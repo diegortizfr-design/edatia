@@ -10,17 +10,23 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
-// --- 🔒 Configuración CORS (solo permite tu dominio de producción) ---
-app.use(cors({
-  origin: ["https://diegortizfr.site", "http://localhost:3000"], // para pruebas locales y producción
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+// --- 🔒 Configuración CORS ---
+app.use(
+  cors({
+    origin: [
+      "https://www.diegortizfr.site", // tu dominio principal
+      "https://diegortizfr.site",     // sin el "www"
+      "http://localhost:3000"         // para pruebas locales
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
 // --- Parseo JSON ---
 app.use(express.json());
 
-// --- Ruta raíz para verificar que el servidor está vivo ---
+// --- Ruta raíz para verificar que el servidor está activo ---
 app.get("/", (req, res) => {
   res.send("✅ ERPod API funcionando correctamente");
 });
@@ -77,7 +83,6 @@ async function main() {
           permisos: JSON.parse(user.permisos || "[]")
         }
       });
-
     } catch (error) {
       console.error("❌ Error en login:", error);
       res.status(500).json({ success: false, message: "Error interno del servidor" });
@@ -85,9 +90,13 @@ async function main() {
   });
 
   // --- Iniciar servidor ---
-  const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor API escuchando en el puerto ${PORT}`));
+  const PORT = process.env.PORT || 10000; // Render asigna automáticamente este puerto
+  app.listen(PORT, () =>
+    console.log(`🚀 Servidor API escuchando en el puerto ${PORT}`)
+  );
 }
 
-// Ejecutar servidor
-main().catch(err => console.error("❌ Error iniciando el servidor:", err));
+// --- Ejecutar servidor ---
+main().catch((err) =>
+  console.error("❌ Error iniciando el servidor:", err)
+);
