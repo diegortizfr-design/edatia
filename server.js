@@ -1,3 +1,7 @@
+// =======================
+// 🚀 ERPod API - ActualyStore
+// =======================
+
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
@@ -5,18 +9,31 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-app.use(cors());
+
+// --- 🔒 Configuración CORS (solo permite tu dominio de producción) ---
+app.use(cors({
+  origin: ["https://diegortizfr.site", "http://localhost:3000"], // para pruebas locales y producción
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// --- Parseo JSON ---
 app.use(express.json());
 
-async function main() {
-  // Conexión MySQL con pool
-  const db = await mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
+// --- Ruta raíz para verificar que el servidor está vivo ---
+app.get("/", (req, res) => {
+  res.send("✅ ERPod API funcionando correctamente");
 });
 
+// --- Función principal ---
+async function main() {
+  // Conexión MySQL
+  const db = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME
+  });
 
   console.log("✅ Conectado a MySQL correctamente (pool activo)");
 
@@ -24,6 +41,10 @@ async function main() {
   app.post("/actualystore/login", async (req, res) => {
     try {
       const { usuario, contrasena } = req.body;
+
+      if (!usuario || !contrasena) {
+        return res.status(400).json({ success: false, message: "Faltan credenciales" });
+      }
 
       const [rows] = await db.execute(
         "SELECT * FROM usuarios_actualystore WHERE usuario = ? AND estado = 'Activo' LIMIT 1",
@@ -43,7 +64,7 @@ async function main() {
 
       const token = jwt.sign(
         { id: user.id, usuario: user.usuario, rol: user.rol },
-        "clave-secreta-erpod",
+        process.env.JWT_SECRET || "clave-secreta-erpod",
         { expiresIn: "4h" }
       );
 
@@ -56,14 +77,17 @@ async function main() {
           permisos: JSON.parse(user.permisos || "[]")
         }
       });
+
     } catch (error) {
-      console.error("❌ Error en login:", error.message);
+      console.error("❌ Error en login:", error);
       res.status(500).json({ success: false, message: "Error interno del servidor" });
     }
   });
 
-  const PORT = 3000;
-  app.listen(PORT, () => console.log(`🚀 Servidor API escuchando en http://localhost:${PORT}`));
+  // --- Iniciar servidor ---
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`🚀 Servidor API escuchando en el puerto ${PORT}`));
 }
-// Llamar función principal
+
+// Ejecutar servidor
 main().catch(err => console.error("❌ Error iniciando el servidor:", err));
