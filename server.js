@@ -10,15 +10,13 @@ app.use(express.json());
 
 async function main() {
   // Conexión MySQL con pool
-  const db = mysql.createPool({
-    host: "217.21.77.0",
-    user: "u818415914_d13g0",
-    password: "D13g0*0rt1z.",
-    database: "u818415914_ERPod",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  });
+  const db = await mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
+});
+
 
   console.log("✅ Conectado a MySQL correctamente (pool activo)");
 
