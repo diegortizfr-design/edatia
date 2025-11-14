@@ -14,16 +14,16 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://www.diegortizfr.site", // dominio principal
-      "https://diegortizfr.site",     // sin www
-      "http://localhost:3000"         // desarrollo local
+      "https://www.diegortizfr.site", // tu dominio principal
+      "https://diegortizfr.site",     // sin el "www"
+      "http://localhost:3000"         // para pruebas locales
     ],
-    methods: ["GET", "POST", "PUT"],
+    methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
-// --- Middleware JSON ---
+// --- Parseo JSON ---
 app.use(express.json());
 
 // --- Ruta raíz para verificar que el servidor está activo ---
@@ -31,9 +31,7 @@ app.get("/", (req, res) => {
   res.send("✅ ERPod API funcionando correctamente");
 });
 
-// ==========================
-// 🧩 CONEXIÓN A BASE DE DATOS
-// ==========================
+// --- Crear Pool de Conexiones ---
 let pool;
 async function initDB() {
   pool = await mysql.createPool({
@@ -48,9 +46,7 @@ async function initDB() {
   console.log("✅ Pool de conexión MySQL inicializado correctamente");
 }
 
-// ==========================
-// 🔐 LOGIN DE USUARIOS
-// ==========================
+// --- RUTA DE LOGIN ---
 app.post("/actualystore/login", async (req, res) => {
   try {
     const { usuario, contrasena } = req.body;
@@ -96,70 +92,8 @@ app.post("/actualystore/login", async (req, res) => {
   }
 });
 
-// ==========================
-// ⚙️ CONFIGURACIÓN - EMPRESA
-// ==========================
-
-// Obtener datos de empresa
-app.get("/actualystore/empresa", async (req, res) => {
-  try {
-    const [rows] = await pool.execute("SELECT * FROM empresa_actualystore LIMIT 1");
-
-    if (rows.length > 0) {
-      return res.json({ success: true, empresa: rows[0] });
-    }
-
-    res.json({ success: true, empresa: null });
-  } catch (error) {
-    console.error("❌ Error al obtener empresa:", error);
-    res.status(500).json({ success: false, message: "Error al obtener datos de la empresa" });
-  }
-});
-
-// Guardar o actualizar empresa
-app.post("/actualystore/empresa", async (req, res) => {
-  try {
-    const datos = req.body;
-    const [rows] = await pool.execute("SELECT id FROM empresa_actualystore LIMIT 1");
-
-    if (rows.length > 0) {
-      // Actualiza si ya existe
-      await pool.execute(
-        `UPDATE empresa_actualystore SET 
-          tipo_figura=?, nombre_fiscal=?, nombre_comercial=?, nit=?, dv=?, 
-          direccion=?, telefono=?, correo=?, web=?, estado=? 
-        WHERE id=?`,
-        [
-          datos.tipo_figura, datos.nombre_fiscal, datos.nombre_comercial,
-          datos.nit, datos.dv, datos.direccion, datos.telefono,
-          datos.correo, datos.web, datos.estado, rows[0].id
-        ]
-      );
-    } else {
-      // Inserta si no existe
-      await pool.execute(
-        `INSERT INTO empresa_actualystore 
-          (tipo_figura, nombre_fiscal, nombre_comercial, nit, dv, direccion, telefono, correo, web, estado)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          datos.tipo_figura, datos.nombre_fiscal, datos.nombre_comercial,
-          datos.nit, datos.dv, datos.direccion, datos.telefono,
-          datos.correo, datos.web, datos.estado
-        ]
-      );
-    }
-
-    res.json({ success: true, message: "Datos de empresa guardados correctamente" });
-  } catch (error) {
-    console.error("❌ Error al guardar empresa:", error);
-    res.status(500).json({ success: false, message: "Error al guardar datos de la empresa" });
-  }
-});
-
-// ==========================
-// 🚀 INICIAR SERVIDOR
-// ==========================
-const PORT = process.env.PORT || 10000;
+// --- Iniciar Servidor ---
+const PORT = process.env.PORT || 10000; // Render asigna automáticamente el puerto
 app.listen(PORT, async () => {
   await initDB();
   console.log(`🚀 Servidor API escuchando en el puerto ${PORT}`);
