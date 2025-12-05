@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERPod SOFTWARE | Panel Principal</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a2b5a4c7d1.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-box">
+      <img src="assets/logo.png" alt="Logo ERPod">
+      <h2>ERPod</h2>
+    </div>
+    <nav class="menu">
+      <a href="#" class="active"><i class="fas fa-home"></i> Inicio</a>
+      <a href="#"><i class="fas fa-shopping-cart"></i> Compras</a>
+      <a href="#"><i class="fas fa-boxes"></i> Inventario</a>
+      <a href="#"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+      <a href="#"><i class="fas fa-chart-line"></i> Reportes</a>
+      <a href="#"><i class="fas fa-cog"></i> Configuración</a>
+    </nav>
+    <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="main-content">
+    <header>
+      <h1>Panel de Control</h1>
+      <div class="user-info">
+        <span class="user-name">Hola, <strong>Admin</strong></span>
+        <img src="assets/user.png" alt="Usuario" class="user-avatar">
+      </div>
+    </header>
+
+    <section class="dashboard">
+      <div class="card">
+        <i class="fas fa-shopping-cart"></i>
+        <h3>Compras</h3>
+        <p>Gestiona tus órdenes de compra y proveedores.</p>
+      </div>
+
+      <div class="card">
+        <i class="fas fa-boxes"></i>
+        <h3>Inventario</h3>
+        <p>Controla tus existencias, entradas y salidas.</p>
+      </div>
+
+      <div class="card">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <h3>Facturación</h3>
+        <p>Emite y controla facturas electrónicas fácilmente.</p>
+      </div>
+
+      <div class="card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Reportes</h3>
+        <p>Visualiza tus estadísticas financieras en tiempo real.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.querySelector(".btn-logout").addEventListener("click", () => {
+      if (confirm("¿Deseas cerrar sesión?")) {
+        window.location.href = "index.html";
+      }
+    });
+  </script>
+
+</body>
+</html>

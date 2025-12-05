@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERPod SOFTWARE | Iniciar sesión</title>
+  <link rel="stylesheet" href="iniciosesion.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="logo.png">
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- LADO IZQUIERDO -->
+    <div class="left-panel">
+      <div class="branding">
+        <img src="assets/logo.png" alt="Logo ERPod" class="logo">
+        <h1>ERPod SOFTWARE.</h1>
+        <p>Gestión inteligente para empresas modernas.</p>
+      </div>
+    </div>
+
+    <!-- LADO DERECHO -->
+    <div class="right-panel">
+      <div class="login-box">
+        <h2>Iniciar Sesión</h2>
+        <form id="loginForm">
+          <div class="input-group">
+            <label for="usuario">Usuario</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required>
+          </div>
+
+          <div class="input-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="contrasena" name="contrasena" placeholder="Ingresa tu contraseña" required>
+          </div>
+
+          <button type="submit" class="btn-login">Ingresar</button>
+
+          <div class="extra-links">
+            <a href="#">¿Olvidaste tu contraseña?</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>© 2025 ERPod SOFTWARE - Diseñado por DIEGO ORTIZ</p>
+  </footer>
+
+  <script src="iniciosesion.js" defer></script>
+</body>
+</html>
