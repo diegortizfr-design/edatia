@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod Login</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div class="login-header">
+            <h2>Iniciar Sesión</h2>
+        </div>
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="text" id="nit" required>
+                <label>NIT Empresa</label>
+            </div>
+            <div class="input-group">
+                <input type="text" id="usuario" required>
+                <label>Usuario</label>
+            </div>
+            <div class="input-group">
+                <input type="password" id="contraseña" required>
+                <label>Contraseña</label>
+            </div>
+
+            <button type="submit" class="btn-login">
+                Entrar
+            </button>
+            <div id="message" class="message"></div>
+        </form>
+    </div>
+
+    <!-- Script separado para cumplir con CSP -->
+    <script src="login.js"></script>
+</body>
+
+</html>

@@ -31,7 +31,7 @@ app.use('/api/empresa', empresaRoutes);
 // Servir frontends por cliente (opcional)
 app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
 app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
-app.use('/frontend', express.static(path.join(__dirname, '..', 'clientes', 'frontend')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 
 // Ruta healthcheck
 app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'dev' }));
