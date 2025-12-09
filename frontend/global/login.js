@@ -51,16 +51,10 @@ form.addEventListener('submit', async (e) => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.data));
 
-            // Redirección dinámica basada en la carpeta de la empresa
-            const folder = data.data.nombre_carpeta;
-            if (folder) {
-                setTimeout(() => {
-                    // Asegurar que la ruta comience con /clientes/ y no tenga dobles slashes
-                    window.location.href = `/clientes/${folder}/dashboard.html`;
-                }, 1000);
-            } else {
-                throw new Error('La empresa no tiene una carpeta asignada.');
-            }
+            // Redirección al Dashboard Unificado Global
+            setTimeout(() => {
+                window.location.href = `/frontend/global/dashboard.html`;
+            }, 1000);
         } else {
             throw new Error(data.message || 'Error al iniciar sesión');
         }
