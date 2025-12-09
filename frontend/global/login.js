@@ -12,7 +12,7 @@ form.addEventListener('submit', async (e) => {
     const contraseña = document.getElementById('contraseña').value;
 
     try {
-        const response = await fetch('http://localhost:4000/api/auth/login', {
+        const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nit, usuario, contraseña })
@@ -30,7 +30,7 @@ form.addEventListener('submit', async (e) => {
 
             // Redirección dinámica basada en la carpeta de la empresa
             setTimeout(() => {
-                window.location.href = `/${data.data.nombre_carpeta}/dashboard_base.html`;
+                window.location.href = `/${data.data.nombre_carpeta}/dashboard.html`;
             }, 1500);
         } else {
             messageDiv.textContent = data.message || 'Error al iniciar sesión';
