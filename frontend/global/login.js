@@ -52,9 +52,15 @@ form.addEventListener('submit', async (e) => {
             localStorage.setItem('user', JSON.stringify(data.data));
 
             // Redirección dinámica basada en la carpeta de la empresa
-            setTimeout(() => {
-                window.location.href = `/${data.data.nombre_carpeta}/dashboard.html`;
-            }, 1000);
+            const folder = data.data.nombre_carpeta;
+            if (folder) {
+                setTimeout(() => {
+                    // Asegurar que la ruta comience con /clientes/ y no tenga dobles slashes
+                    window.location.href = `/clientes/${folder}/dashboard.html`;
+                }, 1000);
+            } else {
+                throw new Error('La empresa no tiene una carpeta asignada.');
+            }
         } else {
             throw new Error(data.message || 'Error al iniciar sesión');
         }
