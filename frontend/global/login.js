@@ -12,7 +12,10 @@ form.addEventListener('submit', async (e) => {
     const contraseña = document.getElementById('contraseña').value;
 
     try {
-        const response = await fetch('/api/auth/login', {
+        // Cargar configuración
+        const config = await fetch('./config.json').then(res => res.json());
+
+        const response = await fetch(`${config.apiUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nit, usuario, contraseña })
