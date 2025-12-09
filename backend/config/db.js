@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './datos.env' }); // o '.env'
 
 const {
-    DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_CONNECTION_LIMIT
+    DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_PASS, DB_NAME, DB_CONNECTION_LIMIT
 } = process.env;
 
 let pool;
@@ -14,7 +14,7 @@ function createPool() {
         host: DB_HOST || '127.0.0.1',
         port: DB_PORT ? Number(DB_PORT) : 3306,
         user: DB_USER,
-        password: DB_PASSWORD,
+        password: DB_PASSWORD || DB_PASS,
         database: DB_NAME,
         waitForConnections: true,
         connectionLimit: DB_CONNECTION_LIMIT ? Number(DB_CONNECTION_LIMIT) : 10,
