@@ -4,8 +4,27 @@ const messageDiv = document.getElementById('message');
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // UI Elements
+    const btnLogin = document.querySelector('.btn-login');
+    const originalBtnText = btnLogin.textContent;
+
+    // Reset message
     messageDiv.className = 'message';
-    messageDiv.textContent = ''; // Limpiar mensaje anterior
+    messageDiv.textContent = '';
+    messageDiv.style.display = 'none';
+
+    // Set Loading State
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Conectando...';
+    btnLogin.style.opacity = '0.7';
+    btnLogin.style.cursor = 'wait';
+
+    // Show initial info message
+    messageDiv.textContent = 'Procesando... (Si el servidor está en reposo, esto puede tardar hasta 1 minuto)';
+    messageDiv.className = 'message'; // Ensure base class
+    messageDiv.style.display = 'block';
+    messageDiv.style.color = '#fff'; // White text for info
 
     const nit = document.getElementById('nit').value;
     const usuario = document.getElementById('usuario').value;
@@ -24,8 +43,9 @@ form.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            messageDiv.textContent = 'Login exitoso! Redirigiendo a ' + data.data.nombre_carpeta + '...';
-            messageDiv.classList.add('success');
+            messageDiv.textContent = '¡Login exitoso! Redirigiendo a ' + data.data.nombre_carpeta + '...';
+            messageDiv.className = 'message success';
+            // Do not re-enable button on success to prevent double submit during redirect
 
             // Guardar token y datos básicos
             localStorage.setItem('token', data.token);
@@ -34,14 +54,20 @@ form.addEventListener('submit', async (e) => {
             // Redirección dinámica basada en la carpeta de la empresa
             setTimeout(() => {
                 window.location.href = `/${data.data.nombre_carpeta}/dashboard.html`;
-            }, 1500);
+            }, 1000);
         } else {
-            messageDiv.textContent = data.message || 'Error al iniciar sesión';
-            messageDiv.classList.add('error');
+            throw new Error(data.message || 'Error al iniciar sesión');
         }
     } catch (error) {
         console.error('Error:', error);
-        messageDiv.textContent = 'Error de conexión con el servidor';
-        messageDiv.classList.add('error');
+
+        // Revert Loading State
+        btnLogin.disabled = false;
+        btnLogin.textContent = originalBtnText;
+        btnLogin.style.opacity = '1';
+        btnLogin.style.cursor = 'pointer';
+
+        messageDiv.textContent = error.message || 'Error de conexión con el servidor.';
+        messageDiv.className = 'message error';
     }
 });

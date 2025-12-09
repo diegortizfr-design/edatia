@@ -4,38 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERPod Login</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>ERPod SOFTWARE | Iniciar sesión</title>
     <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- <link rel="icon" href="logo.png">  Optional if we have a logo in global -->
 </head>
 
 <body>
 
-    <div class="login-container">
-        <div class="login-header">
-            <h2>Iniciar Sesión</h2>
-        </div>
-        <form id="loginForm">
-            <div class="input-group">
-                <input type="text" id="nit" required>
-                <label>NIT Empresa</label>
-            </div>
-            <div class="input-group">
-                <input type="text" id="usuario" required>
-                <label>Usuario</label>
-            </div>
-            <div class="input-group">
-                <input type="password" id="contraseña" required>
-                <label>Contraseña</label>
-            </div>
+    <div class="container">
 
-            <button type="submit" class="btn-login">
-                Entrar
-            </button>
-            <div id="message" class="message"></div>
-        </form>
+        <!-- LADO IZQUIERDO -->
+        <div class="left-panel">
+            <div class="branding">
+                <!-- You might need to update the logo path if it's different in global -->
+                <!-- Using a generic placeholder or relative path if available -->
+                <img src="../../clientes/actualystore/assets/logo.png" alt="Logo ERPod" class="logo"
+                    onerror="this.style.display='none'">
+                <h1>ERPod SOFTWARE.</h1>
+                <p>Gestión inteligente para empresas modernas.</p>
+            </div>
+        </div>
+
+        <!-- LADO DERECHO -->
+        <div class="right-panel">
+            <div class="login-box">
+                <h2>Iniciar Sesión</h2>
+                <form id="loginForm">
+
+                    <div class="input-group">
+                        <label for="nit">NIT Empresa</label>
+                        <input type="text" id="nit" placeholder="Ingresa el NIT" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="usuario">Usuario</label>
+                        <input type="text" id="usuario" placeholder="Ingresa tu usuario" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="contraseña">Contraseña</label>
+                        <input type="password" id="contraseña" placeholder="Ingresa tu contraseña" required>
+                    </div>
+
+                    <button type="submit" class="btn-login">Ingresar</button>
+                    <div id="message" class="message"></div>
+
+                    <div class="extra-links">
+                        <a href="#">¿Olvidaste tu contraseña?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
+
+    <footer>
+        <p>© 2025 ERPod SOFTWARE - Diseñado por DIEGO ORTIZ</p>
+    </footer>
 
     <!-- Script separado para cumplir con CSP -->
     <script src="login.js"></script>
