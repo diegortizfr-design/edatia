@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Formas de Pago</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/configuracion_empresa.css">
+    <link rel="stylesheet" href="css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Simple Toggle Switch Style */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(16px);
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <p style="color: var(--text-gray);">Activa o desactiva los métodos de pago disponibles en el POS y
+                    Facturación.</p>
+                <button class="btn-guardar" style="background: var(--primary-color);"><i class="fas fa-plus"></i> Nuevo
+                    Método</button>
+            </div>
+
+            <div class="table-container" style="background: white;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Icono</th>
+                            <th>Método de Pago</th>
+                            <th>Tipo</th>
+                            <th>Cuenta Banco</th>
+                            <th>Visible en POS</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-money-bill-wave" style="color: #10B981; font-size: 1.2rem;"></i></td>
+                            <td><strong>Efectivo</strong></td>
+                            <td>Efectivo</td>
+                            <td>Caja General (1105)</td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-credit-card" style="color: #4F46E5; font-size: 1.2rem;"></i></td>
+                            <td><strong>Tarjeta Débito/Crédito</strong></td>
+                            <td>Datafono</td>
+                            <td>Banco Davivienda (1110)</td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-mobile-alt" style="color: #F59E0B; font-size: 1.2rem;"></i></td>
+                            <td><strong>Nequi / Daviplata</strong></td>
+                            <td>Transferencia</td>
+                            <td>Nequi Corporativo</td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-file-invoice" style="color: #6B7280; font-size: 1.2rem;"></i></td>
+                            <td><strong>Crédito Clientes</strong></td>
+                            <td>Cartera</td>
+                            <td>Cuentas por Cobrar (1305)</td>
+                            <td>
+                                <label class="switch">
+                                    <input type="checkbox">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="js/menu_loader.js"></script>
+    <script src="js/header_loader.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/notifications.js"></script>
+</body>
+
+</html>
+
+
+
+
+

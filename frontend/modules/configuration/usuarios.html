@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Usuarios y Roles</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/configuracion_empresa.css">
+    <link rel="stylesheet" href="css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <p style="color: var(--text-gray);">Gestiona el acceso de tu equipo al sistema.</p>
+                <button class="btn-guardar" style="background: var(--primary-color);"><i class="fas fa-user-plus"></i>
+                    Invitar Usuario</button>
+            </div>
+
+            <div class="table-container" style="background: white;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Sucursal</th>
+                            <th>Último Acceso</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="display: flex; gap: 10px; align-items: center;">
+                                <img src="https://ui-avatars.com/api/?name=Diego+Ortiz&background=random"
+                                    style="width: 32px; border-radius: 50%;">
+                                <strong>Diego Ortiz</strong>
+                            </td>
+                            <td>diego@erpod.com</td>
+                            <td><span
+                                    style="background: #E0E7FF; color: #4338CA; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">Super
+                                    Admin</span></td>
+                            <td>Todas</td>
+                            <td>Hace 2 minutos</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td style="display: flex; gap: 10px; align-items: center;">
+                                <img src="https://ui-avatars.com/api/?name=Luisa+Ventas&background=random"
+                                    style="width: 32px; border-radius: 50%;">
+                                <strong>Luisa Ventas</strong>
+                            </td>
+                            <td>ventas@erpod.com</td>
+                            <td><span
+                                    style="background: #ECFDF5; color: #059669; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">Vendedor</span>
+                            </td>
+                            <td>Sede Principal</td>
+                            <td>Ayer 5:00 PM</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td style="display: flex; gap: 10px; align-items: center;">
+                                <img src="https://ui-avatars.com/api/?name=Jorge+Contador&background=random"
+                                    style="width: 32px; border-radius: 50%;">
+                                <strong>Jorge Contador</strong>
+                            </td>
+                            <td>contabilidad@erpod.com</td>
+                            <td><span
+                                    style="background: #FEF3C7; color: #D97706; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">Contador</span>
+                            </td>
+                            <td>Remoto</td>
+                            <td>Hace 3 días</td>
+                            <td><span class="badge warning">Pendiente</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script src="../../assets/js/notifications.js"></script>
+</body>
+
+</html>

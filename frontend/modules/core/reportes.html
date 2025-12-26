@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Reportes e Inteligencia</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for Reports */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+        }
+
+        .date-range-picker {
+            background: white;
+            border: 1px solid #e5e7eb;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* CSS Bar Chart Mockup */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            padding-top: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 10px;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 30%;
+            background: linear-gradient(to top, var(--primary-color), #818CF8);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+
+        .bar:hover::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .bar-label {
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--text-gray);
+        }
+
+        /* Quick Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .report-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .report-item:hover {
+            background: #f9fafb;
+        }
+
+        .report-item:last-child {
+            border-bottom: none;
+        }
+
+        .report-icon {
+            width: 40px;
+            height: 40px;
+            background: #EFF6FF;
+            color: var(--primary-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <!-- QUICK STATS -->
+        <section class="stats-row">
+            <div class="stat-box">
+                <div class="stat-circle" style="background: #ECFDF5; color: #10B981;"><i class="fas fa-arrow-up"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem;">$45.2M</h2>
+                    <span style="color: #6B7280; font-size: 0.9rem;">Ventas este mes (+12%)</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-circle" style="background: #FEF3C7; color: #D97706;"><i class="fas fa-coins"></i></div>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem;">$12.5M</h2>
+                    <span style="color: #6B7280; font-size: 0.9rem;">Utilidad Neta</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-circle" style="background: #EEF2FF; color: #4F46E5;"><i class="fas fa-user-plus"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem;">145</h2>
+                    <span style="color: #6B7280; font-size: 0.9rem;">Nuevos Clientes</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHARTS GRID -->
+        <section class="analytics-grid">
+
+            <!-- VENTAS POR MES CHART -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-chart-bar"></i> Ventas Mensuales</h3>
+                    <button class="date-range-picker"><i class="far fa-calendar-alt"></i> 2025</button>
+                </div>
+                <div class="bar-chart">
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 40%;" data-value="$12M"></div>
+                        <span class="bar-label">Ene</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 60%;" data-value="$18M"></div>
+                        <span class="bar-label">Feb</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 35%; background: #F87171;" data-value="$10M"></div>
+                        <span class="bar-label">Mar</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 75%;" data-value="$22M"></div>
+                        <span class="bar-label">Abr</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 50%;" data-value="$15M"></div>
+                        <span class="bar-label">May</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar" style="height: 90%; background: #10B981;" data-value="$30M"></div>
+                        <span class="bar-label">Jun</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOP PRODUCTOS TABLE -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3><i class="fas fa-star"></i> Productos Más Vendidos</h3>
+                    <button class="btn-icon"><i class="fas fa-download"></i></button>
+                </div>
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th style="text-align: right;">Cant.</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Camiseta Polo Azul</td>
+                            <td style="text-align: right;">120</td>
+                            <td style="text-align: right; font-weight: bold;">$4.2M</td>
+                        </tr>
+                        <tr>
+                            <td>Zapatos Deportivos</td>
+                            <td style="text-align: right;">85</td>
+                            <td style="text-align: right; font-weight: bold;">$12.5M</td>
+                        </tr>
+                        <tr>
+                            <td>Gorra Trucker</td>
+                            <td style="text-align: right;">210</td>
+                            <td style="text-align: right; font-weight: bold;">$6.1M</td>
+                        </tr>
+                        <tr>
+                            <td>Jeans Slim Fit</td>
+                            <td style="text-align: right;">95</td>
+                            <td style="text-align: right; font-weight: bold;">$8.9M</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- REPORTES DISPONIBLES -->
+            <div class="chart-container" style="grid-column: span 2;">
+                <div class="chart-header">
+                    <h3><i class="fas fa-file-download"></i> Reportes Detallados (Excel/PDF)</h3>
+                </div>
+                <div class="analytics-grid" style="gap: 10px; margin-bottom: 0;">
+                    <div class="report-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="report-icon"><i class="fas fa-file-invoice"></i></div>
+                            <div>
+                                <strong>Informe Fiscal de Ventas</strong>
+                                <br><small style="color: #6B7280;">Detallado por IVA y Retenciones</small>
+                            </div>
+                        </div>
+                        <button class="btn-icon"><i class="fas fa-download"></i></button>
+                    </div>
+
+                    <div class="report-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="report-icon"><i class="fas fa-users"></i></div>
+                            <div>
+                                <strong>Ventas por Vendedor</strong>
+                                <br><small style="color: #6B7280;">Comisiones y rendimiento</small>
+                            </div>
+                        </div>
+                        <button class="btn-icon"><i class="fas fa-download"></i></button>
+                    </div>
+
+                    <div class="report-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="report-icon"><i class="fas fa-boxes"></i></div>
+                            <div>
+                                <strong>Valorización de Inventario</strong>
+                                <br><small style="color: #6B7280;">Costo promedio y stock actual</small>
+                            </div>
+                        </div>
+                        <button class="btn-icon"><i class="fas fa-download"></i></button>
+                    </div>
+
+                    <div class="report-item">
+                        <div style="display: flex; align-items: center;">
+                            <div class="report-icon"><i class="fas fa-truck"></i></div>
+                            <div>
+                                <strong>Movimientos de Bodega</strong>
+                                <br><small style="color: #6B7280;">Kardex detallado por producto</small>
+                            </div>
+                        </div>
+                        <button class="btn-icon"><i class="fas fa-download"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+    <script src="js/menu_loader.js"></script>
+    <script src="js/header_loader.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/notifications.js"></script>
+</body>
+
+</html>
+
+
+
+
+

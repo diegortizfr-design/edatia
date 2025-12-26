@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Impuestos</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/configuracion_empresa.css">
+    <link rel="stylesheet" href="css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <p style="color: var(--text-gray);">Define tasas de IVA, Retenciones (ReteFuente, ReteICA) e Impuesto al
+                    Consumo.</p>
+                <button class="btn-guardar" style="background: var(--primary-color);"><i class="fas fa-plus"></i> Nuevo
+                    Impuesto</button>
+            </div>
+
+            <div class="table-container" style="background: white;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Corto</th>
+                            <th>Descripción</th>
+                            <th>Porcentaje (%)</th>
+                            <th>Tipo</th>
+                            <th>Cuenta Contable</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>IVA 19%</strong></td>
+                            <td>Impuesto al Valor Agregado General</td>
+                            <td>19.00%</td>
+                            <td>Sumado</td>
+                            <td>24080501</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>IVA 5%</strong></td>
+                            <td>Impuesto Diferencial</td>
+                            <td>5.00%</td>
+                            <td>Sumado</td>
+                            <td>24080502</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>ReteFuente 3.5%</strong></td>
+                            <td>Retención por Compras General</td>
+                            <td>3.50%</td>
+                            <td>Retenido</td>
+                            <td>23654001</td>
+                            <td><span class="badge active">Activo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                        <tr>
+                            <td><strong>ICO 8%</strong></td>
+                            <td>Impuesto Nacional al Consumo</td>
+                            <td>8.00%</td>
+                            <td>Sumado</td>
+                            <td>24950100</td>
+                            <td><span class="badge warning">Inactivo</span></td>
+                            <td><button class="btn-icon"><i class="fas fa-edit"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script src="js/menu_loader.js"></script>
+    <script src="js/header_loader.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/notifications.js"></script>
+</body>
+
+</html>
+
+
+
+
+

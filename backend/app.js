@@ -27,10 +27,14 @@ if (process.env.NODE_ENV === 'development') {
 // Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/empresa', empresaRoutes);
+app.use('/api/terceros', require('./routes/tercerosRoutes'));
+app.use('/api/productos', require('./routes/productosRoutes'));
+app.use('/api/compras', require('./routes/comprasRoutes'));
+app.use('/api/facturacion', require('./routes/facturacionRoutes'));
 
 // Servir frontends por cliente (opcional)
-app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
-app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
+// app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
+// app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
 app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 
 // Ruta healthcheck

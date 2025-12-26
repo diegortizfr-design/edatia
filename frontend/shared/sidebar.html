@@ -1,0 +1,51 @@
+<aside class="sidebar">
+    <div class="logo-box">
+        <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+        <h2 id="empresa-nombre">ERPod Empresas</h2>
+    </div>
+    <nav class="menu" id="menu-principal">
+        <a href="/frontend/modules/core/dashboard.html" class="active"><i class="fas fa-home"></i>
+            <span>Inicio</span></a>
+
+        <div class="menu-item menu-dropdown">
+            <a href="#" class="dropdown-toggle"><i class="fas fa-shopping-cart"></i> <span>Compras</span></a>
+            <div class="dropdown-menu">
+                <a href="/frontend/modules/compras/compras.html">Nueva Orden</a>
+                <a href="/frontend/modules/compras/Proveedores.html">Proveedores</a>
+            </div>
+        </div>
+
+        <div class="menu-item menu-dropdown">
+            <a href="#" class="dropdown-toggle"><i class="fas fa-boxes"></i> <span>Inventario</span></a>
+            <div class="dropdown-menu">
+                <a href="/frontend/modules/inventario/inventario.html">Movimientos</a>
+                <a href="/frontend/modules/inventario/stock.html">Stock Real</a>
+            </div>
+        </div>
+
+        <div class="menu-item menu-dropdown">
+            <a href="#" class="dropdown-toggle"><i class="fas fa-file-invoice-dollar"></i>
+                <span>Facturación</span></a>
+            <div class="dropdown-menu">
+                <a href="/frontend/modules/facturacion/facturacion.html">Nueva Factura</a>
+                <a href="/frontend/modules/facturacion/pos.html">POS</a>
+            </div>
+        </div>
+
+        <div class="menu-item menu-dropdown">
+            <a href="#" class="dropdown-toggle"><i class="fas fa-cog"></i> <span>Configuración</span></a>
+            <div class="dropdown-menu">
+                <a href="/frontend/modules/configuration/empresa.html">Empresa</a>
+                <a href="/frontend/modules/configuration/sucursales.html">Sucursales</a>
+                <a href="/frontend/modules/configuration/terceros.html">Terceros</a>
+                <a href="/frontend/modules/configuration/documentos.html">Documentos</a>
+                <a href="/frontend/modules/configuration/usuarios.html">Usuarios</a>
+                <a href="/frontend/modules/configuration/ecommerce.html">E-commerce</a>
+                <a href="/frontend/modules/configuration/pagos.html">Métodos de Pago</a>
+                <a href="/frontend/modules/configuration/impuestos.html">Impuestos</a>
+            </div>
+        </div>
+    </nav>
+
+    <button class="btn-logout" id="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+</aside>

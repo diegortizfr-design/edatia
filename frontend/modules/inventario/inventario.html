@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Inventario</title>
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <!-- INVENTORY KPIS -->
+        <section class="kpi-grid">
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-cube"></i></div>
+                <h3>Total Items</h3>
+                <p>1,245</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3>Stock Crítico</h3>
+                <p>12 Productos</p>
+                <small style="color: #EF4444;">Requieren atención</small>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-dollar-sign"></i></div>
+                <h3>Valor Inventario</h3>
+                <p>$45.2M</p>
+            </div>
+        </section>
+
+        <!-- FILTERS & ACTIONS -->
+        <div class="action-bar"
+            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="filters">
+                <select class="filter-select">
+                    <option>Todas las Categorías</option>
+                    <option>Electrónica</option>
+                    <option>Ropa</option>
+                    <option>Hogar</option>
+                </select>
+                <select class="filter-select">
+                    <option>Estado: Todos</option>
+                    <option>Activo</option>
+                    <option>Inactivo</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Nuevo Producto</button>
+        </div>
+
+        <!-- PRODUCT TABLE -->
+        <div class="table-container">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>SKU</th>
+                        <th>Categoría</th>
+                        <th>Stock</th>
+                        <th>Precio Venta</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Los datos se cargarán dinámicamente aquí -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- NEW PRODUCT MODAL MOCKUP -->
+    <div class="modal-overlay" id="productModal" style="display: none;">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <h2>Nuevo Producto</h2>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Nombre del Producto</label>
+                            <input type="text" placeholder="Ej: Laptop HP...">
+                        </div>
+                        <div class="form-group">
+                            <label>SKU / Código</label>
+                            <input type="text" placeholder="Ej: LP-001">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('productModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+    </script>
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script src="../../assets/js/notifications.js"></script>
+    <script src="../../assets/js/inventario.js"></script>
+</body>
+
+</html>

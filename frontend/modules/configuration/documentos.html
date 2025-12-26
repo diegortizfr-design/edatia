@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Documentos</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/configuracion_empresa.css">
+    <link rel="stylesheet" href="css/inventario.css"> <!-- Reusing Table Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Styles for Advanced Document Modal */
+        .resolution-card {
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .resolution-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Modal Grid Adjustments */
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .modal-glass {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .section-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Form specific overrides */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="width: 60%;">
+                    <p style="color: var(--text-gray);">Gestiona los consecutivos, resoluciones DIAN y asignación de
+                        sucursales para tus documentos.</p>
+                </div>
+                <div class="actions" style="display: flex; gap: 10px;">
+                    <div class="search-bar" style="width: auto;">
+                        <i class="fas fa-search" style="color: #9CA3AF"></i>
+                        <input type="text" placeholder="Buscar documento...">
+                    </div>
+                    <button class="btn-guardar" onclick="openModal()" style="background: var(--primary-color);">
+                        <i class="fas fa-plus"></i> Nuevo Documento
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container" style="background: white;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th width="50"></th>
+                            <th>Categoría</th>
+                            <th>Prefijo</th>
+                            <th>Descripción / Nombre</th>
+                            <th>Consecutivo</th>
+                            <th>Sucursal Asignada</th>
+                            <th>Resolución</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Ejemplo: Factura de Venta -->
+                        <tr>
+                            <td>
+                                <div
+                                    style="background: #EEF2FF; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary-color);">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                            </td>
+                            <td><strong>FV</strong></td>
+                            <td>FECA</td>
+                            <td>
+                                <strong>Factura Electrónica de Venta</strong>
+                                <br><small style="color: #6B7280;">Ventas POS y Electrónicas</small>
+                            </td>
+                            <td><span style="font-family: monospace; font-size: 1rem;">483</span></td>
+                            <td>Sede Principal (Bogotá)</td>
+                            <td><span class="badge" style="background: #ECFDF5; color: #059669;">Vigente</span></td>
+                            <td><label class="toggle-switch"><input type="checkbox" checked><span
+                                        class="slider"></span></label></td>
+                            <td>
+                                <button class="btn-icon" onclick="openModal()" title="Editar"><i
+                                        class="fas fa-edit"></i></button>
+                                <button class="btn-icon" style="color: #EF4444;" title="Eliminar"><i
+                                        class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+
+                        <!-- Ejemplo: Recibo de Caja -->
+                        <tr>
+                            <td>
+                                <div
+                                    style="background: #F0FDF4; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #16A34A;">
+                                    <i class="fas fa-cash-register"></i>
+                                </div>
+                            </td>
+                            <td><strong>RC</strong></td>
+                            <td>RC</td>
+                            <td>
+                                <strong>Recibo de Caja</strong>
+                                <br><small style="color: #6B7280;">Ingresos de dinero</small>
+                            </td>
+                            <td><span style="font-family: monospace; font-size: 1rem;">781</span></td>
+                            <td>Sede Principal (Bogotá)</td>
+                            <td><span class="badge" style="background: #F3F4F6; color: #6B7280;">N/A</span></td>
+                            <td><label class="toggle-switch"><input type="checkbox" checked><span
+                                        class="slider"></span></label></td>
+                            <td>
+                                <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="btn-icon" style="color: #EF4444;" title="Eliminar"><i
+                                        class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+
+                        <!-- Ejemplo: Orden de Compra -->
+                        <tr>
+                            <td>
+                                <div
+                                    style="background: #FEF3C7; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #D97706;">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                            </td>
+                            <td><strong>OC</strong></td>
+                            <td>OC</td>
+                            <td>
+                                <strong>Orden de Compra</strong>
+                            </td>
+                            <td><span style="font-family: monospace; font-size: 1rem;">111</span></td>
+                            <td>Kiosco CC Andino</td>
+                            <td><span class="badge" style="background: #F3F4F6; color: #6B7280;">N/A</span></td>
+                            <td><label class="toggle-switch"><input type="checkbox" checked><span
+                                        class="slider"></span></label></td>
+                            <td>
+                                <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="btn-icon" style="color: #EF4444;" title="Eliminar"><i
+                                        class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ADVANCED DOCUMENT MODAL -->
+    <div class="modal-overlay" id="docModal" style="display: none;">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-signature"></i> Configurar Documento</h2>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="docForm">
+
+                    <!-- SECTION 1: GENERAL INFO -->
+                    <h4 class="section-subtitle">Información General</h4>
+                    <div class="form-group grid-2">
+                        <label>Categoría del Documento
+                            <select name="categoria" required>
+                                <option value="FV">Factura de Venta</option>
+                                <option value="RC">Recibo de Caja</option>
+                                <option value="CE">Comprobante de Egreso</option>
+                                <option value="NC">Nota Crédito</option>
+                                <option value="OC">Orden de Compra</option>
+                                <option value="TR">Traslado de Inventario</option>
+                            </select>
+                        </label>
+                        <label>Sucursal Asignada
+                            <select name="sucursal" required>
+                                <option value="">Seleccione Sucursal...</option>
+                                <option value="1">Sede Principal (Bogotá)</option>
+                                <option value="2">Kiosco CC Andino</option>
+                                <option value="3">Bodega Norte</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="form-group grid-2">
+                        <label>Nombre del Documento <input type="text" value="FACTURA ELECTRÓNICA DE VENTA"
+                                placeholder="Ej: Factura de Venta"></label>
+                        <label>Prefijo <input type="text" value="FECA" placeholder="Ej: FV"></label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mensaje Resolución / Pie de Página <input type="text"
+                                placeholder="Texto que aparecerá en el PDF..."></label>
+                    </div>
+
+                    <!-- SECTION 2: RESOLUTIONS (THE BLUE BOX) -->
+                    <div class="resolution-card">
+                        <div class="resolution-header">
+                            <i class="fas fa-certificate"></i> Resolución de Facturación (DIAN)
+                        </div>
+                        <div class="form-group grid-2">
+                            <label>Número de Resolución <input type="text" placeholder="1876..."></label>
+                            <label>Fecha de Vencimiento <input type="date"></label>
+                        </div>
+                        <div class="form-group grid-3">
+                            <label>Rango Inicial <input type="number" placeholder="1"></label>
+                            <label>Rango Final <input type="number" placeholder="10000"></label>
+                            <label>Consecutivo Actual <input type="number" value="483"></label>
+                        </div>
+                        <div class="form-group">
+                            <label>Texto Legal Resolución
+                                <textarea rows="2"
+                                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 5px;">AUTORIZACIÓN FACTURACIÓN ELECTRONICA RESOLUCIÓN 18764074198088 DE 2024/07/02 DEL 1 AL 10.000 PREFIJO FECA. VIGENCIA 24 MESES</textarea>
+                            </label>
+                        </div>
+                        <div style="text-align: right;">
+                            <button type="button" class="btn-secondary" style="font-size: 0.8rem;">Ver Resoluciones
+                                Anteriores</button>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: ADVANCED SETTINGS -->
+                    <h4 class="section-subtitle">Configuración Avanzada</h4>
+
+                    <div class="form-group grid-3">
+                        <label>Documento Equivalente
+                            <select>
+                                <option>NO APLICA</option>
+                                <option>POS Electrónico</option>
+                            </select>
+                        </label>
+                        <label>Tipo Doc. Electrónico
+                            <select>
+                                <option>Factura Electrónica</option>
+                                <option>Documento Soporte</option>
+                            </select>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; margin-top: 30px;">
+                            <input type="checkbox" style="width: auto;"> Excluir de Impuestos
+                        </label>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="button" class="btn-primary full-width" onclick="closeModal()">Guardar
+                            Configuración</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('docModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('docModal').style.display = 'none';
+        }
+        // Basic close on click outside
+        window.onclick = function (event) {
+            var modal = document.getElementById('docModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+    <script src="js/menu_loader.js"></script>
+    <script src="js/header_loader.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/notifications.js"></script>
+</body>
+
+</html>
+
+
+
+
+

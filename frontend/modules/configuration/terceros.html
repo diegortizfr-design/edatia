@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Terceros</title>
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/configuracion_empresa.css">
+    <link rel="stylesheet" href="../../assets/css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific Badges for Third Party Types */
+        .badge.cliente {
+            background: #EEF2FF;
+            color: #4F46E5;
+        }
+
+        .badge.proveedor {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+
+        .badge.colaborador {
+            background: #ECFDF5;
+            color: #10B981;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <p style="color: var(--text-gray); margin-bottom: 10px;">Administra clientes, proveedores y
+                        colaboradores.</p>
+                    <div class="filters">
+                        <select class="filter-select">
+                            <option>Todos los Tipos</option>
+                            <option>Clientes</option>
+                            <option>Proveedores</option>
+                            <option>Colaboradores</option>
+                        </select>
+                        <div class="search-bar" style="display: inline-flex; width: 300px; margin-left: 10px;">
+                            <i class="fas fa-search" style="color: #9CA3AF"></i>
+                            <input type="text" placeholder="Buscar por nombre o NIT...">
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-guardar" style="background: var(--primary-color);"><i class="fas fa-plus"></i> Nuevo
+                    Tercero</button>
+            </div>
+
+            <div class="table-container" style="background: white;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre / Razón Social</th>
+                            <th>Identificación (NIT/CC)</th>
+                            <th>Tipo</th>
+                            <th>Teléfono</th>
+                            <th>Ubicación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los datos se cargarán dinámicamente aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Mockup -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px; gap: 10px;">
+                <button class="btn-secondary" style="padding: 5px 10px;">Anterior</button>
+                <button class="btn-secondary" style="padding: 5px 10px;">Siguiente</button>
+            </div>
+
+        </section>
+    </main>
+    <script src="../../assets/js/menu_loader.js"></script>
+    <script src="../../assets/js/header_loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script src="../../assets/js/notifications.js"></script>
+    <!-- MODAL NUEVO/EDITAR TERCERO -->
+    <div id="modal-tercero" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title">Nuevo Tercero</h2>
+            <form id="form-tercero">
+                <input type="hidden" id="tercero_id">
+
+                <div class="form-group">
+                    <label>Nombre Comercial *</label>
+                    <input type="text" id="nombre_comercial" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Razón Social</label>
+                        <input type="text" id="razon_social">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo Documento</label>
+                        <select id="tipo_documento">
+                            <option value="NIT">NIT</option>
+                            <option value="CC">Cédula</option>
+                            <option value="CE">Cédula Extranjería</option>
+                            <option value="PAS">Pasaporte</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Documento (NIT/CC) *</label>
+                        <input type="text" id="documento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" id="telefono">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="direccion">
+                </div>
+
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="email">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="es_cliente" checked> Es Cliente
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 8px; margin-left: 15px;">
+                        <input type="checkbox" id="es_proveedor"> Es Proveedor
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary close-modal-btn">Cancelar</button>
+                    <button type="submit" class="btn-guardar">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../assets/js/configuracion_terceros.js"></script>
+</body>
+
+</html>

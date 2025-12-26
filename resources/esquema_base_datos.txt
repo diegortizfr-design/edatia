@@ -1,0 +1,150 @@
+-- DISEÑO DE BASE DE DATOS POR CLIENTE (TENANT)
+-- Este archivo contiene la estructura SQL para ser ejecutada en la base de datos de cada cliente.
+
+-- 1. TABLA DE USUARIOS DEL CLIENTE
+-- Almacena los usuarios que tienen acceso al sistema (vendedores, administradores, bodegueros).
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100),
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    contraseña VARCHAR(255) NOT NULL,
+    rol ENUM('admin', 'vendedor', 'bodeguero') DEFAULT 'vendedor',
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. TABLA DE TERCEROS (CLIENTES Y PROVEEDORES)
+-- Unifica clientes y proveedores en una sola tabla para evitar duplicidad si una entidad es ambos.
+CREATE TABLE IF NOT EXISTS terceros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_comercial VARCHAR(150) NOT NULL,
+    razon_social VARCHAR(150),
+    tipo_documento VARCHAR(20) DEFAULT 'NIT',
+    documento VARCHAR(20) UNIQUE NOT NULL, -- NIT o Cédula
+    direccion VARCHAR(200),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    es_cliente BOOLEAN DEFAULT TRUE,
+    es_proveedor BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. TABLA DE PRODUCTOS
+-- Catálogo maestro de productos y servicios.
+CREATE TABLE IF NOT EXISTS productos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) UNIQUE, -- Código de barras o interno
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    precio_compra DECIMAL(15, 2) DEFAULT 0,
+    precio_venta DECIMAL(15, 2) DEFAULT 0,
+    impuesto_porcentaje DECIMAL(5, 2) DEFAULT 0, -- Ejemplo: 19.00
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. TABLA DE INVENTARIO (STOCK ACTUAL)
+-- Controla cuántas unidades hay de cada producto en cada bodega.
+CREATE TABLE IF NOT EXISTS inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT NOT NULL,
+    cantidad_actual DECIMAL(15, 2) DEFAULT 0,
+    bodega VARCHAR(50) DEFAULT 'Principal',
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_producto_bodega (producto_id, bodega)
+);
+
+-- 5. TABLA DE MOVIMIENTOS DE INVENTARIO (KARDEX)
+-- Historial detallado de todas las entradas y salidas para auditoría.
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT NOT NULL,
+    tipo_movimiento ENUM('entrada', 'salida', 'ajuste') NOT NULL,
+    cantidad DECIMAL(15, 2) NOT NULL,
+    saldo_anterior DECIMAL(15, 2) NOT NULL, -- Cuánto había antes
+    saldo_nuevo DECIMAL(15, 2) NOT NULL,    -- Cuánto quedó después
+    referencia VARCHAR(100), -- ID de factura, compra o nota
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INT,
+    FOREIGN KEY (producto_id) REFERENCES productos(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- 6. TABLA DE FACTURAS (VENTAS)
+-- Cabecera de las facturas de venta.
+CREATE TABLE IF NOT EXISTS facturas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    consecutivo INT NOT NULL,
+    prefijo VARCHAR(10),
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    cliente_id INT NOT NULL,
+    usuario_id INT NOT NULL, -- Vendedor que hizo la factura
+    subtotal DECIMAL(15, 2) DEFAULT 0,
+    impuestos DECIMAL(15, 2) DEFAULT 0,
+    total DECIMAL(15, 2) DEFAULT 0,
+    estado ENUM('pagada', 'pendiente', 'anulada') DEFAULT 'pagada',
+    metodo_pago VARCHAR(50) DEFAULT 'Efectivo',
+    FOREIGN KEY (cliente_id) REFERENCES terceros(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- 7. DETALLE DE FACTURAS
+-- Renglones de la factura (qué productos se vendieron).
+CREATE TABLE IF NOT EXISTS factura_detalles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    factura_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad DECIMAL(15, 2) NOT NULL,
+    precio_unitario DECIMAL(15, 2) NOT NULL,
+    impuesto DECIMAL(15, 2) DEFAULT 0,
+    subtotal DECIMAL(15, 2) NOT NULL,
+    FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- 8. TABLA DE COMPRAS (GASTOS)
+-- Cabecera de las facturas de compra a proveedores.
+CREATE TABLE IF NOT EXISTS compras (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    proveedor_id INT NOT NULL,
+    numero_factura_proveedor VARCHAR(50), -- El número de factura física que nos da el proveedor
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INT NOT NULL, -- Quien registró la compra
+    total DECIMAL(15, 2) DEFAULT 0,
+    estado ENUM('recibida', 'orden', 'anulada') DEFAULT 'recibida',
+    FOREIGN KEY (proveedor_id) REFERENCES terceros(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- 9. DETALLE DE COMPRAS
+-- Renglones de la compra (qué productos compramos).
+CREATE TABLE IF NOT EXISTS compra_detalles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    compra_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad DECIMAL(15, 2) NOT NULL,
+    costo_unitario DECIMAL(15, 2) NOT NULL,
+    subtotal DECIMAL(15, 2) NOT NULL,
+    FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+-- 10. TABLA DE INFORMACIÓN DE EMPRESA (CONFIGURACIÓN)
+-- Almacena los datos fiscales y de contacto de la propia empresa (el cliente dueño de esta BD).
+-- Esta tabla debería tener solo 1 registro.
+CREATE TABLE IF NOT EXISTS informacion_empresa (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo_figura ENUM('Natural', 'Juridica', 'SC') DEFAULT 'Juridica',
+    nombre_fiscal VARCHAR(200) NOT NULL,
+    nombre_comercial VARCHAR(200),
+    nit VARCHAR(50) NOT NULL,
+    dv CHAR(1),
+    direccion VARCHAR(255),
+    telefono VARCHAR(50),
+    email VARCHAR(150),
+    sitio_web VARCHAR(200),
+    logo_url VARCHAR(255),
+    estado ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

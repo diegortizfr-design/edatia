@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod | El ERP Inteligente para tu Negocio</title>
+    <link rel="stylesheet" href="../../assets/css/landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-cube"></i> ERPod
+        </div>
+        <div class="nav-links">
+            <a href="#features">Características</a>
+            <a href="#pricing">Planes</a>
+            <a href="#contact">Contacto</a>
+        </div>
+        <div class="nav-actions">
+            <!-- Linking to index.html assuming it acts as login, or login.html if it exists. 
+                 Based on standard structures, I'll point to 'login.html' but user can adjust. -->
+            <a href="../auth/login.html" class="btn-login">Iniciar Sesión</a>
+            <a href="#contact" class="btn-cta">Demo Gratis</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Gestiona tu empresa <br> <span class="highlight">sin límites</span></h1>
+            <p>ERPod es la plataforma todo-en-uno para Inventarios, Compras, Facturación POS y Tienda Virtual. Diseñado
+                para crecer contigo.</p>
+            <div class="hero-buttons">
+                <a href="#contact" class="btn-primary">Adquirir Software</a>
+                <a href="#features" class="btn-secondary">Ver cómo funciona</a>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <strong>+5</strong>
+                    <span>Empresas</span>
+                </div>
+                <div class="stat-item">
+                    <strong>99.9%</strong>
+                    <span>Uptime</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <!-- Abstract UI Representation -->
+            <div class="ui-card glass-card">
+                <div class="card-header">
+                    <div class="dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-mockup">
+                        <div class="bar" style="height: 40%"></div>
+                        <div class="bar" style="height: 70%"></div>
+                        <div class="bar" style="height: 50%"></div>
+                        <div class="bar" style="height: 85%"></div>
+                        <div class="bar active" style="height: 100%"></div>
+                    </div>
+                    <div class="floating-badge">
+                        <i class="fas fa-check-circle"></i> Ventas +120%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- FEATURES -->
+    <section id="features" class="features">
+        <h2>Todo lo que necesitas en un solo lugar</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="icon-box"><i class="fas fa-boxes"></i></div>
+                <h3>Inventario Real</h3>
+                <p>Control de stock multi-bodega con alertas automáticas de reabastecimiento.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
+                <h3>Facturación POS</h3>
+                <p>Punto de venta rápido y facturación electrónica cumpliendo norma DIAN.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-box"><i class="fas fa-shopping-cart"></i></div>
+                <h3>Tienda Virtual</h3>
+                <p>Conecta tu web existente con nuestro plugin y vende online al instante.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT / LEAD FORM -->
+    <section id="contact" class="contact-section">
+        <div class="contact-container glass-panel">
+            <div class="contact-text">
+                <h2>¿Listo para digitalizar tu negocio?</h2>
+                <p>Déjanos tus datos y un asesor especializado te contactará para configurar tu demo personalizada.</p>
+                <ul class="benefits-list">
+                    <li><i class="fas fa-check"></i> Sin contratos de permanencia</li>
+                    <li><i class="fas fa-check"></i> Soporte 24/7 incluido</li>
+                    <li><i class="fas fa-check"></i> Migración de datos gratuita</li>
+                </ul>
+            </div>
+            <div class="contact-form-wrapper">
+                <form class="lead-form">
+                    <h3>Adquiere nuestro software</h3>
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre de la Empresa</label>
+                        <input type="text" placeholder="Ej: Moda S.A.S" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" placeholder="juan@empresa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono / WhatsApp</label>
+                        <input type="tel" placeholder="+57 300 123 4567" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Solicitar Contacto <i
+                            class="fas fa-arrow-right"></i></button>
+                    <p class="form-disclaimer">Tus datos están seguros. Política de Privacidad.</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2025 ERPod Software. Todos los derechos reservados.</p>
+            <div class="socials">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

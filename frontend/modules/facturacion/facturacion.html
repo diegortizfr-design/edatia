@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Facturación POS</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/facturacion.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <!-- MAIN (POS LAYOUT) -->
+    <main class="main-content pos-layout">
+
+        <!-- LEFT: PRODUCT GRID -->
+        <section class="pos-products">
+            <header class="pos-header">
+                <div>
+                    <h1><i class="fas fa-cash-register" style="color: var(--primary-color);"></i> Punto de Venta</h1>
+                    <p class="subtitle">Caja: Principal | Vendedor: Admin</p>
+                </div>
+                <div class="search-bar" style="width: 40%;">
+                    <i class="fas fa-search" style="color: #9CA3AF"></i>
+                    <input type="text" placeholder="Buscar producto (F3)...">
+                </div>
+            </header>
+
+            <div class="categories-tabs">
+                <button class="cat-tab active">Todos</button>
+                <button class="cat-tab">Bebidas</button>
+                <button class="cat-tab">Comida</button>
+                <button class="cat-tab">Postres</button>
+                <button class="cat-tab">Otros</button>
+            </div>
+
+            <div class="products-grid">
+                <!-- Product Card -->
+                <div class="product-card">
+                    <div class="prod-img">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <div class="prod-info">
+                        <h4>Cappuccino</h4>
+                        <button class="btn-clear"><i class="fas fa-trash"></i></button>
+                    </div>
+
+                    <div class="client-selector">
+                        <i class="fas fa-user"></i>
+                        <span>Cliente Mostrador</span>
+                        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 0.8rem;"></i>
+                    </div>
+
+                    <div class="cart-items">
+                        <!-- Item -->
+                        <div class="cart-item">
+                            <div class="item-details">
+                                <strong>Cappuccino</strong>
+                                <small>1 x $4,500</small>
+                            </div>
+                            <div class="item-total">$4,500</div>
+                            <button class="btn-remove"><i class="fas fa-times"></i></button>
+                        </div>
+                        <!-- Item -->
+                        <div class="cart-item">
+                            <div class="item-details">
+                                <strong>Sandwich Pollo</strong>
+                                <small>2 x $12,000</small>
+                            </div>
+                            <div class="item-total">$24,000</div>
+                            <button class="btn-remove"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="cart-footer">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>$28,500</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Impuesto (8%)</span>
+                            <span>$2,280</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Total a Pagar</span>
+                            <span>$30,780</span>
+                        </div>
+
+                        <div class="pay-buttons">
+                            <button class="btn-pay cash">
+                                <i class="fas fa-money-bill-wave"></i> Efectivo
+                            </button>
+                            <button class="btn-pay card">
+                                <i class="fas fa-credit-card"></i> Tarjeta
+                            </button>
+                        </div>
+                        <button class="btn-checkout">Cobrar / Facturar</button>
+                    </div>
+                    </aside>
+
+    </main>
+
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script src="../../assets/js/notifications.js"></script>
+    <script src="../../assets/js/facturacion.js"></script>
+</body>
+
+</html>

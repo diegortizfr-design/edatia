@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Panel Principal</title>
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- LAYOUT CONTAINERS -->
+    <div id="sidebar-container"></div>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <div class="welcome-box" style="margin-bottom: 30px;">
+            <h1 id="page-title" style="font-size: 1.8rem; font-weight: 600;">Bienvenido de nuevo 👋</h1>
+            <p style="color: #6B7280;">Aquí tienes un resumen de tu actividad hoy.</p>
+        </div>
+
+        <section class="dashboard" id="cards-container">
+            <!-- Static Preview Cards for Visual Validation -->
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-chart-line"></i></div>
+                <h3>Ventas Hoy</h3>
+                <p>$0.00 COP</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-box-open"></i></div>
+                <h3>Stock Bajo</h3>
+                <p>5 Productos</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-users"></i></div>
+                <h3>Clientes Nuevos</h3>
+                <p>+12 esta semana</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-file-invoice"></i></div>
+                <h3>Facturas Pendientes</h3>
+                <p>3 sin pagar</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="../../assets/js/dashboard.js"></script>
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script src="../../assets/js/notifications.js"></script>
+</body>
+
+</html>

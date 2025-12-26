@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Sucursales</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/configuracion_empresa.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <section class="form-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <p style="color: var(--text-gray);">Administra tus puntos de venta y bodegas.</p>
+                <button class="btn-guardar" style="background: var(--primary-color);">
+                    <i class="fas fa-plus"></i> Nueva Sucursal
+                </button>
+            </div>
+
+            <div class="branches-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                <!-- BRANCH CARD 1 -->
+                <div class="branch-card"
+                    style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; position: relative;">
+                    <div class="branch-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-building" style="color: #4F46E5;"></i> Sede Principal
+                        </h3>
+                        <span class="badge"
+                            style="background: #D1FAE5; color: #059669; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;">Activa</span>
+                    </div>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;"><i
+                            class="fas fa-map-marker-alt"></i> Calle 123 #45-67, Bogotá</p>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 15px;"><i class="fas fa-phone"></i>
+                        (601) 123 4567</p>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button
+                            style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Editar</button>
+                        <button
+                            style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Bodegas</button>
+                    </div>
+                </div>
+
+                <!-- BRANCH CARD 2 -->
+                <div class="branch-card"
+                    style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; position: relative; opacity: 0.8;">
+                    <div class="branch-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-store" style="color: #6B7280;"></i> Kiosco CC Andino
+                        </h3>
+                        <span class="badge"
+                            style="background: #F3F4F6; color: #6B7280; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;">Inactiva</span>
+                    </div>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;"><i
+                            class="fas fa-map-marker-alt"></i> Carrera 11 #82-71</p>
+                    <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 15px;"><i class="fas fa-phone"></i> 300
+                        987 6543</p>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button
+                            style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Editar</button>
+                        <button
+                            style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Bodegas</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+    <script src="js/menu_loader.js"></script>
+    <script src="js/header_loader.js"></script>
+    <script src="js/auth_guard.js"></script>
+    <script src="js/notifications.js"></script>
+</body>
+
+</html>
+
+
+
+
+

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Compras</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-box">
+            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+            <h2 id="empresa-nombre">ERPod Empresas</h2>
+        </div>
+
+        <nav class="menu" id="menu-principal">
+            <!-- Dynamic Menu Loaded Here -->
+        </nav>
+
+        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+        <!-- KPIS -->
+        <section class="kpi-grid">
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
+                <h3>Por Pagar</h3>
+                <p>$12.5M</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-truck"></i></div>
+                <h3>Pedidos en Camino</h3>
+                <p>8 Órdenes</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box"><i class="fas fa-check-circle"></i></div>
+                <h3>Recepciones Hoy</h3>
+                <p>3 Completadas</p>
+            </div>
+        </section>
+
+        <!-- ACTIONS -->
+        <div class="action-bar" style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;">
+            <button class="btn-primary"
+                style="background: white; color: var(--text-dark); border: 1px solid #E5E7EB;"><i
+                    class="fas fa-file-export"></i> Exportar</button>
+            <!DOCTYPE html>
+            <html lang="es">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>ERPod SOFTWARE | Compras</title>
+                <link rel="stylesheet" href="css/dashboard.css">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+                    rel="stylesheet">
+            </head>
+
+            <body>
+
+                <aside class="sidebar">
+                    <div class="logo-box">
+                        <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
+                        <h2 id="empresa-nombre">ERPod Empresas</h2>
+                    </div>
+
+                    <nav class="menu" id="menu-principal">
+                        <!-- Dynamic Menu Loaded Here -->
+                    </nav>
+
+                    <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
+                </aside>
+
+                <!-- CONTENT -->
+                <main class="main-content">
+                    <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+
+                    <!-- KPIS -->
+                    <section class="kpi-grid">
+                        <div class="card">
+                            <div class="card-icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <h3>Por Pagar</h3>
+                            <p>$12.5M</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon-box"><i class="fas fa-truck"></i></div>
+                            <h3>Pedidos en Camino</h3>
+                            <p>8 Órdenes</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon-box"><i class="fas fa-check-circle"></i></div>
+                            <h3>Recepciones Hoy</h3>
+                            <p>3 Completadas</p>
+                        </div>
+                    </section>
+
+                    <!-- ACTIONS -->
+                    <div class="action-bar"
+                        style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;">
+                        <button class="btn-primary"
+                            style="background: white; color: var(--text-dark); border: 1px solid #E5E7EB;"><i
+                                class="fas fa-file-export"></i> Exportar</button>
+                        <button class="btn-primary"><i class="fas fa-plus"></i> Nueva Orden de Compra</button>
+                    </div>
+
+                    <!-- TABLE -->
+                    <div class="table-container">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th># Orden</th>
+                                    <th>Proveedor</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos cargados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </main>
+
+                <script src="../../assets/js/layout-loader.js"></script>
+                <script src="../../assets/js/auth_guard.js"></script>
+                <script src="../../assets/js/notifications.js"></script>
+                <script src="../../assets/js/compras.js"></script>
+                <script src="js/header_loader.js"></script>
+                <script src="js/auth_guard.js"></script>
