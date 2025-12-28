@@ -32,7 +32,7 @@
         <section class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <p style="color: var(--text-gray);">Administra tus puntos de venta y bodegas.</p>
-                <button class="btn-guardar" style="background: var(--primary-color);">
+                <button id="btn-nueva-sucursal" class="btn-guardar" style="background: var(--primary-color);">
                     <i class="fas fa-plus"></i> Nueva Sucursal
                 </button>
             </div>
@@ -89,10 +89,51 @@
             </div>
         </section>
     </main>
+
+    <!-- Modal Nueva Sucursal -->
+    <div id="modal-nueva-sucursal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+        <div class="modal-content"
+            style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <h2>Nueva Sucursal</h2>
+                <span class="close-modal"
+                    style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            </div>
+            <form id="form-nueva-sucursal">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Nombre de la Sucursal</label>
+                    <input type="text" name="nombre" required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Dirección</label>
+                    <input type="text" name="direccion" required
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Teléfono</label>
+                    <input type="text" name="telefono"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Estado</label>
+                    <select name="estado"
+                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="Activa">Activa</option>
+                        <option value="Inactiva">Inactiva</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-guardar" style="width: 100%; background: var(--primary-color);">Guardar
+                    Sucursal</button>
+            </form>
+        </div>
+    </div>
     <script src="../../assets/js/menu_loader.js"></script>
     <script src="../../assets/js/header_loader.js"></script>
     <script src="../../assets/js/auth_guard.js"></script>
     <script src="../../assets/js/notifications.js"></script>
+    <script src="../../assets/js/sucursales.js"></script>
 </body>
 
 </html>
