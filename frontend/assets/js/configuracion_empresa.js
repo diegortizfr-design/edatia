@@ -25,11 +25,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = await res.json();
 
     if (data && data.success && data.empresa) {
-      for (const campo in data.empresa) {
+      const emp = data.empresa;
+      for (const campo in emp) {
         if (document.getElementById(campo)) {
-          document.getElementById(campo).value = data.empresa[campo] || "";
+          document.getElementById(campo).value = emp[campo] || "";
         }
       }
+
+      // Mapeo manual para campos que no coinciden (DB -> HTML ID)
+      if (document.getElementById('correo')) document.getElementById('correo').value = emp.email || "";
+      if (document.getElementById('web')) document.getElementById('web').value = emp.sitio_web || "";
     }
   } catch (error) {
     console.error("Error al cargar configuración o datos de empresa:", error);
