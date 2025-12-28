@@ -1,13 +1,27 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("formEmpresa");
+  let API_URL = "";
 
-  // Use relative path for API to work in both dev and prod
-  // This assumes the backend is on the same origin or proxy is configured
-  const API_URL = "/api/empresa";
-
-  // 🔹 Cargar datos existentes
+  // 🔹 Cargar configuración y datos existentes
   try {
-    const res = await fetch(API_URL);
+    // 1. Cargar config.json para obtener la URL del backend
+    const configRes = await fetch("../../assets/config.json");
+    const config = await configRes.json();
+    API_URL = `${config.apiUrl}/empresa`;
+
+    // 2. Cargar datos de la empresa
+    const res = await fetch(API_URL, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}` // Asegurar envío de token si es necesario
+      }
+    });
+
+    // Si la respuesta es 401/403, redirigir a login (opcional, pero buena práctica)
+    if (res.status === 401) {
+      window.location.href = '../../modules/auth/login.html';
+      return;
+    }
+
     const data = await res.json();
 
     if (data && data.success && data.empresa) {
@@ -18,12 +32,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
   } catch (error) {
-    console.error("Error al cargar datos de empresa:", error);
+    console.error("Error al cargar configuración o datos de empresa:", error);
   }
 
   // 🔹 Guardar cambios
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    if (!API_URL) {
+      alert("❌ Error: No se pudo cargar la configuración del servidor.");
+      return;
+    }
 
     const empresaData = {};
     new FormData(form).forEach((v, k) => (empresaData[k] = v));
@@ -31,7 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify(empresaData),
       });
 
