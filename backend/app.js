@@ -27,6 +27,7 @@ if (process.env.NODE_ENV === 'development') {
 // Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/empresa', empresaRoutes);
+app.use('/api/sucursales', require('./routes/sucursalesRoutes'));
 app.use('/api/terceros', require('./routes/tercerosRoutes'));
 app.use('/api/productos', require('./routes/productosRoutes'));
 app.use('/api/compras', require('./routes/comprasRoutes'));
