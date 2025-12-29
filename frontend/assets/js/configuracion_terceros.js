@@ -114,6 +114,8 @@ function abrirModal(tercero = null) {
         isEditing = true;
         currentId = tercero.id;
         modalTitle.textContent = 'Editar Tercero';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Actualizar';
 
         document.getElementById('nombre_comercial').value = tercero.nombre_comercial;
         document.getElementById('razon_social').value = tercero.razon_social || '';
@@ -128,6 +130,9 @@ function abrirModal(tercero = null) {
         isEditing = false;
         currentId = null;
         modalTitle.textContent = 'Nuevo Tercero';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Guardar';
+
         form.reset();
         document.getElementById('es_cliente').checked = true; // Default
     }
