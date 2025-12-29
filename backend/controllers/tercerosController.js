@@ -97,18 +97,21 @@ exports.actualizarTercero = async (req, res) => {
         clientConn = await connectToClientDB(dbConfig);
 
         const {
-            nombre_comercial, razon_social, direccion, telefono, email, es_cliente, es_proveedor
+            nombre_comercial, razon_social, tipo_documento, documento,
+            direccion, telefono, email, es_cliente, es_proveedor
         } = req.body;
 
         const sql = `
             UPDATE terceros
-            SET nombre_comercial = ?, razon_social = ?, direccion = ?, telefono = ?, email = ?,
+            SET nombre_comercial = ?, razon_social = ?, tipo_documento = ?, documento = ?, 
+                direccion = ?, telefono = ?, email = ?,
                 es_cliente = ?, es_proveedor = ?
             WHERE id = ?
         `;
 
         await clientConn.query(sql, [
-            nombre_comercial, razon_social, direccion, telefono, email,
+            nombre_comercial, razon_social, tipo_documento, documento,
+            direccion, telefono, email,
             es_cliente ? 1 : 0, es_proveedor ? 1 : 0, id
         ]);
 
