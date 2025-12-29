@@ -25,6 +25,20 @@
             border-bottom: 1px solid var(--glass-border);
             padding-bottom: 5px;
         }
+
+        /* Fix for tall modals */
+        .modal-overlay {
+            padding: 40px 20px;
+            align-items: flex-start;
+            overflow-y: auto;
+            display: none;
+            /* Keep hidden by default */
+        }
+
+        .modal-glass {
+            margin: 0 auto;
+            max-height: none;
+        }
     </style>
 </head>
 
