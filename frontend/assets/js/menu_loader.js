@@ -8,7 +8,7 @@ const menuConfig = [
     {
         label: "Inicio",
         icon: "fas fa-home",
-        link: "dashboard.html",
+        link: "/frontend/modules/core/dashboard.html",
         id: "nav-home"
     },
     {
@@ -17,8 +17,8 @@ const menuConfig = [
         link: "#",
         id: "nav-compras",
         submenu: [
-            { label: "Tablero de Órdenes", link: "compras.html" },
-            { label: "Proveedores", link: "compras.html" } // Update when proveedores.html exists
+            { label: "Tablero de Órdenes", link: "/frontend/modules/compras/compras.html" },
+            { label: "Proveedores", link: "/frontend/modules/compras/compras.html" } // Update when proveedores.html exists
         ]
     },
     {
@@ -27,8 +27,8 @@ const menuConfig = [
         link: "#",
         id: "nav-inventario",
         submenu: [
-            { label: "Monitor de Stock", link: "inventario.html" },
-            { label: "Movimientos", link: "inventario.html" }
+            { label: "Monitor de Stock", link: "/frontend/modules/inventario/inventario.html" },
+            { label: "Movimientos", link: "/frontend/modules/inventario/inventario.html" }
         ]
     },
     {
@@ -37,8 +37,8 @@ const menuConfig = [
         link: "#",
         id: "nav-facturacion",
         submenu: [
-            { label: "Punto de Venta (POS)", link: "facturacion.html" },
-            { label: "Historial Ventas", link: "facturacion.html" }
+            { label: "Punto de Venta (POS)", link: "/frontend/modules/facturacion/facturacion.html" },
+            { label: "Historial Ventas", link: "/frontend/modules/facturacion/facturacion.html" }
         ]
     },
     {
@@ -47,20 +47,20 @@ const menuConfig = [
         link: "#",
         id: "nav-configuracion",
         submenu: [
-            { label: "Empresa", link: "configuracion_empresa.html" },
-            { label: "Sucursales", link: "configuracion_sucursales.html" },
-            { label: "Terceros", link: "configuracion_terceros.html" },
-            { label: "Documentos", link: "configuracion_documentos.html" },
-            { label: "Usuarios y Roles", link: "configuracion_usuarios.html" },
-            { label: "Impuestos", link: "configuracion_impuestos.html" },
-            { label: "Formas de Pago", link: "configuracion_pagos.html" },
-            { label: "Canal Online", link: "configuracion_ecommerce.html" }
+            { label: "Empresa", link: "/frontend/modules/configuration/empresa.html" },
+            { label: "Sucursales", link: "/frontend/modules/configuration/sucursales.html" },
+            { label: "Terceros", link: "/frontend/modules/configuration/terceros.html" },
+            { label: "Documentos", link: "/frontend/modules/configuration/documentos.html" },
+            { label: "Usuarios y Roles", link: "/frontend/modules/configuration/usuarios.html" },
+            { label: "Impuestos", link: "/frontend/modules/configuration/impuestos.html" },
+            { label: "Formas de Pago", link: "/frontend/modules/configuration/pagos.html" },
+            { label: "Canal Online", link: "/frontend/modules/configuration/ecommerce.html" }
         ]
     },
     {
         label: "Reportes",
         icon: "fas fa-chart-pie",
-        link: "reportes.html",
+        link: "/frontend/modules/reportes/reportes.html",
         id: "nav-reportes"
     }
 ];
