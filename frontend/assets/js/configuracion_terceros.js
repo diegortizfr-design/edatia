@@ -1,6 +1,6 @@
 // frontend/global/js/configuracion_terceros.js
 
-const API_URL = '/api/terceros';
+let API_URL = ''; // Will be loaded from config
 const tableBody = document.querySelector('.glass-table tbody');
 const modal = document.getElementById('modal-tercero');
 const form = document.getElementById('form-tercero');
@@ -12,19 +12,30 @@ const modalTitle = document.getElementById('modal-title');
 let isEditing = false;
 let currentId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    cargarTerceros();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load Config first
+    try {
+        const configRes = await fetch('../../assets/config.json');
+        const config = await configRes.json();
+        API_URL = `${config.apiUrl}/terceros`;
+
+        cargarTerceros();
+    } catch (error) {
+        console.error('Error loading config:', error);
+        alert('Error cargando configuración del sistema');
+    }
+
+    // Event Listeners
 
     // Event Listeners
     btnNuevo.addEventListener('click', () => abrirModal());
+
 
     closeBtns.forEach(btn => {
         btn.addEventListener('click', cerrarModal);
     });
 
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) cerrarModal();
-    });
+    // Removed window.onclick to prevent closing when clicking outside
 
     form.addEventListener('submit', guardarTercero);
 });
