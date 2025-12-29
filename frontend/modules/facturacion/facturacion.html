@@ -32,87 +32,101 @@
         <!-- LEFT: PRODUCT GRID -->
         <section class="pos-products">
             <header class="pos-header">
-                <div>
-                    <h1><i class="fas fa-cash-register" style="color: var(--primary-color);"></i> Punto de Venta</h1>
+                <div class="header-title">
+                    <h1><i class="fas fa-cash-register"></i> Punto de Venta</h1>
                     <p class="subtitle">Caja: Principal | Vendedor: Admin</p>
                 </div>
-                <div class="search-bar" style="width: 40%;">
-                    <i class="fas fa-search" style="color: #9CA3AF"></i>
-                    <input type="text" placeholder="Buscar producto (F3)...">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="product-search" placeholder="Buscar producto (F3)...">
                 </div>
             </header>
 
-            <div class="categories-tabs">
-                <button class="cat-tab active">Todos</button>
-                <button class="cat-tab">Bebidas</button>
-                <button class="cat-tab">Comida</button>
-                <button class="cat-tab">Postres</button>
-                <button class="cat-tab">Otros</button>
+            <div class="category-tabs">
+                <button class="tab active" data-category="todos"><i class="fas fa-th-large"></i> Todos</button>
+                <button class="tab" data-category="bebidas"><i class="fas fa-coffee"></i> Bebidas</button>
+                <button class="tab" data-category="comida"><i class="fas fa-hamburger"></i> Comida</button>
+                <button class="tab" data-category="postres"><i class="fas fa-ice-cream"></i> Postres</button>
+                <button class="tab" data-category="otros"><i class="fas fa-plus"></i> Otros</button>
             </div>
 
-            <div class="products-grid">
-                <!-- Product Card -->
+            <div class="product-grid" id="products-container">
+                <!-- Example Card -->
                 <div class="product-card">
-                    <div class="prod-img">
-                        <i class="fas fa-coffee"></i>
+                    <div class="p-image"
+                        style="background-image: url('https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop');">
                     </div>
-                    <div class="prod-info">
+                    <div class="p-details">
                         <h4>Cappuccino</h4>
-                        <button class="btn-clear"><i class="fas fa-trash"></i></button>
+                        <span class="price">$4,500</span>
                     </div>
+                </div>
+                <!-- Placeholder for dynamic products -->
+            </div>
+        </section>
 
-                    <div class="client-selector">
-                        <i class="fas fa-user"></i>
-                        <span>Cliente Mostrador</span>
-                        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 0.8rem;"></i>
+        <!-- RIGHT: CART AREA -->
+        <aside class="pos-cart">
+            <div class="cart-header">
+                <h3><i class="fas fa-shopping-cart"></i> Orden Actual</h3>
+                <span class="order-num">#0042</span>
+            </div>
+
+            <div class="cart-customer">
+                <i class="fas fa-user-circle"></i>
+                <span id="current-customer">Cliente Mostrador</span>
+                <button class="btn-icon-small" id="change-customer"><i class="fas fa-edit"></i></button>
+            </div>
+
+            <div class="cart-items" id="cart-container">
+                <!-- Cart Item Example -->
+                <div class="cart-item">
+                    <div class="item-info">
+                        <strong>Cappuccino</strong>
+                        <small>1 x $4,500</small>
                     </div>
+                    <div class="item-total">$4,500</div>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
 
-                    <div class="cart-items">
-                        <!-- Item -->
-                        <div class="cart-item">
-                            <div class="item-details">
-                                <strong>Cappuccino</strong>
-                                <small>1 x $4,500</small>
-                            </div>
-                            <div class="item-total">$4,500</div>
-                            <button class="btn-remove"><i class="fas fa-times"></i></button>
-                        </div>
-                        <!-- Item -->
-                        <div class="cart-item">
-                            <div class="item-details">
-                                <strong>Sandwich Pollo</strong>
-                                <small>2 x $12,000</small>
-                            </div>
-                            <div class="item-total">$24,000</div>
-                            <button class="btn-remove"><i class="fas fa-times"></i></button>
-                        </div>
+                <div class="cart-item">
+                    <div class="item-info">
+                        <strong>Sandwich Pollo</strong>
+                        <small>2 x $12,000</small>
                     </div>
+                    <div class="item-total">$24,000</div>
+                    <button class="remove-btn"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
 
-                    <div class="cart-footer">
-                        <div class="summary-row">
-                            <span>Subtotal</span>
-                            <span>$28,500</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Impuesto (8%)</span>
-                            <span>$2,280</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Total a Pagar</span>
-                            <span>$30,780</span>
-                        </div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">$28,500</span>
+                </div>
+                <div class="summary-row">
+                    <span>Impuesto (8%)</span>
+                    <span id="cart-tax">$2,280</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span id="cart-total">$30,780</span>
+                </div>
 
-                        <div class="pay-buttons">
-                            <button class="btn-pay cash">
-                                <i class="fas fa-money-bill-wave"></i> Efectivo
-                            </button>
-                            <button class="btn-pay card">
-                                <i class="fas fa-credit-card"></i> Tarjeta
-                            </button>
-                        </div>
-                        <button class="btn-checkout">Cobrar / Facturar</button>
-                    </div>
-                    </aside>
+                <div class="cart-actions">
+                    <button class="btn-pay cash">
+                        <i class="fas fa-money-bill-wave"></i> Efectivo
+                    </button>
+                    <button class="btn-pay card-pay">
+                        <i class="fas fa-credit-card"></i> Tarjeta
+                    </button>
+                </div>
+                <button class="btn-checkout">
+                    <span>Cobrar / Facturar</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </aside>
 
     </main>
 
