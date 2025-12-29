@@ -12,26 +12,34 @@ exports.listarProductos = async (req, res) => {
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { busqueda, barcode } = req.query; // barcode is for strict scan
+        const { busqueda, barcode, categoria } = req.query;
 
         const dbConfig = await getClientDbConfig(nit);
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
 
-        let query = 'SELECT * FROM productos';
+        let query = 'SELECT p.*, t.nombre as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
         const params = [];
+        const conditions = [];
 
         if (barcode) {
-            // Búsqueda exacta para pistola lectora
-            query += ' WHERE codigo = ?';
+            conditions.push('p.codigo = ?');
             params.push(barcode);
         } else if (busqueda) {
-            // Búsqueda flexible por nombre o código parcial
-            query += ' WHERE nombre LIKE ? OR codigo LIKE ?';
-            params.push(`%${busqueda}%`, `%${busqueda}%`);
-        } else {
-            query += ' ORDER BY nombre ASC LIMIT 100'; // Limit prevent massive load
+            conditions.push('(p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia_fabrica LIKE ?)');
+            params.push(`%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`);
         }
+
+        if (categoria) {
+            conditions.push('p.categoria = ?');
+            params.push(categoria);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY p.nombre ASC LIMIT 500';
 
         const [rows] = await clientConn.query(query, params);
         res.json({ success: true, data: rows });
@@ -51,32 +59,58 @@ exports.crearProducto = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
+        // Extended schema for Product Configuration
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS productos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                codigo VARCHAR(50) UNIQUE,
+                referencia_fabrica VARCHAR(100),
+                nombre VARCHAR(255) NOT NULL,
+                nombre_alterno VARCHAR(255),
+                categoria VARCHAR(100),
+                unidad_medida VARCHAR(20) DEFAULT 'UND',
+                precio1 DECIMAL(15,2) DEFAULT 0,
+                precio2 DECIMAL(15,2) DEFAULT 0,
+                precio3 DECIMAL(15,2) DEFAULT 0,
+                costo DECIMAL(15,2) DEFAULT 0,
+                impuesto_porcentaje DECIMAL(5,2) DEFAULT 0,
+                proveedor_id INT,
+                stock_minimo INT DEFAULT 0,
+                stock_actual INT DEFAULT 0,
+                descripcion TEXT,
+                imagen_url TEXT,
+                activo BOOLEAN DEFAULT 1,
+                es_servicio BOOLEAN DEFAULT 0,
+                maneja_inventario BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         const {
-            codigo, nombre, descripcion, precio_compra, precio_venta, impuesto_porcentaje, activo
+            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
+            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
+            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
+            es_servicio, maneja_inventario
         } = req.body;
 
         if (!nombre) {
             return res.status(400).json({ success: false, message: 'Nombre del producto es obligatorio' });
         }
 
-        // Check if code exists (if provided)
-        if (codigo) {
-            const [exists] = await clientConn.query('SELECT id FROM productos WHERE codigo = ?', [codigo]);
-            if (exists.length > 0) {
-                return res.status(400).json({ success: false, message: 'Ya existe un producto con ese código' });
-            }
-        }
-
         const sql = `
             INSERT INTO productos 
-            (codigo, nombre, descripcion, precio_compra, precio_venta, impuesto_porcentaje, activo)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (codigo, referencia_fabrica, nombre, nombre_alterno, categoria, 
+             unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje, 
+             proveedor_id, stock_minimo, descripcion, imagen_url, activo,
+             es_servicio, maneja_inventario)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         await clientConn.query(sql, [
-            codigo || null, nombre, descripcion,
-            precio_compra || 0, precio_venta || 0, impuesto_porcentaje || 0,
-            activo !== undefined ? activo : 1
+            codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
+            unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
+            proveedor_id || null, stock_minimo || 0, descripcion || null, imagen_url || null,
+            activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1
         ]);
 
         res.status(201).json({ success: true, message: 'Producto creado exitosamente' });
@@ -98,17 +132,26 @@ exports.actualizarProducto = async (req, res) => {
         clientConn = await connectToClientDB(dbConfig);
 
         const {
-            codigo, nombre, descripcion, precio_compra, precio_venta, impuesto_porcentaje, activo
+            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
+            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
+            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
+            es_servicio, maneja_inventario
         } = req.body;
 
         const sql = `
             UPDATE productos
-            SET codigo=?, nombre=?, descripcion=?, precio_compra=?, precio_venta=?, impuesto_porcentaje=?, activo=?
+            SET codigo=?, referencia_fabrica=?, nombre=?, nombre_alterno=?, categoria=?, 
+                unidad_medida=?, precio1=?, precio2=?, precio3=?, costo=?, impuesto_porcentaje=?, 
+                proveedor_id=?, stock_minimo=?, descripcion=?, imagen_url=?, activo=?,
+                es_servicio=?, maneja_inventario=?
             WHERE id=?
         `;
 
         await clientConn.query(sql, [
-            codigo, nombre, descripcion, precio_compra, precio_venta, impuesto_porcentaje, activo, id
+            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
+            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
+            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
+            es_servicio, maneja_inventario, id
         ]);
 
         res.json({ success: true, message: 'Producto actualizado' });
@@ -129,18 +172,13 @@ exports.eliminarProducto = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        try {
-            await clientConn.query('DELETE FROM productos WHERE id = ?', [id]);
-            res.json({ success: true, message: 'Producto eliminado' });
-        } catch (fkError) {
-            if (fkError.code === 'ER_ROW_IS_REFERENCED_2') {
-                return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene historial de compras o ventas.' });
-            }
-            throw fkError;
-        }
+        await clientConn.query('DELETE FROM productos WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Producto eliminado' });
 
     } catch (err) {
-        console.error(err);
+        if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+            return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene registros vinculados.' });
+        }
         res.status(500).json({ success: false, message: 'Error al eliminar producto' });
     } finally {
         if (clientConn) await clientConn.end();
