@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Historial de Ventas</title>
+    <link rel="stylesheet" href="/frontend/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/frontend/assets/css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <section class="kpi-grid">
+            <div class="card">
+                <div class="card-icon-box" style="background: rgba(79, 70, 229, 0.1); color: var(--primary-color);">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3>Ventas Hoy</h3>
+                <p id="kpi-ventas-hoy">0</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+                <h3>Total Recaudado</h3>
+                <p id="kpi-total-recaudado">$0</p>
+            </div>
+        </section>
+
+        <div class="action-bar"
+            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+            <div class="filters" style="display: flex; gap: 10px; flex-grow: 1;">
+                <div class="search-bar" style="width: 300px;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="filter-search" placeholder="Buscar por # de factura o cliente...">
+                </div>
+                <input type="date" id="filter-date" class="filter-select" style="padding: 10px; border-radius:10px;">
+            </div>
+            <a href="/frontend/modules/facturacion/facturacion.html" class="btn-primary"><i class="fas fa-plus"></i>
+                Nueva Venta</a>
+        </div>
+
+        <div class="table-container card" style="margin-top: 20px; padding: 0;">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th># Factura</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Método</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="facturas-table-body">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="/frontend/assets/js/layout-loader.js"></script>
+    <script src="/frontend/assets/js/auth_guard.js"></script>
+    <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/lista_facturas.js"></script>
+</body>
+
+</html>
