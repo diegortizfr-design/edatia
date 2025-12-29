@@ -48,10 +48,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 5px;"><i class="fas fa-map-marker-alt"></i> ${s.direccion}</p>
                             <p style="color: #6B7280; font-size: 0.9rem; margin-bottom: 15px;"><i class="fas fa-phone"></i> ${s.telefono || 'Sin teléfono'}</p>
                             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Editar</button>
+                                <button class="btn-edit" style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Editar</button>
                                 <button style="flex: 1; padding: 8px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Bodegas</button>
                             </div>
                         `;
+
+                        // Event listeners for buttons
+                        const btnEdit = card.querySelector('.btn-edit');
+                        btnEdit.onclick = () => abrirModalEditar(s);
+
                         gridContainer.appendChild(card);
                     });
                 } else {
@@ -64,7 +69,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Abrir Modal
+    // Abrir Modal Nueva
     btnNueva.onclick = () => {
+        form.reset();
+        document.getElementById('sucursal-id').value = ""; // Clear ID
+        document.querySelector('#modal-nueva-sucursal h2').innerText = "Nueva Sucursal";
+        document.querySelector('#form-nueva-sucursal button[type="submit"]').innerText = "Guardar Sucursal";
+        modal.style.display = "block";
+    }
+
+    // Abrir Modal Editar
+    function abrirModalEditar(sucursal) {
+        form.nombre.value = sucursal.nombre;
+        form.direccion.value = sucursal.direccion;
+        form.telefono.value = sucursal.telefono || '';
+        form.estado.value = sucursal.estado;
+        document.getElementById('sucursal-id').value = sucursal.id;
+
+        document.querySelector('#modal-nueva-sucursal h2').innerText = "Editar Sucursal";
+        document.querySelector('#form-nueva-sucursal button[type="submit"]').innerText = "Actualizar Sucursal";
+
         modal.style.display = "block";
     }
 
@@ -86,10 +110,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+        const id = data.id; // Get ID from hidden input
+
+        const method = id ? "PUT" : "POST";
+        const url = id ? `${API_URL}/${id}` : API_URL;
+
+        // Remove ID from body if creating (optional, but clean)
+        if (!id) delete data.id;
 
         try {
-            const response = await fetch(API_URL, {
-                method: "POST",
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem('token')}`
@@ -99,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const result = await response.json();
             if (result.success) {
-                alert("✅ Sucursal creada correctamente.");
+                alert(id ? "✅ Sucursal actualizada correctamente." : "✅ Sucursal creada correctamente.");
                 modal.style.display = "none";
                 form.reset();
                 cargarSucursales(); // Recargar lista
