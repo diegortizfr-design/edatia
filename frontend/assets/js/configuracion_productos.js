@@ -4,19 +4,23 @@
  */
 
 const API_URL = '/api/productos';
-const tableBody = document.getElementById('productos-table-body');
-const modal = document.getElementById('productModal');
-const form = document.getElementById('productForm');
-
+let tableBody, modal, form;
 let isEditing = false;
 let currentId = null;
 let allProducts = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    tableBody = document.getElementById('productos-table-body');
+    modal = document.getElementById('productModal');
+    form = document.getElementById('productForm');
+
+    if (form) {
+        form.addEventListener('submit', handleSave);
+    } else {
+        console.error('Error: No se encontró el formulario productForm');
+    }
     loadProducts();
     loadSuppliers();
-
-    form.addEventListener('submit', handleSave);
 
     // Search functionality
     const searchInput = document.getElementById('search-input');
@@ -165,23 +169,28 @@ async function handleSave(e) {
     const token = localStorage.getItem('token');
 
     const formData = {
-        nombre: document.getElementById('nombre').value,
-        nombre_alterno: document.getElementById('nombre_alterno').value,
-        referencia_fabrica: document.getElementById('referencia_fabrica').value,
-        codigo: document.getElementById('codigo').value,
-        categoria: document.getElementById('categoria').value,
-        unidad_medida: document.getElementById('unidad_medida').value,
-        precio1: parseFloat(document.getElementById('precio1').value) || 0,
-        precio2: parseFloat(document.getElementById('precio2').value) || 0,
-        precio3: parseFloat(document.getElementById('precio3').value) || 0,
-        costo: parseFloat(document.getElementById('costo').value) || 0,
-        impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje').value) || 0,
-        proveedor_id: document.getElementById('proveedor_id').value || null,
-        stock_minimo: parseInt(document.getElementById('stock_minimo').value) || 0,
-        imagen_url: document.getElementById('imagen_url').value,
-        activo: document.getElementById('activo').checked,
-        maneja_inventario: document.getElementById('maneja_inventario').checked
+        nombre: document.getElementById('nombre')?.value || '',
+        nombre_alterno: document.getElementById('nombre_alterno')?.value || '',
+        referencia_fabrica: document.getElementById('referencia_fabrica')?.value || '',
+        codigo: document.getElementById('codigo')?.value || '',
+        categoria: document.getElementById('categoria')?.value || 'General',
+        unidad_medida: document.getElementById('unidad_medida')?.value || 'UND',
+        precio1: parseFloat(document.getElementById('precio1')?.value) || 0,
+        precio2: parseFloat(document.getElementById('precio2')?.value) || 0,
+        precio3: parseFloat(document.getElementById('precio3')?.value) || 0,
+        costo: parseFloat(document.getElementById('costo')?.value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje')?.value) || 0,
+        proveedor_id: document.getElementById('proveedor_id')?.value || null,
+        stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
+        imagen_url: document.getElementById('imagen_url')?.value || '',
+        activo: document.getElementById('activo')?.checked || false,
+        maneja_inventario: document.getElementById('maneja_inventario')?.checked || false
     };
+
+    if (!formData.nombre) {
+        showNotification('El nombre del producto es obligatorio', 'warning');
+        return;
+    }
 
     try {
         const url = isEditing ? `${API_URL}/${currentId}` : API_URL;

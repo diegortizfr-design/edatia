@@ -50,3 +50,4 @@ function showToast(message, type = 'success') {
 
 // Expose to global scope
 window.showToast = showToast;
+window.showNotification = showToast; // Alias for compatibility
