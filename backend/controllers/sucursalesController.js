@@ -36,6 +36,20 @@ async function listarSucursales(req, res) {
         `);
 
         const [rows] = await clientConn.query('SELECT * FROM sucursales ORDER BY id DESC');
+
+        // Si no hay sucursales, crear una por defecto (Principal) para facilitar la configuración de documentos
+        if (rows.length === 0) {
+            const insertSQL = `
+                INSERT INTO sucursales (nombre, direccion, telefono, es_principal)
+                VALUES (?, ?, ?, ?)
+            `;
+            await clientConn.query(insertSQL, ['Principal', 'Dirección General', '-', 1]);
+
+            // Volver a consultar para devolver la nueva sucursal
+            const [newRows] = await clientConn.query('SELECT * FROM sucursales');
+            return res.json({ success: true, data: newRows });
+        }
+
         res.json({ success: true, data: rows });
 
     } catch (err) {

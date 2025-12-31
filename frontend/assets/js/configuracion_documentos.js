@@ -47,25 +47,32 @@ async function loadDocuments() {
 }
 
 async function loadBranches() {
+    const select = document.getElementById('sucursal_id');
+    if (!select) return;
+
     try {
         const token = localStorage.getItem('token');
         const resp = await fetch(API_BRANCHES, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await resp.json();
-        if (data.success) {
+
+        select.innerHTML = '';
+
+        if (data.success && data.data.length > 0) {
             branches = data.data;
-            const select = document.getElementById('sucursal_id');
-            select.innerHTML = '';
             branches.forEach(b => {
                 const opt = document.createElement('option');
                 opt.value = b.id;
-                opt.textContent = b.nombre;
+                opt.textContent = b.nombre + (b.es_principal ? ' (Principal)' : '');
                 select.appendChild(opt);
             });
+        } else {
+            select.innerHTML = '<option value="">No hay sucursales disponibles</option>';
         }
     } catch (e) {
         console.error('Error loading branches:', e);
+        select.innerHTML = '<option value="">Error al cargar sucursales</option>';
     }
 }
 
