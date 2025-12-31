@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERPod SOFTWARE | Documentos</title>
-    <link rel="stylesheet" href="../../assets/css/dashboard.css">
-    <link rel="stylesheet" href="../../assets/css/configuracion_empresa.css">
-    <link rel="stylesheet" href="../../assets/css/inventario.css"> <!-- Reusing Table Styles -->
+    <link rel="stylesheet" href="/frontend/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/frontend/assets/css/configuracion_empresa.css">
+    <link rel="stylesheet" href="/frontend/assets/css/inventario.css"> <!-- Reusing Table Styles -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -115,21 +115,10 @@
 
 <body>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="logo-box">
-            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
-            <h2 id="empresa-nombre">ERPod Empresas</h2>
-        </div>
-        <nav class="menu" id="menu-principal">
-            <!-- Dynamic Menu Loaded Here -->
-        </nav>
-        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
-    </aside>
+    <div id="sidebar-container"></div>
 
-    <!-- CONTENT -->
     <main class="main-content">
-        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+        <div id="header-container"></div>
 
         <section class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -142,7 +131,8 @@
                         <i class="fas fa-search" style="color: #9CA3AF"></i>
                         <input type="text" placeholder="Buscar documento...">
                     </div>
-                    <button class="btn-guardar" id="btn-nuevo-documento" style="background: var(--primary-color);">
+                    <button class="btn-guardar" id="btn-nuevo-documento" style="background: var(--primary-color);"
+                        onclick="openModal()">
                         <i class="fas fa-plus"></i> Nuevo Documento
                     </button>
                 </div>
@@ -269,10 +259,10 @@
         </div>
     </div>
 
-    <script src="../../assets/js/layout-loader.js"></script>
-    <script src="../../assets/js/auth_guard.js"></script>
-    <script src="../../assets/js/notifications.js"></script>
-    <script src="../../assets/js/configuracion_documentos.js"></script>
+    <script src="/frontend/assets/js/layout-loader.js"></script>
+    <script src="/frontend/assets/js/auth_guard.js"></script>
+    <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/configuracion_documentos.js"></script>
 </body>
 
 </html>

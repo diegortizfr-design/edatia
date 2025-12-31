@@ -18,6 +18,33 @@ exports.listarProductos = async (req, res) => {
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
 
+        // Ensure table exists even on listing (for new customers)
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS productos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                codigo VARCHAR(50) UNIQUE,
+                referencia_fabrica VARCHAR(100),
+                nombre VARCHAR(255) NOT NULL,
+                nombre_alterno VARCHAR(255),
+                categoria VARCHAR(100),
+                unidad_medida VARCHAR(20) DEFAULT 'UND',
+                precio1 DECIMAL(15,2) DEFAULT 0,
+                precio2 DECIMAL(15,2) DEFAULT 0,
+                precio3 DECIMAL(15,2) DEFAULT 0,
+                costo DECIMAL(15,2) DEFAULT 0,
+                impuesto_porcentaje DECIMAL(5,2) DEFAULT 0,
+                proveedor_id INT,
+                stock_minimo INT DEFAULT 0,
+                stock_actual INT DEFAULT 0,
+                descripcion TEXT,
+                imagen_url TEXT,
+                activo BOOLEAN DEFAULT 1,
+                es_servicio BOOLEAN DEFAULT 0,
+                maneja_inventario BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         let query = 'SELECT p.*, t.nombre as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
         const params = [];
         const conditions = [];
