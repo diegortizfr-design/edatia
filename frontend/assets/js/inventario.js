@@ -1,25 +1,32 @@
 // frontend/global/js/inventario.js
 
-const API_URL = '/api/productos';
-const tableBody = document.querySelector('.glass-table tbody');
-const modal = document.getElementById('productModal');
-const form = document.getElementById('form-producto');
-const modalTitle = document.getElementById('modal-title');
+let API_URL = '';
+let tableBody, modal, form, modalTitle;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_URL = `${config.apiUrl}/productos`;
+
+        tableBody = document.querySelector('.glass-table tbody');
+        modal = document.getElementById('productModal');
+        form = document.getElementById('form-producto');
+        modalTitle = document.getElementById('modal-title');
+
+        cargarProductos();
+
+        if (form) {
+            form.addEventListener('submit', guardarProducto);
+        }
+    } catch (e) {
+        console.error('Initialization error:', e);
+    }
+});
 
 // State
 let isEditing = false;
 let currentId = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    cargarProductos();
-
-    // Event Listeners for searching
-    const searchInput = document.querySelector('.search-bar input'); // Assuming header loaded search? Or local?
-    // Note: The search bar might be in the header or locally. 
-    // For now we just load the list.
-
-    form.addEventListener('submit', guardarProducto);
-});
 
 // Store loaded data globally
 let listaProductos = [];

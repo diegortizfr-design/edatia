@@ -3,13 +3,21 @@
  * Handles fetching, filtering and displaying past sales.
  */
 
-const API_URL = '/api/facturacion';
+let API_URL = '';
 const tableBody = document.getElementById('facturas-table-body');
 let allInvoices = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadInvoices();
-    setupFilters();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configResp = await fetch('/frontend/assets/config.json');
+        const config = await configResp.json();
+        API_URL = `${config.apiUrl}/facturacion`;
+
+        loadInvoices();
+        setupFilters();
+    } catch (e) {
+        console.error('Initialization error:', e);
+    }
 });
 
 async function loadInvoices() {

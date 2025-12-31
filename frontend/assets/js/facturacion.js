@@ -3,18 +3,29 @@
  * Handles product search, cart management, and billing process.
  */
 
-const API_PRODUCTS = '/api/productos';
-const API_BILLING = '/api/facturacion';
-const API_DOCS = '/api/documentos';
+let API_BILLING = '';
+let API_PRODUCTS = '';
+let API_DOCS = '';
 
 // POS State
 let cart = [];
 let allProducts = [];
 let selectedCustomer = { id: null, nombre: 'Cliente Mostrador' };
-let selectedDocType = null; // We'll fetch available POS document types
+let selectedDoc = null; // We'll fetch available POS document types
 
-document.addEventListener('DOMContentLoaded', () => {
-    initPOS();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configResp = await fetch('/frontend/assets/config.json');
+        const config = await configResp.json();
+        const API_BASE = config.apiUrl;
+        API_BILLING = `${API_BASE}/facturacion`;
+        API_PRODUCTS = `${API_BASE}/productos`;
+        API_DOCS = `${API_BASE}/documentos`;
+
+        initPOS();
+    } catch (e) {
+        console.error('Initialization error:', e);
+    }
 });
 
 async function initPOS() {

@@ -3,37 +3,46 @@
  * Handles CRUD operations for the extended product schema.
  */
 
-const API_URL = '/api/productos';
+let API_URL = '';
 let tableBody, modal, form;
 let isEditing = false;
 let currentId = null;
 let allProducts = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    tableBody = document.getElementById('productos-table-body');
-    modal = document.getElementById('productModal');
-    form = document.getElementById('productForm');
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_URL = `${config.apiUrl}/productos`;
 
-    if (form) {
-        form.addEventListener('submit', handleSave);
-    } else {
-        console.error('Error: No se encontró el formulario productForm');
-    }
-    loadProducts();
-    loadSuppliers();
+        tableBody = document.getElementById('productos-table-body');
+        modal = document.getElementById('productModal');
+        form = document.getElementById('productForm');
 
-    // Search functionality
-    const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allProducts.filter(p =>
-                p.nombre.toLowerCase().includes(term) ||
-                (p.codigo && p.codigo.toLowerCase().includes(term)) ||
-                (p.referencia_fabrica && p.referencia_fabrica.toLowerCase().includes(term))
-            );
-            renderTable(filtered);
-        });
+        if (form) {
+            form.addEventListener('submit', handleSave);
+        } else {
+            console.error('Error: No se encontró el formulario productForm');
+        }
+
+        loadProducts();
+        loadSuppliers();
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = allProducts.filter(p =>
+                    p.nombre.toLowerCase().includes(term) ||
+                    (p.codigo && p.codigo.toLowerCase().includes(term)) ||
+                    (p.referencia_fabrica && p.referencia_fabrica.toLowerCase().includes(term))
+                );
+                renderTable(filtered);
+            });
+        }
+    } catch (e) {
+        console.error('Initialization error:', e);
     }
 });
 

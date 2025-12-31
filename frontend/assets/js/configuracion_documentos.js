@@ -3,8 +3,9 @@
  * Handles CRUD and UI logic for documents types.
  */
 
-const API_URL = '/api/documentos';
-const API_BRANCHES = '/api/sucursales';
+let API_BASE = '';
+let API_URL = '';
+let API_BRANCHES = '';
 
 let allDocuments = [];
 let branches = [];
@@ -12,22 +13,39 @@ let isEditing = false;
 let currentId = null;
 
 // DOM Elements
-const tableBody = document.getElementById('documentos-table-body');
-const modal = document.getElementById('docModal');
-const docForm = document.getElementById('docForm');
-const categorySelect = document.getElementById('categoria');
-const resolutionSection = document.getElementById('resolution-section');
+let tableBody, modal, docForm, categorySelect, resolutionSection;
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadDocuments();
-    loadBranches();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_BASE = config.apiUrl;
+        API_URL = `${API_BASE}/documentos`;
+        API_BRANCHES = `${API_BASE}/sucursales`;
 
-    // Toggle resolution fields based on category
-    categorySelect.addEventListener('change', (e) => {
-        toggleResolution(e.target.value);
-    });
+        // Initialize DOM Elements
+        tableBody = document.getElementById('documentos-table-body');
+        modal = document.getElementById('docModal');
+        docForm = document.getElementById('docForm');
+        categorySelect = document.getElementById('categoria');
+        resolutionSection = document.getElementById('resolution-section');
 
-    docForm.addEventListener('submit', handleSave);
+        loadDocuments();
+        loadBranches();
+
+        // Toggle resolution fields based on category
+        if (categorySelect) {
+            categorySelect.addEventListener('change', (e) => {
+                toggleResolution(e.target.value);
+            });
+        }
+
+        if (docForm) {
+            docForm.addEventListener('submit', handleSave);
+        }
+    } catch (e) {
+        console.error('Error initializing:', e);
+    }
 });
 
 async function loadDocuments() {
