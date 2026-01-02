@@ -74,10 +74,8 @@ textarea {
 .sidebar .menu a span,
 .sidebar .btn-logout span,
 .sidebar .dropdown-toggle::after {
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s;
-    white-space: nowrap;
+    display: none;
+    /* Use display: none instead of visibility to prevent layout shifting */
 }
 
 /* Show Text on Hover */
@@ -85,6 +83,7 @@ textarea {
 .sidebar:hover .menu a span,
 .sidebar:hover .btn-logout span,
 .sidebar:hover .dropdown-toggle::after {
+    display: inline-block;
     opacity: 1;
     visibility: visible;
     transition-delay: 0.1s;
@@ -110,7 +109,6 @@ textarea {
 
 .sidebar .logo-box h2 {
     display: none;
-    /* Completely remove from flow to avoid spacing issues in collapsed state */
 }
 
 .sidebar:hover .logo-box h2 {
@@ -123,6 +121,8 @@ textarea {
     justify-content: center;
     /* Center icons */
     padding: 12px;
+    gap: 0;
+    /* No gap when collapsed to ensure perfect centering */
 }
 
 .sidebar:hover .menu a,
@@ -130,6 +130,8 @@ textarea {
     justify-content: flex-start;
     /* Left align on expand */
     padding: 12px 20px;
+    gap: 14px;
+    /* Restore gap on expand */
 }
 
 .sidebar .menu a i,
