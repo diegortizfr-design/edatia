@@ -72,9 +72,9 @@ exports.crearCompra = async (req, res) => {
 
         // 1. Insert Header
         const [result] = await clientConn.query(`
-            INSERT INTO compras (proveedor_id, fecha, total, estado)
-            VALUES (?, ?, ?, ?)
-        `, [proveedor_id, fecha, total, estado || 'Recibida']);
+            INSERT INTO compras (proveedor_id, fecha, total, estado, usuario_id)
+            VALUES (?, ?, ?, ?, ?)
+        `, [proveedor_id, fecha, total, estado || 'Recibida', req.user.id]);
 
         const compraId = result.insertId;
 
