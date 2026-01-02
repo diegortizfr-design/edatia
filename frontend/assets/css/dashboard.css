@@ -300,6 +300,15 @@ textarea {
     margin-bottom: 10px;
 }
 
+/* Force submenus to hide when sidebar is collapsed, even if they are active */
+.sidebar:not(:hover) .dropdown-menu {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    overflow: hidden;
+}
+
 /* MAIN CONTENT WITH BLUR */
 .main-content {
     margin-left: var(--sidebar-collapsed-width);
