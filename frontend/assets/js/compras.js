@@ -47,6 +47,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dateInput = document.getElementById('compra-fecha');
         if (dateInput) dateInput.valueAsDate = new Date();
 
+        // Quick Create Listeners
+        document.getElementById('btn-quick-proveedor')?.addEventListener('click', () => {
+            document.getElementById('modal-quick-proveedor').style.display = 'flex';
+        });
+        document.getElementById('close-quick-prov')?.addEventListener('click', () => {
+            document.getElementById('modal-quick-proveedor').style.display = 'none';
+        });
+        document.getElementById('save-quick-prov')?.addEventListener('click', guardarQuickProveedor);
+
+        document.getElementById('btn-quick-producto')?.addEventListener('click', () => {
+            document.getElementById('modal-quick-producto').style.display = 'flex';
+        });
+        document.getElementById('close-quick-prod')?.addEventListener('click', () => {
+            document.getElementById('modal-quick-producto').style.display = 'none';
+        });
+        document.getElementById('save-quick-prod')?.addEventListener('click', guardarQuickProducto);
+
     } catch (e) {
         console.error('Initialization error:', e);
     }
