@@ -98,7 +98,7 @@ function renderTable(compras) {
             <td>${c.proveedor_nombre || 'Proveedor #' + c.proveedor_id}</td>
             <td>${new Date(c.fecha).toLocaleDateString()}</td>
             <td><strong>$${parseFloat(c.total).toLocaleString()}</strong></td>
-            <td><span class="badge ${c.estado === 'Pagada' ? 'active' : 'warning'}">${c.estado || 'Pendiente'}</span></td>
+            <td><span class="badge ${c.estado ? c.estado.toLowerCase() : 'pendiente'}">${c.estado || 'Pendiente'}</span></td>
             <td>
                 <button class="btn-icon" title="Ver detalle"><i class="fas fa-eye"></i></button>
             </td>

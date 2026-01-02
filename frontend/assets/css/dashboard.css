@@ -601,6 +601,105 @@ header {
     animation: modalFadeIn 0.3s;
 }
 
+/* PREMIUM TABLE STYLES */
+.table-container {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    background: white;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.glass-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.glass-table thead {
+    background: #F9FAFB;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.glass-table th {
+    padding: 18px 24px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid #F3F4F6;
+    transition: background 0.2s ease;
+}
+
+.glass-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.glass-table tbody tr:hover {
+    background: #F9FAFB;
+}
+
+.glass-table td {
+    padding: 16px 24px;
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.glass-table td strong {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* Badge Styles */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: capitalize;
+}
+
+.badge.active,
+.badge.pagada,
+.badge.recibida {
+    background: #D1FAE5;
+    color: #059669;
+}
+
+.badge.inactive,
+.badge.cancelada {
+    background: #FEE2E2;
+    color: #EF4444;
+}
+
+.badge.warning,
+.badge.pendiente {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-gray);
+    transition: color 0.2s;
+    padding: 5px;
+}
+
+.btn-icon:hover {
+    color: var(--primary-color);
+}
+
 .close-modal,
 .close-btn {
     color: #aaa;
