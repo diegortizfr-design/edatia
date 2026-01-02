@@ -5,29 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERPod SOFTWARE | Sucursales</title>
-    <link rel="stylesheet" href="../../assets/css/dashboard.css">
-    <link rel="stylesheet" href="../../assets/css/configuracion_empresa.css">
+    <link rel="stylesheet" href="/frontend/assets/css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="logo-box">
-            <i class="fas fa-cube" style="font-size: 2rem; color: #818CF8;"></i>
-            <h2 id="empresa-nombre">ERPod Empresas</h2>
-        </div>
-        <nav class="menu" id="menu-principal">
-            <!-- Dynamic Menu Loaded Here -->
-        </nav>
-        <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> <span>Cerrar sesión</span></button>
-    </aside>
+    <div id="sidebar-container"></div>
 
-    <!-- CONTENT -->
     <main class="main-content">
-        <header id="main-header"><!-- Dynamic Header Loaded Here --></header>
+        <div id="header-container"></div>
 
         <section class="form-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -40,55 +28,63 @@
             <div class="branches-grid" id="grid-sucursales"
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                 <!-- Dynamically loaded branches -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #6B7280;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                    <p>Cargando sucursales...</p>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- Modal Nueva Sucursal -->
+    <!-- Modal Nueva Sucursal (Adjusted for Glassmorphism/Consistency) -->
     <div id="modal-nueva-sucursal" class="modal"
-        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-        <div class="modal-content"
-            style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                <h2>Nueva Sucursal</h2>
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center;">
+        <div class="card" style="width: 50%; max-width: 600px; padding: 30px; position: relative;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+                <h2 style="font-size: 1.5rem; font-weight: 600;">Sucursal</h2>
                 <span class="close-modal"
-                    style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                    style="font-size: 24px; cursor: pointer; color: var(--text-gray);">&times;</span>
             </div>
             <form id="form-nueva-sucursal">
                 <input type="hidden" name="id" id="sucursal-id">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Nombre de la Sucursal</label>
-                    <input type="text" name="nombre" required
-                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Nombre de la Sucursal</label>
+                    <input type="text" name="nombre" id="nombre-sucursal" required
+                        style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Dirección</label>
-                    <input type="text" name="direccion" required
-                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Dirección</label>
+                    <input type="text" name="direccion" id="direccion-sucursal" required
+                        style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Teléfono</label>
-                    <input type="text" name="telefono"
-                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Teléfono</label>
+                    <input type="text" name="telefono" id="telefono-sucursal"
+                        style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px;">Estado</label>
-                    <select name="estado"
-                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Estado</label>
+                    <select name="estado" id="estado-sucursal"
+                        style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
                         <option value="Activa">Activa</option>
                         <option value="Inactiva">Inactiva</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-guardar" style="width: 100%; background: var(--primary-color);">Guardar
-                    Sucursal</button>
+                <div style="display: flex; gap: 15px;">
+                    <button type="button" class="btn-secondary close-modal-btn"
+                        style="flex: 1; background: #F3F4F6; border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" class="btn-guardar"
+                        style="flex: 1; background: var(--primary-color); border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">Guardar
+                        Cambios</button>
+                </div>
             </form>
         </div>
     </div>
-    <script src="../../assets/js/menu_loader.js"></script>
-    <script src="../../assets/js/header_loader.js"></script>
-    <script src="../../assets/js/auth_guard.js"></script>
-    <script src="../../assets/js/notifications.js"></script>
-    <script src="../../assets/js/sucursales.js"></script>
+
+    <script src="/frontend/assets/js/layout-loader.js"></script>
+    <script src="/frontend/assets/js/auth_guard.js"></script>
+    <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/sucursales.js"></script>
 </body>
 
 </html>

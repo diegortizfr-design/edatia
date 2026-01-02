@@ -4,21 +4,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 🔹 Cargar configuración y datos existentes
   try {
-    // 1. Cargar config.json para obtener la URL del backend
-    const configRes = await fetch("../../assets/config.json");
+    const configRes = await fetch("/frontend/assets/config.json");
     const config = await configRes.json();
     API_URL = `${config.apiUrl}/empresa`;
 
-    // 2. Cargar datos de la empresa
     const res = await fetch(API_URL, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // Asegurar envío de token si es necesario
-      }
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
 
-    // Si la respuesta es 401/403, redirigir a login (opcional, pero buena práctica)
     if (res.status === 401) {
-      window.location.href = '../../modules/auth/login.html';
+      window.location.href = '/frontend/modules/auth/login.html';
       return;
     }
 
@@ -27,9 +22,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (data && data.success && data.empresa) {
       const emp = data.empresa;
       for (const campo in emp) {
-        if (document.getElementById(campo)) {
-          document.getElementById(campo).value = emp[campo] || "";
-        }
+        const el = document.getElementById(campo);
+        if (el) el.value = emp[campo] || "";
       }
 
       // Mapeo manual para campos que no coinciden (DB -> HTML ID)
@@ -40,12 +34,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error al cargar configuración o datos de empresa:", error);
   }
 
-  // 🔹 Guardar cambios
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     if (!API_URL) {
-      alert("❌ Error: No se pudo cargar la configuración del servidor.");
+      showNotification("❌ Error: No se pudo cargar la configuración", "error");
       return;
     }
 
@@ -64,12 +57,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const result = await response.json();
       if (result.success) {
-        alert("✅ Datos de empresa guardados correctamente.");
+        showNotification("✅ Datos guardados correctamente", "success");
       } else {
-        alert("⚠️ Error al guardar: " + result.message);
+        showNotification("⚠️ Error: " + result.message, "error");
       }
     } catch (error) {
-      alert("❌ Error de conexión con el servidor.");
+      showNotification("❌ Error de comunicación", "error");
       console.error(error);
     }
   });

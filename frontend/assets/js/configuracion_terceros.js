@@ -1,49 +1,48 @@
-// frontend/global/js/configuracion_terceros.js
+// frontend/assets/js/configuracion_terceros.js
 
-let API_URL = ''; // Will be loaded from config
-const tableBody = document.querySelector('.glass-table tbody');
-const modal = document.getElementById('modal-tercero');
-const form = document.getElementById('form-tercero');
-const btnNuevo = document.querySelector('.btn-guardar'); // The "Nuevo Tercero" button
-const closeBtns = document.querySelectorAll('.close-modal, .close-modal-btn');
-const modalTitle = document.getElementById('modal-title');
-
-// State
-let isEditing = false;
-let currentId = null;
+let API_URL = '';
+let tableBody, modal, form, btnNuevo, closeBtns, modalTitle;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load Config first
     try {
         const configRes = await fetch('../../assets/config.json');
         const config = await configRes.json();
         API_URL = `${config.apiUrl}/terceros`;
 
+        // Initialize DOM Elements
+        tableBody = document.getElementById('terceros-table-body');
+        modal = document.getElementById('modal-tercero');
+        form = document.getElementById('form-tercero');
+        btnNuevo = document.getElementById('btn-nuevo-tercero');
+        closeBtns = document.querySelectorAll('.close-modal, .close-modal-btn');
+        modalTitle = document.getElementById('modal-title');
+
         cargarTerceros();
+
+        if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModal());
+
+        closeBtns.forEach(btn => {
+            btn.addEventListener('click', cerrarModal);
+        });
+
+        if (form) form.addEventListener('submit', guardarTercero);
+
+        window.onclick = (event) => {
+            if (event.target == modal) cerrarModal();
+        }
     } catch (error) {
         console.error('Error loading config:', error);
-        alert('Error cargando configuración del sistema');
     }
-
-    // Event Listeners
-
-    // Event Listeners
-    btnNuevo.addEventListener('click', () => abrirModal());
-
-
-    closeBtns.forEach(btn => {
-        btn.addEventListener('click', cerrarModal);
-    });
-
-    // Removed window.onclick to prevent closing when clicking outside
-
-    form.addEventListener('submit', guardarTercero);
 });
 
-// Store loaded data globally to access it safely
+// State
+let isEditing = false;
+let currentId = null;
 let listaTerceros = [];
 
 async function cargarTerceros() {
+    if (!tableBody) return;
+
     try {
         const token = localStorage.getItem('token');
         const res = await fetch(API_URL, {
@@ -52,7 +51,7 @@ async function cargarTerceros() {
         const data = await res.json();
 
         if (data.success) {
-            listaTerceros = data.data; // Save data
+            listaTerceros = data.data;
             renderTable(listaTerceros);
         } else {
             console.error(data.message);
@@ -63,7 +62,13 @@ async function cargarTerceros() {
 }
 
 function renderTable(terceros) {
+    if (!tableBody) return;
     tableBody.innerHTML = '';
+
+    if (terceros.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6B7280;">No hay terceros registrados</td></tr>';
+        return;
+    }
 
     terceros.forEach(t => {
         const badges = [];
@@ -72,50 +77,49 @@ function renderTable(terceros) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${t.nombre_comercial}</strong><br><small style="color:#666">${t.razon_social || ''}</small></td>
+            <td>
+                <div style="font-weight: 600; color: var(--text-dark);">${t.nombre_comercial}</div>
+                <div style="font-size: 0.85rem; color: var(--text-gray);">${t.razon_social || ''}</div>
+            </td>
             <td>${t.documento}</td>
-            <td>${badges.join(' ')}</td>
+            <td><div style="display: flex; gap: 5px;">${badges.join('')}</div></td>
             <td>${t.telefono || '-'}</td>
             <td>${t.direccion || '-'}</td>
             <td>
-                <!-- Use data-id instead of complex onclick -->
                 <button class="btn-icon btn-editar" data-id="${t.id}" title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon btn-eliminar" data-id="${t.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                <button class="btn-icon btn-eliminar" data-id="${t.id}" title="Eliminar" style="color: #EF4444;"><i class="fas fa-trash"></i></button>
             </td>
         `;
         tableBody.appendChild(row);
     });
-
-    // Re-attach listeners using event delegation
-    // Note: We could attach this once to tableBody, but rebuilding it here is also fine if we clear body
 }
 
-// Event delegation for table actions
-tableBody.addEventListener('click', (e) => {
-    // Handle Edit
-    const btnEdit = e.target.closest('.btn-editar');
-    if (btnEdit) {
-        const id = parseInt(btnEdit.dataset.id);
-        const tercero = listaTerceros.find(t => t.id === id);
-        if (tercero) abrirModal(tercero);
-    }
+// Event delegation
+if (tableBody) {
+    tableBody.addEventListener('click', (e) => {
+        const btnEdit = e.target.closest('.btn-editar');
+        if (btnEdit) {
+            const id = parseInt(btnEdit.dataset.id);
+            const tercero = listaTerceros.find(t => t.id === id);
+            if (tercero) abrirModal(tercero);
+        }
 
-    // Handle Delete
-    const btnDelete = e.target.closest('.btn-eliminar');
-    if (btnDelete) {
-        const id = parseInt(btnDelete.dataset.id);
-        eliminarTercero(id);
-    }
-});
+        const btnDelete = e.target.closest('.btn-eliminar');
+        if (btnDelete) {
+            const id = parseInt(btnDelete.dataset.id);
+            eliminarTercero(id);
+        }
+    });
+}
 
 function abrirModal(tercero = null) {
-    modal.style.display = 'block';
+    if (!modal) return;
+    modal.style.display = 'flex';
     if (tercero) {
         isEditing = true;
         currentId = tercero.id;
         modalTitle.textContent = 'Editar Tercero';
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = 'Actualizar';
+        form.querySelector('button[type="submit"]').textContent = 'Actualizar Tercero';
 
         document.getElementById('nombre_comercial').value = tercero.nombre_comercial;
         document.getElementById('razon_social').value = tercero.razon_social || '';
@@ -130,19 +134,16 @@ function abrirModal(tercero = null) {
         isEditing = false;
         currentId = null;
         modalTitle.textContent = 'Nuevo Tercero';
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = 'Guardar';
-
+        form.querySelector('button[type="submit"]').textContent = 'Guardar Tercero';
         form.reset();
-        document.getElementById('es_cliente').checked = true; // Default
+        document.getElementById('es_cliente').checked = true;
     }
 }
 
 function cerrarModal() {
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 }
 
-// Separate delete function (no longer needs to be on window)
 async function eliminarTercero(id) {
     if (!confirm('¿Estás seguro de eliminar este tercero?')) return;
 
@@ -155,13 +156,14 @@ async function eliminarTercero(id) {
         const data = await res.json();
 
         if (data.success) {
-            cargarTerceros(); // Reload
+            showNotification('Tercero eliminado', 'success');
+            cargarTerceros();
         } else {
-            alert('Error: ' + data.message);
+            showNotification('Error: ' + data.message, 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Error al eliminar');
+        showNotification('Error al eliminar', 'error');
     }
 }
 
@@ -197,13 +199,14 @@ async function guardarTercero(e) {
         const data = await res.json();
 
         if (data.success) {
+            showNotification(isEditing ? 'Tercero actualizado' : 'Tercero guardado', 'success');
             cerrarModal();
             cargarTerceros();
         } else {
-            alert('Error: ' + data.message);
+            showNotification('Error: ' + data.message, 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Error al guardar');
+        showNotification('Error al guardar', 'error');
     }
 }
