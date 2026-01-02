@@ -51,18 +51,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('btn-quick-proveedor')?.addEventListener('click', () => {
             document.getElementById('modal-quick-proveedor').style.display = 'flex';
         });
-        document.getElementById('close-quick-prov')?.addEventListener('click', () => {
-            document.getElementById('modal-quick-proveedor').style.display = 'none';
-        });
-        document.getElementById('save-quick-prov')?.addEventListener('click', guardarQuickProveedor);
+        const closeQuickProv = () => document.getElementById('modal-quick-proveedor').style.display = 'none';
+        document.getElementById('close-quick-prov')?.addEventListener('click', closeQuickProv);
+        document.getElementById('cancel-quick-prov')?.addEventListener('click', closeQuickProv);
+        document.getElementById('form-quick-proveedor')?.addEventListener('submit', guardarQuickProveedor);
 
         document.getElementById('btn-quick-producto')?.addEventListener('click', () => {
             document.getElementById('modal-quick-producto').style.display = 'flex';
         });
-        document.getElementById('close-quick-prod')?.addEventListener('click', () => {
-            document.getElementById('modal-quick-producto').style.display = 'none';
-        });
-        document.getElementById('save-quick-prod')?.addEventListener('click', guardarQuickProducto);
+        const closeQuickProd = () => document.getElementById('modal-quick-producto').style.display = 'none';
+        document.getElementById('close-quick-prod')?.addEventListener('click', closeQuickProd);
+        document.getElementById('cancel-quick-prod')?.addEventListener('click', closeQuickProd);
+        document.getElementById('form-quick-producto')?.addEventListener('submit', guardarQuickProducto);
 
     } catch (e) {
         console.error('Initialization error:', e);
@@ -145,6 +145,98 @@ async function cargarProveedores() {
             });
         }
     } catch (err) { console.error('Error loading providers', err); }
+}
+
+// --- QUICK CREATE LOGIC ---
+
+async function guardarQuickProveedor(e) {
+    if (e) e.preventDefault();
+
+    // Gather Full Data
+    const payload = {
+        nombre_comercial: document.getElementById('quick-prov-nombre').value,
+        razon_social: document.getElementById('quick-prov-razon').value,
+        tipo_documento: document.getElementById('quick-prov-tipo').value,
+        documento: document.getElementById('quick-prov-doc').value,
+        telefono: document.getElementById('quick-prov-tel').value,
+        email: document.getElementById('quick-prov-email').value,
+        direccion: document.getElementById('quick-prov-dir').value,
+        es_proveedor: true,
+        es_cliente: false
+    };
+
+    if (!payload.nombre_comercial || !payload.documento) return showNotification('Nombre y Documento requeridos', 'error');
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(TERCEROS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showNotification('Proveedor creado', 'success');
+            document.getElementById('modal-quick-proveedor').style.display = 'none';
+            document.getElementById('form-quick-proveedor').reset();
+
+            // Refresh list
+            const select = document.getElementById('compra-proveedor');
+            select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
+            await cargarProveedores();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (err) {
+        showNotification('Error guardando proveedor', 'error');
+    }
+}
+
+async function guardarQuickProducto(e) {
+    if (e) e.preventDefault();
+
+    const payload = {
+        nombre: document.getElementById('quick-prod-nombre').value,
+        nombre_alterno: document.getElementById('quick-prod-alterno').value,
+        referencia_fabrica: document.getElementById('quick-prod-ref').value,
+        codigo: document.getElementById('quick-prod-code').value,
+        categoria: document.getElementById('quick-prod-cat').value,
+        unidad_medida: document.getElementById('quick-prod-unidad').value,
+        precio1: parseFloat(document.getElementById('quick-prod-precio1').value) || 0,
+        precio2: parseFloat(document.getElementById('quick-prod-precio2').value) || 0,
+        costo: parseFloat(document.getElementById('quick-prod-costo').value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('quick-prod-iva').value) || 0,
+        stock_minimo: parseInt(document.getElementById('quick-prod-min').value) || 0,
+        activo: document.getElementById('quick-prod-activo').checked ? 1 : 0,
+        maneja_inventario: 1,
+        stock_actual: 0
+    };
+
+    if (!payload.nombre) return showNotification('Nombre del producto requerido', 'error');
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(PRODUCTOS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showNotification('Producto creado', 'success');
+            document.getElementById('modal-quick-producto').style.display = 'none';
+            document.getElementById('form-quick-producto').reset();
+
+            // Search and add to cart? Or just search so user can see it
+            buscarProducto(payload.nombre);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (err) {
+        showNotification('Error guardando producto', 'error');
+    }
 }
 
 async function buscarProducto(query) {

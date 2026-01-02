@@ -187,58 +187,164 @@
         </div>
     </div>
 
-    <!-- MODAL RÁPIDO: PROVEEDOR -->
+    <!-- MODAL RÁPIDO: PROVEEDOR (Formulario Completo) -->
     <div id="modal-quick-proveedor" class="modal"
         style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
-        <div class="card" style="width: 400px; padding: 20px;">
-            <h3 style="margin-bottom: 15px;">Nuevo Proveedor Rápido</h3>
-            <div class="form-control">
-                <label>Nombre Comercial</label>
-                <input type="text" id="quick-prov-nombre" placeholder="Ej: Distribuidora XYZ"
-                    style="width: 100%; margin-bottom: 10px;">
+        <div class="card" style="width: 90%; max-width: 700px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+                <h2 style="font-size: 1.5rem; font-weight: 600;">Nuevo Proveedor</h2>
+                <span id="close-quick-prov"
+                    style="font-size: 24px; cursor: pointer; color: var(--text-gray);">&times;</span>
             </div>
-            <div class="form-control">
-                <label>NIT / Documento</label>
-                <input type="text" id="quick-prov-doc" placeholder="Ej: 900.123.456"
-                    style="width: 100%; margin-bottom: 10px;">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                <button class="btn-secondary" id="close-quick-prov" style="padding: 8px 15px;">Cancelar</button>
-                <button class="btn-primary" id="save-quick-prov" style="padding: 8px 15px;">Guardar</button>
-            </div>
+
+            <form id="form-quick-proveedor">
+                <div class="grid-2">
+                    <div class="form-control">
+                        <label>Nombre Comercial *</label>
+                        <input type="text" id="quick-prov-nombre" required placeholder="Ej: Distribuidora XYZ">
+                    </div>
+                    <div class="form-control">
+                        <label>Razón Social (Opcional)</label>
+                        <input type="text" id="quick-prov-razon" placeholder="Nombre legal">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-control">
+                        <label>Tipo Documento</label>
+                        <select id="quick-prov-tipo">
+                            <option value="NIT">NIT</option>
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="PP">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label>Número Documento *</label>
+                        <input type="text" id="quick-prov-doc" required placeholder="Ej: 900.123.456-1">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-control">
+                        <label>Teléfono</label>
+                        <input type="text" id="quick-prov-tel" placeholder="Ej: 3001234567">
+                    </div>
+                    <div class="form-control">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="quick-prov-email" placeholder="ejemplo@correo.com">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label>Dirección</label>
+                    <input type="text" id="quick-prov-dir" placeholder="Ej: Calle 123 #45-67">
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn-secondary" id="cancel-quick-prov"
+                        style="flex: 1; padding: 12px;">Cancelar</button>
+                    <button type="submit" class="btn-guardar"
+                        style="flex: 1; padding: 12px; background: var(--primary-color); border: none; color: white; border-radius: 8px; cursor: pointer;">Guardar
+                        Proveedor</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- MODAL RÁPIDO: PRODUCTO -->
+    <!-- MODAL RÁPIDO: PRODUCTO (Formulario Completo) -->
     <div id="modal-quick-producto" class="modal"
         style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
-        <div class="card" style="width: 450px; padding: 20px;">
-            <h3 style="margin-bottom: 15px;">Nuevo Producto Rápido</h3>
-            <div class="form-control">
-                <label>Nombre del Producto</label>
-                <input type="text" id="quick-prod-nombre" placeholder="Ej: Café Premium"
-                    style="width: 100%; margin-bottom: 10px;">
+        <div class="card" style="width: 90%; max-width: 800px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+                <h2 style="font-size: 1.5rem; font-weight: 600;">Nuevo Producto</h2>
+                <span id="close-quick-prod"
+                    style="font-size: 24px; cursor: pointer; color: var(--text-gray);">&times;</span>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-control">
-                    <label>Costo</label>
-                    <input type="number" id="quick-prod-costo" placeholder="0"
-                        style="width: 100%; margin-bottom: 10px;">
+
+            <form id="form-quick-producto">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-control"
+                        style="grid-column: 1 / -1; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 10px; font-weight: 700; color:var(--primary-color);">
+                        Información Básica</div>
+
+                    <div class="form-control">
+                        <label>Nombre del Producto *</label>
+                        <input type="text" id="quick-prod-nombre" required placeholder="Ej: Café Premium">
+                    </div>
+                    <div class="form-control">
+                        <label>Nombre Alterno</label>
+                        <input type="text" id="quick-prod-alterno" placeholder="Ej: Café Arábica">
+                    </div>
+                    <div class="form-control">
+                        <label>Referencia Fábrica</label>
+                        <input type="text" id="quick-prod-ref" placeholder="REF-001">
+                    </div>
+                    <div class="form-control">
+                        <label>Código / Barcode</label>
+                        <input type="text" id="quick-prod-code" placeholder="770...">
+                    </div>
+                    <div class="form-control">
+                        <label>Categoría</label>
+                        <input type="text" id="quick-prod-cat" placeholder="Bebidas">
+                    </div>
+                    <div class="form-control">
+                        <label>Unidad de Medida</label>
+                        <select id="quick-prod-unidad">
+                            <option value="UND">Unidad (UND)</option>
+                            <option value="KG">Kilogramo (KG)</option>
+                            <option value="GR">Gramo (GR)</option>
+                            <option value="LT">Litro (LT)</option>
+                            <option value="LB">Libra (LB)</option>
+                            <option value="CAJA">Caja</option>
+                        </select>
+                    </div>
+
+                    <div class="form-control"
+                        style="grid-column: 1 / -1; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 10px; font-weight: 700; color:var(--primary-color);">
+                        Precios y Costos</div>
+
+                    <div class="form-control">
+                        <label>Precio de Venta 1 (General) *</label>
+                        <input type="number" id="quick-prod-precio1" required step="0.01" value="0">
+                    </div>
+                    <div class="form-control">
+                        <label>Precio de Venta 2</label>
+                        <input type="number" id="quick-prod-precio2" step="0.01" value="0">
+                    </div>
+                    <div class="form-control">
+                        <label>Costo de Compra</label>
+                        <input type="number" id="quick-prod-costo" step="0.01" value="0">
+                    </div>
+                    <div class="form-control">
+                        <label>Impuesto (%)</label>
+                        <input type="number" id="quick-prod-iva" step="0.01" value="19">
+                    </div>
+
+                    <div class="form-control"
+                        style="grid-column: 1 / -1; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 10px; font-weight: 700; color:var(--primary-color);">
+                        Logística</div>
+
+                    <div class="form-control">
+                        <label>Stock Mínimo</label>
+                        <input type="number" id="quick-prod-min" value="5">
+                    </div>
+                    <div class="form-control">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 30px;">
+                            <input type="checkbox" id="quick-prod-activo" checked>
+                            <label for="quick-prod-activo">Activo</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-control">
-                    <label>Precio Venta</label>
-                    <input type="number" id="quick-prod-precio" placeholder="0"
-                        style="width: 100%; margin-bottom: 10px;">
+
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn-secondary" id="cancel-quick-prod"
+                        style="flex: 1; padding: 12px;">Cancelar</button>
+                    <button type="submit" class="btn-guardar"
+                        style="flex: 1; padding: 12px; background: var(--primary-color); border: none; color: white; border-radius: 8px; cursor: pointer;">Guardar
+                        Producto</button>
                 </div>
-            </div>
-            <div class="form-control">
-                <label>IVA (%)</label>
-                <input type="number" id="quick-prod-iva" value="19" style="width: 100%; margin-bottom: 10px;">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                <button class="btn-secondary" id="close-quick-prod" style="padding: 8px 15px;">Cancelar</button>
-                <button class="btn-primary" id="save-quick-prod" style="padding: 8px 15px;">Guardar</button>
-            </div>
+            </form>
         </div>
     </div>
 
