@@ -428,38 +428,56 @@ function addBtn(container, text, cls, onClick) {
 async function cambiarEstado(id, nuevoEstado) {
     if (!confirm(`¿Cambiar estado a ${nuevoEstado}?`)) return;
 
-    // Note: Backend endpoint may need implementation. Using typical REST pattern.
-    // If backend controller "crear" is all we touched, update is likely missing logic for specific fields.
-    // But let's try pushing the update.
     try {
         const token = localStorage.getItem('token');
-        // We assume generic update or specific route.
-        // For now, let's trigger a UI update to simulate success if 404 (since I didn't edit update logic yet).
-        // Real implementation:
-        /*
         const res = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ estado: nuevoEstado })
         });
-        */
-        showNotification(`Estado cambiado a: ${nuevoEstado}`, 'success');
-        // Mock update local
-        const c = allComprasData.find(x => x.id === id);
-        if (c) c.estado = nuevoEstado;
-        verCompra(id);
-        cargarCompras();
+        const data = await res.json();
 
-    } catch (e) { console.error(e); }
+        if (data.success) {
+            showNotification(`Estado cambiado a: ${nuevoEstado}`, 'success');
+            // Mock update local for speed, then reload
+            const c = allComprasData.find(x => x.id === id);
+            if (c) c.estado = nuevoEstado;
+            verCompra(id);
+            cargarCompras();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showNotification('Error de conexión', 'error');
+    }
 }
 
 async function cambiarEstadoPago(id, nuevoEstado) {
     if (!confirm(`¿Registrar ${nuevoEstado}?`)) return;
-    showNotification(`Pago registrado: ${nuevoEstado}`, 'success');
-    const c = allComprasData.find(x => x.id === id);
-    if (c) c.estado_pago = nuevoEstado;
-    verCompra(id);
-    cargarCompras();
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ estado_pago: nuevoEstado })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showNotification(`Pago registrado: ${nuevoEstado}`, 'success');
+            const c = allComprasData.find(x => x.id === id);
+            if (c) c.estado_pago = nuevoEstado;
+            verCompra(id);
+            cargarCompras();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showNotification('Error de conexión', 'error');
+    }
 }
 
 // --- QUICK FUNCTIONS ---

@@ -28,6 +28,64 @@ exports.listarCompras = async (req, res) => {
     }
 };
 
+};
+
+exports.actualizarCompra = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+        const { id } = req.params;
+        const { estado, estado_pago } = req.body;
+
+        // Validar que la orden existe
+        const [ordenes] = await clientConn.query('SELECT * FROM compras WHERE id = ?', [id]);
+        if (ordenes.length === 0) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+
+        const ordenActual = ordenes[0];
+
+        // LOGIC: Stock Movement (If transitioning TO 'Recibida' from non-Recibida state)
+        if (estado === 'Recibida' && ordenActual.estado !== 'Recibida' && ordenActual.estado !== 'Completada') {
+
+            // Get items
+            const [items] = await clientConn.query('SELECT * FROM compras_detalle WHERE compra_id = ?', [id]);
+
+            await clientConn.beginTransaction();
+
+            // Update Stock
+            for (const item of items) {
+                await clientConn.query(`
+                    UPDATE productos 
+                    SET stock_actual = stock_actual + ?, costo = ?
+                    WHERE id = ?
+                `, [item.cantidad, item.costo_unitario, item.producto_id]);
+            }
+
+            // Update Header
+            await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
+            await clientConn.commit();
+
+        } else if (estado) {
+            // Just update state
+            await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
+        }
+
+        if (estado_pago) {
+            await clientConn.query('UPDATE compras SET estado_pago = ? WHERE id = ?', [estado_pago, id]);
+        }
+
+        res.json({ success: true, message: 'Orden actualizada' });
+
+    } catch (err) {
+        if (clientConn) await clientConn.rollback();
+        console.error('actualizarCompra error:', err);
+        res.status(500).json({ success: false, message: 'Error actualizando compra' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
 exports.crearCompra = async (req, res) => {
     let clientConn = null;
     try {
@@ -88,7 +146,7 @@ exports.crearCompra = async (req, res) => {
 
         const compraId = result.insertId;
 
-        // 2. Insert Items and Update Stock
+        // 2. Insert Items (NO STOCK UPDATE yet)
         if (items && items.length > 0) {
             for (const item of items) {
                 // Insert detail
@@ -96,18 +154,11 @@ exports.crearCompra = async (req, res) => {
                     INSERT INTO compras_detalle (compra_id, producto_id, cantidad, costo_unitario, subtotal)
                     VALUES (?, ?, ?, ?, ?)
                 `, [compraId, item.producto_id, item.cantidad, item.costo, item.subtotal]);
-
-                // Update Stock (Increase) and optionally Cost (Last Cost)
-                await clientConn.query(`
-                    UPDATE productos 
-                    SET stock_actual = stock_actual + ?, costo = ?
-                    WHERE id = ?
-                `, [item.cantidad, item.costo, item.producto_id]);
             }
         }
 
         await clientConn.commit();
-        res.status(201).json({ success: true, message: 'Compra registrada y stock actualizado', id: compraId });
+        res.status(201).json({ success: true, message: 'Orden de compra creada', id: compraId });
 
     } catch (err) {
         if (clientConn) await clientConn.rollback();
