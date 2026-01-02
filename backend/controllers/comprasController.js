@@ -48,12 +48,22 @@ exports.crearCompra = async (req, res) => {
             CREATE TABLE IF NOT EXISTS compras (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 proveedor_id INT,
+                sucursal_id INT,
                 fecha DATE,
                 total DECIMAL(15,2),
                 estado VARCHAR(50),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                estado_pago VARCHAR(50) DEFAULT 'Debe',
+                usuario_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
+
+        // Update existing table if needed (Migration)
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
+
 
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras_detalle (
@@ -72,9 +82,9 @@ exports.crearCompra = async (req, res) => {
 
         // 1. Insert Header
         const [result] = await clientConn.query(`
-            INSERT INTO compras (proveedor_id, fecha, total, estado, usuario_id)
-            VALUES (?, ?, ?, ?, ?)
-        `, [proveedor_id, fecha, total, estado || 'Recibida', req.user.id]);
+            INSERT INTO compras (proveedor_id, sucursal_id, fecha, total, estado, estado_pago, usuario_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [proveedor_id, req.body.sucursal_id || null, fecha, total, estado || 'Orden de Compra', 'Debe', req.user.id]);
 
         const compraId = result.insertId;
 
