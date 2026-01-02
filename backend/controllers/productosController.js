@@ -45,7 +45,7 @@ exports.listarProductos = async (req, res) => {
             )
         `);
 
-        let query = 'SELECT p.*, t.nombre as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
+        let query = 'SELECT p.*, t.nombre_comercial as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
         const params = [];
         const conditions = [];
 

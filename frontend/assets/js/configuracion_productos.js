@@ -77,10 +77,10 @@ async function loadSuppliers() {
             const select = document.getElementById('proveedor_id');
             select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
             data.data.forEach(t => {
-                if (t.tipo === 'Proveedor' || t.tipo === 'Ambos') {
+                if (t.es_proveedor) {
                     const opt = document.createElement('option');
                     opt.value = t.id;
-                    opt.textContent = t.nombre;
+                    opt.textContent = t.nombre_comercial;
                     select.appendChild(opt);
                 }
             });
