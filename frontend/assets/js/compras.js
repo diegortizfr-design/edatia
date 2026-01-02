@@ -301,6 +301,11 @@ async function guardarCompra() {
     if (!proveedorId) return showNotification('Selecciona un proveedor', 'error');
     if (!sucursalId) return showNotification('Selecciona una sucursal destino', 'error');
 
+    const btnGuardar = document.getElementById('btn-guardar-compra');
+    const originalText = btnGuardar.innerHTML;
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
     const payload = {
         proveedor_id: proveedorId,
         sucursal_id: sucursalId,
@@ -323,11 +328,20 @@ async function guardarCompra() {
             showNotification('Orden registrada exitosamente', 'success');
             cerrarModal();
             cargarCompras();
+            // Restore button just in case
+            setTimeout(() => {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = originalText;
+            }, 500);
         } else {
             showNotification('Error: ' + data.message, 'error');
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = originalText;
         }
     } catch (err) {
         showNotification('Error al guardar compra', 'error');
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = originalText;
     }
 }
 
