@@ -59,21 +59,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initSidebar() {
-    // Highlight active link
     const currentPath = window.location.pathname;
     const links = document.querySelectorAll('.menu a');
 
+    // Remove any pre-existing active classes (just in case)
+    links.forEach(l => l.classList.remove('active'));
+
     links.forEach(link => {
-        // Simple string matching for active state
-        if (link.getAttribute('href') && currentPath.includes(link.getAttribute('href'))) {
+        const href = link.getAttribute('href');
+
+        // Exact match or includes for nested routes if necessary
+        // Using endsWith or exact match to avoid "Home" being active on all sub-pages if it was just "/"
+        if (href && (currentPath === href || currentPath.endsWith(href))) {
             link.classList.add('active');
 
             // Open parent dropdown if this link is inside one
             const menuDropdown = link.closest('.menu-dropdown');
             if (menuDropdown) {
                 menuDropdown.classList.add('active');
-                // Also highlight the parent toggle if desired, or just keep it open
-                // menuDropdown.querySelector('.dropdown-toggle').classList.add('active'); 
+                // Also highlight the toggle of the dropdown to show where we are
+                const toggle = menuDropdown.querySelector('.dropdown-toggle');
+                if (toggle) toggle.classList.add('active');
             }
         }
 
