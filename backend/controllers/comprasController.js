@@ -39,27 +39,66 @@ exports.crearCompra = async (req, res) => {
             proveedor_id, fecha, total, estado, items
         } = req.body;
 
+        // Ensure tables exist
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS compras (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                proveedor_id INT,
+                fecha DATE,
+                total DECIMAL(15,2),
+                estado VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS compras_detalle (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                compra_id INT,
+                producto_id INT,
+                cantidad INT,
+                costo_unitario DECIMAL(15,2),
+                subtotal DECIMAL(15,2),
+                FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE CASCADE
+            )
+        `);
+
         // Start transaction
         await clientConn.beginTransaction();
 
+        // 1. Insert Header
         const [result] = await clientConn.query(`
             INSERT INTO compras (proveedor_id, fecha, total, estado)
             VALUES (?, ?, ?, ?)
-        `, [proveedor_id, fecha, total, estado || 'Pendiente']);
+        `, [proveedor_id, fecha, total, estado || 'Recibida']);
 
         const compraId = result.insertId;
 
-        // Insert items (detalle_compra) if relevant tables exist
-        // For now, assuming basic header insertion is priority
-        // Ideally: Insert into detalle_compra for each item
+        // 2. Insert Items and Update Stock
+        if (items && items.length > 0) {
+            for (const item of items) {
+                // Insert detail
+                await clientConn.query(`
+                    INSERT INTO compras_detalle (compra_id, producto_id, cantidad, costo_unitario, subtotal)
+                    VALUES (?, ?, ?, ?, ?)
+                `, [compraId, item.producto_id, item.cantidad, item.costo, item.subtotal]);
+
+                // Update Stock (Increase) and optionally Cost (Last Cost)
+                await clientConn.query(`
+                    UPDATE productos 
+                    SET stock_actual = stock_actual + ?, costo = ?
+                    WHERE id = ?
+                `, [item.cantidad, item.costo, item.producto_id]);
+            }
+        }
 
         await clientConn.commit();
-        res.status(201).json({ success: true, message: 'Compra creada', id: compraId });
+        res.status(201).json({ success: true, message: 'Compra registrada y stock actualizado', id: compraId });
 
     } catch (err) {
         if (clientConn) await clientConn.rollback();
         console.error('crearCompra error:', err);
-        res.status(500).json({ success: false, message: 'Error al crear compra' });
+        res.status(500).json({ success: false, message: 'Error al procesar la compra' });
     } finally {
         if (clientConn) await clientConn.end();
     }

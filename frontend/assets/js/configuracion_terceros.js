@@ -45,7 +45,16 @@ async function cargarTerceros() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
+        let url = API_URL;
+
+        // Apply filtering based on mode
+        if (window.TERCEROS_MODE === 'cliente') {
+            url += '?tipo=cliente';
+        } else if (window.TERCEROS_MODE === 'proveedor') {
+            url += '?tipo=proveedor';
+        }
+
+        const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -133,10 +142,28 @@ function abrirModal(tercero = null) {
     } else {
         isEditing = false;
         currentId = null;
-        modalTitle.textContent = 'Nuevo Tercero';
-        form.querySelector('button[type="submit"]').textContent = 'Guardar Tercero';
+        modalTitle.textContent = window.TERCEROS_MODE === 'proveedor' ? 'Nuevo Proveedor' : 'Nuevo Cliente';
+        const btnSubmit = form.querySelector('button[type="submit"]');
+        if (btnSubmit) btnSubmit.textContent = window.TERCEROS_MODE === 'proveedor' ? 'Guardar Proveedor' : 'Guardar Cliente';
+
         form.reset();
-        document.getElementById('es_cliente').checked = true;
+
+        // Default constraints based on mode
+        if (window.TERCEROS_MODE === 'cliente') {
+            const checkCliente = document.getElementById('es_cliente');
+            if (checkCliente) checkCliente.checked = true;
+            const checkProv = document.getElementById('es_proveedor');
+            if (checkProv) checkProv.checked = false;
+        } else if (window.TERCEROS_MODE === 'proveedor') {
+            const checkCliente = document.getElementById('es_cliente');
+            if (checkCliente) checkCliente.checked = false;
+            const checkProv = document.getElementById('es_proveedor');
+            if (checkProv) checkProv.checked = true;
+        } else {
+            // Default legacy behavior
+            const checkCliente = document.getElementById('es_cliente');
+            if (checkCliente) checkCliente.checked = true;
+        }
     }
 }
 
