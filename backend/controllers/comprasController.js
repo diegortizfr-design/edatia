@@ -39,6 +39,10 @@ exports.crearCompra = async (req, res) => {
             proveedor_id, fecha, total, estado, items
         } = req.body;
 
+        // Ensure columns exist in productos (Migration fix for existing tables)
+        try { await clientConn.query("ALTER TABLE productos ADD COLUMN stock_actual INT DEFAULT 0"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE productos ADD COLUMN costo DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
+
         // Ensure tables exist
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras (
@@ -98,7 +102,7 @@ exports.crearCompra = async (req, res) => {
     } catch (err) {
         if (clientConn) await clientConn.rollback();
         console.error('crearCompra error:', err);
-        res.status(500).json({ success: false, message: 'Error al procesar la compra' });
+        res.status(500).json({ success: false, message: 'Error al procesar la compra: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }
