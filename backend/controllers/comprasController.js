@@ -28,8 +28,6 @@ exports.listarCompras = async (req, res) => {
     }
 };
 
-};
-
 exports.actualizarCompra = async (req, res) => {
     let clientConn = null;
     try {
