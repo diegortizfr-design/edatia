@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await cargarSucursales(); // New
         await cargarCompras();
 
-        if (btnNuevo) btnNuevo.addEventListener('click', abrirModalCompra);
+        if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModalCompra('orden'));
+        document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
 
         closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
 
@@ -137,160 +138,31 @@ function updateKPIs(compras) {
 
 // --- CREATION LOGIC ---
 
-async function abrirModalCompra() {
+// --- CREATION LOGIC ---
+
+let modoCompra = 'orden'; // 'orden' | 'factura'
+
+async function abrirModalCompra(modo = 'orden') {
+    modoCompra = modo;
+    const titulo = document.querySelector('#modal-nueva-compra h2');
+    const btn = document.getElementById('btn-guardar-compra');
+
+    if (modo === 'factura') {
+        titulo.textContent = 'Registrar Factura de Compra';
+        btn.textContent = 'Guardar Factura (Realizada)';
+    } else {
+        titulo.textContent = 'Nueva Orden de Compra';
+        btn.textContent = 'Guardar Orden';
+    }
+
     modal.style.display = 'flex';
     carrito = [];
     renderCarrito();
-    // Providers & Branches already loaded on init, but can reload if needed
 }
 
-function cerrarModal() {
-    modal.style.display = 'none';
-}
 
-async function cargarProveedores() {
-    const select = document.getElementById('compra-proveedor');
-    if (select.options.length > 1) return;
 
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${TERCEROS_URL}?tipo=proveedor`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-
-        if (data.success) {
-            data.data.forEach(p => {
-                if (p.es_proveedor || p.tipo === 'Proveedor' || p.tipo === 'Ambos') {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = p.nombre_comercial || p.nombre || p.razon_social;
-                    select.appendChild(opt);
-                }
-            });
-        }
-    } catch (err) { console.error('Error loading providers', err); }
-}
-
-async function cargarSucursales() {
-    const select = document.getElementById('compra-sucursal');
-    if (!select || select.options.length > 1) return;
-
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(SUCURSALES_URL, { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-
-        if (data.success) {
-            data.data.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.nombre;
-                select.appendChild(opt);
-            });
-        }
-    } catch (err) { console.error('Error loading sucursales', err); }
-}
-
-// --- CART & SAVING ---
-
-async function buscarProducto(query) {
-    if (!query) return;
-    const resultadosDiv = document.getElementById('resultados-busqueda');
-    resultadosDiv.style.display = 'block';
-    resultadosDiv.innerHTML = '<div style="padding:10px;">Buscando...</div>';
-
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${PRODUCTOS_URL}?busqueda=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-
-        resultadosDiv.innerHTML = '';
-        if (data.success && data.data.length > 0) {
-            data.data.forEach(prod => {
-                const item = document.createElement('div');
-                item.style.padding = '10px';
-                item.style.borderBottom = '1px solid #eee';
-                item.style.cursor = 'pointer';
-                item.style.display = 'flex';
-                item.style.justifyContent = 'space-between';
-                item.innerHTML = `<span>${prod.nombre} (Stock: ${prod.stock_actual || 0})</span> <strong>$${parseFloat(prod.costo || 0).toLocaleString()}</strong>`;
-                item.onmouseover = () => item.style.background = '#f9fafb';
-                item.onmouseout = () => item.style.background = 'white';
-                item.onclick = () => {
-                    agregarAlCarrito(prod);
-                    resultadosDiv.style.display = 'none';
-                    document.getElementById('busqueda-producto').value = '';
-                };
-                resultadosDiv.appendChild(item);
-            });
-        } else {
-            resultadosDiv.innerHTML = '<div style="padding:10px; color: red;">No encontrado</div>';
-        }
-    } catch (err) {
-        resultadosDiv.innerHTML = '<div style="padding:10px;">Error al buscar</div>';
-    }
-}
-
-function agregarAlCarrito(producto) {
-    const existing = carrito.find(i => i.producto_id === producto.id);
-    if (existing) {
-        existing.cantidad++;
-        existing.subtotal = existing.cantidad * existing.costo;
-    } else {
-        carrito.push({
-            producto_id: producto.id,
-            nombre: producto.nombre,
-            cantidad: 1,
-            costo: parseFloat(producto.costo || 0),
-            subtotal: parseFloat(producto.costo || 0)
-        });
-    }
-    renderCarrito();
-}
-
-function renderCarrito() {
-    const tbody = document.getElementById('detalle-compra-body');
-    const msg = document.getElementById('mensaje-vacio');
-    const totalEl = document.getElementById('compra-total');
-
-    tbody.innerHTML = '';
-
-    if (carrito.length === 0) {
-        msg.style.display = 'block';
-        totalEl.textContent = '$0.00';
-        return;
-    }
-
-    msg.style.display = 'none';
-    let total = 0;
-
-    carrito.forEach((item, index) => {
-        total += item.subtotal;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.nombre}</td>
-            <td><input type="number" min="1" value="${item.cantidad}" onchange="actualizarLinea(${index}, 'cantidad', this.value)" style="width: 60px; padding: 5px;"></td>
-            <td><input type="number" step="0.01" value="${item.costo}" onchange="actualizarLinea(${index}, 'costo', this.value)" style="width: 100px; padding: 5px;"></td>
-            <td>$${item.subtotal.toLocaleString()}</td>
-            <td><i class="fas fa-trash" style="color: #EF4444; cursor: pointer;" onclick="eliminarLinea(${index})"></i></td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    totalEl.textContent = `$${total.toLocaleString()}`;
-}
-
-window.actualizarLinea = (index, field, value) => {
-    const item = carrito[index];
-    if (field === 'cantidad') item.cantidad = parseFloat(value);
-    if (field === 'costo') item.costo = parseFloat(value);
-    item.subtotal = item.cantidad * item.costo;
-    renderCarrito();
-};
-
-window.eliminarLinea = (index) => {
-    carrito.splice(index, 1);
-    renderCarrito();
-};
+// --- [In init, remove old listener for btn-nueva-compra to avoid dupes or handle in replacement above] ---
 
 async function guardarCompra() {
     if (carrito.length === 0) return showNotification('El carrito está vacío', 'error');
@@ -306,12 +178,15 @@ async function guardarCompra() {
     btnGuardar.disabled = true;
     btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
+    // Determine initial state based on mode
+    const estadoInicial = (modoCompra === 'factura') ? 'Realizada' : 'Orden de Compra';
+
     const payload = {
         proveedor_id: proveedorId,
         sucursal_id: sucursalId,
         fecha: document.getElementById('compra-fecha').value,
         total: carrito.reduce((sum, i) => sum + i.subtotal, 0),
-        estado: 'Orden de Compra', // New Default
+        estado: estadoInicial,
         items: carrito
     };
 
@@ -325,10 +200,9 @@ async function guardarCompra() {
         const data = await res.json();
 
         if (data.success) {
-            showNotification('Orden registrada exitosamente', 'success');
+            showNotification('Compra registrada exitosamente', 'success');
             cerrarModal();
             cargarCompras();
-            // Restore button just in case
             setTimeout(() => {
                 btnGuardar.disabled = false;
                 btnGuardar.innerHTML = originalText;
@@ -345,38 +219,7 @@ async function guardarCompra() {
     }
 }
 
-// --- VIEW & STATES LOGIC ---
-
-window.verCompra = async (id) => {
-    const compra = allComprasData.find(c => c.id === id);
-    if (!compra) return;
-
-    compraActualId = id;
-    const modalVer = document.getElementById('modal-ver-compra');
-    modalVer.style.display = 'flex';
-
-    // Populate Headers
-    document.getElementById('view-orden-id').textContent = compra.id;
-    document.getElementById('view-proveedor').textContent = compra.proveedor_nombre || `ID: ${compra.proveedor_id}`;
-    document.getElementById('view-sucursal').textContent = compra.sucursal_id ? `Sucursal #${compra.sucursal_id}` : 'General';
-    document.getElementById('view-fecha').textContent = new Date(compra.fecha).toLocaleDateString();
-    document.getElementById('view-total').textContent = `$${parseFloat(compra.total).toLocaleString()}`;
-
-    // Update Badges
-    const badgeEstado = document.getElementById('view-estado-badge');
-    badgeEstado.textContent = compra.estado || 'Orden de Compra';
-    badgeEstado.className = `badge ${getBadgeClass(compra.estado)}`;
-
-    const badgePago = document.getElementById('view-pago-badge');
-    badgePago.textContent = compra.estado_pago || 'Debe';
-    badgePago.className = `badge ${getBadgeClass(compra.estado_pago)}`;
-
-    // Generate Actions
-    generateActionButtons(compra);
-
-    // Clear Items (TODO: Fetch Items from Backend)
-    document.getElementById('view-detalle-body').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #aaa;">Visualización de items pronto...</td></tr>';
-}
+// --- STATES LOGIC ---
 
 function generateActionButtons(compra) {
     const containerEstado = document.getElementById('view-actions-estado');
@@ -387,16 +230,17 @@ function generateActionButtons(compra) {
 
     const estado = (compra.estado || 'orden de compra').toLowerCase();
 
-    // State Flow
+    // Workflow: Orden -> Aprobada -> Realizada -> Recibida -> Completada
     if (estado === 'orden de compra') {
         addBtn(containerEstado, 'Aprobar', 'btn-primary', () => cambiarEstado(compra.id, 'Aprobada'));
         addBtn(containerEstado, 'Rechazar', 'btn-secondary', () => cambiarEstado(compra.id, 'Rechazada'));
     } else if (estado === 'aprobada') {
-        addBtn(containerEstado, 'Realizar Pedido', 'btn-primary', () => cambiarEstado(compra.id, 'Realizada'));
+        addBtn(containerEstado, 'Imprimir / Enviar', 'btn-secondary', () => imprimirOrden(compra.id));
+        addBtn(containerEstado, 'Registrar Factura (Realizada)', 'btn-primary', () => cambiarEstado(compra.id, 'Realizada'));
     } else if (estado === 'realizada') {
         addBtn(containerEstado, 'Recibir Mercancía', 'btn-primary', () => cambiarEstado(compra.id, 'Recibida'));
     } else if (estado === 'recibida') {
-        addBtn(containerEstado, 'Completar', 'btn-primary', () => cambiarEstado(compra.id, 'Completada'));
+        addBtn(containerEstado, 'Completar (Stock)', 'btn-primary', () => cambiarEstado(compra.id, 'Completada'));
     }
 
     // Payment Flow
@@ -406,6 +250,11 @@ function generateActionButtons(compra) {
     } else if (pago === 'pago') {
         addBtn(containerPago, 'Devolución', 'btn-secondary', () => cambiarEstadoPago(compra.id, 'Devolucion'));
     }
+}
+
+function imprimirOrden(id) {
+    showNotification(`Generando PDF para orden #${id}... (Simulado)`, 'success');
+    // Logic to open PDF generation window would go here
 }
 
 function addBtn(container, text, cls, onClick) {

@@ -43,8 +43,8 @@ exports.actualizarCompra = async (req, res) => {
 
         const ordenActual = ordenes[0];
 
-        // LOGIC: Stock Movement (If transitioning TO 'Recibida' from non-Recibida state)
-        if (estado === 'Recibida' && ordenActual.estado !== 'Recibida' && ordenActual.estado !== 'Completada') {
+        // LOGIC: Stock Movement (If transitioning TO 'Completada')
+        if (estado === 'Completada' && ordenActual.estado !== 'Completada') {
 
             // Get items
             const [items] = await clientConn.query('SELECT * FROM compras_detalle WHERE compra_id = ?', [id]);
