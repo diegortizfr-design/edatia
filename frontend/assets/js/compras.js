@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (e) {
         console.error('Initialization error:', e);
-        if (window.showNotification) showNotification('Error conectando con el servidor. Revise su conexión.', 'error');
+        if (window.showNotification) localShowNotification('Error conectando con el servidor. Revise su conexión.', 'error');
 
         // Remove loading state from table if present
         if (tableBody) {
@@ -330,13 +330,13 @@ window.eliminarLinea = (index) => {
 };
 
 async function guardarCompra() {
-    if (carrito.length === 0) return showNotification('El carrito está vacío', 'error');
+    if (carrito.length === 0) return localShowNotification('El carrito está vacío', 'error');
 
     const proveedorId = document.getElementById('compra-proveedor').value;
     const sucursalId = document.getElementById('compra-sucursal').value;
 
-    if (!proveedorId) return showNotification('Selecciona un proveedor', 'error');
-    if (!sucursalId) return showNotification('Selecciona una sucursal destino', 'error');
+    if (!proveedorId) return localShowNotification('Selecciona un proveedor', 'error');
+    if (!sucursalId) return localShowNotification('Selecciona una sucursal destino', 'error');
 
     const btnGuardar = document.getElementById('btn-guardar-compra');
     const originalText = btnGuardar.innerHTML;
@@ -375,7 +375,7 @@ async function guardarCompra() {
         const data = await res.json();
 
         if (data.success) {
-            showNotification('Compra registrada exitosamente', 'success');
+            localShowNotification('Compra registrada exitosamente', 'success');
             cerrarModal();
             cargarCompras();
             setTimeout(() => {
@@ -383,12 +383,12 @@ async function guardarCompra() {
                 btnGuardar.innerHTML = originalText;
             }, 500);
         } else {
-            showNotification('Error: ' + data.message, 'error');
+            localShowNotification('Error: ' + data.message, 'error');
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = originalText;
         }
     } catch (err) {
-        showNotification('Error al guardar compra', 'error');
+        localShowNotification('Error al guardar compra: ' + err.message, 'error');
         btnGuardar.disabled = false;
         btnGuardar.innerHTML = originalText;
     }
@@ -459,7 +459,8 @@ function generateActionButtons(compra) {
 }
 
 function imprimirOrden(id) {
-    showNotification(`Generando PDF para orden #${id}... (Simulado)`, 'success');
+    localShowNotification(`Generando PDF para orden #${id}... (Simulado)`, 'success');
+
     // Logic to open PDF generation window would go here
 }
 
@@ -488,20 +489,22 @@ async function cambiarEstado(id, nuevoEstado) {
         const data = await res.json();
 
         if (data.success) {
-            showNotification(`Estado cambiado a: ${nuevoEstado}`, 'success');
+            localShowNotification(`Estado cambiado a: ${nuevoEstado}`, 'success');
             // Mock update local for speed, then reload
+
             const c = allComprasData.find(x => x.id === id);
             if (c) c.estado = nuevoEstado;
             verCompra(id);
             cargarCompras();
         } else {
-            showNotification('Error: ' + data.message, 'error');
+            localShowNotification('Error: ' + data.message, 'error');
         }
     } catch (e) {
         console.error(e);
-        showNotification('Error de conexión', 'error');
+        localShowNotification('Error de conexión', 'error');
     }
 }
+
 
 async function cambiarEstadoPago(id, nuevoEstado) {
     if (!confirm(`¿Registrar ${nuevoEstado}?`)) return;
@@ -516,19 +519,21 @@ async function cambiarEstadoPago(id, nuevoEstado) {
         const data = await res.json();
 
         if (data.success) {
-            showNotification(`Pago registrado: ${nuevoEstado}`, 'success');
+            localShowNotification(`Pago registrado: ${nuevoEstado}`, 'success');
             const c = allComprasData.find(x => x.id === id);
+
             if (c) c.estado_pago = nuevoEstado;
             verCompra(id);
             cargarCompras();
         } else {
-            showNotification('Error: ' + data.message, 'error');
+            localShowNotification('Error: ' + data.message, 'error');
         }
     } catch (e) {
         console.error(e);
-        showNotification('Error de conexión', 'error');
+        localShowNotification('Error de conexión', 'error');
     }
 }
+
 
 // --- QUICK FUNCTIONS ---
 
@@ -555,15 +560,16 @@ async function guardarQuickProveedor(e) {
         });
         const resp = await res.json();
         if (resp.success) {
-            showNotification('Proveedor creado', 'success');
+            localShowNotification('Proveedor creado', 'success');
             document.getElementById('modal-quick-proveedor').style.display = 'none';
+
             form.reset();
             await cargarProveedores();
             // Auto Select?
             const select = document.getElementById('compra-proveedor');
             select.value = resp.id || resp.data?.id;
         } else {
-            showNotification('Error: ' + resp.message, 'error');
+            localShowNotification('Error: ' + resp.message, 'error');
         }
     } catch (err) { console.error(err); }
 }
@@ -583,18 +589,19 @@ async function guardarQuickProducto(e) {
         });
         const resp = await res.json();
         if (resp.success) {
-            showNotification('Producto creado', 'success');
+            localShowNotification('Producto creado', 'success');
             document.getElementById('modal-quick-producto').style.display = 'none';
             form.reset();
             // Auto add to cart? need full product object.
             // For now just notify.
         } else {
-            showNotification('Error: ' + resp.message, 'error');
+            localShowNotification('Error: ' + resp.message, 'error');
         }
     } catch (err) { console.error(err); }
 }
 
-function showNotification(msg, type) {
+// Helper to safely call global notification
+function localShowNotification(msg, type) {
     if (window.showNotification) window.showNotification(msg, type);
     else alert(msg);
 }
