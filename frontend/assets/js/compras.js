@@ -217,15 +217,30 @@ async function buscarProducto(query) {
     if (!query) return;
     const resultadosDiv = document.getElementById('resultados-busqueda');
     resultadosDiv.style.display = 'block';
-    resultadosDiv.innerHTML = '<div style="padding:10px;">Buscando...</div>';
+    resultadosDiv.innerHTML = '<div style="padding:10px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+
+    if (!PRODUCTOS_URL) {
+        console.error('PRODUCTOS_URL no definido');
+        resultadosDiv.innerHTML = '<div style="padding:10px; color: orange;">Iniciando sistema... Intente en unos segundos.</div>';
+        return;
+    }
 
     try {
+        console.log(`Buscando producto: ${query} en ${PRODUCTOS_URL}`);
         const token = localStorage.getItem('token');
-        const res = await fetch(`${PRODUCTOS_URL}?busqueda=${encodeURIComponent(query)}`, { headers: { 'Authorization': `Bearer ${token}` } });
+
+        const res = await fetch(`${PRODUCTOS_URL}?busqueda=${encodeURIComponent(query)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            throw new Error(`Server returned ${res.status}`);
+        }
+
         const data = await res.json();
 
         resultadosDiv.innerHTML = '';
-        if (data.success && data.data.length > 0) {
+        if (data.success && data.data && data.data.length > 0) {
             data.data.forEach(prod => {
                 const item = document.createElement('div');
                 item.style.padding = '10px';
@@ -244,10 +259,11 @@ async function buscarProducto(query) {
                 resultadosDiv.appendChild(item);
             });
         } else {
-            resultadosDiv.innerHTML = '<div style="padding:10px; color: red;">No encontrado</div>';
+            resultadosDiv.innerHTML = '<div style="padding:10px; color: #EF4444;">No encontrado</div>';
         }
     } catch (err) {
-        resultadosDiv.innerHTML = '<div style="padding:10px;">Error al buscar</div>';
+        console.error('Error buscarProducto:', err);
+        resultadosDiv.innerHTML = `<div style="padding:10px; color: #EF4444;">Error: ${err.message || 'No se pudo buscar'}</div>`;
     }
 }
 
@@ -341,11 +357,21 @@ async function guardarCompra() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
+
+        // Timeout wrapper
+        const fetchWithTimeout = (url, options, timeout = 15000) => {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Tiempo de espera agotado')), timeout))
+            ]);
+        };
+
+        const res = await fetchWithTimeout(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payload)
         });
+
         const data = await res.json();
 
         if (data.success) {
