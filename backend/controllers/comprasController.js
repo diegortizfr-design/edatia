@@ -65,9 +65,22 @@ exports.actualizarCompra = async (req, res) => {
             await clientConn.commit();
 
         } else if (estado) {
-            // Just update state
             await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
         }
+
+        // Update Invoice Details if provided (e.g., in Realizada state)
+        if (req.body.factura_referencia || req.body.factura_url) {
+            const updates = [];
+            const params = [];
+            if (req.body.factura_referencia) { updates.push('factura_referencia = ?'); params.push(req.body.factura_referencia); }
+            if (req.body.factura_url) { updates.push('factura_url = ?'); params.push(req.body.factura_url); }
+
+            if (updates.length > 0) {
+                params.push(id);
+                await clientConn.query(`UPDATE compras SET ${updates.join(', ')} WHERE id = ?`, params);
+            }
+        }
+
 
         if (estado_pago) {
             await clientConn.query('UPDATE compras SET estado_pago = ? WHERE id = ?', [estado_pago, id]);
@@ -110,6 +123,8 @@ exports.crearCompra = async (req, res) => {
                 estado VARCHAR(50),
                 estado_pago VARCHAR(50) DEFAULT 'Debe',
                 usuario_id INT,
+                factura_referencia VARCHAR(100),
+                factura_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
@@ -119,6 +134,9 @@ exports.crearCompra = async (req, res) => {
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_referencia VARCHAR(100)"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_url TEXT"); } catch (e) { }
+
 
 
         await clientConn.query(`
@@ -138,9 +156,13 @@ exports.crearCompra = async (req, res) => {
 
         // 1. Insert Header
         const [result] = await clientConn.query(`
-            INSERT INTO compras (proveedor_id, sucursal_id, fecha, total, estado, estado_pago, usuario_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [proveedor_id, req.body.sucursal_id || null, fecha, total, estado || 'Orden de Compra', 'Debe', req.user.id]);
+            INSERT INTO compras (proveedor_id, sucursal_id, fecha, total, estado, estado_pago, usuario_id, factura_referencia, factura_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            proveedor_id, req.body.sucursal_id || null, fecha, total, estado || 'Orden de Compra', 'Debe',
+            req.user.id, req.body.factura_referencia || null, req.body.factura_url || null
+        ]);
+
 
         const compraId = result.insertId;
 
@@ -162,6 +184,31 @@ exports.crearCompra = async (req, res) => {
         if (clientConn) await clientConn.rollback();
         console.error('crearCompra error:', err);
         res.status(500).json({ success: false, message: 'Error al procesar la compra: ' + err.message });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.obtenerDetallesCompra = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        const { id } = req.params;
+
+        const [items] = await clientConn.query(`
+            SELECT d.*, p.nombre as nombre_producto 
+            FROM compras_detalle d 
+            JOIN productos p ON d.producto_id = p.id 
+            WHERE d.compra_id = ?
+        `, [id]);
+
+        res.json({ success: true, data: items });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Error obteniendo detalles' });
     } finally {
         if (clientConn) await clientConn.end();
     }

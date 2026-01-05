@@ -44,6 +44,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupQuickModal('modal-quick-proveedor', 'btn-quick-proveedor', 'close-quick-prov', 'cancel-quick-prov', 'form-quick-proveedor', guardarQuickProveedor);
     setupQuickModal('modal-quick-producto', 'btn-quick-producto', 'close-quick-prod', 'cancel-quick-prod', 'form-quick-producto', guardarQuickProducto);
 
+    // New Modals Listeners (Invoice & Inspection)
+    const btnsCloseAdjuntar = document.querySelectorAll('.close-modal-btn[data-target="modal-adjuntar-factura"]');
+    btnsCloseAdjuntar.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-adjuntar-factura').style.display = 'none'));
+
+    const btnsCloseInsp = document.querySelectorAll('.close-modal-btn[data-target="modal-inspeccion"]');
+    btnsCloseInsp.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-inspeccion').style.display = 'none'));
+
+    document.getElementById('btn-confirmar-factura')?.addEventListener('click', guardarFacturaAdjunta);
+    document.getElementById('btn-confirmar-recepcion')?.addEventListener('click', guardarInspeccion);
+
+
     // Set default date
     const dateInput = document.getElementById('compra-fecha');
     if (dateInput) dateInput.valueAsDate = new Date();
@@ -441,13 +452,14 @@ function generateActionButtons(compra) {
         addBtn(containerEstado, 'Aprobar', 'btn-primary', () => cambiarEstado(compra.id, 'Aprobada'));
         addBtn(containerEstado, 'Rechazar', 'btn-secondary', () => cambiarEstado(compra.id, 'Rechazada'));
     } else if (estado === 'aprobada') {
-        addBtn(containerEstado, 'Imprimir / Enviar', 'btn-secondary', () => imprimirOrden(compra.id));
-        addBtn(containerEstado, 'Registrar Factura (Realizada)', 'btn-primary', () => cambiarEstado(compra.id, 'Realizada'));
+        addBtn(containerEstado, '🖨️ PDF', 'btn-secondary', () => imprimirOrden(compra.id));
+        addBtn(containerEstado, 'Registrar Factura', 'btn-primary', () => abrirModalAdjuntar(compra.id));
     } else if (estado === 'realizada') {
-        addBtn(containerEstado, 'Recibir Mercancía', 'btn-primary', () => cambiarEstado(compra.id, 'Recibida'));
+        addBtn(containerEstado, 'Recibir Mercancía', 'btn-primary', () => abrirModalInspeccion(compra.id));
     } else if (estado === 'recibida') {
-        addBtn(containerEstado, 'Completar (Stock)', 'btn-primary', () => cambiarEstado(compra.id, 'Completada'));
+        addBtn(containerEstado, 'Completar (Stock)', 'btn-primary', () => completarCompra(compra.id));
     }
+
 
     // Payment Flow
     const pago = (compra.estado_pago || 'debe').toLowerCase();
@@ -605,3 +617,88 @@ function localShowNotification(msg, type) {
     if (window.showNotification) window.showNotification(msg, type);
     else alert(msg);
 }
+
+// --- NEW WORKFLOW HANDLERS ---
+
+function abrirModalAdjuntar(id) {
+    compraActualId = id;
+    document.getElementById('factura-ref-input').value = '';
+    document.getElementById('factura-url-input').value = '';
+    document.getElementById('modal-adjuntar-factura').style.display = 'flex';
+}
+
+async function guardarFacturaAdjunta() {
+    const ref = document.getElementById('factura-ref-input').value;
+    const url = document.getElementById('factura-url-input').value;
+    if (!ref) return localShowNotification('Ingrese el número de factura', 'error');
+
+    // Update state to Realizada + Invoice Info
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${compraActualId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                estado: 'Realizada',
+                factura_referencia: ref,
+                factura_url: url
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            localShowNotification('Factura registrada. Estado: Realizada', 'success');
+            document.getElementById('modal-adjuntar-factura').style.display = 'none';
+            verCompra(compraActualId);
+            cargarCompras();
+        } else {
+            localShowNotification('Error: ' + data.message, 'error');
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function abrirModalInspeccion(id) {
+    compraActualId = id;
+    const modalInspeccion = document.getElementById('modal-inspeccion');
+    const tbody = document.getElementById('inspeccion-body');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Cargando productos...</td></tr>';
+    modalInspeccion.style.display = 'flex';
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${id}/detalles`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        tbody.innerHTML = '';
+
+        if (data.success && data.data && data.data.length > 0) {
+            data.data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.nombre_producto || 'Producto #' + item.producto_id}</td>
+                    <td>${item.cantidad}</td>
+                    <td><input type="number" class="w-full border rounded p-1" value="${item.cantidad}" style="width: 80px; padding: 5px; border:1px solid #ddd; border-radius:4px;"></td>
+                    <td><input type="checkbox" checked style="transform: scale(1.2);"></td>
+                `;
+                tbody.appendChild(row);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: orange;">No se encontraron detalles de productos para esta compra.</td></tr>';
+        }
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: red;">Error cargando productos.</td></tr>';
+    }
+}
+
+async function guardarInspeccion() {
+    await cambiarEstado(compraActualId, 'Recibida');
+    document.getElementById('modal-inspeccion').style.display = 'none';
+}
+
+async function completarCompra(id) {
+    if (!confirm('¿Confirma que la mercancía ha sido ingresada al inventario de la sucursal?')) return;
+    await cambiarEstado(id, 'Completada');
+}
+
