@@ -13,6 +13,43 @@ let allComprasData = [];
 let modoCompra = 'orden'; // 'orden' | 'factura'
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Initialize DOM Elements & Listeners (Synchronous - Critical for UI responsiveness)
+    tableBody = document.getElementById('compras-table-body');
+    modal = document.getElementById('modal-nueva-compra');
+    btnNuevo = document.getElementById('btn-nueva-compra');
+    closeBtns = document.querySelectorAll('.close-modal, .close-modal-btn');
+    const inputBusqueda = document.getElementById('busqueda-producto');
+
+    // Attach Listeners
+    if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModalCompra('orden'));
+    document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
+
+    closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
+    document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
+
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') buscarProducto(inputBusqueda.value);
+        });
+    }
+    document.getElementById('btn-buscar-producto')?.addEventListener('click', () => {
+        buscarProducto(document.getElementById('busqueda-producto').value);
+    });
+
+    // View Modal Actions
+    document.getElementById('close-ver-compra')?.addEventListener('click', () => document.getElementById('modal-ver-compra').style.display = 'none');
+    document.getElementById('btn-cerrar-view')?.addEventListener('click', () => document.getElementById('modal-ver-compra').style.display = 'none');
+
+    // Quick Create Listeners
+    setupQuickModal('modal-quick-proveedor', 'btn-quick-proveedor', 'close-quick-prov', 'cancel-quick-prov', 'form-quick-proveedor', guardarQuickProveedor);
+    setupQuickModal('modal-quick-producto', 'btn-quick-producto', 'close-quick-prod', 'cancel-quick-prod', 'form-quick-producto', guardarQuickProducto);
+
+    // Set default date
+    const dateInput = document.getElementById('compra-fecha');
+    if (dateInput) dateInput.valueAsDate = new Date();
+
+
+    // 2. Async Data Loading
     try {
         const configResp = await fetch('../../assets/config.json');
         const config = await configResp.json();
@@ -21,50 +58,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         TERCEROS_URL = `${config.apiUrl}/terceros`;
         SUCURSALES_URL = `${config.apiUrl}/sucursales`;
 
-        // Initialize DOM Elements
-        tableBody = document.getElementById('compras-table-body');
-        modal = document.getElementById('modal-nueva-compra');
-        btnNuevo = document.getElementById('btn-nueva-compra');
-        closeBtns = document.querySelectorAll('.close-modal, .close-modal-btn');
-
-        // Setup Event Listeners (Before Async Calls)
-        if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModalCompra('orden'));
-        document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
-        closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
-
-        document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
-
-        const inputBusqueda = document.getElementById('busqueda-producto');
-        if (inputBusqueda) {
-            inputBusqueda.addEventListener('keyup', (e) => {
-                if (e.key === 'Enter') buscarProducto(inputBusqueda.value);
-            });
-        }
-        document.getElementById('btn-buscar-producto')?.addEventListener('click', () => {
-            buscarProducto(document.getElementById('busqueda-producto').value);
-        });
-
-        // View Modal Actions
-        document.getElementById('close-ver-compra')?.addEventListener('click', () => document.getElementById('modal-ver-compra').style.display = 'none');
-        document.getElementById('btn-cerrar-view')?.addEventListener('click', () => document.getElementById('modal-ver-compra').style.display = 'none');
-
-        // Quick Create Listeners
-        setupQuickModal('modal-quick-proveedor', 'btn-quick-proveedor', 'close-quick-prov', 'cancel-quick-prov', 'form-quick-proveedor', guardarQuickProveedor);
-        setupQuickModal('modal-quick-producto', 'btn-quick-producto', 'close-quick-prod', 'cancel-quick-prod', 'form-quick-producto', guardarQuickProducto);
-
-        // Set default date
-        const dateInput = document.getElementById('compra-fecha');
-        if (dateInput) dateInput.valueAsDate = new Date();
-
-        // Initial Load
+        // Load Data
         await cargarProveedores();
         await cargarSucursales();
         await cargarCompras();
 
     } catch (e) {
         console.error('Initialization error:', e);
-        // Fallback notification if possible, otherwise alert
-        if (window.showNotification) showNotification('Error inicializando módulo de compras: ' + e.message, 'error');
+        if (window.showNotification) showNotification('Error conectando con el servidor. Revise su conexión.', 'error');
+
+        // Remove loading state from table if present
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: red;">
+                <i class="fas fa-exclamation-triangle"></i> Error cargando datos. Revise la consola.
+             </td></tr>`;
+        }
     }
 });
 
