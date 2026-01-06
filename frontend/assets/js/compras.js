@@ -623,38 +623,52 @@ function localShowNotification(msg, type) {
 function abrirModalAdjuntar(id) {
     compraActualId = id;
     document.getElementById('factura-ref-input').value = '';
-    document.getElementById('factura-url-input').value = '';
+    const fileInput = document.getElementById('factura-file-input');
+    if (fileInput) fileInput.value = '';
     document.getElementById('modal-adjuntar-factura').style.display = 'flex';
 }
 
 async function guardarFacturaAdjunta() {
     const ref = document.getElementById('factura-ref-input').value;
-    const url = document.getElementById('factura-url-input').value;
+    const fileInput = document.getElementById('factura-file-input');
+
     if (!ref) return localShowNotification('Ingrese el número de factura', 'error');
 
-    // Update state to Realizada + Invoice Info
+    const formData = new FormData();
+    formData.append('estado', 'Realizada');
+    formData.append('factura_referencia', ref);
+    if (fileInput && fileInput.files[0]) {
+        formData.append('factura', fileInput.files[0]);
+    }
+
     try {
         const token = localStorage.getItem('token');
+        // Note: Do NOT set Content-Type header when sending FormData, fetch sets it automatically with boundary
         const res = await fetch(`${API_URL}/${compraActualId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({
-                estado: 'Realizada',
-                factura_referencia: ref,
-                factura_url: url
-            })
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
         });
         const data = await res.json();
         if (data.success) {
             localShowNotification('Factura registrada. Estado: Realizada', 'success');
             document.getElementById('modal-adjuntar-factura').style.display = 'none';
-            verCompra(compraActualId);
-            cargarCompras();
+
+            // Workflow: Auto-advance to Inspection
+            // First refresh list to update status in memory/UI
+            await cargarCompras();
+
+            // Open Inspection Modal Immediately
+            setTimeout(() => {
+                abrirModalInspeccion(compraActualId);
+            }, 300);
+
         } else {
             localShowNotification('Error: ' + data.message, 'error');
         }
     } catch (e) { console.error(e); }
 }
+
 
 async function abrirModalInspeccion(id) {
     compraActualId = id;

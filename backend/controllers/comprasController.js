@@ -69,11 +69,21 @@ exports.actualizarCompra = async (req, res) => {
         }
 
         // Update Invoice Details if provided (e.g., in Realizada state)
-        if (req.body.factura_referencia || req.body.factura_url) {
+        if (req.body.factura_referencia || req.file || req.body.factura_url) {
             const updates = [];
             const params = [];
             if (req.body.factura_referencia) { updates.push('factura_referencia = ?'); params.push(req.body.factura_referencia); }
-            if (req.body.factura_url) { updates.push('factura_url = ?'); params.push(req.body.factura_url); }
+
+            // Handle file upload
+            if (req.file) {
+                const fileUrl = `/uploads/facturas/${req.file.filename}`;
+                updates.push('factura_url = ?');
+                params.push(fileUrl);
+            } else if (req.body.factura_url) {
+                // Fallback if URL is sent manually
+                updates.push('factura_url = ?');
+                params.push(req.body.factura_url);
+            }
 
             if (updates.length > 0) {
                 params.push(id);
