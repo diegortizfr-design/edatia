@@ -1,0 +1,160 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda Placer | ATPAventura</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="shop-body">
+    <!-- Navbar -->
+    <nav class="navbar shop-navbar">
+        <div class="nav-container">
+            <div class="logo">ATP<span>AVENTURA</span></div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Volver a la Ruta</a></li>
+                <li><a href="index.html#videos">Videos</a></li>
+                <li><a href="index.html#comunidad">Comunidad</a></li>
+                <li id="cart-btn-nav" class="btn-shop cart-trigger">
+                    MI CARRITO (<span id="cart-count">0</span>)
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Shop Hero -->
+    <header class="shop-header">
+        <div class="container">
+            <h1 class="section-title">EQUIPAJE DE<span>PLACER</span></h1>
+            <p class="section-subtitle">Explora nuestra colección curada para aventureros de mente abierta. Calidad
+                premium y discreción absoluta.</p>
+        </div>
+    </header>
+
+    <!-- Catalog Section -->
+    <section class="catalog">
+        <div class="container">
+            <div class="catalog-controls">
+                <button class="filter-btn active" data-filter="all">Todo</button>
+                <button class="filter-btn" data-filter="juguetes">Juguetes</button>
+                <button class="filter-btn" data-filter="lenceria">Lencería</button>
+                <button class="filter-btn" data-filter="bienestar">Bienestar</button>
+            </div>
+
+            <div class="product-grid">
+                <!-- Producto 1 -->
+                <div class="product-card" data-category="juguetes">
+                    <div class="product-badge">Premium</div>
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1583947215259-38e31be8751f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                            alt="Sonic Pulse">
+                    </div>
+                    <div class="product-info">
+                        <span class="product-tag">Juguetes</span>
+                        <h3>Vibrador "Sonic Pulse"</h3>
+                        <p class="product-price">$129,000</p>
+                        <button class="btn-add-to-cart" data-id="atp-001" data-name="Sonic Pulse" data-price="129000"
+                            data-img="https://images.unsplash.com/photo-1583947215259-38e31be8751f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80">
+                            AÑADIR AL CARRITO
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Producto 2 -->
+                <div class="product-card" data-category="lenceria">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1614850715649-1d0106293bd1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                            alt="Black Route">
+                    </div>
+                    <div class="product-info">
+                        <span class="product-tag">Lencería</span>
+                        <h3>Arnés "Black Route"</h3>
+                        <p class="product-price">$85,000</p>
+                        <button class="btn-add-to-cart" data-id="atp-002" data-name="Black Route" data-price="85000"
+                            data-img="https://images.unsplash.com/photo-1614850715649-1d0106293bd1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80">
+                            AÑADIR AL CARRITO
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Producto 3 -->
+                <div class="product-card" data-category="bienestar">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1559839734-2b71f1e3c7e0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                            alt="Amazon Pulse">
+                    </div>
+                    <div class="product-info">
+                        <span class="product-tag">Bienestar</span>
+                        <h3>Aceite "Amazon Pulse"</h3>
+                        <p class="product-price">$45,000</p>
+                        <button class="btn-add-to-cart" data-id="atp-003" data-name="Amazon Pulse" data-price="45000"
+                            data-img="https://images.unsplash.com/photo-1559839734-2b71f1e3c7e0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80">
+                            AÑADIR AL CARRITO
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Producto 4 -->
+                <div class="product-card" data-category="juguetes">
+                    <div class="product-image">
+                        <img src="https://images.unsplash.com/photo-1590439471364-192aa70c0c53?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                            alt="Neon Flow">
+                    </div>
+                    <div class="product-info">
+                        <span class="product-tag">Juguetes</span>
+                        <h3>Anillo "Neon Flow"</h3>
+                        <p class="product-price">$59,000</p>
+                        <button class="btn-add-to-cart" data-id="atp-004" data-name="Neon Flow" data-price="59000"
+                            data-img="https://images.unsplash.com/photo-1590439471364-192aa70c0c53?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80">
+                            AÑADIR AL CARRITO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Shopping Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>CARRITO DE <span>PLACER</span></h3>
+            <button id="cart-close" class="cart-close">&times;</button>
+        </div>
+        <div id="cart-items" class="cart-items">
+            <!-- Items injected by JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>TOTAL:</span>
+                <span id="cart-total-value">$0</span>
+            </div>
+            <button class="btn-checkout">FINALIZAR COMPRA</button>
+            <button id="cart-continue" class="btn-continue">SEGUIR COMPRANDO</button>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="cart-overlay" class="cart-overlay"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 ATPAventura. La ruta es un placer.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
+```
