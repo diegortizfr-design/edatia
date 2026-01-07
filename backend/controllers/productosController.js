@@ -190,8 +190,11 @@ exports.actualizarProducto = async (req, res) => {
             codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
             unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
             proveedor_id, stock_minimo, descripcion, imagen_url, activo,
-            es_servicio, maneja_inventario, mostrar_en_tienda,
-            ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario
+            es_servicio, maneja_inventario,
+            mostrar_en_tienda = 0,
+            ecommerce_descripcion = null,
+            ecommerce_imagenes = null,
+            ecommerce_afecta_inventario = 0
         } = req.body;
 
         const sql = `
@@ -205,11 +208,11 @@ exports.actualizarProducto = async (req, res) => {
         `;
 
         await clientConn.query(sql, [
-            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
-            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
-            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
-            es_servicio, maneja_inventario, mostrar_en_tienda,
-            ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario, id
+            codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
+            unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
+            proveedor_id || null, stock_minimo || 0, descripcion || null, imagen_url || null,
+            activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
+            mostrar_en_tienda, ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario, id
         ]);
 
         res.json({ success: true, message: 'Producto actualizado' });

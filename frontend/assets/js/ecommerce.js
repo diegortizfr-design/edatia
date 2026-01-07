@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const configResp = await fetch('../../assets/config.json');
         const config = await configResp.json();
         API_URL = `${config.apiUrl}/productos`;
+        UPLOAD_URL = `${config.apiUrl}/upload`;
 
         tableBody = document.getElementById('ecommerce-table-body');
         modal = document.getElementById('ecommerceModal');
@@ -197,3 +198,42 @@ window.exportCatalog = () => {
 
     showNotification('Catálogo exportado exitosamente', 'success');
 };
+
+async function uploadEcomImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const btn = input.previousElementSibling;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            const textarea = document.getElementById('ecom_imagenes');
+            const current = textarea.value.trim();
+            textarea.value = current ? `${current}, ${data.url}` : data.url;
+            showNotification('Imagen subida y añadida a la galería', 'success');
+        } else {
+            showNotification(data.message || 'Error al subir imagen', 'error');
+        }
+    } catch (e) {
+        console.error('Upload error:', e);
+        showNotification('Error de conexión al subir imagen', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        input.value = '';
+    }
+}

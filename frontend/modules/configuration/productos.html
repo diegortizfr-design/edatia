@@ -132,6 +132,19 @@
                             <input type="text" id="codigo" placeholder="770...">
                         </div>
                         <div class="form-group">
+                            <label>Imagen URL</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="text" id="imagen_url" style="flex: 1;" placeholder="https://...">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('upload-input').click()"
+                                    style="padding: 8px 12px; font-size: 0.8rem;">
+                                    <i class="fas fa-upload"></i> Subir
+                                </button>
+                                <input type="file" id="upload-input" style="display: none;" accept="image/*"
+                                    onchange="uploadProductImage(this)">
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label>Categoría</label>
                             <input type="text" id="categoria" placeholder="Bebidas">
                         </div>
