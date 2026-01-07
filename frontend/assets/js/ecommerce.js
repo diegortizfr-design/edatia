@@ -63,21 +63,26 @@ function renderTable(products) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 40px; height: 40px; border-radius: 8px; background: #eee; background-image: url('${p.imagen_url || ''}'); background-size: cover; background-position: center;"></div>
-                    <div>
-                        <strong>${p.nombre}</strong><br>
-                        <small style="color: #6B7280;">REF: ${p.referencia_fabrica || '-'}</small>
+                <div style="display: flex; align-items: center; gap: 15px; padding: 10px 0;">
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #f3f4f6; background-image: url('${p.imagen_url || ''}'); background-size: cover; background-position: center; border: 1px solid #e5e7eb; flex-shrink: 0;"></div>
+                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                        <strong style="color: #1F2937; font-size: 1rem;">${p.nombre}</strong>
+                        <span style="color: #6B7280; font-size: 0.85rem;">REF: ${p.referencia_fabrica || '-'}</span>
                     </div>
                 </div>
             </td>
-            <td><strong>$${parseFloat(p.precio1).toLocaleString()}</strong></td>
+            <td><strong style="font-size: 1rem; color: #111827;">$${parseFloat(p.precio1).toLocaleString()}</strong></td>
             <td>
-                <span style="color: #10B981; font-weight: 600;"><i class="fas fa-check-circle"></i> En Tienda</span>
+                <span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-check-circle"></i> En Tienda
+                </span>
             </td>
             <td>
-                <button class="btn-icon" onclick='openEcomModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Editar detalles web"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon" onclick="removeFromStore(${p.id})" title="Quitar de la tienda" style="color: #EF4444;"><i class="fas fa-unlink"></i></button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-icon" onclick='openPreview(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Ver vista previa" style="background: rgba(59, 130, 246, 0.1); color: #2563EB;"><i class="fas fa-eye"></i></button>
+                    <button class="btn-icon" onclick='openEcomModal(${JSON.stringify(p).replace(/'/g, "&apos;")})' title="Editar detalles web" style="background: rgba(79, 70, 229, 0.1); color: var(--primary-color);"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon" onclick="removeFromStore(${p.id})" title="Quitar de la tienda" style="background: rgba(239, 68, 68, 0.1); color: #DC2626;"><i class="fas fa-trash-alt"></i></button>
+                </div>
             </td>
         `;
         tableBody.appendChild(tr);
@@ -197,6 +202,56 @@ window.exportCatalog = () => {
     downloadAnchorNode.remove();
 
     showNotification('Catálogo exportado exitosamente', 'success');
+};
+
+window.openPreview = (p) => {
+    const modal = document.getElementById('previewModal');
+    modal.style.display = 'flex';
+
+    document.getElementById('preview-name').textContent = p.nombre;
+    document.getElementById('preview-category').textContent = p.categoria || 'General';
+    document.getElementById('preview-ref').textContent = `Ref: ${p.referencia_fabrica || '-'}`;
+    document.getElementById('preview-price').textContent = `$${parseFloat(p.precio1).toLocaleString()}`;
+    document.getElementById('preview-description').innerHTML = p.ecommerce_descripcion || p.descripcion || 'Sin descripción disponible.';
+
+    const badge = document.getElementById('preview-stock-badge');
+    const isOutOfStock = p.ecommerce_afecta_inventario && p.stock_actual <= 0;
+
+    if (isOutOfStock) {
+        badge.textContent = 'Agotado';
+        badge.className = 'badge-stock badge-out-of-stock';
+    } else {
+        badge.textContent = 'Disponible';
+        badge.className = 'badge-stock badge-in-stock';
+    }
+
+    // Images
+    const mainImg = document.getElementById('preview-img-main');
+    const thumbsTrack = document.getElementById('preview-thumbnails');
+
+    const extraImages = (p.ecommerce_imagenes || '').split(',').map(s => s.trim()).filter(s => s);
+    const allImgs = [];
+    if (p.imagen_url) allImgs.push(p.imagen_url);
+    allImgs.push(...extraImages);
+
+    mainImg.style.backgroundImage = allImgs.length > 0 ? `url('${allImgs[0]}')` : 'none';
+
+    thumbsTrack.innerHTML = '';
+    allImgs.forEach((url, idx) => {
+        const div = document.createElement('div');
+        div.className = `thumb-item ${idx === 0 ? 'active' : ''}`;
+        div.style.backgroundImage = `url('${url}')`;
+        div.onclick = () => {
+            mainImg.style.backgroundImage = `url('${url}')`;
+            document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
+            div.classList.add('active');
+        };
+        thumbsTrack.appendChild(div);
+    });
+};
+
+window.closePreviewModal = () => {
+    document.getElementById('previewModal').style.display = 'none';
 };
 
 async function uploadEcomImage(input) {

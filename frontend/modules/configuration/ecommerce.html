@@ -89,6 +89,86 @@
             font-size: 0.7rem;
         }
     </style>
+    <style>
+        .preview-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .img-gallery-main {
+            width: 100%;
+            height: 350px;
+            background-color: #f3f4f6;
+            border-radius: 15px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+        }
+
+        .img-thumbnails-track {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .thumb-item {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .thumb-item:hover,
+        .thumb-item.active {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .badge-stock {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-in-stock {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10B981;
+        }
+
+        .badge-out-of-stock {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+        }
+
+        .ecommerce-table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #6B7280;
+            padding: 15px;
+        }
+    </style>
 </head>
 
 <body>
@@ -223,7 +303,57 @@
             </div>
         </div>
     </div>
-    </main>
+
+    <!-- PREVIEW MODAL -->
+    <div class="modal-overlay" id="previewModal" style="display: none;">
+        <div class="preview-glass">
+            <div class="modal-header" style="border: none; padding-bottom: 0;">
+                <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-external-link-alt" style="color: var(--primary-color);"></i>
+                    Vista Previa en Tienda
+                </h2>
+                <button class="close-btn" onclick="closePreviewModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-grid">
+                    <!-- Left: Images -->
+                    <div class="preview-images">
+                        <div id="preview-img-main" class="img-gallery-main"></div>
+                        <div id="preview-thumbnails" class="img-thumbnails-track"></div>
+                    </div>
+
+                    <!-- Right: Info -->
+                    <div class="preview-info">
+                        <div id="preview-category"
+                            style="color: var(--primary-color); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 5px;">
+                        </div>
+                        <h1 id="preview-name" style="margin: 0; font-size: 2rem; color: #1F2937;"></h1>
+                        <p id="preview-ref" style="color: #9CA3AF; margin-top: 0;"></p>
+
+                        <div style="margin: 20px 0;">
+                            <span id="preview-price"
+                                style="font-size: 1.8rem; font-weight: 800; color: #111827;"></span>
+                            <span id="preview-stock-badge" class="badge-stock"></span>
+                        </div>
+
+                        <div
+                            style="border-top: 1px solid #eee; padding-top: 20px; max-height: 250px; overflow-y: auto;">
+                            <h3 style="font-size: 1rem; margin-bottom: 10px;">Descripción</h3>
+                            <div id="preview-description" style="color: #4B5563; line-height: 1.6; font-size: 0.95rem;">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 30px;">
+                            <button class="btn-primary"
+                                style="width: 100%; padding: 15px; border-radius: 12px; font-size: 1rem;" disabled>
+                                <i class="fas fa-shopping-cart"></i> Agregar al Carrito (Demo)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="/frontend/assets/js/layout-loader.js"></script>
     <script src="/frontend/assets/js/auth_guard.js"></script>
