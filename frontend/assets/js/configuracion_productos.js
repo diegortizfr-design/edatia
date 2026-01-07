@@ -160,12 +160,14 @@ window.openModal = (p = null) => {
         document.getElementById('imagen_url').value = p.imagen_url || '';
         document.getElementById('activo').checked = !!p.activo;
         document.getElementById('maneja_inventario').checked = !!p.maneja_inventario;
+        document.getElementById('mostrar_en_tienda').checked = !!p.mostrar_en_tienda;
     } else {
         isEditing = false;
         currentId = null;
         document.getElementById('modal-title').innerHTML = '<i class="fas fa-box-open"></i> Nuevo Producto';
         document.getElementById('activo').checked = true;
         document.getElementById('maneja_inventario').checked = true;
+        document.getElementById('mostrar_en_tienda').checked = false;
     }
 };
 
@@ -193,7 +195,8 @@ async function handleSave(e) {
         stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
         imagen_url: document.getElementById('imagen_url')?.value || '',
         activo: document.getElementById('activo')?.checked || false,
-        maneja_inventario: document.getElementById('maneja_inventario')?.checked || false
+        maneja_inventario: document.getElementById('maneja_inventario')?.checked || false,
+        mostrar_en_tienda: document.getElementById('mostrar_en_tienda')?.checked || false
     };
 
     if (!formData.nombre) {
