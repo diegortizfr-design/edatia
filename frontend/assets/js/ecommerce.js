@@ -4,8 +4,9 @@
  */
 
 let allProducts = [];
+let ecommerceProducts = [];
 let API_URL = '';
-let tableBody, modal, form;
+let tableBody, modal, form, categoryFilter;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tableBody = document.getElementById('ecommerce-table-body');
         modal = document.getElementById('ecommerceModal');
         form = document.getElementById('ecommerceForm');
+        categoryFilter = document.getElementById('category-filter');
 
         if (form) {
             form.addEventListener('submit', handleSaveEcom);
@@ -39,7 +41,8 @@ async function loadEcommerceProducts() {
         if (data.success) {
             allProducts = data.data;
             // Only show products flagged for e-commerce
-            const ecommerceProducts = allProducts.filter(p => p.mostrar_en_tienda);
+            ecommerceProducts = allProducts.filter(p => p.mostrar_en_tienda);
+            populateCategories(ecommerceProducts);
             renderTable(ecommerceProducts);
         }
     } catch (e) {
@@ -94,6 +97,33 @@ function renderTable(products) {
         `;
         tableBody.appendChild(tr);
     });
+}
+
+function populateCategories(products) {
+    if (!categoryFilter) return;
+
+    // Get unique categories
+    const categories = [...new Set(products.map(p => p.categoria).filter(c => c))];
+
+    // Reset but keep "All"
+    categoryFilter.innerHTML = '<option value="all">Todas las categorías</option>';
+
+    categories.sort().forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categoryFilter.appendChild(option);
+    });
+}
+
+function filterByCategory() {
+    const selected = categoryFilter.value;
+    if (selected === 'all') {
+        renderTable(ecommerceProducts);
+    } else {
+        const filtered = ecommerceProducts.filter(p => p.categoria === selected);
+        renderTable(filtered);
+    }
 }
 
 window.openEcomModal = (p) => {

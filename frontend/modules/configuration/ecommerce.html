@@ -180,8 +180,18 @@
 
         <div class="action-bar"
             style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="color: var(--text-dark); margin: 0;"><i class="fas fa-store"></i> Gestión de Catálogo Virtual
-            </h2>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <h2 style="color: var(--text-dark); margin: 0;"><i class="fas fa-store"></i> Gestión de Catálogo Virtual
+                </h2>
+                <div class="filter-group"
+                    style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                    <i class="fas fa-filter" style="color: #9CA3AF;"></i>
+                    <select id="category-filter" onchange="filterByCategory()"
+                        style="border: none; outline: none; background: transparent; color: #4B5563; font-weight: 500; cursor: pointer; min-width: 150px;">
+                        <option value="all">Todas las categorías</option>
+                    </select>
+                </div>
+            </div>
             <button class="btn-primary" onclick="exportCatalog()"><i class="fas fa-file-export"></i> Exportar Catálogo
                 (JSON)</button>
         </div>

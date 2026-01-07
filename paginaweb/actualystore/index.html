@@ -18,9 +18,8 @@
         </div>
         <ul>
             <li><a href="#">Inicio</a></li>
-            <li><a href="#celulares">Celulares</a></li>
-            <li><a href="#audio">Audio</a></li>
-            <li><a href="#accesorios">Accesorios</a></li>
+            <li><a href="#catalogo">Catálogo</a></li>
+            <li><a href="#contacto">Contacto</a></li>
         </ul>
         <div class="nav-actions" style="display: flex; align-items: center; gap: 20px;">
             <div id="cart-btn-nav" class="btn-primary"
@@ -50,80 +49,15 @@
         </div>
     </section>
 
-    <!-- Celulares -->
-    <section class="products" id="celulares">
-        <h2 class="section-title">Smartphones Flagship</h2>
-        <div class="product-grid">
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/iphone-14-pro.png" alt="iPhone 15 Pro">
-                <h3>ActualyPhone 15 Pro</h3>
-                <p>$999.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
+    <!-- Catálogo Dinámico por Categorías -->
+    <div id="dynamic-catalog-container">
+        <!-- Las secciones se cargarán aquí dinámicamente -->
+        <section class="products">
+            <div style="text-align: center; padding: 100px 20px;">
+                <p style="color: var(--text-secondary); font-size: 1.2rem;">Conectando con el almacén central...</p>
             </div>
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/samsung-galaxy-s22-ultra.png" alt="Samsung Galaxy">
-                <h3>Galaxy Evolution S24</h3>
-                <p>$1,150.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/pixel-6.png" alt="Google Pixel">
-                <h3>Pixel Vision Pro</h3>
-                <p>$850.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Audio -->
-    <section class="products" id="audio">
-        <h2 class="section-title">Experiencia de Audio</h2>
-        <div class="product-grid">
-            <div class="product-card">
-                <img src="assets/headphones.png" alt="ActualyPods Max" style="width: 100%; border-radius: 15px;">
-                <h3>ActualyPods Max</h3>
-                <p>$299.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-            <div class="product-card">
-                <img src="assets/speaker.png" alt="Parlante Sonic" style="width: 100%; border-radius: 15px;">
-                <h3>Sonic Titan v4</h3>
-                <p>$159.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/airpods-pro.png" alt="Buds">
-                <h3>AirPods Actualy Elite</h3>
-                <p>$199.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Accesorios -->
-    <section class="products" id="accesorios">
-        <h2 class="section-title">Accesorios y Estilo</h2>
-        <div class="product-grid">
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/phone-case.png" alt="Forro">
-                <h3>Forro Carbon Armor</h3>
-                <p>$29.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/macbook-charger.png" alt="Cargador">
-                <h3>Cargador GaN 100W</h3>
-                <p>$59.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-            <div class="product-card">
-                <img src="https://img.icons8.com/fluency/240/apple-watch.png" alt="Watch">
-                <h3>ActualyWatch Sport</h3>
-                <p>$399.00</p>
-                <a href="#" class="btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">Comprar</a>
-            </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <!-- SIDEBAR DEL CARRITO -->
     <div id="cart-sidebar" class="cart-sidebar glass">
