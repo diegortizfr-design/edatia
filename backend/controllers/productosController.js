@@ -18,7 +18,7 @@ exports.listarProductos = async (req, res) => {
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
 
-        // Ensure table exists even on listing (for new customers)
+        // Ensure table and columns exist
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,6 +48,23 @@ exports.listarProductos = async (req, res) => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Check and add missing columns if table already existed
+        const [columns] = await clientConn.query('SHOW COLUMNS FROM productos');
+        const colNames = columns.map(c => c.Field);
+
+        if (!colNames.includes('mostrar_en_tienda')) {
+            await clientConn.query('ALTER TABLE productos ADD COLUMN mostrar_en_tienda BOOLEAN DEFAULT 0');
+        }
+        if (!colNames.includes('ecommerce_descripcion')) {
+            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_descripcion TEXT');
+        }
+        if (!colNames.includes('ecommerce_imagenes')) {
+            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_imagenes TEXT');
+        }
+        if (!colNames.includes('ecommerce_afecta_inventario')) {
+            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_afecta_inventario BOOLEAN DEFAULT 0');
+        }
 
         let query = 'SELECT p.*, t.nombre_comercial as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
         const params = [];
