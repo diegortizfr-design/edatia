@@ -60,11 +60,18 @@ function renderTable(products) {
     }
 
     products.forEach(p => {
+        const imageUrl = p.imagen_url || (p.ecommerce_imagenes ? p.ecommerce_imagenes.split(',')[0].trim() : '');
+        const thumbContent = imageUrl
+            ? `<img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`
+            : `<i class="fas fa-box" style="color: #9CA3AF; font-size: 1.2rem;"></i>`;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 15px; padding: 10px 0;">
-                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #f3f4f6; background-image: url('${p.imagen_url || ''}'); background-size: cover; background-position: center; border: 1px solid #e5e7eb; flex-shrink: 0;"></div>
+                    <div style="width: 60px; height: 60px; border-radius: 12px; background: #f3f4f6; border: 1px solid #e5e7eb; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        ${thumbContent}
+                    </div>
                     <div style="display: flex; flex-direction: column; justify-content: center;">
                         <strong style="color: #1F2937; font-size: 1rem;">${p.nombre}</strong>
                         <span style="color: #6B7280; font-size: 0.85rem;">REF: ${p.referencia_fabrica || '-'}</span>
