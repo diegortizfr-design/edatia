@@ -48,7 +48,7 @@ exports.getCatalog = async (req, res) => {
                 categoria: p.categoria,
                 stock_real: p.stock_actual,
                 descripcion: p.ecommerce_descripcion || p.descripcion,
-                imagen_principal: p.imagen_url,
+                imagen_principal: p.imagen_url || (extraImages.length > 0 ? extraImages[0] : null),
                 imagenes: extraImages,
                 afecta_inventario: !!p.ecommerce_afecta_inventario,
                 agotado: isOutOfStock,
