@@ -1,0 +1,137 @@
+.sidebar {
+    width: var(--sidebar-collapsed-width);
+    background: #111827;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 30px 10px;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.sidebar:hover {
+    width: var(--sidebar-width);
+    padding: 30px 20px;
+}
+
+.logo-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+    padding: 0 10px;
+}
+
+.logo-box img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.logo-box h2 {
+    font-weight: 600;
+    font-size: 1.5rem;
+    background: linear-gradient(to right, #4F46E5, #818CF8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: none;
+}
+
+.sidebar:hover .logo-box h2 {
+    display: block;
+}
+
+.menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu-link {
+    text-decoration: none;
+    color: #9CA3AF;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.sidebar:not(:hover) .menu-link {
+    justify-content: center;
+    padding: 12px;
+    gap: 0;
+}
+
+.sidebar:hover .menu-link {
+    padding: 12px 20px;
+}
+
+.menu-link .label {
+    display: none;
+}
+
+.sidebar:hover .menu-link .label {
+    display: inline;
+}
+
+.menu-link.active {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.menu-link.active .icon {
+    color: #fff;
+}
+
+.menu-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.btn-logout {
+    background: rgba(255, 255, 255, 0.05);
+    color: #9CA3AF;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: var(--transition);
+    width: 100%;
+    margin-top: 20px;
+}
+
+.sidebar:not(:hover) .btn-logout {
+    justify-content: center;
+    gap: 0;
+}
+
+.sidebar:hover .btn-logout {
+    padding: 12px 20px;
+}
+
+.btn-logout span {
+    display: none;
+}
+
+.sidebar:hover .btn-logout span {
+    display: inline;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
