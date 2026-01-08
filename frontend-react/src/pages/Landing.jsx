@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Boxes, FileText, ShoppingCart, CheckCircle, Instagram, Linkedin, Twitter, ArrowRight } from 'lucide-react';
+import logo from '../assets/logo.png';
 import './Landing.css';
 
 const Landing = () => {

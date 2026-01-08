@@ -4,6 +4,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import Ecommerce from './pages/Ecommerce';
+import Productos from './pages/Productos';
+import Terceros from './pages/Terceros';
+import Facturacion from './pages/Facturacion';
+import Inventario from './pages/Inventario';
+import Compras from './pages/Compras';
+import Configuracion from './pages/Configuracion';
+import Dashboard from './pages/Dashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -11,10 +19,6 @@ const ProtectedRoute = ({ children }) => {
   if (!user) return <Navigate to="/login" />;
   return <Layout>{children}</Layout>;
 };
-
-// Mock components for modules not yet migrated
-const Dashboard = () => <div className="card"><h1>Dashboard Principal</h1><p>Bienvenido al sistema ERPod en React.</p></div>;
-const Ecommerce = () => <div className="card"><h1>Módulo E-commerce</h1><p>Cargando catálogo...</p></div>;
 
 function App() {
   return (
@@ -37,10 +41,66 @@ function App() {
             }
           />
           <Route
+            path="/facturacion"
+            element={
+              <ProtectedRoute>
+                <Facturacion />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/ecommerce"
             element={
               <ProtectedRoute>
                 <Ecommerce />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/productos"
+            element={
+              <ProtectedRoute>
+                <Productos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventario"
+            element={
+              <ProtectedRoute>
+                <Inventario />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/compras"
+            element={
+              <ProtectedRoute>
+                <Compras />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clientes"
+            element={
+              <ProtectedRoute>
+                <Terceros initialMode="cliente" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/proveedores"
+            element={
+              <ProtectedRoute>
+                <Terceros initialMode="proveedor" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracion"
+            element={
+              <ProtectedRoute>
+                <Configuracion />
               </ProtectedRoute>
             }
           />

@@ -23,16 +23,18 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         try {
             const resp = await api.post('/auth/login', credentials);
-            if (resp.data.success) {
-                const { token, user } = resp.data;
+            // Backend uses { ok: true, data: {...}, token: "..." }
+            if (resp.data.ok) {
+                const { token, data } = resp.data;
                 localStorage.setItem('token', token);
-                localStorage.setItem('user', JSON.stringify(user));
-                setUser(user);
+                localStorage.setItem('user', JSON.stringify(data));
+                setUser(data);
                 return { success: true };
             }
             return { success: false, message: resp.data.message };
         } catch (err) {
-            return { success: false, message: 'Error de conexión' };
+            const errorMsg = err.response?.data?.message || 'Error de conexión con el servidor';
+            return { success: false, message: errorMsg };
         }
     };
 

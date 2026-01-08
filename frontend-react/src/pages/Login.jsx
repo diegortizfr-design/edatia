@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 import './Login.css';
 
 const Login = () => {
@@ -37,7 +38,7 @@ const Login = () => {
                 {/* LADO IZQUIERDO: BRANDING */}
                 <div className="login-left">
                     <div className="branding-box">
-                        <img src="/assets/logo.png" alt="ERPod Logo" className="login-logo" />
+                        <img src={logo} alt="ERPod Logo" className="login-logo" />
                         <h1>ERPod SOFTWARE.</h1>
                         <p>Gestión inteligente para empresas modernas.</p>
                     </div>

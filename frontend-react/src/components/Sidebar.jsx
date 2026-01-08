@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Store, Package, ShoppingCart, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Store, Package, ShoppingCart, Settings, LogOut, ChevronRight, Wallet, Users, Layers } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -9,9 +9,13 @@ const Sidebar = () => {
 
     const menuItems = [
         { path: '/dashboard', icon: <LayoutDashboard size={22} />, label: 'Dashboard' },
+        { path: '/facturacion', icon: <Wallet size={22} />, label: 'Ventas (POS)' },
         { path: '/ecommerce', icon: <Store size={22} />, label: 'E-commerce' },
-        { path: '/inventario', icon: <Package size={22} />, label: 'Inventario' },
+        { path: '/productos', icon: <Package size={22} />, label: 'Productos' },
         { path: '/compras', icon: <ShoppingCart size={22} />, label: 'Compras' },
+        { path: '/inventario', icon: <Layers size={22} />, label: 'Inventario' },
+        { path: '/clientes', icon: <Users size={22} />, label: 'Clientes' },
+        { path: '/proveedores', icon: <Users size={22} />, label: 'Proveedores' },
         { path: '/configuracion', icon: <Settings size={22} />, label: 'Configuración' },
     ];
 
