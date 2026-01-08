@@ -1,0 +1,135 @@
+node.exe : 
+[31m???[39m Build 
+failed in 2.67s
+En l?nea: 1 
+Car?cter: 1
++ & "C:\Program Files
+\nodejs/node.exe" "C:
+\Users\DiegoOrtiz\App
+Data\Roa ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: ([31m??   
+ ?[39m Build fai    
+led in 2.67s:Str    
+ing) [], RemoteE    
+xception
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+[31merror during 
+build:
+[31msrc/pages/Landin
+g.jsx (3:9): 
+"CubeIcon" is not 
+exported by "node_mod
+ules/lucide-react/dis
+t/esm/lucide-react.js
+", imported by "src/p
+ages/Landing.jsx".[3
+1m
+file: [36mC:/Users/D
+iegoOrtiz/Desktop/ERP
+od/frontend-react/src
+/pages/Landing.jsx:3:
+9[31m
+[33m
+1: import React from 
+'react';
+2: import { Link } 
+from 
+'react-router-dom';
+3: import { 
+CubeIcon, Boxes, 
+FileText, 
+ShoppingCart, 
+CheckCircle, 
+Instagram, Linkedin, 
+Twitter, ArrowRight 
+} from 'lucid...
+            ^
+4: import 
+'./Landing.css';
+[31m
+    at 
+getRollupError (file:
+///C:/Users/DiegoOrti
+z/Desktop/ERPod/front
+end-react/node_module
+s/rollup/dist/es/shar
+ed/parseAst.js:401:41
+)
+    at error (file://
+/C:/Users/DiegoOrtiz/
+Desktop/ERPod/fronten
+d-react/node_modules/
+rollup/dist/es/shared
+/parseAst.js:397:42)
+    at Module.error (
+file:///C:/Users/Dieg
+oOrtiz/Desktop/ERPod/
+frontend-react/node_m
+odules/rollup/dist/es
+/shared/node-entry.js
+:17022:16)
+    at 
+Module.traceVariable 
+(file:///C:/Users/Die
+goOrtiz/Desktop/ERPod
+/frontend-react/node_
+modules/rollup/dist/e
+s/shared/node-entry.j
+s:17478:29)
+    at ModuleScope.fi
+ndVariable (file:///C
+:/Users/DiegoOrtiz/De
+sktop/ERPod/frontend-
+react/node_modules/ro
+llup/dist/es/shared/n
+ode-entry.js:15141:39
+)
+    at ReturnValueSco
+pe.findVariable (file
+:///C:/Users/DiegoOrt
+iz/Desktop/ERPod/fron
+tend-react/node_modul
+es/rollup/dist/es/sha
+red/node-entry.js:568
+8:38)
+    at FunctionBodySc
+ope.findVariable (fil
+e:///C:/Users/DiegoOr
+tiz/Desktop/ERPod/fro
+ntend-react/node_modu
+les/rollup/dist/es/sh
+ared/node-entry.js:56
+88:38)
+    at 
+Identifier.bind (file
+:///C:/Users/DiegoOrt
+iz/Desktop/ERPod/fron
+tend-react/node_modul
+es/rollup/dist/es/sha
+red/node-entry.js:546
+2:40)
+    at 
+CallExpression.bind (
+file:///C:/Users/Dieg
+oOrtiz/Desktop/ERPod/
+frontend-react/node_m
+odules/rollup/dist/es
+/shared/node-entry.js
+:2825:28)
+    at 
+CallExpression.bind (
+file:///C:/Users/Dieg
+oOrtiz/Desktop/ERPod/
+frontend-react/node_m
+odules/rollup/dist/es
+/shared/node-entry.js
+:12172:15)[39m
