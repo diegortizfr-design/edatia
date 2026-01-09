@@ -17,11 +17,33 @@ exports.listarCompras = async (req, res) => {
 
         clientConn = await connectToClientDB(dbConfig);
 
-        const [rows] = await clientConn.query('SELECT * FROM compras ORDER BY fecha DESC LIMIT 100');
-        res.json({ success: true, data: rows });
+        // JOIN with Terceros and Documentos for full details
+        const sql = `
+            SELECT c.*, 
+                   t.nombre_comercial, t.razon_social, t.documento as proveedor_nit,
+                   d.nombre as documento_nombre, d.prefijo as documento_prefijo
+            FROM compras c
+            LEFT JOIN terceros t ON c.proveedor_id = t.id
+            LEFT JOIN documentos d ON c.documento_id = d.id
+            ORDER BY c.fecha DESC LIMIT 100
+        `;
+
+        const [rows] = await clientConn.query(sql);
+
+        // Map format for frontend convenience
+        const mod = rows.map(r => ({
+            ...r,
+            proveedor_nombre: r.nombre_comercial || r.razon_social || 'Desconocido',
+            combo_documento: r.documento_nombre ? `${r.documento_nombre} (${r.numero_comprobante || 'S/N'})` : 'N/A'
+        }));
+
+        res.json({ success: true, data: mod });
 
     } catch (err) {
         console.error('listarCompras error:', err);
+        // If columns needed for the JOIN don't exist yet, it's safer to fail or return empty, 
+        // but typically the create/alter happens in crearCompra. 
+        // We could run migration here too if we wanted to be super safe.
         res.status(500).json({ success: false, message: 'Error interno' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -115,19 +137,21 @@ exports.crearCompra = async (req, res) => {
         clientConn = await connectToClientDB(dbConfig);
 
         const {
-            proveedor_id, fecha, total, estado, items
+            proveedor_id, sucursal_id, fecha, total, estado, items,
+            documento_id, factura_referencia // cruce logic
         } = req.body;
 
-        // Ensure columns exist in productos (Migration fix for existing tables)
+        // --- MIGRATIONS: Ensure columns exist ---
         try { await clientConn.query("ALTER TABLE productos ADD COLUMN stock_actual INT DEFAULT 0"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE productos ADD COLUMN costo DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
 
-        // Ensure tables exist
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 proveedor_id INT,
                 sucursal_id INT,
+                documento_id INT,
+                numero_comprobante VARCHAR(50),
                 fecha DATE,
                 total DECIMAL(15,2),
                 estado VARCHAR(50),
@@ -139,15 +163,14 @@ exports.crearCompra = async (req, res) => {
                 FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
             )
         `);
-
-        // Update existing table if needed (Migration)
+        // Alter for new columns
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN documento_id INT"); } catch (e) { }
+        try { await clientConn.query("ALTER TABLE compras ADD COLUMN numero_comprobante VARCHAR(50)"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_referencia VARCHAR(100)"); } catch (e) { }
         try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_url TEXT"); } catch (e) { }
-
-
 
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras_detalle (
@@ -164,22 +187,38 @@ exports.crearCompra = async (req, res) => {
         // Start transaction
         await clientConn.beginTransaction();
 
-        // 1. Insert Header
-        const [result] = await clientConn.query(`
-            INSERT INTO compras (proveedor_id, sucursal_id, fecha, total, estado, estado_pago, usuario_id, factura_referencia, factura_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            proveedor_id, req.body.sucursal_id || null, fecha, total, estado || 'Orden de Compra', 'Debe',
-            req.user.id, req.body.factura_referencia || null, req.body.factura_url || null
-        ]);
+        let numero_comprobante = '';
 
+        // 1. Process Document (Consecutive Logic)
+        if (documento_id) {
+            const [docs] = await clientConn.query('SELECT * FROM documentos WHERE id = ? FOR UPDATE', [documento_id]);
+            if (docs.length === 0) {
+                await clientConn.rollback();
+                return res.status(400).json({ success: false, message: 'Documento no válido' });
+            }
+            const doc = docs[0];
+            numero_comprobante = `${doc.prefijo || ''}${doc.consecutivo_actual}`;
+
+            // Increment consecutive
+            await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [documento_id]);
+        }
+
+        // 2. Insert Header
+        const [result] = await clientConn.query(`
+            INSERT INTO compras 
+            (proveedor_id, sucursal_id, documento_id, numero_comprobante, fecha, total, estado, estado_pago, usuario_id, factura_referencia, factura_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            proveedor_id, sucursal_id || null, documento_id || null, numero_comprobante,
+            fecha, total, estado || 'Orden de Compra', 'Debe',
+            req.user.id, factura_referencia || null, null
+        ]);
 
         const compraId = result.insertId;
 
-        // 2. Insert Items (NO STOCK UPDATE yet)
+        // 3. Insert Items
         if (items && items.length > 0) {
             for (const item of items) {
-                // Insert detail
                 await clientConn.query(`
                     INSERT INTO compras_detalle (compra_id, producto_id, cantidad, costo_unitario, subtotal)
                     VALUES (?, ?, ?, ?, ?)
@@ -188,7 +227,7 @@ exports.crearCompra = async (req, res) => {
         }
 
         await clientConn.commit();
-        res.status(201).json({ success: true, message: 'Orden de compra creada', id: compraId });
+        res.status(201).json({ success: true, message: 'Orden de compra creada', id: compraId, comprobante: numero_comprobante });
 
     } catch (err) {
         if (clientConn) await clientConn.rollback();

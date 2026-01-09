@@ -6,6 +6,7 @@ let API_URL = '';
 let PRODUCTOS_URL = '';
 let TERCEROS_URL = '';
 let SUCURSALES_URL = '';
+let DOCUMENTOS_URL = '';
 let tableBody, modal, btnNuevo, closeBtns;
 let carrito = [];
 let compraActualId = null;
@@ -68,10 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         PRODUCTOS_URL = `${config.apiUrl}/productos`;
         TERCEROS_URL = `${config.apiUrl}/terceros`;
         SUCURSALES_URL = `${config.apiUrl}/sucursales`;
+        DOCUMENTOS_URL = `${config.apiUrl}/documentos`;
 
         // Load Data
         await cargarProveedores();
         await cargarSucursales();
+        await cargarDocumentosCompra();
         await cargarCompras();
 
     } catch (e) {
@@ -120,16 +123,28 @@ function renderTable(compras) {
     if (!tableBody) return;
     tableBody.innerHTML = '';
     if (compras.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6B7280;">No hay órdenes registradas</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: #6B7280;">No hay órdenes registradas</td></tr>`;
         return;
     }
     compras.forEach(c => {
         const row = document.createElement('tr');
+        const comboDoc = c.combo_documento || 'N/A';
+        // Fallback for old records or failed joins
+        const refProv = c.factura_referencia || '-';  // Cruce
+        const provName = c.proveedor_nombre || 'Desc.';
+        const provNit = c.proveedor_nit || '-';
+
+        // Calculate subtotal roughly
+        const total = parseFloat(c.total || 0);
+
         row.innerHTML = `
-            <td>#${c.id}</td>
-            <td>${c.proveedor_nombre || 'Proveedor #' + c.proveedor_id}</td>
+            <td><strong>${comboDoc}</strong></td>
+            <td><strong>${refProv}</strong></td>
             <td>${new Date(c.fecha).toLocaleDateString()}</td>
-            <td><strong>$${parseFloat(c.total).toLocaleString()}</strong></td>
+            <td>${provNit}</td>
+            <td>${provName}</td>
+            <td>$${total.toLocaleString()}</td>
+            <td><strong>$${total.toLocaleString()}</strong></td>
             <td><span class="badge ${getBadgeClass(c.estado)}">${c.estado || 'Orden de Compra'}</span></td>
             <td><span class="badge ${getBadgeClass(c.estado_pago)}">${c.estado_pago || 'Debe'}</span></td>
             <td>
@@ -220,6 +235,28 @@ async function cargarSucursales() {
             });
         }
     } catch (err) { console.error('Error loading sucursales', err); }
+}
+
+async function cargarDocumentosCompra() {
+    const select = document.getElementById('compra-documento');
+    if (!select || select.options.length > 1) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(DOCUMENTOS_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+
+        if (data.success) {
+            data.data.forEach(d => {
+                // Filter by category if strictly needed (e.g. 'compras' or similar)
+                // For now, load all or filter if category column says 'Compras'
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.nombre} (${d.prefijo || ''}${d.consecutivo_actual})`;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) { console.error('Error loading documentos', err); }
 }
 
 // --- CART & SAVING ---
@@ -357,9 +394,22 @@ async function guardarCompra() {
     // Determine initial state based on mode
     const estadoInicial = (modoCompra === 'factura') ? 'Realizada' : 'Orden de Compra';
 
+    // New Fields
+    const documentoId = document.getElementById('compra-documento').value;
+    const facturaRef = document.getElementById('compra-factura-ref').value;
+
+    if (!documentoId) {
+        localShowNotification('Seleccione un documento (consecutivo)', 'error');
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = originalText;
+        return;
+    }
+
     const payload = {
         proveedor_id: proveedorId,
         sucursal_id: sucursalId,
+        documento_id: documentoId,
+        factura_referencia: facturaRef, // Cruce
         fecha: document.getElementById('compra-fecha').value,
         total: carrito.reduce((sum, i) => sum + i.subtotal, 0),
         estado: estadoInicial,

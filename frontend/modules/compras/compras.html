@@ -54,12 +54,15 @@
             <table class="glass-table">
                 <thead>
                     <tr>
-                        <th># Orden</th>
-                        <th>Proveedor</th>
+                        <th style="width: 12%;">Documento</th>
+                        <th>Ref. Prov.</th>
                         <th>Fecha</th>
+                        <th>Nit</th>
+                        <th>Tercero</th>
+                        <th>Subtotal</th>
                         <th>Total</th>
-                        <th>Estado</th>
-                        <th>Pago</th>
+                        <th>Estado Compra</th>
+                        <th>Estado Pago</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -100,7 +103,19 @@
                 <!-- Encabezado de Compra -->
                 <div class="grid-3" style="gap: 20px; align-items: end; margin-bottom: 25px;">
                     <div class="form-control">
-                        <label>Proveedor</label>
+                        <label>Tipo Documento (Consecutivo Int.)</label>
+                        <select id="compra-documento"
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                            <option value="">Seleccione documento...</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label>Ref. Factura Proveedor (Cruce)</label>
+                        <input type="text" id="compra-factura-ref" placeholder="Ej: FV-30"
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                    <div class="form-control">
+                        <label>Fecha de Compra</label>
                         <div style="display: flex; gap: 5px;">
                             <select id="compra-proveedor"
                                 style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
