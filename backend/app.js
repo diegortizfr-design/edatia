@@ -37,22 +37,13 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
 
 // Servir frontends por cliente (opcional)
-// app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
-// app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
-// app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
+app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Ruta healthcheck
 app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'dev' }));
-
-// FRONTEND HTML PRINCIPAL (servir a frontend html)
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
-
-app.get('*', (req, res) => {
-    res.sendFile(
-        path.join(__dirname, '..', 'frontend', 'index.html')
-    );
-});
 
 // 404
 app.use((req, res) => res.status(404).json({ ok: false, message: 'Not Found' }));
