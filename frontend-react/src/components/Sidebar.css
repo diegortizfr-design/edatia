@@ -50,6 +50,28 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+}
+
+/* Custom scrollbar for sidebar */
+.menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.menu::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .menu-link {
@@ -134,4 +156,98 @@
     background: rgba(239, 68, 68, 0.15);
     color: #EF4444;
     border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Collapsible Menu Section */
+.menu-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-toggle {
+    background: none;
+    border: none;
+    width: 100%;
+    position: relative;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.menu-toggle .chevron {
+    position: absolute;
+    right: 12px;
+    display: none;
+    transition: transform 0.3s ease;
+}
+
+.sidebar:hover .menu-toggle .chevron {
+    display: block;
+}
+
+.menu-toggle.open .chevron {
+    transform: rotate(0deg);
+}
+
+/* Submenu Styles */
+.submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    padding-left: 0;
+    animation: slideDown 0.3s ease;
+}
+
+.sidebar:hover .submenu {
+    padding-left: 20px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.submenu-link {
+    text-decoration: none;
+    color: #9CA3AF;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 10px;
+    transition: var(--transition);
+    font-weight: 400;
+    font-size: 0.9rem;
+}
+
+.sidebar:not(:hover) .submenu-link {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+}
+
+.submenu-link .label {
+    display: none;
+}
+
+.sidebar:hover .submenu-link .label {
+    display: inline;
+}
+
+.submenu-link.active {
+    background: rgba(79, 70, 229, 0.2);
+    color: #818CF8;
+}
+
+.submenu-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
 }

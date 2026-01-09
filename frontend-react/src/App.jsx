@@ -12,6 +12,8 @@ import Inventario from './pages/Inventario';
 import Compras from './pages/Compras';
 import Configuracion from './pages/Configuracion';
 import Dashboard from './pages/Dashboard';
+import ListaFacturas from './pages/ListaFacturas';
+import Reportes from './pages/Reportes';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -81,18 +83,10 @@ function App() {
             }
           />
           <Route
-            path="/clientes"
+            path="/terceros"
             element={
               <ProtectedRoute>
-                <Terceros initialMode="cliente" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/proveedores"
-            element={
-              <ProtectedRoute>
-                <Terceros initialMode="proveedor" />
+                <Terceros />
               </ProtectedRoute>
             }
           />
@@ -101,6 +95,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Configuracion />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lista-facturas"
+            element={
+              <ProtectedRoute>
+                <ListaFacturas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reportes"
+            element={
+              <ProtectedRoute>
+                <Reportes />
               </ProtectedRoute>
             }
           />

@@ -3,7 +3,7 @@ import api from '../services/api';
 import {
     TrendingUp, Users, Package, ShoppingCart,
     ArrowUpRight, ArrowDownRight, Activity,
-    Calendar, CheckCircle, Clock
+    Calendar, CheckCircle, Clock, Plus
 } from 'lucide-react';
 
 const Dashboard = () => {
