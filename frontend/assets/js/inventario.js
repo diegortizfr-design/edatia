@@ -75,7 +75,7 @@ function renderTable(productos) {
             <td>${p.codigo || '-'}</td>
             <td>${p.categoria || 'General'}</td>
             <td><strong>${p.stock_actual || 0}</strong></td>
-            <td>$${parseFloat(p.precio_venta).toLocaleString()}</td>
+            <td>$${parseFloat(p.precio_venta || 0).toLocaleString()}</td>
             <td>${statusBadge}</td>
             <td style="display: flex; gap: 5px;">
                 <button class="btn-icon btn-kardex" data-id="${p.id}" title="Ver Movimientos"><i class="fas fa-history"></i></button>
