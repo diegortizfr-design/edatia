@@ -181,9 +181,11 @@ async function abrirModalCompra(modo = 'orden') {
     if (modo === 'factura') {
         titulo.textContent = 'Registrar Factura de Compra';
         btn.textContent = 'Guardar Factura (Realizada)';
+        await cargarDocumentosCompra('FC'); // Factura Compra
     } else {
         titulo.textContent = 'Nueva Orden de Compra';
         btn.textContent = 'Guardar Orden';
+        await cargarDocumentosCompra('OC'); // Orden Compra
     }
 
     modal.style.display = 'flex';
@@ -237,9 +239,12 @@ async function cargarSucursales() {
     } catch (err) { console.error('Error loading sucursales', err); }
 }
 
-async function cargarDocumentosCompra() {
+async function cargarDocumentosCompra(filtro = 'OC') {
     const select = document.getElementById('compra-documento');
-    if (!select || select.options.length > 1) return;
+    if (!select) return;
+
+    // Clear previous options
+    select.innerHTML = '<option value="">Seleccione documento...</option>';
 
     try {
         const token = localStorage.getItem('token');
@@ -248,12 +253,17 @@ async function cargarDocumentosCompra() {
 
         if (data.success) {
             data.data.forEach(d => {
-                // Filter by category if strictly needed (e.g. 'compras' or similar)
-                // For now, load all or filter if category column says 'Compras'
-                const opt = document.createElement('option');
-                opt.value = d.id;
-                opt.textContent = `${d.nombre} (${d.prefijo || ''}${d.consecutivo_actual})`;
-                select.appendChild(opt);
+                // Filter by category passed in arg
+                let categoriaDoc = d.categoria;
+                if (categoriaDoc === 'Factura de Compra') categoriaDoc = 'FC';
+                if (categoriaDoc === 'Orden de Compra') categoriaDoc = 'OC';
+
+                if (categoriaDoc === filtro) {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = `${d.nombre} (${d.prefijo || ''}${d.consecutivo_actual})`;
+                    select.appendChild(opt);
+                }
             });
         }
     } catch (err) { console.error('Error loading documentos', err); }
