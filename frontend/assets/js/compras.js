@@ -178,13 +178,17 @@ async function abrirModalCompra(modo = 'orden') {
     const titulo = document.querySelector('#modal-nueva-compra h2');
     const btn = document.getElementById('btn-guardar-compra');
 
+    const refFieldContainer = document.getElementById('compra-factura-ref').parentElement; // Get the .form-control div
+
     if (modo === 'factura') {
         titulo.textContent = 'Registrar Factura de Compra';
         btn.textContent = 'Guardar Factura (Realizada)';
+        refFieldContainer.style.display = 'block'; // Show for Factura
         await cargarDocumentosCompra('FC'); // Factura Compra
     } else {
         titulo.textContent = 'Nueva Orden de Compra';
         btn.textContent = 'Guardar Orden';
+        refFieldContainer.style.display = 'none'; // Hide for Orden
         await cargarDocumentosCompra('OC'); // Orden Compra
     }
 
@@ -518,6 +522,11 @@ function generateActionButtons(compra) {
         addBtn(containerEstado, 'Recibir Mercancía', 'btn-primary', () => abrirModalInspeccion(compra.id));
     } else if (estado === 'recibida') {
         addBtn(containerEstado, 'Completar (Stock)', 'btn-primary', () => completarCompra(compra.id));
+    } else if (estado === 'completada') {
+        const span = document.createElement('span');
+        span.className = 'badge recibida';
+        span.innerHTML = '<i class="fas fa-check-circle"></i> Compra Finalizada';
+        containerEstado.appendChild(span);
     }
 
 

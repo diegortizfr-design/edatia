@@ -110,6 +110,11 @@ exports.actualizarCompra = async (req, res) => {
 
         const ordenActual = ordenes[0];
 
+        // 🔒 LOCK: If already 'Completada', prevent any status change
+        if (ordenActual.estado === 'Completada') {
+            return res.status(400).json({ success: false, message: 'La orden está finalizada y no se puede modificar.' });
+        }
+
         // LOGIC: Stock Movement (If transitioning TO 'Completada')
         if (estado === 'Completada' && ordenActual.estado !== 'Completada') {
 
