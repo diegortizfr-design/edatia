@@ -89,12 +89,19 @@ function renderTable(productos) {
 
 // Event Delegation
 tableBody.addEventListener('click', (e) => {
+    console.log('Click detected on table:', e.target);
+
     // Edit
     const btnEdit = e.target.closest('.btn-editar');
     if (btnEdit) {
+        console.log('Edit button clicked for ID:', btnEdit.dataset.id);
         const id = parseInt(btnEdit.dataset.id);
         const producto = listaProductos.find(p => p.id === id);
-        if (producto) window.openModal(producto);
+        if (producto) {
+            window.openModal(producto);
+        } else {
+            console.error('Product not found in local list');
+        }
     }
 
     // Delete
@@ -107,6 +114,7 @@ tableBody.addEventListener('click', (e) => {
     // Kardex
     const btnKardex = e.target.closest('.btn-kardex');
     if (btnKardex) {
+        console.log('Kardex button clicked');
         const id = parseInt(btnKardex.dataset.id);
         verKardex(id);
     }
