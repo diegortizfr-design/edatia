@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // State
 let isEditing = false;
 let currentId = null;
+let API_INVENTARIO = '';
 
 // Store loaded data globally
 let listaProductos = [];
@@ -34,6 +35,10 @@ let listaProductos = [];
 async function cargarProductos() {
     try {
         const token = localStorage.getItem('token');
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_INVENTARIO = `${config.apiUrl}/inventario`;
+
         const res = await fetch(API_URL, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -43,6 +48,7 @@ async function cargarProductos() {
             listaProductos = data.data; // Save data
             renderTable(listaProductos);
             updateKPIs(listaProductos);
+            loadProductsForSelect(listaProductos);
         } else {
             console.error(data.message);
         }
@@ -71,7 +77,8 @@ function renderTable(productos) {
             <td><strong>${p.stock_actual || 0}</strong></td>
             <td>$${parseFloat(p.precio_venta).toLocaleString()}</td>
             <td>${statusBadge}</td>
-            <td>
+            <td style="display: flex; gap: 5px;">
+                <button class="btn-icon btn-kardex" data-id="${p.id}" title="Ver Movimientos"><i class="fas fa-history"></i></button>
                 <button class="btn-icon btn-editar" data-id="${p.id}"><i class="fas fa-edit"></i></button>
                 <button class="btn-icon btn-eliminar" data-id="${p.id}"><i class="fas fa-trash"></i></button>
             </td>
@@ -96,13 +103,128 @@ tableBody.addEventListener('click', (e) => {
         const id = parseInt(btnDelete.dataset.id);
         eliminarProducto(id);
     }
+
+    // Kardex
+    const btnKardex = e.target.closest('.btn-kardex');
+    if (btnKardex) {
+        const id = parseInt(btnKardex.dataset.id);
+        verKardex(id);
+    }
 });
 
 function updateKPIs(productos) {
+    // 1. Total Items
     const totalItems = productos.length;
-    const kpiTotal = document.querySelector('.kpi-grid .card:nth-child(1) p');
-    if (kpiTotal) kpiTotal.textContent = totalItems;
+
+    // 2. Critical Stock (Assume min stock 5 for default if not set, or use p.stock_minimo)
+    const stockCritico = productos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo || 5)).length;
+
+    // 3. Inventory Value (Cost * Quantity)
+    const valorTotal = productos.reduce((sum, p) => sum + ((p.costo || 0) * (p.stock_actual || 0)), 0);
+
+    const cards = document.querySelectorAll('.kpi-grid .card');
+    if (cards.length >= 3) {
+        cards[0].querySelector('p').textContent = totalItems.toLocaleString();
+
+        cards[1].querySelector('p').textContent = `${stockCritico} Productos`;
+
+        cards[2].querySelector('p').textContent = `$${valorTotal.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
 }
+
+// Logic for Adjustments
+function loadProductsForSelect(products) {
+    const select = document.getElementById('ajuste-producto');
+    if (!select) return;
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    products.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.nombre} (Stock: ${p.stock_actual})`;
+        select.appendChild(opt);
+    });
+}
+
+document.getElementById('form-ajuste')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!confirm('¿Confirmar ajuste de inventario? Esta acción afectará el stock.')) return;
+
+    const body = {
+        producto_id: document.getElementById('ajuste-producto').value,
+        tipo: document.getElementById('ajuste-tipo').value,
+        cantidad: document.getElementById('ajuste-cantidad').value,
+        motivo: document.getElementById('ajuste-motivo').value
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_INVENTARIO}/ajuste`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Ajuste realizado exitosamente');
+            window.closeAjusteModal();
+            document.getElementById('form-ajuste').reset();
+            cargarProductos(); // Reload table & KPIs
+        } else {
+            alert(data.message);
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error al realizar ajuste');
+    }
+});
+
+async function verKardex(id) {
+    const prod = listaProductos.find(p => p.id === id);
+    if (!prod) return;
+
+    document.getElementById('kardex-product-name').textContent = prod.nombre;
+    const tbody = document.getElementById('kardex-table-body');
+    tbody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+    document.getElementById('kardexModal').style.display = 'flex';
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_INVENTARIO}/kardex/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        tbody.innerHTML = '';
+        if (data.success && data.data.length > 0) {
+            data.data.forEach(m => {
+                const date = new Date(m.created_at).toLocaleString();
+                const color = m.tipo_movimiento.includes('ENTRADA') || m.tipo_movimiento === 'COMPRA' ? 'green' : 'red';
+                const sign = color === 'green' ? '+' : '-';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${date}</td>
+                    <td><span class="badge" style="color: ${color}; bg: transparent;">${m.tipo_movimiento}</span></td>
+                    <td>${m.motivo || '-'} <small style="color: grey;">${m.documento_referencia ? '(' + m.documento_referencia + ')' : ''}</small></td>
+                    <td style="font-weight: bold; color: ${color};">${sign}${m.cantidad}</td>
+                    <td>${m.stock_nuevo}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay movimientos registrados</td></tr>';
+        }
+
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Error cargando historial</td></tr>';
+    }
+}
+
 
 // Global functions for HTML access
 window.openModal = (producto = null) => {
@@ -115,7 +237,7 @@ window.openModal = (producto = null) => {
         document.getElementById('nombre').value = producto.nombre;
         document.getElementById('codigo').value = producto.codigo || '';
         document.getElementById('descripcion').value = producto.descripcion || '';
-        document.getElementById('precio_compra').value = producto.precio_compra || 0;
+        document.getElementById('precio_compra').value = producto.costo || 0; // Changed to costo
         document.getElementById('precio_venta').value = producto.precio_venta || 0;
         document.getElementById('impuesto_porcentaje').value = producto.impuesto_porcentaje || 19;
         document.getElementById('activo').checked = !!producto.activo;
@@ -165,7 +287,7 @@ async function guardarProducto(e) {
         nombre: document.getElementById('nombre').value,
         codigo: document.getElementById('codigo').value,
         descripcion: document.getElementById('descripcion').value,
-        precio_compra: document.getElementById('precio_compra').value,
+        costo: document.getElementById('precio_compra').value, // Mapped to Costo
         precio_venta: document.getElementById('precio_venta').value,
         impuesto_porcentaje: document.getElementById('impuesto_porcentaje').value,
         activo: document.getElementById('activo').checked

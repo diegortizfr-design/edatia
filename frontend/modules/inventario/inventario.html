@@ -55,7 +55,11 @@
                     <option>Inactivo</option>
                 </select>
             </div>
-            <button class="btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Nuevo Producto</button>
+            <button class="btn-primary" onclick="openModal()" style="margin-left: 10px;"><i class="fas fa-plus"></i>
+                Nuevo</button>
+            <button class="btn-secondary" onclick="openAjusteModal()"
+                style="background: var(--warning-color); color: #fff; border: none;"><i class="fas fa-sliders-h"></i>
+                Ajustes</button>
         </div>
 
         <!-- PRODUCT TABLE -->
@@ -84,33 +88,134 @@
     <div class="modal-overlay" id="productModal" style="display: none;">
         <div class="modal-glass">
             <div class="modal-header">
-                <h2>Nuevo Producto</h2>
+                <h2 id="modal-title">Nuevo Producto</h2>
                 <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form id="form-producto">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div class="form-group">
-                            <label>Nombre del Producto</label>
-                            <input type="text" placeholder="Ej: Laptop HP...">
+                            <label>Nombre del Producto *</label>
+                            <input type="text" id="nombre" required placeholder="Ej: Laptop HP...">
                         </div>
                         <div class="form-group">
                             <label>SKU / Código</label>
-                            <input type="text" placeholder="Ej: LP-001">
+                            <input type="text" id="codigo" placeholder="Ej: LP-001">
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="descripcion" rows="3"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Costo</label>
+                            <input type="number" id="precio_compra" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Precio Venta</label>
+                            <input type="number" id="precio_venta" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Impuesto (%)</label>
+                            <input type="number" id="impuesto_porcentaje" value="19">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="activo" checked style="width: auto;">
+                        <label for="activo" style="margin: 0;">Producto Activo</label>
+                    </div>
+
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- AJUSTE MODAL -->
+    <div class="modal-overlay" id="ajusteModal" style="display: none;">
+        <div class="modal-glass" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Ajuste de Inventario</h2>
+                <button class="close-btn" onclick="closeAjusteModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-ajuste">
+                    <div class="form-group">
+                        <label>Producto *</label>
+                        <select id="ajuste-producto" required
+                            style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: var(--text-color); border-radius: 8px;">
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Tipo Movimiento</label>
+                            <select id="ajuste-tipo" required style="width: 100%; padding: 10px; border-radius: 8px;">
+                                <option value="AJUSTE_ENTRADA">Entrada (+)</option>
+                                <option value="AJUSTE_SALIDA">Salida (-)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Cantidad</label>
+                            <input type="number" id="ajuste-cantidad" required min="1" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motivo / Observación *</label>
+                        <textarea id="ajuste-motivo" required rows="2"
+                            placeholder="Ej: Conteo físico, Merma, Regalo..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Registrar
+                        Ajuste</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- KARDEX MODAL -->
+    <div class="modal-overlay" id="kardexModal" style="display: none;">
+        <div class="modal-glass" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>Historial de Movimientos</h2>
+                <button class="close-btn" onclick="closeKardexModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1;">
+                <h3 id="kardex-product-name" style="margin-bottom: 20px; color: var(--primary-color);"></h3>
+                <table class="glass-table" style="font-size: 0.9em;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Motivo</th>
+                            <th>Cant.</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kardex-table-body">
+                        <!-- JS Loaded -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
-        function openModal() {
-            document.getElementById('productModal').style.display = 'flex';
-        }
-        function closeModal() {
-            document.getElementById('productModal').style.display = 'none';
-        }
+        // Global helpers handled in inventario.js but declared here for safety
+        function openModal() { document.getElementById('productModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+        function openAjusteModal() { document.getElementById('ajusteModal').style.display = 'flex'; }
+        function closeAjusteModal() { document.getElementById('ajusteModal').style.display = 'none'; }
+        function closeKardexModal() { document.getElementById('kardexModal').style.display = 'none'; }
     </script>
     <script src="../../assets/js/layout-loader.js"></script>
     <script src="../../assets/js/auth_guard.js"></script>

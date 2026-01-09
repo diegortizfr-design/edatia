@@ -111,18 +111,34 @@ async function loadClients() {
             const select = document.getElementById('pos-client-select');
             select.innerHTML = '';
 
-            // Add 'Cliente Mostrador' or general if not in list, usually ID 1 is generic or we add manually
+            // Filter clients
             const clients = data.data.filter(c => c.es_cliente);
+
+            // 1. Try to find "Consumidor Final" (NIT 22222222222)
+            let defaultClient = clients.find(c => c.numero_documento === '22222222222');
+
+            // 2. If not found, fallback to first in list or ID 1
+            if (!defaultClient && clients.length > 0) {
+                defaultClient = clients[0];
+            }
 
             clients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = c.nombre_comercial || c.razon_social;
+                opt.textContent = `${c.nombre_comercial || c.razon_social} (${c.numero_documento})`;
+                if (defaultClient && c.id === defaultClient.id) opt.selected = true;
                 select.appendChild(opt);
             });
 
+            // Set global state
+            if (defaultClient) {
+                selectedCustomer = defaultClient;
+                select.value = defaultClient.id;
+            }
+
             select.addEventListener('change', (e) => {
-                selectedCustomer = { id: e.target.value };
+                const found = clients.find(c => c.id == e.target.value);
+                if (found) selectedCustomer = found;
             });
         }
     } catch (e) { console.error(e); }
@@ -161,6 +177,76 @@ function setupEventListeners() {
 
     // Checkout Button
     document.getElementById('btn-cobrar')?.addEventListener('click', openPaymentModal);
+
+    // Quick Client Button
+    document.getElementById('btn-quick-client')?.addEventListener('click', () => {
+        document.getElementById('modal-quick-cliente').style.display = 'flex';
+    });
+
+    // Quick Client Form Submit
+    document.getElementById('form-quick-cliente')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await saveQuickClient();
+    });
+}
+
+async function saveQuickClient() {
+    const btn = document.querySelector('#form-quick-cliente .btn-guardar');
+    const originalText = btn.textContent;
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+
+    const body = {
+        nombre_comercial: document.getElementById('quick-cli-nombre').value,
+        tipo_documento: document.getElementById('quick-cli-tipo').value,
+        numero_documento: document.getElementById('quick-cli-doc').value,
+        telefono: document.getElementById('quick-cli-tel').value,
+        email: document.getElementById('quick-cli-email').value,
+        direccion: document.getElementById('quick-cli-dir').value,
+        es_cliente: 1,
+        es_proveedor: 0,
+        estado: 1
+    };
+
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(API_CLIENTS, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            showNotification('Cliente creado exitosamente', 'success');
+            document.getElementById('modal-quick-cliente').style.display = 'none';
+            document.getElementById('form-quick-cliente').reset();
+
+            // Reload clients and select the new one (by finding NIT)
+            await loadClients();
+
+            // Select the new client
+            const select = document.getElementById('pos-client-select');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].text.includes(body.numero_documento)) {
+                    select.selectedIndex = i;
+                    selectedCustomer = { id: select.options[i].value, nombre: body.nombre_comercial };
+                    break;
+                }
+            }
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showNotification('Error al crear cliente', 'error');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
 function renderProductGrid(products) {

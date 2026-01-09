@@ -35,6 +35,7 @@ app.use('/api/facturacion', require('./routes/facturacionRoutes'));
 app.use('/api/documentos', require('./routes/documentosRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
+app.use('/api/inventario', require('./routes/inventarioRoutes'));
 
 // Servir frontends por cliente (opcional)
 // app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));

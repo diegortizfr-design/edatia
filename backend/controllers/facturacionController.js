@@ -120,8 +120,17 @@ exports.crearFactura = async (req, res) => {
                 if ((prod.stock_actual || 0) < item.cantidad) {
                     throw new Error(`Stock insuficiente para producto ID ${item.id}. Stock: ${prod.stock_actual}`);
                 }
+                const stockNuevo = (prod.stock_actual || 0) - item.cantidad;
+
                 // Deduct
-                await clientConn.query('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [item.cantidad, item.id]);
+                await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [stockNuevo, item.id]);
+
+                // Record Movement (Kardex)
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario 
+                    (producto_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                    VALUES (?, 'VENTA', ?, ?, ?, ?, ?, ?)
+                `, [item.id, item.cantidad, prod.stock_actual || 0, stockNuevo, 'Venta POS', numero_factura, prod.costo || 0]);
             }
         }
 

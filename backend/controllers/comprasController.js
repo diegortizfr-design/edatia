@@ -136,11 +136,23 @@ exports.actualizarCompra = async (req, res) => {
                     const qty = Number(item.cantidad) || 0;
                     const cost = Number(item.costo_unitario) || 0;
 
+                    // Fetch current stock for movement record
+                    const [prods] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [item.producto_id]);
+                    const currentStock = prods.length ? (Number(prods[0].stock_actual) || 0) : 0;
+                    const newStock = currentStock + qty;
+
                     await clientConn.query(`
                         UPDATE productos 
                         SET stock_actual = IFNULL(stock_actual, 0) + ?, costo = ?
                         WHERE id = ?
                     `, [qty, cost, item.producto_id]);
+
+                    // Record Movement (Kardex)
+                    await clientConn.query(`
+                        INSERT INTO movimientos_inventario 
+                        (producto_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                        VALUES (?, 'COMPRA', ?, ?, ?, ?, ?, ?)
+                    `, [item.producto_id, qty, currentStock, newStock, 'Entrada por Compra', ordenActual.numero_comprobante, cost]);
                 }
 
                 // Update Header

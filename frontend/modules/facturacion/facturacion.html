@@ -166,6 +166,78 @@
         </div>
     </div>
 
+    <!-- MODAL QUICK CLIENTE -->
+    <div id="modal-quick-cliente" class="modal"
+        style="display: none; position: fixed; z-index: 2050; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div class="card" style="width: 90%; max-width: 700px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+            <div
+                style="display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 600;">Nuevo Cliente</h2>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">Registro rápido para facturación</p>
+                </div>
+                <span class="close-modal-btn" data-target="modal-quick-cliente"
+                    style="font-size: 28px; cursor: pointer;">&times;</span>
+            </div>
+
+            <form id="form-quick-cliente">
+                <input type="hidden" name="es_cliente" value="1">
+                <input type="hidden" name="es_proveedor" value="0">
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-control">
+                        <label>Nombre Completo / Razón Social *</label>
+                        <input type="text" id="quick-cli-nombre" required placeholder="Ej: Juan Pérez"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div class="form-control">
+                        <label>Tipo Documento</label>
+                        <select id="quick-cli-tipo"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="NIT">NIT</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="PP">Pasaporte</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="form-control">
+                        <label>Número Documento *</label>
+                        <input type="text" id="quick-cli-doc" required placeholder="Ej: 1098765432"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div class="form-control">
+                        <label>Teléfono</label>
+                        <input type="text" id="quick-cli-tel" placeholder="Ej: 3001234567"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                </div>
+
+                <div class="form-control" style="margin-top: 15px;">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="quick-cli-email" placeholder="cliente@email.com"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+
+                <div class="form-control" style="margin-top: 15px;">
+                    <label>Dirección</label>
+                    <input type="text" id="quick-cli-dir" placeholder="Ej: Calle 123 #45-67"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn-secondary close-modal-btn" data-target="modal-quick-cliente"
+                        style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" class="btn-guardar"
+                        style="flex: 1; padding: 12px; background: var(--primary-color); border: none; color: white; border-radius: 8px; cursor: pointer;">
+                        Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/frontend/assets/js/layout-loader.js"></script>
     <script src="/frontend/assets/js/auth_guard.js"></script>
     <script src="/frontend/assets/js/notifications.js"></script>
