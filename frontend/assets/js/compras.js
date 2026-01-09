@@ -166,9 +166,14 @@ function getBadgeClass(status) {
 
 function updateKPIs(compras) {
     const porPagar = compras.filter(c => c.estado_pago !== 'Pago').reduce((acc, curr) => acc + parseFloat(curr.total), 0);
-    document.getElementById('kpi-por-pagar').textContent = `$${porPagar.toLocaleString()}`;
-    document.getElementById('kpi-pedidos').textContent = `${compras.filter(c => c.estado === 'Orden de Compra' || c.estado === 'Pendiente').length} Órdenes`;
-    document.getElementById('kpi-recepciones').textContent = `${compras.length} Totales`;
+    const elPagar = document.getElementById('kpi-por-pagar');
+    if (elPagar) elPagar.textContent = `$${porPagar.toLocaleString()}`;
+
+    const elPedidos = document.getElementById('kpi-pedidos');
+    if (elPedidos) elPedidos.textContent = `${compras.filter(c => c.estado === 'Orden de Compra' || c.estado === 'Pendiente').length} Órdenes`;
+
+    const elRecep = document.getElementById('kpi-recepciones');
+    if (elRecep) elRecep.textContent = `${compras.length} Totales`;
 }
 
 // --- CREATION LOGIC ---
