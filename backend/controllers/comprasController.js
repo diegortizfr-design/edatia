@@ -8,6 +8,51 @@ async function getClientDbConfig(nit) {
     return rows[0];
 }
 
+// Helper to ensure schema exists (Mini-migration system)
+async function ensureComprasSchema(clientConn) {
+    try { await clientConn.query("ALTER TABLE productos ADD COLUMN stock_actual INT DEFAULT 0"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE productos ADD COLUMN costo DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
+
+    await clientConn.query(`
+        CREATE TABLE IF NOT EXISTS compras (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            proveedor_id INT,
+            sucursal_id INT,
+            documento_id INT,
+            numero_comprobante VARCHAR(50),
+            fecha DATE,
+            total DECIMAL(15,2),
+            estado VARCHAR(50),
+            estado_pago VARCHAR(50) DEFAULT 'Debe',
+            usuario_id INT,
+            factura_referencia VARCHAR(100),
+            factura_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )
+    `);
+
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN documento_id INT"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN numero_comprobante VARCHAR(50)"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_referencia VARCHAR(100)"); } catch (e) { }
+    try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_url TEXT"); } catch (e) { }
+
+    await clientConn.query(`
+        CREATE TABLE IF NOT EXISTS compras_detalle (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            compra_id INT,
+            producto_id INT,
+            cantidad INT,
+            costo_unitario DECIMAL(15,2),
+            subtotal DECIMAL(15,2),
+            FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE CASCADE
+        )
+    `);
+}
+
 exports.listarCompras = async (req, res) => {
     let clientConn = null;
     try {
@@ -16,6 +61,9 @@ exports.listarCompras = async (req, res) => {
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
 
         clientConn = await connectToClientDB(dbConfig);
+
+        // Ensure schema exists before querying (prevents 500 if columns missing)
+        await ensureComprasSchema(clientConn);
 
         // JOIN with Terceros and Documentos for full details
         const sql = `
@@ -41,10 +89,7 @@ exports.listarCompras = async (req, res) => {
 
     } catch (err) {
         console.error('listarCompras error:', err);
-        // If columns needed for the JOIN don't exist yet, it's safer to fail or return empty, 
-        // but typically the create/alter happens in crearCompra. 
-        // We could run migration here too if we wanted to be super safe.
-        res.status(500).json({ success: false, message: 'Error interno' });
+        res.status(500).json({ success: false, message: 'Error interno: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }
