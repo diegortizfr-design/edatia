@@ -104,39 +104,58 @@ exports.actualizarCompra = async (req, res) => {
         const { id } = req.params;
         const { estado, estado_pago } = req.body;
 
+        console.log(`[actualizarCompra] ID: ${id}, New Estado: ${estado}, User: ${nit}`);
+
         // Validar que la orden existe
         const [ordenes] = await clientConn.query('SELECT * FROM compras WHERE id = ?', [id]);
         if (ordenes.length === 0) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
 
         const ordenActual = ordenes[0];
+        console.log(`[actualizarCompra] Estado Actual: ${ordenActual.estado}`);
 
         // 🔒 LOCK: If already 'Completada', prevent any status change
-        if (ordenActual.estado === 'Completada') {
+        // Ensure accurate comparison (case insensitive just in case)
+        if (ordenActual.estado && ordenActual.estado.toLowerCase() === 'completada') {
+            console.log('[actualizarCompra] Blocked: Order is already completed.');
             return res.status(400).json({ success: false, message: 'La orden está finalizada y no se puede modificar.' });
         }
 
         // LOGIC: Stock Movement (If transitioning TO 'Completada')
-        if (estado === 'Completada' && ordenActual.estado !== 'Completada') {
+        if (estado === 'Completada') {
 
+            console.log('[actualizarCompra] Processing stock update...');
             // Get items
             const [items] = await clientConn.query('SELECT * FROM compras_detalle WHERE compra_id = ?', [id]);
 
             await clientConn.beginTransaction();
 
-            // Update Stock
-            for (const item of items) {
-                await clientConn.query(`
-                    UPDATE productos 
-                    SET stock_actual = stock_actual + ?, costo = ?
-                    WHERE id = ?
-                `, [item.cantidad, item.costo_unitario, item.producto_id]);
+            try {
+                // Update Stock
+                for (const item of items) {
+                    // Ensure values are numbers
+                    const qty = Number(item.cantidad) || 0;
+                    const cost = Number(item.costo_unitario) || 0;
+
+                    await clientConn.query(`
+                        UPDATE productos 
+                        SET stock_actual = IFNULL(stock_actual, 0) + ?, costo = ?
+                        WHERE id = ?
+                    `, [qty, cost, item.producto_id]);
+                }
+
+                // Update Header
+                await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', ['Completada', id]);
+                await clientConn.commit();
+                console.log('[actualizarCompra] Transaction Committed.');
+
+            } catch (txErr) {
+                await clientConn.rollback();
+                console.error('[actualizarCompra] Transaction Failed:', txErr);
+                throw txErr; // Re-throw to main catch
             }
 
-            // Update Header
-            await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
-            await clientConn.commit();
-
         } else if (estado) {
+            console.log(`[actualizarCompra] Updating simple status to: ${estado}`);
             await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
         }
 
@@ -152,7 +171,6 @@ exports.actualizarCompra = async (req, res) => {
                 updates.push('factura_url = ?');
                 params.push(fileUrl);
             } else if (req.body.factura_url) {
-                // Fallback if URL is sent manually
                 updates.push('factura_url = ?');
                 params.push(req.body.factura_url);
             }
@@ -171,9 +189,10 @@ exports.actualizarCompra = async (req, res) => {
         res.json({ success: true, message: 'Orden actualizada' });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
+        // Only rollback if we are in a transaction state (hard to track here simply, but safe to try)
+        // Ideally handled inside the specific block
         console.error('actualizarCompra error:', err);
-        res.status(500).json({ success: false, message: 'Error actualizando compra' });
+        res.status(500).json({ success: false, message: 'Error actualizando compra: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }
