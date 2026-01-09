@@ -130,29 +130,58 @@ exports.actualizarCompra = async (req, res) => {
             await clientConn.beginTransaction();
 
             try {
+                // Get Default Branch if not set in order
+                let targetSucursal = ordenActual.sucursal_id;
+                if (!targetSucursal) {
+                    const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                    targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+                }
+
                 // Update Stock
                 for (const item of items) {
                     // Ensure values are numbers
                     const qty = Number(item.cantidad) || 0;
                     const cost = Number(item.costo_unitario) || 0;
 
-                    // Fetch current stock for movement record
-                    const [prods] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [item.producto_id]);
-                    const currentStock = prods.length ? (Number(prods[0].stock_actual) || 0) : 0;
-                    const newStock = currentStock + qty;
+                    // 1. Fetch CURRENT Branch Stock
+                    const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.producto_id, targetSucursal]);
+                    const currentBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+                    const newBranchStock = currentBranchStock + qty;
 
+                    // 2. Fetch Global Stock (for cost update & global cache)
+                    const [prods] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [item.producto_id]);
+                    const currentGlobalStock = prods.length ? (Number(prods[0].stock_actual) || 0) : 0;
+                    const newGlobalStock = currentGlobalStock + qty;
+
+                    // 3. Upsert Branch Stock
+                    if (invSuc.length > 0) {
+                        await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.producto_id, targetSucursal]);
+                    } else {
+                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [item.producto_id, targetSucursal, newBranchStock]);
+                    }
+
+                    // 4. Update Global Stock & Cost
                     await clientConn.query(`
                         UPDATE productos 
-                        SET stock_actual = IFNULL(stock_actual, 0) + ?, costo = ?
+                        SET stock_actual = ?, costo = ?
                         WHERE id = ?
-                    `, [qty, cost, item.producto_id]);
+                    `, [newGlobalStock, cost, item.producto_id]);
 
-                    // Record Movement (Kardex)
+                    // 5. Record Movement (Kardex)
                     await clientConn.query(`
                         INSERT INTO movimientos_inventario 
-                        (producto_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                        VALUES (?, 'COMPRA', ?, ?, ?, ?, ?, ?)
-                    `, [item.producto_id, qty, currentStock, newStock, 'Entrada por Compra', ordenActual.numero_comprobante, cost]);
+                        (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                        VALUES (?, ?, 'COMPRA', ?, ?, ?, ?, ?, ?)
+                    `, [
+                        item.producto_id,
+                        targetSucursal,
+                        qty,
+                        currentBranchStock,
+                        newBranchStock,
+                        'Entrada por Compra',
+                        ordenActual.numero_comprobante,
+                        cost
+                    ]);
                 }
 
                 // Update Header

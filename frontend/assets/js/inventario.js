@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalTitle = document.getElementById('modal-title');
 
         cargarProductos();
+        loadSucursales();
 
         if (form) {
             form.addEventListener('submit', guardarProducto);
@@ -32,21 +33,30 @@ let API_INVENTARIO = '';
 // Store loaded data globally
 let listaProductos = [];
 
-async function cargarProductos() {
+async function cargarProductos(sucursalId = null) {
     try {
         const token = localStorage.getItem('token');
         const configResp = await fetch('../../assets/config.json');
         const config = await configResp.json();
         API_INVENTARIO = `${config.apiUrl}/inventario`;
 
-        const res = await fetch(API_URL, {
+        // Construct URL with optional Branch Filter
+        let url = `${API_URL}`;
+        const params = new URLSearchParams();
+        if (sucursalId) params.append('sucursal_id', sucursalId);
+
+        // Preserve other filters if present (future use)
+        const qs = params.toString();
+        if (qs) url += `?${qs}`;
+
+        const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
 
         if (data.success) {
             listaProductos = data.data; // Save data
-            renderTable(listaProductos);
+            renderTable(listaProductos, sucursalId); // Pass context
             updateKPIs(listaProductos);
             loadProductsForSelect(listaProductos);
         } else {
@@ -57,7 +67,35 @@ async function cargarProductos() {
     }
 }
 
-function renderTable(productos) {
+async function loadSucursales() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_INVENTARIO.replace('/inventario', '/sucursales')}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        const select = document.getElementById('filtro-sucursal');
+        if (data.success && select) {
+            select.innerHTML = '<option value="">Todas las Sucursales</option>';
+            data.data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nombre;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading branches:', e);
+    }
+}
+
+window.applyFilters = () => {
+    const sucursalId = document.getElementById('filtro-sucursal').value;
+    cargarProductos(sucursalId);
+};
+
+function renderTable(productos, sucursalId = null) {
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
@@ -65,6 +103,13 @@ function renderTable(productos) {
         const statusBadge = p.activo
             ? '<span class="badge active" style="color:#059669; background:#ECFDF5; padding:4px 8px; border-radius:4px;">Activo</span>'
             : '<span class="badge" style="color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:4px;">Inactivo</span>';
+
+        // Determine Stock Display
+        let stockDisplay = `<strong>${p.stock_actual || 0}</strong> <small class="text-muted">(Global)</small>`;
+        if (sucursalId) {
+            // If filtered, p.stock_sucursal should be populated from backend
+            stockDisplay = `<strong style="color: var(--primary-color);">${p.stock_sucursal || 0}</strong> <small class="text-muted">(En Sucursal)</small>`;
+        }
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -74,7 +119,7 @@ function renderTable(productos) {
             </td>
             <td>${p.codigo || '-'}</td>
             <td>${p.categoria || 'General'}</td>
-            <td><strong>${p.stock_actual || 0}</strong></td>
+            <td>${stockDisplay}</td>
             <td>$${parseFloat(p.precio_venta || 0).toLocaleString()}</td>
             <td>${statusBadge}</td>
             <td style="display: flex; gap: 5px;">

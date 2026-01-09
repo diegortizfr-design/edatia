@@ -12,7 +12,7 @@ exports.listarProductos = async (req, res) => {
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { busqueda, barcode, categoria } = req.query;
+        const { busqueda, barcode, categoria, sucursal_id } = req.query;
 
         const dbConfig = await getClientDbConfig(nit);
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
@@ -66,8 +66,17 @@ exports.listarProductos = async (req, res) => {
             await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_afecta_inventario BOOLEAN DEFAULT 0');
         }
 
-        let query = 'SELECT p.*, t.nombre_comercial as proveedor_nombre FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id';
+        let query = `
+            SELECT p.*, t.nombre_comercial as proveedor_nombre,
+                   ${sucursal_id ? 'IFNULL(isuc.cant_actual, 0) as stock_sucursal' : 'NULL as stock_sucursal'}
+            FROM productos p 
+            LEFT JOIN terceros t ON p.proveedor_id = t.id
+            ${sucursal_id ? 'LEFT JOIN inventario_sucursales isuc ON p.id = isuc.producto_id AND isuc.sucursal_id = ?' : ''}
+        `;
+
         const params = [];
+        if (sucursal_id) params.push(sucursal_id);
+
         const conditions = [];
 
         if (barcode) {

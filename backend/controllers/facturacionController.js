@@ -109,43 +109,74 @@ exports.crearFactura = async (req, res) => {
 
         await clientConn.beginTransaction();
 
-        // 1. Validate Stock & Prepare Items
-        for (const item of items) {
-            // Get product current stock settings (afecta_inventario)
-            const [prods] = await clientConn.query('SELECT stock_actual, afecta_inventario FROM productos WHERE id = ? FOR UPDATE', [item.id]);
-            if (prods.length === 0) throw new Error(`Producto ID ${item.id} no encontrado`);
-            const prod = prods[0];
-
-            if (prod.afecta_inventario) {
-                if ((prod.stock_actual || 0) < item.cantidad) {
-                    throw new Error(`Stock insuficiente para producto ID ${item.id}. Stock: ${prod.stock_actual}`);
-                }
-                const stockNuevo = (prod.stock_actual || 0) - item.cantidad;
-
-                // Deduct
-                await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [stockNuevo, item.id]);
-
-                // Record Movement (Kardex)
-                await clientConn.query(`
-                    INSERT INTO movimientos_inventario 
-                    (producto_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                    VALUES (?, 'VENTA', ?, ?, ?, ?, ?, ?)
-                `, [item.id, item.cantidad, prod.stock_actual || 0, stockNuevo, 'Venta POS', numero_factura, prod.costo || 0]);
-            }
-        }
-
-        // 2. Get Invoice Consecutive
+        // 1. Get Invoice Consecutive AND Branch Info (Moved up)
         const [docRows] = await clientConn.query(
-            'SELECT prefijo, consecutivo_actual FROM documentos WHERE id = ? FOR UPDATE',
+            'SELECT prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE id = ? FOR UPDATE',
             [documento_id]
         );
         if (docRows.length === 0) throw new Error('Tipo de documento (Factura) no encontrado');
 
-        const { prefijo, consecutivo_actual } = docRows[0];
+        const { prefijo, consecutivo_actual, sucursal_id } = docRows[0];
         const numero_factura = `${prefijo || ''}${consecutivo_actual}`;
 
         // Update Invoice Consecutive
         await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [documento_id]);
+
+        // 2. Validate Stock & Deduct (Now with sucursal_id available)
+        for (const item of items) {
+            const [prods] = await clientConn.query('SELECT stock_actual, afecta_inventario, costo FROM productos WHERE id = ? FOR UPDATE', [item.id]);
+            if (prods.length === 0) throw new Error(`Producto ID ${item.id} no encontrado`);
+            const prod = prods[0];
+
+            if (prod.afecta_inventario) {
+                let currentBranchStock = 0;
+                if (sucursal_id) {
+                    // Check Branch Stock
+                    const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.id, sucursal_id]);
+                    currentBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+                    if (currentBranchStock < item.cantidad) {
+                        throw new Error(`Stock insuficiente en sucursal para producto ID ${item.id}. Stock Sucursal: ${currentBranchStock}`);
+                    }
+                } else {
+                    // Fallback check
+                    if ((prod.stock_actual || 0) < item.cantidad) {
+                        throw new Error(`Stock insuficiente (Global) para producto ID ${item.id}`);
+                    }
+                }
+
+                // Update Branch Stock
+                if (sucursal_id) {
+                    const newBranchStock = currentBranchStock - item.cantidad;
+                    if (currentBranchStock > 0) {
+                        await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.id, sucursal_id]);
+                    } else {
+                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [newBranchStock, item.id, sucursal_id]);
+                    }
+                }
+
+                // Update Global Stock
+                const stockNuevo = (parseFloat(prod.stock_actual) || 0) - item.cantidad;
+                await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [stockNuevo, item.id]);
+
+                // Record Movement
+                await clientConn.query(`
+                     INSERT INTO movimientos_inventario 
+                     (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                     VALUES (?, ?, 'VENTA', ?, ?, ?, ?, ?, ?)
+                 `, [
+                    item.id,
+                    sucursal_id || null,
+                    item.cantidad,
+                    sucursal_id ? currentBranchStock : (prod.stock_actual || 0),
+                    sucursal_id ? (currentBranchStock - item.cantidad) : stockNuevo,
+                    'Venta POS',
+                    numero_factura,
+                    prod.costo || 0
+                ]);
+            }
+        }
+
+
 
 
         // 3. Insert Invoice Header
