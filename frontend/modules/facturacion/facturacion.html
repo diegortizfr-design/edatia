@@ -25,7 +25,11 @@
                 <header class="pos-header">
                     <div class="header-title">
                         <h1><i class="fas fa-cash-register"></i> Punto de Venta</h1>
-                        <p class="subtitle">Caja: Principal | Vendedor: Admin</p>
+                        <!-- Selector de Documento de Facturación -->
+                        <select id="pos-document-type"
+                            style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.9rem; margin-top: 5px;">
+                            <option value="">Cargando documentos...</option>
+                        </select>
                     </div>
                     <div class="search-bar">
                         <i class="fas fa-search"></i>
@@ -42,26 +46,7 @@
                 </div>
 
                 <div class="product-grid" id="products-container">
-                    <!-- Example Card -->
-                    <div class="product-card">
-                        <div class="p-image"
-                            style="background-image: url('https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=300&auto=format&fit=crop');">
-                        </div>
-                        <div class="p-details">
-                            <h4>Cappuccino</h4>
-                            <span class="price">$4,500</span>
-                        </div>
-                    </div>
-                    <!-- Placeholders for verification -->
-                    <div class="product-card">
-                        <div class="p-image"
-                            style="background-image: url('https://images.unsplash.com/photo-1513267048331-5611cad82e4f?q=80&w=300&auto=format&fit=crop');">
-                        </div>
-                        <div class="p-details">
-                            <h4>Sandwich Pollo</h4>
-                            <span class="price">$12,000</span>
-                        </div>
-                    </div>
+                    <!-- Products loaded via JS -->
                 </div>
             </section>
 
@@ -69,46 +54,117 @@
             <aside class="pos-cart card">
                 <div class="cart-header">
                     <h3><i class="fas fa-shopping-cart"></i> Orden</h3>
-                    <span class="order-num">#0042</span>
+                    <span class="order-num">---</span>
                 </div>
 
                 <div class="cart-customer">
                     <i class="fas fa-user-circle"></i>
-                    <span>Cliente Mostrador</span>
-                    <button class="btn-icon-small"><i class="fas fa-edit"></i></button>
+                    <!-- Simple Client Selector -->
+                    <select id="pos-client-select"
+                        style="border: none; background: transparent; font-weight: 500; width: 100%;">
+                        <option value="1">Cliente Mostrador</option>
+                        <!-- Loader via JS -->
+                    </select>
                 </div>
 
                 <div class="cart-items" id="cart-container">
-                    <!-- Cart Item Example -->
-                    <div class="cart-item">
-                        <div class="item-info">
-                            <strong>Cappuccino</strong>
-                            <small>1 x $4,500</small>
-                        </div>
-                        <div class="item-total">$4,500</div>
-                        <button class="remove-btn"><i class="fas fa-times"></i></button>
-                    </div>
+                    <!-- Cart Items loaded via JS -->
                 </div>
 
                 <div class="cart-summary">
                     <div class="summary-row">
                         <span>Subtotal</span>
-                        <span>$4,500</span>
+                        <span>$0.00</span>
                     </div>
                     <div class="summary-row total">
                         <span>Total</span>
-                        <span>$4,500</span>
+                        <span>$0.00</span>
                     </div>
 
                     <div class="cart-actions">
-                        <button class="btn-pay cash"><i class="fas fa-money-bill-wave"></i></button>
-                        <button class="btn-pay card-pay"><i class="fas fa-credit-card"></i></button>
+                        <!-- Trigger Payment Modal directly -->
                     </div>
-                    <button class="btn-checkout">Cobrar <i class="fas fa-arrow-right"></i></button>
+                    <button class="btn-checkout" id="btn-cobrar">Cobrar <i class="fas fa-arrow-right"></i></button>
                 </div>
             </aside>
         </div>
     </main>
+
+    <!-- PAYMENT MODAL -->
+    <div id="modal-pago" class="modal"
+        style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div class="card" style="width: 90%; max-width: 500px; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem;">Resumen de Pago</h2>
+                <span class="close-modal-btn" data-target="modal-pago"
+                    style="font-size: 28px; cursor: pointer;">&times;</span>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span style="display: block; color: var(--text-gray);">Total a Pagar</span>
+                <span id="pago-total-display"
+                    style="font-size: 2.5rem; font-weight: 700; color: var(--primary-color);">$0.00</span>
+            </div>
+
+            <div class="form-control">
+                <label>Tipo de Pago</label>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button type="button" class="btn-toggle active" data-value="Contado"
+                        onclick="setPaymentType('Contado')">Contado</button>
+                    <button type="button" class="btn-toggle" data-value="Crédito"
+                        onclick="setPaymentType('Crédito')">Crédito</button>
+                </div>
+                <input type="hidden" id="pago-tipo" value="Contado">
+            </div>
+
+            <div class="form-control" style="margin-top: 15px;">
+                <label>Método de Pago</label>
+                <select id="pago-metodo"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="Efectivo">Efectivo 💵</option>
+                    <option value="Tarjeta">Tarjeta 💳</option>
+                    <option value="Transferencia">Transferencia 🏦</option>
+                </select>
+            </div>
+
+            <div id="section-contado">
+                <div class="form-control" style="margin-top: 15px;">
+                    <label>Monto Recibido</label>
+                    <input type="number" id="pago-monto" style="font-size: 1.2rem; padding: 10px; width: 100%;"
+                        placeholder="0">
+                </div>
+
+                <div
+                    style="margin-top: 15px; background: #f3f4f6; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between;">
+                    <strong>Cambio / Devuelta:</strong>
+                    <strong id="pago-cambio" style="color: green;">$0.00</strong>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <button class="btn-primary" id="btn-finalizar-venta"
+                    style="width: 100%; padding: 15px; font-size: 1.1rem;">
+                    Confirmar Venta <i class="fas fa-check"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIPT MODAL -->
+    <div id="modal-recibo" class="modal"
+        style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; width: 300px; text-align: center; border-radius: 5px;">
+            <i class="fas fa-check-circle" style="color: green; font-size: 3rem;"></i>
+            <h3>¡Venta Exitosa!</h3>
+            <p id="recibo-info">Factura: -</p>
+            <p id="recibo-extra" style="font-size: 0.9rem; color: gray;"></p>
+
+            <div style="margin-top: 20px;">
+                <button class="btn-secondary" onclick="location.reload()">Nueva Venta</button>
+                <button class="btn-primary" style="margin-left: 10px;">Imprimir</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/frontend/assets/js/layout-loader.js"></script>
     <script src="/frontend/assets/js/auth_guard.js"></script>
