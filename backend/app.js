@@ -37,8 +37,8 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
 
 // Servir frontends por cliente (opcional)
-app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
-app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
+// app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
+// app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
 app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
