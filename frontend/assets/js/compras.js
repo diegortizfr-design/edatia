@@ -545,9 +545,12 @@ function generateActionButtons(compra) {
 }
 
 function imprimirOrden(id) {
-    localShowNotification(`Generando PDF para orden #${id}... (Simulado)`, 'success');
-
-    // Logic to open PDF generation window would go here
+    // Open the print view in a new window/tab
+    const width = 850;
+    const height = 600;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    window.open(`print_orden.html?id=${id}`, 'PrintOrden', `width=${width},height=${height},top=${top},left=${left}`);
 }
 
 function addBtn(container, text, cls, onClick) {
@@ -766,8 +769,18 @@ async function abrirModalInspeccion(id) {
                 row.innerHTML = `
                     <td>${item.nombre_producto || 'Producto #' + item.producto_id}</td>
                     <td>${item.cantidad}</td>
-                    <td><input type="number" class="w-full border rounded p-1" value="${item.cantidad}" style="width: 80px; padding: 5px; border:1px solid #ddd; border-radius:4px;"></td>
-                    <td><input type="checkbox" checked style="transform: scale(1.2);"></td>
+                    <td>
+                        <input type="number" id="insp-qty-${item.producto_id}" 
+                               class="received-qty-input"
+                               data-prod="${item.producto_id}"
+                               min="0" 
+                               max="${item.cantidad}" 
+                               value="${item.cantidad}" 
+                               style="width: 80px; padding: 5px; border:1px solid #ddd; border-radius:4px; text-align: center;">
+                    </td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" checked style="transform: scale(1.2);">
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -781,6 +794,22 @@ async function abrirModalInspeccion(id) {
 }
 
 async function guardarInspeccion() {
+    // Collect specific quantities
+    const inputs = document.querySelectorAll('.received-qty-input');
+    const receivedItems = [];
+
+    inputs.forEach(inp => {
+        receivedItems.push({
+            producto_id: inp.dataset.prod,
+            cantidad_recibida: parseFloat(inp.value) || 0
+        });
+    });
+
+    // Validar si hay cambios (Parcialidad no soportada fully en backend en este paso, pero podemos guardar notas o ajustar items)
+    // Por ahora, asumimos que el usuario edita lo que realmente entra.
+    // TODO: Send `receivedItems` to backend to adjust Purchase Details if needed (Partial Delivery feature)
+    // Current Logic: Just advance state manually.
+
     await cambiarEstado(compraActualId, 'Recibida');
     document.getElementById('modal-inspeccion').style.display = 'none';
 }

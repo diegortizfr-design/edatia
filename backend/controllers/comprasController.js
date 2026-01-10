@@ -233,6 +233,15 @@ exports.crearCompra = async (req, res) => {
             await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [documento_id]);
         }
 
+        // --- VALIDATION: Prevent Duplicate Invoice ---
+        if (factura_referencia && proveedor_id) {
+            const [dups] = await clientConn.query('SELECT id FROM compras WHERE proveedor_id = ? AND factura_referencia = ?', [proveedor_id, factura_referencia]);
+            if (dups.length > 0) {
+                await clientConn.rollback();
+                return res.status(400).json({ success: false, message: 'Ya existe una compra con ese número de factura para este proveedor.' });
+            }
+        }
+
         // 2. Insert Header
         const [result] = await clientConn.query(`
             INSERT INTO compras 
