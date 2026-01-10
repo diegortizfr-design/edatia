@@ -290,16 +290,21 @@ window.openModal = (producto = null) => {
         document.getElementById('nombre').value = producto.nombre;
         document.getElementById('codigo').value = producto.codigo || '';
         document.getElementById('descripcion').value = producto.descripcion || '';
-        document.getElementById('precio_compra').value = producto.costo || 0; // Changed to costo
+        document.getElementById('precio_compra').value = producto.costo || 0;
         document.getElementById('precio_venta').value = producto.precio_venta || 0;
         document.getElementById('impuesto_porcentaje').value = producto.impuesto_porcentaje || 19;
+
         document.getElementById('activo').checked = !!producto.activo;
+        document.getElementById('maneja_inventario').checked = !!producto.maneja_inventario;
+        document.getElementById('mostrar_en_tienda').checked = !!producto.mostrar_en_tienda;
     } else {
         isEditing = false;
         currentId = null;
         modalTitle.textContent = 'Nuevo Producto';
         form.reset();
         document.getElementById('activo').checked = true;
+        document.getElementById('maneja_inventario').checked = true;
+        document.getElementById('mostrar_en_tienda').checked = false;
     }
 };
 
@@ -340,10 +345,12 @@ async function guardarProducto(e) {
         nombre: document.getElementById('nombre').value,
         codigo: document.getElementById('codigo').value,
         descripcion: document.getElementById('descripcion').value,
-        costo: document.getElementById('precio_compra').value, // Mapped to Costo
+        costo: document.getElementById('precio_compra').value,
         precio_venta: document.getElementById('precio_venta').value,
         impuesto_porcentaje: document.getElementById('impuesto_porcentaje').value,
-        activo: document.getElementById('activo').checked
+        activo: document.getElementById('activo').checked,
+        maneja_inventario: document.getElementById('maneja_inventario').checked,
+        mostrar_en_tienda: document.getElementById('mostrar_en_tienda').checked
     };
 
     try {
