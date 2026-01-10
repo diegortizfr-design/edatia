@@ -124,11 +124,11 @@ exports.crearFactura = async (req, res) => {
 
         // 2. Validate Stock & Deduct (Now with sucursal_id available)
         for (const item of items) {
-            const [prods] = await clientConn.query('SELECT stock_actual, afecta_inventario, costo FROM productos WHERE id = ? FOR UPDATE', [item.id]);
+            const [prods] = await clientConn.query('SELECT stock_actual, maneja_inventario, costo FROM productos WHERE id = ? FOR UPDATE', [item.id]);
             if (prods.length === 0) throw new Error(`Producto ID ${item.id} no encontrado`);
             const prod = prods[0];
 
-            if (prod.afecta_inventario) {
+            if (prod.maneja_inventario) {
                 let currentBranchStock = 0;
                 if (sucursal_id) {
                     // Check Branch Stock

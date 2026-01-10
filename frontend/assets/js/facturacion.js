@@ -277,7 +277,7 @@ function renderProductGrid(products) {
 
         let stockLabel = '';
         let noStock = false;
-        if (p.afecta_inventario) {
+        if (p.maneja_inventario) {
             const stock = p.stock_actual || 0;
             if (stock <= 0) {
                 stockLabel = '<span style="color:red; font-size:0.8rem;">Sin Stock</span>';
@@ -322,7 +322,7 @@ function renderProductGrid(products) {
 
 function addToCart(product) {
     // 1. Check if affects inventory and has stock
-    if (product.afecta_inventario) {
+    if (product.maneja_inventario) {
         const existingInCart = cart.find(item => item.id === product.id);
         const currentQty = existingInCart ? existingInCart.cantidad : 0;
         const available = product.stock_actual || 0;
@@ -344,7 +344,7 @@ function addToCart(product) {
             precio: parseFloat(product.precio1),
             impuesto_porcentaje: parseFloat(product.impuesto_porcentaje) || 0,
             cantidad: 1,
-            afecta_inventario: product.afecta_inventario,
+            maneja_inventario: product.maneja_inventario,
             stock_max: product.stock_actual // Keep ref just in case
         });
     }
