@@ -22,18 +22,8 @@ async function listarSucursales(req, res) {
 
         clientConn = await connectToClientDB(dbConfig);
 
-        // Crear tabla si no existe (seguridad para evitar errores en primera ejecución)
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS sucursales (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                nombre VARCHAR(100) NOT NULL,
-                direccion VARCHAR(255) NOT NULL,
-                telefono VARCHAR(50),
-                estado VARCHAR(20) DEFAULT 'Activa',
-                es_principal BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // DDL Removed
+
 
         const [rows] = await clientConn.query('SELECT * FROM sucursales ORDER BY id DESC');
 
@@ -73,18 +63,8 @@ async function crearSucursal(req, res) {
 
         clientConn = await connectToClientDB(dbConfig);
 
-        // Asegurar que exista tabla
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS sucursales (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                nombre VARCHAR(100) NOT NULL,
-                direccion VARCHAR(255) NOT NULL,
-                telefono VARCHAR(50),
-                estado VARCHAR(20) DEFAULT 'Activa',
-                es_principal BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // DDL Removed
+
 
         // INSERT
         const insertSQL = `

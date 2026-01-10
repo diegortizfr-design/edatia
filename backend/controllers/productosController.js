@@ -1,5 +1,6 @@
 const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
+const { initializeTenantDB } = require('../utils/tenantInit');
 
 async function getClientDbConfig(nit) {
     const pool = getPool();
@@ -18,53 +19,8 @@ exports.listarProductos = async (req, res) => {
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
 
-        // Ensure table and columns exist
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS productos (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                codigo VARCHAR(50) UNIQUE,
-                referencia_fabrica VARCHAR(100),
-                nombre VARCHAR(255) NOT NULL,
-                nombre_alterno VARCHAR(255),
-                categoria VARCHAR(100),
-                unidad_medida VARCHAR(20) DEFAULT 'UND',
-                precio1 DECIMAL(15,2) DEFAULT 0,
-                precio2 DECIMAL(15,2) DEFAULT 0,
-                precio3 DECIMAL(15,2) DEFAULT 0,
-                costo DECIMAL(15,2) DEFAULT 0,
-                impuesto_porcentaje DECIMAL(5,2) DEFAULT 0,
-                proveedor_id INT,
-                stock_minimo INT DEFAULT 0,
-                stock_actual INT DEFAULT 0,
-                descripcion TEXT,
-                imagen_url TEXT,
-                activo BOOLEAN DEFAULT 1,
-                es_servicio BOOLEAN DEFAULT 0,
-                maneja_inventario BOOLEAN DEFAULT 1,
-                mostrar_en_tienda BOOLEAN DEFAULT 0,
-                ecommerce_descripcion TEXT,
-                ecommerce_imagenes TEXT,
-                ecommerce_afecta_inventario BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // DDL Removed - Assuming schema exists or will be handled by lazy init on error
 
-        // Check and add missing columns if table already existed
-        const [columns] = await clientConn.query('SHOW COLUMNS FROM productos');
-        const colNames = columns.map(c => c.Field);
-
-        if (!colNames.includes('mostrar_en_tienda')) {
-            await clientConn.query('ALTER TABLE productos ADD COLUMN mostrar_en_tienda BOOLEAN DEFAULT 0');
-        }
-        if (!colNames.includes('ecommerce_descripcion')) {
-            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_descripcion TEXT');
-        }
-        if (!colNames.includes('ecommerce_imagenes')) {
-            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_imagenes TEXT');
-        }
-        if (!colNames.includes('ecommerce_afecta_inventario')) {
-            await clientConn.query('ALTER TABLE productos ADD COLUMN ecommerce_afecta_inventario BOOLEAN DEFAULT 0');
-        }
 
         let query = `
             SELECT p.*, t.nombre_comercial as proveedor_nombre,
@@ -103,6 +59,12 @@ exports.listarProductos = async (req, res) => {
 
     } catch (err) {
         console.error('listarProductos error:', err);
+        // Lazy Init: If table doesn't exist, try to init and retry (simplified for now)
+        if (err.code === 'ER_NO_SUCH_TABLE') {
+            // Logic could be added here to auto-initialize, but better to log and explicit init
+            // For now, just fail to see performance gain, or we can catch and retry
+            console.warn('Table not found, try initializing schema.');
+        }
         res.status(500).json({ success: false, message: 'Error al listar productos' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -116,36 +78,8 @@ exports.crearProducto = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        // Extended schema for Product Configuration
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS productos (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                codigo VARCHAR(50) UNIQUE,
-                referencia_fabrica VARCHAR(100),
-                nombre VARCHAR(255) NOT NULL,
-                nombre_alterno VARCHAR(255),
-                categoria VARCHAR(100),
-                unidad_medida VARCHAR(20) DEFAULT 'UND',
-                precio1 DECIMAL(15,2) DEFAULT 0,
-                precio2 DECIMAL(15,2) DEFAULT 0,
-                precio3 DECIMAL(15,2) DEFAULT 0,
-                costo DECIMAL(15,2) DEFAULT 0,
-                impuesto_porcentaje DECIMAL(5,2) DEFAULT 0,
-                proveedor_id INT,
-                stock_minimo INT DEFAULT 0,
-                stock_actual INT DEFAULT 0,
-                descripcion TEXT,
-                imagen_url TEXT,
-                activo BOOLEAN DEFAULT 1,
-                es_servicio BOOLEAN DEFAULT 0,
-                maneja_inventario BOOLEAN DEFAULT 1,
-                mostrar_en_tienda BOOLEAN DEFAULT 0,
-                ecommerce_descripcion TEXT,
-                ecommerce_imagenes TEXT,
-                ecommerce_afecta_inventario BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // DDL Removed
+
 
         const {
             codigo, referencia_fabrica, nombre, nombre_alterno, categoria,

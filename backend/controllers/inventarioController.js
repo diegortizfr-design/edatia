@@ -16,39 +16,8 @@ exports.verKardex = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        // DATE FILTER (Optional, default last 30 days logic could be added)
-        // Ensure tables exist
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS movimientos_inventario (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                producto_id INT NOT NULL,
-                sucursal_id INT DEFAULT NULL,
-                tipo_movimiento VARCHAR(50) NOT NULL,
-                cantidad DECIMAL(15,2) NOT NULL,
-                stock_anterior DECIMAL(15,2) DEFAULT 0,
-                stock_nuevo DECIMAL(15,2) NOT NULL,
-                motivo VARCHAR(255),
-                documento_referencia VARCHAR(100) DEFAULT NULL,
-                costo_unitario DECIMAL(15,2) DEFAULT 0,
-                usuario_id INT DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX (producto_id),
-                INDEX (created_at)
-            )
-        `);
+        // DDL Removed
 
-        // MULTI-BRANCH TABLE
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS inventario_sucursales (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                producto_id INT NOT NULL,
-                sucursal_id INT NOT NULL,
-                cant_actual DECIMAL(15,2) DEFAULT 0,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_prod_suc (producto_id, sucursal_id),
-                FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
-            )
-        `);
 
         // Fetch movements with Branch Name
         const [rows] = await clientConn.query(`

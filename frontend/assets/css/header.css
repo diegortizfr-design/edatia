@@ -1,0 +1,107 @@
+/* Header Component Styles */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    /* Glassmorphism base included */
+}
+
+.search-bar {
+    position: relative;
+}
+
+.search-bar i {
+    position: absolute;
+    left: 40px; /* Adjusted from inline 40px */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+}
+
+.search-bar input {
+    padding: 10px 10px 10px 55px;
+    border-radius: 20px;
+    border: 1px solid #E5E7EB;
+    background: rgba(255,255,255,0.5);
+    width: 300px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-bar input:focus {
+    background: rgba(255,255,255,0.9);
+    border-color: #6366f1; /* Indigo-500 accent */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.header-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.notifications {
+    position: relative;
+    cursor: pointer;
+}
+
+.notifications i {
+    font-size: 1.2rem;
+    color: #6B7280;
+    transition: color 0.2s;
+}
+
+.notifications:hover i {
+    color: #4F46E5;
+}
+
+.notifications .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #EF4444;
+    color: white;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.user-profile .avatar {
+    width: 35px;
+    height: 35px;
+    background: #4F46E5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    user-select: none;
+}
+
+.user-profile .user-info .name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.user-profile .user-info .role {
+    display: block;
+    font-size: 0.75rem;
+    color: #6B7280;
+}

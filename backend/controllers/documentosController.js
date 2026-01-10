@@ -50,28 +50,8 @@ exports.crearDocumento = async (req, res) => {
 
         clientConn = await connectToClientDB(dbConfig);
 
-        // Crear tabla si no existe (First-Run logic)
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS documentos (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                sucursal_id INT NOT NULL,
-                categoria VARCHAR(50),
-                nombre VARCHAR(100) NOT NULL,
-                prefijo VARCHAR(20),
-                consecutivo_actual INT DEFAULT 1,
-                resolucion_numero VARCHAR(100),
-                resolucion_fecha DATE,
-                resolucion_fecha_vencimiento DATE,
-                resolucion_rango_inicial INT,
-                resolucion_rango_final INT,
-                resolucion_texto TEXT,
-                documento_equivalente VARCHAR(50),
-                tipo_doc_electronico VARCHAR(50),
-                excluir_impuestos BOOLEAN DEFAULT 0,
-                estado BOOLEAN DEFAULT 1,
-                FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE CASCADE
-            )
-        `);
+        // DDL Removed
+
 
         const {
             sucursal_id, categoria, nombre, prefijo, consecutivo_actual,

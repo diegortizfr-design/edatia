@@ -10,47 +10,7 @@ async function getClientDbConfig(nit) {
 
 // Helper to ensure schema exists (Mini-migration system)
 async function ensureComprasSchema(clientConn) {
-    try { await clientConn.query("ALTER TABLE productos ADD COLUMN stock_actual INT DEFAULT 0"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE productos ADD COLUMN costo DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
-
-    await clientConn.query(`
-        CREATE TABLE IF NOT EXISTS compras (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            proveedor_id INT,
-            sucursal_id INT,
-            documento_id INT,
-            numero_comprobante VARCHAR(50),
-            fecha DATE,
-            total DECIMAL(15,2),
-            estado VARCHAR(50),
-            estado_pago VARCHAR(50) DEFAULT 'Debe',
-            usuario_id INT,
-            factura_referencia VARCHAR(100),
-            factura_url TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-        )
-    `);
-
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN documento_id INT"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN numero_comprobante VARCHAR(50)"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_referencia VARCHAR(100)"); } catch (e) { }
-    try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_url TEXT"); } catch (e) { }
-
-    await clientConn.query(`
-        CREATE TABLE IF NOT EXISTS compras_detalle (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            compra_id INT,
-            producto_id INT,
-            cantidad INT,
-            costo_unitario DECIMAL(15,2),
-            subtotal DECIMAL(15,2),
-            FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE CASCADE
-        )
-    `);
+    // DDL Removed - Handled by tenantInit
 }
 
 exports.listarCompras = async (req, res) => {
@@ -251,48 +211,8 @@ exports.crearCompra = async (req, res) => {
             documento_id, factura_referencia // cruce logic
         } = req.body;
 
-        // --- MIGRATIONS: Ensure columns exist ---
-        try { await clientConn.query("ALTER TABLE productos ADD COLUMN stock_actual INT DEFAULT 0"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE productos ADD COLUMN costo DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
+        // DDL Removed
 
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS compras (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                proveedor_id INT,
-                sucursal_id INT,
-                documento_id INT,
-                numero_comprobante VARCHAR(50),
-                fecha DATE,
-                total DECIMAL(15,2),
-                estado VARCHAR(50),
-                estado_pago VARCHAR(50) DEFAULT 'Debe',
-                usuario_id INT,
-                factura_referencia VARCHAR(100),
-                factura_url TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-            )
-        `);
-        // Alter for new columns
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN documento_id INT"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN numero_comprobante VARCHAR(50)"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN sucursal_id INT"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN estado_pago VARCHAR(50) DEFAULT 'Debe'"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN usuario_id INT"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_referencia VARCHAR(100)"); } catch (e) { }
-        try { await clientConn.query("ALTER TABLE compras ADD COLUMN factura_url TEXT"); } catch (e) { }
-
-        await clientConn.query(`
-            CREATE TABLE IF NOT EXISTS compras_detalle (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                compra_id INT,
-                producto_id INT,
-                cantidad INT,
-                costo_unitario DECIMAL(15,2),
-                subtotal DECIMAL(15,2),
-                FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE CASCADE
-            )
-        `);
 
         // Start transaction
         await clientConn.beginTransaction();
