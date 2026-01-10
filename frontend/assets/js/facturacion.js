@@ -40,6 +40,8 @@ async function initPOS() {
 
 // --- DATA LOADING ---
 
+// --- DATA LOADING ---
+
 async function loadProducts() {
     try {
         const token = localStorage.getItem('token');
@@ -47,12 +49,48 @@ async function loadProducts() {
         const data = await resp.json();
         if (data.success) {
             allProducts = data.data;
+            renderCategoryTabs(allProducts); // New: Dynamic Categories
             renderProductGrid(allProducts);
         }
     } catch (e) { console.error('Error loading products:', e); }
 }
 
+function renderCategoryTabs(products) {
+    const container = document.querySelector('.category-tabs');
+    if (!container) return;
+
+    // Get unique categories
+    const categories = ['Todos', ...new Set(products.map(p => p.categoria || 'Sin Categoría').filter(c => c))];
+
+    container.innerHTML = '';
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `tab ${cat === 'Todos' ? 'active' : ''}`;
+        btn.dataset.category = cat;
+        // Icons mapping (optional, or generic)
+        let icon = 'fa-tag';
+        if (cat.toLowerCase().includes('bebida')) icon = 'fa-coffee';
+        if (cat.toLowerCase().includes('comida')) icon = 'fa-hamburger';
+        if (cat.toLowerCase().includes('postre')) icon = 'fa-ice-cream';
+
+        btn.innerHTML = `<i class="fas ${icon}"></i> ${cat}`;
+
+        btn.onclick = () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            if (cat === 'Todos') {
+                renderProductGrid(allProducts);
+            } else {
+                renderProductGrid(allProducts.filter(p => (p.categoria || 'Sin Categoría') === cat));
+            }
+        };
+
+        container.appendChild(btn);
+    });
+}
+
 async function loadPOSConfig() {
+    // ... (unchanged) ...
     try {
         const token = localStorage.getItem('token');
         const resp = await fetch(API_DOCS, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -61,12 +99,8 @@ async function loadPOSConfig() {
             const docSelect = document.getElementById('pos-document-type');
             docSelect.innerHTML = '<option value="">Seleccione Documento...</option>';
 
-            // Filter for 'Factura' related categories
             const posDocs = data.data.filter(d =>
-                d.categoria === 'Factura de Venta' ||
-                d.categoria === 'Factura POS' ||
-                d.categoria === 'Venta' ||
-                d.categoria === 'FV'
+                ['factura de venta', 'factura pos', 'venta', 'fv'].includes((d.categoria || '').toLowerCase())
             );
 
             posDocs.forEach(doc => {
@@ -78,7 +112,6 @@ async function loadPOSConfig() {
                 docSelect.appendChild(opt);
             });
 
-            // Auto-select first if available
             if (posDocs.length > 0) {
                 docSelect.value = posDocs[0].id; // Select first
                 selectedDoc = posDocs[0];
@@ -111,26 +144,20 @@ async function loadClients() {
             const select = document.getElementById('pos-client-select');
             select.innerHTML = '';
 
-            // Filter clients
             const clients = data.data.filter(c => c.es_cliente);
 
-            // 1. Try to find "Consumidor Final" (NIT 22222222222)
             let defaultClient = clients.find(c => c.numero_documento === '22222222222');
-
-            // 2. If not found, fallback to first in list or ID 1
-            if (!defaultClient && clients.length > 0) {
-                defaultClient = clients[0];
-            }
+            if (!defaultClient && clients.length > 0) defaultClient = clients[0];
 
             clients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = `${c.nombre_comercial || c.razon_social} (${c.numero_documento})`;
+                // FIX: Better display format
+                opt.textContent = `${c.nombre_comercial || c.razon_social || c.nombre} - ${c.numero_documento || 'Sin NIT'}`;
                 if (defaultClient && c.id === defaultClient.id) opt.selected = true;
                 select.appendChild(opt);
             });
 
-            // Set global state
             if (defaultClient) {
                 selectedCustomer = defaultClient;
                 select.value = defaultClient.id;
@@ -164,16 +191,7 @@ function setupEventListeners() {
         });
     }
 
-    // Category filter
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const cat = tab.dataset.category;
-            const filtered = cat === 'todos' ? allProducts : allProducts.filter(p => p.categoria && p.categoria.toLowerCase() === cat.toLowerCase());
-            renderProductGrid(filtered);
-        });
-    });
+
 
     // Checkout Button
     document.getElementById('btn-cobrar')?.addEventListener('click', openPaymentModal);
@@ -255,12 +273,10 @@ function renderProductGrid(products) {
     container.innerHTML = '';
 
     products.forEach(p => {
-        if (!p.activo) return; // Skip inactive
+        if (!p.activo) return;
 
-        // Stock Display Logic
         let stockLabel = '';
         let noStock = false;
-
         if (p.afecta_inventario) {
             const stock = p.stock_actual || 0;
             if (stock <= 0) {
@@ -275,12 +291,23 @@ function renderProductGrid(products) {
         card.className = `product-card ${noStock ? 'disabled' : ''}`;
         if (noStock) card.style.opacity = '0.6';
 
+        // Image Handling
+        let imageHTML = '';
+        if (p.imagen_url && p.imagen_url.trim() !== '') {
+            imageHTML = `<div class="p-image" style="background-image: url('${p.imagen_url}');"></div>`;
+        } else {
+            // Fallback Icon
+            imageHTML = `<div class="p-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
+                            <i class="fas fa-box-open" style="font-size: 3rem;"></i>
+                         </div>`;
+        }
+
         card.innerHTML = `
-            <div class="p-image" style="background-image: url('${p.imagen_url || ''}'); background-color: #f3f3f3;"></div>
+            ${imageHTML}
             <div class="p-details">
-                <h4>${p.nombre}</h4>
-                <div style="display:flex; justify-content:space-between;">
-                    <span class="price">$${parseFloat(p.precio1).toLocaleString()}</span>
+                <h4 title="${p.nombre}">${p.nombre}</h4>
+                <div style="display:flex; justify-content:space-between; align-items: center;">
+                    <span class="price">$${parseFloat(p.precio1 || 0).toLocaleString()}</span>
                     ${stockLabel}
                 </div>
             </div>
