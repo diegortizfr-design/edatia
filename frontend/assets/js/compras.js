@@ -406,11 +406,20 @@ async function guardarCompra() {
     if (!sucursalId) return localShowNotification('Selecciona una sucursal destino', 'error');
 
     const btnGuardar = document.getElementById('btn-guardar-compra');
-    const originalText = btnGuardar.innerHTML;
-    btnGuardar.disabled = true;
-    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    const originalText = btnGuardar.getAttribute('data-original-text') || btnGuardar.innerHTML;
+    if (!btnGuardar.getAttribute('data-original-text')) btnGuardar.setAttribute('data-original-text', originalText);
+
+    const toggleBtn = (disable, err = null) => {
+        btnGuardar.disabled = disable;
+        btnGuardar.innerHTML = disable ? '<i class="fas fa-spinner fa-spin"></i> Guardando...' : originalText;
+        if (err) localShowNotification(err, 'error');
+    };
+
+    toggleBtn(true);
 
     // Determine initial state based on mode
+    // Factura -> 'Realizada' (Ready for Inspection/Receiving)
+    // Orden -> 'Orden de Compra' (Needs Approval)
     const estadoInicial = (modoCompra === 'factura') ? 'Realizada' : 'Orden de Compra';
 
     // New Fields
@@ -418,10 +427,12 @@ async function guardarCompra() {
     const facturaRef = document.getElementById('compra-factura-ref').value;
 
     if (!documentoId) {
-        localShowNotification('Seleccione un documento (consecutivo)', 'error');
-        btnGuardar.disabled = false;
-        btnGuardar.innerHTML = originalText;
-        return;
+        return toggleBtn(false, 'Seleccione un documento (consecutivo)');
+    }
+
+    // Validation: Invoice Reference Mandatory if Mode = Factura
+    if (modoCompra === 'factura' && !facturaRef) {
+        return toggleBtn(false, 'Debe ingresar el número de factura del proveedor');
     }
 
     const payload = {
@@ -469,8 +480,7 @@ async function guardarCompra() {
         }
     } catch (err) {
         localShowNotification('Error al guardar compra: ' + err.message, 'error');
-        btnGuardar.disabled = false;
-        btnGuardar.innerHTML = originalText;
+        toggleBtn(false);
     }
 }
 

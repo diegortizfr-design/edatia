@@ -1,5 +1,6 @@
 const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
+const { initializeTenantDB } = require('../utils/tenantInit');
 
 async function getClientDbConfig(nit) {
     const pool = getPool();
@@ -270,6 +271,18 @@ exports.crearCompra = async (req, res) => {
 
     } catch (err) {
         if (clientConn) await clientConn.rollback();
+
+        // Auto-fix schema mismatch (Lazy Migration)
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            console.warn(`[Schema Mismatch] in crearCompra for NIT ${req.user.nit}. Running migration...`);
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'El sistema ha actualizado la base de datos. Por favor, intente guardar de nuevo.' });
+            } catch (migErr) {
+                console.error('Migration failed:', migErr);
+            }
+        }
+
         console.error('crearCompra error:', err);
         res.status(500).json({ success: false, message: 'Error al procesar la compra: ' + err.message });
     } finally {
