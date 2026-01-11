@@ -1,76 +1,45 @@
-// frontend/global/js/inventario.js
+/**
+ * Inventario Module JS
+ * Optimized for real-time stock management and premium UI.
+ */
 
-let API_URL = '';
-let tableBody, modal, form, modalTitle;
+let API_BASE = '';
+let API_PRODUCTOS = '';
+let API_INVENTARIO = '';
+let tableBody;
+let listaProductos = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const configResp = await fetch('../../assets/config.json');
         const config = await configResp.json();
-        API_URL = `${config.apiUrl}/productos`;
+        API_BASE = config.apiUrl;
+        API_PRODUCTOS = `${API_BASE}/productos`;
+        API_INVENTARIO = `${API_BASE}/inventario`;
 
         tableBody = document.querySelector('.glass-table tbody');
-        modal = document.getElementById('productModal');
-        form = document.getElementById('form-producto');
-        modalTitle = document.getElementById('modal-title');
 
-        cargarProductos();
-        loadSucursales();
+        // Initial Load
+        await loadSucursales();
+        await cargarInventario();
 
-        if (form) {
-            form.addEventListener('submit', guardarProducto);
-        }
+        // Listeners for filters
+        document.getElementById('filtro-sucursal').addEventListener('change', cargarInventario);
+        document.getElementById('filtro-categoria').addEventListener('change', cargarInventario);
+        document.getElementById('filtro-estado').addEventListener('change', cargarInventario);
+
+        // Adjustment Form
+        document.getElementById('form-ajuste')?.addEventListener('submit', registrarAjuste);
+
     } catch (e) {
         console.error('Initialization error:', e);
     }
 });
 
-// State
-let isEditing = false;
-let currentId = null;
-let API_INVENTARIO = '';
-
-// Store loaded data globally
-let listaProductos = [];
-
-async function cargarProductos(sucursalId = null) {
-    try {
-        const token = localStorage.getItem('token');
-        const configResp = await fetch('../../assets/config.json');
-        const config = await configResp.json();
-        API_INVENTARIO = `${config.apiUrl}/inventario`;
-
-        // Construct URL with optional Branch Filter
-        let url = `${API_URL}`;
-        const params = new URLSearchParams();
-        if (sucursalId) params.append('sucursal_id', sucursalId);
-
-        // Preserve other filters if present (future use)
-        const qs = params.toString();
-        if (qs) url += `?${qs}`;
-
-        const res = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            listaProductos = data.data; // Save data
-            renderTable(listaProductos, sucursalId); // Pass context
-            updateKPIs(listaProductos);
-            loadProductsForSelect(listaProductos);
-        } else {
-            console.error(data.message);
-        }
-    } catch (err) {
-        console.error('Error cargando productos:', err);
-    }
-}
-
 async function loadSucursales() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_INVENTARIO.replace('/inventario', '/sucursales')}`, {
+        const res = await fetch(`${API_BASE}/sucursales`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -90,119 +59,127 @@ async function loadSucursales() {
     }
 }
 
-window.applyFilters = () => {
-    const sucursalId = document.getElementById('filtro-sucursal').value;
-    cargarProductos(sucursalId);
-};
+async function cargarInventario() {
+    try {
+        const token = localStorage.getItem('token');
+        const sucursalId = document.getElementById('filtro-sucursal').value;
+        const categoria = document.getElementById('filtro-categoria').value;
+        const estado = document.getElementById('filtro-estado').value;
+
+        // Fetch products (which contain stock data)
+        let url = `${API_PRODUCTOS}?`;
+        if (sucursalId) url += `sucursal_id=${sucursalId}&`;
+        if (categoria) url += `categoria=${categoria}&`;
+        if (estado !== "") url += `activo=${estado}&`;
+
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            listaProductos = data.data;
+            renderTable(listaProductos, sucursalId);
+            updateKPIs(listaProductos);
+            updateCategoryFilter(listaProductos);
+            loadProductsForAjuste(listaProductos);
+        }
+    } catch (err) {
+        console.error('Error cargando inventario:', err);
+    }
+}
 
 function renderTable(productos, sucursalId = null) {
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
     productos.forEach(p => {
-        const statusBadge = p.activo
-            ? '<span class="badge active" style="color:#059669; background:#ECFDF5; padding:4px 8px; border-radius:4px;">Activo</span>'
-            : '<span class="badge" style="color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:4px;">Inactivo</span>';
+        const stockActual = sucursalId ? (p.stock_sucursal || 0) : (p.stock_actual || 0);
+        const stockLabel = sucursalId ? '(En Sucursal)' : '(Global)';
 
-        // Determine Stock Display
-        let stockDisplay = `<strong>${p.stock_actual || 0}</strong> <small class="text-muted">(Global)</small>`;
-        if (sucursalId) {
-            // If filtered, p.stock_sucursal should be populated from backend
-            stockDisplay = `<strong style="color: var(--primary-color);">${p.stock_sucursal || 0}</strong> <small class="text-muted">(En Sucursal)</small>`;
-        }
+        // Critical stock check
+        const isCritical = stockActual <= (p.stock_minimo || 5);
+        const stockStyle = isCritical ? 'color: #EF4444; font-weight: bold;' : 'font-weight: 600;';
+
+        const statusBadge = p.activo
+            ? '<span class="badge" style="background:rgba(16,185,129,0.1); color:#10B981; border:1px solid rgba(16,185,129,0.2);">Activo</span>'
+            : '<span class="badge" style="background:rgba(107,114,128,0.1); color:#6B7280; border:1px solid rgba(107,114,128,0.2);">Inactivo</span>';
 
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <strong>${p.nombre}</strong><br>
-                <small style="color: #666;">${p.descripcion || ''}</small>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="prod-avatar">${p.nombre.charAt(0)}</div>
+                    <div>
+                        <div style="font-weight:600;">${p.nombre}</div>
+                        <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">${p.descripcion || ''}</div>
+                    </div>
+                </div>
             </td>
-            <td>${p.codigo || '-'}</td>
+            <td><code>${p.codigo || '-'}</code></td>
             <td>${p.categoria || 'General'}</td>
-            <td>${stockDisplay}</td>
-            <td>$${parseFloat(p.precio_venta || 0).toLocaleString()}</td>
+            <td>
+                <div style="${stockStyle}">${stockActual}</div>
+                <div style="font-size:0.7rem; color:rgba(255,255,255,0.4);">${stockLabel}</div>
+            </td>
+            <td style="font-weight:600;">$${parseFloat(p.precio1 || 0).toLocaleString()}</td>
             <td>${statusBadge}</td>
-            <td style="display: flex; gap: 5px;">
-                <button class="btn-icon btn-kardex" data-id="${p.id}" title="Ver Movimientos"><i class="fas fa-history"></i></button>
-                <button class="btn-icon btn-editar" data-id="${p.id}"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon btn-eliminar" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+            <td>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-icon-glass" onclick="verKardex(${p.id})" title="Kardex / Movimientos"><i class="fas fa-history"></i></button>
+                    ${p.maneja_inventario ? `<button class="btn-icon-glass" onclick="openFastAjuste(${p.id})" title="Ajuste Rápido"><i class="fas fa-plus-minus"></i></button>` : ''}
+                </div>
             </td>
         `;
         tableBody.appendChild(row);
     });
 }
 
-// Event Delegation
-tableBody.addEventListener('click', (e) => {
-    console.log('Click detected on table:', e.target);
-
-    // Edit
-    const btnEdit = e.target.closest('.btn-editar');
-    if (btnEdit) {
-        console.log('Edit button clicked for ID:', btnEdit.dataset.id);
-        const id = parseInt(btnEdit.dataset.id);
-        const producto = listaProductos.find(p => p.id === id);
-        if (producto) {
-            window.openModal(producto);
-        } else {
-            console.error('Product not found in local list');
-        }
-    }
-
-    // Delete
-    const btnDelete = e.target.closest('.btn-eliminar');
-    if (btnDelete) {
-        const id = parseInt(btnDelete.dataset.id);
-        eliminarProducto(id);
-    }
-
-    // Kardex
-    const btnKardex = e.target.closest('.btn-kardex');
-    if (btnKardex) {
-        console.log('Kardex button clicked');
-        const id = parseInt(btnKardex.dataset.id);
-        verKardex(id);
-    }
-});
-
 function updateKPIs(productos) {
-    // 1. Total Items
     const totalItems = productos.length;
-
-    // 2. Critical Stock (Assume min stock 5 for default if not set, or use p.stock_minimo)
     const stockCritico = productos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo || 5)).length;
-
-    // 3. Inventory Value (Cost * Quantity)
     const valorTotal = productos.reduce((sum, p) => sum + ((p.costo || 0) * (p.stock_actual || 0)), 0);
 
     const cards = document.querySelectorAll('.kpi-grid .card');
     if (cards.length >= 3) {
         cards[0].querySelector('p').textContent = totalItems.toLocaleString();
-
         cards[1].querySelector('p').textContent = `${stockCritico} Productos`;
-
-        cards[2].querySelector('p').textContent = `$${valorTotal.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        cards[2].querySelector('p').textContent = '$' + (valorTotal / 1000000).toFixed(1) + 'M';
     }
 }
 
-// Logic for Adjustments
-function loadProductsForSelect(products) {
-    const select = document.getElementById('ajuste-producto');
-    if (!select) return;
-    select.innerHTML = '<option value="">Seleccione...</option>';
+function updateCategoryFilter(productos) {
+    const select = document.getElementById('filtro-categoria');
+    const currentVal = select.value;
+    const categories = [...new Set(productos.map(p => p.categoria).filter(c => c))];
 
-    products.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach(p => {
+    select.innerHTML = '<option value="">Todas las Categorías</option>';
+    categories.sort().forEach(c => {
         const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `${p.nombre} (Stock: ${p.stock_actual})`;
+        opt.value = c;
+        opt.textContent = c;
         select.appendChild(opt);
     });
+    select.value = currentVal;
 }
 
-document.getElementById('form-ajuste')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!confirm('¿Confirmar ajuste de inventario? Esta acción afectará el stock.')) return;
+function loadProductsForAjuste(products) {
+    const select = document.getElementById('ajuste-producto');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Seleccione...</option>';
+    products.filter(p => p.maneja_inventario).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        select.appendChild(opt);
+    });
+    select.value = current;
+}
 
+async function registrarAjuste(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
     const body = {
         producto_id: document.getElementById('ajuste-producto').value,
         tipo: document.getElementById('ajuste-tipo').value,
@@ -211,7 +188,6 @@ document.getElementById('form-ajuste')?.addEventListener('submit', async (e) => 
     };
 
     try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${API_INVENTARIO}/ajuste`, {
             method: 'POST',
             headers: {
@@ -222,26 +198,25 @@ document.getElementById('form-ajuste')?.addEventListener('submit', async (e) => 
         });
         const data = await res.json();
         if (data.success) {
-            alert('Ajuste realizado exitosamente');
+            showNotification('Ajuste registrado exitosamente', 'success');
             window.closeAjusteModal();
             document.getElementById('form-ajuste').reset();
-            cargarProductos(); // Reload table & KPIs
+            cargarInventario();
         } else {
-            alert(data.message);
+            showNotification(data.message, 'error');
         }
     } catch (e) {
-        console.error(e);
-        alert('Error al realizar ajuste');
+        showNotification('Error en la conexión', 'error');
     }
-});
+}
 
-async function verKardex(id) {
+window.verKardex = async (id) => {
     const prod = listaProductos.find(p => p.id === id);
     if (!prod) return;
 
     document.getElementById('kardex-product-name').textContent = prod.nombre;
     const tbody = document.getElementById('kardex-table-body');
-    tbody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando...</td></tr>';
     document.getElementById('kardexModal').style.display = 'flex';
 
     try {
@@ -254,128 +229,30 @@ async function verKardex(id) {
         tbody.innerHTML = '';
         if (data.success && data.data.length > 0) {
             data.data.forEach(m => {
-                const date = new Date(m.created_at).toLocaleString();
-                const color = m.tipo_movimiento.includes('ENTRADA') || m.tipo_movimiento === 'COMPRA' ? 'green' : 'red';
-                const sign = color === 'green' ? '+' : '-';
+                const date = new Date(m.created_at).toLocaleDateString() + ' ' + new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isEntry = m.tipo_movimiento.includes('ENTRADA') || m.tipo_movimiento === 'COMPRA';
+                const color = isEntry ? '#10B981' : '#F87171';
+                const sign = isEntry ? '+' : '-';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${date}</td>
-                    <td><span class="badge" style="color: ${color}; bg: transparent;">${m.tipo_movimiento}</span></td>
-                    <td>${m.motivo || '-'} <small style="color: grey;">${m.documento_referencia ? '(' + m.documento_referencia + ')' : ''}</small></td>
+                    <td><span class="badge-sm" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${m.tipo_movimiento}</span></td>
+                    <td>${m.motivo || '-'} <br><small style="opacity:0.6;">${m.documento_referencia || ''}</small></td>
                     <td style="font-weight: bold; color: ${color};">${sign}${m.cantidad}</td>
-                    <td>${m.stock_nuevo}</td>
+                    <td style="font-weight: 500;">${m.stock_nuevo}</td>
                 `;
                 tbody.appendChild(tr);
             });
         } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay movimientos registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5;">No hay movimientos</td></tr>';
         }
-
     } catch (e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5">Error cargando historial</td></tr>';
-    }
-}
-
-
-// Global functions for HTML access
-window.openModal = (producto = null) => {
-    modal.style.display = 'flex';
-    if (producto) {
-        isEditing = true;
-        currentId = producto.id;
-        modalTitle.textContent = 'Editar Producto';
-
-        document.getElementById('nombre').value = producto.nombre;
-        document.getElementById('codigo').value = producto.codigo || '';
-        document.getElementById('descripcion').value = producto.descripcion || '';
-        document.getElementById('precio_compra').value = producto.costo || 0;
-        document.getElementById('precio_venta').value = producto.precio_venta || 0;
-        document.getElementById('impuesto_porcentaje').value = producto.impuesto_porcentaje || 19;
-
-        document.getElementById('activo').checked = !!producto.activo;
-        document.getElementById('maneja_inventario').checked = !!producto.maneja_inventario;
-        document.getElementById('mostrar_en_tienda').checked = !!producto.mostrar_en_tienda;
-    } else {
-        isEditing = false;
-        currentId = null;
-        modalTitle.textContent = 'Nuevo Producto';
-        form.reset();
-        document.getElementById('activo').checked = true;
-        document.getElementById('maneja_inventario').checked = true;
-        document.getElementById('mostrar_en_tienda').checked = false;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error al cargar</td></tr>';
     }
 };
 
-window.closeModal = () => {
-    modal.style.display = 'none';
-};
-
-// No longer exposing editarProducto to window global scope for onclick
-// window.editarProducto is removed
-
-async function eliminarProducto(id) {
-    if (!confirm('¿Eliminar producto?')) return;
-
-    try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            cargarProductos();
-        } else {
-            alert(data.message);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error eliminando');
-    }
-}
-
-async function guardarProducto(e) {
-    e.preventDefault();
-
-    const token = localStorage.getItem('token');
-    const formData = {
-        nombre: document.getElementById('nombre').value,
-        codigo: document.getElementById('codigo').value,
-        descripcion: document.getElementById('descripcion').value,
-        costo: document.getElementById('precio_compra').value,
-        precio_venta: document.getElementById('precio_venta').value,
-        impuesto_porcentaje: document.getElementById('impuesto_porcentaje').value,
-        activo: document.getElementById('activo').checked,
-        maneja_inventario: document.getElementById('maneja_inventario').checked,
-        mostrar_en_tienda: document.getElementById('mostrar_en_tienda').checked
-    };
-
-    try {
-        const method = isEditing ? 'PUT' : 'POST';
-        const url = isEditing ? `${API_URL}/${currentId}` : API_URL;
-
-        const res = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            window.closeModal();
-            cargarProductos();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error al guardar');
-    }
+window.openFastAjuste = (id) => {
+    document.getElementById('ajuste-producto').value = id;
+    window.openAjusteModal();
 }
