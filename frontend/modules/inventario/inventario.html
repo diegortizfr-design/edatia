@@ -16,8 +16,9 @@
     <div id="sidebar-container"></div>
 
     <!-- CONTENT -->
-    <main class="main-content">
+    <main class="main-content" style="background: #f8fafc;">
         <div id="header-container"></div>
+
 
         <!-- INVENTORY KPIS -->
         <section class="kpi-grid">
@@ -41,7 +42,7 @@
 
         <!-- FILTERS & ACTIONS -->
         <div class="action-bar"
-            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 16px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px);">
             <div class="filters">
                 <select class="filter-select" id="filtro-sucursal">
                     <option value="">Todas las Sucursales</option>
@@ -55,11 +56,12 @@
                     <option value="0">Inactivo</option>
                 </select>
             </div>
-            <button class="btn-secondary" onclick="openAjusteModal()"
-                style="background: var(--warning-color); color: #fff; border: none; margin-left: auto;"><i
+            <button class="btn-primary" onclick="openAjusteModal()"
+                style="margin-left: auto; padding: 10px 20px; font-size: 0.9rem; background: var(--warning-color);"><i
                     class="fas fa-sliders-h"></i>
                 Ajustes</button>
         </div>
+
 
 
         <!-- PRODUCT TABLE -->

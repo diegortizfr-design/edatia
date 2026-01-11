@@ -1,8 +1,12 @@
 :root {
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    /* More opaque for light theme */
+    --glass-border: rgba(99, 102, 241, 0.15);
+    /* Indigo tint border */
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
 }
 
 .kpi-grid {
@@ -15,55 +19,61 @@
 .kpi-grid .card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 25px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 20px;
+    padding: 30px;
     position: relative;
     overflow: hidden;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
     box-shadow: var(--glass-shadow);
 }
 
 .kpi-grid .card:hover {
     transform: translateY(-5px);
-    border-color: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
 }
 
 .card-icon-box {
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     background: var(--primary-gradient);
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
-    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
     color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .kpi-grid h3 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
-    opacity: 0.7;
+    color: var(--text-secondary);
     margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .kpi-grid p {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 700;
-    margin: 5px 0 0 0;
+    color: var(--text-primary);
+    margin: 8px 0 0 0;
 }
 
 /* Glass Table Enhancements */
 .table-container {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 10px;
-    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 15px;
+    backdrop-filter: blur(12px);
     box-shadow: var(--glass-shadow);
+    margin-top: 20px;
 }
 
 .glass-table {
@@ -76,98 +86,147 @@
     padding: 15px 20px;
     font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.6;
+    letter-spacing: 1.2px;
+    color: var(--text-primary);
+    /* Increased contrast */
+    font-weight: 700;
+    /* Increased weight */
     text-align: left;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .glass-table td {
-    padding: 15px 20px;
-    background: rgba(255, 255, 255, 0.02);
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.4);
     border-top: 1px solid var(--glass-border);
     border-bottom: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 0.95rem;
 }
 
 .glass-table td:first-child {
     border-left: 1px solid var(--glass-border);
-    border-top-left-radius: 12px;
-    border-bottom-left-radius: 12px;
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
 }
 
 .glass-table td:last-child {
     border-right: 1px solid var(--glass-border);
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
 }
 
 .glass-table tr:hover td {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(99, 102, 241, 0.2);
 }
 
 /* Icons & Buttons */
 .btn-icon-glass {
-    width: 34px;
-    height: 34px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: white;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .btn-icon-glass:hover {
     background: var(--primary-gradient);
-    border-color: transparent;
-    transform: scale(1.1);
+    color: white;
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .prod-avatar {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     background: var(--primary-gradient);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    font-weight: 700;
     color: white;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.15);
 }
 
 /* Filters */
+.filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .filter-select {
-    background: var(--glass-bg);
+    background: white;
     border: 1px solid var(--glass-border);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 10px;
+    color: var(--text-primary);
+    padding: 10px 18px;
+    border-radius: 12px;
     font-family: inherit;
+    font-weight: 500;
+    font-size: 0.9rem;
     cursor: pointer;
     outline: none;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.filter-select:hover {
+    border-color: var(--primary-color);
 }
 
 .filter-select option {
-    background: #1a1a2e;
-    color: white;
+    background: white;
+    color: var(--text-primary);
 }
 
 /* Badges */
 .badge {
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 0.7rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .badge-sm {
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
     font-size: 0.65rem;
+    font-weight: 700;
+}
+
+/* Kardex & Modals Visibility */
+.modal-glass {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(20px);
+    color: var(--text-primary);
+}
+
+.modal-header h2 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.form-group label {
+    color: var(--text-secondary);
     font-weight: 600;
+    font-size: 0.85rem;
+}
+
+input,
+select,
+textarea {
+    color: var(--text-primary) !important;
 }
