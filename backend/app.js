@@ -8,6 +8,8 @@ const { createPool } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const empresaRoutes = require('./routes/empresaRoutes');
+const reportesRoutes = require('./routes/reportesRoutes');
+
 
 const app = express();
 
@@ -36,6 +38,7 @@ app.use('/api/documentos', require('./routes/documentosRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
 app.use('/api/inventario', require('./routes/inventarioRoutes'));
+app.use('/api/reportes', reportesRoutes); // Added use statement
 
 // Servir frontends por cliente (opcional)
 // app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));

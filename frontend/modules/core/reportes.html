@@ -157,24 +157,27 @@
                 <div class="stat-circle" style="background: #ECFDF5; color: #10B981;"><i class="fas fa-arrow-up"></i>
                 </div>
                 <div>
-                    <h2 style="margin: 0; font-size: 1.6rem; font-weight: 700;">$45.2M</h2>
-                    <span style="color: #6B7280; font-size: 0.9rem;">Ventas este mes (+12%)</span>
+                    <h2 id="kpi-ventas" style="margin: 0; font-size: 1.6rem; font-weight: 700;">$0</h2>
+                    <span id="label-ventas" style="color: #6B7280; font-size: 0.9rem;">Ventas este mes</span>
                 </div>
+
             </div>
             <div class="stat-box card">
                 <div class="stat-circle" style="background: #FEF3C7; color: #D97706;"><i class="fas fa-coins"></i></div>
                 <div>
-                    <h2 style="margin: 0; font-size: 1.6rem; font-weight: 700;">$12.5M</h2>
+                    <h2 id="kpi-utilidad" style="margin: 0; font-size: 1.6rem; font-weight: 700;">$0</h2>
                     <span style="color: #6B7280; font-size: 0.9rem;">Utilidad Neta</span>
                 </div>
+
             </div>
             <div class="stat-box card">
                 <div class="stat-circle" style="background: #EEF2FF; color: #4F46E5;"><i class="fas fa-user-plus"></i>
                 </div>
                 <div>
-                    <h2 style="margin: 0; font-size: 1.6rem; font-weight: 700;">145</h2>
+                    <h2 id="kpi-clientes" style="margin: 0; font-size: 1.6rem; font-weight: 700;">0</h2>
                     <span style="color: #6B7280; font-size: 0.9rem;">Nuevos Clientes</span>
                 </div>
+
             </div>
         </section>
 
@@ -184,28 +187,10 @@
                     <h3><i class="fas fa-chart-bar" style="color: var(--primary-color);"></i> Ventas Mensuales</h3>
                     <button class="date-range-picker"><i class="far fa-calendar-alt"></i> 2025</button>
                 </div>
-                <div class="bar-chart">
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 40%;"></div><span class="bar-label">Ene</span>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 60%;"></div><span class="bar-label">Feb</span>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 35%; background: #F87171;"></div><span
-                            class="bar-label">Mar</span>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 75%;"></div><span class="bar-label">Abr</span>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 50%;"></div><span class="bar-label">May</span>
-                    </div>
-                    <div class="bar-wrapper">
-                        <div class="bar" style="height: 90%; background: #10B981;"></div><span
-                            class="bar-label">Jun</span>
-                    </div>
+                <div class="bar-chart" id="ventas-chart">
+                    <!-- Dynamic Bars -->
                 </div>
+
             </div>
 
             <div class="chart-container card">
@@ -221,23 +206,10 @@
                             <th style="text-align: right;">Total</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>Camiseta Polo Azul</td>
-                            <td style="text-align: right;">120</td>
-                            <td style="text-align: right; font-weight: bold;">$4.2M</td>
-                        </tr>
-                        <tr>
-                            <td>Zapatos Deportivos</td>
-                            <td style="text-align: right;">85</td>
-                            <td style="text-align: right; font-weight: bold;">$12.5M</td>
-                        </tr>
-                        <tr>
-                            <td>Gorra Trucker</td>
-                            <td style="text-align: right;">210</td>
-                            <td style="text-align: right; font-weight: bold;">$6.1M</td>
-                        </tr>
+                    <tbody id="top-products-body">
+                        <!-- Dynamic Content -->
                     </tbody>
+
                 </table>
             </div>
 
@@ -279,6 +251,8 @@
     <script src="/frontend/assets/js/layout-loader.js"></script>
     <script src="/frontend/assets/js/auth_guard.js"></script>
     <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/reportes.js"></script>
 </body>
+
 
 </html>
