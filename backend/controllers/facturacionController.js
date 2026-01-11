@@ -126,15 +126,17 @@ exports.crearFactura = async (req, res) => {
 
 
         // 3. Insert Invoice Header
+        const { id: userId } = req.user;
         const [resFac] = await clientConn.query(`
             INSERT INTO facturas 
-            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, monto_pagado, devuelta, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, monto_pagado, devuelta, estado, vendedor_id, usuario_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             numero_factura, prefijo, documento_id, cliente_id || null,
             subtotal, impuesto_total, total,
             tipo_pago, metodo_pago, monto_pagado, devuelta,
-            (tipo_pago === 'Crédito' ? 'Pendiente' : 'Pagada')
+            (tipo_pago === 'Crédito' ? 'Pendiente' : 'Pagada'),
+            userId || null, userId || null
         ]);
         const facturaId = resFac.insertId;
 
