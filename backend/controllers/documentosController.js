@@ -2,35 +2,12 @@ const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
 const { initializeTenantDB } = require('../utils/tenantInit');
 
-
 // Helper: Obtener config de BD del cliente
 async function getClientDbConfig(nit) {
-    // ... existing code ...
-
-    // ... (inside crearDocumento catch block) ...
-} catch (err) {
-    // Auto-fix schema mismatch (Lazy Migration)
-    if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
-        console.warn(`[Schema Mismatch] in crearDocumento for NIT ${req.user.nit}. Running migration...`);
-        try {
-            await initializeTenantDB(await getClientDbConfig(req.user.nit));
-            // Retry? Or just tell user to retry.
-            return res.status(503).json({ success: false, message: 'El sistema ha actualizado la base de datos. Por favor, intente guardar de nuevo.' });
-        } catch (migErr) {
-            console.error('Migration failed:', migErr);
-        }
-    }
-
-    console.error('crearDocumento error:', err);
-    res.status(500).json({ success: false, message: 'Error al crear documento: ' + err.message });
-} finally {
-    if (clientConn) await clientConn.end();
-}
-};
-const pool = getPool();
-const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
-if (rows.length === 0) return null;
-return rows[0];
+    const pool = getPool();
+    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
+    if (rows.length === 0) return null;
+    return rows[0];
 }
 
 exports.listarDocumentos = async (req, res) => {
@@ -73,9 +50,6 @@ exports.crearDocumento = async (req, res) => {
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
 
         clientConn = await connectToClientDB(dbConfig);
-
-        // DDL Removed
-
 
         const {
             sucursal_id, categoria, nombre, prefijo, consecutivo_actual,
