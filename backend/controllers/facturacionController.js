@@ -19,7 +19,7 @@ exports.listarFacturas = async (req, res) => {
 
         // Fetch invoices with customer name
         const [rows] = await clientConn.query(`
-            SELECT f.*, t.nombre as cliente_nombre 
+            SELECT f.*, t.nombre_comercial as cliente_nombre 
             FROM facturas f 
             LEFT JOIN terceros t ON f.cliente_id = t.id 
             ORDER BY f.id DESC LIMIT 500
@@ -200,7 +200,7 @@ exports.obtenerDetallesFactura = async (req, res) => {
         // Get Header
         const [headers] = await clientConn.query(`
             SELECT f.*, 
-                   t.nombre as cliente_nombre, t.numero_documento as cliente_nit, 
+                   t.nombre_comercial as cliente_nombre, t.documento as cliente_nit, 
                    t.direccion as cliente_direccion, t.telefono as cliente_telefono,
                    u.nombre as vendedor_nombre
             FROM facturas f
@@ -237,7 +237,7 @@ exports.listarRecibos = async (req, res) => {
         clientConn = await connectToClientDB(dbConfig);
 
         const [rows] = await clientConn.query(`
-            SELECT r.*, t.nombre as cliente_nombre 
+            SELECT r.*, t.nombre_comercial as cliente_nombre 
             FROM recibos_caja r 
             LEFT JOIN terceros t ON r.cliente_id = t.id 
             ORDER BY r.id DESC LIMIT 500
