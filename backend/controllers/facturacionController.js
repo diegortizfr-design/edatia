@@ -188,3 +188,43 @@ exports.crearFactura = async (req, res) => {
         if (clientConn) await clientConn.end();
     }
 };
+
+exports.obtenerDetallesFactura = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { id } = req.params;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        // Get Header
+        const [headers] = await clientConn.query(`
+            SELECT f.*, 
+                   t.nombre as cliente_nombre, t.numero_documento as cliente_nit, 
+                   t.direccion as cliente_direccion, t.telefono as cliente_telefono,
+                   u.nombre as vendedor_nombre
+            FROM facturas f
+            LEFT JOIN terceros t ON f.cliente_id = t.id
+            LEFT JOIN usuarios u ON f.vendedor_id = u.id
+            WHERE f.id = ?
+        `, [id]);
+
+        if (headers.length === 0) return res.status(404).json({ success: false, message: 'Factura no encontrada' });
+
+        // Get Details
+        const [items] = await clientConn.query(`
+            SELECT fd.*, p.nombre as nombre_producto, p.codigo
+            FROM factura_detalle fd
+            JOIN productos p ON fd.producto_id = p.id
+            WHERE fd.factura_id = ?
+        `, [id]);
+
+        res.json({ success: true, data: headers[0], items: items });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
