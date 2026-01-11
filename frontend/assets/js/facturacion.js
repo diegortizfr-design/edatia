@@ -531,20 +531,13 @@ async function processFullSale() {
 
         if (data.success) {
             // SUCCESS
+            // SUCCESS
             document.getElementById('modal-pago').style.display = 'none';
-
-            // Show Receipt Modal
-            const receiptModal = document.getElementById('modal-recibo');
-            document.getElementById('recibo-info').textContent = `Factura: ${data.numero}`;
-            document.getElementById('recibo-extra').textContent = data.recibo ? `+ Recibo de Caja: ${data.recibo}` : '';
-
-            receiptModal.style.display = 'flex';
-
-            // Reset
-            cart = [];
-            renderCart();
-            loadProducts(); // Update stock locally
-            loadPOSConfig(); // Consecutive update
+            setupSuccessModal({
+                numero: data.numero,
+                recibo: data.recibo,
+                factura_id: data.factura_id
+            });
 
         } else {
             showNotification(data.message, 'error');
@@ -559,3 +552,48 @@ async function processFullSale() {
         showNotification('Error de conexión al facturar', 'error');
     }
 }
+
+// --- SUCCESS MODAL ---
+
+function setupSuccessModal(data) {
+    const modal = document.getElementById('modal-recibo');
+    document.getElementById('recibo-info').textContent = `Factura: ${data.numero}`;
+    document.getElementById('recibo-extra').textContent = data.recibo ? `+ Recibo de Caja: ${data.recibo}` : '';
+    modal.style.display = 'flex';
+
+    // Button Handlers
+    const btnFinish = document.getElementById('btn-pos-finish');
+    const btnPrint = document.getElementById('btn-pos-print');
+
+    // Clone to remove old listeners
+    const newBtnFinish = btnFinish.cloneNode(true);
+    const newBtnPrint = btnPrint.cloneNode(true);
+    btnFinish.parentNode.replaceChild(newBtnFinish, btnFinish);
+    btnPrint.parentNode.replaceChild(newBtnPrint, btnPrint);
+
+    newBtnFinish.addEventListener('click', () => {
+        resetPOS();
+        modal.style.display = 'none';
+    });
+
+    newBtnPrint.addEventListener('click', () => {
+        printInvoice(data.factura_id);
+        resetPOS();
+        modal.style.display = 'none';
+    });
+}
+
+function resetPOS() {
+    cart = [];
+    renderCart();
+    loadProducts(); // Update stock locally
+    loadPOSConfig(); // Consecutive update
+    // Clear Payment Inputs
+    document.getElementById('pago-monto').value = '';
+    document.getElementById('pago-cambio').textContent = '$0.00';
+}
+
+function printInvoice(id) {
+    window.open(`/frontend/modules/facturacion/print_factura.html?id=${id}`, '_blank');
+}
+

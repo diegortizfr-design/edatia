@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Factura de Venta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            padding: 20px;
+            color: #333;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .company-info h1 {
+            margin: 0;
+            color: #4F46E5;
+        }
+
+        .doc-info {
+            text-align: right;
+        }
+
+        .doc-info h2 {
+            margin: 0;
+            color: #555;
+        }
+
+        .grid {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 40px;
+        }
+
+        .box {
+            flex: 1;
+        }
+
+        .box h3 {
+            border-bottom: 1px solid #ccc;
+            font-size: 0.9rem;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f9f9f9;
+            font-weight: bold;
+        }
+
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .totals p {
+            margin: 5px 0;
+        }
+
+        .grand-total {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4F46E5;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="text-align: right; margin-bottom: 20px;">
+        <button onclick="window.print()"
+            style="padding: 10px 20px; background: #333; color: white; border: none; cursor: pointer;">Imprimir</button>
+    </div>
+
+    <div class="header">
+        <div class="company-info">
+            <h1 id="company-name">Mi Empresa</h1>
+            <p id="company-nit">NIT: 800.000.000</p>
+            <p id="company-dir">Dirección Empresa</p>
+        </div>
+        <div class="doc-info">
+            <h2>FACTURA DE VENTA</h2>
+            <h3 id="doc-number" style="color: #E63946; margin-top: 5px;">#FACT-000</h3>
+            <p style="margin: 5px 0;">Fecha: <span id="doc-date">01/01/2026</span></p>
+            <p style="margin: 5px 0;">Vendedor: <span id="vendedor-name">-</span></p>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="box">
+            <h3>CLIENTE</h3>
+            <p id="cliente-name" style="font-weight: bold;">Cliente General</p>
+            <p id="cliente-nit">NIT: 222222222</p>
+            <p id="cliente-address">Dirección Cliente</p>
+            <p id="cliente-phone">Tel: -</p>
+        </div>
+        <div class="box">
+            <h3>DETALLES PAGO</h3>
+            <p>Forma de Pago: <span id="payment-type">-</span></p>
+            <p>Método: <span id="payment-method">-</span></p>
+            <p>Estado: <span id="payment-status">-</span></p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th style="width: 80px; text-align: center;">Cant</th>
+                <th style="width: 120px; text-align: right;">Precio Unit.</th>
+                <th style="width: 120px; text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody id="items-body">
+            <!-- Items -->
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <p>Subtotal: <span id="val-subtotal">$0.00</span></p>
+        <p>Impuesto: <span id="val-tax">$0.00</span></p>
+        <p class="grand-total">Total: <span id="val-total">$0.00</span></p>
+    </div>
+
+    <div class="footer">
+        <p>Gracias por su compra.</p>
+        <p>Generado por ERPod Software</p>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        const token = localStorage.getItem('token');
+
+        async function loadData() {
+            if (!id) return alert('No ID provided');
+
+            try {
+                // Config
+                const cfgRes = await fetch('../../assets/config.json');
+                const cfg = await cfgRes.json();
+                const API = cfg.apiUrl;
+
+                // Load Details (New Endpoint)
+                const res = await fetch(`${API}/facturacion/${id}/detalles`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.message);
+
+                const header = data.data;
+                const items = data.items;
+
+                // Fill Header
+                document.getElementById('doc-number').textContent = `#${header.numero_factura}`;
+                document.getElementById('doc-date').textContent = new Date(header.fecha).toLocaleString();
+                document.getElementById('vendedor-name').textContent = header.vendedor_nombre || 'Cajero';
+
+                // Fill Client
+                document.getElementById('cliente-name').textContent = header.cliente_nombre || 'Cliente General';
+                document.getElementById('cliente-nit').textContent = `NIT: ${header.cliente_nit || '22222222222'}`;
+                document.getElementById('cliente-address').textContent = header.cliente_direccion || 'Ciudad';
+                document.getElementById('cliente-phone').textContent = `Tel: ${header.cliente_telefono || '-'}`;
+
+                // Fill Payment
+                document.getElementById('payment-type').textContent = header.tipo_pago;
+                document.getElementById('payment-method').textContent = header.metodo_pago;
+                document.getElementById('payment-status').textContent = header.estado;
+
+                // Fill Table
+                const table = document.getElementById('items-body');
+                let subtotal = 0;
+
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    const price = parseFloat(item.precio_unitario);
+                    const qty = parseFloat(item.cantidad);
+                    const total = parseFloat(item.subtotal);
+
+                    row.innerHTML = `
+                        <td>${item.nombre_producto}</td>
+                        <td style="text-align: center;">${qty}</td>
+                        <td style="text-align: right;">$${price.toLocaleString()}</td>
+                        <td style="text-align: right;">$${total.toLocaleString()}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+                document.getElementById('val-subtotal').textContent = `$${parseFloat(header.subtotal).toLocaleString()}`;
+                document.getElementById('val-tax').textContent = `$${parseFloat(header.impuesto_total).toLocaleString()}`;
+                document.getElementById('val-total').textContent = `$${parseFloat(header.total).toLocaleString()}`;
+
+                // Auto Print
+                // window.print();
+
+            } catch (e) {
+                console.error(e);
+                alert('Error cargando factura: ' + e.message);
+            }
+        }
+
+        if (token) loadData();
+        else {
+            const pToken = window.opener?.localStorage.getItem('token');
+            if (pToken) {
+                localStorage.setItem('token', pToken);
+                window.location.reload();
+            } else {
+                document.body.innerHTML = '<h1>No autorizado</h1>';
+            }
+        }
+    </script>
+</body>
+
+</html>
