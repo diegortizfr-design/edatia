@@ -250,7 +250,7 @@ exports.crearCompra = async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             proveedor_id, sucursal_id || null, documento_id || null, numero_comprobante,
-            fecha, total, estado || 'Orden de Compra', 'Debe',
+            fecha, total, (factura_referencia ? 'Realizada' : (estado || 'Orden de Compra')), 'Debe',
             req.user.id, factura_referencia || null, null
         ]);
 

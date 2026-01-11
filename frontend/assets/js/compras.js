@@ -159,7 +159,8 @@ function getBadgeClass(status) {
     if (!status) return 'pendiente';
     const s = status.toLowerCase();
     if (['recibida', 'completada', 'pago'].some(x => s.includes(x))) return 'recibida'; // Green
-    if (['aprobada', 'realizada'].some(x => s.includes(x))) return 'warning'; // Yellow
+    if (['realizada'].some(x => s.includes(x))) return 'primary'; // Blue/Primary for Realized Invoice
+    if (['aprobada'].some(x => s.includes(x))) return 'warning'; // Yellow
     if (['rechazada', 'cancelada', 'devolucion'].some(x => s.includes(x))) return 'cancelada'; // Red
     return 'pendiente'; // Gray
 }
