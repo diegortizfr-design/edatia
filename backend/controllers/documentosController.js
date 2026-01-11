@@ -74,24 +74,13 @@ exports.crearDocumento = async (req, res) => {
         await clientConn.query(sql, [
             sucursal_id, categoria, nombre, prefijo, consecutivo_actual || 1,
             resolucion_numero, resolucion_fecha || null, resolucion_fecha_vencimiento || null,
-            resolucion_rango_inicial, resolucion_rango_final, resolucion_texto,
+            resolucion_rango_inicial || null, resolucion_rango_final || null, resolucion_texto,
             documento_equivalente, tipo_doc_electronico, excluir_impuestos ? 1 : 0, estado ? 1 : 0
         ]);
 
         res.status(201).json({ success: true, message: 'Documento configurado correctamente' });
 
     } catch (err) {
-        // Auto-fix schema mismatch (Lazy Migration)
-        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
-            console.warn(`[Schema Mismatch] in crearDocumento for NIT ${req.user.nit}. Running migration...`);
-            try {
-                await initializeTenantDB(await getClientDbConfig(req.user.nit));
-                return res.status(503).json({ success: false, message: 'El sistema ha actualizado la base de datos. Por favor, intente guardar de nuevo.' });
-            } catch (migErr) {
-                console.error('Migration failed:', migErr);
-            }
-        }
-
         console.error('crearDocumento error:', err);
         res.status(500).json({ success: false, message: 'Error al crear documento: ' + err.message });
     } finally {
@@ -126,7 +115,7 @@ exports.actualizarDocumento = async (req, res) => {
         await clientConn.query(sql, [
             sucursal_id, categoria, nombre, prefijo, consecutivo_actual,
             resolucion_numero, resolucion_fecha || null, resolucion_fecha_vencimiento || null,
-            resolucion_rango_inicial, resolucion_rango_final, resolucion_texto,
+            resolucion_rango_inicial || null, resolucion_rango_final || null, resolucion_texto,
             documento_equivalente, tipo_doc_electronico, excluir_impuestos ? 1 : 0, estado ? 1 : 0,
             id
         ]);
