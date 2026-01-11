@@ -78,6 +78,24 @@ async function initializeTenantDB(dbConfig) {
             )
         `);
 
+        // Mini-migration for documentos
+        const [docColumns] = await clientConn.query('SHOW COLUMNS FROM documentos');
+        const docColNames = docColumns.map(c => c.Field);
+        const docNewCols = [
+            { name: 'resolucion_fecha_vencimiento', def: 'DATE' },
+            { name: 'tipo_doc_electronico', def: 'VARCHAR(50)' },
+            { name: 'documento_equivalente', def: 'VARCHAR(50)' },
+            { name: 'excluir_impuestos', def: 'BOOLEAN DEFAULT 0' },
+            { name: 'resolucion_rango_inicial', def: 'INT' },
+            { name: 'resolucion_rango_final', def: 'INT' },
+            { name: 'resolucion_texto', def: 'TEXT' }
+        ];
+        for (const col of docNewCols) {
+            if (!docColNames.includes(col.name)) {
+                try { await clientConn.query(`ALTER TABLE documentos ADD COLUMN ${col.name} ${col.def}`); } catch (e) { }
+            }
+        }
+
         // --- 5. PRODUCTOS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS productos (
