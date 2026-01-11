@@ -1,7 +1,7 @@
 const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
 const { initializeTenantDB } = require('../utils/tenantInit');
-const { initializeTenantDB } = require('../utils/tenantInit');
+
 
 // Helper: Obtener config de BD del cliente
 async function getClientDbConfig(nit) {
