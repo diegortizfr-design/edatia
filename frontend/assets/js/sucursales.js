@@ -34,27 +34,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                 data.data.forEach(s => {
                     const card = document.createElement('div');
                     card.className = "card";
-                    card.style.padding = "25px";
+                    card.style.cssText = `
+                        padding: 30px; 
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+                        border-radius: 20px; 
+                        display: flex; 
+                        flex-direction: column; 
+                        position: relative; 
+                        overflow: hidden;
+                        border: 1px solid rgba(255, 255, 255, 0.5);
+                    `;
 
-                    const badgeClass = s.estado === 'Activa' ? 'active' : 'warning';
+                    // Simple hover effect via JS
+                    card.onmouseenter = () => {
+                        card.style.transform = "translateY(-5px)";
+                        card.style.boxShadow = "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)";
+                    };
+                    card.onmouseleave = () => {
+                        card.style.transform = "translateY(0)";
+                        card.style.boxShadow = "none";
+                    };
+
+                    const badgeStyle = s.estado === 'Activa'
+                        ? 'background: #ecfdf5; color: #059669; border: 1px solid #10b9813d;'
+                        : 'background: #fff7ed; color: #d97706; border: 1px solid #f59e0b3d;';
 
                     card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-weight: 600;">
-                                <i class="fas fa-building" style="color: var(--primary-color);"></i> ${s.nombre}
-                            </h3>
-                            <span class="badge ${badgeClass}">${s.estado}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                            <div style="background: rgba(99, 102, 241, 0.1); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 1.25rem;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; ${badgeStyle}">
+                                ${s.estado}
+                            </span>
                         </div>
-                        <div style="color: var(--text-gray); font-size: 0.95rem;">
-                            <p style="margin-bottom: 8px;"><i class="fas fa-map-marker-alt" style="width: 20px;"></i> ${s.direccion}</p>
-                            <p style="margin-bottom: 20px;"><i class="fas fa-phone" style="width: 20px;"></i> ${s.telefono || 'Sin teléfono'}</p>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">${s.nombre}</h3>
+                        <div style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px; flex-grow: 1;">
+                            <p style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-map-marker-alt" style="color: #94a3b8; width: 16px;"></i> ${s.direccion}
+                            </p>
+                            <p style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-phone" style="color: #94a3b8; width: 16px;"></i> ${s.telefono || 'Sin teléfono'}
+                            </p>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: auto;">
-                            <button class="btn-edit btn-secondary" style="flex: 1; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                                <i class="fas fa-edit"></i> Editar
+                        <div style="display: flex; gap: 12px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                            <button class="btn-edit" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #e2e8f0; background: white; color: #475569; font-weight: 600; font-size: 0.9rem; transition: all 0.2s;">
+                                <i class="fas fa-edit" style="color: #6366f1;"></i> Editar
                             </button>
-                            <button class="btn-secondary" style="flex: 1; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                                <i class="fas fa-boxes"></i> Bodegas
+                            <button style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #e2e8f0; background: white; color: #475569; font-weight: 600; font-size: 0.9rem; transition: all 0.2s;">
+                                <i class="fas fa-boxes" style="color: #a855f7;"></i> Bodegas
                             </button>
                         </div>
                     `;
