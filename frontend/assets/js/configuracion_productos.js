@@ -70,7 +70,11 @@ async function loadProducts() {
 async function loadSuppliers() {
     try {
         const token = localStorage.getItem('token');
-        const resp = await fetch('/api/terceros', {
+        // Fix: Use dynamic API URL based on current configuration
+        // API_URL is like ".../api/productos", so we replace to get ".../api/terceros"
+        const suppliersUrl = API_URL.replace('/productos', '/terceros');
+
+        const resp = await fetch(suppliersUrl, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await resp.json();
