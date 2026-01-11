@@ -10,34 +10,137 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Glassmorphism Overrides */
+        .modal-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 24px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 20px 30px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .modal-body {
+            padding: 30px;
+            background: transparent;
+        }
+
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
         .section-title {
             grid-column: 1 / -1;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             font-weight: 700;
-            color: var(--primary-color);
-            margin-top: 10px;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 5px;
+            color: #6366f1;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+            padding-bottom: 8px;
         }
 
-        /* Fix for tall modals */
+        /* Input Styling */
+        .form-group label {
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(243, 244, 246, 0.5);
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+            width: 100%;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            background: white;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        /* Button Styling */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        /* Checkbox & Switch */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-wrapper:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #6366f1;
+            border-radius: 4px;
+        }
+
         .modal-overlay {
             padding: 40px 20px;
-            align-items: flex-start;
+            align-items: center;
+            /* Center Vertically */
+            justify-content: center;
             overflow-y: auto;
             display: none;
-            /* Keep hidden by default */
-        }
-
-        .modal-glass {
-            margin: 0 auto;
-            max-height: none;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
         }
     </style>
 </head>
@@ -75,24 +178,28 @@
 
         <div class="action-bar"
             style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
-            <div class="search-bar" style="width: 400px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Buscar por nombre, código o referencia...">
+            <div class="search-bar"
+                style="width: 400px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 5px 15px;">
+                <i class="fas fa-search" style="color: #94a3b8;"></i>
+                <input type="text" id="search-input" placeholder="Buscar por nombre, código o referencia..."
+                    style="border: none; outline: none; background: transparent;">
             </div>
-            <button class="btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Nuevo Producto</button>
+            <button class="btn-primary" onclick="openModal()" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-plus-circle"></i> Nuevo Producto
+            </button>
         </div>
 
-        <div class="table-container card" style="margin-top: 20px; padding: 0;">
+        <div class="table-container card" style="margin-top: 20px; padding: 0; overflow: hidden; border-radius: 16px;">
             <table class="glass-table">
-                <thead>
+                <thead style="background: #f8fafc;">
                     <tr>
-                        <th>Producto</th>
-                        <th>Referencia</th>
-                        <th>Categoría</th>
-                        <th>Precio 1</th>
-                        <th>Stock</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
+                        <th style="padding: 16px;">Producto</th>
+                        <th style="padding: 16px;">Referencia</th>
+                        <th style="padding: 16px;">Categoría</th>
+                        <th style="padding: 16px;">Precio 1</th>
+                        <th style="padding: 16px;">Stock</th>
+                        <th style="padding: 16px;">Estado</th>
+                        <th style="padding: 16px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="productos-table-body">
@@ -103,26 +210,34 @@
     </main>
 
     <!-- PRODUCT MODAL -->
-    <div class="modal-overlay" id="productModal" style="display: none;">
-        <div class="modal-glass" style="max-width: 800px;">
-            <div class="modal-header">
-                <h2 id="modal-title"><i class="fas fa-box-open"></i> Configurar Producto</h2>
-                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-glass"
+            style="width: 95%; max-width: 850px; display: flex; flex-direction: column; max-height: 90vh;">
+            <div class="modal-header"
+                style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="modal-title" style="margin: 0;"><i class="fas fa-box-open"
+                        style="color: #6366f1; margin-right: 10px;"></i> Configurar Producto</h2>
+                <button class="close-btn" onclick="closeModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;"><i
+                        class="fas fa-times"></i></button>
             </div>
-            <div class="modal-body">
+
+            <div class="modal-body" style="overflow-y: auto; flex-grow: 1;">
                 <form id="productForm">
                     <input type="hidden" id="prod_id">
 
                     <div class="form-grid">
                         <div class="section-title">Información Básica</div>
+
                         <div class="form-group">
-                            <label>Nombre del Producto *</label>
+                            <label>Nombre del Producto <span style="color: #ef4444;">*</span></label>
                             <input type="text" id="nombre" required placeholder="Ej: Café Premium">
                         </div>
                         <div class="form-group">
                             <label>Nombre Alterno (Opcional)</label>
                             <input type="text" id="nombre_alterno" placeholder="Ej: Café Arábica">
                         </div>
+
                         <div class="form-group">
                             <label>Referencia Fábrica</label>
                             <input type="text" id="referencia_fabrica" placeholder="REF-001">
@@ -131,19 +246,22 @@
                             <label>Código / Barcode</label>
                             <input type="text" id="codigo" placeholder="770...">
                         </div>
-                        <div class="form-group">
-                            <label>Imagen URL</label>
-                            <div style="display: flex; gap: 5px;">
-                                <input type="text" id="imagen_url" style="flex: 1;" placeholder="https://...">
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Imagen URL & Carga</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="imagen_url" style="flex: 1;"
+                                    placeholder="https://ejemplo.com/imagen.jpg">
                                 <button type="button" class="btn-secondary"
                                     onclick="document.getElementById('upload-input').click()"
-                                    style="padding: 8px 12px; font-size: 0.8rem;">
-                                    <i class="fas fa-upload"></i> Subir
+                                    style="white-space: nowrap; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-cloud-upload-alt"></i> Subir Imagen
                                 </button>
                                 <input type="file" id="upload-input" style="display: none;" accept="image/*"
                                     onchange="uploadProductImage(this)">
                             </div>
                         </div>
+
                         <div class="form-group">
                             <label>Categoría</label>
                             <input type="text" id="categoria" placeholder="Bebidas">
@@ -161,21 +279,29 @@
                         </div>
 
                         <div class="section-title">Precios y Costos</div>
+
                         <div class="form-group">
-                            <label>Precio de Venta 1 (General) *</label>
-                            <input type="number" id="precio1" required step="0.01" value="0">
+                            <label>Precio de Venta 1 (General) <span style="color: #ef4444;">*</span></label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="precio1" required step="0.01" value="0"
+                                    style="padding-left: 25px;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Precio de Venta 2 (Mayoreo)</label>
-                            <input type="number" id="precio2" step="0.01" value="0">
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="precio2" step="0.01" value="0" style="padding-left: 25px;">
+                            </div>
                         </div>
+
                         <div class="form-group">
-                            <label>Precio de Venta 3 (Especial)</label>
-                            <input type="number" id="precio3" step="0.01" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Costo de Compra</label>
-                            <input type="number" id="costo" step="0.01" value="0">
+                            <label>Costo de Compra (Promedio)</label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="costo" step="0.01" value="0" style="padding-left: 25px;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Impuesto (%)</label>
@@ -183,43 +309,48 @@
                         </div>
 
                         <div class="section-title">Logística e Inventario</div>
+
                         <div class="form-group">
                             <label>Proveedor Principal</label>
                             <select id="proveedor_id">
-                                <option value="">Seleccione un proveedor...</option>
+                                <option value="">Cargando proveedores...</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Stock Mínimo (Alerta)</label>
                             <input type="number" id="stock_minimo" value="5">
                         </div>
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label>Imagen URL</label>
-                            <input type="text" id="imagen_url" placeholder="https://...">
-                        </div>
-                        <div class="form-group"
-                            style="flex-direction: row; gap: 10px; align-items: center; margin-top: 10px;">
-                            <input type="checkbox" id="activo" checked>
-                            <label for="activo">Producto Activo</label>
-                        </div>
-                        <div class="form-group"
-                            style="flex-direction: row; gap: 10px; align-items: center; margin-top: 10px;">
-                            <input type="checkbox" id="maneja_inventario" checked>
-                            <label for="maneja_inventario">Maneja Inventario</label>
-                        </div>
-                        <div class="form-group"
-                            style="flex-direction: row; gap: 10px; align-items: center; margin-top: 10px; background: rgba(79, 70, 229, 0.1); padding: 5px 10px; border-radius: 6px; border: 1px dashed var(--primary-color);">
-                            <input type="checkbox" id="mostrar_en_tienda">
-                            <label for="mostrar_en_tienda" style="color: var(--primary-color); font-weight: 600;">Venta
-                                Online (E-commerce)</label>
-                        </div>
-                    </div>
 
-                    <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;">
-                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar Producto</button>
+                        <!-- Checkboxes Row -->
+                        <div style="grid-column: 1 / -1; display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="activo" checked>
+                                <label for="activo" style="margin: 0; cursor: pointer;">Producto Activo</label>
+                            </div>
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="maneja_inventario" checked>
+                                <label for="maneja_inventario" style="margin: 0; cursor: pointer;">Maneja
+                                    Inventario</label>
+                            </div>
+                            <div class="checkbox-wrapper"
+                                style="background: rgba(99, 102, 241, 0.05); border: 1px dashed #818cf8;">
+                                <input type="checkbox" id="mostrar_en_tienda">
+                                <label for="mostrar_en_tienda"
+                                    style="margin: 0; color: #6366f1; font-weight: 600; cursor: pointer;">Venta
+                                    Online</label>
+                            </div>
+                        </div>
                     </div>
                 </form>
+            </div>
+
+            <div class="modal-footer"
+                style="padding: 20px 30px; border-top: 1px solid rgba(0,0,0,0.05); text-align: right; background: rgba(255,255,255,0.4);">
+                <button type="button" class="btn-secondary" onclick="closeModal()"
+                    style="margin-right: 10px;">Cancelar</button>
+                <button type="button" class="btn-primary"
+                    onclick="document.getElementById('productForm').dispatchEvent(new Event('submit'))">Guardar
+                    Producto</button>
             </div>
         </div>
     </div>

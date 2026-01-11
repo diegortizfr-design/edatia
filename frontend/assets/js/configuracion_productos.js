@@ -77,7 +77,8 @@ async function loadSuppliers() {
 
         if (data.success) {
             const select = document.getElementById('proveedor_id');
-            select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
+            // Added explicit option for no supplier
+            select.innerHTML = '<option value="">-- Sin Proveedor Fijo --</option>';
             data.data.forEach(t => {
                 if (t.es_proveedor) {
                     const opt = document.createElement('option');
