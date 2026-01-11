@@ -76,7 +76,7 @@ function renderTable(invoices) {
             <td><span class="badge active">${f.estado}</span></td>
             <td>
                 <button class="btn-icon" onclick="viewDetails(${f.id})" title="Ver Detalle"><i class="fas fa-eye"></i></button>
-                <button class="btn-icon" title="Imprimir"><i class="fas fa-print"></i></button>
+                <button class="btn-icon" onclick="printInvoice(${f.id})" title="Imprimir"><i class="fas fa-print"></i></button>
             </td>
         `;
         tableBody.appendChild(tr);
@@ -102,4 +102,8 @@ function updateKPIs(invoices) {
 function viewDetails(id) {
     // Modular future implementation for invoice detail modal
     showNotification('Funcionalidad de detalle en desarrollo', 'info');
+}
+
+function printInvoice(id) {
+    window.open(`/frontend/modules/facturacion/print_factura.html?id=${id}`, '_blank');
 }
