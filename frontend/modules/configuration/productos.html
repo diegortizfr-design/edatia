@@ -184,9 +184,16 @@
                 <input type="text" id="search-input" placeholder="Buscar por nombre, código o referencia..."
                     style="border: none; outline: none; background: transparent;">
             </div>
-            <button class="btn-primary" onclick="openModal()" style="display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-plus-circle"></i> Nuevo Producto
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="openBulkModal()"
+                    style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-file-excel" style="color: #10b981;"></i> Carga Masiva
+                </button>
+                <button class="btn-primary" onclick="openModal()" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-plus-circle"></i> Nuevo Producto
+                </button>
+            </div>
+
         </div>
 
         <div class="table-container card" style="margin-top: 20px; padding: 0; overflow: hidden; border-radius: 16px;">
@@ -355,7 +362,52 @@
         </div>
     </div>
 
+    <!-- BULK UPLOAD MODAL -->
+    <div class="modal-overlay" id="bulkModal">
+        <div class="modal-glass" style="width: 90%; max-width: 500px; display: none;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <h2 style="margin: 0; font-size: 1.5rem;"><i class="fas fa-file-excel"
+                        style="color: #10b981; margin-right: 10px;"></i> Carga Masiva</h2>
+                <button onclick="closeBulkModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 40px 30px;">
+                <div style="margin-bottom: 25px;">
+                    <i class="fas fa-cloud-upload-alt"
+                        style="font-size: 3rem; color: #6366f1; margin-bottom: 15px;"></i>
+                    <p style="color: #475569; font-weight: 500;">Sube tu archivo Excel con productos.</p>
+                </div>
+
+                <input type="file" id="bulk-file-input" accept=".xlsx, .xls" style="display: none;"
+                    onchange="handleBulkFileSelect(this)">
+
+                <button class="btn-primary" onclick="document.getElementById('bulk-file-input').click()"
+                    style="width: 100%; margin-bottom: 15px;">
+                    <i class="fas fa-search"></i> Seleccionar Archivo
+                </button>
+
+                <div id="file-info"
+                    style="display: none; margin-bottom: 20px; padding: 10px; background: rgba(99, 102, 241, 0.05); border-radius: 8px; border: 1px dashed #818cf8;">
+                    <span id="file-name" style="font-size: 0.9rem; font-weight: 600; color: #6366f1;"></span>
+                </div>
+
+                <a href="#" onclick="downloadTemplate()"
+                    style="color: #6366f1; font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+                    <i class="fas fa-download"></i> Descargar Plantilla
+                </a>
+            </div>
+            <div class="modal-footer"
+                style="padding: 20px 30px; border-top: 1px solid rgba(0,0,0,0.05); text-align: right;">
+                <button class="btn-secondary" onclick="closeBulkModal()" style="margin-right: 10px;">Cancelar</button>
+                <button id="btn-start-bulk" class="btn-primary" disabled onclick="uploadBulkFile()">Iniciar
+                    Carga</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/frontend/assets/js/layout-loader.js"></script>
+
     <script src="/frontend/assets/js/auth_guard.js"></script>
     <script src="/frontend/assets/js/notifications.js"></script>
     <script src="/frontend/assets/js/configuracion_productos.js"></script>

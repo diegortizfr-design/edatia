@@ -2,6 +2,8 @@ const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
 const { initializeTenantDB } = require('../utils/tenantInit');
 
+const XLSX = require('xlsx');
+
 async function getClientDbConfig(nit) {
     const pool = getPool();
     const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
@@ -9,7 +11,92 @@ async function getClientDbConfig(nit) {
     return rows[0];
 }
 
+exports.bulkUpload = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        if (!req.file) return res.status(400).json({ success: false, message: 'No se subió ningún archivo' });
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        // Leer Excel
+        const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        if (rows.length === 0) return res.status(400).json({ success: false, message: 'El archivo está vacío' });
+
+        let counting = 0;
+        let errors = 0;
+
+        // Mapeo sugerido de columnas (Normalizar nombres)
+        // Se espera: Codigo/Código, Nombre, Referencia, Categoria/Categoría, Precio1, Precio2, Costo, Impuesto, StockMinimo
+        for (const row of rows) {
+            try {
+                // Normalizar claves (quitar tildes y a minúsculas para encontrar correspondencia)
+                const normalize = (str) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const data = {};
+                for (const key in row) {
+                    data[normalize(key)] = row[key];
+                }
+
+                const nombre = data.nombre;
+                if (!nombre) continue; // Saltar si no hay nombre
+
+                const insertSQL = `
+                    INSERT INTO productos 
+                    (codigo, referencia_fabrica, nombre, categoria, unidad_medida, 
+                     precio1, precio2, costo, impuesto_porcentaje, stock_minimo, activo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                    nombre = VALUES(nombre),
+                    referencia_fabrica = VALUES(referencia_fabrica),
+                    categoria = VALUES(categoria),
+                    precio1 = VALUES(precio1),
+                    precio2 = VALUES(precio2),
+                    costo = VALUES(costo),
+                    impuesto_porcentaje = VALUES(impuesto_porcentaje),
+                    stock_minimo = VALUES(stock_minimo)
+                `;
+
+                await clientConn.query(insertSQL, [
+                    data.codigo || null,
+                    data.referencia || null,
+                    nombre,
+                    data.categoria || 'General',
+                    data.unidad || 'UND',
+                    parseFloat(data.precio1) || 0,
+                    parseFloat(data.precio2) || 0,
+                    parseFloat(data.costo) || 0,
+                    parseFloat(data.impuesto) || 0,
+                    parseInt(data.stockminimo) || 0,
+                    1
+                ]);
+                counting++;
+            } catch (err) {
+                console.error('Error insertando fila:', err, row);
+                errors++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Proceso completado. ${counting} productos procesados correctamente. ${errors} errores.`,
+            count: counting,
+            errors: errors
+        });
+
+    } catch (err) {
+        console.error('bulkUpload error:', err);
+        res.status(500).json({ success: false, message: 'Error interno al procesar el archivo' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
 exports.listarProductos = async (req, res) => {
+
     let clientConn = null;
     try {
         const { nit } = req.user;

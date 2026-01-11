@@ -297,3 +297,81 @@ async function deleteProduct(id) {
         showNotification('Error al eliminar', 'error');
     }
 }
+
+// --- Bulk Upload Functions ---
+window.openBulkModal = () => {
+    document.getElementById('bulkModal').style.display = 'flex';
+    document.getElementById('bulkModal').querySelector('.modal-glass').style.display = 'block';
+    resetBulkModal();
+};
+
+window.closeBulkModal = () => {
+    document.getElementById('bulkModal').style.display = 'none';
+};
+
+function resetBulkModal() {
+    document.getElementById('bulk-file-input').value = '';
+    document.getElementById('file-info').style.display = 'none';
+    document.getElementById('btn-start-bulk').disabled = true;
+    document.getElementById('file-name').textContent = '';
+}
+
+window.handleBulkFileSelect = (input) => {
+    const file = input.files[0];
+    if (file) {
+        document.getElementById('file-name').textContent = file.name;
+        document.getElementById('file-info').style.display = 'block';
+        document.getElementById('btn-start-bulk').disabled = false;
+    }
+};
+
+window.uploadBulkFile = async () => {
+    const input = document.getElementById('bulk-file-input');
+    const file = input.files[0];
+    if (!file) return;
+
+    const btn = document.getElementById('btn-start-bulk');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(`${API_URL}/bulk-upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeBulkModal();
+            loadProducts();
+        } else {
+            showNotification(data.message || 'Error en la carga masiva', 'error');
+        }
+    } catch (e) {
+        console.error('Bulk upload error:', e);
+        showNotification('Error de conexión al subir archivo', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+window.downloadTemplate = () => {
+    const headers = 'Codigo,Nombre,Referencia,Categoria,Unidad,Precio1,Precio2,Costo,Impuesto,StockMinimo';
+    const blob = new Blob([headers], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_productos.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
