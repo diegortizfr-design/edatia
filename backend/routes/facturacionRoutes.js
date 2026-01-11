@@ -4,6 +4,7 @@ const { protect } = require('../middlewares/authMiddleware');
 const facturacionCtrl = require('../controllers/facturacionController');
 
 router.get('/', protect, facturacionCtrl.listarFacturas);
+router.get('/recibos', protect, facturacionCtrl.listarRecibos);
 router.get('/:id/detalles', protect, facturacionCtrl.obtenerDetallesFactura);
 router.post('/', protect, facturacionCtrl.crearFactura);
 

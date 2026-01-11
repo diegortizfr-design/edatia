@@ -228,3 +228,27 @@ exports.obtenerDetallesFactura = async (req, res) => {
         if (clientConn) await clientConn.end();
     }
 };
+
+exports.listarRecibos = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        const [rows] = await clientConn.query(`
+            SELECT r.*, t.nombre as cliente_nombre 
+            FROM recibos_caja r 
+            LEFT JOIN terceros t ON r.cliente_id = t.id 
+            ORDER BY r.id DESC LIMIT 500
+        `);
+
+        res.json({ success: true, data: rows });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
