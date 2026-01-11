@@ -47,110 +47,113 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupQuickModal('modal-quick-tercero', 'btn-quick-proveedor', 'close-quick-tercero', 'btn-cancel-quick-tercero', 'form-quick-tercero', guardarQuickProveedor);
     setupQuickModal('modal-quick-producto', 'btn-quick-producto', 'close-quick-prod', 'cancel-quick-prod', 'form-quick-producto', guardarQuickProducto);
 
-    // New Modals Listeners (Invoice & Inspection)
+    // Modals Listeners (Invoice & Inspection)
     const btnsCloseAdjuntar = document.querySelectorAll('.close-modal-btn[data-target="modal-adjuntar-factura"]');
     btnsCloseAdjuntar.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-adjuntar-factura').style.display = 'none'));
 
-    // ... rest of listeners ...
-});
+    const btnsCloseInsp = document.querySelectorAll('.close-modal-btn[data-target="modal-inspeccion"]');
+    btnsCloseInsp.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-inspeccion').style.display = 'none'));
 
-// ... setupQuickModal function ...
+    document.getElementById('btn-confirmar-factura')?.addEventListener('click', guardarFactura);
+    document.getElementById('btn-confirmar-recepcion')?.addEventListener('click', guardarInspeccion);
 
-async function guardarQuickProveedor(e) {
-    e.preventDefault();
-    // Validate required fields
-    const nombre = document.getElementById('qt_nombre_comercial').value;
-    const documento = document.getElementById('qt_documento').value;
+    // ... setupQuickModal function ...
 
-    if (!nombre || !documento) {
-        if (window.showNotification) localShowNotification('Nombre y Documento son obligatorios', 'warning');
-        return;
-    }
+    async function guardarQuickProveedor(e) {
+        e.preventDefault();
+        // Validate required fields
+        const nombre = document.getElementById('qt_nombre_comercial').value;
+        const documento = document.getElementById('qt_documento').value;
 
-    const formData = {
-        nombre_comercial: nombre,
-        razon_social: document.getElementById('qt_razon_social').value,
-        tipo_documento: document.getElementById('qt_tipo_documento').value,
-        documento: documento,
-        telefono: document.getElementById('qt_telefono').value,
-        email: document.getElementById('qt_email').value,
-        direccion: document.getElementById('qt_direccion').value,
-        es_cliente: false, // Default for purchases
-        es_proveedor: true
-    };
-
-    try {
-        const token = localStorage.getItem('token');
-        const resp = await fetch(TERCEROS_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await resp.json();
-        if (data.success) {
-            localShowNotification('Proveedor creado exitosamente', 'success');
-            document.getElementById('modal-quick-tercero').style.display = 'none';
-            document.getElementById('form-quick-tercero').reset();
-
-            // Reload providers and select the new one
-            await cargarProveedores();
-
-            // Auto-select the new provider (assuming cargarProveedores populates the select)
-            // We need to wait a tiny bit or find it in the new list
-            setTimeout(() => {
-                const select = document.getElementById('compra-proveedor');
-                // The backend usually returns the ID of the new item in data.id or we can find by document
-                // For now, let's just select the last one or try to match document if possible, 
-                // but since cargarProveedores is async and we just awaited it, the list is fresh.
-                // Best effort: Search option with text match or assume backend returns ID
-                if (data.id || data.data?.id) {
-                    select.value = data.id || data.data.id;
-                }
-            }, 100);
-
-        } else {
-            localShowNotification(data.message, 'error');
+        if (!nombre || !documento) {
+            if (window.showNotification) localShowNotification('Nombre y Documento son obligatorios', 'warning');
+            return;
         }
-    } catch (error) {
-        console.error('Quick Provider Error:', error);
-        localShowNotification('Error al crear proveedor', 'error');
+
+        const formData = {
+            nombre_comercial: nombre,
+            razon_social: document.getElementById('qt_razon_social').value,
+            tipo_documento: document.getElementById('qt_tipo_documento').value,
+            documento: documento,
+            telefono: document.getElementById('qt_telefono').value,
+            email: document.getElementById('qt_email').value,
+            direccion: document.getElementById('qt_direccion').value,
+            es_cliente: false, // Default for purchases
+            es_proveedor: true
+        };
+
+        try {
+            const token = localStorage.getItem('token');
+            const resp = await fetch(TERCEROS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                localShowNotification('Proveedor creado exitosamente', 'success');
+                document.getElementById('modal-quick-tercero').style.display = 'none';
+                document.getElementById('form-quick-tercero').reset();
+
+                // Reload providers and select the new one
+                await cargarProveedores();
+
+                // Auto-select the new provider (assuming cargarProveedores populates the select)
+                // We need to wait a tiny bit or find it in the new list
+                setTimeout(() => {
+                    const select = document.getElementById('compra-proveedor');
+                    // The backend usually returns the ID of the new item in data.id or we can find by document
+                    // For now, let's just select the last one or try to match document if possible, 
+                    // but since cargarProveedores is async and we just awaited it, the list is fresh.
+                    // Best effort: Search option with text match or assume backend returns ID
+                    if (data.id || data.data?.id) {
+                        select.value = data.id || data.data.id;
+                    }
+                }, 100);
+
+            } else {
+                localShowNotification(data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Quick Provider Error:', error);
+            localShowNotification('Error al crear proveedor', 'error');
+        }
     }
-}
-const dateInput = document.getElementById('compra-fecha');
-if (dateInput) dateInput.valueAsDate = new Date();
+    const dateInput = document.getElementById('compra-fecha');
+    if (dateInput) dateInput.valueAsDate = new Date();
 
 
-// 2. Async Data Loading
-try {
-    const configResp = await fetch('../../assets/config.json');
-    const config = await configResp.json();
-    API_URL = `${config.apiUrl}/compras`;
-    PRODUCTOS_URL = `${config.apiUrl}/productos`;
-    TERCEROS_URL = `${config.apiUrl}/terceros`;
-    SUCURSALES_URL = `${config.apiUrl}/sucursales`;
-    DOCUMENTOS_URL = `${config.apiUrl}/documentos`;
+    // 2. Async Data Loading
+    try {
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_URL = `${config.apiUrl}/compras`;
+        PRODUCTOS_URL = `${config.apiUrl}/productos`;
+        TERCEROS_URL = `${config.apiUrl}/terceros`;
+        SUCURSALES_URL = `${config.apiUrl}/sucursales`;
+        DOCUMENTOS_URL = `${config.apiUrl}/documentos`;
 
-    // Load Data
-    await cargarProveedores();
-    await cargarSucursales();
-    await cargarDocumentosCompra();
-    await cargarCompras();
+        // Load Data
+        await cargarProveedores();
+        await cargarSucursales();
+        await cargarDocumentosCompra();
+        await cargarCompras();
 
-} catch (e) {
-    console.error('Initialization error:', e);
-    if (window.showNotification) localShowNotification('Error conectando con el servidor. Revise su conexión.', 'error');
+    } catch (e) {
+        console.error('Initialization error:', e);
+        if (window.showNotification) localShowNotification('Error conectando con el servidor. Revise su conexión.', 'error');
 
-    // Remove loading state from table if present
-    if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: red;">
+        // Remove loading state from table if present
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: red;">
                 <i class="fas fa-exclamation-triangle"></i> Error cargando datos. Revise la consola.
              </td></tr>`;
+        }
     }
-}
 });
 
 function setupQuickModal(modalId, btnOpenId, btnCloseId, btnCancelId, formId, submitHandler) {
@@ -247,6 +250,14 @@ async function abrirModalCompra(modo = 'orden') {
     const titulo = document.querySelector('#modal-nueva-compra h2');
     const btn = document.getElementById('btn-guardar-compra');
 
+    // Reset inputs
+    document.getElementById('compra-factura-ref').value = '';
+    const dateInput = document.getElementById('compra-fecha');
+    if (dateInput) dateInput.valueAsDate = new Date();
+    document.getElementById('compra-proveedor').value = '';
+    document.getElementById('compra-documento').value = '';
+    document.getElementById('compra-sucursal').value = '';
+
     const refFieldContainer = document.getElementById('compra-factura-ref').parentElement;
 
     // Remove previous listeners to avoid duplicates (cleanest way: clone node or named functions)
@@ -258,7 +269,7 @@ async function abrirModalCompra(modo = 'orden') {
         titulo.textContent = 'Registrar Factura de Compra';
         finalBtn.textContent = 'Guardar Factura (Realizada)';
         finalBtn.classList.remove('btn-secondary');
-        finalBtn.classList.add('btn-primary');
+        finalBtn.classList.add('btn-premium');
         refFieldContainer.style.display = 'block';
         finalBtn.addEventListener('click', guardarFactura);
         await cargarDocumentosCompra('FC');
@@ -268,6 +279,10 @@ async function abrirModalCompra(modo = 'orden') {
         finalBtn.classList.add('btn-secondary'); // Visual distinction
         finalBtn.classList.remove('btn-primary');
         refFieldContainer.style.display = 'none';
+
+        // Ensure the value is really gone so it passes the 'if (factura_referencia)' check as false
+        document.getElementById('compra-factura-ref').value = '';
+
         finalBtn.addEventListener('click', guardarOrden);
         await cargarDocumentosCompra('OC');
     }
@@ -275,6 +290,8 @@ async function abrirModalCompra(modo = 'orden') {
     modal.style.display = 'flex';
     carrito = [];
     renderCarrito();
+    document.getElementById('mensaje-vacio').style.display = 'block';
+    document.getElementById('compra-total').textContent = '$0.00';
 }
 
 function cerrarModal() {
