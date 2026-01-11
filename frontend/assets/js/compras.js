@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
 
     closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
-    document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
+    closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
+    // Listener removed here as it is assigned dynamically in abrirModalCompra
+    // document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
 
     if (inputBusqueda) {
         inputBusqueda.addEventListener('keyup', (e) => {
@@ -184,18 +186,29 @@ async function abrirModalCompra(modo = 'orden') {
     const titulo = document.querySelector('#modal-nueva-compra h2');
     const btn = document.getElementById('btn-guardar-compra');
 
-    const refFieldContainer = document.getElementById('compra-factura-ref').parentElement; // Get the .form-control div
+    const refFieldContainer = document.getElementById('compra-factura-ref').parentElement;
+
+    // Remove previous listeners to avoid duplicates (cleanest way: clone node or named functions)
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    const finalBtn = document.getElementById('btn-guardar-compra');
 
     if (modo === 'factura') {
         titulo.textContent = 'Registrar Factura de Compra';
-        btn.textContent = 'Guardar Factura (Realizada)';
-        refFieldContainer.style.display = 'block'; // Show for Factura
-        await cargarDocumentosCompra('FC'); // Factura Compra
+        finalBtn.textContent = 'Guardar Factura (Realizada)';
+        finalBtn.classList.remove('btn-secondary');
+        finalBtn.classList.add('btn-primary');
+        refFieldContainer.style.display = 'block';
+        finalBtn.addEventListener('click', guardarFactura);
+        await cargarDocumentosCompra('FC');
     } else {
         titulo.textContent = 'Nueva Orden de Compra';
-        btn.textContent = 'Guardar Orden';
-        refFieldContainer.style.display = 'none'; // Hide for Orden
-        await cargarDocumentosCompra('OC'); // Orden Compra
+        finalBtn.textContent = 'Guardar Orden';
+        finalBtn.classList.add('btn-secondary'); // Visual distinction
+        finalBtn.classList.remove('btn-primary');
+        refFieldContainer.style.display = 'none';
+        finalBtn.addEventListener('click', guardarOrden);
+        await cargarDocumentosCompra('OC');
     }
 
     modal.style.display = 'flex';
@@ -397,68 +410,51 @@ window.eliminarLinea = (index) => {
     renderCarrito();
 };
 
-async function guardarCompra() {
+async function guardarOrden() {
+    await procesarGuardado('Orden de Compra');
+}
+
+async function guardarFactura() {
+    // Explicit Validation for Invoice
+    const facturaRef = document.getElementById('compra-factura-ref').value;
+    if (!facturaRef) return localShowNotification('Debe ingresar el número de factura del proveedor', 'error');
+
+    await procesarGuardado('Realizada');
+}
+
+
+async function procesarGuardado(estadoForzado) {
     if (carrito.length === 0) return localShowNotification('El carrito está vacío', 'error');
 
     const proveedorId = document.getElementById('compra-proveedor').value;
     const sucursalId = document.getElementById('compra-sucursal').value;
+    const documentoId = document.getElementById('compra-documento').value;
+    const facturaRef = document.getElementById('compra-factura-ref').value;
+    const fecha = document.getElementById('compra-fecha').value;
 
     if (!proveedorId) return localShowNotification('Selecciona un proveedor', 'error');
     if (!sucursalId) return localShowNotification('Selecciona una sucursal destino', 'error');
+    if (!documentoId) return localShowNotification('Seleccione un documento (consecutivo)', 'error');
 
     const btnGuardar = document.getElementById('btn-guardar-compra');
-    const originalText = btnGuardar.getAttribute('data-original-text') || btnGuardar.innerHTML;
-    if (!btnGuardar.getAttribute('data-original-text')) btnGuardar.setAttribute('data-original-text', originalText);
-
-    const toggleBtn = (disable, err = null) => {
-        btnGuardar.disabled = disable;
-        btnGuardar.innerHTML = disable ? '<i class="fas fa-spinner fa-spin"></i> Guardando...' : originalText;
-        if (err) localShowNotification(err, 'error');
-    };
-
-    toggleBtn(true);
-
-    // Determine initial state based on mode
-    // Factura -> 'Realizada' (Ready for Inspection/Receiving)
-    // Orden -> 'Orden de Compra' (Needs Approval)
-    const estadoInicial = (modoCompra === 'factura') ? 'Realizada' : 'Orden de Compra';
-
-    // New Fields
-    const documentoId = document.getElementById('compra-documento').value;
-    const facturaRef = document.getElementById('compra-factura-ref').value;
-
-    if (!documentoId) {
-        return toggleBtn(false, 'Seleccione un documento (consecutivo)');
-    }
-
-    // Validation: Invoice Reference Mandatory if Mode = Factura
-    if (modoCompra === 'factura' && !facturaRef) {
-        return toggleBtn(false, 'Debe ingresar el número de factura del proveedor');
-    }
+    const originalText = btnGuardar.innerHTML;
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
     const payload = {
         proveedor_id: proveedorId,
         sucursal_id: sucursalId,
         documento_id: documentoId,
-        factura_referencia: facturaRef, // Cruce
-        fecha: document.getElementById('compra-fecha').value,
+        factura_referencia: facturaRef,
+        fecha: fecha,
         total: carrito.reduce((sum, i) => sum + i.subtotal, 0),
-        estado: estadoInicial,
+        estado: estadoForzado, // Explicit state
         items: carrito
     };
 
     try {
         const token = localStorage.getItem('token');
-
-        // Timeout wrapper
-        const fetchWithTimeout = (url, options, timeout = 15000) => {
-            return Promise.race([
-                fetch(url, options),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Tiempo de espera agotado')), timeout))
-            ]);
-        };
-
-        const res = await fetchWithTimeout(API_URL, {
+        const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payload)
@@ -467,21 +463,17 @@ async function guardarCompra() {
         const data = await res.json();
 
         if (data.success) {
-            localShowNotification('Compra registrada exitosamente', 'success');
+            localShowNotification('Guardado exitosamente', 'success');
             cerrarModal();
             cargarCompras();
-            setTimeout(() => {
-                btnGuardar.disabled = false;
-                btnGuardar.innerHTML = originalText;
-            }, 500);
         } else {
             localShowNotification('Error: ' + data.message, 'error');
-            btnGuardar.disabled = false;
-            btnGuardar.innerHTML = originalText;
         }
     } catch (err) {
-        localShowNotification('Error al guardar compra: ' + err.message, 'error');
-        toggleBtn(false);
+        localShowNotification('Error al guardar: ' + err.message, 'error');
+    } finally {
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = originalText;
     }
 }
 
