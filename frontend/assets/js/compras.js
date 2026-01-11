@@ -54,13 +54,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnsCloseInsp = document.querySelectorAll('.close-modal-btn[data-target="modal-inspeccion"]');
     btnsCloseInsp.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-inspeccion').style.display = 'none'));
 
-    document.getElementById('btn-confirmar-factura')?.addEventListener('click', guardarFactura);
+    document.getElementById('btn-confirmar-factura')?.addEventListener('click', guardarFacturaAdjunta);
     document.getElementById('btn-confirmar-recepcion')?.addEventListener('click', guardarInspeccion);
 
     // ... setupQuickModal function ...
 
+    // --- STATE MANAGEMENT ---
+
+    async function guardarFacturaAdjunta() {
+        if (!compraActualId) return;
+
+        const facturaRef = document.getElementById('factura-ref-input').value; // Correct ID for small modal
+        const fileInput = document.getElementById('factura-file-input');
+
+        if (!facturaRef) {
+            return localShowNotification('Debe ingresar el número de factura del proveedor', 'warning');
+        }
+
+        const formData = new FormData();
+        formData.append('factura_referencia', facturaRef);
+        formData.append('estado', 'Realizada'); // Auto-transition to Realizada
+
+        if (fileInput.files.length > 0) {
+            formData.append('archivo', fileInput.files[0]);
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/${compraActualId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }, // No Content-Type for FormData
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                localShowNotification('Factura registrada correctamente', 'success');
+                document.getElementById('modal-adjuntar-factura').style.display = 'none';
+                // Clear inputs
+                document.getElementById('factura-ref-input').value = '';
+                fileInput.value = '';
+
+                // Refund/Reload
+                const c = allComprasData.find(x => x.id === compraActualId);
+                if (c) {
+                    c.estado = 'Realizada';
+                    c.factura_referencia = facturaRef;
+                }
+                verCompra(compraActualId);
+                cargarCompras();
+            } else {
+                localShowNotification(data.message, 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            localShowNotification('Error al guardar factura', 'error');
+        }
+    }
+
     async function guardarQuickProveedor(e) {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         // Validate required fields
         const nombre = document.getElementById('qt_nombre_comercial').value;
         const documento = document.getElementById('qt_documento').value;
