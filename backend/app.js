@@ -40,11 +40,15 @@ app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
 app.use('/api/inventario', require('./routes/inventarioRoutes'));
 app.use('/api/reportes', reportesRoutes); // Added use statement
 
-// Servir frontends por cliente (opcional)
-// app.use('/actualystore', express.static(path.join(__dirname, '..', 'clientes', 'actualystore')));
-// app.use('/assencebarberstudio', express.static(path.join(__dirname, '..', 'clientes', 'assencebarberstudio')));
-app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend'))); // Mantener compatibilidad si se usa /frontend
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// Ruta raíz: Mostrar la página de landing
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'modules', 'core', 'landing.html'));
+});
 
 // Ruta healthcheck
 app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'dev' }));
