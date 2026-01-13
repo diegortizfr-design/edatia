@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Carga de API ERPod ---
     const NIT = '1143875756';
-    const API_URL = `https://api-erpod.onrender.com/api/public/ecommerce/${NIT}`;
+    const API_URL = `https://erpod.onrender.com/api/public/ecommerce/${NIT}`;
 
     const loadProducts = async () => {
         try {

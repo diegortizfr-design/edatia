@@ -32,7 +32,7 @@ Se ha implementado una solución completa para gestionar la tienda virtual desde
 
 ### 6. Puerta de Enlace Pública (API Gateway)
 - Se creó una **API Pública** que permite a las tiendas virtuales (como ATPAventura) consumir el catálogo en tiempo real.
-- **Ruta**: `GET https://api-erpod.onrender.com/api/public/ecommerce/:nit`
+- **Ruta**: `GET https://erpod.onrender.com/api/public/ecommerce/:nit`
 - **Funcionalidad**: Sincronización automática de precios, descripciones y existencias.
 
 ## Archivos Modificados/Creados

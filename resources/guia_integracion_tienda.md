@@ -21,14 +21,14 @@ Para que la tienda hable con el ERP, necesitamos tres pilares técnicos:
 
 ### Paso B: Conexión Automática (API)
 Tu nueva puerta de enlace es:
-`GET https://api-erpod.onrender.com/api/public/ecommerce/tu-nit`
+`GET https://erpod.onrender.com/api/public/ecommerce/tu-nit`
 
 **Ejemplo de código para tu tienda virtual:**
 ```javascript
 // Función para cargar productos desde ERPod
 async function cargarCatalogoERPod() {
     const NIT = 'TU-NIT-AQUI'; // Reemplaza con tu NIT sin puntos ni guiones
-    const API_URL = `https://api-erpod.onrender.com/api/public/ecommerce/${NIT}`;
+    const API_URL = `https://erpod.onrender.com/api/public/ecommerce/${NIT}`;
 
     try {
         const response = await fetch(API_URL);
