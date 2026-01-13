@@ -8,6 +8,7 @@ const mysql = require('mysql2/promise');
  */
 async function connectToClientDB(config) {
     try {
+        console.log(`Intentando conectar a DB cliente: Host=${config.db_host}, User=${config.db_user}, DB=${config.db_name}`);
         const connection = await mysql.createConnection({
             host: config.db_host,
             user: config.db_user,
