@@ -18,7 +18,7 @@ async function connectToClientDB(config) {
         return connection;
     } catch (error) {
         console.error('Error conectando a DB cliente:', error.message);
-        throw new Error('No se pudo conectar a la base de datos de la empresa');
+        throw new Error('No se pudo conectar a la base de datos de la empresa: ' + error.message);
     }
 }
 
