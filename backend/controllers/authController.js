@@ -68,17 +68,21 @@ async function login(req, res) {
     clientConn = await connectToClientDB(empresaConfig);
 
     // 4. Buscar usuario en la DB del cliente
+    console.log(`Buscando usuario: '${usuario}' en la tabla usuarios...`);
     const [users] = await clientConn.query('SELECT id, contraseña, nombre FROM usuarios WHERE usuario = ?', [usuario]);
 
     if (!users.length) {
-      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
+      console.log(`Usuario '${usuario}' no encontrado en la base de datos.`);
+      return res.status(401).json({ ok: false, message: 'Credenciales inválidas: Usuario no encontrado' });
     }
 
     const user = users[0];
+    console.log('Usuario encontrado. Comparando contraseñas...');
     const match = await bcrypt.compare(contraseña, user.contraseña);
 
     if (!match) {
-      return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
+      console.log('La contraseña no coincide con el hash almacenado.');
+      return res.status(401).json({ ok: false, message: 'Credenciales inválidas: Contraseña incorrecta' });
     }
 
     // 5. Generar Token
