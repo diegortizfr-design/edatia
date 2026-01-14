@@ -77,13 +77,23 @@ async function login(req, res) {
     }
 
     const user = users[0];
-    console.log('Usuario encontrado. Comparando contraseñas...');
-    const match = await bcrypt.compare(contraseña, user.contraseña);
+    console.log('Usuario encontrado. Validando credenciales...');
 
-    if (!match) {
-      console.log('La contraseña no coincide con el hash almacenado.');
+    let match = false;
+    try {
+      // Intentar comparación de Bcrypt
+      match = await bcrypt.compare(contraseña, user.contraseña);
+    } catch (e) {
+      console.log('El valor en DB no es un hash Bcrypt válido, probando texto plano...');
+    }
+
+    // Si no es un hash válido o no coincide, probar texto plano directamente
+    if (!match && contraseña !== user.contraseña) {
+      console.log('La contraseña no coincide.');
       return res.status(401).json({ ok: false, message: 'Credenciales inválidas: Contraseña incorrecta' });
     }
+
+    console.log('Acceso concedido.');
 
     // 5. Generar Token
     const token = jwt.sign({
