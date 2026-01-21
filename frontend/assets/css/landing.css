@@ -1,7 +1,10 @@
+@import 'variables.css';
+
 :root {
-    --primary: #4F46E5;
-    --secondary: #10B981;
+    --primary: var(--primary-color);
+    --secondary: var(--secondary-color);
     --dark: #0F172A;
+    /* Kept for landing specific dark theme */
     --light: #F8FAFC;
     --glass: rgba(255, 255, 255, 0.1);
     --glass-border: rgba(255, 255, 255, 0.2);
