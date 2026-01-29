@@ -1,0 +1,121 @@
+[
+    {
+        "codigo": "1",
+        "nombre": "ACTIVO",
+        "naturaleza": "Debito",
+        "nivel": 1,
+        "tipo": "Clase"
+    },
+    {
+        "codigo": "11",
+        "nombre": "DISPONIBLE",
+        "naturaleza": "Debito",
+        "nivel": 2,
+        "tipo": "Grupo"
+    },
+    {
+        "codigo": "1105",
+        "nombre": "CAJA",
+        "naturaleza": "Debito",
+        "nivel": 3,
+        "tipo": "Cuenta"
+    },
+    {
+        "codigo": "110505",
+        "nombre": "CAJA GENERAL",
+        "naturaleza": "Debito",
+        "nivel": 4,
+        "tipo": "Subcuenta"
+    },
+    {
+        "codigo": "1110",
+        "nombre": "BANCOS",
+        "naturaleza": "Debito",
+        "nivel": 3,
+        "tipo": "Cuenta"
+    },
+    {
+        "codigo": "2",
+        "nombre": "PASIVO",
+        "naturaleza": "Credito",
+        "nivel": 1,
+        "tipo": "Clase"
+    },
+    {
+        "codigo": "22",
+        "nombre": "PROVEEDORES",
+        "naturaleza": "Credito",
+        "nivel": 2,
+        "tipo": "Grupo"
+    },
+    {
+        "codigo": "2205",
+        "nombre": "NACIONALES",
+        "naturaleza": "Credito",
+        "nivel": 3,
+        "tipo": "Cuenta"
+    },
+    {
+        "codigo": "3",
+        "nombre": "PATRIMONIO",
+        "naturaleza": "Credito",
+        "nivel": 1,
+        "tipo": "Clase"
+    },
+    {
+        "codigo": "31",
+        "nombre": "CAPITAL SOCIAL",
+        "naturaleza": "Credito",
+        "nivel": 2,
+        "tipo": "Grupo"
+    },
+    {
+        "codigo": "4",
+        "nombre": "INGRESOS",
+        "naturaleza": "Credito",
+        "nivel": 1,
+        "tipo": "Clase"
+    },
+    {
+        "codigo": "41",
+        "nombre": "OPERACIONALES",
+        "naturaleza": "Credito",
+        "nivel": 2,
+        "tipo": "Grupo"
+    },
+    {
+        "codigo": "4135",
+        "nombre": "COMERCIO AL POR MAYOR Y MENOR",
+        "naturaleza": "Credito",
+        "nivel": 3,
+        "tipo": "Cuenta"
+    },
+    {
+        "codigo": "5",
+        "nombre": "GASTOS",
+        "naturaleza": "Debito",
+        "nivel": 1,
+        "tipo": "Clase"
+    },
+    {
+        "codigo": "51",
+        "nombre": "OPERACIONALES DE ADMINISTRACION",
+        "naturaleza": "Debito",
+        "nivel": 2,
+        "tipo": "Grupo"
+    },
+    {
+        "codigo": "5105",
+        "nombre": "GASTOS DE PERSONAL",
+        "naturaleza": "Debito",
+        "nivel": 3,
+        "tipo": "Cuenta"
+    },
+    {
+        "codigo": "6",
+        "nombre": "COSTOS DE VENTAS",
+        "naturaleza": "Debito",
+        "nivel": 1,
+        "tipo": "Clase"
+    }
+]
