@@ -351,6 +351,18 @@ function addToCart(product) {
     renderCart();
 }
 
+function updateQuantity(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+        item.cantidad += delta;
+        if (item.cantidad <= 0) {
+            removeFromCart(id);
+        } else {
+            renderCart();
+        }
+    }
+}
+
 function removeFromCart(id) {
     cart = cart.filter(item => item.id !== id);
     renderCart();
@@ -358,28 +370,57 @@ function removeFromCart(id) {
 
 function renderCart() {
     const container = document.getElementById('cart-container');
-    if (!container) return;
+    if (!container) {
+        console.error('No se encontró #cart-container');
+        return;
+    }
+
     container.innerHTML = '';
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; color:#94a3b8; padding-top:40px;">
+                <i class="fas fa-shopping-basket" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                <p>Carrito vacío</p>
+            </div>
+        `;
+        document.querySelectorAll('.summary-row span:last-child').forEach(s => s.textContent = '$0.00');
+        return;
+    }
 
     let subtotal = 0;
     let taxes = 0;
 
     cart.forEach(item => {
-        const itemTotal = item.precio * item.cantidad;
-        const itemTax = itemTotal * (item.impuesto_porcentaje / 100);
+        const itemTotal = (item.precio || 0) * (item.cantidad || 0);
+        const itemTax = itemTotal * ((item.impuesto_porcentaje || 0) / 100);
 
         subtotal += itemTotal;
         taxes += itemTax;
 
         const div = document.createElement('div');
         div.className = 'cart-item';
+        div.style.borderBottom = '1px solid #f1f5f9';
+        div.style.padding = '12px 0';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+
         div.innerHTML = `
-            <div class="item-info">
-                <strong>${item.nombre}</strong>
-                <small>${item.cantidad} x $${item.precio.toLocaleString()}</small>
+            <div class="item-info" style="flex: 1;">
+                <strong style="color: #1e293b; display: block; font-size: 1rem;">${item.nombre}</strong>
+                <small style="color: #64748b; font-size: 0.85rem;">${item.cantidad} x $${(item.precio || 0).toLocaleString()}</small>
             </div>
-            <div class="item-total">$${itemTotal.toLocaleString()}</div>
-            <button class="remove-btn" onclick="event.stopPropagation(); removeFromCart(${item.id})"><i class="fas fa-times"></i></button>
+            <div class="item-total" style="color: #4F46E5; font-weight: 700; font-size: 1rem; margin-right: 12px;">
+                $${itemTotal.toLocaleString()}
+            </div>
+            <div class="item-actions" style="display: flex; gap: 4px;">
+                <button onclick="updateQuantity(${item.id}, -1)" style="border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #475569;">-</button>
+                <button onclick="updateQuantity(${item.id}, 1)" style="border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #475569;">+</button>
+                <button class="remove-btn" onclick="event.stopPropagation(); removeFromCart(${item.id})" style="background: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-left:8px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         `;
         container.appendChild(div);
     });
@@ -395,8 +436,6 @@ function renderCart() {
 
     // Store logic total for modal
     window.currentCartTotal = total;
-    window.currentCartSubtotal = subtotal;
-    window.currentCartTaxes = taxes;
 }
 
 // --- PAYMENT MODAL LOGIC ---

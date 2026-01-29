@@ -3,20 +3,21 @@
 .pos-layout {
     display: flex;
     flex-direction: column;
-    gap: 0;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     padding: 0 !important;
-    /* Force no padding for layout */
+    background: #f8fafc;
 }
 
 .pos-container {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     flex: 1;
     overflow: hidden;
-    padding: 0 40px 30px 40px;
-    /* Vertical align with header */
+    padding: 0 20px 20px 20px;
+    height: calc(100vh - 100px);
+    /* Restringir altura total */
 }
 
 /* LEFT SIDE: PRODUCTS AREA */
@@ -153,11 +154,15 @@
 
 /* RIGHT SIDE: CART PANEL */
 .pos-cart {
-    width: 400px;
+    width: 420px;
     display: flex;
     flex-direction: column;
-    max-height: 100%;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     overflow: hidden;
+    height: 100%;
+    border: 1px solid #e2e8f0;
 }
 
 .cart-header {
@@ -202,23 +207,40 @@
 .cart-items {
     flex: 1;
     overflow-y: auto;
-    padding: 0 20px;
-    min-height: 0;
-    /* Importante para el scroll en flexbox */
+    padding: 15px 20px;
+    min-height: 100px;
+    /* Asegurar que tenga espacio */
+    background: #fdfdfd;
 }
 
 .cart-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px dashed var(--glass-border);
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-info strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.item-info small {
+    color: #64748b;
 }
 
 .item-total {
     font-weight: 700;
-    margin-left: auto;
+    margin-left: 10px;
     margin-right: 15px;
+    color: var(--primary-color);
 }
 
 .remove-btn {
@@ -243,18 +265,26 @@
 .cart-summary {
     background: #ffffff;
     padding: 20px 25px;
-    border-top: 1px solid var(--glass-border);
+    border-top: 2px solid var(--primary-color);
     margin-top: auto;
-    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.03);
+    z-index: 10;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #475569;
 }
 
 .summary-row.total {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid var(--primary-color);
-    font-size: 1.6rem;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #e2e8f0;
+    font-size: 1.8rem;
     font-weight: 800;
-    color: var(--text-dark);
+    color: #1e293b;
 }
 
 .cart-actions {
