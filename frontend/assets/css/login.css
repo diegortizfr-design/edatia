@@ -130,6 +130,7 @@ body {
 .btn-login:disabled {
   background-color: #ccc;
   border-color: #ccc;
+  color: #666;
   cursor: not-allowed;
 }
 

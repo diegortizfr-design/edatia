@@ -95,6 +95,7 @@
         .btn-primary {
             background: var(--primary-gradient);
             border: none;
+            color: white !important;
             box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
             border-radius: 12px;
             padding: 12px 24px;
@@ -356,8 +357,8 @@
                 <button type="button" class="btn-secondary" onclick="closeModal()"
                     style="margin-right: 10px;">Cancelar</button>
                 <button type="button" class="btn-primary"
-                    onclick="document.getElementById('productForm').dispatchEvent(new Event('submit'))">Guardar
-                    Producto</button>
+                    onclick="document.getElementById('productForm').dispatchEvent(new Event('submit'))"
+                    style="color: white;">Guardar Producto</button>
             </div>
         </div>
     </div>

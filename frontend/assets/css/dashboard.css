@@ -776,7 +776,7 @@ header {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
+    color: white !important;
     box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
 }
 
@@ -812,7 +812,7 @@ header {
 
 .btn-ghost:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: var(--text-dark);
+    color: var(--primary-color);
 }
 
 /* Icon spacing for buttons */
