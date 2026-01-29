@@ -25,11 +25,6 @@
                 <header class="pos-header">
                     <div class="header-title">
                         <h1><i class="fas fa-cash-register"></i> Punto de Venta</h1>
-                        <!-- Selector de Documento de Facturación -->
-                        <select id="pos-document-type"
-                            style="padding: 10px; border-radius: 8px; border: 2px solid #e2e8f0; font-size: 0.95rem; margin-top: 10px; width: 100%; background: #ffffff; font-weight: 600; color: var(--primary-color);">
-                            <option value="">Cargando documentos...</option>
-                        </select>
                     </div>
                     <div class="search-bar">
                         <i class="fas fa-search"></i>
@@ -46,25 +41,40 @@
                 </div>
             </section>
 
-            <!-- RIGHT: CART AREA -->
-            <aside class="pos-cart card">
+            <!-- MIDDLE: CART ITEMS -->
+            <section class="pos-cart-items card">
+                <div class="cart-header">
+                    <h3><i class="fas fa-shopping-basket"></i> Detalle</h3>
+                </div>
+                <div class="cart-items" id="cart-container">
+                    <!-- Cart Items loaded via JS -->
+                </div>
+            </section>
+
+            <!-- RIGHT: CHECKOUT & CUSTOMER -->
+            <aside class="pos-checkout card">
                 <div class="cart-header">
                     <h3><i class="fas fa-shopping-cart"></i> Orden</h3>
                     <span class="order-num">---</span>
                 </div>
 
                 <div class="cart-customer">
-                    <i class="fas fa-user-circle"></i>
-                    <!-- Simple Client Selector -->
-                    <select id="pos-client-select"
-                        style="border: 2px solid #e2e8f0; background: #ffffff; font-weight: 600; width: 100%; padding: 10px; border-radius: 8px; color: var(--text-dark);">
-                        <option value="1">👤 Cliente Mostrador</option>
-                        <!-- Loader via JS -->
+                    <label style="font-size: 0.75rem; color: var(--text-gray); margin-bottom: 4px; display: block;">Tipo
+                        de Documento</label>
+                    <select id="pos-document-type"
+                        style="padding: 8px; border-radius: 8px; border: 2px solid #e2e8f0; font-size: 0.85rem; width: 100%; background: #ffffff; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">
+                        <option value="">Cargando documentos...</option>
                     </select>
-                </div>
 
-                <div class="cart-items" id="cart-container">
-                    <!-- Cart Items loaded via JS -->
+                    <label
+                        style="font-size: 0.75rem; color: var(--text-gray); margin-bottom: 4px; display: block;">Cliente</label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-user-circle"></i>
+                        <select id="pos-client-select"
+                            style="border: 2px solid #e2e8f0; background: #ffffff; font-weight: 600; width: 100%; padding: 8px; border-radius: 8px; color: var(--text-dark); font-size: 0.85rem;">
+                            <option value="1">👤 Cliente Mostrador</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="cart-summary">
@@ -77,8 +87,8 @@
                         <span>$0.00</span>
                     </div>
 
-                    <div class="cart-actions">
-                        <!-- Trigger Payment Modal directly -->
+                    <div class="cart-actions" style="margin-top: 15px;">
+                        <!-- Payment buttons or info -->
                     </div>
                     <button class="btn-checkout" id="btn-cobrar">Cobrar <i class="fas fa-arrow-right"></i></button>
                 </div>
@@ -231,6 +241,36 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR PRECIO MANUAL (PREMIUM) -->
+    <div id="price-edit-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px; border-radius: 20px; overflow: hidden; padding: 0;">
+            <div
+                style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); padding: 25px; color: white; text-align: center;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px; opacity: 0.9;"><i class="fas fa-tag"></i></div>
+                <h2 id="modal-product-name" style="margin: 0; font-size: 1.2rem; font-weight: 700;">Nombre del Producto
+                </h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 0.9rem;">Ingrese el nuevo precio unitario</p>
+            </div>
+            <div style="padding: 30px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <div style="position: relative;">
+                        <span
+                            style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 700; font-size: 1.2rem;">$</span>
+                        <input type="number" id="manual-price-input"
+                            style="width: 100%; padding: 15px 15px 15px 35px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1.4rem; font-weight: 800; color: #1e293b; outline: none; transition: all 0.3s; background: #f8fafc;"
+                            placeholder="0.00" step="any">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
+                    <button onclick="closePriceModal()"
+                        style="padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-weight: 600; cursor: pointer; color: #64748b;">Cancelar</button>
+                    <button id="save-price-btn"
+                        style="padding: 12px; border-radius: 12px; border: none; background: var(--primary-color); color: white; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);">Actualizar</button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -320,17 +320,17 @@ async function abrirModalCompra(modo = 'orden') {
 
     if (modo === 'factura') {
         titulo.textContent = 'Registrar Factura de Compra';
-        finalBtn.textContent = 'Guardar Factura (Realizada)';
-        finalBtn.classList.remove('btn-secondary');
+        finalBtn.innerHTML = '<i class="fas fa-file-check" style="margin-right: 8px;"></i> Guardar Factura (Realizada)';
+        finalBtn.classList.remove('btn-secondary', 'btn-primary');
         finalBtn.classList.add('btn-premium');
         refFieldContainer.style.display = 'block';
         finalBtn.addEventListener('click', guardarFactura);
         await cargarDocumentosCompra('FC');
     } else {
         titulo.textContent = 'Nueva Orden de Compra';
-        finalBtn.textContent = 'Guardar Orden';
-        finalBtn.classList.add('btn-secondary'); // Visual distinction
-        finalBtn.classList.remove('btn-primary');
+        finalBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px;"></i> Guardar Orden';
+        finalBtn.classList.add('btn-primary');
+        finalBtn.classList.remove('btn-secondary', 'btn-premium');
         refFieldContainer.style.display = 'none';
 
         // Ensure the value is really gone so it passes the 'if (factura_referencia)' check as false

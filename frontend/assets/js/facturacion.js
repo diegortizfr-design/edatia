@@ -342,6 +342,8 @@ function addToCart(product) {
             id: product.id,
             nombre: product.nombre,
             precio: parseFloat(product.precio1),
+            precio1: parseFloat(product.precio1 || 0),
+            precio2: parseFloat(product.precio2 || 0),
             impuesto_porcentaje: parseFloat(product.impuesto_porcentaje) || 0,
             cantidad: 1,
             maneja_inventario: product.maneja_inventario,
@@ -367,6 +369,55 @@ function removeFromCart(id) {
     cart = cart.filter(item => item.id !== id);
     renderCart();
 }
+
+// --- PRICING HELPERS ---
+
+window.changePriceType = (id, type) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+
+    if (type === '1') item.precio = item.precio1;
+    else if (type === '2') item.precio = item.precio2;
+
+    renderCart();
+};
+
+window.editManualPrice = (id) => {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+
+    const modal = document.getElementById('price-edit-modal');
+    const input = document.getElementById('manual-price-input');
+    const nameLabel = document.getElementById('modal-product-name');
+    const saveBtn = document.getElementById('save-price-btn');
+
+    nameLabel.textContent = item.nombre;
+    input.value = item.precio;
+    modal.classList.add('active');
+
+    const handleSave = () => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val) && val >= 0) {
+            item.precio = val;
+            renderCart();
+            closePriceModal();
+        } else {
+            if (window.showNotification) showNotification('Precio inválido', 'warning');
+        }
+        saveBtn.removeEventListener('click', handleSave);
+    };
+
+    saveBtn.addEventListener('click', handleSave);
+
+    // Permitir guardar con Enter
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter') handleSave();
+    };
+};
+
+window.closePriceModal = () => {
+    document.getElementById('price-edit-modal').classList.remove('active');
+};
 
 function renderCart() {
     const container = document.getElementById('cart-container');
@@ -400,26 +451,38 @@ function renderCart() {
 
         const div = document.createElement('div');
         div.className = 'cart-item';
-        div.style.borderBottom = '1px solid #f1f5f9';
-        div.style.padding = '12px 0';
-        div.style.display = 'flex';
-        div.style.justifyContent = 'space-between';
-        div.style.alignItems = 'center';
 
         div.innerHTML = `
-            <div class="item-info" style="flex: 1;">
-                <strong style="color: #1e293b; display: block; font-size: 1rem;">${item.nombre}</strong>
-                <small style="color: #64748b; font-size: 0.85rem;">${item.cantidad} x $${(item.precio || 0).toLocaleString()}</small>
+            <!-- Fila 1: Producto y Total item -->
+            <div class="item-main-info">
+                <span class="item-name" title="${item.nombre}">${item.nombre}</span>
+                <span class="item-total-price">$${itemTotal.toLocaleString()}</span>
             </div>
-            <div class="item-total" style="color: #4F46E5; font-weight: 700; font-size: 1rem; margin-right: 12px;">
-                $${itemTotal.toLocaleString()}
+            
+            <!-- Fila 2: Información de Precio -->
+            <div class="item-pricing-row">
+                <div class="item-pricing-area">
+                    <span class="item-qty-label">${item.cantidad} x</span>
+                    <span class="item-unit-price" title="Doble clic para editar" ondblclick="editManualPrice(${item.id})">
+                        $${(item.precio || 0).toLocaleString()}
+                    </span>
+                    <select class="item-price-select" onchange="changePriceType(${item.id}, this.value)">
+                        <option value="1" ${item.precio === item.precio1 ? 'selected' : ''}>P1</option>
+                        <option value="2" ${item.precio === item.precio2 ? 'selected' : ''}>P2</option>
+                        ${(item.precio !== item.precio1 && item.precio !== item.precio2) ? '<option value="custom" selected>M</option>' : ''}
+                    </select>
+                </div>
             </div>
-            <div class="item-actions" style="display: flex; gap: 4px;">
-                <button onclick="updateQuantity(${item.id}, -1)" style="border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #475569;">-</button>
-                <button onclick="updateQuantity(${item.id}, 1)" style="border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #475569;">+</button>
-                <button class="remove-btn" onclick="event.stopPropagation(); removeFromCart(${item.id})" style="background: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-left:8px;">
-                    <i class="fas fa-trash"></i>
-                </button>
+
+            <!-- Fila 3: Acciones (Abajo) -->
+            <div class="item-actions-row">
+                <div class="item-controls-area">
+                    <button class="qty-btn" title="Restar" onclick="updateQuantity(${item.id}, -1)">-</button>
+                    <button class="qty-btn" title="Sumar" onclick="updateQuantity(${item.id}, 1)">+</button>
+                    <button class="item-remove-btn" title="Eliminar" onclick="event.stopPropagation(); removeFromCart(${item.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
         container.appendChild(div);

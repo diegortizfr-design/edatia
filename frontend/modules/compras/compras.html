@@ -202,7 +202,7 @@
                 <div style="display: flex; gap: 15px;">
                     <button class="btn-secondary close-modal-btn">Cancelar</button>
                     <button class="btn-primary" id="btn-guardar-compra">
-                        <i class="fas fa-save"></i> Guardar Compra
+                        <i class="fas fa-save" style="margin-right: 8px;"></i> Guardar Compra
                     </button>
                 </div>
             </div>
@@ -596,9 +596,11 @@
                 <label>Adjuntar Archivo (ZIP, PDF, Imagen)</label>
                 <input type="file" id="factura-file-input" accept=".zip,.rar,.pdf,.jpg,.jpeg,.png">
             </div>
-            <div style="margin-top: 20px; text-align: right;">
+            <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="btn-secondary close-modal-btn" data-target="modal-adjuntar-factura">Cancelar</button>
-                <button class="btn-primary" id="btn-confirmar-factura">Guardar</button>
+                <button class="btn-primary" id="btn-confirmar-factura">
+                    <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Guardar Factura
+                </button>
             </div>
         </div>
     </div>
@@ -633,9 +635,12 @@
                 </table>
             </div>
 
-            <div style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+            <div
+                style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 20px;">
                 <button class="btn-secondary close-modal-btn" data-target="modal-inspeccion">Cancelar</button>
-                <button class="btn-primary" id="btn-confirmar-recepcion">Confirmar Recepción</button>
+                <button class="btn-primary" id="btn-confirmar-recepcion">
+                    <i class="fas fa-truck-loading" style="margin-right: 8px;"></i> Confirmar Recepción
+                </button>
             </div>
         </div>
     </div>
