@@ -25,7 +25,7 @@ body {
     min-height: 100vh;
     background: var(--bg-body);
     color: var(--text-dark);
-    overflow-x: hidden;
+    overflow-x: auto;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -600,6 +600,7 @@ header {
 /* PREMIUM TABLE STYLES */
 .table-container {
     overflow-x: auto;
+    max-width: 100%;
     border-radius: var(--radius-lg);
     background: white;
     box-shadow: var(--shadow-soft);
