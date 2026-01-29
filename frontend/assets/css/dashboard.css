@@ -25,7 +25,7 @@ body {
     min-height: 100vh;
     background: var(--bg-body);
     color: var(--text-dark);
-    overflow-x: auto;
+    overflow-x: hidden;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -312,6 +312,8 @@ textarea {
     padding: 30px 40px;
     background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.05), transparent 40%);
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 /* HEADER GLASS */
