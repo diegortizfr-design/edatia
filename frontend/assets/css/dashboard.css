@@ -2,15 +2,8 @@
 @import 'variables.css';
 
 :root {
-    /* Map to global variables */
-    --primary-color: var(--primary-color);
-    --secondary-color: var(--secondary-color);
-    --accent-color: var(--accent-color);
-    --text-dark: var(--text-dark);
-    --text-gray: var(--text-gray);
-    --bg-body: var(--bg-body);
-
-    /* Local specific variables */
+    /* Mapping local names to variables from variables.css */
+    /* No manual mapping needed if names are the same, but keeping local vars for consistency */
     --glass-bg: rgba(255, 255, 255, 0.7);
     --glass-border: rgba(255, 255, 255, 0.5);
     --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
@@ -739,21 +732,6 @@ header {
     padding-top: 20px;
 }
 
-.btn-secondary {
-    background: white;
-    border: 1px solid #d1d5db;
-    color: var(--text-dark);
-    padding: 10px 20px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.btn-secondary:hover {
-    background: #f3f4f6;
-    transform: translateY(-1px);
-}
 
 /* PREMIUM BUTTON SYSTEM */
 .btn-primary,
