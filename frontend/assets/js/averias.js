@@ -1,7 +1,9 @@
 // Lógica de Interfaz para Gestión de Averías (Conectado a API)
 
-const API_URL = '/api/averias';
-const PRODUCTOS_URL = '/api/productos';
+const BACKEND_URL = 'https://erpod.onrender.com';
+const API_URL = BACKEND_URL + '/api/averias';
+const PRODUCTOS_URL = BACKEND_URL + '/api/productos';
+const SUCURSALES_URL = BACKEND_URL + '/api/sucursales';
 const token = localStorage.getItem('token');
 
 document.addEventListener('DOMContentLoaded', () => {
