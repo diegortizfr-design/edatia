@@ -12,62 +12,22 @@ async function getClientDbConfig(nit) {
 exports.getAverias = async (req, res) => {
     let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
-
-        clientConn = await connectToClientDB(dbConfig);
-
-        console.log('getAverias: Inicio request', req.user);
         if (!req.user || !req.user.nit) {
             return res.status(400).json({ success: false, message: 'Token de usuario inválido o falta NIT' });
         }
         const { nit } = req.user;
 
-        let dbConfig;
-        try {
-            dbConfig = await getClientDbConfig(nit);
-        } catch (e) {
-            console.error('Error fatal getting dbConfig:', e);
-            return res.status(500).json({ success: false, message: 'Error interno consultando configuración empresa: ' + e.message });
-        }
-
+        const dbConfig = await getClientDbConfig(nit);
         if (!dbConfig) {
             console.error('Empresa no encontrada para NIT:', nit);
             return res.status(404).json({ success: false, message: 'Empresa no encontrada en configuración' });
         }
 
-        try {
-            clientConn = await connectToClientDB(dbConfig);
-        } catch (e) {
-            console.error('Error conectando a BD cliente:', e);
-            return res.status(500).json({ success: false, message: 'No se pudo conectar a la base de datos del cliente: ' + e.message });
-        }
+        clientConn = await connectToClientDB(dbConfig);
 
+
+        // Obtener averías con datos de producto y costo en una sola consulta
         const [rows] = await clientConn.query(`
-            SELECT a.*, p.nombre as producto_nombre, p.imagen_url, p.referencia_fabrica, s.nombre as sucursal_nombre
-            FROM averias a
-            JOIN productos p ON a.producto_id = p.id
-            JOIN sucursales s ON a.sucursal_origen_id = s.id
-            ORDER BY a.fecha_reporte DESC
-        `);
-
-        // Calcular totales para KPIs rápidos
-        let totalItems = 0;
-        let valorPerdida = 0;
-        let recuperados = 0;
-
-        rows.forEach(row => {
-            totalItems += parseFloat(row.cantidad);
-            // Asumimos que tenemos acceso al costo, si no, habría que unirlo en la query principal o asumirlo
-            // En este caso, para el KPI de valor, sería ideal tener el costo histórico o actual.
-            // Por simplicidad, usaremos un valor estimado si no está en la tabla averias.
-            // Mejor opción: JOIN con productos.costo
-        });
-
-        // Query adicional para KPIs más precisos si es necesario, o enriquecer la query anterior
-        // Updated Query with Cost
-        const [rowsWithCost] = await clientConn.query(`
             SELECT a.*, p.nombre as producto_nombre, p.imagen_url, p.referencia_fabrica, p.costo, s.nombre as sucursal_nombre
             FROM averias a
             JOIN productos p ON a.producto_id = p.id
@@ -75,25 +35,20 @@ exports.getAverias = async (req, res) => {
             ORDER BY a.fecha_reporte DESC
         `);
 
-        totalItems = rowsWithCost.reduce((acc, curr) => acc + parseFloat(curr.cantidad), 0);
-        valorPerdida = rowsWithCost.reduce((acc, curr) => {
-            // Solo contar pérdida si no está recuperado
+        // Calcular KPIs usando la consulta única
+        const totalItems = rows.reduce((acc, curr) => acc + parseFloat(curr.cantidad || 0), 0);
+        const valorPerdida = rows.reduce((acc, curr) => {
             if (curr.estado !== 'Recuperado') {
-                return acc + (parseFloat(curr.cantidad) * parseFloat(curr.costo || 0));
+                return acc + (parseFloat(curr.cantidad || 0) * parseFloat(curr.costo || 0));
             }
             return acc;
         }, 0);
-        recuperados = rowsWithCost.filter(r => r.estado === 'Recuperado').reduce((acc, curr) => acc + parseFloat(curr.cantidad), 0);
-
+        const recuperados = rows.filter(r => r.estado === 'Recuperado').reduce((acc, curr) => acc + parseFloat(curr.cantidad || 0), 0);
 
         res.json({
             success: true,
-            data: rowsWithCost,
-            stats: {
-                totalItems,
-                valorPerdida,
-                recuperados
-            }
+            data: rows,
+            stats: { totalItems, valorPerdida, recuperados }
         });
 
     } catch (err) {
