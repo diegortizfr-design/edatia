@@ -18,20 +18,42 @@
             padding: 30px;
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-soft);
-            height: calc(100vh - 200px);
+            min-height: calc(100vh - 250px);
         }
 
-        #calendar {
+        #calendar,
+        #list-view {
             height: 100%;
         }
 
-        .fc-header-toolbar {
-            margin-bottom: 2rem !important;
+        #list-view {
+            display: none;
         }
 
-        .fc-button-primary {
-            background-color: var(--primary-color) !important;
-            border-color: var(--primary-color) !important;
+        .view-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: flex-end;
+        }
+
+        .btn-view {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-view.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         /* Modal Styles */
@@ -60,6 +82,78 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             animation: slideUp 0.3s ease-out;
             margin: auto;
+        }
+
+        /* List Table styles */
+        .event-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .event-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .event-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .event-row:hover {
+            background: #f8fafc;
+            cursor: pointer;
+        }
+
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .priority-Alta {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .priority-Media {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .priority-Baja {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .priority-Critica {
+            background: #7f1d1d;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
         }
 
         @keyframes slideUp {
@@ -131,32 +225,62 @@
         <div id="header-container"></div>
 
         <div class="welcome-box" style="margin-bottom: 30px;">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <div class="camia-avatar" style="width: 70px; height: 70px;">
-                    <img src="https://ui-avatars.com/api/?name=camIA&background=4F46E5&color=fff" alt="camIA">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="camia-avatar" style="width: 70px; height: 70px;">
+                        <img src="https://ui-avatars.com/api/?name=camIA&background=4F46E5&color=fff" alt="camIA">
+                    </div>
+                    <div>
+                        <h1 style="font-size: 2rem; font-weight: 700;">Agenda de camIA</h1>
+                        <p style="color: var(--text-gray);">Organiza tus citas, cobros y tareas importantes.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 style="font-size: 2rem; font-weight: 700;">Agenda de camIA</h1>
-                    <p style="color: var(--text-gray);">Organiza tus citas, cobros y tareas importantes.</p>
-                </div>
+                <button class="btn-save" style="width: auto; padding: 12px 25px;" onclick="abrirModal()">
+                    <i class="fas fa-plus"></i> Nuevo Compromiso
+                </button>
             </div>
+        </div>
+
+        <div class="view-controls">
+            <button id="btn-calendar" class="btn-view active" onclick="switchView('calendar')">
+                <i class="fas fa-calendar-alt"></i> Calendario
+            </button>
+            <button id="btn-list" class="btn-view" onclick="switchView('list')">
+                <i class="fas fa-list"></i> Lista
+            </button>
         </div>
 
         <div class="agenda-container">
             <div id="calendar"></div>
+            <div id="list-view">
+                <table class="event-table">
+                    <thead>
+                        <tr>
+                            <th>Compromiso</th>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Prioridad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="event-list-body">
+                        <!-- Se llena dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
-    <!-- Modal Nuevo Evento -->
+    <!-- Modal Nuevo/Editar Evento -->
     <div id="modal-evento" class="modal">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 style="font-weight: 700; color: var(--primary-color);">Agendar con camIA</h2>
+                <h2 id="modal-title" style="font-weight: 700; color: var(--primary-color);">Agendar con camIA</h2>
                 <button onclick="cerrarModal()"
                     style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
             </div>
 
             <form id="form-evento">
+                <input type="hidden" id="event-id">
                 <div class="form-group">
                     <label>¿Qué tienes en mente?</label>
                     <input type="text" id="event-title" class="form-control" placeholder="Ej: Cobro factura #123"
@@ -197,7 +321,11 @@
                 </div>
 
                 <button type="submit" class="btn-save">
-                    <i class="fas fa-magic"></i> Dejar en manos de camIA
+                    <i class="fas fa-magic"></i> <span id="btn-save-text">Dejar en manos de camIA</span>
+                </button>
+
+                <button type="button" id="btn-delete" class="btn-delete" onclick="eliminarEventoAction()">
+                    <i class="fas fa-trash"></i> Eliminar Compromiso
                 </button>
             </form>
         </div>
@@ -207,13 +335,57 @@
     <script src="../../assets/js/auth_guard.js"></script>
     <script>
         const BACKEND_URL = 'https://erpod.onrender.com';
+        const token = localStorage.getItem('token');
         let calendar;
+        let allEvents = [];
 
-        function abrirModal(dateStr) {
+        function switchView(view) {
+            document.getElementById('calendar').style.display = view === 'calendar' ? 'block' : 'none';
+            document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none';
+
+            document.getElementById('btn-calendar').classList.toggle('active', view === 'calendar');
+            document.getElementById('btn-list').classList.toggle('active', view === 'list');
+
+            if (view === 'list') renderListView();
+            else calendar.render();
+        }
+
+        function abrirModal(eventData = null) {
             const modal = document.getElementById('modal-evento');
-            // Formatear fecha para el input datetime-local (YYYY-MM-DDTHH:MM)
-            const dateValue = dateStr ? dateStr + "T09:00" : "";
-            document.getElementById('event-date').value = dateValue;
+            const form = document.getElementById('form-evento');
+            form.reset();
+
+            if (eventData) {
+                // Editar
+                document.getElementById('modal-title').textContent = 'Editar Compromiso';
+                document.getElementById('btn-save-text').textContent = 'Actualizar con camIA';
+                document.getElementById('event-id').value = eventData.id;
+                document.getElementById('event-title').value = eventData.titulo || eventData.title;
+                document.getElementById('event-category').value = eventData.categoria || eventData.extendedProps?.categoria;
+                document.getElementById('event-priority').value = eventData.prioridad || eventData.extendedProps?.prioridad;
+                document.getElementById('event-desc').value = eventData.descripcion || eventData.extendedProps?.descripcion;
+
+                // Formato para datetime-local
+                const date = new Date(eventData.fecha_inicio || eventData.start);
+                const isoStr = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                document.getElementById('event-date').value = isoStr;
+
+                document.getElementById('btn-delete').style.display = 'flex';
+            } else {
+                // Nuevo
+                document.getElementById('modal-title').textContent = 'Agendar con camIA';
+                document.getElementById('btn-save-text').textContent = 'Dejar en manos de camIA';
+                document.getElementById('event-id').value = '';
+                document.getElementById('btn-delete').style.display = 'none';
+
+                // Fecha por defecto: Mañana a las 9 AM
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate() + 1);
+                defaultDate.setHours(9, 0, 0, 0);
+                const isoStr = new Date(defaultDate.getTime() - (defaultDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                document.getElementById('event-date').value = isoStr;
+            }
+
             modal.style.display = 'flex';
         }
 
@@ -221,8 +393,56 @@
             document.getElementById('modal-evento').style.display = 'none';
         }
 
+        async function cargarEventosAction() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/camia/eventos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    allEvents = data.data;
+                    return data.data.map(ev => ({
+                        id: ev.id,
+                        title: ev.titulo,
+                        start: ev.fecha_inicio,
+                        end: ev.fecha_fin,
+                        color: ev.color,
+                        extendedProps: { ...ev }
+                    }));
+                }
+                return [];
+            } catch (error) {
+                console.error("Error cargando eventos:", error);
+                return [];
+            }
+        }
+
+        function renderListView() {
+            const tbody = document.getElementById('event-list-body');
+            tbody.innerHTML = '';
+
+            // Ordenar por fecha
+            const sortedEvents = [...allEvents].sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio));
+
+            sortedEvents.forEach(ev => {
+                const tr = document.createElement('tr');
+                tr.className = 'event-row';
+                const date = new Date(ev.fecha_inicio).toLocaleString('es-ES', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                tr.innerHTML = `
+                    <td><strong>${ev.titulo}</strong></td>
+                    <td>${date}</td>
+                    <td><i class="fas fa-tag"></i> ${ev.categoria}</td>
+                    <td><span class="priority-badge priority-${ev.prioridad}">${ev.prioridad}</span></td>
+                `;
+                tr.onclick = () => abrirModal(ev);
+                tbody.appendChild(tr);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-            const token = localStorage.getItem('token');
             var calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
@@ -230,54 +450,41 @@
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                    right: 'dayGridMonth,timeGridWeek'
                 },
                 buttonText: {
                     today: 'Hoy',
                     month: 'Mes',
-                    week: 'Semana',
-                    list: 'Agenda'
+                    week: 'Semana'
                 },
                 events: async function (info, successCallback, failureCallback) {
-                    try {
-                        const response = await fetch(`${BACKEND_URL}/api/camia/eventos`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            const events = data.data.map(ev => ({
-                                title: ev.titulo,
-                                start: ev.fecha_inicio,
-                                end: ev.fecha_fin,
-                                color: ev.color,
-                                extendedProps: { ...ev }
-                            }));
-                            successCallback(events);
-                        }
-                    } catch (error) {
-                        console.error("Error cargando eventos:", error);
-                        failureCallback(error);
-                    }
+                    const events = await cargarEventosAction();
+                    successCallback(events);
                 },
                 dateClick: function (info) {
-                    abrirModal(info.dateStr);
+                    abrirModal({ start: info.dateStr });
+                },
+                eventClick: function (info) {
+                    abrirModal(info.event);
                 }
             });
             calendar.render();
 
-            // Lógica para guardar evento (Real a DB)
             document.getElementById('form-evento').addEventListener('submit', async function (e) {
                 e.preventDefault();
-
+                const id = document.getElementById('event-id').value;
                 const titulo = document.getElementById('event-title').value;
                 const fecha = document.getElementById('event-date').value;
                 const categoria = document.getElementById('event-category').value;
                 const descripcion = document.getElementById('event-desc').value;
                 const prioridad = document.getElementById('event-priority').value;
 
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${BACKEND_URL}/api/camia/eventos/${id}` : `${BACKEND_URL}/api/camia/eventos`;
+
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/camia/eventos`, {
-                        method: 'POST',
+                    const response = await fetch(url, {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
@@ -293,21 +500,47 @@
                     });
 
                     const result = await response.json();
-
                     if (result.success) {
                         calendar.refetchEvents();
-                        alert('¡Excelente! camIA ha agendado tu compromiso: ' + titulo);
+                        if (document.getElementById('list-view').style.display === 'block') {
+                            await cargarEventosAction();
+                            renderListView();
+                        }
                         cerrarModal();
-                        this.reset();
+                        alert('¡Compromis actualizado con camIA!');
                     } else {
-                        alert('Error al agendar: ' + result.message);
+                        alert('Error: ' + result.message);
                     }
                 } catch (error) {
                     console.error("Error:", error);
-                    alert('Error de conexión con camIA.');
+                    alert('Error de conexión.');
                 }
             });
         });
+
+        async function eliminarEventoAction() {
+            const id = document.getElementById('event-id').value;
+            if (!id || !confirm('¿Estás seguro de que quieres eliminar este compromiso?')) return;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/camia/eventos/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    calendar.refetchEvents();
+                    if (document.getElementById('list-view').style.display === 'block') {
+                        await cargarEventosAction();
+                        renderListView();
+                    }
+                    cerrarModal();
+                    alert('Eliminado Correctamente');
+                }
+            } catch (err) {
+                alert('Error al eliminar');
+            }
+        }
 
         function getCategoryColor(cat) {
             const colors = {
@@ -320,7 +553,6 @@
             return colors[cat] || '#4F46E5';
         }
 
-        // Cerrar modal al hacer clic fuera
         window.onclick = function (event) {
             const modal = document.getElementById('modal-evento');
             if (event.target == modal) cerrarModal();

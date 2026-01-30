@@ -6,5 +6,7 @@ const { protect } = require('../middlewares/authMiddleware'); // Assuming it exi
 router.get('/eventos', protect, camiaController.getEventos);
 router.post('/eventos', protect, camiaController.crearEvento);
 router.get('/resumen', protect, camiaController.getResumenHoy);
+router.put('/eventos/:id', protect, camiaController.actualizarEvento);
+router.delete('/eventos/:id', protect, camiaController.eliminarEvento);
 
 module.exports = router;

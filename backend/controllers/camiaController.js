@@ -54,8 +54,64 @@ exports.crearEvento = async (req, res) => {
     }
 };
 
+// Actualizar evento en camIA
+exports.actualizarEvento = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { id } = req.params;
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        const { titulo, descripcion, fecha_inicio, fecha_fin, categoria, prioridad, color, es_todo_el_dia } = req.body;
+        const usuario_id = req.user.id;
+
+        const [result] = await clientConn.query(`
+            UPDATE eventos_camia 
+            SET titulo = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, categoria = ?, prioridad = ?, color = ?, es_todo_el_dia = ?
+            WHERE id = ? AND usuario_id = ?
+        `, [titulo, descripcion, fecha_inicio, fecha_fin, categoria, prioridad, color, es_todo_el_dia || 0, id, usuario_id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Evento no encontrado o no autorizado' });
+        }
+
+        res.json({ success: true, message: 'Evento actualizado con éxito' });
+    } catch (err) {
+        console.error('actualizarEvento error:', err);
+        res.status(500).json({ success: false, message: 'Error al actualizar evento' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+// Eliminar evento de camIA
+exports.eliminarEvento = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { id } = req.params;
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        const [result] = await clientConn.query('DELETE FROM eventos_camia WHERE id = ? AND usuario_id = ?', [id, req.user.id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Evento no encontrado o no autorizado' });
+        }
+
+        res.json({ success: true, message: 'Evento eliminado correctamente' });
+    } catch (err) {
+        console.error('eliminarEvento error:', err);
+        res.status(500).json({ success: false, message: 'Error al eliminar evento' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
 // Resumen de hoy para el widget del Dashboard
 exports.getResumenHoy = async (req, res) => {
+    // ... existing code ...
     let clientConn = null;
     try {
         const { nit } = req.user;
