@@ -100,22 +100,43 @@ function formatCurrency(value) {
 
 // --- Búsqueda de Productos en Modal ---
 let searchTimeout;
-const searchInput = document.querySelector('#formAveria input[placeholder="Escribe código o nombre..."]');
+// Se recomienda usar ID, pero si el HTML no lo tiene, seremos más específicos
+// En el replace anterior del HTML no añadí ID al input del Modal, así que lo haré por contexto de formulario.
+let searchInputModal = document.querySelector('#formAveria input[placeholder="Escribe código o nombre..."]');
+
+// Contenedor de resultados
 const resultsContainer = document.createElement('div');
 resultsContainer.className = 'search-results mockup-results';
 resultsContainer.style.display = 'none';
-// Insert after search input
-if (searchInput) {
-    searchInput.parentNode.insertBefore(resultsContainer, searchInput.nextSibling);
-}
+resultsContainer.style.position = 'absolute';
+resultsContainer.style.background = 'white';
+resultsContainer.style.width = '100%';
+resultsContainer.style.zIndex = '1000';
+resultsContainer.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+resultsContainer.style.maxHeight = '200px';
+resultsContainer.style.overflowY = 'auto';
 
 // Hidden field for selected product ID
 let selectedProductId = null;
 
 function setupSearch() {
-    if (!searchInput) return;
+    // Re-seleccionar para asegurar que existe (por si se re-renderiza algo)
+    searchInputModal = document.querySelector('#formAveria input[placeholder="Escribe código o nombre..."]');
 
-    searchInput.addEventListener('input', (e) => {
+    if (!searchInputModal) {
+        console.error('No se encontró el input de búsqueda en el modal');
+        return;
+    }
+
+    // Insertar resultados dinámicamente si no existen
+    if (!resultsContainer.parentNode) {
+        // Asegurarse de que el padre tenga position relative
+        const container = searchInputModal.parentNode;
+        container.style.position = 'relative';
+        container.appendChild(resultsContainer);
+    }
+
+    searchInputModal.addEventListener('input', (e) => {
         const query = e.target.value;
         clearTimeout(searchTimeout);
 
@@ -125,6 +146,13 @@ function setupSearch() {
         }
 
         searchTimeout = setTimeout(() => buscarProductos(query), 300);
+    });
+
+    // Ocultar al perder foco (con delay para permitir click)
+    searchInputModal.addEventListener('blur', () => {
+        setTimeout(() => {
+            resultsContainer.style.display = 'none';
+        }, 200);
     });
 }
 
@@ -168,9 +196,8 @@ function showResults(products) {
 
 function selectProduct(product) {
     selectedProductId = product.id;
-    searchInput.value = product.nombre;
+    if (searchInputModal) searchInputModal.value = product.nombre;
     resultsContainer.style.display = 'none';
-    // Podríamos guardar el stock actual para validar en el frontend también
 }
 
 // --- Manejo de Sucursales (Setup básico para el select) ---
