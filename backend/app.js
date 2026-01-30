@@ -40,6 +40,7 @@ app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
 app.use('/api/inventario', require('./routes/inventarioRoutes'));
 app.use('/api/reportes', reportesRoutes); // Added use statement
 app.use('/api/contabilidad', require('./routes/contabilidadRoutes'));
+app.use('/api/averias', require('./routes/averiasRoutes'));
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
