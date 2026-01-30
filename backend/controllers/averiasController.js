@@ -10,17 +10,14 @@ async function getClientDbConfig(nit) {
 
 // Obtener todas las averías
 exports.getAverias = async (req, res) => {
-    // DIAGNÓSTICO: Retorno inmediato para validar ruta
-    console.log('getAverias: Bypass activo');
-    return res.json({
-        success: true,
-        data: [],
-        stats: { totalItems: 0, valorPerdida: 0, recuperados: 0 },
-        message: "Modo diagnóstico activo"
-    });
-
     let clientConn = null;
     try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+
         console.log('getAverias: Inicio request', req.user);
         if (!req.user || !req.user.nit) {
             return res.status(400).json({ success: false, message: 'Token de usuario inválido o falta NIT' });

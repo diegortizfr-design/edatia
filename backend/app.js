@@ -13,25 +13,21 @@ const reportesRoutes = require('./routes/reportesRoutes');
 
 const app = express();
 
-// --- DIAGNÓSTICO: Logger al inicio absoluto ---
-app.use((req, res, next) => {
-    console.log(`>>> [REQUEST] ${req.method} ${req.url}`);
-    next();
-});
-
-// --- DIAGNÓSTICO: Ping sin dependencias ---
-app.get('/api/ping', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// Middlewares
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable CSP for compatibility with Render/custom domains
+    crossOriginEmbedderPolicy: false
+}));
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // crear pool al iniciar
 createPool();
 
-// Middlewares
-app.use(cors()); // Cors primero
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true }));
-// app.use(helmet()); // Temporalmente desactivado para pruebas de 500 html
+// Ruta de monitoreo básico
+app.get('/api/ping', (req, res) => res.json({ ok: true, timestamp: new Date() }));
+
 
 
 if (process.env.NODE_ENV === 'development') {
