@@ -12,11 +12,31 @@ async function getClientDbConfig(nit) {
 exports.getAverias = async (req, res) => {
     let clientConn = null;
     try {
+        console.log('getAverias: Inicio request', req.user);
+        if (!req.user || !req.user.nit) {
+            return res.status(400).json({ success: false, message: 'Token de usuario inválido o falta NIT' });
+        }
         const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
 
-        clientConn = await connectToClientDB(dbConfig);
+        let dbConfig;
+        try {
+            dbConfig = await getClientDbConfig(nit);
+        } catch (e) {
+            console.error('Error fatal getting dbConfig:', e);
+            return res.status(500).json({ success: false, message: 'Error interno consultando configuración empresa: ' + e.message });
+        }
+
+        if (!dbConfig) {
+            console.error('Empresa no encontrada para NIT:', nit);
+            return res.status(404).json({ success: false, message: 'Empresa no encontrada en configuración' });
+        }
+
+        try {
+            clientConn = await connectToClientDB(dbConfig);
+        } catch (e) {
+            console.error('Error conectando a BD cliente:', e);
+            return res.status(500).json({ success: false, message: 'No se pudo conectar a la base de datos del cliente: ' + e.message });
+        }
 
         const [rows] = await clientConn.query(`
             SELECT a.*, p.nombre as producto_nombre, p.imagen_url, p.referencia_fabrica, s.nombre as sucursal_nombre
