@@ -1,8 +1,6 @@
-/**
- * PUC Manager (Plan Único de Cuentas)
- */
-
+const BACKEND_URL = 'https://erpod.onrender.com';
 let pucData = [];
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadPUC();
