@@ -209,7 +209,7 @@ async function loadSucursales() {
     // For now, keep hardcoded or fetch if endpoint exists. 
     // Let's check sucursalesRoutes... assuming /api/sucursales exists.
     try {
-        const response = await fetch('/api/sucursales', { headers: { 'Authorization': `Bearer ${token}` } });
+        const response = await fetch(SUCURSALES_URL, { headers: { 'Authorization': `Bearer ${token}` } });
         const result = await response.json();
         if (result.success && result.data) {
             select.innerHTML = '';
