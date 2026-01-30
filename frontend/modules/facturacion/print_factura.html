@@ -3,104 +3,312 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Factura de Venta</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Factura de Venta | ERPod</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #818CF8;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            padding: 20px;
-            color: #333;
-            max-width: 800px;
-            margin: auto;
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.5;
+            padding: 40px 20px 120px 20px;
+            /* Espacio extra para que los botones no tapen nada */
+        }
+
+        .invoice-wrapper {
+            background: #fff;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Accent bar at the top */
+        .invoice-wrapper::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            margin-bottom: 40px;
         }
 
-        .company-info h1 {
-            margin: 0;
-            color: #4F46E5;
+        .brand-area h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -1px;
+            margin-bottom: 5px;
         }
 
-        .doc-info {
+        .brand-area p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .invoice-title-area {
             text-align: right;
         }
 
-        .doc-info h2 {
-            margin: 0;
-            color: #555;
+        .invoice-title-area h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--dark);
         }
 
-        .grid {
-            display: flex;
-            margin-bottom: 20px;
-            gap: 40px;
+        .invoice-number {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ef4444;
+            margin: 5px 0;
         }
 
-        .box {
-            flex: 1;
+        .date-chip {
+            display: inline-block;
+            background: var(--light);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray);
+            border: 1px solid var(--border);
         }
 
-        .box h3 {
-            border-bottom: 1px solid #ccc;
-            font-size: 0.9rem;
-            color: #777;
-            margin-bottom: 5px;
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 25px 0;
+        }
+
+        .info-box h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .info-box p {
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+
+        .cliente-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .table-container {
+            margin-bottom: 30px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
-        th,
-        td {
-            border-bottom: 1px solid #eee;
-            padding: 10px;
+        thead th {
             text-align: left;
+            padding: 15px;
+            background: var(--light);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray);
+            font-weight: 700;
+            border-bottom: 2px solid var(--border);
         }
 
-        th {
-            background: #f9f9f9;
-            font-weight: bold;
+        tbody td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
         }
 
-        .totals {
-            margin-top: 20px;
+        .cell-qty {
+            text-align: center;
+        }
+
+        .cell-price {
             text-align: right;
         }
 
-        .totals p {
-            margin: 5px 0;
+        .cell-total {
+            text-align: right;
+            font-weight: 600;
         }
 
-        .grand-total {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #4F46E5;
+        .summary-area {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            width: 300px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .summary-row.total {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--border);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .payment-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-pending {
+            background: #fef9c3;
+            color: #854d0e;
         }
 
         .footer {
-            margin-top: 40px;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            font-size: 0.8rem;
-            color: #888;
+            margin-top: 60px;
             text-align: center;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .actions {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(241, 245, 249, 0.8);
+            /* Fondo semi-transparente del color del body */
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            border-top: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-print {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn-back {
+            background: white;
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-copy {
+            background: #E63946;
+            color: white;
+        }
+
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+
+        .btn-copy.loading,
+        .btn-whatsapp.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
 
         @media print {
             body {
+                background: white;
                 padding: 0;
             }
 
-            button {
+            .invoice-wrapper {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .actions {
+                display: none;
+            }
+
+            .invoice-wrapper::before {
                 display: none;
             }
         }
@@ -108,64 +316,91 @@
 </head>
 
 <body>
-    <div style="text-align: right; margin-bottom: 20px;">
-        <button onclick="window.print()"
-            style="padding: 10px 20px; background: #333; color: white; border: none; cursor: pointer;">Imprimir</button>
+
+    <div class="actions">
+        <button class="btn btn-back" onclick="window.close()"><i class="fas fa-arrow-left"></i> Cerrar</button>
+        <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+        <button class="btn btn-copy" id="btn-copy-img" onclick="copyInvoiceImage()"><i class="fas fa-image"></i> Copiar
+            Factura</button>
+        <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Imprimir</button>
     </div>
 
-    <div class="header">
-        <div class="company-info">
-            <h1 id="company-name">Mi Empresa</h1>
-            <p id="company-nit">NIT: 800.000.000</p>
-            <p id="company-dir">Dirección Empresa</p>
+    <div class="invoice-wrapper">
+        <div class="header">
+            <div class="brand-area">
+                <h1 id="company-name">CARGANDO...</h1>
+                <p id="company-nit">NIT: ---</p>
+                <p id="company-dir">Dirección</p>
+                <p id="company-contact">Cargando...</p>
+            </div>
+            <div class="invoice-title-area">
+                <h2>Factura de Venta</h2>
+                <div class="invoice-number" id="doc-number">#---</div>
+                <div class="date-chip">
+                    <i class="far fa-calendar-alt"></i> <span id="doc-date">--/--/----</span>
+                </div>
+                <div style="margin-top:10px;">
+                    <span id="payment-badge" class="payment-badge">ESTADO</span>
+                </div>
+            </div>
         </div>
-        <div class="doc-info">
-            <h2>FACTURA DE VENTA</h2>
-            <h3 id="doc-number" style="color: #E63946; margin-top: 5px;">#FACT-000</h3>
-            <p style="margin: 5px 0;">Fecha: <span id="doc-date">01/01/2026</span></p>
-            <p style="margin: 5px 0;">Vendedor: <span id="vendedor-name">-</span></p>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>Facturar a:</h3>
+                <p class="cliente-name" id="cliente-name">Cliente</p>
+                <p id="cliente-nit">NIT: ---</p>
+                <p id="cliente-address">Dirección</p>
+                <p id="cliente-phone">Tel: ---</p>
+                <p id="cliente-email">---</p>
+            </div>
+            <div class="info-box">
+                <h3>Información de Pago:</h3>
+                <p><strong>Forma:</strong> <span id="payment-type">---</span></p>
+                <p><strong>Método:</strong> <span id="payment-method">---</span></p>
+                <p><strong>Vendedor:</strong> <span id="vendedor-name">---</span></p>
+            </div>
         </div>
-    </div>
 
-    <div class="grid">
-        <div class="box">
-            <h3>CLIENTE</h3>
-            <p id="cliente-name" style="font-weight: bold;">Cliente General</p>
-            <p id="cliente-nit">NIT: 222222222</p>
-            <p id="cliente-address">Dirección Cliente</p>
-            <p id="cliente-phone">Tel: -</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Descripción</th>
+                        <th class="cell-qty" style="width: 15%;">Cantidad</th>
+                        <th class="cell-price" style="width: 20%;">Precio Unit.</th>
+                        <th class="cell-total" style="width: 20%;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="items-body">
+                    <!-- Filas dinámicas -->
+                </tbody>
+            </table>
         </div>
-        <div class="box">
-            <h3>DETALLES PAGO</h3>
-            <p>Forma de Pago: <span id="payment-type">-</span></p>
-            <p>Método: <span id="payment-method">-</span></p>
-            <p>Estado: <span id="payment-status">-</span></p>
+
+        <div class="summary-area">
+            <div class="summary-card">
+                <div class="summary-row">
+                    <span>Subtotal Neto:</span>
+                    <span id="val-subtotal">$0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Impuestos (IVA):</span>
+                    <span id="val-tax">$0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>TOTAL:</span>
+                    <span id="val-total">$0.00</span>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th style="width: 80px; text-align: center;">Cant</th>
-                <th style="width: 120px; text-align: right;">Precio Unit.</th>
-                <th style="width: 120px; text-align: right;">Total</th>
-            </tr>
-        </thead>
-        <tbody id="items-body">
-            <!-- Items -->
-        </tbody>
-    </table>
-
-    <div class="totals">
-        <p>Subtotal: <span id="val-subtotal">$0.00</span></p>
-        <p>Impuesto: <span id="val-tax">$0.00</span></p>
-        <p class="grand-total">Total: <span id="val-total">$0.00</span></p>
-    </div>
-
-    <div class="footer">
-        <p>Gracias por su compra.</p>
-        <p>Generado por ERPod Software</p>
+        <div class="footer">
+            <p style="font-weight: 700; margin-bottom: 5px;">¡Gracias por preferirnos!</p>
+            <p>Esta es una representación gráfica de una factura de venta.</p>
+            <p style="font-size: 0.75rem; margin-top: 15px; opacity: 0.6;">Generado por ERPod v1.4 • Software de Gestión
+                en la Nube</p>
+        </div>
     </div>
 
     <script>
@@ -173,17 +408,33 @@
         const id = params.get('id');
         const token = localStorage.getItem('token');
 
+        let invoiceData = null; // Global to access from WhatsApp function
+
         async function loadData() {
-            if (!id) return alert('No ID provided');
+            if (!id) return alert('No se proporcionó ID de factura');
 
             try {
-                // Config
+                // 1. Cargar Configuración
                 const cfgRes = await fetch('../../assets/config.json');
                 const cfg = await cfgRes.json();
-                const API = cfg.apiUrl;
+                const API_BASE = cfg.apiUrl;
 
-                // Load Details (New Endpoint)
-                const res = await fetch(`${API}/facturacion/${id}/detalles`, { headers: { 'Authorization': `Bearer ${token}` } });
+                // 2. Cargar Información de la Empresa
+                try {
+                    const empRes = await fetch(`${API_BASE}/sucursales`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    const empData = await empRes.json();
+                    if (empData.success && empData.data.length > 0) {
+                        const main = empData.data.find(s => s.es_principal) || empData.data[0];
+                        document.getElementById('company-name').textContent = main.nombre || 'SU EMPRESA';
+                        document.getElementById('company-dir').textContent = main.direccion || '';
+                        document.getElementById('company-contact').textContent = `Tel: ${main.telefono || ''}`;
+                    }
+                } catch (e) { console.warn("No se pudo cargar info de empresa"); }
+
+                // 3. Cargar Detalles de Factura
+                const res = await fetch(`${API_BASE}/facturacion/${id}/detalles`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const data = await res.json();
 
                 if (!data.success) throw new Error(data.message);
@@ -191,25 +442,30 @@
                 const header = data.data;
                 const items = data.items;
 
-                // Fill Header
+                // Encabezado
                 document.getElementById('doc-number').textContent = `#${header.numero_factura}`;
-                document.getElementById('doc-date').textContent = new Date(header.fecha).toLocaleString();
+                document.getElementById('doc-date').textContent = new Date(header.fecha).toLocaleDateString();
                 document.getElementById('vendedor-name').textContent = header.vendedor_nombre || 'Cajero';
 
-                // Fill Client
-                document.getElementById('cliente-name').textContent = header.cliente_nombre || 'Cliente General';
-                document.getElementById('cliente-nit').textContent = `NIT: ${header.cliente_nit || '22222222222'}`;
+                // Estado Badge
+                const badge = document.getElementById('payment-badge');
+                badge.textContent = header.estado;
+                badge.className = `payment-badge ${header.estado === 'Pagada' ? 'badge-paid' : 'badge-pending'}`;
+
+                // Cliente
+                document.getElementById('cliente-name').textContent = header.cliente_nombre || 'CLIENTE GENERAL';
+                document.getElementById('cliente-nit').textContent = `NIT/CC: ${header.cliente_nit || '22222222222'}`;
                 document.getElementById('cliente-address').textContent = header.cliente_direccion || 'Ciudad';
                 document.getElementById('cliente-phone').textContent = `Tel: ${header.cliente_telefono || '-'}`;
+                if (header.cliente_email) document.getElementById('cliente-email').textContent = header.cliente_email;
 
-                // Fill Payment
+                // Pago
                 document.getElementById('payment-type').textContent = header.tipo_pago;
                 document.getElementById('payment-method').textContent = header.metodo_pago;
-                document.getElementById('payment-status').textContent = header.estado;
 
-                // Fill Table
+                // Tabla de Items
                 const table = document.getElementById('items-body');
-                let subtotal = 0;
+                table.innerHTML = '';
 
                 items.forEach(item => {
                     const row = document.createElement('tr');
@@ -218,35 +474,99 @@
                     const total = parseFloat(item.subtotal);
 
                     row.innerHTML = `
-                        <td>${item.nombre_producto}</td>
-                        <td style="text-align: center;">${qty}</td>
-                        <td style="text-align: right;">$${price.toLocaleString()}</td>
-                        <td style="text-align: right;">$${total.toLocaleString()}</td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--dark);">${item.nombre_producto}</div>
+                            <div style="font-size: 0.75rem; color: var(--gray);">Ref: ${item.id}</div>
+                        </td>
+                        <td class="cell-qty">${qty}</td>
+                        <td class="cell-price">$${price.toLocaleString()}</td>
+                        <td class="cell-total">$${total.toLocaleString()}</td>
                     `;
                     table.appendChild(row);
                 });
 
+                // Totales
                 document.getElementById('val-subtotal').textContent = `$${parseFloat(header.subtotal).toLocaleString()}`;
                 document.getElementById('val-tax').textContent = `$${parseFloat(header.impuesto_total).toLocaleString()}`;
                 document.getElementById('val-total').textContent = `$${parseFloat(header.total).toLocaleString()}`;
 
-                // Auto Print
-                // window.print();
+                invoiceData = header; // Store for sharing
 
             } catch (e) {
                 console.error(e);
-                alert('Error cargando factura: ' + e.message);
+                alert('Error al cargar la factura: ' + e.message);
+            }
+        }
+
+        function shareWhatsApp() {
+            if (!invoiceData) return alert("Cargando datos...");
+            const urlFactura = window.location.href;
+            const cliente = invoiceData.cliente_nombre || 'Cliente';
+            const numero = invoiceData.numero_factura;
+            const mensaje = encodeURIComponent(`Hola *${cliente}*, adjunto el link de tu factura *${numero}*: ${urlFactura}`);
+            window.open(`https://api.whatsapp.com/send?text=${mensaje}`, '_blank');
+        }
+
+        async function copyInvoiceImage() {
+            const btn = document.getElementById('btn-copy-img');
+            const originalHTML = btn.innerHTML;
+
+            try {
+                btn.classList.add('loading');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                // Seleccionar el área de la factura
+                const element = document.querySelector('.invoice-wrapper');
+
+                // Convertir a Canvas
+                const canvas = await html2canvas(element, {
+                    scale: 2, // Mejor calidad
+                    backgroundColor: '#f1f5f9', // Color de fondo para el borde
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+
+                // Convertir a Blob y copiar al portapapeles
+                canvas.toBlob(async (blob) => {
+                    if (!blob) throw new Error("No se pudo generar el blob de la imagen");
+
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+
+                        btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+
+                        setTimeout(() => {
+                            btn.innerHTML = originalHTML;
+                            btn.classList.remove('loading');
+                        }, 3000);
+
+                    } catch (err) {
+                        console.error("Clipboard Error:", err);
+                        alert('Error al copiar: Asegúrate de estar usando HTTPS y de dar permisos al navegador.');
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('loading');
+                    }
+                }, "image/png");
+
+            } catch (e) {
+                console.error("Capture Error:", e);
+                alert('Error al capturar la imagen. Intenta nuevamente.');
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('loading');
             }
         }
 
         if (token) loadData();
         else {
+            // Intentar recuperar de ventana padre si es un popup
             const pToken = window.opener?.localStorage.getItem('token');
             if (pToken) {
                 localStorage.setItem('token', pToken);
                 window.location.reload();
             } else {
-                document.body.innerHTML = '<h1>No autorizado</h1>';
+                document.body.innerHTML = '<div class="invoice-wrapper" style="text-align:center;"><h1>Acceso Denegado</h1><p>Inicie sesión nuevamente.</p></div>';
             }
         }
     </script>

@@ -665,23 +665,21 @@ function setupSuccessModal(data) {
 
     // Button Handlers
     const btnFinish = document.getElementById('btn-pos-finish');
-    const btnPrint = document.getElementById('btn-pos-print');
+    const btnView = document.getElementById('btn-pos-view');
 
     // Clone to remove old listeners
     const newBtnFinish = btnFinish.cloneNode(true);
-    const newBtnPrint = btnPrint.cloneNode(true);
+    const newBtnView = btnView.cloneNode(true);
     btnFinish.parentNode.replaceChild(newBtnFinish, btnFinish);
-    btnPrint.parentNode.replaceChild(newBtnPrint, btnPrint);
+    btnView.parentNode.replaceChild(newBtnView, btnView);
 
     newBtnFinish.addEventListener('click', () => {
         resetPOS();
         modal.style.display = 'none';
     });
 
-    newBtnPrint.addEventListener('click', () => {
+    newBtnView.addEventListener('click', () => {
         printInvoice(data.factura_id);
-        resetPOS();
-        modal.style.display = 'none';
     });
 }
 
@@ -699,3 +697,12 @@ function printInvoice(id) {
     window.open(`/frontend/modules/facturacion/print_factura.html?id=${id}`, '_blank');
 }
 
+function sendWhatsApp(numeroFactura, facturaId) {
+    // 1. Construir mensaje y URL
+    // Usamos el dominio principal para el link de la factura
+    const urlFactura = `https://erpod.site/frontend/modules/facturacion/print_factura.html?id=${facturaId}`;
+    const mensaje = encodeURIComponent(`Hola *${selectedCustomer.nombre_comercial || selectedCustomer.nombre || 'Cliente'}*, adjunto el link de tu factura *${numeroFactura}*: ${urlFactura}`);
+
+    // 2. Abrir WhatsApp sin número para que el usuario elija el contacto manualmente
+    window.open(`https://api.whatsapp.com/send?text=${mensaje}`, '_blank');
+}

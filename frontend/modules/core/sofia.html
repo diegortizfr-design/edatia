@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sofIA | Tu Asistente Personal</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/sofia.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <style>
+        .agenda-container {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            height: calc(100vh - 200px);
+        }
+
+        #calendar {
+            height: 100%;
+        }
+
+        .fc-header-toolbar {
+            margin-bottom: 2rem !important;
+        }
+
+        .fc-button-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <div class="welcome-box" style="margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="sofia-avatar" style="width: 70px; height: 70px;">
+                    <img src="https://ui-avatars.com/api/?name=sofIA&background=4F46E5&color=fff" alt="sofIA">
+                </div>
+                <div>
+                    <h1 style="font-size: 2rem; font-weight: 700;">Agenda de sofIA</h1>
+                    <p style="color: var(--text-gray);">Organiza tus citas, cobros y tareas importantes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="agenda-container">
+            <div id="calendar"></div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana',
+                    list: 'Agenda'
+                },
+                events: [
+                    // Mock events
+                    { title: 'Cobro Cliente #104', start: new Date().toISOString().split('T')[0], color: '#10B981' },
+                    { title: 'Reunión Proveedor', start: new Date(Date.now() + 86400000).toISOString().split('T')[0], color: '#F59E0B' }
+                ],
+                dateClick: function (info) {
+                    alert('Click en: ' + info.dateStr + '. Aquí podrás agendar un nuevo compromiso con sofIA.');
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+
+</html>

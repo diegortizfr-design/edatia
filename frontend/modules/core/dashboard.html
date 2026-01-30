@@ -7,6 +7,7 @@
     <title>ERPod SOFTWARE | Panel Principal</title>
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/camia.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -20,9 +21,21 @@
     <main class="main-content">
         <div id="header-container"></div>
 
-        <div class="welcome-box" style="margin-bottom: 30px;">
-            <h1 id="page-title" style="font-size: 1.8rem; font-weight: 600;">Bienvenido de nuevo 👋</h1>
-            <p style="color: #6B7280;">Aquí tienes un resumen de tu actividad hoy.</p>
+        <div class="welcome-box"
+            style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+            <div>
+                <h1 id="page-title" style="font-size: 1.8rem; font-weight: 600;">Bienvenido de nuevo 👋</h1>
+                <p style="color: #6B7280;">Aquí tienes un resumen de tu actividad hoy.</p>
+            </div>
+
+            <div id="camia-dashboard-widget" class="camia-widget">
+                <div class="camia-avatar">
+                    <img src="https://ui-avatars.com/api/?name=camIA&background=4F46E5&color=fff" alt="camIA">
+                </div>
+                <div class="camia-bubble">
+                    <p id="camia-greeting">Hola, soy <strong>camIA</strong>. Cargando...</p>
+                </div>
+            </div>
         </div>
 
         <section class="dashboard" id="cards-container">
@@ -51,6 +64,7 @@
     </main>
 
     <script src="../../assets/js/dashboard.js"></script>
+    <script src="../../assets/js/camia.js"></script>
     <script src="../../assets/js/layout-loader.js"></script>
     <script src="../../assets/js/auth_guard.js"></script>
     <script src="../../assets/js/notifications.js"></script>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>camIA | Tu Asistente Personal</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../../assets/css/camia.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <style>
+        .agenda-container {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            height: calc(100vh - 200px);
+        }
+
+        #calendar {
+            height: 100%;
+        }
+
+        .fc-header-toolbar {
+            margin-bottom: 2rem !important;
+        }
+
+        .fc-button-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-save {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-save:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <div class="welcome-box" style="margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="camia-avatar" style="width: 70px; height: 70px;">
+                    <img src="https://ui-avatars.com/api/?name=camIA&background=4F46E5&color=fff" alt="camIA">
+                </div>
+                <div>
+                    <h1 style="font-size: 2rem; font-weight: 700;">Agenda de camIA</h1>
+                    <p style="color: var(--text-gray);">Organiza tus citas, cobros y tareas importantes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="agenda-container">
+            <div id="calendar"></div>
+        </div>
+    </main>
+
+    <!-- Modal Nuevo Evento -->
+    <div id="modal-evento" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="font-weight: 700; color: var(--primary-color);">Agendar con camIA</h2>
+                <button onclick="cerrarModal()"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8;">&times;</button>
+            </div>
+
+            <form id="form-evento">
+                <div class="form-group">
+                    <label>¿Qué tienes en mente?</label>
+                    <input type="text" id="event-title" class="form-control" placeholder="Ej: Cobro factura #123"
+                        required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="event-category" class="form-control">
+                            <option value="Cita">Cita de Negocios</option>
+                            <option value="Venta">Seguimiento de Venta</option>
+                            <option value="Cobro">Cobranza</option>
+                            <option value="Pago">Pago a Proveedor</option>
+                            <option value="Personal">Personal / Tarea</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prioridad</label>
+                        <select id="event-priority" class="form-control">
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Critica">¡Crítica!</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha y Hora</label>
+                    <input type="datetime-local" id="event-date" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Detalles adicionales</label>
+                    <textarea id="event-desc" class="form-control" rows="3"
+                        placeholder="Anota aquí lo que camIA deba recordarte..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-magic"></i> Dejar en manos de camIA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../assets/js/layout-loader.js"></script>
+    <script src="../../assets/js/auth_guard.js"></script>
+    <script>
+        let calendar;
+
+        function abrirModal(dateStr) {
+            const modal = document.getElementById('modal-evento');
+            // Formatear fecha para el input datetime-local (YYYY-MM-DDTHH:MM)
+            const dateValue = dateStr ? dateStr + "T09:00" : "";
+            document.getElementById('event-date').value = dateValue;
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-evento').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = localStorage.getItem('token');
+            var calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana',
+                    list: 'Agenda'
+                },
+                events: async function (info, successCallback, failureCallback) {
+                    try {
+                        const response = await fetch('/api/camia/eventos', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            const events = data.data.map(ev => ({
+                                title: ev.titulo,
+                                start: ev.fecha_inicio,
+                                end: ev.fecha_fin,
+                                color: ev.color,
+                                extendedProps: { ...ev }
+                            }));
+                            successCallback(events);
+                        }
+                    } catch (error) {
+                        console.error("Error cargando eventos:", error);
+                        failureCallback(error);
+                    }
+                },
+                dateClick: function (info) {
+                    abrirModal(info.dateStr);
+                }
+            });
+            calendar.render();
+
+            // Lógica para guardar evento (Real a DB)
+            document.getElementById('form-evento').addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const titulo = document.getElementById('event-title').value;
+                const fecha = document.getElementById('event-date').value;
+                const categoria = document.getElementById('event-category').value;
+                const descripcion = document.getElementById('event-desc').value;
+                const prioridad = document.getElementById('event-priority').value;
+
+                try {
+                    const response = await fetch('/api/camia/eventos', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            titulo,
+                            descripcion,
+                            fecha_inicio: fecha,
+                            categoria,
+                            prioridad,
+                            color: getCategoryColor(categoria)
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        calendar.refetchEvents();
+                        alert('¡Excelente! camIA ha agendado tu compromiso: ' + titulo);
+                        cerrarModal();
+                        this.reset();
+                    } else {
+                        alert('Error al agendar: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert('Error de conexión con camIA.');
+                }
+            });
+        });
+
+        function getCategoryColor(cat) {
+            const colors = {
+                'Cita': '#4F46E5',
+                'Venta': '#818CF8',
+                'Cobro': '#10B981',
+                'Pago': '#EF4444',
+                'Personal': '#94a3b8'
+            };
+            return colors[cat] || '#4F46E5';
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function (event) {
+            const modal = document.getElementById('modal-evento');
+            if (event.target == modal) cerrarModal();
+        }
+    </script>
+</body>
+
+</html>
