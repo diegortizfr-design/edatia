@@ -58,4 +58,14 @@ app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV 
 // 404
 app.use((req, res) => res.status(404).json({ ok: false, message: 'Not Found' }));
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled Error:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+});
+
 module.exports = app;
