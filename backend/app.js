@@ -11,28 +11,28 @@ const empresaRoutes = require('./routes/empresaRoutes');
 const reportesRoutes = require('./routes/reportesRoutes');
 
 
-// crear pool al iniciar
-createPool();
-
 const app = express();
 
-// DEBUG: Logger de peticiones global
+// --- DIAGNÓSTICO: Logger al inicio absoluto ---
 app.use((req, res, next) => {
-    console.log(`[DEBUG] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers.authorization ? 'Bearer [HIDDEN]' : 'No Token')}`);
+    console.log(`>>> [REQUEST] ${req.method} ${req.url}`);
     next();
 });
 
-// DEBUG: Ruta de test simple
+// --- DIAGNÓSTICO: Ping sin dependencias ---
 app.get('/api/ping', (req, res) => {
-    console.log('[DEBUG] Hit /api/ping');
-    res.json({ ok: true, message: 'API is responding' });
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// crear pool al iniciar
+createPool();
+
 // Middlewares
-app.use(helmet());
-app.use(cors());
+app.use(cors()); // Cors primero
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
+// app.use(helmet()); // Temporalmente desactivado para pruebas de 500 html
+
 
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
