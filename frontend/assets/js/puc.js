@@ -136,7 +136,7 @@ async function saveAccount() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/contabilidad/puc', {
+        const res = await fetch(BACKEND_URL + '/api/contabilidad/puc', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ async function loadPUC() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/contabilidad/puc', {
+        const res = await fetch(BACKEND_URL + '/api/contabilidad/puc', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
