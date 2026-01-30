@@ -10,6 +10,15 @@ async function getClientDbConfig(nit) {
 
 // Obtener todas las averías
 exports.getAverias = async (req, res) => {
+    // DIAGNÓSTICO: Retorno inmediato para validar ruta
+    console.log('getAverias: Bypass activo');
+    return res.json({
+        success: true,
+        data: [],
+        stats: { totalItems: 0, valorPerdida: 0, recuperados: 0 },
+        message: "Modo diagnóstico activo"
+    });
+
     let clientConn = null;
     try {
         console.log('getAverias: Inicio request', req.user);
