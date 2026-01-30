@@ -11,10 +11,22 @@ const empresaRoutes = require('./routes/empresaRoutes');
 const reportesRoutes = require('./routes/reportesRoutes');
 
 
-const app = express();
-
 // crear pool al iniciar
 createPool();
+
+const app = express();
+
+// DEBUG: Logger de peticiones global
+app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers.authorization ? 'Bearer [HIDDEN]' : 'No Token')}`);
+    next();
+});
+
+// DEBUG: Ruta de test simple
+app.get('/api/ping', (req, res) => {
+    console.log('[DEBUG] Hit /api/ping');
+    res.json({ ok: true, message: 'API is responding' });
+});
 
 // Middlewares
 app.use(helmet());
