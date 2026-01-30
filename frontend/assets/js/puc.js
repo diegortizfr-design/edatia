@@ -252,21 +252,35 @@ function filterPUC(query) {
 }
 
 async function importTemplate() {
-    if (!confirm('¿Desea cargar la plantilla predeterminada? Esto sobrescribirá los cambios no guardados si no usa base de datos real.')) return;
+    if (!confirm('¿Desea cargar la plantilla predeterminada? Esto guardará las cuentas en la base de datos de producción.')) return;
 
     try {
-        const res = await fetch('/frontend/assets/data/puc_template.json');
-        const data = await res.json();
-        pucData = data;
-        localStorage.setItem('erpod_puc', JSON.stringify(data)); // Simple persistence for demo
-        renderPUC(pucData);
-        updateKPIs();
-        if (window.showNotification) showNotification('Plantilla cargada correctamente', 'success');
+        const templateRes = await fetch('/frontend/assets/data/puc_template.json');
+        const accounts = await templateRes.json();
+
+        const token = localStorage.getItem('token');
+        const res = await fetch(BACKEND_URL + '/api/contabilidad/puc/bulk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(accounts)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            if (window.showNotification) showNotification('Plantilla importada exitosamente', 'success');
+            await loadPUC();
+        } else {
+            alert('Error: ' + result.message);
+        }
     } catch (e) {
         console.error(e);
-        alert('Error cargando plantilla');
+        alert('Error de conexión o al leer la plantilla');
     }
 }
+
 
 function updateKPIs() {
     // Simple mock calculation logic could go here

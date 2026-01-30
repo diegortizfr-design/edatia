@@ -6,5 +6,7 @@ const { protect } = require('../middlewares/authMiddleware'); // Asumiendo middl
 // Rutas protegidas
 router.get('/puc', protect, contabilidadController.getPUC);
 router.post('/puc', protect, contabilidadController.createAccount);
+router.post('/puc/bulk', protect, contabilidadController.bulkImportPUC);
+
 
 module.exports = router;

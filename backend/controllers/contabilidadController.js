@@ -79,3 +79,51 @@ exports.createAccount = async (req, res) => {
         if (clientConn) await clientConn.end();
     }
 };
+// Importación masiva (Bulk) de Cuentas (Plantilla)
+exports.bulkImportPUC = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+        const accounts = req.body; // Array de objetos
+
+        if (!Array.isArray(accounts)) {
+            return res.status(400).json({ success: false, message: 'Se esperaba un array de cuentas' });
+        }
+
+        await clientConn.beginTransaction();
+
+        const sql = `
+            INSERT IGNORE INTO contabilidad_puc 
+            (codigo, nombre, naturaleza, nivel, tipo, requiere_tercero, requiere_costos, requiere_base, estado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        for (const acc of accounts) {
+            await clientConn.query(sql, [
+                acc.codigo,
+                acc.nombre.toUpperCase(),
+                acc.naturaleza,
+                acc.nivel,
+                acc.tipo,
+                acc.requiere_tercero ? 1 : 0,
+                acc.requiere_costos ? 1 : 0,
+                acc.requiere_base ? 1 : 0,
+                acc.estado || 'Activa'
+            ]);
+        }
+
+        await clientConn.commit();
+        res.json({ success: true, message: `${accounts.length} cuentas procesadas exitosamente.` });
+
+    } catch (err) {
+        if (clientConn) await clientConn.rollback();
+        console.error('bulkImportPUC error:', err);
+        res.status(500).json({ success: false, message: 'Error en importación masiva' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
