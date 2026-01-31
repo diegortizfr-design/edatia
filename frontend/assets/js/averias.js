@@ -59,6 +59,7 @@ function renderTabla(data) {
         tr.style.borderBottom = '1px solid #f3f4f6';
 
         const badgeClass = getBadgeClass(item.estado);
+        const esEstadoFinal = ['Vendido al Costo', 'Uso Personal', 'Desechado'].includes(item.estado);
 
         tr.innerHTML = `
             <td style="padding: 15px;">
@@ -77,8 +78,14 @@ function renderTabla(data) {
             <td style="padding: 15px; color: #1F2937; font-weight: 600;">${item.cantidad}</td>
             <td style="padding: 15px; color: #4B5563;">${new Date(item.fecha_reporte).toLocaleDateString()}</td>
             <td style="padding: 15px;"><span class="badge ${badgeClass}" style="padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">${item.estado}</span></td>
-            <td style="padding: 15px;">
+            <td style="padding: 15px; display: flex; gap: 8px;">
                 <button class="btn-icon" title="Gestionar" style="background: none; border: none; color: #6B7280; cursor: pointer; font-size: 1rem;"><i class="fas fa-cog"></i></button>
+                ${!esEstadoFinal ? `
+                    <button class="btn-icon" onclick="abrirModalSalida(${item.id})" title="Dar Salida Definitiva" 
+                        style="background: #fee2e2; border: none; color: #DC2626; cursor: pointer; font-size: 1rem; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                ` : ''}
             </td>
         `;
         tbody.appendChild(tr);
@@ -87,11 +94,13 @@ function renderTabla(data) {
 
 function getBadgeClass(estado) {
     switch (estado) {
-        case 'Pendiente': return 'warning'; // yellow
-        case 'Para Remate': return 'info'; // blue
-        case 'Para Regalo': return 'success'; // green
-        case 'Desechado': return 'danger'; // red
+        case 'Pendiente': return 'warning';
+        case 'Para Remate': return 'info';
+        case 'Para Regalo': return 'success';
+        case 'Desechado': return 'danger';
         case 'Recuperado': return 'success';
+        case 'Vendido al Costo': return 'danger';
+        case 'Uso Personal': return 'danger';
         default: return 'info';
     }
 }
@@ -102,11 +111,8 @@ function formatCurrency(value) {
 
 // --- Búsqueda de Productos en Modal ---
 let searchTimeout;
-// Se recomienda usar ID, pero si el HTML no lo tiene, seremos más específicos
-// En el replace anterior del HTML no añadí ID al input del Modal, así que lo haré por contexto de formulario.
 let searchInputModal = document.querySelector('#formAveria input[placeholder="Escribe código o nombre..."]');
 
-// Contenedor de resultados
 const resultsContainer = document.createElement('div');
 resultsContainer.className = 'search-results mockup-results';
 resultsContainer.style.display = 'none';
@@ -118,21 +124,14 @@ resultsContainer.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
 resultsContainer.style.maxHeight = '200px';
 resultsContainer.style.overflowY = 'auto';
 
-// Hidden field for selected product ID
 let selectedProductId = null;
 
 function setupSearch() {
-    // Re-seleccionar para asegurar que existe (por si se re-renderiza algo)
     searchInputModal = document.querySelector('#formAveria input[placeholder="Escribe código o nombre..."]');
 
-    if (!searchInputModal) {
-        console.error('No se encontró el input de búsqueda en el modal');
-        return;
-    }
+    if (!searchInputModal) return;
 
-    // Insertar resultados dinámicamente si no existen
     if (!resultsContainer.parentNode) {
-        // Asegurarse de que el padre tenga position relative
         const container = searchInputModal.parentNode;
         container.style.position = 'relative';
         container.appendChild(resultsContainer);
@@ -150,7 +149,6 @@ function setupSearch() {
         searchTimeout = setTimeout(() => buscarProductos(query), 300);
     });
 
-    // Ocultar al perder foco (con delay para permitir click)
     searchInputModal.addEventListener('blur', () => {
         setTimeout(() => {
             resultsContainer.style.display = 'none';
@@ -202,12 +200,9 @@ function selectProduct(product) {
     resultsContainer.style.display = 'none';
 }
 
-// --- Manejo de Sucursales (Setup básico para el select) ---
+// --- Manejo de Sucursales ---
 async function loadSucursales() {
-    const select = document.querySelector('select'); // Assumes first select is sucursal based on HTML order
-    // In a real scenario, fetch /api/sucursales
-    // For now, keep hardcoded or fetch if endpoint exists. 
-    // Let's check sucursalesRoutes... assuming /api/sucursales exists.
+    const select = document.querySelector('select');
     try {
         const response = await fetch(SUCURSALES_URL, { headers: { 'Authorization': `Bearer ${token}` } });
         const result = await response.json();
@@ -237,14 +232,24 @@ window.cerrarModalReporte = function () {
     document.getElementById('modalReporte').style.display = 'none';
 }
 
-window.onclick = function (event) {
-    const modal = document.getElementById('modalReporte');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
+window.abrirModalSalida = function (id) {
+    document.getElementById('salidaAveriaId').value = id;
+    document.getElementById('modalSalida').style.display = 'flex';
 }
 
-// --- Form Submit ---
+window.cerrarModalSalida = function () {
+    document.getElementById('modalSalida').style.display = 'none';
+    document.getElementById('formSalida').reset();
+}
+
+window.onclick = function (event) {
+    const modalR = document.getElementById('modalReporte');
+    const modalS = document.getElementById('modalSalida');
+    if (event.target == modalR) modalR.style.display = 'none';
+    if (event.target == modalS) modalS.style.display = 'none';
+}
+
+// --- Form Submits ---
 document.getElementById('formAveria').addEventListener('submit', async function (e) {
     e.preventDefault();
 
@@ -253,8 +258,6 @@ document.getElementById('formAveria').addEventListener('submit', async function 
         return;
     }
 
-    // Get values from form inputs by index/query selector since they don't have IDs in the HTML I generated earlier
-    // HTML structure: form -> row -> form-group -> inputs
     const selects = this.querySelectorAll('select');
     const inputs = this.querySelectorAll('input');
     const textareas = this.querySelectorAll('textarea');
@@ -285,12 +288,44 @@ document.getElementById('formAveria').addEventListener('submit', async function 
         if (result.success) {
             alert('Avería registrada correctamente.');
             cerrarModalReporte();
-            cargarAverias(); // Reload table
+            cargarAverias();
         } else {
             alert('Error: ' + result.message);
         }
     } catch (error) {
-        console.error('Error enviando formulario:', error);
         alert('Error de conexión al guardar.');
+    }
+});
+
+document.getElementById('formSalida').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const id = document.getElementById('salidaAveriaId').value;
+    const nuevoEstado = document.getElementById('tipoSalida').value;
+    const observaciones = document.getElementById('obsSalida').value;
+
+    if (!confirm(`¿Confirmar salida como ${nuevoEstado}? No podrá deshacer esta acción.`)) return;
+
+    try {
+        const response = await fetch(`${API_URL}/${id}/salida`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ nuevoEstado, observaciones })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(result.message);
+            cerrarModalSalida();
+            cargarAverias();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Error de conexión al procesar salida.');
     }
 });

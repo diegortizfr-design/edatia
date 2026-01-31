@@ -14,7 +14,7 @@ class CamiaAssistant {
     }
 
     async init() {
-        this.updateGreeting(`Hola <strong>${this.userData.usuario || 'Diego'}</strong>, soy <strong>camIA</strong>. Estoy analizando tu agenda...`);
+        this.updateGreeting(`Bienvenido a <strong>ERPod Empresas</strong>, ten un excelente día.`);
 
         await this.showDailySummary();
 
@@ -39,18 +39,18 @@ class CamiaAssistant {
                 const totalEventos = resumen.eventos.reduce((acc, curr) => acc + curr.total, 0);
 
                 if (totalEventos > 0 || resumen.facturasVencidas > 0) {
-                    let msg = `<strong>${this.userData.usuario || 'Diego'}</strong>, hoy tienes `;
+                    let msg = `Hola, hoy tienes `;
                     if (totalEventos > 0) msg += `<strong>${totalEventos} compromisos</strong> `;
                     if (resumen.facturasVencidas > 0) msg += `${totalEventos > 0 ? 'y ' : ''}<strong>${resumen.facturasVencidas} facturas vencidas</strong>.`;
 
-                    this.updateGreeting(msg + " ¿Quieres verlos?");
+                    this.updateGreeting(msg);
                 } else {
-                    this.updateGreeting(`¡Todo al día! No tienes compromisos urgentes para hoy.`);
+                    this.updateGreeting(`¡Todo al día! Sin compromisos urgentes.`);
                 }
             }
         } catch (error) {
             console.error("camIA Error:", error);
-            this.updateGreeting(`¡Hola! Ten un excelente día.`);
+            this.updateGreeting(`Bienvenido a <strong>ERPod Empresas</strong>, ten un excelente día.`);
         }
     }
 

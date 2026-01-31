@@ -10,14 +10,27 @@
     background: #f8fafc;
 }
 
+/* MAXIMIZE SPACE: Remove top header specifically for POS */
+#header-container {
+    display: none !important;
+}
+
+.pos-layout .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+    padding: 0 !important;
+    /* No padding for full screen feel */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .pos-container {
     display: flex;
     gap: 12px;
-    /* Reducido para 3 columnas */
     flex: 1;
     overflow: hidden;
-    padding: 0 15px 15px 15px;
-    height: calc(100vh - 110px);
+    padding: 12px;
+    height: 100vh;
     min-height: 0;
 }
 
@@ -26,19 +39,38 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0;
-    padding: 15px;
-    /* Reducido de 25px */
+    gap: 0;
+    overflow: hidden;
+    padding: 0 !important;
+    /* Override default card padding */
 }
 
 .pos-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-    /* Permite que el buscador baje si no hay espacio */
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px 20px;
+    /* Standardize with cart-header */
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pos-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Space between search and category */
+    width: 100%;
+}
+
+@media (max-width: 1400px) {
+    .pos-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-bar {
+        max-width: 100%;
+    }
 }
 
 .pos-header h1 {
@@ -63,52 +95,6 @@
     margin: 4px 0 0 0;
 }
 
-/* CATEGORY TABS */
-.category-tabs {
-    display: flex;
-    gap: 8px;
-    /* Reducido de 12px */
-    margin-bottom: 15px;
-    /* Reducido de 25px */
-    overflow-x: auto;
-    padding-bottom: 5px;
-    scrollbar-width: none;
-}
-
-.category-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.tab {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 10px 18px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    color: #475569;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-    white-space: nowrap;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.tab:hover {
-    background: #ffffff;
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.tab.active {
-    background: var(--primary-color);
-    color: #ffffff !important;
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-}
-
 /* PRODUCT GRID */
 .product-grid {
     display: grid;
@@ -122,6 +108,15 @@
     flex: 1;
 }
 
+.p-image {
+    height: 120px;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+    background-color: #f3f4f6;
+    flex-shrink: 0;
+}
+
 .product-card {
     background: white;
     border-radius: var(--radius-md);
@@ -129,21 +124,11 @@
     cursor: pointer;
     transition: var(--transition);
     border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-    border-color: var(--primary-color);
-}
-
-.p-image {
-    height: 90px;
-    /* Reducido de 110px */
-    width: 100%;
-    background-size: cover;
-    background-position: center;
-    background-color: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 200px;
+    /* Enforce minimum height */
 }
 
 .p-details {
@@ -177,6 +162,8 @@
     overflow: hidden;
     height: 100%;
     border: 1px solid #e2e8f0;
+    padding: 0 !important;
+    /* Override default card padding */
 }
 
 .pos-cart-items {
@@ -192,9 +179,9 @@
 }
 
 .cart-header {
-    padding: 10px 15px;
-    /* Reducido de 15px 20px */
-    border-bottom: 1px solid var(--glass-border);
+    padding: 15px 20px;
+    /* Standardized */
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;

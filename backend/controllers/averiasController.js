@@ -124,3 +124,48 @@ exports.crearAveria = async (req, res) => {
         if (clientConn) await clientConn.end();
     }
 };
+// Procesar Salida de Avería (Final e Irreversible)
+exports.procesarSalidaAveria = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { id } = req.params;
+        const { nuevoEstado, observaciones } = req.body;
+        const { nit } = req.user;
+
+        if (!['Vendido al Costo', 'Uso Personal'].includes(nuevoEstado)) {
+            return res.status(400).json({ success: false, message: 'Estado de salida inválido' });
+        }
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        // 1. Verificar estado actual
+        const [averia] = await clientConn.query('SELECT estado FROM averias WHERE id = ?', [id]);
+        if (averia.length === 0) {
+            return res.status(404).json({ success: false, message: 'Avería no encontrada' });
+        }
+
+        const estadoActual = averia[0].estado;
+        const estadosFinales = ['Vendido al Costo', 'Uso Personal', 'Desechado'];
+
+        if (estadosFinales.includes(estadoActual)) {
+            return res.status(400).json({ success: false, message: 'Esta avería ya tiene una salida asignada y no puede modificarse' });
+        }
+
+        // 2. Actualizar estado y opcionalmente agregar observaciones al motivo
+        await clientConn.query(`
+            UPDATE averias 
+            SET estado = ?, 
+                motivo_descripcion = CONCAT(motivo_descripcion, '\n--- SALIDA: ', ?, ' ---\nObs: ', ?)
+            WHERE id = ?
+        `, [nuevoEstado, nuevoEstado, observaciones || '', id]);
+
+        res.json({ success: true, message: `Salida registrada como ${nuevoEstado}` });
+
+    } catch (err) {
+        console.error('procesarSalidaAveria error:', err);
+        res.status(500).json({ success: false, message: 'Error al procesar la salida' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};

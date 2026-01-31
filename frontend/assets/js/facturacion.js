@@ -12,6 +12,7 @@ let API_CLIENTS = ''; // Need clients too
 let cart = [];
 let allProducts = [];
 let selectedCustomer = { id: 1, nombre: 'Cliente Mostrador' }; // Default
+let selectedSeller = null;
 let selectedDoc = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -35,6 +36,7 @@ async function initPOS() {
     loadProducts();
     loadPOSConfig();
     loadClients();
+    loadSellers();
     setupEventListeners();
 }
 
@@ -55,38 +57,81 @@ async function loadProducts() {
     } catch (e) { console.error('Error loading products:', e); }
 }
 
+let availableCategories = [];
+
 function renderCategoryTabs(products) {
-    const container = document.querySelector('.category-tabs');
-    if (!container) return;
+    const optionsList = document.getElementById('category-options-list');
+    const searchInput = document.getElementById('category-search-input');
+
+    if (!optionsList || !searchInput) return;
 
     // Get unique categories
-    const categories = ['Todos', ...new Set(products.map(p => p.categoria || 'Sin Categoría').filter(c => c))];
+    availableCategories = ['Todos', ...new Set(products.map(p => p.categoria || 'Sin Categoría').filter(c => c))];
 
-    container.innerHTML = '';
-    categories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.className = `tab ${cat === 'Todos' ? 'active' : ''}`;
-        btn.dataset.category = cat;
-        // Icons mapping (optional, or generic)
-        let icon = 'fa-tag';
-        if (cat.toLowerCase().includes('bebida')) icon = 'fa-coffee';
-        if (cat.toLowerCase().includes('comida')) icon = 'fa-hamburger';
-        if (cat.toLowerCase().includes('postre')) icon = 'fa-ice-cream';
+    renderCategoryOptions(availableCategories);
 
-        btn.innerHTML = `<i class="fas ${icon}"></i> ${cat}`;
+    // Setup searchable dropdown events
+    searchInput.onfocus = () => {
+        optionsList.style.display = 'block';
+        updateCategoryOptionsList(searchInput.value);
+    };
 
-        btn.onclick = () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-            if (cat === 'Todos') {
-                renderProductGrid(allProducts);
-            } else {
-                renderProductGrid(allProducts.filter(p => (p.categoria || 'Sin Categoría') === cat));
-            }
-        };
+    searchInput.oninput = (e) => {
+        updateCategoryOptionsList(e.target.value);
+    };
 
-        container.appendChild(btn);
+    // Close when clicking outside
+    document.addEventListener('mousedown', (e) => {
+        const container = document.getElementById('category-dropdown-container');
+        if (container && !container.contains(e.target)) {
+            optionsList.style.display = 'none';
+        }
     });
+}
+
+function updateCategoryOptionsList(term) {
+    const normalizedTerm = (term || '').toLowerCase();
+    const filtered = availableCategories.filter(cat => cat.toLowerCase().includes(normalizedTerm));
+    renderCategoryOptions(filtered);
+}
+
+let currentSelectedCategory = 'Todos';
+
+function renderCategoryOptions(categoriesToShow) {
+    const optionsList = document.getElementById('category-options-list');
+    if (!optionsList) return;
+
+    optionsList.innerHTML = '';
+    categoriesToShow.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = `category-option ${cat === currentSelectedCategory ? 'active' : ''}`;
+        div.textContent = cat;
+        div.onclick = (e) => {
+            e.stopPropagation();
+            filterByCategory(cat);
+            optionsList.style.display = 'none';
+            // If "Todos" is selected, keep search clear, otherwise show category
+            const searchInput = document.getElementById('category-search-input');
+            if (cat === 'Todos') searchInput.value = '';
+            else searchInput.value = cat;
+        };
+        optionsList.appendChild(div);
+    });
+
+    if (categoriesToShow.length === 0) {
+        optionsList.innerHTML = '<div class="category-option" style="color:gray; font-style:italic;">No encontrado</div>';
+    }
+}
+
+function filterByCategory(cat) {
+    currentSelectedCategory = cat;
+
+    // Render grid
+    if (cat === 'Todos') {
+        renderProductGrid(allProducts);
+    } else {
+        renderProductGrid(allProducts.filter(p => (p.categoria || 'Sin Categoría') === cat));
+    }
 }
 
 async function loadPOSConfig() {
@@ -146,14 +191,14 @@ async function loadClients() {
 
             const clients = data.data.filter(c => c.es_cliente);
 
-            let defaultClient = clients.find(c => c.numero_documento === '22222222222');
+            let defaultClient = clients.find(c => c.documento === '22222222222');
             if (!defaultClient && clients.length > 0) defaultClient = clients[0];
 
             clients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                // FIX: Better display format
-                opt.textContent = `${c.nombre_comercial || c.razon_social || c.nombre} - ${c.numero_documento || 'Sin NIT'}`;
+                // FIX: Use 'documento' instead of 'numero_documento'
+                opt.textContent = `${c.nombre_comercial || c.razon_social || c.nombre} - ${c.documento || 'Sin NIT'}`;
                 if (defaultClient && c.id === defaultClient.id) opt.selected = true;
                 select.appendChild(opt);
             });
@@ -169,6 +214,33 @@ async function loadClients() {
             });
         }
     } catch (e) { console.error(e); }
+}
+
+async function loadSellers() {
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(API_CLIENTS, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await resp.json();
+        if (data.success) {
+            const select = document.getElementById('pos-seller-select');
+            if (!select) return;
+            select.innerHTML = '<option value="">👤 Sin Vendedor</option>';
+
+            const sellers = data.data.filter(c => c.es_empleado);
+
+            sellers.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `👤 ${s.nombre_comercial || s.nombre}`;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener('change', (e) => {
+                const found = sellers.find(s => s.id == e.target.value);
+                selectedSeller = found ? found : null;
+            });
+        }
+    } catch (e) { console.error('Error loading sellers:', e); }
 }
 
 // --- UI LOGIC ---
@@ -217,7 +289,7 @@ async function saveQuickClient() {
     const body = {
         nombre_comercial: document.getElementById('quick-cli-nombre').value,
         tipo_documento: document.getElementById('quick-cli-tipo').value,
-        numero_documento: document.getElementById('quick-cli-doc').value,
+        documento: document.getElementById('quick-cli-doc').value,
         telefono: document.getElementById('quick-cli-tel').value,
         email: document.getElementById('quick-cli-email').value,
         direccion: document.getElementById('quick-cli-dir').value,
@@ -249,9 +321,11 @@ async function saveQuickClient() {
             // Select the new client
             const select = document.getElementById('pos-client-select');
             for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].text.includes(body.numero_documento)) {
+                if (select.options[i].text.includes(body.documento)) {
                     select.selectedIndex = i;
-                    selectedCustomer = { id: select.options[i].value, nombre: body.nombre_comercial };
+                    // Actualizar el estado global del cliente seleccionado
+                    const optValue = select.options[i].value;
+                    selectedCustomer = { id: optValue, nombre: body.nombre_comercial };
                     break;
                 }
             }
@@ -268,7 +342,7 @@ async function saveQuickClient() {
 }
 
 function renderProductGrid(products) {
-    const container = document.getElementById('products-container');
+    const container = document.getElementById('product-grid');
     if (!container) return;
     container.innerHTML = '';
 
@@ -298,16 +372,16 @@ function renderProductGrid(products) {
         } else {
             // Fallback Icon
             imageHTML = `<div class="p-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
-                            <i class="fas fa-box-open" style="font-size: 3rem;"></i>
+                            <i class="fas fa-box-open" style="font-size: 2.5rem;"></i>
                          </div>`;
         }
 
         card.innerHTML = `
             ${imageHTML}
-            <div class="p-details">
-                <h4 title="${p.nombre}">${p.nombre}</h4>
-                <div style="display:flex; justify-content:space-between; align-items: center;">
-                    <span class="price">$${parseFloat(p.precio1 || 0).toLocaleString()}</span>
+            <div class="p-details" style="display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
+                <h4 title="${p.nombre}" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; height: 2.2em;">${p.nombre}</h4>
+                <div style="display:flex; justify-content:space-between; align-items: center; margin-top: auto;">
+                    <span class="price" style="font-size: 1rem;">$${parseFloat(p.precio1 || 0).toLocaleString()}</span>
                     ${stockLabel}
                 </div>
             </div>
@@ -604,6 +678,7 @@ async function processFullSale() {
         const body = {
             documento_id: selectedDoc.id,
             cliente_id: selectedCustomer.id || 1, // Default to 1 (Generic) if null
+            vendedor_id: selectedSeller ? selectedSeller.id : null,
             subtotal: subtotal,
             impuesto_total: impuestos,
             total: total,
@@ -691,6 +766,10 @@ function resetPOS() {
     // Clear Payment Inputs
     document.getElementById('pago-monto').value = '';
     document.getElementById('pago-cambio').textContent = '$0.00';
+    // Reset Seller
+    selectedSeller = null;
+    const selectSeller = document.getElementById('pos-seller-select');
+    if (selectSeller) selectSeller.value = '';
 }
 
 function printInvoice(id) {

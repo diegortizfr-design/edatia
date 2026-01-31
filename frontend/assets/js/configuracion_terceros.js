@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalTitle = document.getElementById('modal-title');
 
         cargarTerceros();
+        cargarCargosParaSelect();
 
         if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModal());
 
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 let isEditing = false;
 let currentId = null;
 let listaTerceros = [];
+let listaCargos = [];
 
 async function cargarTerceros() {
     if (!tableBody) return;
@@ -70,6 +72,28 @@ async function cargarTerceros() {
     }
 }
 
+async function cargarCargosParaSelect() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/nomina/cargos', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            listaCargos = data.data;
+            const select = document.getElementById('cargo_id');
+            if (!select) return;
+            select.innerHTML = '<option value="">Seleccione un Cargo...</option>';
+            listaCargos.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) { console.error('Error cargando cargos:', err); }
+}
+
 function renderTable(terceros) {
     if (!tableBody) return;
     tableBody.innerHTML = '';
@@ -83,6 +107,7 @@ function renderTable(terceros) {
         const badges = [];
         if (t.es_cliente) badges.push('<span class="badge cliente">Cliente</span>');
         if (t.es_proveedor) badges.push('<span class="badge proveedor">Proveedor</span>');
+        if (t.es_empleado) badges.push('<span class="badge empleado" style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:600;">Empleado</span>');
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -139,6 +164,12 @@ function abrirModal(tercero = null) {
         document.getElementById('email').value = tercero.email || '';
         document.getElementById('es_cliente').checked = !!tercero.es_cliente;
         document.getElementById('es_proveedor').checked = !!tercero.es_proveedor;
+        const checkEmpleado = document.getElementById('es_empleado');
+        checkEmpleado.checked = !!tercero.es_empleado;
+        document.getElementById('cargo_id').value = tercero.cargo_id || '';
+
+        // Trigger toggle logic
+        toggleRolContainer(checkEmpleado.checked);
     } else {
         isEditing = false;
         currentId = null;
@@ -147,6 +178,11 @@ function abrirModal(tercero = null) {
         if (btnSubmit) btnSubmit.textContent = window.TERCEROS_MODE === 'proveedor' ? 'Guardar Proveedor' : 'Guardar Cliente';
 
         form.reset();
+        document.getElementById('es_cliente').checked = false;
+        document.getElementById('es_proveedor').checked = false;
+        document.getElementById('es_empleado').checked = false;
+        document.getElementById('cargo_id').value = '';
+        toggleRolContainer(false);
 
         // Default constraints based on mode
         if (window.TERCEROS_MODE === 'cliente') {
@@ -170,6 +206,18 @@ function abrirModal(tercero = null) {
 function cerrarModal() {
     if (modal) modal.style.display = 'none';
 }
+
+function toggleRolContainer(show) {
+    const container = document.getElementById('rol-container');
+    if (container) container.style.display = show ? 'block' : 'none';
+    const select = document.getElementById('cargo_id');
+    if (select) select.required = show;
+}
+
+// Add event listener for employee toggle
+document.getElementById('es_empleado')?.addEventListener('change', (e) => {
+    toggleRolContainer(e.target.checked);
+});
 
 async function eliminarTercero(id) {
     if (!confirm('¿Estás seguro de eliminar este tercero?')) return;
@@ -207,7 +255,9 @@ async function guardarTercero(e) {
         direccion: document.getElementById('direccion').value,
         email: document.getElementById('email').value,
         es_cliente: document.getElementById('es_cliente').checked,
-        es_proveedor: document.getElementById('es_proveedor').checked
+        es_proveedor: document.getElementById('es_proveedor').checked,
+        es_empleado: document.getElementById('es_empleado').checked,
+        cargo_id: document.getElementById('es_empleado').checked ? document.getElementById('cargo_id').value : null
     };
 
     try {

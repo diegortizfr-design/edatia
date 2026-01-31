@@ -5,5 +5,6 @@ const { protect } = require('../middlewares/authMiddleware');
 
 router.get('/', protect, averiasController.getAverias);
 router.post('/', protect, averiasController.crearAveria);
+router.put('/:id/salida', protect, averiasController.procesarSalidaAveria);
 
 module.exports = router;

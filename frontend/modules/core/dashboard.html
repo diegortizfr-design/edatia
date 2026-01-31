@@ -21,44 +21,67 @@
     <main class="main-content">
         <div id="header-container"></div>
 
-        <div class="welcome-box"
-            style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
-            <div>
-                <h1 id="page-title" style="font-size: 1.8rem; font-weight: 600;">Bienvenido de nuevo 👋</h1>
-                <p style="color: #6B7280;">Aquí tienes un resumen de tu actividad hoy.</p>
-            </div>
-
-            <div id="camia-dashboard-widget" class="camia-widget">
-                <div class="camia-avatar">
-                    <img src="https://ui-avatars.com/api/?name=camIA&background=4F46E5&color=fff" alt="camIA">
-                </div>
-                <div class="camia-bubble">
-                    <p id="camia-greeting">Hola, soy <strong>camIA</strong>. Cargando...</p>
-                </div>
-            </div>
-        </div>
 
         <section class="dashboard" id="cards-container">
-            <!-- Static Preview Cards for Visual Validation -->
-            <div class="card">
-                <div class="card-icon-box"><i class="fas fa-chart-line"></i></div>
-                <h3>Ventas Hoy</h3>
-                <p>$0.00 COP</p>
+            <!-- Widget: Nueva Factura (POS) -->
+            <a href="/frontend/modules/facturacion/facturacion.html"
+                class="card widget-card shortcut-widget billing-widget" id="widget-pos">
+                <div class="card-icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div class="widget-content">
+                    <h3>Nueva Factura</h3>
+                    <p class="main-val">Acceder al POS</p>
+                    <span class="sub-text">Facturación Rápida</span>
+                </div>
+            </a>
+
+            <!-- Widget: Cierre del Día Anterior -->
+            <div class="card widget-card prev-day-summary" id="widget-cierre">
+                <div class="card-icon-box"><i class="fas fa-history"></i></div>
+                <div class="widget-content">
+                    <h3>Cierre Ayer</h3>
+                    <p class="main-val" id="val-cierre">Cargando...</p>
+                    <span class="sub-text" id="date-cierre">Última jornada</span>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-icon-box"><i class="fas fa-box-open"></i></div>
-                <h3>Stock Bajo</h3>
-                <p>5 Productos</p>
+
+            <!-- Widget: Mi Plan Actual -->
+            <div class="card widget-card current-plan" id="widget-plan">
+                <div class="card-icon-box"><i class="fas fa-star" style="color: #f59e0b;"></i></div>
+                <div class="widget-content">
+                    <h3>Mi Plan ERPod</h3>
+                    <p class="main-val" id="val-plan">Premium Pro</p>
+                    <span class="sub-text">Suscripción Activa</span>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-icon-box"><i class="fas fa-users"></i></div>
-                <h3>Clientes Nuevos</h3>
-                <p>+12 esta semana</p>
+
+            <!-- Widget: Compromisos Hoy -->
+            <div class="card widget-card daily-agenda" id="widget-agenda">
+                <div class="card-icon-box"><i class="fas fa-calendar-check"></i></div>
+                <div class="widget-content">
+                    <h3>Compromisos Hoy</h3>
+                    <p class="main-val" id="val-agenda">Sin compromisos</p>
+                    <span class="sub-text" id="status-agenda">Todo al día</span>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-icon-box"><i class="fas fa-file-invoice"></i></div>
-                <h3>Facturas Pendientes</h3>
-                <p>3 sin pagar</p>
+
+            <!-- Widget: Soporte Técnico -->
+            <div class="card widget-card support-widget" id="widget-support">
+                <div class="card-icon-box"><i class="fas fa-headset"></i></div>
+                <div class="widget-content">
+                    <h3>Soporte Técnico</h3>
+                    <p class="main-val">Ayuda en Vivo</p>
+                    <span class="sub-text">Próximamente disponible</span>
+                </div>
+            </div>
+
+            <!-- Widget: Novedades y Ayuda -->
+            <div class="card widget-card news-widget" id="widget-news">
+                <div class="card-icon-box"><i class="fas fa-book-open"></i></div>
+                <div class="widget-content">
+                    <h3>Novedades y Ayuda</h3>
+                    <p class="main-val">Manuales y Guías</p>
+                    <span class="sub-text">Centro de conocimiento</span>
+                </div>
             </div>
         </section>
     </main>

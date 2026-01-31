@@ -61,40 +61,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // Si el usuario no tiene módulos definidos, usar por defecto
-    const modulos = userData.modulos || ["compras", "inventario", "facturacion", "reportes"];
+    // 3. Renderizar Módulos Dinámicos (Solo si existen y no son los filtrados)
+    // El 'container' ya fue declarado en la línea 44
 
-    container.innerHTML = ""; // Limpiar
+    // Filtramos los módulos que el usuario pidió quitar
+    const modulosFiltrados = (userData.modulos || ["reportes"]).filter(m => !["compras", "inventario", "facturacion", "reportes"].includes(m.toLowerCase()));
 
-    modulos.forEach(mod => {
-        // Normalizar nombre del módulo (minusculas)
-        const modKey = mod.toLowerCase();
-        const config = moduleConfig[modKey] || { icon: "cube", desc: "Gestión del módulo " + mod };
-
-        // Crear Card
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-            <i class="fas fa-${config.icon}"></i>
-            <h3>${mod.charAt(0).toUpperCase() + mod.slice(1)}</h3>
-            <p>${config.desc}</p>
-        `;
-        // Click en card para navegar (futuro)
-        card.addEventListener('click', () => {
-            console.log(`Navegando a módulo ${mod}`);
-            // window.location.href = `modules/${mod}/index.html`; 
+    // Solo limpiamos si vamos a renderizar módulos dinámicos adicionales, 
+    // pero manteniendo los widgets estáticos que ya están en el HTML.
+    if (modulosFiltrados.length > 0) {
+        modulosFiltrados.forEach(mod => {
+            const modKey = mod.toLowerCase();
+            const config = moduleConfig[modKey] || { icon: "cube", desc: "Gestión del módulo " + mod };
+            const card = document.createElement("div");
+            card.className = "card widget-card"; // Usar la misma clase para consistencia
+            card.innerHTML = `
+                <div class="card-icon-box"><i class="fas fa-${config.icon}"></i></div>
+                <div class="widget-content">
+                    <h3>${mod.charAt(0).toUpperCase() + mod.slice(1)}</h3>
+                    <p class="sub-text">${config.desc}</p>
+                </div>
+            `;
+            container.appendChild(card);
         });
+    }
 
-        container.appendChild(card);
+    // 4. Cargar Datos de los Widgets
+    await cargarWidgets();
 
-        // Agregar al menú lateral también - DESHABILITADO POR DUPLICIDAD HTML
-        // const link = document.createElement("a");
-        // link.href = "#";
-        // link.innerHTML = `<i class="fas fa-${config.icon}"></i> ${mod.charAt(0).toUpperCase() + mod.slice(1)}`;
-        // menuContainer.appendChild(link);
-    });
-
-    // 4. Lógica de Logout
+    // 5. Lógica de Logout
     const logoutBtn = document.querySelector(".btn-logout");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
@@ -105,3 +100,58 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 });
+
+async function cargarWidgets() {
+    try {
+        const token = localStorage.getItem("token");
+
+        // A. Cierre del Día Anterior
+        fetch('/api/facturacion/facturas', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const ayer = new Date();
+                    ayer.setDate(ayer.getDate() - 1);
+                    const ayerStr = ayer.toISOString().split('T')[0];
+
+                    const ventasAyer = data.data.filter(f => f.fecha_emision.startsWith(ayerStr));
+                    const totalAyer = ventasAyer.reduce((sum, f) => sum + parseFloat(f.total), 0);
+
+                    document.getElementById('val-cierre').textContent = totalAyer > 0
+                        ? `$${totalAyer.toLocaleString('es-CO')} COP`
+                        : '$0.00 COP';
+                    document.getElementById('date-cierre').textContent = `Jornada del ${ayer.toLocaleDateString()}`;
+                }
+            }).catch(err => {
+                document.getElementById('val-cierre').textContent = '$0.00 COP';
+                console.error("Error cierre:", err);
+            });
+
+        // B. Compromisos Hoy (camIA)
+        fetch('/api/camia/resumen', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                const agendaVal = document.getElementById('val-agenda');
+                const agendaStat = document.getElementById('status-agenda');
+
+                if (data.success && data.resumen) {
+                    const totalE = data.resumen.eventos.reduce((acc, curr) => acc + curr.total, 0);
+                    if (totalE > 0) {
+                        agendaVal.textContent = `${totalE} Compromisos`;
+                        agendaStat.textContent = 'Agenda activa para hoy';
+                        agendaVal.style.color = '#3b82f6';
+                    } else {
+                        agendaVal.textContent = 'Sin compromisos';
+                        agendaStat.textContent = 'Día despejado';
+                    }
+                }
+            }).catch(err => console.error("Error agenda:", err));
+
+    } catch (error) {
+        console.error("Error cargando widgets:", error);
+    }
+}

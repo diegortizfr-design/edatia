@@ -59,6 +59,16 @@ const menuConfig = [
         ]
     },
     {
+        label: "Nómina",
+        icon: "fas fa-user-friends",
+        link: "#",
+        id: "nav-nomina",
+        submenu: [
+            { label: "Colaboradores", link: "/frontend/modules/configuration/terceros.html" },
+            { label: "Cargos y Roles", link: "/frontend/modules/nomina/configuraciones/roles.html" }
+        ]
+    },
+    {
         label: "Reportes",
         icon: "fas fa-chart-pie",
         link: "/frontend/modules/reportes/reportes.html",
