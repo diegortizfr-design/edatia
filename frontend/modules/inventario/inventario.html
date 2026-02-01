@@ -27,7 +27,7 @@
                 <h3>Total Items</h3>
                 <p>1,245</p>
             </div>
-            <div class="card">
+            <div class="card" onclick="openStockCriticoModal()" style="cursor: pointer;">
                 <div class="card-icon-box"><i class="fas fa-exclamation-triangle"></i></div>
                 <h3>Stock Crítico</h3>
                 <p>12 Productos</p>
@@ -135,6 +135,46 @@
         </div>
     </div>
 
+    <!-- STOCK CRITICO MODAL -->
+    <div class="modal-overlay" id="stockCriticoModal" style="display: none;">
+        <div class="modal-glass" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>Gestión de Stock Crítico</h2>
+                <button class="close-btn" onclick="closeStockCriticoModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
+                <div
+                    style="margin-bottom: 20px; display: flex; gap: 10px; align-items: flex-end; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Nuevo Stock Mínimo
+                            (Masivo)</label>
+                        <input type="number" id="bulk-stock-min" placeholder="Ej: 10"
+                            style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; width: 100%;">
+                    </div>
+                    <button class="btn-primary" onclick="saveStockMinimoChanges()"
+                        style="background: #10B981; color: white !important; height: 40px;">
+                        <i class="fas fa-save"></i> Aplicar a Seleccionados
+                    </button>
+                </div>
+
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" onchange="toggleSelectAll(this.checked)">
+                            </th>
+                            <th>Producto</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-critico-tbody">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- KARDEX MODAL -->
     <div class="modal-overlay" id="kardexModal" style="display: none;">
         <div class="modal-glass" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
@@ -166,6 +206,8 @@
         // Global helpers handled in inventario.js but declared here for safety
         function openAjusteModal() { document.getElementById('ajusteModal').style.display = 'flex'; }
         function closeAjusteModal() { document.getElementById('ajusteModal').style.display = 'none'; }
+        function openStockCriticoModal() { document.getElementById('stockCriticoModal').style.display = 'flex'; window.loadCriticalStockData(); }
+        function closeStockCriticoModal() { document.getElementById('stockCriticoModal').style.display = 'none'; }
         function closeKardexModal() { document.getElementById('kardexModal').style.display = 'none'; }
     </script>
 

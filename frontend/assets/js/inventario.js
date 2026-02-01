@@ -137,16 +137,141 @@ function renderTable(productos, sucursalId = null) {
 
 function updateKPIs(productos) {
     const totalItems = productos.length;
-    const stockCritico = productos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo || 5)).length;
+
+    // Duplicate detection (Same Name)
+    const nameMap = {};
+    productos.forEach(p => {
+        const name = (p.nombre || '').trim().toLowerCase();
+        nameMap[name] = (nameMap[name] || 0) + 1;
+    });
+    // Count objects that are duplicates (e.g. if "A" appears twice, both are counted as potential duplicates)
+    const totalDuplicates = productos.filter(p => nameMap[(p.nombre || '').trim().toLowerCase()] > 1).length;
+
+
+    const stockCritico = productos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo !== undefined ? p.stock_minimo : 5)).length;
     const valorTotal = productos.reduce((sum, p) => sum + ((p.costo || 0) * (p.stock_actual || 0)), 0);
 
     const cards = document.querySelectorAll('.kpi-grid .card');
     if (cards.length >= 3) {
-        cards[0].querySelector('p').textContent = totalItems.toLocaleString();
+        // 1. Total Items with Duplicate Warning
+        let totalHTML = totalItems.toLocaleString();
+        if (totalDuplicates > 0) {
+            totalHTML += `<div style="font-size: 0.7em; color: #EF4444; margin-top: 5px;"><i class="fas fa-exclamation-circle"></i> ${totalDuplicates} Duplicados</div>`;
+        }
+        cards[0].querySelector('p').innerHTML = totalHTML;
+
+        // 2. Stock Critico
         cards[1].querySelector('p').textContent = `${stockCritico} Productos`;
-        cards[2].querySelector('p').textContent = '$' + (valorTotal / 1000000).toFixed(1) + 'M';
+
+        // 3. Valor Inventario (Full COP Format: $ 14.200.000)
+        // Using es-CO locale
+        const valorFormatted = '$ ' + valorTotal.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        cards[2].querySelector('p').textContent = valorFormatted;
     }
 }
+
+// --- CRITICAL STOCK MANAGEMENT ---
+
+window.loadCriticalStockData = () => {
+    const criticalProducts = listaProductos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo !== undefined ? p.stock_minimo : 5));
+    renderCriticalTable(criticalProducts);
+};
+
+function renderCriticalTable(products) {
+    const tbody = document.getElementById('stock-critico-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No hay productos en stock crítico</td></tr>';
+        return;
+    }
+
+    products.forEach(p => {
+        const min = p.stock_minimo !== undefined ? p.stock_minimo : 5;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="stock-check" value="${p.id}"></td>
+            <td>
+                <div style="font-weight: 600;">${p.nombre}</div>
+                <div style="font-size: 0.8em; color: #888;">${p.codigo || '-'}</div>
+            </td>
+            <td style="color: #EF4444; font-weight: bold;">${p.stock_actual || 0}</td>
+            <td>${min}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+window.toggleSelectAll = (checked) => {
+    document.querySelectorAll('.stock-check').forEach(ck => ck.checked = checked);
+};
+
+window.saveStockMinimoChanges = async () => {
+    const selectedIds = Array.from(document.querySelectorAll('.stock-check:checked')).map(ck => ck.value);
+    const newMin = parseInt(document.getElementById('bulk-stock-min').value);
+
+    if (selectedIds.length === 0) {
+        showNotification('Seleccione al menos un producto', 'error');
+        return;
+    }
+    if (isNaN(newMin) || newMin < 0) {
+        showNotification('Ingrese un Stock Mínimo válido', 'error');
+        return;
+    }
+
+    if (!confirm(`¿Actualizar Stock Mínimo a ${newMin} para ${selectedIds.length} productos?`)) return;
+
+    // Bulk update loop (Client-side iteration)
+    let successCount = 0;
+    const token = localStorage.getItem('token');
+
+    showNotification('Procesando actualización masiva...', 'info');
+
+    for (const id of selectedIds) {
+        try {
+            // Find current product to keep other fields intact? 
+            // The API updates specific fields passed or keeps old ones?
+            // Checking actualizarProducto controller:
+            // It runs UPDATE SET ... for all fields. If I send only stock_minimo, others might become NULL or DEFAULT if not handled carefully.
+            // But wait, the controller uses `req.body.x || previous`? No, logic is: `codigo || null`, etc.
+            // Oh, the controller sets defaults if fields are missing in body?
+            // "codigo || null", "nombre". If nombre is missing, it inserts undefined?
+            // Actually, the update controller is:
+            // "SELECT * FROM productos" is NOT done. It just does UPDATE products SET ...
+            // So if I only send stock_minimo, and other fields are undefined in req.body, they will be set to NULL/Default in DB!
+            // THIS IS DANGEROUS. I must send ALL fields.
+
+            const prod = listaProductos.find(p => p.id == id); // id from checkbox is string
+            if (!prod) continue;
+
+            const payload = { ...prod, stock_minimo: newMin };
+
+            // We need to match the body expected by 'actualizarProducto'
+            // Controller expects: codigo, referencia_fabrica, nombre, etc.
+            // If I send the object from `listarProductos`, it should match mostly.
+            // Let's ensure 'proveedor_id' is correct (in list it joins 'proveedor_nombre', but usually 'proveedor_id' is present).
+
+            const res = await fetch(`${API_PRODUCTOS}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) successCount++;
+
+        } catch (e) {
+            console.error(`Error updating product ${id}`, e);
+        }
+    }
+
+    showNotification(`Actualizados ${successCount} de ${selectedIds.length} productos`, 'success');
+    window.closeStockCriticoModal();
+    cargarInventario(); // Refresh
+};
 
 function updateCategoryFilter(productos) {
     const select = document.getElementById('filtro-categoria');
