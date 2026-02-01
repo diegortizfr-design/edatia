@@ -1207,3 +1207,34 @@ header {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     animation: modalFadeIn 0.3s;
 }
+
+/* Product Config Widget Theme */
+.product-config-widget,
+.product-config-widget:hover,
+.product-config-widget:focus,
+.product-config-widget:active,
+.product-config-widget:visited {
+    background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+    border-bottom: 3px solid #6366f1;
+    text-decoration: none !important;
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Ensure no child element gets underlined */
+.product-config-widget * {
+    text-decoration: none !important;
+}
+
+.product-config-widget .card-icon-box {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.product-config-widget .main-val {
+    color: #4338ca;
+}
+
+.product-config-widget:active {
+    transform: scale(0.98);
+}

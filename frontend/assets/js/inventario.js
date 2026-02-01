@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('filtro-categoria').addEventListener('change', cargarInventario);
         document.getElementById('filtro-estado').addEventListener('change', cargarInventario);
 
+        // Search Listener with Debounce
+        let searchTimeout;
+        document.getElementById('busqueda-inventario')?.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                cargarInventario();
+            }, 300);
+        });
+
         // Adjustment Form
         document.getElementById('form-ajuste')?.addEventListener('submit', registrarAjuste);
 
@@ -66,12 +75,14 @@ async function cargarInventario() {
         const sucursalId = document.getElementById('filtro-sucursal').value;
         const categoria = document.getElementById('filtro-categoria').value;
         const estado = document.getElementById('filtro-estado').value;
+        const busqueda = document.getElementById('busqueda-inventario')?.value.trim();
 
         // Fetch products (which contain stock data)
         let url = `${API_PRODUCTOS}?`;
         if (sucursalId) url += `sucursal_id=${sucursalId}&`;
         if (categoria) url += `categoria=${categoria}&`;
         if (estado !== "") url += `activo=${estado}&`;
+        if (busqueda) url += `busqueda=${encodeURIComponent(busqueda)}&`;
 
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
