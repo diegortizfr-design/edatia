@@ -53,6 +53,7 @@ const menuConfig = [
             { label: "Terceros", link: "/frontend/modules/configuration/terceros.html" },
             { label: "Documentos", link: "/frontend/modules/configuration/documentos.html" },
             { label: "Usuarios y Roles", link: "/frontend/modules/configuration/usuarios.html" },
+            { label: "Auditoría (Roles y Cargos)", link: "/frontend/modules/configuration/auditoria.html" },
             { label: "Impuestos", link: "/frontend/modules/configuration/impuestos.html" },
             { label: "Formas de Pago", link: "/frontend/modules/configuration/pagos.html" },
             { label: "Canal Online", link: "/frontend/modules/configuration/ecommerce.html" }

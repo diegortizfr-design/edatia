@@ -51,6 +51,7 @@ app.use('/api/contabilidad', require('./routes/contabilidadRoutes'));
 app.use('/api/averias', require('./routes/averiasRoutes'));
 app.use('/api/camia', require('./routes/camiaRoutes'));
 app.use('/api/nomina', require('./routes/nominaRoutes'));
+app.use('/api/usuarios', require('./routes/usuariosRoutes'));
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '..', 'frontend')));

@@ -75,7 +75,7 @@ async function cargarTerceros() {
 async function cargarCargosParaSelect() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/nomina/cargos', {
+        const res = await fetch('/api/usuarios/cargos', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -107,7 +107,7 @@ function renderTable(terceros) {
         const badges = [];
         if (t.es_cliente) badges.push('<span class="badge cliente">Cliente</span>');
         if (t.es_proveedor) badges.push('<span class="badge proveedor">Proveedor</span>');
-        if (t.es_empleado) badges.push('<span class="badge empleado" style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:600;">Empleado</span>');
+        if (t.es_colaborador) badges.push('<span class="badge colaborador" style="background:#6366f120; color:#6366f1; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:600;">Colaborador</span>');
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -164,12 +164,11 @@ function abrirModal(tercero = null) {
         document.getElementById('email').value = tercero.email || '';
         document.getElementById('es_cliente').checked = !!tercero.es_cliente;
         document.getElementById('es_proveedor').checked = !!tercero.es_proveedor;
-        const checkEmpleado = document.getElementById('es_empleado');
-        checkEmpleado.checked = !!tercero.es_empleado;
+        document.getElementById('es_colaborador').checked = !!tercero.es_colaborador;
         document.getElementById('cargo_id').value = tercero.cargo_id || '';
 
         // Trigger toggle logic
-        toggleRolContainer(checkEmpleado.checked);
+        toggleRolContainer(!!tercero.es_colaborador);
     } else {
         isEditing = false;
         currentId = null;
@@ -180,7 +179,7 @@ function abrirModal(tercero = null) {
         form.reset();
         document.getElementById('es_cliente').checked = false;
         document.getElementById('es_proveedor').checked = false;
-        document.getElementById('es_empleado').checked = false;
+        document.getElementById('es_colaborador').checked = false;
         document.getElementById('cargo_id').value = '';
         toggleRolContainer(false);
 
@@ -214,8 +213,8 @@ function toggleRolContainer(show) {
     if (select) select.required = show;
 }
 
-// Add event listener for employee toggle
-document.getElementById('es_empleado')?.addEventListener('change', (e) => {
+// Add event listener for collaborator toggle (unified with employee)
+document.getElementById('es_colaborador')?.addEventListener('change', (e) => {
     toggleRolContainer(e.target.checked);
 });
 
@@ -256,8 +255,8 @@ async function guardarTercero(e) {
         email: document.getElementById('email').value,
         es_cliente: document.getElementById('es_cliente').checked,
         es_proveedor: document.getElementById('es_proveedor').checked,
-        es_empleado: document.getElementById('es_empleado').checked,
-        cargo_id: document.getElementById('es_empleado').checked ? document.getElementById('cargo_id').value : null
+        es_colaborador: document.getElementById('es_colaborador').checked,
+        cargo_id: document.getElementById('es_colaborador').checked ? document.getElementById('cargo_id').value : null
     };
 
     try {

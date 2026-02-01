@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         API_BILLING = `${API_BASE}/facturacion`;
         API_PRODUCTS = `${API_BASE}/productos`;
         API_DOCS = `${API_BASE}/documentos`;
-        API_CLIENTS = `${API_BASE}/terceros`; // Assuming this endpoint exists
+        API_CLIENTS = `${API_BASE}/terceros`;
+        API_USERS = `${API_BASE}/usuarios`;
 
         initPOS();
         setupPaymentModal();
@@ -219,19 +220,19 @@ async function loadClients() {
 async function loadSellers() {
     try {
         const token = localStorage.getItem('token');
-        const resp = await fetch(API_CLIENTS, { headers: { 'Authorization': `Bearer ${token}` } });
+        const resp = await fetch(API_USERS, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await resp.json();
         if (data.success) {
             const select = document.getElementById('pos-seller-select');
             if (!select) return;
             select.innerHTML = '<option value="">👤 Sin Vendedor</option>';
 
-            const sellers = data.data.filter(c => c.es_empleado);
+            const sellers = data.data.filter(u => u.estado === 'Activo');
 
             sellers.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
-                opt.textContent = `👤 ${s.nombre_comercial || s.nombre}`;
+                opt.textContent = `👤 ${s.nombre}`;
                 select.appendChild(opt);
             });
 

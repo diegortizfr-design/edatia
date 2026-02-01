@@ -37,25 +37,101 @@ async function initializeTenantDB(dbConfig) {
                 email VARCHAR(100),
                 es_cliente BOOLEAN DEFAULT 0,
                 es_proveedor BOOLEAN DEFAULT 0,
+                es_colaborador BOOLEAN DEFAULT 0,
+                cargo_id INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_documento (documento)
             )
         `);
 
-        // --- 3. USUARIOS ---
+        // Mini-migration for TERCEROS
+        const [terColumns] = await clientConn.query('SHOW COLUMNS FROM terceros');
+        const terColNames = terColumns.map(c => c.Field);
+        if (!terColNames.includes('es_colaborador')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN es_colaborador BOOLEAN DEFAULT 0'); } catch (e) { }
+        }
+        if (!terColNames.includes('cargo_id')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN cargo_id INT'); } catch (e) { }
+        }
+        if (terColNames.includes('es_empleado')) {
+            try { await clientConn.query('UPDATE terceros SET es_colaborador = 1 WHERE es_empleado = 1'); } catch (e) { }
+        }
+
+        // --- 3. ROLES ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS roles (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                descripcion TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // --- 4. CARGOS ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS cargos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // --- 5. USUARIOS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nombre VARCHAR(100),
                 usuario VARCHAR(50), 
                 email VARCHAR(100),
+                telefono VARCHAR(50),
                 contraseña VARCHAR(255),
                 password VARCHAR(255),
+                rol_id INT,
+                cargo_id INT,
+                tercero_id INT,
+                estado VARCHAR(20) DEFAULT 'Activo',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // --- 4. DOCUMENTOS ---
+        // Mini-migration for USUARIOS
+        const [usuColumns] = await clientConn.query('SHOW COLUMNS FROM usuarios');
+        const usuColNames = usuColumns.map(c => c.Field);
+        const usuNewCols = [
+            { name: 'rol_id', def: 'INT NULL' },
+            { name: 'cargo_id', def: 'INT NULL' },
+            { name: 'tercero_id', def: 'INT NULL' },
+            { name: 'telefono', def: 'VARCHAR(50) NULL' },
+            { name: 'estado', def: "VARCHAR(20) DEFAULT 'Activo'" }
+        ];
+        for (const col of usuNewCols) {
+            if (!usuColNames.includes(col.name)) {
+                try { await clientConn.query(`ALTER TABLE usuarios ADD COLUMN ${col.name} ${col.def}`); } catch (e) { }
+            }
+        }
+
+        // Seed default roles and cargos for new tenant
+        const [rolesCount] = await clientConn.query('SELECT COUNT(*) as total FROM roles');
+        if (rolesCount[0].total === 0) {
+            await clientConn.query(`
+                INSERT INTO roles (nombre, descripcion) VALUES 
+                ('Administrador', 'Acceso total al sistema'),
+                ('Vendedor', 'Acceso a POS, Facturación y Clientes'),
+                ('Cajero', 'Acceso a POS y Recibos de Caja'),
+                ('Almacenista', 'Gestión de Inventarios y Productos'),
+                ('Contador', 'Acceso a Reportes y Contabilidad')
+            `);
+        }
+
+        const [cargosCount] = await clientConn.query('SELECT COUNT(*) as total FROM cargos');
+        if (cargosCount[0].total === 0) {
+            await clientConn.query(`
+                INSERT INTO cargos (nombre) VALUES 
+                ('Gerente'), ('Vendedor Mostrador'), ('Cajero'), ('Bodeguero'), ('Contador Externo')
+            `);
+        }
+
+        // --- 6. DOCUMENTOS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS documentos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,7 +172,7 @@ async function initializeTenantDB(dbConfig) {
             }
         }
 
-        // --- 5. PRODUCTOS ---
+        // --- 7. PRODUCTOS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS productos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -149,7 +225,7 @@ async function initializeTenantDB(dbConfig) {
             }
         }
 
-        // --- 6. COMPRAS ---
+        // --- 8. COMPRAS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -185,7 +261,7 @@ async function initializeTenantDB(dbConfig) {
             }
         }
 
-        // --- 7. COMPRAS DETALLE ---
+        // --- 9. COMPRAS DETALLE ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS compras_detalle (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,7 +274,7 @@ async function initializeTenantDB(dbConfig) {
             )
         `);
 
-        // --- 8. FACTURAS ---
+        // --- 10. FACTURAS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS facturas (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -227,7 +303,7 @@ async function initializeTenantDB(dbConfig) {
         if (!facColNames.includes('devuelta')) try { await clientConn.query("ALTER TABLE facturas ADD COLUMN devuelta DECIMAL(15,2) DEFAULT 0"); } catch (e) { }
 
 
-        // --- 9. FACTURA DETALLE ---
+        // --- 11. FACTURA DETALLE ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS factura_detalle (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -241,7 +317,7 @@ async function initializeTenantDB(dbConfig) {
             )
         `);
 
-        // --- 10. RECIBOS CAJA ---
+        // --- 12. RECIBOS CAJA ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS recibos_caja (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -256,7 +332,7 @@ async function initializeTenantDB(dbConfig) {
             )
         `);
 
-        // --- 11. INVENTARIO (Sucursales & Movimientos) ---
+        // --- 13. INVENTARIO (Sucursales & Movimientos) ---
         await clientConn.query(`
              CREATE TABLE IF NOT EXISTS inventario_sucursales (
                 id INT AUTO_INCREMENT PRIMARY KEY,

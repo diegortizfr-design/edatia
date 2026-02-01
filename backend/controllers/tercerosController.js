@@ -1,5 +1,6 @@
 const { getPool } = require('../config/db');
 const { connectToClientDB } = require('../config/dbFactory');
+const { initializeTenantDB } = require('../utils/tenantInit');
 
 // Helper: Obtener config de BD del cliente
 async function getClientDbConfig(nit) {
@@ -54,7 +55,7 @@ exports.crearTercero = async (req, res) => {
 
         const {
             nombre_comercial, razon_social, tipo_documento, documento,
-            direccion, telefono, email, es_cliente, es_proveedor
+            direccion, telefono, email, es_cliente, es_proveedor, es_colaborador, cargo_id
         } = req.body;
 
         if (!nombre_comercial || !documento) {
@@ -69,19 +70,25 @@ exports.crearTercero = async (req, res) => {
 
         const sql = `
             INSERT INTO terceros 
-            (nombre_comercial, razon_social, tipo_documento, documento, direccion, telefono, email, es_cliente, es_proveedor)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (nombre_comercial, razon_social, tipo_documento, documento, direccion, telefono, email, es_cliente, es_proveedor, es_colaborador, cargo_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         await clientConn.query(sql, [
             nombre_comercial, razon_social || nombre_comercial, tipo_documento, documento,
-            direccion, telefono, email, es_cliente ? 1 : 0, es_proveedor ? 1 : 0
+            direccion, telefono, email, es_cliente ? 1 : 0, es_proveedor ? 1 : 0, es_colaborador ? 1 : 0, cargo_id || null
         ]);
 
         res.status(201).json({ success: true, message: 'Tercero creado correctamente' });
 
     } catch (err) {
         console.error('crearTercero error:', err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al crear tercero' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -98,27 +105,33 @@ exports.actualizarTercero = async (req, res) => {
 
         const {
             nombre_comercial, razon_social, tipo_documento, documento,
-            direccion, telefono, email, es_cliente, es_proveedor
+            direccion, telefono, email, es_cliente, es_proveedor, es_colaborador, cargo_id
         } = req.body;
 
         const sql = `
             UPDATE terceros
             SET nombre_comercial = ?, razon_social = ?, tipo_documento = ?, documento = ?, 
                 direccion = ?, telefono = ?, email = ?,
-                es_cliente = ?, es_proveedor = ?
+                es_cliente = ?, es_proveedor = ?, es_colaborador = ?, cargo_id = ?
             WHERE id = ?
         `;
 
         await clientConn.query(sql, [
             nombre_comercial, razon_social, tipo_documento, documento,
             direccion, telefono, email,
-            es_cliente ? 1 : 0, es_proveedor ? 1 : 0, id
+            es_cliente ? 1 : 0, es_proveedor ? 1 : 0, es_colaborador ? 1 : 0, cargo_id || null, id
         ]);
 
         res.json({ success: true, message: 'Tercero actualizado' });
 
     } catch (err) {
         console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al actualizar' });
     } finally {
         if (clientConn) await clientConn.end();
