@@ -170,6 +170,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Rol Asignado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -213,14 +214,14 @@
                         <input type="text" id="telefono"
                             style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="display: none;">
                         <label>Rol de Sistema</label>
                         <select id="rol_id"
                             style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
                             <option value="">Cargando...</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="display: none;">
                         <label>Cargo en Empresa</label>
                         <select id="cargo_id"
                             style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
@@ -294,6 +295,18 @@
                     <label>Nombre del Cargo</label>
                     <input type="text" id="cargo_nombre" required
                         style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="cargo_descripcion" rows="3"
+                        style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Rol Asignado</label>
+                    <select id="cargo_rol_id"
+                        style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <option value="">Sin rol asignado</option>
+                    </select>
                 </div>
                 <div style="text-align: right; margin-top: 15px;">
                     <button type="button" onclick="closeCargoModal()" class="btn-secondary">Cancelar</button>

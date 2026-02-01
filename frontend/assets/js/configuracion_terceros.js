@@ -1,6 +1,7 @@
 // frontend/assets/js/configuracion_terceros.js
 
 let API_URL = '';
+let API_CARGOS = '';
 let tableBody, modal, form, btnNuevo, closeBtns, modalTitle;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const configRes = await fetch('../../assets/config.json');
         const config = await configRes.json();
         API_URL = `${config.apiUrl}/terceros`;
+        API_CARGOS = `${config.apiUrl}/usuarios/cargos`;
 
         // Initialize DOM Elements
         tableBody = document.getElementById('terceros-table-body');
@@ -75,7 +77,7 @@ async function cargarTerceros() {
 async function cargarCargosParaSelect() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/usuarios/cargos', {
+        const res = await fetch(API_CARGOS, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();

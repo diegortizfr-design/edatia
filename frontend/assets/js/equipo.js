@@ -225,6 +225,7 @@ async function loadCargos() {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td style="font-weight:600;">${c.nombre}</td>
+                        <td>${c.rol_nombre || '<span style="color:#999;">Sin rol</span>'}</td>
                         <td style="text-align: center;">
                             <button class="btn-icon" onclick='openCargoModal(${JSON.stringify(c)})' style="background:none; border:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
                             <button class="btn-icon" style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteCargo(${c.id})"><i class="fas fa-trash"></i></button>
@@ -249,7 +250,20 @@ async function loadColaboradores() {
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = `${t.nombre_comercial} (${t.documento})`;
+                opt.setAttribute('data-cargo-id', t.cargo_id || '');
                 select.appendChild(opt);
+            });
+
+            // Add event listener to auto-populate cargo when tercero is selected
+            select.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const cargoId = selectedOption.getAttribute('data-cargo-id');
+                const cargoSelect = document.getElementById('cargo_id');
+                if (cargoId && cargoSelect) {
+                    cargoSelect.value = cargoId;
+                } else {
+                    cargoSelect.value = '';
+                }
             });
         }
     } catch (e) { console.error(e); }
@@ -301,12 +315,34 @@ async function deleteRole(id) {
     } catch (e) { showNotification('Error', 'error'); }
 }
 
-window.openCargoModal = (c = null) => {
+window.openCargoModal = async (c = null) => {
     const modal = document.getElementById('cargoModal');
     modal.style.display = 'flex';
     document.getElementById('cargoForm').reset();
     document.getElementById('edit_cargo_id').value = c ? c.id : '';
-    if (c) document.getElementById('cargo_nombre').value = c.nombre;
+    if (c) {
+        document.getElementById('cargo_nombre').value = c.nombre;
+        document.getElementById('cargo_descripcion').value = c.descripcion || '';
+        document.getElementById('cargo_rol_id').value = c.rol_id || '';
+    }
+
+    // Load roles into dropdown
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(API_ROLES, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await resp.json();
+        if (data.success) {
+            const select = document.getElementById('cargo_rol_id');
+            select.innerHTML = '<option value="">Sin rol asignado</option>';
+            data.data.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = r.nombre;
+                if (c && c.rol_id == r.id) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) { console.error('Error loading roles:', e); }
 };
 
 window.closeCargoModal = () => document.getElementById('cargoModal').style.display = 'none';
@@ -314,7 +350,11 @@ window.closeCargoModal = () => document.getElementById('cargoModal').style.displ
 async function handleCargoSave(e) {
     e.preventDefault();
     const id = document.getElementById('edit_cargo_id').value;
-    const body = { nombre: document.getElementById('cargo_nombre').value };
+    const body = {
+        nombre: document.getElementById('cargo_nombre').value,
+        descripcion: document.getElementById('cargo_descripcion').value,
+        rol_id: document.getElementById('cargo_rol_id').value || null
+    };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `${API_CARGOS}/${id}` : API_CARGOS;
 

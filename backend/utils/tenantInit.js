@@ -72,9 +72,22 @@ async function initializeTenantDB(dbConfig) {
             CREATE TABLE IF NOT EXISTS cargos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nombre VARCHAR(100) NOT NULL UNIQUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                descripcion TEXT,
+                rol_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE SET NULL
             )
         `);
+
+        // Mini-migration for CARGOS
+        const [cargoColumns] = await clientConn.query('SHOW COLUMNS FROM cargos');
+        const cargoColNames = cargoColumns.map(c => c.Field);
+        if (!cargoColNames.includes('descripcion')) {
+            try { await clientConn.query('ALTER TABLE cargos ADD COLUMN descripcion TEXT'); } catch (e) { }
+        }
+        if (!cargoColNames.includes('rol_id')) {
+            try { await clientConn.query('ALTER TABLE cargos ADD COLUMN rol_id INT'); } catch (e) { }
+        }
 
         // --- 5. USUARIOS ---
         await clientConn.query(`

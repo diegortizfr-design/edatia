@@ -50,10 +50,18 @@ exports.crearUsuario = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        const { nombre, usuario, email, password, rol_id, cargo_id, telefono, tercero_id } = req.body;
+        let { nombre, usuario, email, password, rol_id, cargo_id, telefono, tercero_id } = req.body;
 
         if (!usuario || !password) {
             return res.status(400).json({ success: false, message: 'Usuario y contraseña requeridos' });
+        }
+
+        // If tercero_id is provided, inherit cargo_id from tercero
+        if (tercero_id) {
+            const [terceroRows] = await clientConn.query('SELECT cargo_id FROM terceros WHERE id = ?', [tercero_id]);
+            if (terceroRows.length > 0 && terceroRows[0].cargo_id) {
+                cargo_id = terceroRows[0].cargo_id;
+            }
         }
 
         const hashed = await bcrypt.hash(password, 10);
@@ -89,7 +97,15 @@ exports.actualizarUsuario = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        const { nombre, usuario, email, password, rol_id, cargo_id, telefono, estado, tercero_id } = req.body;
+        let { nombre, usuario, email, password, rol_id, cargo_id, telefono, estado, tercero_id } = req.body;
+
+        // If tercero_id is provided, inherit cargo_id from tercero
+        if (tercero_id) {
+            const [terceroRows] = await clientConn.query('SELECT cargo_id FROM terceros WHERE id = ?', [tercero_id]);
+            if (terceroRows.length > 0 && terceroRows[0].cargo_id) {
+                cargo_id = terceroRows[0].cargo_id;
+            }
+        }
 
         let sql = 'UPDATE usuarios SET nombre = ?, usuario = ?, email = ?, rol_id = ?, cargo_id = ?, telefono = ?, estado = ?, tercero_id = ?';
         let params = [nombre, usuario, email, rol_id || null, cargo_id || null, telefono || null, estado, tercero_id || null];
@@ -234,7 +250,12 @@ exports.listarCargos = async (req, res) => {
         const { nit } = req.user;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
-        const [rows] = await clientConn.query('SELECT * FROM cargos ORDER BY nombre ASC');
+        const [rows] = await clientConn.query(`
+            SELECT c.*, r.nombre as rol_nombre 
+            FROM cargos c 
+            LEFT JOIN roles r ON c.rol_id = r.id 
+            ORDER BY c.nombre ASC
+        `);
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error(err);
@@ -254,10 +275,11 @@ exports.crearCargo = async (req, res) => {
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { nombre } = req.body;
+        const { nombre, descripcion, rol_id } = req.body;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
-        await clientConn.query('INSERT INTO cargos (nombre) VALUES (?)', [nombre]);
+        await clientConn.query('INSERT INTO cargos (nombre, descripcion, rol_id) VALUES (?, ?, ?)',
+            [nombre, descripcion || null, rol_id || null]);
         res.status(201).json({ success: true, message: 'Cargo creado' });
     } catch (err) {
         console.error(err);
@@ -278,10 +300,11 @@ exports.actualizarCargo = async (req, res) => {
     try {
         const { nit } = req.user;
         const { id } = req.params;
-        const { nombre } = req.body;
+        const { nombre, descripcion, rol_id } = req.body;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
-        await clientConn.query('UPDATE cargos SET nombre = ? WHERE id = ?', [nombre, id]);
+        await clientConn.query('UPDATE cargos SET nombre = ?, descripcion = ?, rol_id = ? WHERE id = ?',
+            [nombre, descripcion || null, rol_id || null, id]);
         res.json({ success: true, message: 'Cargo actualizado' });
     } catch (err) {
         console.error(err);
