@@ -145,6 +145,13 @@ exports.listarRoles = async (req, res) => {
         const [rows] = await clientConn.query('SELECT * FROM roles ORDER BY nombre ASC');
         res.json({ success: true, data: rows });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al listar roles' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -161,6 +168,13 @@ exports.crearRol = async (req, res) => {
         await clientConn.query('INSERT INTO roles (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
         res.status(201).json({ success: true, message: 'Rol creado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al crear rol' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -178,6 +192,13 @@ exports.actualizarRol = async (req, res) => {
         await clientConn.query('UPDATE roles SET nombre = ?, descripcion = ? WHERE id = ?', [nombre, descripcion, id]);
         res.json({ success: true, message: 'Rol actualizado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al actualizar rol' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -194,6 +215,13 @@ exports.eliminarRol = async (req, res) => {
         await clientConn.query('DELETE FROM roles WHERE id = ?', [id]);
         res.json({ success: true, message: 'Rol eliminado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al eliminar rol' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -209,6 +237,13 @@ exports.listarCargos = async (req, res) => {
         const [rows] = await clientConn.query('SELECT * FROM cargos ORDER BY nombre ASC');
         res.json({ success: true, data: rows });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al listar cargos' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -225,6 +260,13 @@ exports.crearCargo = async (req, res) => {
         await clientConn.query('INSERT INTO cargos (nombre) VALUES (?)', [nombre]);
         res.status(201).json({ success: true, message: 'Cargo creado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al crear cargo' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -242,6 +284,13 @@ exports.actualizarCargo = async (req, res) => {
         await clientConn.query('UPDATE cargos SET nombre = ? WHERE id = ?', [nombre, id]);
         res.json({ success: true, message: 'Cargo actualizado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al actualizar cargo' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -258,6 +307,13 @@ exports.eliminarCargo = async (req, res) => {
         await clientConn.query('DELETE FROM cargos WHERE id = ?', [id]);
         res.json({ success: true, message: 'Cargo eliminado' });
     } catch (err) {
+        console.error(err);
+        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                await initializeTenantDB(await getClientDbConfig(req.user.nit));
+                return res.status(503).json({ success: false, message: 'Esquema actualizado. Reintente por favor.' });
+            } catch (migErr) { console.error('Migration failed:', migErr); }
+        }
         res.status(500).json({ success: false, message: 'Error al eliminar cargo' });
     } finally {
         if (clientConn) await clientConn.end();

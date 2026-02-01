@@ -117,9 +117,11 @@ function setupEventListeners() {
         });
         const data = await resp.json();
         if (data.success) {
-            showNotification('Rol guardado', 'success');
+            showNotification('Rol guardado correctamente', 'success');
             closeRoleModal();
             loadRoles();
+        } else {
+            showNotification('Error: ' + (data.message || 'No se pudo guardar el rol'), 'error');
         }
     };
 
@@ -137,9 +139,11 @@ function setupEventListeners() {
         });
         const data = await resp.json();
         if (data.success) {
-            showNotification('Cargo guardado', 'success');
+            showNotification('Cargo guardado correctamente', 'success');
             closeCargoModal();
             loadCargos();
+        } else {
+            showNotification('Error: ' + (data.message || 'No se pudo guardar el cargo'), 'error');
         }
     };
 }
