@@ -12,68 +12,59 @@ const menuConfig = [
         id: "nav-home"
     },
     {
-        label: "Compras",
-        icon: "fas fa-shopping-cart",
-        link: "#",
-        id: "nav-compras",
-        submenu: [
-            { label: "Tablero de Órdenes", link: "/frontend/modules/compras/compras.html" },
-            { label: "Proveedores", link: "/frontend/modules/compras/compras.html" } // Update when proveedores.html exists
-        ]
-    },
-    {
-        label: "Inventario",
-        icon: "fas fa-boxes",
-        link: "#",
-        id: "nav-inventario",
-        submenu: [
-            { label: "Monitor de Stock", link: "/frontend/modules/inventario/inventario.html" },
-            { label: "Movimientos", link: "/frontend/modules/inventario/inventario.html" }
-        ]
-    },
-    {
-        label: "Facturación",
+        label: "Facturación / Ventas",
         icon: "fas fa-file-invoice-dollar",
         link: "#",
         id: "nav-facturacion",
         submenu: [
             { label: "Punto de Venta (POS)", link: "/frontend/modules/facturacion/facturacion.html" },
-            { label: "Historial Ventas", link: "/frontend/modules/facturacion/lista_facturas.html" },
+            { label: "Historial de Ventas", link: "/frontend/modules/facturacion/lista_facturas.html" },
             { label: "Recibos de Caja", link: "/frontend/modules/facturacion/lista_recibos.html" }
         ]
     },
     {
-        label: "Configuración",
-        icon: "fas fa-cog",
-        link: "#",
-        id: "nav-configuracion",
-        submenu: [
-            { label: "Empresa", link: "/frontend/modules/configuration/empresa.html" },
-            { label: "Sucursales", link: "/frontend/modules/configuration/sucursales.html" },
-            { label: "Terceros", link: "/frontend/modules/configuration/terceros.html" },
-            { label: "Documentos", link: "/frontend/modules/configuration/documentos.html" },
-            { label: "Usuarios y Roles", link: "/frontend/modules/configuration/usuarios.html" },
-            { label: "Auditoría (Roles y Cargos)", link: "/frontend/modules/configuration/auditoria.html" },
-            { label: "Impuestos", link: "/frontend/modules/configuration/impuestos.html" },
-            { label: "Formas de Pago", link: "/frontend/modules/configuration/pagos.html" },
-            { label: "Canal Online", link: "/frontend/modules/configuration/ecommerce.html" }
-        ]
+        label: "Inventario",
+        icon: "fas fa-boxes",
+        link: "/frontend/modules/inventario/inventario.html",
+        id: "nav-inventario"
     },
     {
-        label: "Nómina",
-        icon: "fas fa-user-friends",
-        link: "#",
-        id: "nav-nomina",
-        submenu: [
-            { label: "Colaboradores", link: "/frontend/modules/configuration/terceros.html" },
-            { label: "Cargos y Roles", link: "/frontend/modules/nomina/configuraciones/roles.html" }
-        ]
+        label: "Compras / Gastos",
+        icon: "fas fa-shopping-bag",
+        link: "/frontend/modules/compras/compras.html",
+        id: "nav-compras"
+    },
+    {
+        label: "Terceros (Contactos)",
+        icon: "fas fa-address-book",
+        link: "/frontend/modules/configuration/terceros.html",
+        id: "nav-terceros"
+    },
+    {
+        label: "Gestión de Equipo",
+        icon: "fas fa-users-cog",
+        link: "/frontend/modules/configuration/equipo.html",
+        id: "nav-equipo"
     },
     {
         label: "Reportes",
         icon: "fas fa-chart-pie",
         link: "/frontend/modules/reportes/reportes.html",
         id: "nav-reportes"
+    },
+    {
+        label: "Ajustes del Sistema",
+        icon: "fas fa-tools",
+        link: "#",
+        id: "nav-configuracion",
+        submenu: [
+            { label: "Datos de Empresa", link: "/frontend/modules/configuration/empresa.html" },
+            { label: "Sucursales", link: "/frontend/modules/configuration/sucursales.html" },
+            { label: "Resoluciones / Docs", link: "/frontend/modules/configuration/documentos.html" },
+            { label: "Impuestos / IVA", link: "/frontend/modules/configuration/impuestos.html" },
+            { label: "Formas de Pago", link: "/frontend/modules/configuration/pagos.html" },
+            { label: "Canal Online (E-com)", link: "/frontend/modules/configuration/ecommerce.html" }
+        ]
     }
 ];
 
