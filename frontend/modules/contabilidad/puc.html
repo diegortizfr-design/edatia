@@ -18,48 +18,69 @@
         <div id="header-container"></div>
 
         <!-- HERO KPI SECTION -->
-        <section class="kpi-grid">
-            <div class="card">
-                <div class="card-icon-box" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">
+        <section style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div class="card"
+                style="padding: 12px 18px; display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+                <div class="card-icon-box"
+                    style="background: rgba(16, 185, 129, 0.1); color: #10B981; width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0;">
                     <i class="fas fa-coins"></i>
                 </div>
-                <h3>Activos</h3>
-                <p id="kpi-total-activos">$0.00</p>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 0.75rem; margin: 0; color: var(--text-gray); font-weight: 500;">Activos</h3>
+                    <p id="kpi-total-activos"
+                        style="font-size: 1.2rem; font-weight: 700; margin: 2px 0 0 0; color: var(--text-dark);">$0.00
+                    </p>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-icon-box" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
+            <div class="card"
+                style="padding: 12px 18px; display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+                <div class="card-icon-box"
+                    style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0;">
                     <i class="fas fa-hand-holding-usd"></i>
                 </div>
-                <h3>Pasivos</h3>
-                <p id="kpi-total-pasivos">$0.00</p>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 0.75rem; margin: 0; color: var(--text-gray); font-weight: 500;">Pasivos</h3>
+                    <p id="kpi-total-pasivos"
+                        style="font-size: 1.2rem; font-weight: 700; margin: 2px 0 0 0; color: var(--text-dark);">$0.00
+                    </p>
+                </div>
             </div>
-            <div class="card">
-                <div class="card-icon-box" style="background: rgba(59, 130, 246, 0.1); color: #3B82F6;">
+            <div class="card"
+                style="padding: 12px 18px; display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+                <div class="card-icon-box"
+                    style="background: rgba(59, 130, 246, 0.1); color: #3B82F6; width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0;">
                     <i class="fas fa-balance-scale"></i>
                 </div>
-                <h3>Patrimonio</h3>
-                <p id="kpi-total-patrimonio">$0.00</p>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 0.75rem; margin: 0; color: var(--text-gray); font-weight: 500;">Patrimonio
+                    </h3>
+                    <p id="kpi-total-patrimonio"
+                        style="font-size: 1.2rem; font-weight: 700; margin: 2px 0 0 0; color: var(--text-dark);">$0.00
+                    </p>
+                </div>
             </div>
         </section>
 
         <!-- ACTION BAR -->
-        <div class="action-bar" style="margin-top: 30px; justify-content: space-between;">
+        <div class="action-bar" style="margin-top: 15px; justify-content: space-between; align-items: center;">
             <div>
-                <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--text-dark);">Plan Único de Cuentas</h1>
-                <p style="color: var(--text-gray);">Gestiona la estructura contable de tu empresa</p>
+                <h1 style="font-size: 1.3rem; font-weight: 700; color: var(--text-dark); margin: 0;">Plan Único de
+                    Cuentas</h1>
+                <p style="color: var(--text-gray); margin: 2px 0 0 0; font-size: 0.85rem;">Gestiona la estructura
+                    contable de tu empresa</p>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" id="btn-import-puc">
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-secondary" id="btn-import-puc" style="padding: 8px 14px; font-size: 0.85rem;">
                     <i class="fas fa-file-import"></i> Importar Plantilla
                 </button>
-                <button class="btn-premium" id="btn-nueva-cuenta">
+                <button class="btn-premium" id="btn-nueva-cuenta" style="padding: 8px 14px; font-size: 0.85rem;">
                     <i class="fas fa-plus"></i> Nueva Cuenta
                 </button>
             </div>
         </div>
 
         <!-- SEARCH -->
-        <div class="card" style="margin-top: 20px; padding: 15px;">
+        <div class="card" style="margin-top: 12px; padding: 10px 15px;">
             <div style="display: flex; gap: 15px;">
                 <div class="search-bar" style="width: 100%; max-width: 600px;">
                     <i class="fas fa-search" style="color: var(--text-gray);"></i>
@@ -69,7 +90,7 @@
         </div>
 
         <!-- PUC TREE VIEW TABLE -->
-        <div class="table-container card" style="margin-top: 20px; padding: 0;">
+        <div class="table-container card" style="margin-top: 12px; padding: 0;">
             <table class="glass-table">
                 <thead>
                     <tr>

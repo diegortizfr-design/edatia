@@ -19,7 +19,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const labelNivel = document.getElementById('new-nivel-label');
 
     if (btnNew) btnNew.addEventListener('click', () => {
+        editingCodigo = null; // Reset editing state
         form.reset();
+        // Re-enable fields
+        document.getElementById('new-padre').disabled = false;
+        document.getElementById('new-codigo-suffix').disabled = false;
         populateParentSelect();
         updateFormState(); // Set initial state (Clase)
         modal.style.display = 'flex';
@@ -102,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function saveAccount() {
     const parentCode = document.getElementById('new-padre').value;
     const suffix = document.getElementById('new-codigo-suffix').value.trim();
-    const codigo = parentCode + suffix;
+    const codigo = editingCodigo || (parentCode + suffix);
 
     const nombre = document.getElementById('new-nombre').value.trim().toUpperCase();
     const tipo = document.getElementById('new-tipo').value;
@@ -115,14 +119,16 @@ async function saveAccount() {
     const reqBase = document.getElementById('check-base').checked;
 
     // Validation
-    if (!suffix || !nombre) return alert('Código y Nombre son obligatorios');
+    if (!codigo || !nombre) return alert('Código y Nombre son obligatorios');
 
-    // Strict Length Validation (Colombian PUC Standard)
-    if (tipo === 'Clase' && codigo.length !== 1) return alert('La Clase debe tener 1 dígito');
-    if (tipo === 'Grupo' && codigo.length !== 2) return alert('El Grupo debe tener 2 dígitos (Ej: 11)');
-    if (tipo === 'Cuenta' && codigo.length !== 4) return alert('La Cuenta debe tener 4 dígitos (Ej: 1105)');
+    // Strict Length Validation (Colombian PUC Standard) - only for new accounts
+    if (!editingCodigo) {
+        if (tipo === 'Clase' && codigo.length !== 1) return alert('La Clase debe tener 1 dígito');
+        if (tipo === 'Grupo' && codigo.length !== 2) return alert('El Grupo debe tener 2 dígitos (Ej: 11)');
+        if (tipo === 'Cuenta' && codigo.length !== 4) return alert('La Cuenta debe tener 4 dígitos (Ej: 1105)');
+    }
 
-    const newAccount = {
+    const accountData = {
         codigo,
         nombre,
         naturaleza,
@@ -136,13 +142,18 @@ async function saveAccount() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(BACKEND_URL + '/api/contabilidad/puc', {
-            method: 'POST',
+        const url = editingCodigo
+            ? `${BACKEND_URL}/api/contabilidad/puc/${editingCodigo}`
+            : `${BACKEND_URL}/api/contabilidad/puc`;
+        const method = editingCodigo ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(newAccount)
+            body: JSON.stringify(accountData)
         });
 
         const data = await res.json();
@@ -155,7 +166,9 @@ async function saveAccount() {
         // Reload
         await loadPUC();
         document.getElementById('modal-nueva-cuenta').style.display = 'none';
-        if (window.showNotification) showNotification('Cuenta creada exitosamente', 'success');
+        const message = editingCodigo ? 'Cuenta actualizada exitosamente' : 'Cuenta creada exitosamente';
+        if (window.showNotification) showNotification(message, 'success');
+        editingCodigo = null; // Reset
 
     } catch (err) {
         console.error(err);
@@ -231,7 +244,10 @@ function renderPUC(data) {
             <td>Nivel ${cuenta.nivel}</td>
             <td><span class="badge success">Activa</span></td>
             <td>
-                <button class="btn-icon" title="Editar"><i class="fas fa-edit"></i></button>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-icon" title="Editar" onclick="editAccount('${cuenta.codigo}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon" title="Eliminar" onclick="deleteAccount('${cuenta.codigo}')" style="color: #ef4444;"><i class="fas fa-trash"></i></button>
+                </div>
             </td>
         `;
         tbody.appendChild(row);
@@ -282,7 +298,76 @@ async function importTemplate() {
 }
 
 
-function updateKPIs() {
-    // Simple mock calculation logic could go here
-    document.getElementById('kpi-total-activos').textContent = '$0.00';
+async function updateKPIs() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(BACKEND_URL + '/api/contabilidad/balance-general', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const json = await res.json();
+
+        if (json.success && json.totales) {
+            const totales = json.totales;
+            document.getElementById('kpi-total-activos').textContent = '$' + (totales.activos || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 });
+            document.getElementById('kpi-total-pasivos').textContent = '$' + (totales.pasivos || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 });
+            document.getElementById('kpi-total-patrimonio').textContent = '$' + (totales.patrimonio || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 });
+        }
+    } catch (e) {
+        console.error('Error updating KPIs:', e);
+    }
+}
+
+// Edit account
+let editingCodigo = null;
+
+function editAccount(codigo) {
+    const cuenta = pucData.find(c => c.codigo === codigo);
+    if (!cuenta) return;
+
+    editingCodigo = codigo;
+
+    // Populate form
+    document.getElementById('new-padre').disabled = true;
+    document.getElementById('new-codigo-suffix').disabled = true;
+    document.getElementById('prefix-code').style.display = 'none';
+
+    document.getElementById('new-codigo-suffix').value = codigo;
+    document.getElementById('new-nombre').value = cuenta.nombre;
+    document.getElementById('new-naturaleza').value = cuenta.naturaleza;
+    document.getElementById('new-nivel-label').value = `${cuenta.tipo} (Nivel ${cuenta.nivel})`;
+    document.getElementById('new-tipo').value = cuenta.tipo;
+    document.getElementById('new-nivel').value = cuenta.nivel;
+
+    document.getElementById('check-tercero').checked = cuenta.requiere_tercero;
+    document.getElementById('check-costos').checked = cuenta.requiere_costos;
+    document.getElementById('check-base').checked = cuenta.requiere_base;
+
+    document.getElementById('modal-nueva-cuenta').style.display = 'flex';
+}
+
+async function deleteAccount(codigo) {
+    if (!confirm(`¿Está seguro de eliminar la cuenta ${codigo}? Esta acción no se puede deshacer.`)) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(BACKEND_URL + `/api/contabilidad/puc/${codigo}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            alert(data.message || 'Error al eliminar la cuenta');
+            return;
+        }
+
+        if (window.showNotification) showNotification('Cuenta eliminada exitosamente', 'success');
+        await loadPUC();
+
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión con el servidor');
+    }
 }
