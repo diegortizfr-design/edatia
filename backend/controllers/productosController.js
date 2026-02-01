@@ -130,7 +130,7 @@ exports.bulkUpload = async (req, res) => {
                         parseFloat(data.precio2) || 0,
                         costo,
                         parseFloat(data.impuesto) || 0,
-                        parseInt(data.stockminimo) || 5,
+                        parseInt(data.stockminimo) || 0,
                         stock,
                         1
                     ]);
@@ -253,7 +253,7 @@ exports.crearProducto = async (req, res) => {
         await clientConn.query(sql, [
             codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
             unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
-            proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 5, descripcion || null, imagen_url || null,
+            proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 0, descripcion || null, imagen_url || null,
             activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
             mostrar_en_tienda || 0, ecommerce_descripcion || null, ecommerce_imagenes || null, ecommerce_afecta_inventario || 0
         ]);
@@ -289,8 +289,21 @@ exports.actualizarProducto = async (req, res) => {
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
+                let val = req.body[field];
+
+                // Sanitize empty strings to NULL for optional text fields
+                if ((field === 'codigo' || field === 'referencia_fabrica' || field === 'nombre_alterno' || field === 'proveedor_id' || field === 'imagen_url' || field === 'descripcion') && val === '') {
+                    val = null;
+                }
+
+                // Sanitize numeric fields - ensure they are 0 if empty string or null
+                // Note: precio1 is required usually, but we safeguard here.
+                if ((field === 'stock_minimo' || field === 'impuesto_porcentaje' || field === 'precio1' || field === 'precio2' || field === 'precio3' || field === 'costo') && (val === '' || val === null)) {
+                    val = 0;
+                }
+
                 updates.push(`${field} = ?`);
-                values.push(req.body[field]);
+                values.push(val);
             }
         }
 
@@ -306,7 +319,14 @@ exports.actualizarProducto = async (req, res) => {
 
     } catch (err) {
         console.error('actualizarProducto error:', err);
-        res.status(500).json({ success: false, message: 'Error al actualizar producto' });
+
+        // Handle Duplicate Entry Error (e.g. reused Code)
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: 'El Código o Referencia ya está en uso por otro producto.' });
+        }
+
+        // Return actual error message for debugging
+        res.status(500).json({ success: false, message: 'Error al actualizar: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }

@@ -225,9 +225,9 @@ async function handleSave(e) {
 
     const formData = {
         nombre: document.getElementById('nombre')?.value || '',
-        nombre_alterno: document.getElementById('nombre_alterno')?.value || '',
-        referencia_fabrica: document.getElementById('referencia_fabrica')?.value || '',
-        codigo: document.getElementById('codigo')?.value || '',
+        nombre_alterno: document.getElementById('nombre_alterno')?.value || null,
+        referencia_fabrica: document.getElementById('referencia_fabrica')?.value || null,
+        codigo: document.getElementById('codigo')?.value || null,
         categoria: document.getElementById('categoria')?.value || 'General',
         unidad_medida: document.getElementById('unidad_medida')?.value || 'UND',
         precio1: parseFloat(document.getElementById('precio1')?.value) || 0,
@@ -237,7 +237,7 @@ async function handleSave(e) {
         impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje')?.value) || 0,
         proveedor_id: document.getElementById('proveedor_id')?.value || null,
         stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
-        imagen_url: document.getElementById('imagen_url')?.value || '',
+        imagen_url: document.getElementById('imagen_url')?.value || null,
         activo: document.getElementById('activo')?.checked || false,
         maneja_inventario: document.getElementById('maneja_inventario')?.checked || false,
         mostrar_en_tienda: document.getElementById('mostrar_en_tienda')?.checked || false
