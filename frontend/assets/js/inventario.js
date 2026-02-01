@@ -156,7 +156,7 @@ function updateKPIs(productos) {
         // 1. Total Items with Duplicate Warning
         let totalHTML = totalItems.toLocaleString();
         if (totalDuplicates > 0) {
-            totalHTML += `<div style="font-size: 0.7em; color: #EF4444; margin-top: 5px;"><i class="fas fa-exclamation-circle"></i> ${totalDuplicates} Duplicados</div>`;
+            totalHTML += `<div onclick="openDuplicadosModal()" style="font-size: 0.7em; color: #EF4444; margin-top: 5px; cursor: pointer; text-decoration: underline;" title="Clic para ver detalles"><i class="fas fa-exclamation-circle"></i> ${totalDuplicates} Duplicados</div>`;
         }
         cards[0].querySelector('p').innerHTML = totalHTML;
 
@@ -205,6 +205,40 @@ function renderCriticalTable(products) {
 
 window.toggleSelectAll = (checked) => {
     document.querySelectorAll('.stock-check').forEach(ck => ck.checked = checked);
+};
+
+window.loadDuplicatesData = () => {
+    // Logic to group by name
+    const nameMap = {};
+    listaProductos.forEach(p => {
+        const name = (p.nombre || '').trim().toLowerCase();
+        if (!nameMap[name]) nameMap[name] = [];
+        nameMap[name].push(p.codigo || 'Sin SKU');
+    });
+
+    // Filter only those with >1 occurrences
+    const duplicates = Object.entries(nameMap)
+        .filter(([name, codes]) => codes.length > 1)
+        .map(([name, codes]) => ({ name, count: codes.length, codes }))
+        .sort((a, b) => b.count - a.count); // Show most frequent first
+
+    const tbody = document.getElementById('duplicados-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (duplicates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px;">No hay duplicados encontrados</td></tr>';
+    } else {
+        duplicates.forEach(d => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${d.name.toUpperCase()}</strong></td>
+                <td style="text-align: center; color: #EF4444; font-weight: bold;">${d.count}</td>
+                <td style="font-size: 0.85em; color: #666; word-break: break-all;">${d.codes.join(', ')}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
 };
 
 window.saveStockMinimoChanges = async () => {

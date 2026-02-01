@@ -175,6 +175,32 @@
         </div>
     </div>
 
+    <!-- DUPLICADOS MODAL -->
+    <div class="modal-overlay" id="duplicadosModal" style="display: none;">
+        <div class="modal-glass" style="max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2>Detalle de Duplicados</h2>
+                <button class="close-btn" onclick="closeDuplicadosModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
+                <p style="margin-bottom: 15px; color: #666;">Los siguientes nombres de productos aparecen más de una vez
+                    en el inventario:</p>
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Producto</th>
+                            <th style="width: 100px; text-align: center;">Repeticiones</th>
+                            <th>Códigos / SKUs Encontrados</th>
+                        </tr>
+                    </thead>
+                    <tbody id="duplicados-tbody">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- KARDEX MODAL -->
     <div class="modal-overlay" id="kardexModal" style="display: none;">
         <div class="modal-glass" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
@@ -208,6 +234,8 @@
         function closeAjusteModal() { document.getElementById('ajusteModal').style.display = 'none'; }
         function openStockCriticoModal() { document.getElementById('stockCriticoModal').style.display = 'flex'; window.loadCriticalStockData(); }
         function closeStockCriticoModal() { document.getElementById('stockCriticoModal').style.display = 'none'; }
+        function openDuplicadosModal() { document.getElementById('duplicadosModal').style.display = 'flex'; window.loadDuplicatesData(); }
+        function closeDuplicadosModal() { document.getElementById('duplicadosModal').style.display = 'none'; }
         function closeKardexModal() { document.getElementById('kardexModal').style.display = 'none'; }
     </script>
 
