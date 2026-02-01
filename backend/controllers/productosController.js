@@ -28,62 +28,128 @@ exports.bulkUpload = async (req, res) => {
         if (rows.length === 0) return res.status(400).json({ success: false, message: 'El archivo está vacío' });
 
         let counting = 0;
+        let updated = 0;
         let errors = 0;
+        const errorMessages = [];
 
-        // Mapeo sugerido de columnas (Normalizar nombres)
-        // Se espera: Codigo/Código, Nombre, Referencia, Categoria/Categoría, Precio1, Precio2, Costo, Impuesto, StockMinimo
-        for (const row of rows) {
+        // Pre-fetch existing products to minimize DB hits and handle "Duplicate by Name" check
+        const [existingProducts] = await clientConn.query('SELECT id, codigo, nombre FROM productos');
+
+        // Map by Code (Normalized)
+        const productsByCode = new Map();
+        existingProducts.forEach(p => {
+            if (p.codigo) productsByCode.set(p.codigo.trim().toLowerCase(), p);
+        });
+
+        // Map by Name (Normalized) - Fallback
+        const productsByName = new Map();
+        existingProducts.forEach(p => {
+            if (p.nombre) productsByName.set(p.nombre.trim().toLowerCase(), p);
+        });
+
+        for (const [index, row] of rows.entries()) {
             try {
-                // Normalizar claves (quitar tildes y a minúsculas para encontrar correspondencia)
-                const normalize = (str) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                // Normalizar claves
+                const normalize = (str) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
                 const data = {};
                 for (const key in row) {
                     data[normalize(key)] = row[key];
                 }
 
-                const nombre = data.nombre;
-                if (!nombre) continue; // Saltar si no hay nombre
+                // 1. Validate Mandatory Columns
+                const nombre = data.nombre || data.producto;
+                const categoria = data.categoria;
+                // Stock can be: stock, cantidad, inventario, stock_actual, stockactual
+                const stockVal = data.stock ?? data.cantidad ?? data.inventario ?? data.stockactual ?? data.stock_actual;
 
-                const insertSQL = `
-                    INSERT INTO productos 
-                    (codigo, referencia_fabrica, nombre, categoria, unidad_medida, 
-                     precio1, precio2, costo, impuesto_porcentaje, stock_minimo, activo)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE
-                    nombre = VALUES(nombre),
-                    referencia_fabrica = VALUES(referencia_fabrica),
-                    categoria = VALUES(categoria),
-                    precio1 = VALUES(precio1),
-                    precio2 = VALUES(precio2),
-                    costo = VALUES(costo),
-                    impuesto_porcentaje = VALUES(impuesto_porcentaje),
-                    stock_minimo = VALUES(stock_minimo)
-                `;
+                if (!nombre || !categoria || stockVal === undefined || stockVal === null) {
+                    errors++;
+                    errorMessages.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría, Stock)`);
+                    continue;
+                }
 
-                await clientConn.query(insertSQL, [
-                    data.codigo || null,
-                    data.referencia || null,
-                    nombre,
-                    data.categoria || 'General',
-                    data.unidad || 'UND',
-                    parseFloat(data.precio1) || 0,
-                    parseFloat(data.precio2) || 0,
-                    parseFloat(data.costo) || 0,
-                    parseFloat(data.impuesto) || 0,
-                    parseInt(data.stockminimo) || 0,
-                    1
-                ]);
-                counting++;
+                const codigo = data.codigo ? String(data.codigo).trim() : null;
+                const stock = parseInt(stockVal) || 0;
+                const precio1 = parseFloat(data.precio1 || data.precio) || 0;
+                const costo = parseFloat(data.costo) || 0;
+
+                // 2. Duplicate Detection Strategy
+                let productToUpdate = null;
+
+                // A. Try match by Code
+                if (codigo && productsByCode.has(codigo.toLowerCase())) {
+                    productToUpdate = productsByCode.get(codigo.toLowerCase());
+                }
+
+                // B. If no code match (or logic allows), Try match by Name
+                if (!productToUpdate) {
+                    const nameKey = String(nombre).trim().toLowerCase();
+                    if (productsByName.has(nameKey)) {
+                        productToUpdate = productsByName.get(nameKey);
+                    }
+                }
+
+                if (productToUpdate) {
+                    // UPDATE
+                    const updateSQL = `
+                        UPDATE productos SET
+                            nombre = ?, 
+                            categoria = ?, 
+                            stock_actual = ?,
+                            precio1 = IF(? > 0, ?, precio1),
+                            costo = IF(? > 0, ?, costo),
+                            codigo = IFNULL(?, codigo) -- Update code only if provided
+                        WHERE id = ?
+                    `;
+                    await clientConn.query(updateSQL, [
+                        nombre,
+                        categoria,
+                        stock, // Replace stock as per standard upload behavior
+                        precio1, precio1,
+                        costo, costo,
+                        codigo,
+                        productToUpdate.id
+                    ]);
+                    updated++;
+                } else {
+                    // INSERT
+                    const insertSQL = `
+                        INSERT INTO productos 
+                        (codigo, referencia_fabrica, nombre, categoria, unidad_medida, 
+                         precio1, precio2, costo, impuesto_porcentaje, stock_minimo, stock_actual, activo)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
+
+                    await clientConn.query(insertSQL, [
+                        codigo,
+                        data.referencia || null,
+                        nombre,
+                        categoria,
+                        data.unidad || 'UND',
+                        precio1,
+                        parseFloat(data.precio2) || 0,
+                        costo,
+                        parseFloat(data.impuesto) || 0,
+                        parseInt(data.stockminimo) || 5,
+                        stock,
+                        1
+                    ]);
+                    counting++;
+                }
+
             } catch (err) {
-                console.error('Error insertando fila:', err, row);
+                console.error('Error procesando fila:', err, row);
                 errors++;
+                errorMessages.push(`Fila ${index + 2}: Error interno`);
             }
         }
 
         res.json({
             success: true,
-            message: `Proceso completado. ${counting} productos procesados correctamente. ${errors} errores.`,
+            message: `Proceso completado. ${counting} creados, ${updated} actualizados. ${errors} errores.`,
+            details: errorMessages,
             count: counting,
+            updated: updated,
             errors: errors
         });
 
@@ -105,9 +171,6 @@ exports.listarProductos = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
-
-        // DDL Removed - Assuming schema exists or will be handled by lazy init on error
-
 
         let query = `
             SELECT p.*, t.nombre_comercial as proveedor_nombre,
@@ -148,9 +211,9 @@ exports.listarProductos = async (req, res) => {
         console.error('listarProductos error:', err);
         // Lazy Init: If table doesn't exist, try to init and retry (simplified for now)
         if (err.code === 'ER_NO_SUCH_TABLE') {
-            // Logic could be added here to auto-initialize, but better to log and explicit init
-            // For now, just fail to see performance gain, or we can catch and retry
-            console.warn('Table not found, try initializing schema.');
+            const { initializeTenantDB } = require('../utils/tenantInit');
+            await initializeTenantDB(await getClientDbConfig(req.user.nit));
+            return res.status(500).json({ success: false, message: 'Base de datos inicializada. Intente de nuevo.' });
         }
         res.status(500).json({ success: false, message: 'Error al listar productos' });
     } finally {
@@ -164,9 +227,6 @@ exports.crearProducto = async (req, res) => {
         const { nit } = req.user;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
-
-        // DDL Removed
-
 
         const {
             codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
@@ -216,35 +276,32 @@ exports.actualizarProducto = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        const {
-            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
-            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
-            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
-            es_servicio, maneja_inventario,
-            mostrar_en_tienda = 0,
-            ecommerce_descripcion = null,
-            ecommerce_imagenes = null,
-            ecommerce_afecta_inventario = 0
-        } = req.body;
+        const allowedFields = [
+            'codigo', 'referencia_fabrica', 'nombre', 'nombre_alterno', 'categoria',
+            'unidad_medida', 'precio1', 'precio2', 'precio3', 'costo', 'impuesto_porcentaje',
+            'proveedor_id', 'stock_minimo', 'descripcion', 'imagen_url', 'activo',
+            'es_servicio', 'maneja_inventario', 'mostrar_en_tienda',
+            'ecommerce_descripcion', 'ecommerce_imagenes', 'ecommerce_afecta_inventario'
+        ];
 
-        const sql = `
-            UPDATE productos
-            SET codigo=?, referencia_fabrica=?, nombre=?, nombre_alterno=?, categoria=?, 
-                unidad_medida=?, precio1=?, precio2=?, precio3=?, costo=?, impuesto_porcentaje=?, 
-                proveedor_id=?, stock_minimo=?, descripcion=?, imagen_url=?, activo=?,
-                es_servicio=?, maneja_inventario=?, mostrar_en_tienda=?,
-                ecommerce_descripcion=?, ecommerce_imagenes=?, ecommerce_afecta_inventario=?
-            WHERE id=?
-        `;
+        const updates = [];
+        const values = [];
 
-        await clientConn.query(sql, [
-            codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
-            unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
-            proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 5, descripcion || null, imagen_url || null,
-            activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
-            mostrar_en_tienda, ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario, id
-        ]);
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        }
 
+        if (updates.length === 0) {
+            return res.json({ success: true, message: 'Nada que actualizar' });
+        }
+
+        const sql = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
+        values.push(id);
+
+        await clientConn.query(sql, values);
         res.json({ success: true, message: 'Producto actualizado' });
 
     } catch (err) {
@@ -271,6 +328,90 @@ exports.eliminarProducto = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene registros vinculados.' });
         }
         res.status(500).json({ success: false, message: 'Error al eliminar producto' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.unificarProductos = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { principal_id, duplicados_ids, sumar_stock } = req.body;
+
+        if (!principal_id || !duplicados_ids || !Array.isArray(duplicados_ids) || duplicados_ids.length === 0) {
+            return res.status(400).json({ success: false, message: 'Datos incompletos para unificación' });
+        }
+
+        // Validate that principal is not in duplicates
+        if (duplicados_ids.includes(principal_id)) {
+            return res.status(400).json({ success: false, message: 'El producto principal no puede ser uno de los duplicados a eliminar' });
+        }
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        await clientConn.beginTransaction();
+
+        try {
+            // 1. Calculate stock to add (if requested)
+            if (sumar_stock) {
+                // Get stock sum of duplicates
+                const [stockRes] = await clientConn.query(
+                    `SELECT SUM(stock_actual) as total_stock FROM productos WHERE id IN (?)`,
+                    [duplicados_ids]
+                );
+                const stockToAdd = stockRes[0].total_stock || 0;
+
+                if (stockToAdd > 0) {
+                    await clientConn.query(
+                        `UPDATE productos SET stock_actual = stock_actual + ? WHERE id = ?`,
+                        [stockToAdd, principal_id]
+                    );
+                }
+            }
+
+            // 2. Re-assign dependencies (This is critical: Facturas, Compras, Movimientos)
+            // Note: This matches foreign key naming in typical ER schemas.
+            // If table doesn't exist or column is diff, this might fail, so we wrap.
+
+            const tablesToUpdate = [
+                { table: 'factura_detalle', col: 'producto_id' },
+                { table: 'compras_detalle', col: 'producto_id' },
+                { table: 'movimientos_inventario', col: 'producto_id' },
+                { table: 'inventario_sucursales', col: 'producto_id' }, // Multi-branch stock
+                { table: 'ajuste_inventario', col: 'producto_id' }
+            ];
+
+            for (const t of tablesToUpdate) {
+                // Check if table exists first to avoid crashes on partial migrations? 
+                // Alternatively, just try catch specific update
+                try {
+                    await clientConn.query(
+                        `UPDATE ${t.table} SET ${t.col} = ? WHERE ${t.col} IN (?)`,
+                        [principal_id, duplicados_ids]
+                    );
+                } catch (ignore) {
+                    // Ignore table not found, but log it
+                    console.warn(`Table ${t.table} possibly missing or not needing update during unification.`);
+                }
+            }
+
+            // 3. Delete Duplicates
+            // Force delete even if they have other constraints? Re-assignment should have cleared FKs.
+            await clientConn.query('DELETE FROM productos WHERE id IN (?)', [duplicados_ids]);
+
+            await clientConn.commit();
+            res.json({ success: true, message: 'Productos unificados correctamente' });
+
+        } catch (err) {
+            await clientConn.rollback();
+            throw err;
+        }
+
+    } catch (err) {
+        console.error('unificarProductos error:', err);
+        res.status(500).json({ success: false, message: 'Error durante la unificación: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }

@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Initial Load
         await loadSucursales();
+        await loadCompanyConfig(); // Load duplicate rules
         await cargarInventario();
 
         // Listeners for filters
@@ -138,14 +139,14 @@ function renderTable(productos, sucursalId = null) {
 function updateKPIs(productos) {
     const totalItems = productos.length;
 
-    // Duplicate detection (Same Name)
-    const nameMap = {};
+    // Duplicate detection (Dynamic)
+    const keyMap = {};
     productos.forEach(p => {
-        const name = (p.nombre || '').trim().toLowerCase();
-        nameMap[name] = (nameMap[name] || 0) + 1;
+        const key = getDuplicateKey(p);
+        keyMap[key] = (keyMap[key] || 0) + 1;
     });
-    // Count objects that are duplicates (e.g. if "A" appears twice, both are counted as potential duplicates)
-    const totalDuplicates = productos.filter(p => nameMap[(p.nombre || '').trim().toLowerCase()] > 1).length;
+    // Count objects that are duplicates
+    const totalDuplicates = productos.filter(p => keyMap[getDuplicateKey(p)] > 1).length;
 
 
     const stockCritico = productos.filter(p => (p.stock_actual || 0) <= (p.stock_minimo !== undefined ? p.stock_minimo : 5)).length;
@@ -155,8 +156,18 @@ function updateKPIs(productos) {
     if (cards.length >= 3) {
         // 1. Total Items with Duplicate Warning
         let totalHTML = totalItems.toLocaleString();
+
+        // Construct detailed title
+        const activeCriteria = [];
+        if (inventoryConfig.duplicados.nombre) activeCriteria.push('Nombre');
+        if (inventoryConfig.duplicados.codigo) activeCriteria.push('SKU');
+        if (inventoryConfig.duplicados.referencia_fabrica) activeCriteria.push('Ref');
+        if (inventoryConfig.duplicados.categoria) activeCriteria.push('Cat');
+        const criteriaText = activeCriteria.length > 0 ? activeCriteria.join(', ') : 'Nombre (Backup)';
+
         if (totalDuplicates > 0) {
-            totalHTML += `<div onclick="openDuplicadosModal()" style="font-size: 0.7em; color: #EF4444; margin-top: 5px; cursor: pointer; text-decoration: underline;" title="Clic para ver detalles"><i class="fas fa-exclamation-circle"></i> ${totalDuplicates} Duplicados</div>`;
+            console.warn('Duplicates found:', totalDuplicates, 'Criteria:', criteriaText);
+            totalHTML += `<div onclick="openDuplicadosModal()" style="font-size: 0.7em; color: #EF4444; margin-top: 5px; cursor: pointer; text-decoration: underline;" title="Criterio: ${criteriaText}. Clic para ver detalles"><i class="fas fa-exclamation-circle"></i> ${totalDuplicates} Duplicados</div>`;
         }
         cards[0].querySelector('p').innerHTML = totalHTML;
 
@@ -207,38 +218,185 @@ window.toggleSelectAll = (checked) => {
     document.querySelectorAll('.stock-check').forEach(ck => ck.checked = checked);
 };
 
+
+let inventoryConfig = { duplicados: { nombre: true } }; // Default
+
+// Load Company Config
+async function loadCompanyConfig() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/empresa`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.empresa && data.empresa.config_inventario) {
+            const conf = typeof data.empresa.config_inventario === 'string'
+                ? JSON.parse(data.empresa.config_inventario)
+                : data.empresa.config_inventario;
+
+            if (conf.duplicados) inventoryConfig.duplicados = conf.duplicados;
+        }
+    } catch (e) { console.error("Error loading company config", e); }
+}
+
+// Helper to generate key based on config
+function getDuplicateKey(p) {
+    let parts = [];
+    if (inventoryConfig.duplicados.nombre) parts.push((p.nombre || '').trim().toLowerCase());
+    if (inventoryConfig.duplicados.codigo) parts.push((p.codigo || '').trim().toLowerCase());
+    if (inventoryConfig.duplicados.referencia_fabrica) parts.push((p.referencia_fabrica || '').trim().toLowerCase());
+    if (inventoryConfig.duplicados.categoria) parts.push((p.categoria || '').trim().toLowerCase());
+
+    // If no config selected, default to Name (safety fallback)
+    if (parts.length === 0) return (p.nombre || '').trim().toLowerCase();
+
+    return parts.join('||');
+}
+
 window.loadDuplicatesData = () => {
-    // Logic to group by name
-    const nameMap = {};
+    // Reset view
+    document.getElementById('duplicados-list-view').style.display = 'block';
+    document.getElementById('duplicados-merge-view').style.display = 'none';
+
+    const keyMap = {};
+
     listaProductos.forEach(p => {
-        const name = (p.nombre || '').trim().toLowerCase();
-        if (!nameMap[name]) nameMap[name] = [];
-        nameMap[name].push(p.codigo || 'Sin SKU');
+        const key = getDuplicateKey(p);
+        if (!keyMap[key]) keyMap[key] = [];
+        keyMap[key].push(p); // Store full objects
     });
 
-    // Filter only those with >1 occurrences
-    const duplicates = Object.entries(nameMap)
-        .filter(([name, codes]) => codes.length > 1)
-        .map(([name, codes]) => ({ name, count: codes.length, codes }))
-        .sort((a, b) => b.count - a.count); // Show most frequent first
+    const duplicates = Object.entries(keyMap)
+        .filter(([key, items]) => items.length > 1)
+        .map(([key, items]) => {
+            return {
+                key: key,
+                name: items[0].nombre, // Use first as rep
+                count: items.length,
+                codes: items.map(i => i.codigo || 'Sin SKU').join(', '),
+                items: items
+            };
+        })
+        .sort((a, b) => b.count - a.count);
 
     const tbody = document.getElementById('duplicados-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (duplicates.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px;">No hay duplicados encontrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No hay duplicados encontrados</td></tr>';
     } else {
         duplicates.forEach(d => {
+            // Encode key for safe usage in onclick
+            const safeKey = encodeURIComponent(d.key);
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${d.name.toUpperCase()}</strong></td>
+                <td>
+                    <strong>${d.name.substring(0, 40)}${d.name.length > 40 ? '...' : ''}</strong> 
+                    <br><small style="color:#aaa;">${d.key !== d.name.toLowerCase() ? 'Clave: ' + d.key.substring(0, 30) : ''}</small>
+                </td>
                 <td style="text-align: center; color: #EF4444; font-weight: bold;">${d.count}</td>
-                <td style="font-size: 0.85em; color: #666; word-break: break-all;">${d.codes.join(', ')}</td>
+                <td style="font-size: 0.85em; color: #666; word-break: break-all;">${d.codes}</td>
+                <td>
+                    <button class="btn-sm" onclick="setupMergeUI('${safeKey}')">Gestionar</button>
+                </td>
             `;
             tbody.appendChild(row);
         });
     }
+};
+
+window.showDuplicatesList = () => {
+    document.getElementById('duplicados-list-view').style.display = 'block';
+    document.getElementById('duplicados-merge-view').style.display = 'none';
+};
+
+window.setupMergeUI = (encodedKey) => {
+    const key = decodeURIComponent(encodedKey);
+    const candidates = listaProductos.filter(p => getDuplicateKey(p) === key);
+
+    if (candidates.length < 2) {
+        showNotification('Error: Ya no hay duplicados para este criterio', 'warning');
+        window.loadDuplicatesData();
+        return;
+    }
+
+    document.getElementById('duplicados-list-view').style.display = 'none';
+    document.getElementById('duplicados-merge-view').style.display = 'block';
+
+    const tbody = document.getElementById('merge-candidates-tbody');
+    tbody.innerHTML = '';
+
+    candidates.forEach((p, idx) => {
+        const row = document.createElement('tr');
+        // Pre-select the one with highest stock or latest ID? Let's select first by default.
+        const checked = idx === 0 ? 'checked' : '';
+        const style = p.activo ? '' : 'opacity: 0.6;';
+
+        row.innerHTML = `
+            <td style="text-align:center;">
+                <input type="radio" name="principal_product" value="${p.id}" ${checked} style="width: 18px; height: 18px;">
+            </td>
+            <td style="${style}">
+                <div style="font-weight:600;">${p.nombre}</div>
+                <div style="font-size:0.8em; color:#888;">SKU: ${p.codigo || 'N/A'} | ID: ${p.id}</div>
+            </td>
+            <td style="font-weight:bold;">${p.stock_actual || 0}</td>
+            <td>$${parseFloat(p.precio1).toLocaleString()}</td>
+            <td>${p.activo ? 'Activo' : 'Inactivo'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Handle Form Submit
+    const form = document.getElementById('form-unificacion');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const selected = document.querySelector('input[name="principal_product"]:checked');
+        if (!selected) return showNotification('Seleccione un producto principal', 'error');
+
+        const principalId = parseInt(selected.value);
+        const sumarStock = document.getElementById('check-sumar-stock').checked;
+
+        // All candidates except principal are duplicates to delete
+        const duplicatesIds = candidates.map(c => c.id).filter(id => id !== principalId);
+
+        if (duplicatesIds.length === 0) return;
+
+        if (!confirm(`¿Estás seguro de unificar ${duplicatesIds.length} productos en el ID ${principalId}? Esta acción NO se puede deshacer.`)) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_PRODUCTOS}/unificar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    principal_id: principalId,
+                    duplicados_ids: duplicatesIds,
+                    sumar_stock: sumarStock
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                showNotification('Unificación completada exitosamente', 'success');
+                // Reload global inventory
+                await cargarInventario();
+                // Return to duplicates list (which will refresh data from global variable)
+                window.loadDuplicatesData();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Error de conexión', 'error');
+        }
+    };
 };
 
 window.saveStockMinimoChanges = async () => {

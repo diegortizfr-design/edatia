@@ -49,7 +49,8 @@ async function crearEmpresa(req, res) {
 
         const {
             tipo_figura, nombre_fiscal, nombre_comercial,
-            dv, direccion, telefono, correo, web, estado, logo_url
+            dv, direccion, telefono, correo, web, estado, logo_url,
+            config_inventario // New field
         } = req.body;
 
         // 2. Obtener credenciales BD cliente
@@ -67,24 +68,28 @@ async function crearEmpresa(req, res) {
             const updateSQL = `
                 UPDATE informacion_empresa 
                 SET tipo_figura=?, nombre_fiscal=?, nombre_comercial=?, nit=?, dv=?, 
-                    direccion=?, telefono=?, email=?, sitio_web=?, logo_url=?, estado=?
+                    direccion=?, telefono=?, email=?, sitio_web=?, logo_url=?, estado=?,
+                    config_inventario=?
                 WHERE id=?
             `;
             // Nota: usamos 'email' y 'sitio_web' según el esquema SQL nuevo
             await clientConn.query(updateSQL, [
                 tipo_figura, nombre_fiscal, nombre_comercial, nit, dv,
-                direccion, telefono, correo, web, logo_url, estado, existing[0].id
+                direccion, telefono, correo, web, logo_url, estado,
+                JSON.stringify(config_inventario || {}), // Save as JSON string
+                existing[0].id
             ]);
         } else {
             // INSERT
             const insertSQL = `
                 INSERT INTO informacion_empresa 
-                (tipo_figura, nombre_fiscal, nombre_comercial, nit, dv, direccion, telefono, email, sitio_web, logo_url, estado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (tipo_figura, nombre_fiscal, nombre_comercial, nit, dv, direccion, telefono, email, sitio_web, logo_url, estado, config_inventario)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             await clientConn.query(insertSQL, [
                 tipo_figura, nombre_fiscal, nombre_comercial, nit, dv,
-                direccion, telefono, correo, web, logo_url, estado
+                direccion, telefono, correo, web, logo_url, estado,
+                JSON.stringify(config_inventario || {})
             ]);
         }
 

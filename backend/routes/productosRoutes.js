@@ -11,6 +11,7 @@ router.post('/', protect, productosCtrl.crearProducto);
 router.post('/bulk-upload', protect, upload.single('archivo'), productosCtrl.bulkUpload);
 router.put('/:id', protect, productosCtrl.actualizarProducto);
 router.delete('/:id', protect, productosCtrl.eliminarProducto);
+router.post('/unificar', protect, productosCtrl.unificarProductos);
 
 
 module.exports = router;

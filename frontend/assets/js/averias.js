@@ -1,19 +1,31 @@
 // Lógica de Interfaz para Gestión de Averías (Conectado a API)
 
-const BACKEND_URL = 'https://erpod.onrender.com';
-const API_URL = BACKEND_URL + '/api/averias';
-const PRODUCTOS_URL = BACKEND_URL + '/api/productos';
-const SUCURSALES_URL = BACKEND_URL + '/api/sucursales';
+let API_BASE = '';
+let API_URL = '';
+let PRODUCTOS_URL = '';
+let SUCURSALES_URL = '';
 const token = localStorage.getItem('token');
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (!token) {
         window.location.href = '../../modules/auth/login.html';
         return;
     }
-    cargarAverias();
-    setupSearch();
-    loadSucursales(); // Nuevo: Cargar sucursales reales si es posible, o hardcoded por ahora
+
+    try {
+        const configResp = await fetch('../../assets/config.json');
+        const config = await configResp.json();
+        API_BASE = config.apiUrl;
+        API_URL = `${API_BASE}/averias`;
+        PRODUCTOS_URL = `${API_BASE}/productos`;
+        SUCURSALES_URL = `${API_BASE}/sucursales`;
+
+        cargarAverias();
+        setupSearch();
+        loadSucursales();
+    } catch (e) {
+        console.error('Error loading config:', e);
+    }
 });
 
 async function cargarAverias() {

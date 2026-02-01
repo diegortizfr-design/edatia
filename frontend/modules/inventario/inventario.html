@@ -177,26 +177,79 @@
 
     <!-- DUPLICADOS MODAL -->
     <div class="modal-overlay" id="duplicadosModal" style="display: none;">
-        <div class="modal-glass" style="max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-glass"
+            style="max-width: 1000px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <h2>Detalle de Duplicados</h2>
                 <button class="close-btn" onclick="closeDuplicadosModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
-                <p style="margin-bottom: 15px; color: #666;">Los siguientes nombres de productos aparecen más de una vez
-                    en el inventario:</p>
-                <table class="glass-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre del Producto</th>
-                            <th style="width: 100px; text-align: center;">Repeticiones</th>
-                            <th>Códigos / SKUs Encontrados</th>
-                        </tr>
-                    </thead>
-                    <tbody id="duplicados-tbody">
-                        <!-- Dynamic Content -->
-                    </tbody>
-                </table>
+                <!-- VISTA LLISTA (Default) -->
+                <div id="duplicados-list-view">
+                    <p style="margin-bottom: 15px; color: #666;">Los siguientes productos parecen estar duplicados según
+                        la configuración actual:</p>
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Criterio / Nombre</th>
+                                <th style="width: 100px; text-align: center;">Cant.</th>
+                                <th>SKUs</th>
+                                <th style="width: 100px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duplicados-tbody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- VISTA UNIFICACIÓN (Hidden) -->
+                <div id="duplicados-merge-view" style="display: none;">
+                    <button class="btn-secondary" onclick="showDuplicatesList()" style="margin-bottom: 15px;">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista
+                    </button>
+
+                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">Unificar Productos</h3>
+                    <p style="font-size: 0.9em; margin-bottom: 20px;">
+                        Seleccione el <strong>Producto Principal</strong> que conservará. Los demás serán eliminados y
+                        su historial se moverá al principal.
+                    </p>
+
+                    <div
+                        style="background: rgba(255,255,255,0.5); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="check-sumar-stock" checked style="width: 18px; height: 18px;">
+                            <span style="font-weight: 500;">Sumar el stock de los duplicados al principal</span>
+                        </label>
+                        <div style="margin-left: 28px; font-size: 0.8em; color: #666;">
+                            Ej: Si el Principal tiene 5 y el Duplicado tiene 3, el resultado será 8.
+                        </div>
+                    </div>
+
+                    <form id="form-unificacion">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Elegir</th>
+                                    <th>Producto (Nombre / SKU)</th>
+                                    <th>Stock</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merge-candidates-tbody">
+                                <!-- Candidates -->
+                            </tbody>
+                        </table>
+
+                        <div style="display: flex; justify-content: flex-end; margin-top: 20px; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="showDuplicatesList()">Cancelar</button>
+                            <button type="submit" class="btn-primary" style="background: #EF4444; border: none;">
+                                <i class="fas fa-random"></i> Confirmar Unificación
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
