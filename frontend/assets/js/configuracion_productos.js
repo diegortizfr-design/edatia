@@ -364,12 +364,13 @@ window.uploadBulkFile = async () => {
 };
 
 window.downloadTemplate = () => {
-    const headers = 'Codigo,Nombre,Referencia,Categoria,Unidad,Precio1,Precio2,Costo,Impuesto,StockMinimo';
+    // Updated template with mandatory fields marked or implied
+    const headers = 'Codigo,Nombre,Categoria,Stock,Referencia,Unidad,Precio1,Precio2,Costo,Impuesto,StockMinimo';
     const blob = new Blob([headers], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "plantilla_productos.csv");
+    link.setAttribute("download", "plantilla_productos_v2.csv");
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
