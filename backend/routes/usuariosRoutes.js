@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const usuariosController = require('../controllers/usuariosController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middlewares/authMiddleware');
 
-router.use(authMiddleware);
+router.use(protect);
 
 // USUARIOS
 router.get('/', usuariosController.listarUsuarios);
