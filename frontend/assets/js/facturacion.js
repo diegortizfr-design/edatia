@@ -253,8 +253,10 @@ function setupEventListeners() {
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             const filtered = allProducts.filter(p =>
-                p.nombre.toLowerCase().includes(term) ||
-                (p.codigo && p.codigo.toLowerCase().includes(term))
+                (p.nombre && p.nombre.toLowerCase().includes(term)) ||
+                (p.codigo && p.codigo.toLowerCase().includes(term)) ||
+                (p.nombre_alterno && p.nombre_alterno.toLowerCase().includes(term)) ||
+                (p.referencia_fabrica && p.referencia_fabrica.toLowerCase().includes(term))
             );
             renderProductGrid(filtered);
         });

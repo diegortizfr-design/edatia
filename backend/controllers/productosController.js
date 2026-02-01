@@ -189,8 +189,8 @@ exports.listarProductos = async (req, res) => {
             conditions.push('p.codigo = ?');
             params.push(barcode);
         } else if (busqueda) {
-            conditions.push('(p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia_fabrica LIKE ?)');
-            params.push(`%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`);
+            conditions.push('(p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia_fabrica LIKE ? OR p.nombre_alterno LIKE ?)');
+            params.push(`%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`);
         }
 
         if (categoria) {

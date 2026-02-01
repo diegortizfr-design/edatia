@@ -58,9 +58,21 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    /* Space between search and category */
     width: 100%;
 }
+
+/* Unify alignment for search bar and category box */
+.pos-search-wrapper .search-bar,
+.pos-search-wrapper .category-search-box {
+    width: 100% !important;
+    border: 1px solid #e2e8f0 !important;
+    margin: 0 !important;
+}
+
+.pos-search-wrapper .search-bar {
+    background: #f1f5f9;
+}
+
 
 @media (max-width: 1400px) {
     .pos-header {
