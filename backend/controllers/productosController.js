@@ -292,8 +292,19 @@ exports.actualizarProducto = async (req, res) => {
                 let val = req.body[field];
 
                 // Sanitize empty strings to NULL for optional text fields
-                if ((field === 'codigo' || field === 'referencia_fabrica' || field === 'nombre_alterno' || field === 'proveedor_id' || field === 'imagen_url' || field === 'descripcion') && val === '') {
+                if ((field === 'codigo' || field === 'referencia_fabrica' || field === 'nombre_alterno' || field === 'proveedor_id' || field === 'descripcion') && val === '') {
                     val = null;
+                }
+
+                // FIX: If imagen_url is empty string, do NOT update it (keep existing)
+                // If user wants to delete image, frontend should send null or we need explicit flag, 
+                // but checking for '' usually means "no new file selected" in this context.
+                if (field === 'imagen_url' && val === '') {
+                    continue;
+                }
+
+                if (field === 'imagen_url' && val === null) {
+                    // Explicit null update allowed if needed
                 }
 
                 // Sanitize numeric fields - ensure they are 0 if empty string or null

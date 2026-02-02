@@ -9,6 +9,7 @@ let isEditing = false;
 let currentId = null;
 let allProducts = [];
 let UPLOAD_URL = '';
+let deleteImageFlag = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -131,8 +132,15 @@ async function uploadProductImage(input) {
         btn.innerHTML = originalText;
         btn.disabled = false;
         input.value = '';
+        deleteImageFlag = false; // Reset flag on new upload
     }
 }
+
+window.deleteProductImage = () => {
+    document.getElementById('imagen_url').value = '';
+    deleteImageFlag = true;
+    showNotification('Foto removida (Guardar para aplicar)', 'info');
+};
 
 function renderTable(products) {
     if (!tableBody) return;
@@ -160,7 +168,7 @@ function renderTable(products) {
                 : '<span class="status-inactive"><i class="fas fa-times-circle"></i> Inactivo</span>'}
             </td>
             <td>
-                <button class="btn-icon" onclick="openModal(${JSON.stringify(p).replace(/"/g, '&quot;')})" title="Editar"><i class="fas fa-edit"></i></button>
+                <button class="btn-icon" onclick="openModal(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
                 <button class="btn-icon" onclick="deleteProduct(${p.id})" title="Eliminar" style="color: #EF4444;"><i class="fas fa-trash"></i></button>
             </td>
         `;
@@ -178,14 +186,29 @@ function updateKPIs(products) {
     document.getElementById('kpi-bajo-stock').textContent = lowStock;
 }
 
-window.openModal = (p = null) => {
+window.openModal = (idOrObj = null) => {
     modal.style.display = 'flex';
     form.reset();
+    deleteImageFlag = false; // Reset delete flag
+
+    let p = null;
+    if (idOrObj) {
+        if (typeof idOrObj === 'object') {
+            p = idOrObj;
+        } else {
+            // Assume it's an ID
+            p = allProducts.find(prod => prod.id == idOrObj);
+        }
+    }
 
     if (p) {
         isEditing = true;
         currentId = p.id;
         document.getElementById('modal-title').innerHTML = '<i class="fas fa-edit"></i> Editar Producto';
+
+        // DEBUG: Check what image URL we have
+        // console.log('Editing Product:', p);
+        // alert(`Editando ID: ${p.id}\nImagen URL: ${p.imagen_url}`);
 
         document.getElementById('prod_id').value = p.id;
         document.getElementById('nombre').value = p.nombre;
@@ -196,7 +219,8 @@ window.openModal = (p = null) => {
         document.getElementById('unidad_medida').value = p.unidad_medida || 'UND';
         document.getElementById('precio1').value = p.precio1;
         document.getElementById('precio2').value = p.precio2;
-        document.getElementById('precio3').value = p.precio3;
+        document.getElementById('precio2').value = p.precio2;
+        // document.getElementById('precio3').value = p.precio3; // Element removed from HTML
         document.getElementById('costo').value = p.costo;
         document.getElementById('impuesto_porcentaje').value = p.impuesto_porcentaje;
         document.getElementById('proveedor_id').value = p.proveedor_id || '';
@@ -232,12 +256,17 @@ async function handleSave(e) {
         unidad_medida: document.getElementById('unidad_medida')?.value || 'UND',
         precio1: parseFloat(document.getElementById('precio1')?.value) || 0,
         precio2: parseFloat(document.getElementById('precio2')?.value) || 0,
-        precio3: parseFloat(document.getElementById('precio3')?.value) || 0,
+        precio2: parseFloat(document.getElementById('precio2')?.value) || 0,
+        // precio3: parseFloat(document.getElementById('precio3')?.value) || 0,
         costo: parseFloat(document.getElementById('costo')?.value) || 0,
         impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje')?.value) || 0,
         proveedor_id: document.getElementById('proveedor_id')?.value || null,
         stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
-        imagen_url: document.getElementById('imagen_url')?.value || null,
+        // Logic: 
+        // If deleteImageFlag is true -> send NULL (Backend deletes image)
+        // If input is empty string -> send "" (Backend ignores update -> keeps existing)
+        // If has value -> send value (Backend updates)
+        imagen_url: deleteImageFlag ? null : (document.getElementById('imagen_url')?.value || ''),
         activo: document.getElementById('activo')?.checked || false,
         maneja_inventario: document.getElementById('maneja_inventario')?.checked || false,
         mostrar_en_tienda: document.getElementById('mostrar_en_tienda')?.checked || false

@@ -265,6 +265,11 @@
                                     style="white-space: nowrap; display: flex; align-items: center; gap: 8px;">
                                     <i class="fas fa-cloud-upload-alt"></i> Subir Imagen
                                 </button>
+                                <button type="button" class="btn-secondary" onclick="deleteProductImage()"
+                                    style="white-space: nowrap; display: flex; align-items: center; gap: 8px; color: #ef4444; border-color: #ef4444;"
+                                    title="Quitar Foto">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                                 <input type="file" id="upload-input" style="display: none;" accept="image/*"
                                     onchange="uploadProductImage(this)">
                             </div>
@@ -411,7 +416,7 @@
 
     <script src="/frontend/assets/js/auth_guard.js"></script>
     <script src="/frontend/assets/js/notifications.js"></script>
-    <script src="/frontend/assets/js/configuracion_productos.js"></script>
+    <script src="/frontend/assets/js/configuracion_productos.js?v=3"></script>
 </body>
 
 </html>
