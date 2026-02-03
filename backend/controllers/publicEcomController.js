@@ -227,9 +227,6 @@ exports.createOrder = async (req, res) => {
     } finally {
         if (clientConn) await clientConn.end();
     }
-} finally {
-    if (clientConn) await clientConn.end();
-}
 };
 
 exports.getPhysicalStores = async (req, res) => {
