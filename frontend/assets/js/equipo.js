@@ -138,6 +138,11 @@ async function handleUserSave(e) {
         tercero_id: document.getElementById('tercero_id').value || null
     };
 
+    if (!formData.tercero_id) {
+        showNotification('Debe seleccionar un colaborador para el usuario', 'error');
+        return;
+    }
+
     try {
         const url = isEditingUser ? `${API_USERS}/${currentUserId}` : API_USERS;
         const resp = await fetch(url, {
@@ -245,7 +250,7 @@ async function loadColaboradores() {
         const data = await resp.json();
         if (data.success) {
             const select = document.getElementById('tercero_id');
-            select.innerHTML = '<option value="">Ninguno / No aplica</option>';
+            select.innerHTML = '<option value="">-- Seleccionar Colaborador (Obligatorio) --</option>';
             data.data.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;

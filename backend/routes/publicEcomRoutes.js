@@ -4,5 +4,7 @@ const publicEcomController = require('../controllers/publicEcomController');
 
 // This route is public and does not require authMiddleware
 router.get('/:nit', publicEcomController.getCatalog);
+router.post('/:nit/order', publicEcomController.createOrder);
+router.get('/:nit/branches', publicEcomController.getPhysicalStores);
 
 module.exports = router;

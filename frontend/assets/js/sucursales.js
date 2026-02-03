@@ -120,6 +120,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('telefono-sucursal').value = sucursal.telefono || '';
         document.getElementById('estado-sucursal').value = sucursal.estado;
 
+        // New Fields
+        document.getElementById('pais-sucursal').value = sucursal.pais || 'Colombia';
+        document.getElementById('dept-sucursal').value = sucursal.departamento || '';
+        document.getElementById('ciudad-sucursal').value = sucursal.ciudad || '';
+        document.getElementById('barrio-sucursal').value = sucursal.barrio || '';
+        document.getElementById('check-tienda').checked = !!sucursal.es_tienda_fisica;
+        document.getElementById('check-bodega').checked = !!sucursal.es_bodega;
+
         modal.querySelector('h2').innerText = "Editar Sucursal";
         modal.querySelector('button[type="submit"]').innerText = "Actualizar Sucursal";
         modal.style.display = "flex";
@@ -142,7 +150,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             nombre: document.getElementById('nombre-sucursal').value,
             direccion: document.getElementById('direccion-sucursal').value,
             telefono: document.getElementById('telefono-sucursal').value,
-            estado: document.getElementById('estado-sucursal').value
+            estado: document.getElementById('estado-sucursal').value,
+            // New Fields
+            pais: document.getElementById('pais-sucursal').value,
+            departamento: document.getElementById('dept-sucursal').value,
+            ciudad: document.getElementById('ciudad-sucursal').value,
+            barrio: document.getElementById('barrio-sucursal').value,
+            es_tienda_fisica: document.getElementById('check-tienda').checked,
+            es_bodega: document.getElementById('check-bodega').checked
         };
 
         const method = id ? "PUT" : "POST";

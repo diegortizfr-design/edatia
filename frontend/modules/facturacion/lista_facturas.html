@@ -37,15 +37,25 @@
 
         <div class="action-bar"
             style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-            <div class="filters" style="display: flex; gap: 10px; flex-grow: 1;">
-                <div class="search-bar" style="width: 300px;">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="filter-search" placeholder="Buscar por # de factura o cliente...">
-                </div>
-                <input type="date" id="filter-date" class="filter-select" style="padding: 10px; border-radius:10px;">
+            <select id="filter-branch" class="filter-select"
+                style="padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <option value="">Todas las Sucursales</option>
+            </select>
+            <div class="search-bar"
+                style="width: 150px; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <input type="text" id="filter-prefix" placeholder="Prefijo (ej: FE)" style="background: transparent;">
             </div>
-            <a href="/frontend/modules/facturacion/facturacion.html" class="btn-primary"><i class="fas fa-plus"></i>
-                Nueva Venta</a>
+            <div class="search-bar"
+                style="width: 300px; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <i class="fas fa-search" style="color: #64748b;"></i>
+                <input type="text" id="filter-search" placeholder="Buscar por # de factura o cliente..."
+                    style="background: transparent;">
+            </div>
+            <input type="date" id="filter-date" class="filter-select"
+                style="padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        </div>
+        <a href="/frontend/modules/facturacion/facturacion.html" class="btn-primary"><i class="fas fa-plus"></i>
+            Nueva Venta</a>
         </div>
 
         <div class="table-container card" style="margin-top: 20px; padding: 0;">

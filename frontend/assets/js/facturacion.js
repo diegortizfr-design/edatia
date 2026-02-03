@@ -48,7 +48,11 @@ async function initPOS() {
 async function loadProducts() {
     try {
         const token = localStorage.getItem('token');
-        const resp = await fetch(API_PRODUCTS, { headers: { 'Authorization': `Bearer ${token}` } });
+        let url = API_PRODUCTS;
+        if (selectedDoc && selectedDoc.sucursal_id) {
+            url += `?sucursal_id=${selectedDoc.sucursal_id}`;
+        }
+        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await resp.json();
         if (data.success) {
             allProducts = data.data;
@@ -167,6 +171,7 @@ async function loadPOSConfig() {
             docSelect.addEventListener('change', (e) => {
                 selectedDoc = posDocs.find(d => d.id == e.target.value);
                 updateOrderNumDisplay();
+                loadProducts(); // Reload stock for the new branch
             });
         }
     } catch (e) { console.error('Error loading POS config:', e); }
@@ -355,7 +360,7 @@ function renderProductGrid(products) {
         let stockLabel = '';
         let noStock = false;
         if (p.maneja_inventario) {
-            const stock = p.stock_actual || 0;
+            const stock = (p.stock_sucursal !== undefined && p.stock_sucursal !== null) ? p.stock_sucursal : (p.stock_actual || 0);
             if (stock <= 0) {
                 stockLabel = '<span style="color:red; font-size:0.8rem;">Sin Stock</span>';
                 noStock = true;
@@ -402,7 +407,7 @@ function addToCart(product) {
     if (product.maneja_inventario) {
         const existingInCart = cart.find(item => item.id === product.id);
         const currentQty = existingInCart ? existingInCart.cantidad : 0;
-        const available = product.stock_actual || 0;
+        const available = (product.stock_sucursal !== undefined && product.stock_sucursal !== null) ? product.stock_sucursal : (product.stock_actual || 0);
 
         if (currentQty + 1 > available) {
             showNotification(`Stock insuficiente. Disponible: ${available}`, 'warning');

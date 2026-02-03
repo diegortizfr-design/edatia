@@ -56,6 +56,10 @@ exports.crearUsuario = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Usuario y contraseña requeridos' });
         }
 
+        if (!tercero_id) {
+            return res.status(400).json({ success: false, message: 'El usuario debe estar vinculado a un colaborador' });
+        }
+
         // If tercero_id is provided, inherit cargo_id from tercero
         if (tercero_id) {
             const [terceroRows] = await clientConn.query('SELECT cargo_id FROM terceros WHERE id = ?', [tercero_id]);
@@ -98,6 +102,10 @@ exports.actualizarUsuario = async (req, res) => {
         clientConn = await connectToClientDB(dbConfig);
 
         let { nombre, usuario, email, password, rol_id, cargo_id, telefono, estado, tercero_id } = req.body;
+
+        if (!tercero_id) {
+            return res.status(400).json({ success: false, message: 'El usuario debe estar vinculado a un colaborador' });
+        }
 
         // If tercero_id is provided, inherit cargo_id from tercero
         if (tercero_id) {

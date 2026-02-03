@@ -102,8 +102,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Menú Móvil Hamburger ---
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navMenu = document.querySelector('nav ul');
+
+    if (hamburgerBtn && navMenu) {
+        hamburgerBtn.addEventListener('click', () => {
+            hamburgerBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        // Cerrar menú al hacer clic en un enlace
+        navMenu.querySelectorAll('li a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburgerBtn.classList.remove('active');
+                navMenu.classList.remove('active');
+            });
+        });
+    }
+
     // --- Carga de API ERPod ---
-    const NIT = '1143875756';
+    const NIT = '1005892267';
     const API_URL = `https://erpod.onrender.com/api/public/ecommerce/${NIT}`;
 
     const loadProducts = async () => {
@@ -122,69 +141,153 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Estado Global de Productos
+    let allProducts = [];
+    let activeCategory = 'Todo';
+
     const renderErpCatalog = (products) => {
+        allProducts = products;
+        renderCategoryShowcase();
+        renderCategoryFilters();
+        renderProducts();
+    };
+
+    const renderCategoryShowcase = () => {
+        const showcaseContainer = document.getElementById('category-cards-container');
+        if (!showcaseContainer) return;
+
+        // Categorías únicas
+        const categories = [...new Set(allProducts.map(p => p.categoria || 'Otros'))];
+
+        showcaseContainer.innerHTML = categories.map(cat => {
+            // Obtener primer producto de la categoría para usar su imagen
+            const product = allProducts.find(p => (p.categoria || 'Otros') === cat);
+            const imageUrl = product && product.imagen_principal
+                ? product.imagen_principal
+                : 'https://via.placeholder.com/150?text=' + cat.substring(0, 3).toUpperCase();
+
+            return `
+            <div class="category-visual-card" onclick="selectCategoryFromShowcase('${cat}')">
+                <img src="${imageUrl}" alt="${cat}" class="category-visual-img">
+                <h3>${cat}</h3>
+            </div>
+            `;
+        }).join('');
+
+        // Exponer función de selección
+        window.selectCategoryFromShowcase = (cat) => {
+            activeCategory = cat;
+            renderCategoryFilters();
+            renderProducts();
+            // Scroll suave a los productos
+            document.getElementById('dynamic-catalog-container').scrollIntoView({ behavior: 'smooth' });
+        };
+    };
+
+    const renderCategoryFilters = () => {
+        const filterContainer = document.getElementById('category-filters');
+        if (!filterContainer) return;
+
+        // Obtener categorías únicas
+        const categories = ['Todo', ...new Set(allProducts.map(p => p.categoria || 'Otros'))];
+
+        filterContainer.innerHTML = categories.map(cat => `
+            <button class="cat-pill ${cat === activeCategory ? 'active' : ''}" onclick="filterByCategory('${cat}')">
+                ${cat}
+            </button>
+        `).join('');
+
+        // Exponer función globalmente
+        window.filterByCategory = (cat) => {
+            activeCategory = cat;
+            renderCategoryFilters(); // Re-render para actualizar estado activo
+            renderProducts();
+        };
+    };
+
+    const renderProducts = () => {
         catalogContainer.innerHTML = '';
-        if (products.length === 0) {
-            catalogContainer.innerHTML = '<section class="products"><p style="text-align: center;">No hay productos disponibles por ahora.</p></section>';
+
+        // Filtrar productos
+        const filtered = activeCategory === 'Todo'
+            ? allProducts
+            : allProducts.filter(p => (p.categoria || 'Otros') === activeCategory);
+
+        if (filtered.length === 0) {
+            catalogContainer.innerHTML = '<section class="products"><p style="text-align: center;">No hay productos en esta categoría.</p></section>';
             return;
         }
 
-        // Agrupar por categoría
-        const grouped = products.reduce((acc, p) => {
-            const cat = p.categoria || 'Otros';
-            if (!acc[cat]) acc[cat] = [];
-            acc[cat].push(p);
-            return acc;
-        }, {});
+        // Si es "Todo", mantenemos agrupación por secciones para orden visual?
+        // O si ya filtramos, mostramos grid directo.
+        // El usuario pidió: "ver todas las categorias y asi elegir cual".
+        // Si elige una, mostramos grid. Si es Todo, mostramos grid mixto o secciones?
+        // Vamos a hacer grid unificado para "Todo" para modernizar, o secciones si prefiere.
+        // Mantengamos secciones para "Todo" para separar visualmente, y GRID único para categorías específicas.
 
-        // Renderizar cada categoría como una sección
-        Object.keys(grouped).forEach(catName => {
-            const productsInCat = grouped[catName];
+        if (activeCategory === 'Todo') {
+            const grouped = filtered.reduce((acc, p) => {
+                const cat = p.categoria || 'Otros';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(p);
+                return acc;
+            }, {});
 
-            const section = document.createElement('section');
-            section.className = 'products';
-            section.id = 'catalogo'; // Punto de anclaje genérico
+            Object.keys(grouped).forEach(catName => {
+                renderProductSection(catName, grouped[catName]);
+            });
+        } else {
+            renderProductSection(activeCategory, filtered);
+        }
+    };
 
-            section.innerHTML = `
-                <h2 class="section-title">${catName}</h2>
-                <div class="product-grid"></div>
+    const renderProductSection = (title, products) => {
+        const section = document.createElement('section');
+        section.className = 'products';
+
+        // Animación de entrada suave
+        section.style.animation = 'fadeIn 0.5s ease-out';
+
+        section.innerHTML = `
+            <h2 class="section-title">${title}</h2>
+            <div class="product-grid"></div>
+        `;
+
+        const grid = section.querySelector('.product-grid');
+
+        products.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+
+            const buttonHtml = p.agotado
+                ? `<button class="btn-primary" style="background: #9CA3AF; cursor: not-allowed; width: 100%; border: none; padding: 12px; border-radius: 12px;" disabled>Agotado</button>`
+                : `<button class="btn-buy btn-primary" style="width: 100%; border: none; padding: 12px; border-radius: 12px;">Comprar</button>`;
+
+            card.innerHTML = `
+                <div style="height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 15px; background: #f9fafb; margin-bottom: 15px;">
+                    <img src="${p.imagen_principal || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${p.nombre}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+                <h3>${p.nombre}</h3>
+                <p style="font-weight: 700; color: var(--brand-blue); font-size: 1.2rem; margin-bottom: 15px;">$${p.precio.toLocaleString()}</p>
+                ${buttonHtml}
             `;
 
-            const grid = section.querySelector('.product-grid');
-
-            productsInCat.forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-
-                const buttonHtml = p.agotado
-                    ? `<button class="btn-primary" style="background: #9CA3AF; cursor: not-allowed; width: 100%; border: none; padding: 12px; border-radius: 12px;" disabled>Agotado</button>`
-                    : `<button class="btn-buy btn-primary" style="width: 100%; border: none; padding: 12px; border-radius: 12px;">Comprar</button>`;
-
-                card.innerHTML = `
-                    <div style="height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 15px; background: #f9fafb; margin-bottom: 15px;">
-                        <img src="${p.imagen_principal || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${p.nombre}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                    </div>
-                    <h3>${p.nombre}</h3>
-                    <p style="font-weight: 700; color: var(--brand-blue); font-size: 1.2rem; margin-bottom: 15px;">$${p.precio.toLocaleString()}</p>
-                    ${buttonHtml}
-                `;
-
-                const buyBtn = card.querySelector('.btn-buy');
-                if (buyBtn) {
-                    buyBtn.addEventListener('click', () => {
-                        addToCart({
-                            name: p.nombre,
-                            price: p.precio,
-                            img: p.imagen_principal || 'https://via.placeholder.com/300x300?text=No+Image'
-                        });
+            const buyBtn = card.querySelector('.btn-buy');
+            if (buyBtn) {
+                buyBtn.addEventListener('click', () => {
+                    addToCart({
+                        id: p.id,
+                        name: p.nombre,
+                        price: p.precio,
+                        img: p.imagen_principal || 'https://via.placeholder.com/300x300?text=No+Image'
                     });
-                }
+                });
+            }
 
-                grid.appendChild(card);
-            });
-
-            catalogContainer.appendChild(section);
+            grid.appendChild(card);
         });
+
+        catalogContainer.appendChild(section);
     };
 
     // --- Otros Event Listeners ---

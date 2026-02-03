@@ -70,3 +70,200 @@ exports.getCatalog = async (req, res) => {
         if (clientConn) await clientConn.end();
     }
 };
+
+exports.createOrder = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.params;
+        const { cliente, items, delivery } = req.body;
+
+        if (!nit) return res.status(400).json({ success: false, message: 'NIT requerido' });
+        if (!items || items.length === 0) return res.status(400).json({ success: false, message: 'Carrito vacío' });
+        if (!cliente || !cliente.nombre || !cliente.telefono) {
+            return res.status(400).json({ success: false, message: 'Datos del cliente incompletos' });
+        }
+
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+        await clientConn.beginTransaction();
+
+        // 1. Gestionar Cliente (Tercero)
+        let clienteId = null;
+        const documentoCliente = cliente.documento || cliente.telefono.replace(/\D/g, '');
+
+        const [existingClient] = await clientConn.query('SELECT id FROM terceros WHERE documento = ? OR telefono = ?', [documentoCliente, cliente.telefono]);
+
+        if (existingClient.length > 0) {
+            clienteId = existingClient[0].id;
+            await clientConn.query('UPDATE terceros SET direccion = ?, telefono = ? WHERE id = ?', [cliente.direccion, cliente.telefono, clienteId]);
+        } else {
+            const [resCli] = await clientConn.query(`
+                INSERT INTO terceros (nombre_comercial, razon_social, documento, direccion, telefono, es_cliente, es_proveedor)
+                VALUES (?, ?, ?, ?, ?, 1, 0)
+            `, [cliente.nombre, cliente.nombre, documentoCliente, cliente.direccion || '', cliente.telefono]);
+            clienteId = resCli.insertId;
+        }
+
+        // 2. Obtener Consecutivo de Factura
+        const [docs] = await clientConn.query("SELECT id, prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE categoria IN ('Factura de Venta', 'Factura') AND activo = 1 LIMIT 1 FOR UPDATE");
+
+        if (docs.length === 0) {
+            throw new Error('No hay configuración de facturación activa en el sistema');
+        }
+        const docConfig = docs[0];
+        const numeroFactura = `${docConfig.prefijo || ''}${docConfig.consecutivo_actual}`;
+        const sucursalId = docConfig.sucursal_id;
+
+        await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [docConfig.id]);
+
+        // 3. Procesar Items y Stock
+        let subtotal = 0;
+        let total = 0;
+
+        for (const item of items) {
+            // IMPORTANTE: El frontend debe enviar el ID del producto ahora.
+            // Si no lo envía, intentamos buscar por nombre (menos seguro pero fallback necesario si no actualizamos todo el front)
+            let prodId = item.id;
+            let prod = null;
+
+            if (prodId) {
+                const [prods] = await clientConn.query('SELECT * FROM productos WHERE id = ? FOR UPDATE', [prodId]);
+                if (prods.length > 0) prod = prods[0];
+            }
+
+            if (!prod) {
+                // Fallback por nombre exacto
+                const [prodsByName] = await clientConn.query('SELECT * FROM productos WHERE nombre = ? LIMIT 1 FOR UPDATE', [item.name]);
+                if (prodsByName.length > 0) {
+                    prod = prodsByName[0];
+                    prodId = prod.id;
+                }
+            }
+
+            if (!prod) throw new Error(`Producto no encontrado: ${item.name}`);
+
+            const cantidad = parseFloat(item.quantity);
+            const precio = parseFloat(prod.precio1);
+            const subtotalItem = precio * cantidad;
+
+            subtotal += subtotalItem;
+            total += subtotalItem;
+
+            if (prod.ecommerce_afecta_inventario) {
+                if (prod.stock_actual < cantidad) {
+                    throw new Error(`Stock insuficiente para ${prod.nombre}`);
+                }
+
+                // Actualizar Global
+                await clientConn.query('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [cantidad, prodId]);
+
+                // Actualizar Sucursal
+                if (sucursalId) {
+                    // Check if exists in branch
+                    const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ?', [prodId, sucursalId]);
+                    if (invSuc.length > 0) {
+                        await clientConn.query('UPDATE inventario_sucursales SET cant_actual = cant_actual - ? WHERE producto_id = ? AND sucursal_id = ?', [cantidad, prodId, sucursalId]);
+                    } else {
+                        // Insert negative stock or 0? better insert negative if allowed or just 0
+                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [-cantidad, prodId, sucursalId]);
+                    }
+                }
+
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario 
+                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                    VALUES (?, ?, 'VENTA_WEB', ?, ?, ?, ?, ?, ?)
+                `, [
+                    prodId, sucursalId, cantidad,
+                    prod.stock_actual,
+                    prod.stock_actual - cantidad,
+                    'Venta E-commerce', numeroFactura, prod.costo
+                ]);
+            }
+
+            // Guardar info para detalle
+            item.dbProd = prod;
+            item.dbPrecio = precio;
+            item.dbSubtotal = subtotalItem;
+        }
+
+        // 4. Insertar Header Factura
+        const [resFac] = await clientConn.query(`
+            INSERT INTO facturas 
+            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, estado, observaciones, fecha)
+            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW())
+        `, [
+            numeroFactura, docConfig.prefijo, docConfig.id, clienteId,
+            subtotal, total,
+            'Contado', 'Efectivo',
+            'Pendiente',
+            `Pedido Web - Entrega: ${delivery}`
+        ]);
+
+        const facturaId = resFac.insertId;
+
+        // 5. Insertar Detalles
+        for (const item of items) {
+            await clientConn.query(`
+                INSERT INTO factura_detalle (factura_id, producto_id, cantidad, precio_unitario, impuesto_porcentaje, subtotal)
+                VALUES (?, ?, ?, ?, 0, ?)
+            `, [facturaId, item.dbProd.id, item.quantity, item.dbPrecio, item.dbSubtotal]);
+        }
+
+        await clientConn.commit();
+
+        res.json({
+            success: true,
+            numero_pedido: numeroFactura,
+            total: total
+        });
+
+    } catch (err) {
+        if (clientConn) await clientConn.rollback();
+        console.error('Create Order Error:', err);
+        res.status(500).json({ success: false, message: err.message || 'Error al procesar el pedido' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+} finally {
+    if (clientConn) await clientConn.end();
+}
+};
+
+exports.getPhysicalStores = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.params;
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Tienda no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+
+        // Lazy Migration: Check if es_tienda_fisica column exists
+        const [columns] = await clientConn.query("SHOW COLUMNS FROM sucursales LIKE 'es_tienda_fisica'");
+        if (columns.length === 0) {
+            await clientConn.query("ALTER TABLE sucursales ADD COLUMN es_tienda_fisica TINYINT(1) DEFAULT 0 AFTER direccion");
+            // Set 'Principal' as physical store by default if it exists
+            await clientConn.query("UPDATE sucursales SET es_tienda_fisica = 1 WHERE nombre LIKE '%Principal%' OR es_principal = 1");
+        }
+
+        const [rows] = await clientConn.query("SELECT id, nombre, direccion, telefono FROM sucursales WHERE es_tienda_fisica = 1 AND (estado = 'Activo' OR estado IS NULL)");
+
+        // If no physical stores found, return at least one fallback if available or empty
+        if (rows.length === 0) {
+            // Fallback: return principal
+            const [principal] = await clientConn.query("SELECT id, nombre, direccion, telefono FROM sucursales WHERE es_principal = 1");
+            return res.json({ success: true, data: principal });
+        }
+
+        res.json({ success: true, data: rows });
+
+    } catch (err) {
+        console.error('getPhysicalStores error:', err);
+        res.status(500).json({ success: false, message: 'Error al obtener sucursales' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};

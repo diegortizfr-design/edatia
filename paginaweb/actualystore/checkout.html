@@ -85,11 +85,44 @@
                         </label>
                     </div>
 
+                    <!-- Contenedor para Dirección de Domicilio -->
                     <div id="address-container" class="form-group" style="margin-bottom: 30px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Dirección de
+                        <label style="display: block; margin-bottom: 12px; font-weight: 600;">Detalles de
                             Entrega</label>
-                        <input type="text" id="cust-address" placeholder="Calle, Barrio, Ciudad..."
-                            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <input type="text" id="cust-dept" placeholder="Departamento (Ej: Antioquia)"
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div>
+                                <input type="text" id="cust-city" placeholder="Ciudad (Ej: Medellín)"
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <input type="text" id="cust-neighborhood" placeholder="Barrio"
+                                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+
+                        <div>
+                            <input type="text" id="cust-address"
+                                placeholder="Dirección Exacta (Ej: Calle 10 # 30-20, Apto 201)"
+                                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                    </div>
+
+                    <!-- Contenedor para Selección de Sucursal (Oculto por defecto) -->
+                    <div id="branch-container" class="form-group" style="margin-bottom: 30px; display: none;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Selecciona la Tienda para
+                            Recoger</label>
+                        <select id="branch-select"
+                            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                            <option value="">Cargando tiendas...</option>
+                        </select>
+                        <p id="branch-info" style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">
+                        </p>
                     </div>
 
                     <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center;">

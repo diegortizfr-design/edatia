@@ -17,13 +17,52 @@ exports.listarFacturas = async (req, res) => {
 
         clientConn = await connectToClientDB(dbConfig);
 
-        // Fetch invoices with customer name
-        const [rows] = await clientConn.query(`
+        const { sucursal_id, prefijo, busqueda, fecha } = req.query;
+
+        let query = `
             SELECT f.*, t.nombre_comercial as cliente_nombre 
             FROM facturas f 
-            LEFT JOIN terceros t ON f.cliente_id = t.id 
-            ORDER BY f.id DESC LIMIT 500
-        `);
+            LEFT JOIN terceros t ON f.cliente_id = t.id
+            LEFT JOIN documentos d ON f.documento_id = d.id -- Join documents to get branch info if not stored directly on invoice
+        `;
+
+        const conditions = [];
+        const params = [];
+
+        // Note: 'facturas' table usually tracks 'sucursal_id' directly or via 'documento_id'. 
+        // Based on crearFactura, we do: SELECT ... sucursal_id FROM documentos ... 
+        // But facturas table does NOT seem to have sucursal_id column in the INSERT statement (lines 131-133). 
+        // However, 'documentos' table usually links to a branch.
+        // Let's assume we filter by the document's branch.
+
+        if (sucursal_id) {
+            conditions.push('d.sucursal_id = ?');
+            params.push(sucursal_id);
+        }
+
+        if (prefijo) {
+            conditions.push('f.prefijo = ?');
+            params.push(prefijo);
+        }
+
+        if (fecha) {
+            // Assuming fecha param is YYYY-MM-DD
+            conditions.push('DATE(f.fecha) = ?');
+            params.push(fecha);
+        }
+
+        if (busqueda) {
+            conditions.push('(f.numero_factura LIKE ? OR t.nombre_comercial LIKE ?)');
+            params.push(`%${busqueda}%`, `%${busqueda}%`);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY f.id DESC LIMIT 500';
+
+        const [rows] = await clientConn.query(query, params);
         res.json({ success: true, data: rows });
 
     } catch (err) {
@@ -79,7 +118,15 @@ exports.crearFactura = async (req, res) => {
                 if (sucursal_id) {
                     // Check Branch Stock
                     const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.id, sucursal_id]);
-                    currentBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+
+                    if (invSuc.length > 0) {
+                        currentBranchStock = parseFloat(invSuc[0].cant_actual);
+                    } else {
+                        // FALLBACK: If there's only one branch or this is the first time, 
+                        // use the global stock from the 'productos' table.
+                        currentBranchStock = parseFloat(prod.stock_actual) || 0;
+                    }
+
                     if (currentBranchStock < item.cantidad) {
                         throw new Error(`Stock insuficiente en sucursal para producto ID ${item.id}. Stock Sucursal: ${currentBranchStock}`);
                     }
@@ -93,10 +140,12 @@ exports.crearFactura = async (req, res) => {
                 // Update Branch Stock
                 if (sucursal_id) {
                     const newBranchStock = currentBranchStock - item.cantidad;
-                    if (currentBranchStock > 0) {
+                    // Check if we need to update or insert
+                    const [checkExists] = await clientConn.query('SELECT id FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ?', [item.id, sucursal_id]);
+                    if (checkExists.length > 0) {
                         await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.id, sucursal_id]);
                     } else {
-                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [newBranchStock, item.id, sucursal_id]);
+                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [item.id, sucursal_id, newBranchStock]);
                     }
                 }
 

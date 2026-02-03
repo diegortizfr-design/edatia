@@ -14,7 +14,7 @@
     <!-- Navegación -->
     <nav>
         <div class="logo">
-            <img src="assets/logo.png" alt="ActualyStore Logo" style="height: 50px;">
+            <img src="assets/logo.png" alt="ActualyStore Logo">
         </div>
         <ul>
             <li><a href="#">Inicio</a></li>
@@ -27,8 +27,14 @@
                 <img src="https://img.icons8.com/material-outlined/24/ffffff/shopping-bag.png" alt="Cart">
                 <span>Mi Carrito</span>
                 <span id="cart-count"
-                    style="background: var(--brand-red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
+                    style="background: var(--brand-red); color: rgb(255, 255, 255); border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
             </div>
+        </div>
+        <div id="hamburger-btn" class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
         </div>
     </nav>
 
@@ -41,13 +47,29 @@
             <p>Tu destino premium para los gadgets más avanzados. Celulares, audio de alta fidelidad y accesorios
                 exclusivos con la garantía y confianza que buscas.</p>
             <div class="hero-btns">
-                <a href="#celulares" class="btn-primary">Ver Catálogo</a>
+                <a href="#category-showcase" class="btn-primary">Ver Catálogo</a>
             </div>
         </div>
         <div class="hero-image">
-            <img src="assets/hero_phone.png" alt="Smarphone Futurista">
+            <img src="assets/logo.png" alt="logo">
         </div>
     </section>
+
+    <!-- Visual Category Showcase -->
+    <section id="category-showcase" class="category-showcase-section">
+        <div class="section-title">Explora por Categoría</div>
+        <div id="category-cards-container" class="category-cards-container">
+            <!-- Cards se cargarán aquí -->
+            <p style="text-align: center; width: 100%;">Cargando categorías...</p>
+        </div>
+    </section>
+
+    <!-- Filtros de Categoría (Pills) -->
+    <div class="category-filter-container">
+        <div id="category-filters" class="category-filters">
+            <!-- Botones de categoría se cargarán aquí -->
+        </div>
+    </div>
 
     <!-- Catálogo Dinámico por Categorías -->
     <div id="dynamic-catalog-container">
@@ -58,6 +80,58 @@
             </div>
         </section>
     </div>
+
+    <!-- Contacto Section -->
+    <section id="contacto" class="contact-section">
+        <div class="section-title">Contacto</div>
+        <div class="contact-container">
+            <div class="contact-info glass">
+                <h3>Estamos aquí para ti</h3>
+                <p>¿Tienes dudas sobre algún gadget? Nuestro equipo de expertos está listo para asesorarte.</p>
+
+                <div class="info-item">
+                    <img src="https://img.icons8.com/color/48/whatsapp--v1.png" alt="WhatsApp">
+                    <div>
+                        <h4>WhatsApp</h4>
+                        <p>+57 322 387 7590</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <img src="https://img.icons8.com/color/48/instagram-new--v1.png" alt="Instagram">
+                    <div>
+                        <h4>Síguenos</h4>
+                        <p>@ActualyStore</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <img src="https://img.icons8.com/color/48/marker.png" alt="Ubicación">
+                    <div>
+                        <h4>Ubicación</h4>
+                        <p>Medellín, Colombia</p>
+                    </div>
+                </div>
+            </div>
+
+            <form class="contact-form glass">
+                <h3>Envíanos un mensaje</h3>
+                <div class="form-group">
+                    <label>Tu Nombre</label>
+                    <input type="text" placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Tu Correo</label>
+                    <input type="email" placeholder="juan@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Mensaje</label>
+                    <textarea rows="4" placeholder="Hola, estoy interesado en..."></textarea>
+                </div>
+                <button type="button" class="btn-primary" style="width: 100%; border: none;">Enviar Mensaje</button>
+            </form>
+        </div>
+    </section>
 
     <!-- SIDEBAR DEL CARRITO -->
     <div id="cart-sidebar" class="cart-sidebar glass">

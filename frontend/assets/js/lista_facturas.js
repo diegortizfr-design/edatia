@@ -14,16 +14,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         API_URL = `${config.apiUrl}/facturacion`;
 
         loadInvoices();
+        loadBranches();
         setupFilters();
     } catch (e) {
         console.error('Initialization error:', e);
     }
 });
 
-async function loadInvoices() {
+async function loadBranches() {
     try {
         const token = localStorage.getItem('token');
-        const resp = await fetch(API_URL, {
+        // Derive branches URL
+        const branchesUrl = API_URL.replace('/facturacion', '/sucursales');
+
+        const resp = await fetch(branchesUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const select = document.getElementById('filter-branch');
+            data.data.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = b.nombre;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading branches:', e);
+    }
+}
+
+async function loadInvoices(filters = {}) {
+    try {
+        const token = localStorage.getItem('token');
+
+        // Build Query String
+        const params = new URLSearchParams();
+        if (filters.search) params.append('busqueda', filters.search);
+        if (filters.date) params.append('fecha', filters.date);
+        if (filters.branch) params.append('sucursal_id', filters.branch);
+        if (filters.prefix) params.append('prefijo', filters.prefix);
+
+        const url = `${API_URL}?${params.toString()}`;
+
+        const resp = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await resp.json();
@@ -40,25 +75,31 @@ async function loadInvoices() {
 function setupFilters() {
     const searchInput = document.getElementById('filter-search');
     const dateInput = document.getElementById('filter-date');
+    const branchSelect = document.getElementById('filter-branch');
+    const prefixInput = document.getElementById('filter-prefix');
 
     const runFilters = () => {
-        const term = searchInput.value.toLowerCase();
-        const date = dateInput.value;
-
-        const filtered = allInvoices.filter(f => {
-            const matchesTerm = f.numero_factura.toLowerCase().includes(term) ||
-                (f.cliente_nombre && f.cliente_nombre.toLowerCase().includes(term));
-
-            const matchesDate = !date || f.fecha.startsWith(date);
-
-            return matchesTerm && matchesDate;
-        });
-
-        renderTable(filtered);
+        const filters = {
+            search: searchInput.value,
+            date: dateInput.value,
+            branch: branchSelect.value,
+            prefix: prefixInput.value
+        };
+        loadInvoices(filters);
     };
 
-    searchInput.addEventListener('input', runFilters);
+    // Debounce for text inputs
+    let timeout = null;
+    const debouncedRun = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(runFilters, 500);
+    };
+
+    searchInput.addEventListener('input', debouncedRun);
+    prefixInput.addEventListener('input', debouncedRun);
+
     dateInput.addEventListener('change', runFilters);
+    branchSelect.addEventListener('change', runFilters);
 }
 
 function renderTable(invoices) {

@@ -30,6 +30,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (form) form.addEventListener('submit', guardarTercero);
 
+        if (tableBody) {
+            tableBody.addEventListener('click', (e) => {
+                const btnEdit = e.target.closest('.btn-editar');
+                if (btnEdit) {
+                    const id = parseInt(btnEdit.dataset.id);
+                    const tercero = listaTerceros.find(t => t.id === id);
+                    if (tercero) abrirModal(tercero);
+                }
+
+                const btnDelete = e.target.closest('.btn-eliminar');
+                if (btnDelete) {
+                    const id = parseInt(btnDelete.dataset.id);
+                    eliminarTercero(id);
+                }
+            });
+        }
+
         window.onclick = (event) => {
             if (event.target == modal) cerrarModal();
         }
@@ -130,23 +147,6 @@ function renderTable(terceros) {
     });
 }
 
-// Event delegation
-if (tableBody) {
-    tableBody.addEventListener('click', (e) => {
-        const btnEdit = e.target.closest('.btn-editar');
-        if (btnEdit) {
-            const id = parseInt(btnEdit.dataset.id);
-            const tercero = listaTerceros.find(t => t.id === id);
-            if (tercero) abrirModal(tercero);
-        }
-
-        const btnDelete = e.target.closest('.btn-eliminar');
-        if (btnDelete) {
-            const id = parseInt(btnDelete.dataset.id);
-            eliminarTercero(id);
-        }
-    });
-}
 
 function abrirModal(tercero = null) {
     if (!modal) return;
