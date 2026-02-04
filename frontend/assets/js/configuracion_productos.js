@@ -230,9 +230,16 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('maneja_inventario').checked = !!p.maneja_inventario;
         document.getElementById('mostrar_en_tienda').checked = !!p.mostrar_en_tienda;
 
-        // Hide Stock Inicial when editing
+        // Hide Stock Inicial when editing, show Adjustment
         const stockInicialCont = document.getElementById('stock_inicial_container');
         if (stockInicialCont) stockInicialCont.style.display = 'none';
+
+        const ajusteCont = document.getElementById('ajuste_stock_container');
+        if (ajusteCont) {
+            ajusteCont.style.display = 'block';
+            document.getElementById('ajuste_cantidad').value = 0;
+            document.getElementById('ajuste_motivo').value = 'Ajuste Manual';
+        }
     } else {
         isEditing = false;
         currentId = null;
@@ -242,9 +249,12 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('mostrar_en_tienda').checked = false;
         document.getElementById('stock_inicial').value = 0;
 
-        // Show Stock Inicial for new products
+        // Show Stock Inicial for new products, hide Adjustment
         const stockInicialCont = document.getElementById('stock_inicial_container');
         if (stockInicialCont) stockInicialCont.style.display = 'block';
+
+        const ajusteCont = document.getElementById('ajuste_stock_container');
+        if (ajusteCont) ajusteCont.style.display = 'none';
     }
 };
 
@@ -272,6 +282,8 @@ async function handleSave(e) {
         proveedor_id: document.getElementById('proveedor_id')?.value || null,
         stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
         stock_inicial: parseInt(document.getElementById('stock_inicial')?.value) || 0,
+        ajuste_cantidad: parseInt(document.getElementById('ajuste_cantidad')?.value) || 0,
+        ajuste_motivo: document.getElementById('ajuste_motivo')?.value || 'Ajuste Manual',
         // Logic: 
         // If deleteImageFlag is true -> send NULL (Backend deletes image)
         // If input is empty string -> send "" (Backend ignores update -> keeps existing)

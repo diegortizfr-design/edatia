@@ -369,18 +369,66 @@ exports.actualizarProducto = async (req, res) => {
         const sql = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
         values.push(id);
 
-        await clientConn.query(sql, values);
-        res.json({ success: true, message: 'Producto actualizado' });
+        await clientConn.beginTransaction();
+
+        try {
+            // 1. Update Basic Fields
+            await clientConn.query(sql, values);
+
+            // 2. Handle Stock Adjustment if provided
+            const { ajuste_cantidad, ajuste_motivo } = req.body;
+            if (ajuste_cantidad && ajuste_cantidad !== 0) {
+                // Fetch current stock to calculate new stock
+                const [curr] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [id]);
+                const oldStock = curr[0].stock_actual || 0;
+                const cost = curr[0].costo || 0;
+                const newStock = oldStock + ajuste_cantidad;
+
+                // Update Global Stock
+                await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [newStock, id]);
+
+                // Update Branch Stock (Main branch)
+                const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                const targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+
+                const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [id, targetSucursal]);
+                const oldBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+                const newBranchStock = oldBranchStock + ajuste_cantidad;
+
+                if (invSuc.length > 0) {
+                    await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, id, targetSucursal]);
+                } else {
+                    await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [id, targetSucursal, newBranchStock]);
+                }
+
+                // Record Movement (Kardex)
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario 
+                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    id,
+                    targetSucursal,
+                    ajuste_cantidad > 0 ? 'ENTRADA' : 'SALIDA',
+                    Math.abs(ajuste_cantidad),
+                    oldBranchStock,
+                    newBranchStock,
+                    ajuste_motivo || 'Ajuste Manual',
+                    'Ajuste Sistema',
+                    cost
+                ]);
+            }
+
+            await clientConn.commit();
+            res.json({ success: true, message: 'Producto actualizado correctamente' });
+
+        } catch (txErr) {
+            await clientConn.rollback();
+            throw txErr;
+        }
 
     } catch (err) {
         console.error('actualizarProducto error:', err);
-
-        // Handle Duplicate Entry Error (e.g. reused Code)
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ success: false, message: 'El Código o Referencia ya está en uso por otro producto.' });
-        }
-
-        // Return actual error message for debugging
         res.status(500).json({ success: false, message: 'Error al actualizar: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();

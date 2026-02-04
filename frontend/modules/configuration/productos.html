@@ -338,6 +338,30 @@
                             <input type="number" id="stock_inicial" value="0">
                         </div>
 
+                        <!-- Quick Adjustment Section (Edit Only) -->
+                        <div id="ajuste_stock_container"
+                            style="grid-column: 1 / -1; background: rgba(99, 102, 241, 0.05); padding: 20px; border-radius: 16px; border: 1px dashed #818cf8; display: none;">
+                            <div style="font-weight: 700; color: #6366f1; margin-bottom: 12px; font-size: 0.9rem;">
+                                <i class="fas fa-tools"></i> AJUSTE RÁPIDO DE INVENTARIO
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Cantidad a Sumar/Restar</label>
+                                    <input type="number" id="ajuste_cantidad" placeholder="Ej: 5 o -2" value="0">
+                                    <small style="color: #64748b;">(Usa números negativos para restar)</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Motivo del Ajuste</label>
+                                    <select id="ajuste_motivo">
+                                        <option value="Ajuste Manual">Ajuste Manual</option>
+                                        <option value="Entrada por Inventario">Entrada por Inventario</option>
+                                        <option value="Corrección de Error">Corrección de Error</option>
+                                        <option value="Pérdida / Daño">Pérdida / Daño</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Checkboxes Row -->
                         <div style="grid-column: 1 / -1; display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
                             <div class="checkbox-wrapper">
