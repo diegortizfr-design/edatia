@@ -229,6 +229,10 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('activo').checked = !!p.activo;
         document.getElementById('maneja_inventario').checked = !!p.maneja_inventario;
         document.getElementById('mostrar_en_tienda').checked = !!p.mostrar_en_tienda;
+
+        // Hide Stock Inicial when editing
+        const stockInicialCont = document.getElementById('stock_inicial_container');
+        if (stockInicialCont) stockInicialCont.style.display = 'none';
     } else {
         isEditing = false;
         currentId = null;
@@ -236,6 +240,11 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('activo').checked = true;
         document.getElementById('maneja_inventario').checked = true;
         document.getElementById('mostrar_en_tienda').checked = false;
+        document.getElementById('stock_inicial').value = 0;
+
+        // Show Stock Inicial for new products
+        const stockInicialCont = document.getElementById('stock_inicial_container');
+        if (stockInicialCont) stockInicialCont.style.display = 'block';
     }
 };
 
@@ -262,6 +271,7 @@ async function handleSave(e) {
         impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje')?.value) || 0,
         proveedor_id: document.getElementById('proveedor_id')?.value || null,
         stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
+        stock_inicial: parseInt(document.getElementById('stock_inicial')?.value) || 0,
         // Logic: 
         // If deleteImageFlag is true -> send NULL (Backend deletes image)
         // If input is empty string -> send "" (Backend ignores update -> keeps existing)

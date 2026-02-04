@@ -233,36 +233,80 @@ exports.crearProducto = async (req, res) => {
             unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
             proveedor_id, stock_minimo, descripcion, imagen_url, activo,
             es_servicio, maneja_inventario, mostrar_en_tienda,
-            ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario
+            ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario,
+            stock_inicial // New field
         } = req.body;
 
         if (!nombre) {
             return res.status(400).json({ success: false, message: 'Nombre del producto es obligatorio' });
         }
 
-        const sql = `
-            INSERT INTO productos 
-            (codigo, referencia_fabrica, nombre, nombre_alterno, categoria, 
-             unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje, 
-             proveedor_id, stock_minimo, descripcion, imagen_url, activo,
-             es_servicio, maneja_inventario, mostrar_en_tienda,
-             ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+        const stockIni = parseInt(stock_inicial) || 0;
 
-        await clientConn.query(sql, [
-            codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
-            unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
-            proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 0, descripcion || null, imagen_url || null,
-            activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
-            mostrar_en_tienda || 0, ecommerce_descripcion || null, ecommerce_imagenes || null, ecommerce_afecta_inventario || 0
-        ]);
+        await clientConn.beginTransaction();
 
-        res.status(201).json({ success: true, message: 'Producto creado exitosamente' });
+        try {
+            const sql = `
+                INSERT INTO productos 
+                (codigo, referencia_fabrica, nombre, nombre_alterno, categoria, 
+                 unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje, 
+                 proveedor_id, stock_minimo, stock_actual, stock_inicial, descripcion, imagen_url, activo,
+                 es_servicio, maneja_inventario, mostrar_en_tienda,
+                 ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            const [result] = await clientConn.query(sql, [
+                codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
+                unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
+                proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 0, stockIni, stockIni, descripcion || null, imagen_url || null,
+                activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
+                mostrar_en_tienda || 0, ecommerce_descripcion || null, ecommerce_imagenes || null, ecommerce_afecta_inventario || 0
+            ]);
+
+            const productoId = result.insertId;
+
+            // Handle Initial Stock Movement
+            if (stockIni > 0) {
+                // 1. Get Main Branch
+                const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                const targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+
+                // 2. Insert into inventario_sucursales
+                await clientConn.query(`
+                    INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE cant_actual = cant_actual + VALUES(cant_actual)
+                `, [productoId, targetSucursal, stockIni]);
+
+                // 3. Record Kardex Movement
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario 
+                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                    VALUES (?, ?, 'ENTRADA', ?, ?, ?, ?, ?, ?)
+                `, [
+                    productoId,
+                    targetSucursal,
+                    stockIni,
+                    0,
+                    stockIni,
+                    'Ajuste Inicial',
+                    'N/A',
+                    costo || 0
+                ]);
+            }
+
+            await clientConn.commit();
+            res.status(201).json({ success: true, message: 'Producto creado exitosamente' });
+
+        } catch (txErr) {
+            await clientConn.rollback();
+            throw txErr;
+        }
 
     } catch (err) {
         console.error('crearProducto error:', err);
-        res.status(500).json({ success: false, message: 'Error al crear producto' });
+        res.status(500).json({ success: false, message: 'Error al crear producto: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }

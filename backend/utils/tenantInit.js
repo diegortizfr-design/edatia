@@ -212,6 +212,7 @@ async function initializeTenantDB(dbConfig) {
                 ecommerce_descripcion TEXT,
                 ecommerce_imagenes TEXT,
                 ecommerce_afecta_inventario BOOLEAN DEFAULT 0,
+                stock_inicial INT DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -226,7 +227,8 @@ async function initializeTenantDB(dbConfig) {
             { name: 'ecommerce_imagenes', def: 'TEXT' },
             { name: 'ecommerce_afecta_inventario', def: 'BOOLEAN DEFAULT 0' },
             { name: 'stock_actual', def: 'INT DEFAULT 0' }, // Ensure types match
-            { name: 'costo', def: 'DECIMAL(15,2) DEFAULT 0' }
+            { name: 'costo', def: 'DECIMAL(15,2) DEFAULT 0' },
+            { name: 'stock_inicial', def: 'INT DEFAULT 0' }
         ];
 
         for (const col of prodNewCols) {
@@ -253,6 +255,7 @@ async function initializeTenantDB(dbConfig) {
                 usuario_id INT,
                 factura_referencia VARCHAR(100),
                 factura_url TEXT,
+                metodo_pago VARCHAR(50) DEFAULT 'Contado',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -266,7 +269,8 @@ async function initializeTenantDB(dbConfig) {
             { name: 'estado_pago', def: "VARCHAR(50) DEFAULT 'Debe'" },
             { name: 'usuario_id', def: 'INT' },
             { name: 'factura_referencia', def: 'VARCHAR(100)' },
-            { name: 'factura_url', def: 'TEXT' }
+            { name: 'factura_url', def: 'TEXT' },
+            { name: 'metodo_pago', def: "VARCHAR(50) DEFAULT 'Contado'" }
         ];
         for (const col of compNewCols) {
             if (!compColNames.includes(col.name)) {
