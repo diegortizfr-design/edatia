@@ -7,6 +7,7 @@ let PRODUCTOS_URL = '';
 let TERCEROS_URL = '';
 let SUCURSALES_URL = '';
 let DOCUMENTOS_URL = '';
+let UPLOAD_URL = '';
 let tableBody, modal, btnNuevo, closeBtns;
 let carrito = [];
 let compraActualId = null;
@@ -213,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         TERCEROS_URL = `${config.apiUrl}/terceros`;
         SUCURSALES_URL = `${config.apiUrl}/sucursales`;
         DOCUMENTOS_URL = `${config.apiUrl}/documentos`;
+        UPLOAD_URL = `${config.apiUrl}/upload`;
 
         // Load Data
         await cargarProveedores();
@@ -240,6 +242,10 @@ function setupQuickModal(modalId, btnOpenId, btnCloseId, btnCancelId, formId, su
     const close = () => {
         document.getElementById(modalId).style.display = 'none';
         document.getElementById(formId)?.reset();
+        // Custom reset for quick product image
+        if (modalId === 'modal-quick-producto') {
+            deleteQuickProductImage();
+        }
     }
     document.getElementById(btnCloseId)?.addEventListener('click', close);
     document.getElementById(btnCancelId)?.addEventListener('click', close);
@@ -949,6 +955,71 @@ async function guardarQuickProveedor(e) {
     }
 }
 
+async function uploadQuickProductImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const btn = input.nextElementSibling; // The "Subir Foto" button
+    const container = document.getElementById('qp_image_preview_container');
+    const preview = document.getElementById('qp_image_preview');
+    const icon = container.querySelector('i');
+    const deleteBtn = document.getElementById('qp_btn_delete_img');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            document.getElementById('qp_imagen_url').value = data.url;
+            preview.src = data.url;
+            preview.style.display = 'block';
+            icon.style.display = 'none';
+            deleteBtn.style.display = 'flex';
+            localShowNotification('Imagen subida con éxito', 'success');
+        } else {
+            localShowNotification(data.message || 'Error al subir imagen', 'error');
+        }
+    } catch (e) {
+        console.error('Upload error:', e);
+        localShowNotification('Error de conexión al subir imagen', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        input.value = '';
+    }
+}
+
+function deleteQuickProductImage() {
+    const container = document.getElementById('qp_image_preview_container');
+    const preview = document.getElementById('qp_image_preview');
+    const icon = container.querySelector('i');
+    const deleteBtn = document.getElementById('qp_btn_delete_img');
+    const urlInput = document.getElementById('qp_imagen_url');
+
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+    if (icon) icon.style.display = 'block';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+    if (urlInput) urlInput.value = '';
+}
+
+window.uploadQuickProductImage = uploadQuickProductImage;
+window.deleteQuickProductImage = deleteQuickProductImage;
+
 async function guardarQuickProducto(e) {
     if (e) e.preventDefault();
 
@@ -962,11 +1033,13 @@ async function guardarQuickProducto(e) {
         categoria: document.getElementById('qp_categoria').value,
         unidad_medida: document.getElementById('qp_unidad_medida').value,
         precio1: parseFloat(document.getElementById('qp_precio1').value) || 0,
+        precio2: parseFloat(document.getElementById('qp_precio2').value) || 0,
         costo: parseFloat(document.getElementById('qp_costo').value) || 0,
         impuesto_porcentaje: parseFloat(document.getElementById('qp_impuesto_porcentaje').value) || 0,
         stock_minimo: parseInt(document.getElementById('qp_stock_minimo').value) || 0,
         activo: document.getElementById('qp_activo').checked ? 1 : 0,
-        maneja_inventario: document.getElementById('qp_maneja_inventario').checked ? 1 : 0
+        maneja_inventario: document.getElementById('qp_maneja_inventario').checked ? 1 : 0,
+        imagen_url: document.getElementById('qp_imagen_url').value || ''
     };
 
     try {

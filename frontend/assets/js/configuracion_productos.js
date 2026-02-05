@@ -231,21 +231,9 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('maneja_inventario').checked = !!p.maneja_inventario;
         document.getElementById('mostrar_en_tienda').checked = !!p.mostrar_en_tienda;
 
-        // Hide Stock Inicial when editing, show Adjustment
+        // Hide Stock Inicial when editing
         const stockInicialCont = document.getElementById('stock_inicial_container');
         if (stockInicialCont) stockInicialCont.style.display = 'none';
-
-        const ajusteCont = document.getElementById('ajuste_stock_container');
-        if (ajusteCont) {
-            ajusteCont.style.display = 'block';
-            document.getElementById('ajuste_cantidad').value = 0;
-            document.getElementById('ajuste_motivo').value = 'Ajuste Manual';
-
-            // Trigger stock fetch for the currently selected branch in the ajuste selector
-            if (allBranches.length > 0) {
-                consultarStockSucursal();
-            }
-        }
     } else {
         isEditing = false;
         currentId = null;
@@ -255,12 +243,9 @@ window.openModal = (idOrObj = null) => {
         document.getElementById('mostrar_en_tienda').checked = false;
         document.getElementById('stock_inicial').value = 0;
 
-        // Show Stock Inicial for new products, hide Adjustment
+        // Show Stock Inicial for new products
         const stockInicialCont = document.getElementById('stock_inicial_container');
         if (stockInicialCont) stockInicialCont.style.display = 'block';
-
-        const ajusteCont = document.getElementById('ajuste_stock_container');
-        if (ajusteCont) ajusteCont.style.display = 'none';
     }
 };
 
@@ -284,7 +269,7 @@ async function loadBranchesForStock() {
 
         if (data.success) {
             allBranches = data.data;
-            const selects = ['stock_sucursal_inicial', 'ajuste_sucursal'];
+            const selects = ['stock_sucursal_inicial'];
 
             selects.forEach(id => {
                 const el = document.getElementById(id);
@@ -307,47 +292,12 @@ async function loadBranchesForStock() {
                     if (principal) el.value = principal.id;
                 }
             });
-
-            // If editing, trigger initial stock fetch
-            if (isEditing) {
-                setTimeout(consultarStockSucursal, 100);
-            }
         }
     } catch (err) {
         console.error('Error loading branches:', err);
     }
 }
 
-async function consultarStockSucursal() {
-    const productId = currentId;
-    const sucursalId = document.getElementById('ajuste_sucursal').value;
-    const stockDisplay = document.getElementById('val_stock_actual');
-
-    if (!productId || !sucursalId) {
-        if (stockDisplay) stockDisplay.textContent = '0';
-        return;
-    }
-
-    try {
-        const token = localStorage.getItem('token');
-        // We use the same listarProductos but filtered by ID and Branch
-        const res = await fetch(`${API_URL}?busqueda=&sucursal_id=${sucursalId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            const prod = data.data.find(p => p.id == productId);
-            if (prod && stockDisplay) {
-                stockDisplay.textContent = prod.stock_sucursal || '0';
-            } else if (stockDisplay) {
-                stockDisplay.textContent = '0';
-            }
-        }
-    } catch (err) {
-        console.error('Error consulting branch stock:', err);
-    }
-}
 
 // Initial branch load is handled in the main DOMContentLoaded async block.
 
@@ -355,7 +305,6 @@ async function handleSave(e) {
     if (e) e.preventDefault();
 
     const stock_inicial = parseInt(document.getElementById('stock_inicial')?.value) || 0;
-    const ajuste_cantidad = parseInt(document.getElementById('ajuste_cantidad')?.value) || 0;
 
     // Build Form Data
     const formData = {
@@ -369,26 +318,22 @@ async function handleSave(e) {
         precio2: parseFloat(document.getElementById('precio2').value) || 0,
         precio3: parseFloat(document.getElementById('precio3').value) || 0,
         costo: parseFloat(document.getElementById('costo').value) || 0,
-        impuesto_porcentaje: parseFloat(document.getElementById('impuesto').value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje').value) || 0,
         proveedor_id: document.getElementById('proveedor_id').value || null,
         stock_minimo: parseInt(document.getElementById('stock_minimo').value) || 0,
         stock_inicial: stock_inicial,
-        ajuste_cantidad: ajuste_cantidad,
-        ajuste_motivo: document.getElementById('ajuste_motivo')?.value || 'Ajuste Manual',
         maneja_inventario: document.getElementById('maneja_inventario').checked,
         mostrar_en_tienda: document.getElementById('mostrar_en_tienda').checked,
         activo: document.getElementById('activo').checked,
-        // NEW BRANCH FIELD
-        sucursal_id: isEditing
-            ? document.getElementById('ajuste_sucursal').value
-            : document.getElementById('stock_sucursal_inicial').value
+        // BRANCH ONLY ON CREATE (Stock Inicial)
+        sucursal_id: !isEditing ? document.getElementById('stock_sucursal_inicial').value : null
     };
 
     // Validations
     if (!formData.nombre) return showNotification('El nombre es obligatorio', 'warning');
     if (formData.maneja_inventario) {
-        if (!formData.sucursal_id && (stock_inicial > 0 || ajuste_cantidad !== 0)) {
-            return showNotification('Debe seleccionar una sucursal para el inventario', 'warning');
+        if (!isEditing && stock_inicial > 0 && !formData.sucursal_id) {
+            return showNotification('Debe seleccionar una sucursal para el stock inicial', 'warning');
         }
     }
 

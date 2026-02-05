@@ -574,6 +574,28 @@
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
 
                         <div
+                            style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; background: #f8fafc; padding: 20px; border-radius: 20px; border: 2px dashed #e2e8f0; margin-bottom: 5px;">
+                            <div id="qp_image_preview_container"
+                                style="width: 120px; height: 120px; border-radius: 16px; overflow: hidden; background: white; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative;">
+                                <i class="fas fa-image" style="font-size: 3rem; color: #e2e8f0;"></i>
+                                <img id="qp_image_preview"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                <button type="button" onclick="deleteQuickProductImage()" id="qp_btn_delete_img"
+                                    style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 0.7rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="qp_imagen_url">
+                            <input type="file" id="qp_file_input" accept="image/*" style="display: none;"
+                                onchange="uploadQuickProductImage(this)">
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('qp_file_input').click()"
+                                style="padding: 10px 20px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; background: white; color: #6366f1; border: 1.5px solid #6366f1;">
+                                <i class="fas fa-camera"></i> Subir Foto del Producto
+                            </button>
+                        </div>
+
+                        <div
                             style="grid-column: 1 / -1; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #6366f1; border-bottom: 2px solid rgba(99, 102, 241, 0.1); padding-bottom: 8px;">
                             Información Básica
                         </div>
@@ -634,6 +656,13 @@
                         </div>
                         <div class="form-group">
                             <label
+                                style="font-weight: 500; color: #475569; margin-bottom: 6px; display: block; font-size: 0.9rem;">Precio
+                                de Venta 2 (Mayoreo)</label>
+                            <input type="number" id="qp_precio2" step="0.01" value="0"
+                                style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                        </div>
+                        <div class="form-group">
+                            <label
                                 style="font-weight: 500; color: #475569; margin-bottom: 6px; display: block; font-size: 0.9rem;">Costo
                                 de Compra</label>
                             <input type="number" id="qp_costo" step="0.01" value="0"
@@ -643,14 +672,14 @@
                             <label
                                 style="font-weight: 500; color: #475569; margin-bottom: 6px; display: block; font-size: 0.9rem;">Impuesto
                                 (%)</label>
-                            <input type="number" id="qp_impuesto_porcentaje" step="0.01" value="19"
+                            <input type="number" id="qp_impuesto_porcentaje" step="0.01" value="0"
                                 style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc;">
                         </div>
                         <div class="form-group">
                             <label
                                 style="font-weight: 500; color: #475569; margin-bottom: 6px; display: block; font-size: 0.9rem;">Stock
                                 Mínimo</label>
-                            <input type="number" id="qp_stock_minimo" value="5"
+                            <input type="number" id="qp_stock_minimo" value="0"
                                 style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc;">
                         </div>
 
