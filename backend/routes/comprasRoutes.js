@@ -8,6 +8,7 @@ const upload = require('../utils/uploadConfig');
 router.get('/', protect, comprasCtrl.listarCompras);
 router.post('/', protect, comprasCtrl.crearCompra);
 router.put('/:id', protect, upload.single('factura'), comprasCtrl.actualizarCompra);
+router.delete('/:id', protect, comprasCtrl.eliminarCompra);
 router.get('/:id/detalles', protect, comprasCtrl.obtenerDetallesCompra);
 
 

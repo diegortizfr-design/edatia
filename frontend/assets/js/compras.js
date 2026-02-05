@@ -12,6 +12,9 @@ let carrito = [];
 let compraActualId = null;
 let allComprasData = [];
 let modoCompra = 'orden'; // 'orden' | 'factura'
+let allProductsCatalogue = [];
+let bulkSelection = {}; // { productId: quantity }
+let sortStockAsc = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Initialize DOM Elements & Listeners (Synchronous - Critical for UI responsiveness)
@@ -25,7 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModalCompra('orden'));
     document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
 
-    closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
     closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
     // Listener removed here as it is assigned dynamically in abrirModalCompra
     // document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
@@ -47,6 +49,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupQuickModal('modal-quick-tercero', 'btn-quick-proveedor', 'close-quick-tercero', 'btn-cancel-quick-tercero', 'form-quick-tercero', guardarQuickProveedor);
     setupQuickModal('modal-quick-producto', 'btn-quick-producto', 'close-quick-prod', 'cancel-quick-prod', 'form-quick-producto', guardarQuickProducto);
 
+    // Specific button for product save because it's not a submit button in the new structure (to match original config module)
+    document.getElementById('btn-save-quick-prod')?.addEventListener('click', () => {
+        document.getElementById('form-quick-producto').dispatchEvent(new Event('submit'));
+    });
+
     // Modals Listeners (Invoice & Inspection)
     const btnsCloseAdjuntar = document.querySelectorAll('.close-modal-btn[data-target="modal-adjuntar-factura"]');
     btnsCloseAdjuntar.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-adjuntar-factura').style.display = 'none'));
@@ -55,7 +62,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnsCloseInsp.forEach(btn => btn.addEventListener('click', () => document.getElementById('modal-inspeccion').style.display = 'none'));
 
     document.getElementById('btn-confirmar-factura')?.addEventListener('click', guardarFacturaAdjunta);
-    document.getElementById('btn-confirmar-recepcion')?.addEventListener('click', guardarInspeccion);
+    document.getElementById('btn-save-inspeccion')?.addEventListener('click', guardarInspeccion); // Fixed ID match
+
+    // Bulk Selector Listeners
+    document.getElementById('btn-bulk-productos')?.addEventListener('click', abrirCargarProductosMasivo);
+    document.getElementById('close-bulk-prod')?.addEventListener('click', cerrarBulkSelector);
+    document.getElementById('btn-cancel-bulk')?.addEventListener('click', cerrarBulkSelector);
+    document.getElementById('btn-confirm-bulk')?.addEventListener('click', confirmarSeleccionMasiva);
+    document.getElementById('filter-bulk-prod')?.addEventListener('input', (e) => renderBulkProdList(e.target.value));
+
+    document.getElementById('btn-sort-stock')?.addEventListener('click', () => {
+        sortStockAsc = !sortStockAsc;
+        const btn = document.getElementById('btn-sort-stock');
+        if (sortStockAsc) {
+            btn.style.background = '#eef2ff';
+            btn.style.borderColor = '#6366f1';
+            btn.style.color = '#6366f1';
+        } else {
+            btn.style.background = 'white';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#64748b';
+        }
+        renderBulkProdList(document.getElementById('filter-bulk-prod').value);
+    });
 
     // ... setupQuickModal function ...
 
@@ -114,12 +143,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function guardarQuickProveedor(e) {
         if (e && e.preventDefault) e.preventDefault();
-        // Validate required fields
+
         const nombre = document.getElementById('qt_nombre_comercial').value;
         const documento = document.getElementById('qt_documento').value;
 
         if (!nombre || !documento) {
-            if (window.showNotification) localShowNotification('Nombre y Documento son obligatorios', 'warning');
+            localShowNotification('Nombre y Documento son obligatorios', 'warning');
             return;
         }
 
@@ -131,8 +160,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             telefono: document.getElementById('qt_telefono').value,
             email: document.getElementById('qt_email').value,
             direccion: document.getElementById('qt_direccion').value,
-            es_cliente: false, // Default for purchases
-            es_proveedor: true
+            es_cliente: document.getElementById('qt_es_cliente').checked,
+            es_proveedor: document.getElementById('qt_es_proveedor').checked
         };
 
         try {
@@ -152,21 +181,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('modal-quick-tercero').style.display = 'none';
                 document.getElementById('form-quick-tercero').reset();
 
-                // Reload providers and select the new one
                 await cargarProveedores();
 
-                // Auto-select the new provider (assuming cargarProveedores populates the select)
-                // We need to wait a tiny bit or find it in the new list
-                setTimeout(() => {
-                    const select = document.getElementById('compra-proveedor');
-                    // The backend usually returns the ID of the new item in data.id or we can find by document
-                    // For now, let's just select the last one or try to match document if possible, 
-                    // but since cargarProveedores is async and we just awaited it, the list is fresh.
-                    // Best effort: Search option with text match or assume backend returns ID
-                    if (data.id || data.data?.id) {
-                        select.value = data.id || data.data.id;
-                    }
-                }, 100);
+                // Auto-select the new provider
+                const select = document.getElementById('compra-proveedor');
+                const newId = data.id || data.data?.id;
+                if (newId) {
+                    setTimeout(() => {
+                        select.value = newId;
+                    }, 200);
+                }
 
             } else {
                 localShowNotification(data.message, 'error');
@@ -267,7 +291,13 @@ function renderTable(compras) {
             <td><span class="badge ${getBadgeClass(c.estado)}">${c.estado || 'Orden de Compra'}</span></td>
             <td><span class="badge ${getBadgeClass(c.estado_pago)}">${c.estado_pago || 'Debe'}</span></td>
             <td>
-                <button class="btn-icon" onclick="verCompra(${c.id})" title="Ver detalle"><i class="fas fa-eye"></i></button>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-icon" onclick="verCompra(${c.id})" title="Ver detalle" style="color: #6366f1;"><i class="fas fa-eye"></i></button>
+                    ${c.estado !== 'Completada' ? `
+                        <button class="btn-icon" onclick="editarCompra(${c.id})" title="Editar" style="color: #0ea5e9;"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon" onclick="eliminarCompra(${c.id})" title="Eliminar" style="color: #ef4444;"><i class="fas fa-trash"></i></button>
+                    ` : ''}
+                </div>
             </td>
         `;
         tableBody.appendChild(row);
@@ -300,6 +330,7 @@ function updateKPIs(compras) {
 
 async function abrirModalCompra(modo = 'orden') {
     modoCompra = modo;
+    compraActualId = null; // Reset ID
     const titulo = document.querySelector('#modal-nueva-compra h2');
     const btn = document.getElementById('btn-guardar-compra');
 
@@ -310,6 +341,7 @@ async function abrirModalCompra(modo = 'orden') {
     document.getElementById('compra-proveedor').value = '';
     document.getElementById('compra-documento').value = '';
     document.getElementById('compra-sucursal').value = '';
+    document.getElementById('compra-metodo-pago').value = 'Contado';
 
     const refFieldContainer = document.getElementById('compra-factura-ref').parentElement;
 
@@ -479,18 +511,24 @@ async function buscarProducto(query) {
     }
 }
 
-function agregarAlCarrito(producto) {
+function agregarAlCarrito(producto, manualQty = null) {
     const existing = carrito.find(i => i.producto_id === producto.id);
+    const qtyToAdd = manualQty !== null ? parseFloat(manualQty) : 1;
+
     if (existing) {
-        existing.cantidad++;
+        if (manualQty !== null) {
+            existing.cantidad += qtyToAdd;
+        } else {
+            existing.cantidad++;
+        }
         existing.subtotal = existing.cantidad * existing.costo;
     } else {
         carrito.push({
             producto_id: producto.id,
             nombre: producto.nombre,
-            cantidad: 1,
+            cantidad: qtyToAdd,
             costo: parseFloat(producto.costo || 0),
-            subtotal: parseFloat(producto.costo || 0)
+            subtotal: qtyToAdd * parseFloat(producto.costo || 0)
         });
     }
     renderCarrito();
@@ -553,6 +591,65 @@ async function guardarFactura() {
     await procesarGuardado('Realizada');
 }
 
+async function eliminarCompra(id) {
+    if (!confirm('¿Está seguro de eliminar esta compra?')) return;
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            localShowNotification('Eliminado correctamente', 'success');
+            cargarCompras();
+        } else {
+            localShowNotification(data.message, 'error');
+        }
+    } catch (e) { localShowNotification('Error eliminando', 'error'); }
+}
+
+async function editarCompra(id) {
+    const compra = allComprasData.find(c => c.id === id);
+    if (!compra) return;
+
+    compraActualId = id;
+    abrirModalCompra(compra.factura_referencia ? 'factura' : 'orden');
+
+    compraActualId = id; // Re-set
+    const titulo = document.querySelector('#modal-nueva-compra h2');
+    titulo.textContent = `Editar ${compra.factura_referencia ? 'Factura' : 'Orden'} #${compra.numero_comprobante || id}`;
+
+    document.getElementById('compra-proveedor').value = compra.proveedor_id;
+    document.getElementById('compra-sucursal').value = compra.sucursal_id || '';
+    document.getElementById('compra-fecha').value = new Date(compra.fecha).toISOString().split('T')[0];
+    document.getElementById('compra-factura-ref').value = compra.factura_referencia || '';
+    document.getElementById('compra-metodo-pago').value = compra.metodo_pago || 'Contado';
+
+    setTimeout(() => {
+        document.getElementById('compra-documento').value = compra.documento_id || '';
+    }, 500);
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${id}/detalles`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+            carrito = data.data.map(item => ({
+                producto_id: item.producto_id,
+                nombre: item.nombre_producto,
+                cantidad: parseFloat(item.cantidad),
+                costo: parseFloat(item.costo_unitario),
+                subtotal: parseFloat(item.subtotal)
+            }));
+            renderCarrito();
+            document.getElementById('compra-total').textContent = `$${parseFloat(compra.total).toLocaleString()}`;
+        }
+    } catch (err) { console.error(err); }
+}
+
 
 async function procesarGuardado(estadoForzado) {
     if (carrito.length === 0) return localShowNotification('El carrito está vacío', 'error');
@@ -562,6 +659,7 @@ async function procesarGuardado(estadoForzado) {
     const documentoId = document.getElementById('compra-documento').value;
     const facturaRef = document.getElementById('compra-factura-ref').value;
     const fecha = document.getElementById('compra-fecha').value;
+    const metodoPago = document.getElementById('compra-metodo-pago').value;
 
     if (!proveedorId) return localShowNotification('Selecciona un proveedor', 'error');
     if (!sucursalId) return localShowNotification('Selecciona una sucursal destino', 'error');
@@ -578,6 +676,7 @@ async function procesarGuardado(estadoForzado) {
         documento_id: documentoId,
         factura_referencia: facturaRef,
         fecha: fecha,
+        metodo_pago: metodoPago,
         total: carrito.reduce((sum, i) => sum + i.subtotal, 0),
         estado: estadoForzado, // Explicit state
         items: carrito
@@ -585,8 +684,11 @@ async function procesarGuardado(estadoForzado) {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
-            method: 'POST',
+        const url = compraActualId ? `${API_URL}/${compraActualId}` : API_URL;
+        const method = compraActualId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payload)
         });
@@ -594,7 +696,7 @@ async function procesarGuardado(estadoForzado) {
         const data = await res.json();
 
         if (data.success) {
-            localShowNotification('Guardado exitosamente', 'success');
+            localShowNotification(compraActualId ? 'Actualizado exitosamente' : 'Guardado exitosamente', 'success');
             cerrarModal();
             cargarCompras();
         } else {
@@ -619,30 +721,56 @@ window.verCompra = async (id) => {
     modalVer.style.display = 'flex';
 
     // Populate Headers
-    document.getElementById('view-orden-id').textContent = compra.id;
+    document.getElementById('view-doc-ref').textContent = `Documento: ${compra.combo_documento || compra.numero_comprobante || id}`;
     document.getElementById('view-proveedor').textContent = compra.proveedor_nombre || `ID: ${compra.proveedor_id}`;
-    document.getElementById('view-sucursal').textContent = compra.sucursal_id ? `Sucursal #${compra.sucursal_id}` : 'General';
     document.getElementById('view-fecha').textContent = new Date(compra.fecha).toLocaleDateString();
     document.getElementById('view-total').textContent = `$${parseFloat(compra.total).toLocaleString()}`;
 
-    // Update Badges
-    const badgeEstado = document.getElementById('view-estado-badge');
-    badgeEstado.textContent = compra.estado || 'Orden de Compra';
-    badgeEstado.className = `badge ${getBadgeClass(compra.estado)}`;
+    // Update Badges / States
+    const elEstado = document.getElementById('view-estado-compra');
+    elEstado.innerHTML = `<span class="badge ${getBadgeClass(compra.estado)}">${compra.estado || 'Orden de Compra'}</span>`;
 
-    const badgePago = document.getElementById('view-pago-badge');
-    badgePago.textContent = compra.estado_pago || 'Debe';
-    badgePago.className = `badge ${getBadgeClass(compra.estado_pago)}`;
+    const elPago = document.getElementById('view-estado-pago');
+    elPago.innerHTML = `<span class="badge ${getBadgeClass(compra.estado_pago)}">${compra.estado_pago || 'Debe'}</span>`;
 
     // Generate Actions
     generateActionButtons(compra);
 
-    // Clear Items (TODO: Fetch Items from Backend)
-    document.getElementById('view-detalle-body').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #aaa;">Visualización de items pronto...</td></tr>';
+    // Populate Items
+    const tbody = document.getElementById('view-detalle-body');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando productos...</td></tr>';
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/${id}/detalles`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        tbody.innerHTML = '';
+        if (data.success && data.data.length > 0) {
+            data.data.forEach(item => {
+                const tr = document.createElement('tr');
+                const subtotal = parseFloat(item.subtotal || (item.cantidad * item.costo_unitario));
+                tr.innerHTML = `
+                    <td style="padding: 12px 20px;">${item.nombre_producto}</td>
+                    <td style="padding: 12px 20px; text-align: center;">${item.cantidad}</td>
+                    <td style="padding: 12px 20px;">$${parseFloat(item.costo_unitario).toLocaleString()}</td>
+                    <td style="padding: 12px 20px; font-weight: 600;">$${subtotal.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">No hay productos registrados para esta compra.</td></tr>';
+        }
+    } catch (err) {
+        console.error('Error fetching details:', err);
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando productos.</td></tr>';
+    }
 }
 
 function generateActionButtons(compra) {
-    const containerEstado = document.getElementById('view-actions-estado');
+    const containerEstado = document.getElementById('view-actions-compra');
     const containerPago = document.getElementById('view-actions-pago');
 
     containerEstado.innerHTML = '';
@@ -762,65 +890,115 @@ async function cambiarEstadoPago(id, nuevoEstado) {
 
 async function guardarQuickProveedor(e) {
     if (e) e.preventDefault();
-    const form = document.getElementById('form-quick-proveedor');
 
-    // Simplistic extraction - adjust based on actual form IDs if needed, 
-    // but assuming standard form behavior or specific IDs were used in HTML.
-    // For safety, let's use FormData
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    const nombre = document.getElementById('qt_nombre_comercial').value;
+    const documento = document.getElementById('qt_documento').value;
 
-    // Ensure critical fields
-    data.tipo = 'Proveedor';
-    data.es_proveedor = 1;
+    if (!nombre || !documento) {
+        localShowNotification('Nombre y Documento son obligatorios', 'warning');
+        return;
+    }
+
+    const formData = {
+        nombre_comercial: nombre,
+        razon_social: document.getElementById('qt_razon_social').value,
+        tipo_documento: document.getElementById('qt_tipo_documento').value,
+        documento: documento,
+        telefono: document.getElementById('qt_telefono').value,
+        email: document.getElementById('qt_email').value,
+        direccion: document.getElementById('qt_direccion').value,
+        es_cliente: document.getElementById('qt_es_cliente').checked,
+        es_proveedor: document.getElementById('qt_es_proveedor').checked,
+        tipo: 'Proveedor' // Legacy compatibility
+    };
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(TERCEROS_URL, {
+        const resp = await fetch(TERCEROS_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(data)
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
         });
-        const resp = await res.json();
-        if (resp.success) {
-            localShowNotification('Proveedor creado', 'success');
-            document.getElementById('modal-quick-proveedor').style.display = 'none';
 
-            form.reset();
+        const data = await resp.json();
+        if (data.success) {
+            localShowNotification('Proveedor creado exitosamente', 'success');
+            document.getElementById('modal-quick-tercero').style.display = 'none';
+            document.getElementById('form-quick-tercero').reset();
+
             await cargarProveedores();
-            // Auto Select?
+
+            // Auto-select the new provider
             const select = document.getElementById('compra-proveedor');
-            select.value = resp.id || resp.data?.id;
+            const newId = data.id || data.data?.id;
+            if (newId) {
+                setTimeout(() => {
+                    select.value = newId;
+                }, 200);
+            }
+
         } else {
-            localShowNotification('Error: ' + resp.message, 'error');
+            localShowNotification(data.message, 'error');
         }
-    } catch (err) { console.error(err); }
+    } catch (error) {
+        console.error('Quick Provider Error:', error);
+        localShowNotification('Error al crear proveedor', 'error');
+    }
 }
 
 async function guardarQuickProducto(e) {
     if (e) e.preventDefault();
-    const form = document.getElementById('form-quick-producto');
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+
+    const nombre = document.getElementById('qp_nombre').value;
+    if (!nombre) return localShowNotification('El nombre es obligatorio', 'warning');
+
+    const formData = {
+        nombre: nombre,
+        referencia_fabrica: document.getElementById('qp_referencia_fabrica').value,
+        codigo: document.getElementById('qp_codigo').value,
+        categoria: document.getElementById('qp_categoria').value,
+        unidad_medida: document.getElementById('qp_unidad_medida').value,
+        precio1: parseFloat(document.getElementById('qp_precio1').value) || 0,
+        costo: parseFloat(document.getElementById('qp_costo').value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('qp_impuesto_porcentaje').value) || 0,
+        stock_minimo: parseInt(document.getElementById('qp_stock_minimo').value) || 0,
+        activo: document.getElementById('qp_activo').checked ? 1 : 0,
+        maneja_inventario: document.getElementById('qp_maneja_inventario').checked ? 1 : 0
+    };
 
     try {
         const token = localStorage.getItem('token');
         const res = await fetch(PRODUCTOS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(data)
+            body: JSON.stringify(formData)
         });
         const resp = await res.json();
         if (resp.success) {
-            localShowNotification('Producto creado', 'success');
+            localShowNotification('Producto creado exitosamente', 'success');
             document.getElementById('modal-quick-producto').style.display = 'none';
-            form.reset();
-            // Auto add to cart? need full product object.
-            // For now just notify.
+            document.getElementById('form-quick-producto').reset();
+
+            // Auto-add to cart
+            const newProd = {
+                id: resp.id || resp.data?.id,
+                nombre: formData.nombre,
+                costo: formData.costo,
+                stock_actual: 0
+            };
+            if (newProd.id) {
+                agregarAlCarrito(newProd);
+            }
         } else {
             localShowNotification('Error: ' + resp.message, 'error');
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        localShowNotification('Error de conexión al crear producto', 'error');
+    }
 }
 
 // Helper to safely call global notification
@@ -854,7 +1032,6 @@ async function guardarFacturaAdjunta() {
 
     try {
         const token = localStorage.getItem('token');
-        // Note: Do NOT set Content-Type header when sending FormData, fetch sets it automatically with boundary
         const res = await fetch(`${API_URL}/${compraActualId}`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` },
@@ -865,11 +1042,8 @@ async function guardarFacturaAdjunta() {
             localShowNotification('Factura registrada. Estado: Realizada', 'success');
             document.getElementById('modal-adjuntar-factura').style.display = 'none';
 
-            // Workflow: Auto-advance to Inspection
-            // First refresh list to update status in memory/UI
             await cargarCompras();
 
-            // Open Inspection Modal Immediately
             setTimeout(() => {
                 abrirModalInspeccion(compraActualId);
             }, 300);
@@ -928,22 +1102,7 @@ async function abrirModalInspeccion(id) {
 }
 
 async function guardarInspeccion() {
-    // Collect specific quantities
     const inputs = document.querySelectorAll('.received-qty-input');
-    const receivedItems = [];
-
-    inputs.forEach(inp => {
-        receivedItems.push({
-            producto_id: inp.dataset.prod,
-            cantidad_recibida: parseFloat(inp.value) || 0
-        });
-    });
-
-    // Validar si hay cambios (Parcialidad no soportada fully en backend en este paso, pero podemos guardar notas o ajustar items)
-    // Por ahora, asumimos que el usuario edita lo que realmente entra.
-    // TODO: Send `receivedItems` to backend to adjust Purchase Details if needed (Partial Delivery feature)
-    // Current Logic: Just advance state manually.
-
     await cambiarEstado(compraActualId, 'Recibida');
     document.getElementById('modal-inspeccion').style.display = 'none';
 }
@@ -952,4 +1111,137 @@ async function completarCompra(id) {
     if (!confirm('¿Confirma que la mercancía ha sido ingresada al inventario de la sucursal?')) return;
     await cambiarEstado(id, 'Completada');
 }
+
+/**
+ * BULK SELECTOR LOGIC
+ */
+async function abrirCargarProductosMasivo() {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(PRODUCTOS_URL, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            allProductsCatalogue = data.data || [];
+            bulkSelection = {};
+            document.getElementById('bulk-selection-count').textContent = '0 productos seleccionados';
+            document.getElementById('filter-bulk-prod').value = '';
+            renderBulkProdList();
+            document.getElementById('modal-bulk-productos').style.display = 'flex';
+        } else {
+            localShowNotification('Error al cargar catálogo', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        localShowNotification('Error de conexión', 'error');
+    }
+}
+
+function renderBulkProdList(filter = '') {
+    const listBody = document.getElementById('bulk-prod-body');
+    listBody.innerHTML = '';
+
+    let filtered = allProductsCatalogue.filter(p =>
+        p.nombre.toLowerCase().includes(filter.toLowerCase()) ||
+        (p.referencia_fabrica && p.referencia_fabrica.toLowerCase().includes(filter.toLowerCase())) ||
+        (p.codigo && p.codigo.toLowerCase().includes(filter.toLowerCase()))
+    );
+
+    if (sortStockAsc) {
+        filtered.sort((a, b) => (parseFloat(a.stock_actual) || 0) - (parseFloat(b.stock_actual) || 0));
+    } else {
+        filtered.sort((a, b) => (parseFloat(b.stock_actual) || 0) - (parseFloat(a.stock_actual) || 0));
+    }
+
+    filtered.forEach(p => {
+        const tr = document.createElement('tr');
+        const isSelected = bulkSelection[p.id] !== undefined;
+        const qty = bulkSelection[p.id] || '';
+
+        tr.innerHTML = `
+            <td style="padding: 12px 20px; text-align: center;">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                    onchange="toggleBulkSelection(${p.id}, this.checked)"
+                    style="transform: scale(1.3); cursor: pointer; accent-color: #6366f1;">
+            </td>
+            <td style="padding: 12px 20px;">
+                <div style="font-weight: 600; color: #1e293b;">${p.nombre}</div>
+                <div style="font-size: 0.75rem; color: #64748b;">${p.referencia_fabrica || 'Sin ref.'} | ${p.codigo || 'S/N'}</div>
+            </td>
+            <td style="padding: 12px 20px; color: #64748b;">${p.stock_actual || 0}</td>
+            <td style="padding: 12px 20px;">
+                <input type="number" id="bulk-qty-${p.id}" value="${qty}" min="0" 
+                    placeholder="0"
+                    onchange="window.updateBulkSelection(${p.id}, this.value)"
+                    style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; text-align: center;">
+            </td>
+        `;
+        listBody.appendChild(tr);
+    });
+}
+
+function toggleBulkSelection(id, checked) {
+    if (checked) {
+        if (!bulkSelection[id]) {
+            bulkSelection[id] = 1;
+            const input = document.getElementById(`bulk-qty-${id}`);
+            if (input) input.value = 1;
+        }
+    } else {
+        delete bulkSelection[id];
+        const input = document.getElementById(`bulk-qty-${id}`);
+        if (input) input.value = '';
+    }
+    updateBulkCounter();
+}
+
+function updateBulkSelection(id, val) {
+    const qty = parseFloat(val) || 0;
+    if (qty > 0) {
+        bulkSelection[id] = qty;
+        const cb = document.querySelector(`input[type="checkbox"][onchange*="toggleBulkSelection(${id}"]`);
+        if (cb) cb.checked = true;
+    } else {
+        delete bulkSelection[id];
+        const cb = document.querySelector(`input[type="checkbox"][onchange*="toggleBulkSelection(${id}"]`);
+        if (cb) cb.checked = false;
+    }
+    updateBulkCounter();
+}
+
+function updateBulkCounter() {
+    const count = Object.keys(bulkSelection).length;
+    const counterEl = document.getElementById('bulk-selection-count');
+    if (counterEl) counterEl.textContent = `${count} productos seleccionados`;
+}
+
+function confirmarSeleccionMasiva() {
+    const ids = Object.keys(bulkSelection);
+    if (ids.length === 0) {
+        return localShowNotification('No has seleccionado ningún producto con cantidad', 'warning');
+    }
+
+    let addedCount = 0;
+    ids.forEach(id => {
+        const prod = allProductsCatalogue.find(p => p.id == id);
+        if (prod) {
+            agregarAlCarrito(prod, bulkSelection[id]);
+            addedCount++;
+        }
+    });
+
+    localShowNotification(`${addedCount} productos añadidos`, 'success');
+    cerrarBulkSelector();
+}
+
+function cerrarBulkSelector() {
+    document.getElementById('modal-bulk-productos').style.display = 'none';
+    allProductsCatalogue = [];
+    bulkSelection = {};
+}
+
+window.updateBulkSelection = updateBulkSelection;
+window.toggleBulkSelection = toggleBulkSelection;
 

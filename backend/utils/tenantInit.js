@@ -380,6 +380,92 @@ async function initializeTenantDB(dbConfig) {
             )
         `);
 
+        // --- 14. NOTAS CRÉDITO ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS notas_credito (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                numero_nc VARCHAR(50) UNIQUE,
+                prefijo VARCHAR(20),
+                documento_id INT,
+                factura_id INT,
+                cliente_id INT,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                subtotal DECIMAL(15,2) DEFAULT 0,
+                impuesto_total DECIMAL(15,2) DEFAULT 0,
+                total DECIMAL(15,2) DEFAULT 0,
+                motivo TEXT,
+                usuario_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE SET NULL
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS nota_credito_detalle (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nota_credito_id INT,
+                producto_id INT,
+                cantidad DECIMAL(15,2),
+                precio_unitario DECIMAL(15,2),
+                impuesto_porcentaje DECIMAL(5,2),
+                subtotal DECIMAL(15,2),
+                FOREIGN KEY (nota_credito_id) REFERENCES notas_credito(id) ON DELETE CASCADE
+            )
+        `);
+
+        // --- 15. CAJAS ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS cajas (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                sucursal_id INT,
+                documento_id INT,
+                impresora_config JSON,
+                codigo_acceso VARCHAR(50),
+                codigo_puc VARCHAR(20),
+                cliente_defecto_id INT,
+                estado ENUM('Activa', 'Inactiva') DEFAULT 'Activa',
+                fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS caja_sesiones (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                usuario_id INT NOT NULL,
+                sucursal_id INT,
+                caja_id INT,
+                fecha_apertura DATETIME DEFAULT CURRENT_TIMESTAMP,
+                fecha_cierre DATETIME,
+                base_inicial DECIMAL(15,2) DEFAULT 0,
+                monto_total_esperado DECIMAL(15,2) DEFAULT 0,
+                monto_real_cierre DECIMAL(15,2) DEFAULT 0,
+                diferencia DECIMAL(15,2) DEFAULT 0,
+                estado ENUM('Abierta', 'Cerrada') DEFAULT 'Abierta',
+                observaciones TEXT,
+                FOREIGN KEY (caja_id) REFERENCES cajas(id) ON DELETE SET NULL
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS caja_movimientos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                caja_sesion_id INT,
+                tipo_movimiento ENUM('Ingreso', 'Egreso') NOT NULL,
+                monto DECIMAL(15,2) NOT NULL,
+                concepto VARCHAR(255),
+                documento_referencia VARCHAR(100),
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (caja_sesion_id) REFERENCES caja_sesiones(id) ON DELETE CASCADE
+            )
+        `);
+
+        // Add caja_sesion_id to facturas if not exists
+        const [facColsForCaja] = await clientConn.query("SHOW COLUMNS FROM facturas LIKE 'caja_sesion_id'");
+        if (facColsForCaja.length === 0) {
+            await clientConn.query("ALTER TABLE facturas ADD COLUMN caja_sesion_id INT NULL");
+        }
+
         console.log(`Schema initialization completed for: ${dbConfig.db_name}`);
         return { success: true };
 

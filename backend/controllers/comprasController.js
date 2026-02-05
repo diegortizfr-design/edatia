@@ -63,136 +63,112 @@ exports.actualizarCompra = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
         const { id } = req.params;
-        const { estado, estado_pago } = req.body;
+        const {
+            estado, estado_pago, proveedor_id, sucursal_id, fecha, total, items,
+            documento_id, factura_referencia, metodo_pago
+        } = req.body;
 
-        console.log(`[actualizarCompra] ID: ${id}, New Estado: ${estado}, User: ${nit}`);
-
-        // Validar que la orden existe
         const [ordenes] = await clientConn.query('SELECT * FROM compras WHERE id = ?', [id]);
         if (ordenes.length === 0) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
 
         const ordenActual = ordenes[0];
-        console.log(`[actualizarCompra] Estado Actual: ${ordenActual.estado}`);
 
-        // 🔒 LOCK: If already 'Completada', prevent any status change
-        // Ensure accurate comparison (case insensitive just in case)
+        // 🔒 LOCK: If already 'Completada', prevent any modification
         if (ordenActual.estado && ordenActual.estado.toLowerCase() === 'completada') {
-            console.log('[actualizarCompra] Blocked: Order is already completed.');
             return res.status(400).json({ success: false, message: 'La orden está finalizada y no se puede modificar.' });
         }
 
-        // LOGIC: Stock Movement (If transitioning TO 'Completada')
+        await clientConn.beginTransaction();
+
+        // 1. Logic for stock movement (transitioning to Completada)
         if (estado === 'Completada') {
+            const [detalleItems] = await clientConn.query('SELECT * FROM compras_detalle WHERE compra_id = ?', [id]);
+            let targetSucursal = ordenActual.sucursal_id;
+            if (!targetSucursal) {
+                const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+            }
 
-            console.log('[actualizarCompra] Processing stock update...');
-            // Get items
-            const [items] = await clientConn.query('SELECT * FROM compras_detalle WHERE compra_id = ?', [id]);
+            for (const item of detalleItems) {
+                const qty = Number(item.cantidad) || 0;
+                const cost = Number(item.costo_unitario) || 0;
 
-            await clientConn.beginTransaction();
+                const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.producto_id, targetSucursal]);
+                const currentBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+                const newBranchStock = currentBranchStock + qty;
 
-            try {
-                // Get Default Branch if not set in order
-                let targetSucursal = ordenActual.sucursal_id;
-                if (!targetSucursal) {
-                    const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-                    targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+                const [prods] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [item.producto_id]);
+                const currentGlobalStock = prods.length ? (Number(prods[0].stock_actual) || 0) : 0;
+                const currentCost = prods.length ? (Number(prods[0].costo) || 0) : 0;
+                const newGlobalStock = currentGlobalStock + qty;
+
+                let finalCost = cost;
+                if (newGlobalStock > 0) {
+                    finalCost = ((currentGlobalStock * currentCost) + (qty * cost)) / newGlobalStock;
                 }
 
-                // Update Stock
-                for (const item of items) {
-                    // Ensure values are numbers
-                    const qty = Number(item.cantidad) || 0;
-                    const cost = Number(item.costo_unitario) || 0;
-
-                    // 1. Fetch CURRENT Branch Stock
-                    const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.producto_id, targetSucursal]);
-                    const currentBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
-                    const newBranchStock = currentBranchStock + qty;
-
-                    // 2. Fetch Global Stock (for cost update & global cache)
-                    const [prods] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [item.producto_id]);
-                    const currentGlobalStock = prods.length ? (Number(prods[0].stock_actual) || 0) : 0;
-                    const newGlobalStock = currentGlobalStock + qty;
-
-                    // 3. Upsert Branch Stock
-                    if (invSuc.length > 0) {
-                        await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.producto_id, targetSucursal]);
-                    } else {
-                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [item.producto_id, targetSucursal, newBranchStock]);
-                    }
-
-                    // 4. Update Global Stock & Cost
-                    await clientConn.query(`
-                        UPDATE productos 
-                        SET stock_actual = ?, costo = ?
-                        WHERE id = ?
-                    `, [newGlobalStock, cost, item.producto_id]);
-
-                    // 5. Record Movement (Kardex)
-                    await clientConn.query(`
-                        INSERT INTO movimientos_inventario 
-                        (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                        VALUES (?, ?, 'COMPRA', ?, ?, ?, ?, ?, ?)
-                    `, [
-                        item.producto_id,
-                        targetSucursal,
-                        qty,
-                        currentBranchStock,
-                        newBranchStock,
-                        'Entrada por Compra',
-                        ordenActual.numero_comprobante,
-                        cost
-                    ]);
+                if (invSuc.length > 0) {
+                    await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.producto_id, targetSucursal]);
+                } else {
+                    await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [item.producto_id, targetSucursal, newBranchStock]);
                 }
 
-                // Update Header
-                await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', ['Completada', id]);
-                await clientConn.commit();
-                console.log('[actualizarCompra] Transaction Committed.');
+                await clientConn.query('UPDATE productos SET stock_actual = ?, costo = ? WHERE id = ?', [newGlobalStock, finalCost, item.producto_id]);
 
-            } catch (txErr) {
-                await clientConn.rollback();
-                console.error('[actualizarCompra] Transaction Failed:', txErr);
-                throw txErr; // Re-throw to main catch
-            }
-
-        } else if (estado) {
-            console.log(`[actualizarCompra] Updating simple status to: ${estado}`);
-            await clientConn.query('UPDATE compras SET estado = ? WHERE id = ?', [estado, id]);
-        }
-
-        // Update Invoice Details if provided (e.g., in Realizada state)
-        if (req.body.factura_referencia || req.file || req.body.factura_url) {
-            const updates = [];
-            const params = [];
-            if (req.body.factura_referencia) { updates.push('factura_referencia = ?'); params.push(req.body.factura_referencia); }
-
-            // Handle file upload
-            if (req.file) {
-                const fileUrl = `/uploads/facturas/${req.file.filename}`;
-                updates.push('factura_url = ?');
-                params.push(fileUrl);
-            } else if (req.body.factura_url) {
-                updates.push('factura_url = ?');
-                params.push(req.body.factura_url);
-            }
-
-            if (updates.length > 0) {
-                params.push(id);
-                await clientConn.query(`UPDATE compras SET ${updates.join(', ')} WHERE id = ?`, params);
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario 
+                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                    VALUES (?, ?, 'COMPRA', ?, ?, ?, 'Entrada por Compra', ?, ?)
+                `, [item.producto_id, targetSucursal, qty, currentBranchStock, newBranchStock, ordenActual.numero_comprobante, cost]);
             }
         }
 
+        // 2. Update Header
+        const headerUpdates = [];
+        const headerParams = [];
 
-        if (estado_pago) {
-            await clientConn.query('UPDATE compras SET estado_pago = ? WHERE id = ?', [estado_pago, id]);
+        if (proveedor_id) { headerUpdates.push('proveedor_id = ?'); headerParams.push(proveedor_id); }
+        if (sucursal_id) { headerUpdates.push('sucursal_id = ?'); headerParams.push(sucursal_id); }
+        if (fecha) { headerUpdates.push('fecha = ?'); headerParams.push(fecha); }
+        if (total !== undefined) { headerUpdates.push('total = ?'); headerParams.push(total); }
+        if (estado) { headerUpdates.push('estado = ?'); headerParams.push(estado); }
+        if (estado_pago) { headerUpdates.push('estado_pago = ?'); headerParams.push(estado_pago); }
+        if (factura_referencia !== undefined) { headerUpdates.push('factura_referencia = ?'); headerParams.push(factura_referencia); }
+        if (metodo_pago) {
+            headerUpdates.push('metodo_pago = ?'); headerParams.push(metodo_pago);
+            if (!estado_pago) {
+                headerUpdates.push('estado_pago = ?');
+                headerParams.push(metodo_pago === 'Contado' ? 'Pago' : 'Debe');
+            }
         }
 
-        res.json({ success: true, message: 'Orden actualizada' });
+        if (req.file) {
+            const fileUrl = `/uploads/facturas/${req.file.filename}`;
+            headerUpdates.push('factura_url = ?');
+            headerParams.push(fileUrl);
+        }
+
+        if (headerUpdates.length > 0) {
+            headerParams.push(id);
+            await clientConn.query(`UPDATE compras SET ${headerUpdates.join(', ')} WHERE id = ?`, headerParams);
+        }
+
+        // 3. Update Items (If provided)
+        if (items && items.length > 0) {
+            await clientConn.query('DELETE FROM compras_detalle WHERE compra_id = ?', [id]);
+            for (const item of items) {
+                await clientConn.query(`
+                    INSERT INTO compras_detalle (compra_id, producto_id, cantidad, costo_unitario, subtotal)
+                    VALUES (?, ?, ?, ?, ?)
+                `, [id, item.producto_id, item.cantidad, item.costo, item.subtotal]);
+            }
+        }
+
+        await clientConn.commit();
+        res.json({ success: true, message: 'Compra actualizada correctamente' });
 
     } catch (err) {
-        // Only rollback if we are in a transaction state (hard to track here simply, but safe to try)
-        // Ideally handled inside the specific block
+        if (clientConn) await clientConn.rollback();
         console.error('actualizarCompra error:', err);
         res.status(500).json({ success: false, message: 'Error actualizando compra: ' + err.message });
     } finally {
@@ -209,7 +185,7 @@ exports.crearCompra = async (req, res) => {
 
         const {
             proveedor_id, sucursal_id, fecha, total, estado, items,
-            documento_id, factura_referencia // cruce logic
+            documento_id, factura_referencia, metodo_pago // add metodo_pago
         } = req.body;
 
         // DDL Removed
@@ -246,12 +222,13 @@ exports.crearCompra = async (req, res) => {
         // 2. Insert Header
         const [result] = await clientConn.query(`
             INSERT INTO compras 
-            (proveedor_id, sucursal_id, documento_id, numero_comprobante, fecha, total, estado, estado_pago, usuario_id, factura_referencia, factura_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (proveedor_id, sucursal_id, documento_id, numero_comprobante, fecha, total, estado, estado_pago, usuario_id, factura_referencia, factura_url, metodo_pago)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             proveedor_id, sucursal_id || null, documento_id || null, numero_comprobante,
-            fecha, total, (factura_referencia ? 'Realizada' : (estado || 'Orden de Compra')), 'Debe',
-            req.user.id, factura_referencia || null, null
+            fecha, total, (factura_referencia ? 'Realizada' : (estado || 'Orden de Compra')),
+            (metodo_pago === 'Contado' ? 'Pago' : 'Debe'),
+            req.user.id, factura_referencia || null, null, metodo_pago || 'Contado'
         ]);
 
         const compraId = result.insertId;
@@ -310,6 +287,39 @@ exports.obtenerDetallesCompra = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Error obteniendo detalles' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.eliminarCompra = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+        const { id } = req.params;
+
+        // 1. Check if exists and state
+        const [ordenes] = await clientConn.query('SELECT estado FROM compras WHERE id = ?', [id]);
+        if (ordenes.length === 0) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+
+        if (ordenes[0].estado === 'Completada') {
+            return res.status(400).json({ success: false, message: 'No se puede eliminar una compra completada porque ya afectó el stock e inventario.' });
+        }
+
+        // 2. Delete (Detail will be deleted via CASCADE if FK is set, but let's be explicit)
+        await clientConn.beginTransaction();
+        await clientConn.query('DELETE FROM compras_detalle WHERE compra_id = ?', [id]);
+        await clientConn.query('DELETE FROM compras WHERE id = ?', [id]);
+        await clientConn.commit();
+
+        res.json({ success: true, message: 'Compra eliminada correctamente' });
+
+    } catch (err) {
+        if (clientConn) await clientConn.rollback();
+        console.error('eliminarCompra error:', err);
+        res.status(500).json({ success: false, message: 'Error eliminando compra: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }

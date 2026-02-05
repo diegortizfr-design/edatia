@@ -85,7 +85,8 @@ exports.crearFactura = async (req, res) => {
 
         const {
             documento_id, cliente_id, subtotal, impuesto_total, total,
-            tipo_pago, metodo_pago, monto_pagado, devuelta, items
+            tipo_pago, metodo_pago, monto_pagado, devuelta, items,
+            caja_sesion_id, vendedor_id
         } = req.body;
 
         if (!items || items.length === 0) {
@@ -178,14 +179,14 @@ exports.crearFactura = async (req, res) => {
         const { id: userId } = req.user;
         const [resFac] = await clientConn.query(`
             INSERT INTO facturas 
-            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, monto_pagado, devuelta, estado, vendedor_id, usuario_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, monto_pagado, devuelta, estado, vendedor_id, usuario_id, caja_sesion_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             numero_factura, prefijo, documento_id, cliente_id || null,
             subtotal, impuesto_total, total,
             tipo_pago, metodo_pago, monto_pagado, devuelta,
             (tipo_pago === 'Crédito' ? 'Pendiente' : 'Pagada'),
-            userId || null, userId || null
+            vendedor_id || userId || null, userId || null, caja_sesion_id || null
         ]);
         const facturaId = resFac.insertId;
 
@@ -216,7 +217,40 @@ exports.crearFactura = async (req, res) => {
 
                 // Update RC Consecutive
                 await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [rcDoc.id]);
+
+                // Update Caja Session Totals (if exists and is effective/cash)
+                if (caja_sesion_id) {
+                    if (metodo_pago === 'Efectivo') {
+                        await clientConn.query(
+                            "UPDATE caja_sesiones SET monto_ventas_efectivo = monto_ventas_efectivo + ?, monto_total_esperado = monto_total_esperado + ? WHERE id = ?",
+                            [total, total, caja_sesion_id]
+                        );
+                    } else {
+                        await clientConn.query(
+                            "UPDATE caja_sesiones SET monto_ventas_otros = monto_ventas_otros + ?, monto_total_esperado = monto_total_esperado + ? WHERE id = ?",
+                            [total, total, caja_sesion_id]
+                        );
+                    }
+
+                    // Add Movement
+                    await clientConn.query(
+                        "INSERT INTO caja_movimientos (sesion_id, tipo_movimiento, monto, motivo, metodo_pago, referencia_id) VALUES (?, 'Venta', ?, ?, ?, ?)",
+                        [caja_sesion_id, total, `Venta ${numero_factura}`, metodo_pago, facturaId]
+                    );
+                }
             }
+        } else if (caja_sesion_id) {
+            // If not Contado (Credit), we still might want to track the movement or just the fact that it's in this session
+            // but usually only cash movements are tracked in caja_sesiones totals for balancing.
+            // We'll just update the session total expected if it also affects other methods.
+            await clientConn.query(
+                "UPDATE caja_sesiones SET monto_ventas_otros = monto_ventas_otros + ?, monto_total_esperado = monto_total_esperado + ? WHERE id = ?",
+                [total, total, caja_sesion_id]
+            );
+            await clientConn.query(
+                "INSERT INTO caja_movimientos (sesion_id, tipo_movimiento, monto, motivo, metodo_pago, referencia_id) VALUES (?, 'Venta', ?, ?, ?, ?)",
+                [caja_sesion_id, total, `Venta Crédito ${numero_factura}`, metodo_pago, facturaId]
+            );
         }
 
         await clientConn.commit();
@@ -297,6 +331,136 @@ exports.listarRecibos = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.anularFactura = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { factura_id, documento_id, motivo } = req.body;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        await clientConn.beginTransaction();
+
+        try {
+            // 1. Get Invoice Header
+            const [facs] = await clientConn.query('SELECT * FROM facturas WHERE id = ? FOR UPDATE', [factura_id]);
+            if (facs.length === 0) throw new Error('Factura no encontrada');
+            const fac = facs[0];
+
+            if (fac.estado === 'Anulada') throw new Error('La factura ya se encuentra anulada');
+
+            // 2. Get Invoice Details
+            const [items] = await clientConn.query('SELECT * FROM factura_detalle WHERE factura_id = ?', [factura_id]);
+
+            // 3. Get NC Document info
+            const [docRows] = await clientConn.query(
+                'SELECT prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE id = ? FOR UPDATE',
+                [documento_id]
+            );
+            if (docRows.length === 0) throw new Error('Tipo de documento (Nota Crédito) no encontrado');
+            const { prefijo, consecutivo_actual, sucursal_id } = docRows[0];
+            const numero_nc = `${prefijo || ''}${consecutivo_actual}`;
+
+            // 4. Create Nota Crédito Header
+            const [ncRes] = await clientConn.query(`
+                INSERT INTO notas_credito 
+                (numero_nc, prefijo, documento_id, factura_id, cliente_id, subtotal, impuesto_total, total, motivo, usuario_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                numero_nc, prefijo, documento_id, factura_id, fac.cliente_id,
+                fac.subtotal, fac.impuesto_total, fac.total, motivo || 'Anulación de Factura', req.user.id
+            ]);
+            const notaCreditoId = ncRes.insertId;
+
+            // 5. Create NC Details and REVERSE Stock
+            for (const item of items) {
+                // Insert NC Detail
+                await clientConn.query(`
+                    INSERT INTO nota_credito_detalle (nota_credito_id, producto_id, cantidad, precio_unitario, impuesto_porcentaje, subtotal)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `, [notaCreditoId, item.producto_id, item.cantidad, item.precio_unitario, item.impuesto_porcentaje, item.subtotal]);
+
+                // Reverse Stock
+                const [prods] = await clientConn.query('SELECT stock_actual, maneja_inventario, costo FROM productos WHERE id = ? FOR UPDATE', [item.producto_id]);
+                if (prods.length > 0) {
+                    const prod = prods[0];
+                    if (prod.maneja_inventario) {
+                        // Update Branch Stock
+                        const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [item.producto_id, sucursal_id]);
+                        const oldBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
+                        const newBranchStock = oldBranchStock + parseFloat(item.cantidad);
+
+                        if (invSuc.length > 0) {
+                            await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, item.producto_id, sucursal_id]);
+                        } else {
+                            await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [item.producto_id, sucursal_id, newBranchStock]);
+                        }
+
+                        // Update Global Stock
+                        const oldGlobalStock = parseFloat(prod.stock_actual) || 0;
+                        const newGlobalStock = oldGlobalStock + parseFloat(item.cantidad);
+                        await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [newGlobalStock, item.producto_id]);
+
+                        // Record Movement (ENTRADA por devolución)
+                        await clientConn.query(`
+                            INSERT INTO movimientos_inventario 
+                            (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
+                            VALUES (?, ?, 'ENTRADA', ?, ?, ?, ?, ?, ?)
+                        `, [
+                            item.producto_id, sucursal_id, item.cantidad,
+                            oldBranchStock, newBranchStock,
+                            `Devolución/Anulación ${fac.numero_factura}`,
+                            numero_nc,
+                            prod.costo || 0
+                        ]);
+                    }
+                }
+            }
+
+            // 6. Reverse Cash Session Movement (If applicable)
+            if (fac.tipo_pago === 'Contado' && fac.caja_sesion_id) {
+                // We create an 'Egreso' movement in the session for the refund
+                await clientConn.query(
+                    "INSERT INTO caja_movimientos (sesion_id, tipo_movimiento, monto, motivo, metodo_pago, referencia_id) VALUES (?, 'Egreso', ?, ?, ?, ?)",
+                    [fac.caja_sesion_id, fac.total, `Anulación Factura ${fac.numero_factura}`, fac.metodo_pago, notaCreditoId]
+                );
+
+                // Update Session Totals
+                if (fac.metodo_pago === 'Efectivo') {
+                    await clientConn.query(
+                        "UPDATE caja_sesiones SET monto_ventas_efectivo = monto_ventas_efectivo - ?, monto_total_esperado = monto_total_esperado - ? WHERE id = ?",
+                        [fac.total, fac.total, fac.caja_sesion_id]
+                    );
+                } else {
+                    await clientConn.query(
+                        "UPDATE caja_sesiones SET monto_ventas_otros = monto_ventas_otros - ?, monto_total_esperado = monto_total_esperado - ? WHERE id = ?",
+                        [fac.total, fac.total, fac.caja_sesion_id]
+                    );
+                }
+            }
+
+            // 7. Update Invoice Status
+            await clientConn.query('UPDATE facturas SET estado = "Anulada" WHERE id = ?', [factura_id]);
+
+            // 8. Increment NC Consecutive
+            await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [documento_id]);
+
+            await clientConn.commit();
+            res.json({ success: true, message: 'Factura anulada exitosamente', numero_nc: numero_nc });
+
+        } catch (txErr) {
+            await clientConn.rollback();
+            throw txErr;
+        }
+
+    } catch (err) {
+        console.error('anularFactura error:', err);
+        res.status(500).json({ success: false, message: 'Error al anular factura: ' + err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }
