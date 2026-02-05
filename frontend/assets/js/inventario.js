@@ -145,12 +145,19 @@ function renderTable(productos, sucursalId = null) {
         row.innerHTML = `
             <td>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="prod-avatar">${p.nombre.charAt(0)}</div>
+                    <div class="prod-avatar">
+                        ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" onerror="this.onerror=null; this.parentElement.innerText='${p.nombre.charAt(0)}';">` : p.nombre.charAt(0)}
+                    </div>
                     <div>
                         <div style="font-weight:600;">${p.nombre}</div>
                         <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">${p.descripcion || ''}</div>
                     </div>
                 </div>
+            </td>
+            <td>
+                <span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">
+                    ${p.referencia_fabrica || '-'}
+                </span>
             </td>
             <td><code>${p.codigo || '-'}</code></td>
             <td>${p.categoria || 'General'}</td>
@@ -229,7 +236,7 @@ function renderCriticalTable(products) {
     tbody.innerHTML = '';
 
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">No hay productos en stock crítico</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No hay productos en stock crítico</td></tr>';
         return;
     }
 
@@ -239,9 +246,17 @@ function renderCriticalTable(products) {
         row.innerHTML = `
             <td><input type="checkbox" class="stock-check" value="${p.id}"></td>
             <td>
-                <div style="font-weight: 600;">${p.nombre}</div>
-                <div style="font-size: 0.8em; color: #888;">${p.codigo || '-'}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="prod-avatar" style="width: 32px; height: 32px; font-size: 0.9rem;">
+                        ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" onerror="this.onerror=null; this.parentElement.innerText='${p.nombre.charAt(0)}';">` : p.nombre.charAt(0)}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600;">${p.nombre}</div>
+                        <div style="font-size: 0.8em; color: #888;">${p.codigo || '-'}</div>
+                    </div>
+                </div>
             </td>
+            <td><span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">${p.referencia_fabrica || '-'}</span></td>
             <td style="color: #EF4444; font-weight: bold;">${p.stock_actual || 0}</td>
             <td>${min}</td>
         `;
@@ -373,9 +388,17 @@ window.setupMergeUI = (encodedKey) => {
                 <input type="radio" name="principal_product" value="${p.id}" ${checked} style="width: 18px; height: 18px;">
             </td>
             <td style="${style}">
-                <div style="font-weight:600;">${p.nombre}</div>
-                <div style="font-size:0.8em; color:#888;">SKU: ${p.codigo || 'N/A'} | ID: ${p.id}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="prod-avatar" style="width: 36px; height: 36px; font-size: 1rem;">
+                        ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" onerror="this.onerror=null; this.parentElement.innerText='${p.nombre.charAt(0)}';">` : p.nombre.charAt(0)}
+                    </div>
+                    <div>
+                        <div style="font-weight:600;">${p.nombre}</div>
+                        <div style="font-size:0.8em; color:#888;">SKU: ${p.codigo || 'N/A'} | ID: ${p.id}</div>
+                    </div>
+                </div>
             </td>
+            <td><span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">${p.referencia_fabrica || '-'}</span></td>
             <td style="font-weight:bold;">${p.stock_actual || 0}</td>
             <td>$${parseFloat(p.precio1).toLocaleString()}</td>
             <td>${p.activo ? 'Activo' : 'Inactivo'}</td>
@@ -523,7 +546,7 @@ function loadProductsForAjuste(products) {
     products.filter(p => p.maneja_inventario).forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = p.nombre;
+        opt.textContent = `${p.nombre} (${p.referencia_fabrica || 'Sin Ref'})`;
         select.appendChild(opt);
     });
     select.value = current;
