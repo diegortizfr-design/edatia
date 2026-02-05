@@ -318,7 +318,7 @@ exports.crearProducto = async (req, res) => {
             }
 
             await clientConn.commit();
-            res.status(201).json({ success: true, message: 'Producto creado exitosamente' });
+            res.status(201).json({ success: true, message: 'Producto creado exitosamente', id: productoId });
 
         } catch (txErr) {
             await clientConn.rollback();

@@ -17,7 +17,7 @@ const menuConfig = [
         link: "#",
         id: "nav-facturacion",
         submenu: [
-            { label: "Punto de Venta (POS)", link: "/frontend/modules/facturacion/facturacion.html" },
+            { label: "Punto de Venta (POS)", link: "/frontend/modules/facturacion/pos.html" },
             { label: "Historial de Ventas", link: "/frontend/modules/facturacion/lista_facturas.html" },
             { label: "Recibos de Caja", link: "/frontend/modules/facturacion/lista_recibos.html" }
         ]

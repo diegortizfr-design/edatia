@@ -18,7 +18,7 @@ const headerConfig = {
         icon: 'fas fa-boxes',
         searchPlaceholder: 'Buscar producto, SKU...'
     },
-    'facturacion.html': {
+    'pos.html': {
         title: 'Punto de Venta',
         icon: 'fas fa-cash-register',
         searchPlaceholder: 'Buscar producto (F3)...'

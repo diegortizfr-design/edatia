@@ -29,7 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnNuevo) btnNuevo.addEventListener('click', () => abrirModalCompra('orden'));
     document.getElementById('btn-registrar-factura')?.addEventListener('click', () => abrirModalCompra('factura'));
 
-    closeBtns.forEach(btn => btn.addEventListener('click', cerrarModal));
+    // Filter out nested close buttons (handled by specific setupQuickModal)
+    closeBtns.forEach(btn => {
+        if (!btn.classList.contains('nested-close')) {
+            btn.addEventListener('click', cerrarModal);
+        }
+    });
     // Listener removed here as it is assigned dynamically in abrirModalCompra
     // document.getElementById('btn-guardar-compra')?.addEventListener('click', guardarCompra);
 
@@ -1054,6 +1059,7 @@ async function guardarQuickProducto(e) {
             localShowNotification('Producto creado exitosamente', 'success');
             document.getElementById('modal-quick-producto').style.display = 'none';
             document.getElementById('form-quick-producto').reset();
+            deleteQuickProductImage();
 
             // Auto-add to cart
             const newProd = {
