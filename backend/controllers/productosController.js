@@ -98,16 +98,18 @@ exports.bulkUpload = async (req, res) => {
                             stock_actual = ?,
                             precio1 = IF(? > 0, ?, precio1),
                             costo = IF(? > 0, ?, costo),
-                            codigo = IFNULL(?, codigo) -- Update code only if provided
+                            codigo = IFNULL(?, codigo),
+                            referencia_fabrica = IFNULL(?, referencia_fabrica)
                         WHERE id = ?
                     `;
                     await clientConn.query(updateSQL, [
                         nombre,
                         categoria,
-                        stock, // Replace stock as per standard upload behavior
+                        stock,
                         precio1, precio1,
                         costo, costo,
                         codigo,
+                        data.referencia || null,
                         productToUpdate.id
                     ]);
                     updated++;
