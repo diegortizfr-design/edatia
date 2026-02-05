@@ -166,6 +166,18 @@
     object-fit: cover;
 }
 
+.badge-outline {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(99, 102, 241, 0.05);
+    color: #4f46e5;
+    /* Indigo color for contrast */
+}
+
 /* Filters */
 .filters {
     display: flex;

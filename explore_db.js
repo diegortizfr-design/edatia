@@ -3,10 +3,10 @@ const { getPool } = require('./backend/config/db');
 async function explore() {
     const pool = getPool();
     try {
-        // 1. List branches
-        const [branches] = await pool.query("SELECT id, nombre FROM sucursales");
-        console.log("Sucursales encontradas:");
-        console.table(branches);
+        // 1. Show columns of productos
+        const [columns] = await pool.query("SHOW COLUMNS FROM productos");
+        console.log("Columnas de productos:");
+        console.table(columns);
 
         const actualicell = branches.find(b => b.nombre.toUpperCase().includes("ACTUALICELL"));
         if (!actualicell) {

@@ -57,10 +57,9 @@ exports.bulkUpload = async (req, res) => {
                 }
 
                 // 1. Validate Mandatory Columns
-                const nombre = data.nombre || data.producto;
-                const categoria = data.categoria;
-                // Stock can be: stock, cantidad, inventario, stock_actual, stockactual
-                const stockVal = data.stock ?? data.cantidad ?? data.inventario ?? data.stockactual ?? data.stock_actual;
+                const nombre = data.nombre || data.producto || data.articulo;
+                const categoria = data.categoria || data.linea || data.grupo;
+                const stockVal = data.stock ?? data.cantidad ?? data.inventario ?? data.stockactual ?? data.stock_actual ?? data.existencia;
 
                 if (!nombre || !categoria || stockVal === undefined || stockVal === null) {
                     errors++;
@@ -68,10 +67,11 @@ exports.bulkUpload = async (req, res) => {
                     continue;
                 }
 
-                const codigo = data.codigo ? String(data.codigo).trim() : null;
+                const codigo = (data.codigo ?? data.sku ?? data.barcode ?? data.cod ?? data.ean) ? String(data.codigo ?? data.sku ?? data.barcode ?? data.cod ?? data.ean).trim() : null;
+                const referencia = (data.referencia ?? data.ref ?? data.referencia_fabrica ?? data.modelo) ? String(data.referencia ?? data.ref ?? data.referencia_fabrica ?? data.modelo).trim() : null;
                 const stock = parseInt(stockVal) || 0;
-                const precio1 = parseFloat(data.precio1 || data.precio) || 0;
-                const costo = parseFloat(data.costo) || 0;
+                const precio1 = parseFloat(data.precio1 || data.precio || data.pvp) || 0;
+                const costo = parseFloat(data.costo || data.cost) || 0;
 
                 // 2. Duplicate Detection Strategy
                 let productToUpdate = null;
@@ -109,7 +109,7 @@ exports.bulkUpload = async (req, res) => {
                         precio1, precio1,
                         costo, costo,
                         codigo,
-                        data.referencia || null,
+                        referencia,
                         productToUpdate.id
                     ]);
                     updated++;
@@ -124,10 +124,10 @@ exports.bulkUpload = async (req, res) => {
 
                     await clientConn.query(insertSQL, [
                         codigo,
-                        data.referencia || null,
+                        referencia,
                         nombre,
                         categoria,
-                        data.unidad || 'UND',
+                        data.unidad || data.u_m || 'UND',
                         precio1,
                         parseFloat(data.precio2) || 0,
                         costo,
@@ -191,8 +191,18 @@ exports.listarProductos = async (req, res) => {
             conditions.push('p.codigo = ?');
             params.push(barcode);
         } else if (busqueda) {
-            conditions.push('(p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia_fabrica LIKE ? OR p.nombre_alterno LIKE ?)');
-            params.push(`%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`, `%${busqueda}%`);
+            // Search in multiple fields for maximum flexibility
+            conditions.push(`(
+                p.nombre LIKE ? OR 
+                p.codigo LIKE ? OR 
+                p.referencia_fabrica LIKE ? OR 
+                p.nombre_alterno LIKE ? OR 
+                p.descripcion LIKE ? OR
+                p.categoria LIKE ? OR
+                t.nombre_comercial LIKE ?
+            )`);
+            const term = `%${busqueda}%`;
+            params.push(term, term, term, term, term, term, term);
         }
 
         if (categoria) {

@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Adjustment Form
         document.getElementById('form-ajuste')?.addEventListener('submit', registrarAjuste);
 
+        // Check for URL Actions (Shortcuts)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('sort') === 'stock_asc') {
+            // Sorting will be handled in cargarInventario or right after cargarInventario
+        }
+
     } catch (e) {
         console.error('Initialization error:', e);
     }
@@ -115,6 +121,22 @@ async function cargarInventario() {
 
         if (data.success) {
             listaProductos = data.data;
+
+            // DEBUG: Show first product to check field names
+            if (listaProductos.length > 0) {
+                console.log("ERP DEBUG - First product data sample:", listaProductos[0]);
+            }
+
+            // --- SORT BY STOCK IF REQUESTED ---
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('sort') === 'stock_asc') {
+                listaProductos.sort((a, b) => {
+                    const sA = sucursalId ? (parseFloat(a.stock_sucursal) || 0) : (parseFloat(a.stock_actual) || 0);
+                    const sB = sucursalId ? (parseFloat(b.stock_sucursal) || 0) : (parseFloat(b.stock_actual) || 0);
+                    return sA - sB;
+                });
+            }
+
             renderTable(listaProductos, sucursalId);
             updateKPIs(listaProductos);
             updateCategoryFilter(listaProductos);
@@ -155,8 +177,8 @@ function renderTable(productos, sucursalId = null) {
                 </div>
             </td>
             <td>
-                <span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">
-                    ${p.referencia_fabrica || '-'}
+                <span class="badge-outline">
+                    ${p.referencia_fabrica || p.referencia || '-'}
                 </span>
             </td>
             <td><code>${p.codigo || '-'}</code></td>
@@ -256,7 +278,7 @@ function renderCriticalTable(products) {
                     </div>
                 </div>
             </td>
-            <td><span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">${p.referencia_fabrica || '-'}</span></td>
+            <td><span class="badge-outline">${p.referencia_fabrica || '-'}</span></td>
             <td style="color: #EF4444; font-weight: bold;">${p.stock_actual || 0}</td>
             <td>${min}</td>
         `;
@@ -398,7 +420,7 @@ window.setupMergeUI = (encodedKey) => {
                     </div>
                 </div>
             </td>
-            <td><span class="badge-outline" style="font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">${p.referencia_fabrica || '-'}</span></td>
+            <td><span class="badge-outline">${p.referencia_fabrica || '-'}</span></td>
             <td style="font-weight:bold;">${p.stock_actual || 0}</td>
             <td>$${parseFloat(p.precio1).toLocaleString()}</td>
             <td>${p.activo ? 'Activo' : 'Inactivo'}</td>
