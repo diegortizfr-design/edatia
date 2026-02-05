@@ -52,15 +52,16 @@ exports.crearAjuste = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
         }
 
-        // Default Branch: If not provided, try to find "Principal", else ID 1
+        // Default Branch Logic: Explicit > Single Branch > Principal > First available
         let targetSucursal = sucursal_id;
         if (!targetSucursal) {
-            const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-            if (sucs.length > 0) targetSucursal = sucs[0].id;
-            else {
-                // Fallback to first one
-                const [first] = await clientConn.query("SELECT id FROM sucursales LIMIT 1");
-                if (first.length > 0) targetSucursal = first[0].id;
+            const [sucs] = await clientConn.query("SELECT id FROM sucursales");
+            if (sucs.length === 1) {
+                targetSucursal = sucs[0].id;
+            } else {
+                const [principal] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                if (principal.length > 0) targetSucursal = principal[0].id;
+                else if (sucs.length > 0) targetSucursal = sucs[0].id;
                 else throw new Error('No hay sucursales configuradas');
             }
         }

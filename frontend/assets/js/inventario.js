@@ -55,14 +55,38 @@ async function loadSucursales() {
         const data = await res.json();
 
         const select = document.getElementById('filtro-sucursal');
-        if (data.success && select) {
-            select.innerHTML = '<option value="">Todas las Sucursales</option>';
-            data.data.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.nombre;
-                select.appendChild(opt);
-            });
+        const selectManual = document.getElementById('ajuste-sucursal-manual');
+
+        if (data.success) {
+            const branches = data.data;
+
+            if (select) {
+                select.innerHTML = '<option value="">Todas las Sucursales</option>';
+                branches.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nombre;
+                    select.appendChild(opt);
+                });
+            }
+
+            if (selectManual) {
+                selectManual.innerHTML = '<option value="">Seleccione Sucursal...</option>';
+                branches.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nombre;
+                    selectManual.appendChild(opt);
+                });
+
+                // --- SINGLE BRANCH AUTOSELECT ---
+                if (branches.length === 1) {
+                    selectManual.value = branches[0].id;
+                } else {
+                    const principal = branches.find(s => s.es_principal);
+                    if (principal) selectManual.value = principal.id;
+                }
+            }
         }
     } catch (e) {
         console.error('Error loading branches:', e);

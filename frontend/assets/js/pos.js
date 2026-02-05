@@ -137,6 +137,9 @@ function renderLobby(cajas) {
             <div class="user-info">
                 ${isOpen ? `Usuario: ${c.sesion_usuario_nombre || 'Desconocido'}` : (c.sucursal_nombre || 'Sucursal General')}
             </div>
+            <div class="user-info" style="margin-top: 5px; opacity: 0.8; font-size: 0.75rem;">
+                <i class="fas fa-user-circle"></i> Defecto: ${c.cliente_defecto_nombre || 'Cliente Mostrador'}
+            </div>
         `;
         grid.appendChild(card);
     });
@@ -541,17 +544,24 @@ async function loadClients() {
 
             const clients = data.data.filter(c => c.es_cliente);
             let defaultClient = null;
+
+            // Prioridad 1: Cliente configurado en la caja/sesión activa
             if (sesionCaja && sesionCaja.cliente_defecto_id) {
-                defaultClient = clients.find(c => c.id == sesionCaja.cliente_defecto_id);
+                console.log('Buscando cliente defecto:', sesionCaja.cliente_defecto_id);
+                defaultClient = clients.find(c => String(c.id) === String(sesionCaja.cliente_defecto_id));
             }
-            if (!defaultClient) defaultClient = clients.find(c => c.documento === '22222222222');
+
+            // Prioridad 2: Cliente 1 (si no hay otro específico)
+            if (!defaultClient) defaultClient = clients.find(c => String(c.id) === '1');
+
+            // Prioridad 3: Primer cliente de la lista
             if (!defaultClient && clients.length > 0) defaultClient = clients[0];
 
             clients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = `${c.nombre_comercial || c.razon_social || c.nombre} - ${c.documento || 'Sin NIT'}`;
-                if (defaultClient && c.id === defaultClient.id) opt.selected = true;
+                opt.textContent = `${c.nombre_comercial || c.razon_social || c.nombre} (${c.documento || 'Sin doc'})`;
+                if (defaultClient && String(c.id) === String(defaultClient.id)) opt.selected = true;
                 select.appendChild(opt);
             });
 

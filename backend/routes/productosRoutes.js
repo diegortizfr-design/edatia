@@ -12,6 +12,7 @@ router.post('/bulk-upload', protect, upload.single('archivo'), productosCtrl.bul
 router.put('/:id', protect, productosCtrl.actualizarProducto);
 router.delete('/:id', protect, productosCtrl.eliminarProducto);
 router.post('/unificar', protect, productosCtrl.unificarProductos);
+router.get('/migrar-a-sucursal', protect, productosCtrl.migrarProductosASucursal);
 
 
 module.exports = router;

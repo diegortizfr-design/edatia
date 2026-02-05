@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         loadProducts();
         loadSuppliers();
+        loadBranchesForStock();
 
         // Search functionality
         const searchInput = document.getElementById('search-input');
@@ -239,6 +240,11 @@ window.openModal = (idOrObj = null) => {
             ajusteCont.style.display = 'block';
             document.getElementById('ajuste_cantidad').value = 0;
             document.getElementById('ajuste_motivo').value = 'Ajuste Manual';
+
+            // Trigger stock fetch for the currently selected branch in the ajuste selector
+            if (allBranches.length > 0) {
+                consultarStockSucursal();
+            }
         }
     } else {
         isEditing = false;
@@ -262,48 +268,136 @@ window.closeModal = () => {
     modal.style.display = 'none';
 };
 
-async function handleSave(e) {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
+// --- BRANCH LOADING & AUTOSELECT ---
+let allBranches = [];
 
-    const formData = {
-        nombre: document.getElementById('nombre')?.value || '',
-        nombre_alterno: document.getElementById('nombre_alterno')?.value || null,
-        referencia_fabrica: document.getElementById('referencia_fabrica')?.value || null,
-        codigo: document.getElementById('codigo')?.value || null,
-        categoria: document.getElementById('categoria')?.value || 'General',
-        unidad_medida: document.getElementById('unidad_medida')?.value || 'UND',
-        precio1: parseFloat(document.getElementById('precio1')?.value) || 0,
-        precio2: parseFloat(document.getElementById('precio2')?.value) || 0,
-        precio2: parseFloat(document.getElementById('precio2')?.value) || 0,
-        // precio3: parseFloat(document.getElementById('precio3')?.value) || 0,
-        costo: parseFloat(document.getElementById('costo')?.value) || 0,
-        impuesto_porcentaje: parseFloat(document.getElementById('impuesto_porcentaje')?.value) || 0,
-        proveedor_id: document.getElementById('proveedor_id')?.value || null,
-        stock_minimo: parseInt(document.getElementById('stock_minimo')?.value) || 0,
-        stock_inicial: parseInt(document.getElementById('stock_inicial')?.value) || 0,
-        ajuste_cantidad: parseInt(document.getElementById('ajuste_cantidad')?.value) || 0,
-        ajuste_motivo: document.getElementById('ajuste_motivo')?.value || 'Ajuste Manual',
-        // Logic: 
-        // If deleteImageFlag is true -> send NULL (Backend deletes image)
-        // If input is empty string -> send "" (Backend ignores update -> keeps existing)
-        // If has value -> send value (Backend updates)
-        imagen_url: deleteImageFlag ? null : (document.getElementById('imagen_url')?.value || ''),
-        activo: document.getElementById('activo')?.checked || false,
-        maneja_inventario: document.getElementById('maneja_inventario')?.checked || false,
-        mostrar_en_tienda: document.getElementById('mostrar_en_tienda')?.checked || false
-    };
+async function loadBranchesForStock() {
+    try {
+        const token = localStorage.getItem('token');
+        // Derive base URL from API_URL which is ".../api/productos"
+        const sucursalesUrl = API_URL.replace('/productos', '/sucursales');
 
-    if (!formData.nombre) {
-        showNotification('El nombre del producto es obligatorio', 'warning');
+        const res = await fetch(sucursalesUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            allBranches = data.data;
+            const selects = ['stock_sucursal_inicial', 'ajuste_sucursal'];
+
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                el.innerHTML = '<option value="">Seleccione Sucursal...</option>';
+                allBranches.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nombre;
+                    el.appendChild(opt);
+                });
+
+                // --- SINGLE BRANCH AUTOSELECT ---
+                if (allBranches.length === 1) {
+                    el.value = allBranches[0].id;
+                } else {
+                    // Try to find Principal
+                    const principal = allBranches.find(s => s.es_principal);
+                    if (principal) el.value = principal.id;
+                }
+            });
+
+            // If editing, trigger initial stock fetch
+            if (isEditing) {
+                setTimeout(consultarStockSucursal, 100);
+            }
+        }
+    } catch (err) {
+        console.error('Error loading branches:', err);
+    }
+}
+
+async function consultarStockSucursal() {
+    const productId = currentId;
+    const sucursalId = document.getElementById('ajuste_sucursal').value;
+    const stockDisplay = document.getElementById('val_stock_actual');
+
+    if (!productId || !sucursalId) {
+        if (stockDisplay) stockDisplay.textContent = '0';
         return;
     }
 
     try {
+        const token = localStorage.getItem('token');
+        // We use the same listarProductos but filtered by ID and Branch
+        const res = await fetch(`${API_URL}?busqueda=&sucursal_id=${sucursalId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const prod = data.data.find(p => p.id == productId);
+            if (prod && stockDisplay) {
+                stockDisplay.textContent = prod.stock_sucursal || '0';
+            } else if (stockDisplay) {
+                stockDisplay.textContent = '0';
+            }
+        }
+    } catch (err) {
+        console.error('Error consulting branch stock:', err);
+    }
+}
+
+// Initial branch load is handled in the main DOMContentLoaded async block.
+
+async function handleSave(e) {
+    if (e) e.preventDefault();
+
+    const stock_inicial = parseInt(document.getElementById('stock_inicial')?.value) || 0;
+    const ajuste_cantidad = parseInt(document.getElementById('ajuste_cantidad')?.value) || 0;
+
+    // Build Form Data
+    const formData = {
+        codigo: document.getElementById('codigo').value,
+        referencia_fabrica: document.getElementById('referencia_fabrica').value,
+        nombre: document.getElementById('nombre').value,
+        nombre_alterno: document.getElementById('nombre_alterno').value,
+        categoria: document.getElementById('categoria').checked ? (document.getElementById('categoria_select').value || 'General') : document.getElementById('categoria_input').value,
+        unidad_medida: document.getElementById('unidad_medida').value,
+        precio1: parseFloat(document.getElementById('precio1').value) || 0,
+        precio2: parseFloat(document.getElementById('precio2').value) || 0,
+        precio3: parseFloat(document.getElementById('precio3').value) || 0,
+        costo: parseFloat(document.getElementById('costo').value) || 0,
+        impuesto_porcentaje: parseFloat(document.getElementById('impuesto').value) || 0,
+        proveedor_id: document.getElementById('proveedor_id').value || null,
+        stock_minimo: parseInt(document.getElementById('stock_minimo').value) || 0,
+        stock_inicial: stock_inicial,
+        ajuste_cantidad: ajuste_cantidad,
+        ajuste_motivo: document.getElementById('ajuste_motivo')?.value || 'Ajuste Manual',
+        maneja_inventario: document.getElementById('maneja_inventario').checked,
+        mostrar_en_tienda: document.getElementById('mostrar_en_tienda').checked,
+        activo: document.getElementById('activo').checked,
+        // NEW BRANCH FIELD
+        sucursal_id: isEditing
+            ? document.getElementById('ajuste_sucursal').value
+            : document.getElementById('stock_sucursal_inicial').value
+    };
+
+    // Validations
+    if (!formData.nombre) return showNotification('El nombre es obligatorio', 'warning');
+    if (formData.maneja_inventario) {
+        if (!formData.sucursal_id && (stock_inicial > 0 || ajuste_cantidad !== 0)) {
+            return showNotification('Debe seleccionar una sucursal para el inventario', 'warning');
+        }
+    }
+
+    try {
+        const token = localStorage.getItem('token');
         const url = isEditing ? `${API_URL}/${currentId}` : API_URL;
         const method = isEditing ? 'PUT' : 'POST';
 
-        const resp = await fetch(url, {
+        const res = await fetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
@@ -312,17 +406,16 @@ async function handleSave(e) {
             body: JSON.stringify(formData)
         });
 
-        const data = await resp.json();
+        const data = await res.json();
         if (data.success) {
             showNotification(isEditing ? 'Producto actualizado' : 'Producto creado', 'success');
             closeModal();
-            loadProducts();
+            cargarProductos();
         } else {
             showNotification(data.message, 'error');
         }
-    } catch (e) {
-        console.error('Save error:', e);
-        showNotification('Error al guardar producto', 'error');
+    } catch (err) {
+        showNotification('Error al guardar', 'error');
     }
 }
 
@@ -427,3 +520,40 @@ window.downloadTemplate = () => {
     link.click();
     document.body.removeChild(link);
 };
+
+async function ejecutarMigracion() {
+    if (!confirm('¿Confirma que desea migrar todo el stock actual de todos los productos a la sucursal ACTUALICELL?')) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        // Derive migration URL from API_URL (which might be https://erpod.onrender.com/api/productos)
+        const migrationUrl = API_URL.replace('/productos', '/productos/migrar-a-sucursal');
+
+        const btn = document.querySelector('button[onclick=\"ejecutarMigracion()\"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class=\"fas fa-spinner fa-spin\"></i> Procesando...';
+        btn.disabled = true;
+
+        const res = await fetch(migrationUrl, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            Swal.fire('¡Éxito!', data.message, 'success');
+            loadProducts();
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    } catch (err) {
+        console.error('Migration error:', err);
+        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+        const btn = document.querySelector('button[onclick=\"ejecutarMigracion()\"]');
+        btn.innerHTML = '<i class=\"fas fa-magic\"></i> Migrar a ACTUALICELL';
+        btn.disabled = false;
+    }
+}

@@ -268,9 +268,18 @@ exports.crearProducto = async (req, res) => {
 
             // Handle Initial Stock Movement
             if (stockIni > 0) {
-                // 1. Get Main Branch
-                const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-                const targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+                // 1. Determine target branch (Specified OR Single branch OR Principal)
+                let targetSucursal = req.body.sucursal_id;
+
+                if (!targetSucursal) {
+                    const [sucs] = await clientConn.query("SELECT id FROM sucursales");
+                    if (sucs.length === 1) {
+                        targetSucursal = sucs[0].id;
+                    } else {
+                        const [principal] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                        targetSucursal = principal.length > 0 ? principal[0].id : (sucs.length > 0 ? sucs[0].id : 1);
+                    }
+                }
 
                 // 2. Insert into inventario_sucursales
                 await clientConn.query(`
@@ -387,9 +396,18 @@ exports.actualizarProducto = async (req, res) => {
                 // Update Global Stock
                 await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [newStock, id]);
 
-                // Update Branch Stock (Main branch)
-                const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-                const targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
+                // Update Branch Stock
+                let targetSucursal = req.body.sucursal_id;
+
+                if (!targetSucursal) {
+                    const [sucs] = await clientConn.query("SELECT id FROM sucursales");
+                    if (sucs.length === 1) {
+                        targetSucursal = sucs[0].id;
+                    } else {
+                        const [principal] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+                        targetSucursal = principal.length > 0 ? principal[0].id : (sucs.length > 0 ? sucs[0].id : 1);
+                    }
+                }
 
                 const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [id, targetSucursal]);
                 const oldBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
@@ -535,6 +553,73 @@ exports.unificarProductos = async (req, res) => {
     } catch (err) {
         console.error('unificarProductos error:', err);
         res.status(500).json({ success: false, message: 'Error durante la unificación: ' + err.message });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.migrarProductosASucursal = async (req, res) => {
+    let clientConn = null;
+    try {
+        const pool = getPool();
+        // Intentar obtener el primer NIT de la tabla configuracion si no viene en req
+        const [emp] = await pool.query('SELECT nit FROM empresasconfig LIMIT 1');
+        if (emp.length === 0) return res.status(404).json({ success: false, message: 'No hay empresas configuradas' });
+
+        const nit = emp[0].nit;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+        await clientConn.beginTransaction();
+
+        // 1. Identificar sucursal ACTUALICELL
+        const [branches] = await clientConn.query("SELECT id FROM sucursales WHERE nombre LIKE '%ACTUALICELL%' LIMIT 1");
+        if (branches.length === 0) {
+            return res.status(404).json({ success: false, message: 'Sucursal ACTUALICELL no encontrada' });
+        }
+        const sucursalId = branches[0].id;
+
+        // 2. Buscar productos que necesiten migración
+        const [productos] = await clientConn.query(`
+            SELECT p.id, p.nombre, p.stock_actual, p.costo
+            FROM productos p
+            LEFT JOIN inventario_sucursales isuc ON p.id = isuc.producto_id AND isuc.sucursal_id = ?
+            WHERE p.stock_actual > 0 AND (isuc.id IS NULL OR isuc.cant_actual < p.stock_actual)
+        `, [sucursalId]);
+
+        let migrados = 0;
+
+        for (const p of productos) {
+            const [exist] = await clientConn.query(
+                "SELECT id, cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ?",
+                [p.id, sucursalId]
+            );
+
+            if (exist.length > 0) {
+                const diff = p.stock_actual - parseFloat(exist[0].cant_actual);
+                if (diff > 0) {
+                    await clientConn.query("UPDATE inventario_sucursales SET cant_actual = ? WHERE id = ?", [p.stock_actual, exist[0].id]);
+                    await clientConn.query(`
+                        INSERT INTO movimientos_inventario (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, costo_unitario)
+                        VALUES (?, ?, 'AJUSTE_ENTRADA', ?, ?, ?, 'Migración Automática', ?)
+                    `, [p.id, sucursalId, diff, exist[0].cant_actual, p.stock_actual, p.costo || 0]);
+                    migrados++;
+                }
+            } else {
+                await clientConn.query("INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)", [p.id, sucursalId, p.stock_actual]);
+                await clientConn.query(`
+                    INSERT INTO movimientos_inventario (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, costo_unitario)
+                    VALUES (?, ?, 'ENTRADA', ?, 0, ?, 'Migración Automática Inicial', ?)
+                `, [p.id, sucursalId, p.stock_actual, p.stock_actual, p.costo || 0]);
+                migrados++;
+            }
+        }
+
+        await clientConn.commit();
+        res.json({ success: true, message: `Migración completada. ${migrados} productos migrados.`, nit_usado: nit });
+
+    } catch (err) {
+        if (clientConn) await clientConn.rollback();
+        res.status(500).json({ success: false, message: err.message });
     } finally {
         if (clientConn) await clientConn.end();
     }

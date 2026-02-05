@@ -230,3 +230,57 @@ select,
 textarea {
     color: var(--text-primary) !important;
 }
+
+/* Premium Modal Interactions */
+#form-ajuste select:focus,
+#form-ajuste input:focus,
+#form-ajuste textarea:focus {
+    border-color: #6366f1 !important;
+    background: white !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#form-ajuste button:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px -12px rgba(99, 102, 241, 0.6) !important;
+}
+
+#form-ajuste button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.modal-overlay {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-glass {
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.close-btn:hover {
+    background: #e2e8f0 !important;
+    transform: rotate(90deg);
+    color: #ef4444;
+}
+
+.select-wrapper:hover select {
+    border-color: #cbd5e1 !important;
+}

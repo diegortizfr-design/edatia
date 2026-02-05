@@ -84,6 +84,7 @@ function renderCajas(cajas) {
             </div>
             <div class="caja-info"><i class="fas fa-building"></i> Sucursal: ${c.sucursal_nombre || 'No asignada'}</div>
             <div class="caja-info"><i class="fas fa-file-invoice"></i> Documento: ${c.documento_nombre || 'No asignado'}</div>
+            <div class="caja-info"><i class="fas fa-user-circle"></i> Cliente Defecto: ${c.cliente_defecto_nombre || 'Cliente Mostrador'}</div>
             <div class="caja-actions">
                 <button class="btn-icon btn-edit" title="Editar" onclick='editCaja(${JSON.stringify(c).replace(/'/g, "&apos;")})'>
                     <i class="fas fa-edit"></i>
