@@ -43,9 +43,12 @@ async function loadCajas() {
         const data = await resp.json();
         if (data.success) {
             renderCajas(data.data);
+        } else {
+            showNotification(data.message || 'Error al cargar cajas', 'error');
         }
     } catch (e) {
         console.error(e);
+        showNotification('Error de conexión al cargar cajas', 'error');
     }
 }
 

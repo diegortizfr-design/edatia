@@ -89,23 +89,29 @@ exports.listarCajas = async (req, res) => {
         const { nit } = req.user;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
+
+        // Garantizar que las tablas existan
         await ensureCajaTables(clientConn);
+
         const [rows] = await clientConn.query(`
             SELECT c.*, 
-                   s.id as sesion_activa_id,
-                   s.usuario_id as sesion_usuario_id,
+                   s.nombre as sucursal_nombre,
+                   d.nombre as documento_nombre,
+                   ses.id as sesion_activa_id,
+                   ses.usuario_id as sesion_usuario_id,
                    u.nombre as sesion_usuario_nombre,
-                   p.nombre as puc_nombre,
                    t.nombre_comercial as cliente_defecto_nombre
             FROM cajas c
-            LEFT JOIN caja_sesiones s ON c.id = s.caja_id AND s.estado = 'Abierta'
-            LEFT JOIN usuarios u ON s.usuario_id = u.id
-            LEFT JOIN contabilidad_puc p ON c.codigo_puc = p.codigo
+            LEFT JOIN sucursales s ON c.sucursal_id = s.id
+            LEFT JOIN documentos d ON c.documento_id = d.id
+            LEFT JOIN caja_sesiones ses ON c.id = ses.caja_id AND ses.estado = 'Abierta'
+            LEFT JOIN usuarios u ON ses.usuario_id = u.id
             LEFT JOIN terceros t ON c.cliente_defecto_id = t.id
             ORDER BY c.nombre ASC
         `);
         res.json({ success: true, data: rows });
     } catch (err) {
+        console.error('Error listarCajas:', err);
         res.status(500).json({ success: false, message: err.message });
     } finally {
         if (clientConn) await clientConn.end();
@@ -118,6 +124,10 @@ exports.crearCaja = async (req, res) => {
         const { nit } = req.user;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
+
+        // Garantizar que las tablas existan antes de insertar
+        await ensureCajaTables(clientConn);
+
         const { nombre, sucursal_id, documento_id, impresora_config, codigo_acceso, codigo_puc, cliente_defecto_id } = req.body;
         const [result] = await clientConn.query(
             "INSERT INTO cajas (nombre, sucursal_id, documento_id, impresora_config, codigo_acceso, codigo_puc, cliente_defecto_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -125,6 +135,7 @@ exports.crearCaja = async (req, res) => {
         );
         res.json({ success: true, id: result.insertId });
     } catch (err) {
+        console.error('Error crearCaja:', err);
         res.status(500).json({ success: false, message: err.message });
     } finally {
         if (clientConn) await clientConn.end();
