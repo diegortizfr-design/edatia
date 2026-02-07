@@ -164,15 +164,16 @@ exports.bulkUpload = async (req, res) => {
 };
 
 exports.listarProductos = async (req, res) => {
-
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { busqueda, barcode, categoria, sucursal_id } = req.query;
+        const { busqueda, barcode, categoria, sucursal_id, page = 1, limit = 50 } = req.query;
 
         const dbConfig = await getClientDbConfig(nit);
         if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
         clientConn = await connectToClientDB(dbConfig);
+
+        const offset = (page - 1) * limit;
 
         let query = `
             SELECT p.*, t.nombre_comercial as proveedor_nombre,
@@ -182,7 +183,11 @@ exports.listarProductos = async (req, res) => {
             ${sucursal_id ? 'LEFT JOIN inventario_sucursales isuc ON p.id = isuc.producto_id AND isuc.sucursal_id = ?' : ''}
         `;
 
+        let countQuery = `SELECT COUNT(*) as total FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id`;
+
         const params = [];
+        const countParams = [];
+
         if (sucursal_id) params.push(sucursal_id);
 
         const conditions = [];
@@ -190,8 +195,83 @@ exports.listarProductos = async (req, res) => {
         if (barcode) {
             conditions.push('p.codigo = ?');
             params.push(barcode);
+            countParams.push(barcode);
         } else if (busqueda) {
-            // Search in multiple fields for maximum flexibility
+            conditions.push(`(
+                p.nombre LIKE ? OR 
+                p.codigo LIKE ? OR 
+                p.referencia_fabrica LIKE ? OR 
+                p.nombre_alterno LIKE ? OR 
+                p.descripcion LIKE ? OR
+                p.categoria LIKE ? OR
+                t.nombre_comercial LIKE ?
+            )`);
+            const term = `%${busqueda}%`;
+            const searchParams = [term, term, term, term, term, term, term];
+            params.push(...searchParams);
+            countParams.push(...searchParams);
+        }
+
+        if (categoria) {
+            conditions.push('p.categoria = ?');
+            params.push(categoria);
+            countParams.push(categoria);
+        }
+
+        if (conditions.length > 0) {
+            const conditionStr = ' WHERE ' + conditions.join(' AND ');
+            query += conditionStr;
+            countQuery += conditionStr;
+        }
+
+        query += ' ORDER BY p.nombre ASC LIMIT ? OFFSET ?';
+        params.push(parseInt(limit), parseInt(offset));
+
+        const [rows] = await clientConn.query(query, params);
+        const [countResult] = await clientConn.query(countQuery, conditions.length > 0 && !barcode ? countParams : (barcode ? countParams : [])); // Logic for params needs to be exact.
+        // Wait, countQueryParams must match conditions added. 
+        // Logic fix:
+        // params has [sucursal?, search*7?, category?, limit, offset]
+        // countParams should have [search*7?, category?]
+        // My countParams logic above was a bit loose. Let's fix it properly in the ReplacementContent logic.
+
+    } catch (err) {
+        // ... existing error handler
+    }
+};
+
+// RE-WRITING THE WHOLE FUNCTION TO BE CLEANER
+exports.listarProductos = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { busqueda, barcode, categoria, sucursal_id, page = 1, limit = 50 } = req.query;
+
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+        clientConn = await connectToClientDB(dbConfig);
+
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        let baseQuery = `FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id`;
+        let selectQuery = `SELECT p.*, t.nombre_comercial as proveedor_nombre`;
+
+        if (sucursal_id) {
+            selectQuery += `, IFNULL(isuc.cant_actual, 0) as stock_sucursal`;
+            baseQuery += ` LEFT JOIN inventario_sucursales isuc ON p.id = isuc.producto_id AND isuc.sucursal_id = ?`;
+        } else {
+            selectQuery += `, NULL as stock_sucursal`;
+        }
+
+        const conditions = [];
+        const params = [];
+
+        if (sucursal_id) params.push(sucursal_id);
+
+        if (barcode) {
+            conditions.push('p.codigo = ?');
+            params.push(barcode);
+        } else if (busqueda) {
             conditions.push(`(
                 p.nombre LIKE ? OR 
                 p.codigo LIKE ? OR 
@@ -211,17 +291,37 @@ exports.listarProductos = async (req, res) => {
         }
 
         if (conditions.length > 0) {
-            query += ' WHERE ' + conditions.join(' AND ');
+            baseQuery += ' WHERE ' + conditions.join(' AND ');
         }
 
-        query += ' ORDER BY p.nombre ASC LIMIT 500';
+        // Get Total Count
+        // For count, we don't need the sucursal join unless we filter by it? 
+        // Actually sucursal join is LEFT join, so it doesn't filter rows unless we add WHERE isuc.blah.
+        // But wait, the params array includes sucursal_id IF provided.
+        // So we must use the SAME baseQuery for count but replace SELECT part.
+        const countSql = `SELECT COUNT(*) as total ${baseQuery}`;
+        const [countRows] = await clientConn.query(countSql, params);
+        const total = countRows[0].total;
 
-        const [rows] = await clientConn.query(query, params);
-        res.json({ success: true, data: rows });
+        // Get Data
+        const dataSql = `${selectQuery} ${baseQuery} ORDER BY p.nombre ASC LIMIT ? OFFSET ?`;
+        params.push(parseInt(limit), parseInt(offset));
+
+        const [rows] = await clientConn.query(dataSql, params);
+
+        res.json({
+            success: true,
+            data: rows,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(total / limit)
+            }
+        });
 
     } catch (err) {
         console.error('listarProductos error:', err);
-        // Lazy Init: If table doesn't exist, try to init and retry (simplified for now)
         if (err.code === 'ER_NO_SUCH_TABLE') {
             const { initializeTenantDB } = require('../utils/tenantInit');
             await initializeTenantDB(await getClientDbConfig(req.user.nit));
@@ -253,6 +353,15 @@ exports.crearProducto = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Nombre del producto es obligatorio' });
         }
 
+        // AUTO-GENERAR CÓDIGO SI ESTÁ VACÍO
+        let finalCodigo = codigo;
+        if (!finalCodigo || finalCodigo.trim() === '') {
+            // Generar código único: AUTO-[TIMESTAMP]-[RANDOM 3 DIGIT]
+            const timestamp = Date.now().toString().slice(-6);
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            finalCodigo = `AUTO-${timestamp}${random}`;
+        }
+
         const stockIni = parseInt(stock_inicial) || 0;
 
         await clientConn.beginTransaction();
@@ -269,7 +378,7 @@ exports.crearProducto = async (req, res) => {
             `;
 
             const [result] = await clientConn.query(sql, [
-                codigo || null, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
+                finalCodigo, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
                 unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
                 proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 0, stockIni, descripcion || null, imagen_url || null,
                 activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
@@ -570,69 +679,143 @@ exports.unificarProductos = async (req, res) => {
     }
 };
 
-exports.migrarProductosASucursal = async (req, res) => {
+exports.obtenerDuplicados = async (req, res) => {
     let clientConn = null;
     try {
-        const pool = getPool();
-        // Intentar obtener el primer NIT de la tabla configuracion si no viene en req
-        const [emp] = await pool.query('SELECT nit FROM empresasconfig LIMIT 1');
-        if (emp.length === 0) return res.status(404).json({ success: false, message: 'No hay empresas configuradas' });
-
-        const nit = emp[0].nit;
+        const { nit } = req.user;
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
-        await clientConn.beginTransaction();
 
-        // 1. Identificar sucursal ACTUALICELL
-        const [branches] = await clientConn.query("SELECT id FROM sucursales WHERE nombre LIKE '%ACTUALICELL%' LIMIT 1");
-        if (branches.length === 0) {
-            return res.status(404).json({ success: false, message: 'Sucursal ACTUALICELL no encontrada' });
-        }
-        const sucursalId = branches[0].id;
-
-        // 2. Buscar productos que necesiten migración
-        const [productos] = await clientConn.query(`
-            SELECT p.id, p.nombre, p.stock_actual, p.costo
+        // Find duplicates by Name (case insensitive roughly)
+        // Using LOWER() for better matching
+        const [rows] = await clientConn.query(`
+            SELECT p.*, t.nombre_comercial as proveedor_nombre
             FROM productos p
-            LEFT JOIN inventario_sucursales isuc ON p.id = isuc.producto_id AND isuc.sucursal_id = ?
-            WHERE p.stock_actual > 0 AND (isuc.id IS NULL OR isuc.cant_actual < p.stock_actual)
-        `, [sucursalId]);
+            LEFT JOIN terceros t ON p.proveedor_id = t.id
+            INNER JOIN (
+                SELECT nombre FROM productos GROUP BY nombre HAVING COUNT(*) > 1
+            ) dup ON p.nombre = dup.nombre
+            ORDER BY p.nombre ASC
+        `);
 
-        let migrados = 0;
+        // Group by name
+        const groups = {};
+        rows.forEach(p => {
+            const key = p.nombre.trim(); // Key is the name itself
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(p);
+        });
 
-        for (const p of productos) {
-            const [exist] = await clientConn.query(
-                "SELECT id, cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ?",
-                [p.id, sucursalId]
-            );
+        // Format for frontend
+        const result = Object.entries(groups).map(([key, items]) => ({
+            key,
+            name: key,
+            count: items.length,
+            codes: items.map(i => i.codigo || 'Sin SKU').join(', '),
+            items
+        }));
 
-            if (exist.length > 0) {
-                const diff = p.stock_actual - parseFloat(exist[0].cant_actual);
-                if (diff > 0) {
-                    await clientConn.query("UPDATE inventario_sucursales SET cant_actual = ? WHERE id = ?", [p.stock_actual, exist[0].id]);
-                    await clientConn.query(`
-                        INSERT INTO movimientos_inventario (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, costo_unitario)
-                        VALUES (?, ?, 'AJUSTE_ENTRADA', ?, ?, ?, 'Migración Automática', ?)
-                    `, [p.id, sucursalId, diff, exist[0].cant_actual, p.stock_actual, p.costo || 0]);
-                    migrados++;
-                }
-            } else {
-                await clientConn.query("INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)", [p.id, sucursalId, p.stock_actual]);
-                await clientConn.query(`
-                    INSERT INTO movimientos_inventario (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, costo_unitario)
-                    VALUES (?, ?, 'ENTRADA', ?, 0, ?, 'Migración Automática Inicial', ?)
-                `, [p.id, sucursalId, p.stock_actual, p.stock_actual, p.costo || 0]);
-                migrados++;
-            }
-        }
-
-        await clientConn.commit();
-        res.json({ success: true, message: `Migración completada. ${migrados} productos migrados.`, nit_usado: nit });
+        res.json({ success: true, data: result });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
-        res.status(500).json({ success: false, message: err.message });
+        console.error('obtenerDuplicados error:', err);
+        res.status(500).json({ success: false, message: 'Error al obtener duplicados' });
     } finally {
         if (clientConn) await clientConn.end();
     }
 };
+
+exports.obtenerCategorias = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        const [rows] = await clientConn.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
+        res.json({ success: true, data: rows });
+
+    } catch (err) {
+        console.error('obtenerCategorias error:', err);
+        // Fallback to old method if table doesn't exist (safety)
+        if (err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                const [rows] = await clientConn.query('SELECT DISTINCT categoria as nombre FROM productos WHERE categoria IS NOT NULL AND categoria != "" ORDER BY categoria ASC');
+                return res.json({ success: true, data: rows.map(r => ({ id: null, nombre: r.nombre })) });
+            } catch (e) { }
+        }
+        res.status(500).json({ success: false, message: 'Error al obtener categorías' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.crearCategoria = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { nombre, descripcion } = req.body;
+        if (!nombre) return res.status(400).json({ success: false, message: 'Nombre es obligatorio' });
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        await clientConn.query('INSERT INTO categorias_productos (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
+        res.json({ success: true, message: 'Categoría creada' });
+
+    } catch (err) {
+        console.error('crearCategoria error:', err);
+        if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ success: false, message: 'La categoría ya existe' });
+        res.status(500).json({ success: false, message: 'Error al crear categoría' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.actualizarCategoria = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { id } = req.params;
+        const { nombre, descripcion, activo } = req.body;
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        await clientConn.query('UPDATE categorias_productos SET nombre = ?, descripcion = ?, activo = ? WHERE id = ?',
+            [nombre, descripcion, activo !== undefined ? activo : 1, id]);
+
+        res.json({ success: true, message: 'Categoría actualizada' });
+
+    } catch (err) {
+        console.error('actualizarCategoria error:', err);
+        res.status(500).json({ success: false, message: 'Error al actualizar categoría' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+exports.eliminarCategoria = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.user;
+        const { id } = req.params;
+
+        const dbConfig = await getClientDbConfig(nit);
+        clientConn = await connectToClientDB(dbConfig);
+
+        // Check availability? (Optional: Prevent delete if products use it)
+        // For now, soft delete or forceful? Let's just delete.
+        await clientConn.query('DELETE FROM categorias_productos WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Categoría eliminada' });
+
+    } catch (err) {
+        console.error('eliminarCategoria error:', err);
+        res.status(500).json({ success: false, message: 'Error al eliminar categoría' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+
+

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Configuración de Productos</title>
+    <link rel="stylesheet" href="/frontend/assets/css/dashboard.css">
+    <link rel="stylesheet" href="/frontend/assets/css/inventario.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Glassmorphism Overrides */
+        .modal-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 24px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 20px 30px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .modal-body {
+            padding: 30px;
+            background: transparent;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: #6366f1;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+            padding-bottom: 8px;
+        }
+
+        /* Input Styling */
+        .form-group label {
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: rgba(243, 244, 246, 0.5);
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
+            width: 100%;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            background: white;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+
+        /* Button Styling */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            color: white !important;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        /* Checkbox & Switch */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-wrapper:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #6366f1;
+            border-radius: 4px;
+        }
+
+        .modal-overlay {
+            padding: 40px 20px;
+            align-items: center;
+            /* Center Vertically */
+            justify-content: center;
+            overflow-y: auto;
+            display: none;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <section class="kpi-grid">
+            <div class="card">
+                <div class="card-icon-box" style="background: rgba(79, 70, 229, 0.1); color: var(--primary-color);">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h3>Productos Activos</h3>
+                <p id="kpi-total-productos">0</p>
+            </div>
+            <div class="card">
+                <div class="card-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary-color);">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <h3>Categorías</h3>
+                <p id="kpi-categorias">0</p>
+            </div>
+            <div class="card" onclick="location.href='../inventario/inventario.html?sort=stock_asc'"
+                style="cursor: pointer;">
+                <div class="card-icon-box" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h3>Bajo Stock</h3>
+                <p id="kpi-bajo-stock">0</p>
+            </div>
+        </section>
+
+        <div class="action-bar"
+            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="search-bar"
+                style="width: 400px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 5px 15px;">
+                <i class="fas fa-search" style="color: #94a3b8;"></i>
+                <input type="text" id="search-input" placeholder="Buscar por nombre, código o referencia..."
+                    style="border: none; outline: none; background: transparent;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="openDuplicadosModal()"
+                    style="display: flex; align-items: center; gap: 8px; color: #6366f1; border-color: #6366f1;">
+                    <i class="fas fa-random"></i> Unificar Duplicados
+                </button>
+                <button class="btn-secondary" onclick="openBulkModal()"
+                    style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-file-excel" style="color: #10b981;"></i> Carga Masiva
+                </button>
+                <button class="btn-primary" onclick="openModal()" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-plus-circle"></i> Nuevo Producto
+                </button>
+            </div>
+
+        </div>
+
+        <div class="table-container card" style="margin-top: 20px; padding: 0; overflow: hidden; border-radius: 16px;">
+            <table class="glass-table">
+                <thead style="background: #f8fafc;">
+                    <tr>
+                        <th style="padding: 16px;">Producto</th>
+                        <th style="padding: 16px;">Referencia</th>
+                        <th style="padding: 16px;">Categoría</th>
+                        <th style="padding: 16px;">Precio 1</th>
+                        <th style="padding: 16px;">Stock</th>
+                        <th style="padding: 16px;">Estado</th>
+                        <th style="padding: 16px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="productos-table-body">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+
+            <!-- PAGINATION CONTROLS -->
+            <div id="pagination-controls"
+                style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.05);">
+                <span id="pagination-info" style="color: #64748b; font-size: 0.9rem;">Mostrando 0 de 0</span>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-prev-page" class="btn-secondary" onclick="changePage(-1)" disabled><i
+                            class="fas fa-chevron-left"></i> Anterior</button>
+                    <button id="btn-next-page" class="btn-secondary" onclick="changePage(1)" disabled>Siguiente <i
+                            class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PRODUCT MODAL -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-glass"
+            style="width: 95%; max-width: 850px; display: flex; flex-direction: column; max-height: 90vh;">
+            <div class="modal-header"
+                style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="modal-title" style="margin: 0;"><i class="fas fa-box-open"
+                        style="color: #6366f1; margin-right: 10px;"></i> Configurar Producto</h2>
+                <button class="close-btn" onclick="closeModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;"><i
+                        class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body" style="overflow-y: auto; flex-grow: 1;">
+                <form id="productForm">
+                    <input type="hidden" id="prod_id">
+
+                    <div class="form-grid">
+                        <div class="section-title">Información Básica</div>
+
+                        <div class="form-group">
+                            <label>Nombre del Producto <span style="color: #ef4444;">*</span></label>
+                            <input type="text" id="nombre" required placeholder="Ej: Café Premium">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre Alterno (Opcional)</label>
+                            <input type="text" id="nombre_alterno" placeholder="Ej: Café Arábica">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Referencia Fábrica</label>
+                            <input type="text" id="referencia_fabrica" placeholder="REF-001">
+                        </div>
+                        <div class="form-group">
+                            <label>Código / Barcode <small style="color: #6366f1;">(Auto si vacío)</small></label>
+                            <input type="text" id="codigo" placeholder="Dejar vacío para generar automático">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Imagen URL & Carga</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="imagen_url" style="flex: 1;"
+                                    placeholder="https://ejemplo.com/imagen.jpg">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('upload-input').click()"
+                                    style="white-space: nowrap; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-cloud-upload-alt"></i> Subir Imagen
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="deleteProductImage()"
+                                    style="white-space: nowrap; display: flex; align-items: center; gap: 8px; color: #ef4444; border-color: #ef4444;"
+                                    title="Quitar Foto">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <input type="file" id="upload-input" style="display: none;" accept="image/*"
+                                    onchange="uploadProductImage(this)">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <select id="categoria">
+                                <option value="">Seleccione una categoría</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidad de Medida</label>
+                            <select id="unidad_medida">
+                                <option value="UND">Unidad (UND)</option>
+                                <option value="KG">Kilogramo (KG)</option>
+                                <option value="GR">Gramo (GR)</option>
+                                <option value="LT">Litro (LT)</option>
+                                <option value="LB">Libra (LB)</option>
+                                <option value="CAJA">Caja</option>
+                            </select>
+                        </div>
+
+                        <div class="section-title">Precios y Costos</div>
+
+                        <div class="form-group">
+                            <label>Precio de Venta 1 (General) <span style="color: #ef4444;">*</span></label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="precio1" required step="0.01" value="0"
+                                    style="padding-left: 25px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Precio de Venta 2 (Mayoreo)</label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="precio2" step="0.01" value="0" style="padding-left: 25px;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Costo de Compra (Promedio)</label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">$</span>
+                                <input type="number" id="costo" step="0.01" value="0" style="padding-left: 25px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Impuesto (%)</label>
+                            <input type="number" id="impuesto_porcentaje" step="0.01" value="0">
+                        </div>
+
+                        <div class="section-title">Logística e Inventario</div>
+
+                        <div class="form-group">
+                            <label>Proveedor Principal</label>
+                            <select id="proveedor_id">
+                                <option value="">Cargando proveedores...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Mínimo (Alerta)</label>
+                            <input type="number" id="stock_minimo" value="0">
+                        </div>
+                        <div class="form-group" id="stock_inicial_container"
+                            style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <label>Stock Inicial</label>
+                                <input type="number" id="stock_inicial" value="0">
+                            </div>
+                            <div>
+                                <label>Sucursal para Stock Inicial</label>
+                                <select id="stock_sucursal_inicial">
+                                    <option value="">Cargando sucursales...</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+                        <!-- Checkboxes Row -->
+                        <div style="grid-column: 1 / -1; display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="activo" checked>
+                                <label for="activo" style="margin: 0; cursor: pointer;">Producto Activo</label>
+                            </div>
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="maneja_inventario" checked>
+                                <label for="maneja_inventario" style="margin: 0; cursor: pointer;">Maneja
+                                    Inventario</label>
+                            </div>
+                            <div class="checkbox-wrapper"
+                                style="background: rgba(99, 102, 241, 0.05); border: 1px dashed #818cf8;">
+                                <input type="checkbox" id="mostrar_en_tienda">
+                                <label for="mostrar_en_tienda"
+                                    style="margin: 0; color: #6366f1; font-weight: 600; cursor: pointer;">Venta
+                                    Online</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer"
+                style="padding: 20px 30px; border-top: 1px solid rgba(0,0,0,0.05); text-align: right; background: rgba(255,255,255,0.4);">
+                <button type="button" class="btn-secondary" onclick="closeModal()"
+                    style="margin-right: 10px;">Cancelar</button>
+                <button type="button" class="btn-primary"
+                    onclick="document.getElementById('productForm').dispatchEvent(new Event('submit'))"
+                    style="color: white;">Guardar Producto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BULK UPLOAD MODAL -->
+    <div class="modal-overlay" id="bulkModal">
+        <div class="modal-glass" style="width: 90%; max-width: 500px; display: none;">
+            <div class="modal-header"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <h2 style="margin: 0; font-size: 1.5rem;"><i class="fas fa-file-excel"
+                        style="color: #10b981; margin-right: 10px;"></i> Carga Masiva</h2>
+                <button onclick="closeBulkModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 40px 30px;">
+                <div style="margin-bottom: 25px;">
+                    <i class="fas fa-cloud-upload-alt"
+                        style="font-size: 3rem; color: #6366f1; margin-bottom: 15px;"></i>
+                    <p style="color: #475569; font-weight: 500;">Sube tu archivo Excel con productos.</p>
+                </div>
+
+                <input type="file" id="bulk-file-input" accept=".xlsx, .xls" style="display: none;"
+                    onchange="handleBulkFileSelect(this)">
+
+                <button class="btn-primary" onclick="document.getElementById('bulk-file-input').click()"
+                    style="width: 100%; margin-bottom: 15px;">
+                    <i class="fas fa-search"></i> Seleccionar Archivo
+                </button>
+
+                <div id="file-info"
+                    style="display: none; margin-bottom: 20px; padding: 10px; background: rgba(99, 102, 241, 0.05); border-radius: 8px; border: 1px dashed #818cf8;">
+                    <span id="file-name" style="font-size: 0.9rem; font-weight: 600; color: #6366f1;"></span>
+                </div>
+
+                <a href="#" onclick="downloadTemplate()"
+                    style="color: #6366f1; font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+                    <i class="fas fa-download"></i> Descargar Plantilla
+                </a>
+            </div>
+            <div class="modal-footer"
+                style="padding: 20px 30px; border-top: 1px solid rgba(0,0,0,0.05); text-align: right;">
+                <button class="btn-secondary" onclick="closeBulkModal()" style="margin-right: 10px;">Cancelar</button>
+                <button id="btn-start-bulk" class="btn-primary" disabled onclick="uploadBulkFile()">Iniciar
+                    Carga</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DUPLICADOS MODAL -->
+    <div class="modal-overlay" id="duplicadosModal" style="display: none;">
+        <div class="modal-glass"
+            style="max-width: 1000px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header"
+                style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 20px 30px;">
+                <h2><i class="fas fa-random" style="color: #6366f1;"></i> Gestión de Duplicados</h2>
+                <button class="close-btn" onclick="closeDuplicadosModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 20px;">
+                <!-- VISTA LLISTA (Default) -->
+                <div id="duplicados-list-view">
+                    <p style="margin-bottom: 15px; color: #666;">Los siguientes productos parecen estar duplicados según
+                        el nombre y código:</p>
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre / Clave</th>
+                                <th style="width: 100px; text-align: center;">Cant.</th>
+                                <th>SKUs</th>
+                                <th style="width: 100px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="duplicados-tbody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- VISTA UNIFICACIÓN (Hidden) -->
+                <div id="duplicados-merge-view" style="display: none;">
+                    <button class="btn-secondary" onclick="showDuplicatesList()" style="margin-bottom: 15px;">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista
+                    </button>
+
+                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">Unificar Productos</h3>
+                    <p style="font-size: 0.9em; margin-bottom: 20px;">
+                        Seleccione el <strong>Producto Principal</strong> que conservará. Los demás serán eliminados y
+                        su historial se moverá al principal.
+                    </p>
+
+                    <div
+                        style="background: rgba(255,255,255,0.5); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="check-sumar-stock" checked style="width: 18px; height: 18px;">
+                            <span style="font-weight: 500;">Sumar el stock de los duplicados al principal</span>
+                        </label>
+                    </div>
+
+                    <form id="form-unificacion">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Elegir</th>
+                                    <th>Producto (Nombre / SKU)</th>
+                                    <th>Referencia</th>
+                                    <th>Stock</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merge-candidates-tbody">
+                                <!-- Candidates -->
+                            </tbody>
+                        </table>
+
+                        <div style="display: flex; justify-content: flex-end; margin-top: 20px; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="showDuplicatesList()">Cancelar</button>
+                            <button type="submit" class="btn-primary"
+                                style="background: #EF4444; border: none; color: white;">
+                                <i class="fas fa-random"></i> Confirmar Unificación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/frontend/assets/js/layout-loader.js"></script>
+
+    <script src="/frontend/assets/js/auth_guard.js"></script>
+    <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/productos.js?v=1"></script>
+</body>
+
+</html>

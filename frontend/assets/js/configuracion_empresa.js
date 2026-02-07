@@ -44,8 +44,79 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
     }
+    // Load logo if exists
+    if (emp.logo_url) {
+      const preview = document.getElementById('logo_preview');
+      const placeholder = document.getElementById('logo_placeholder');
+      const deleteBtn = document.getElementById('btn_delete_logo');
+
+      preview.src = emp.logo_url;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+      deleteBtn.style.display = 'block';
+      document.getElementById('logo_url').value = emp.logo_url;
+    }
+
   } catch (error) {
     console.error("Error al cargar configuración o datos de empresa:", error);
+  }
+
+  // --- LOGO UPLOAD LOGIC ---
+  const logoInput = document.getElementById('logo_input');
+  if (logoInput) {
+    logoInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const btn = document.querySelector('label[for="logo_input"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+      btn.style.pointerEvents = 'none';
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // Construct Upload URL: /api/empresa -> /api/upload
+        const uploadUrl = API_URL.replace('/empresa', '/upload');
+
+        const res = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('logo_url').value = data.url;
+          document.getElementById('logo_preview').src = data.url;
+          document.getElementById('logo_preview').style.display = 'block';
+          document.getElementById('logo_placeholder').style.display = 'none';
+          document.getElementById('btn_delete_logo').style.display = 'block';
+          showNotification('Logo subido correctamente', 'success');
+        } else {
+          showNotification('Error: ' + data.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showNotification('Error al subir logo', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = 'auto';
+      }
+    });
+  }
+
+  const btnDeleteLogo = document.getElementById('btn_delete_logo');
+  if (btnDeleteLogo) {
+    btnDeleteLogo.addEventListener('click', () => {
+      document.getElementById('logo_url').value = '';
+      document.getElementById('logo_preview').src = '';
+      document.getElementById('logo_preview').style.display = 'none';
+      document.getElementById('logo_placeholder').style.display = 'block';
+      btnDeleteLogo.style.display = 'none';
+      logoInput.value = '';
+    });
   }
 
   form.addEventListener("submit", async (e) => {
@@ -77,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const formData = new FormData(form);
 
     // Basic fields
-    const keys = ['tipo_figura', 'nombre_fiscal', 'nombre_comercial', 'nit', 'dv', 'direccion', 'telefono', 'correo', 'web', 'estado'];
+    const keys = ['tipo_figura', 'nombre_fiscal', 'nombre_comercial', 'nit', 'dv', 'direccion', 'telefono', 'correo', 'web', 'estado', 'logo_url'];
     keys.forEach(k => empresaData[k] = formData.get(k));
 
     // Inventory Config Construction

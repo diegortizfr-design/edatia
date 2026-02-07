@@ -185,6 +185,32 @@ async function initializeTenantDB(dbConfig) {
             }
         }
 
+        // --- 6.5. CATEGORIAS ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS categorias_productos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                descripcion TEXT,
+                activo TINYINT(1) DEFAULT 1,
+                empresa_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Populate from existing products if empty
+        const [catCount] = await clientConn.query('SELECT COUNT(*) as total FROM categorias_productos');
+        if (catCount[0].total === 0) {
+            // Check if products table exists first to avoid error on fresh install
+            const [prodExists] = await clientConn.query("SHOW TABLES LIKE 'productos'");
+            if (prodExists.length > 0) {
+                await clientConn.query(`
+                    INSERT IGNORE INTO categorias_productos (nombre)
+                    SELECT DISTINCT categoria FROM productos 
+                    WHERE categoria IS NOT NULL AND categoria != ''
+                `);
+            }
+        }
+
         // --- 7. PRODUCTOS ---
         await clientConn.query(`
             CREATE TABLE IF NOT EXISTS productos (
