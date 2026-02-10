@@ -97,12 +97,27 @@ exports.createOrder = async (req, res) => {
 
         if (existingClient.length > 0) {
             clienteId = existingClient[0].id;
-            await clientConn.query('UPDATE terceros SET direccion = ?, telefono = ? WHERE id = ?', [cliente.direccion, cliente.telefono, clienteId]);
+            await clientConn.query(`
+                UPDATE terceros 
+                SET direccion = ?, direccion_adicional = ?, telefono = ?, email = ?, 
+                    tipo_documento = ?, pais_id = ?, departamento_id = ?, ciudad_id = ?
+                WHERE id = ?
+            `, [
+                cliente.direccion, cliente.direccion_adicional, cliente.telefono, cliente.email,
+                cliente.tipo_documento, cliente.pais_id, cliente.departamento_id, cliente.ciudad_id,
+                clienteId
+            ]);
         } else {
             const [resCli] = await clientConn.query(`
-                INSERT INTO terceros (nombre_comercial, razon_social, documento, direccion, telefono, es_cliente, es_proveedor)
-                VALUES (?, ?, ?, ?, ?, 1, 0)
-            `, [cliente.nombre, cliente.nombre, documentoCliente, cliente.direccion || '', cliente.telefono]);
+                INSERT INTO terceros 
+                (nombre_comercial, razon_social, tipo_documento, documento, direccion, direccion_adicional, 
+                 telefono, email, pais_id, departamento_id, ciudad_id, es_cliente, es_proveedor)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
+            `, [
+                cliente.nombre, cliente.nombre, cliente.tipo_documento || 'CC', documentoCliente,
+                cliente.direccion || '', cliente.direccion_adicional || '', cliente.telefono, cliente.email || '',
+                cliente.pais_id || null, cliente.departamento_id || null, cliente.ciudad_id || null
+            ]);
             clienteId = resCli.insertId;
         }
 
@@ -258,8 +273,74 @@ exports.getPhysicalStores = async (req, res) => {
         res.json({ success: true, data: rows });
 
     } catch (err) {
-        console.error('getPhysicalStores error:', err);
+        console.error('Public Branches API Error:', err);
         res.status(500).json({ success: false, message: 'Error al obtener sucursales' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+// Get Departments (for checkout form)
+exports.getDepartamentos = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.params;
+        const { pais_id } = req.query;
+
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+
+        let query = 'SELECT id, nombre, codigo FROM departamentos';
+        const params = [];
+
+        if (pais_id) {
+            query += ' WHERE pais_id = ?';
+            params.push(pais_id);
+        }
+
+        query += ' ORDER BY nombre ASC';
+        const [rows] = await clientConn.query(query, params);
+
+        res.json({ success: true, data: rows });
+
+    } catch (err) {
+        console.error('Public Departamentos API Error:', err);
+        res.status(500).json({ success: false, message: 'Error al obtener departamentos' });
+    } finally {
+        if (clientConn) await clientConn.end();
+    }
+};
+
+// Get Cities (for checkout form)
+exports.getCiudades = async (req, res) => {
+    let clientConn = null;
+    try {
+        const { nit } = req.params;
+        const { departamento_id } = req.query;
+
+        const dbConfig = await getClientDbConfig(nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+
+        clientConn = await connectToClientDB(dbConfig);
+
+        let query = 'SELECT id, nombre, codigo FROM ciudades';
+        const params = [];
+
+        if (departamento_id) {
+            query += ' WHERE departamento_id = ?';
+            params.push(departamento_id);
+        }
+
+        query += ' ORDER BY nombre ASC';
+        const [rows] = await clientConn.query(query, params);
+
+        res.json({ success: true, data: rows });
+
+    } catch (err) {
+        console.error('Public Ciudades API Error:', err);
+        res.status(500).json({ success: false, message: 'Error al obtener ciudades' });
     } finally {
         if (clientConn) await clientConn.end();
     }

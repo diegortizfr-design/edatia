@@ -56,6 +56,19 @@ async function initializeTenantDB(dbConfig) {
         if (terColNames.includes('es_empleado')) {
             try { await clientConn.query('UPDATE terceros SET es_colaborador = 1 WHERE es_empleado = 1'); } catch (e) { }
         }
+        // Geographic fields
+        if (!terColNames.includes('pais_id')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN pais_id INT'); } catch (e) { }
+        }
+        if (!terColNames.includes('departamento_id')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN departamento_id INT'); } catch (e) { }
+        }
+        if (!terColNames.includes('ciudad_id')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN ciudad_id INT'); } catch (e) { }
+        }
+        if (!terColNames.includes('direccion_adicional')) {
+            try { await clientConn.query('ALTER TABLE terceros ADD COLUMN direccion_adicional VARCHAR(255)'); } catch (e) { }
+        }
 
         // --- 3. ROLES ---
         await clientConn.query(`
@@ -490,6 +503,101 @@ async function initializeTenantDB(dbConfig) {
         const [facColsForCaja] = await clientConn.query("SHOW COLUMNS FROM facturas LIKE 'caja_sesion_id'");
         if (facColsForCaja.length === 0) {
             await clientConn.query("ALTER TABLE facturas ADD COLUMN caja_sesion_id INT NULL");
+        }
+
+        // --- GEOGRAPHIC TABLES ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS paises (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                codigo VARCHAR(10),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS departamentos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                pais_id INT NOT NULL,
+                nombre VARCHAR(100) NOT NULL,
+                codigo VARCHAR(10),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (pais_id) REFERENCES paises(id) ON DELETE CASCADE
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS ciudades (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                departamento_id INT NOT NULL,
+                nombre VARCHAR(100) NOT NULL,
+                codigo VARCHAR(10),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE
+            )
+        `);
+
+        // Seed Colombia data if paises table is empty
+        const [existingCountries] = await clientConn.query('SELECT COUNT(*) as count FROM paises');
+        if (existingCountries[0].count === 0) {
+            // Insert Colombia
+            const [colombiaResult] = await clientConn.query(`
+                INSERT INTO paises (nombre, codigo) VALUES ('Colombia', 'CO')
+            `);
+            const colombiaId = colombiaResult.insertId;
+
+            // Insert Colombian departments
+            const departamentos = [
+                'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá',
+                'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare',
+                'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo',
+                'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima',
+                'Valle del Cauca', 'Vaupés', 'Vichada', 'Bogotá D.C.'
+            ];
+
+            for (const dept of departamentos) {
+                await clientConn.query(`
+                    INSERT INTO departamentos (pais_id, nombre) VALUES (?, ?)
+                `, [colombiaId, dept]);
+            }
+
+            // Insert major cities for key departments
+            const [antioquia] = await clientConn.query('SELECT id FROM departamentos WHERE nombre = "Antioquia"');
+            if (antioquia.length > 0) {
+                const cities = ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro'];
+                for (const city of cities) {
+                    await clientConn.query('INSERT INTO ciudades (departamento_id, nombre) VALUES (?, ?)', [antioquia[0].id, city]);
+                }
+            }
+
+            const [bogota] = await clientConn.query('SELECT id FROM departamentos WHERE nombre = "Bogotá D.C."');
+            if (bogota.length > 0) {
+                await clientConn.query('INSERT INTO ciudades (departamento_id, nombre) VALUES (?, ?)', [bogota[0].id, 'Bogotá']);
+            }
+
+            const [valle] = await clientConn.query('SELECT id FROM departamentos WHERE nombre = "Valle del Cauca"');
+            if (valle.length > 0) {
+                const cities = ['Cali', 'Palmira', 'Buenaventura', 'Tuluá'];
+                for (const city of cities) {
+                    await clientConn.query('INSERT INTO ciudades (departamento_id, nombre) VALUES (?, ?)', [valle[0].id, city]);
+                }
+            }
+
+            const [atlantico] = await clientConn.query('SELECT id FROM departamentos WHERE nombre = "Atlántico"');
+            if (atlantico.length > 0) {
+                const cities = ['Barranquilla', 'Soledad', 'Malambo'];
+                for (const city of cities) {
+                    await clientConn.query('INSERT INTO ciudades (departamento_id, nombre) VALUES (?, ?)', [atlantico[0].id, city]);
+                }
+            }
+
+            const [santander] = await clientConn.query('SELECT id FROM departamentos WHERE nombre = "Santander"');
+            if (santander.length > 0) {
+                const cities = ['Bucaramanga', 'Floridablanca', 'Girón'];
+                for (const city of cities) {
+                    await clientConn.query('INSERT INTO ciudades (departamento_id, nombre) VALUES (?, ?)', [santander[0].id, city]);
+                }
+            }
         }
 
         console.log(`Schema initialization completed for: ${dbConfig.db_name}`);

@@ -732,18 +732,16 @@ exports.obtenerCategorias = async (req, res) => {
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        const [rows] = await clientConn.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
-        res.json({ success: true, data: rows });
+        // Opción 2: Usar DISTINCT de la tabla productos
+        const [rows] = await clientConn.query('SELECT DISTINCT categoria as nombre FROM productos WHERE categoria IS NOT NULL AND categoria != "" ORDER BY categoria ASC');
+
+        // Mapeamos para que el frontend reciba un "id" (usamos el nombre como ID)
+        const formatData = rows.map(r => ({ id: r.nombre, nombre: r.nombre, descripcion: 'Categoría dinámica', activo: 1 }));
+
+        res.json({ success: true, data: formatData });
 
     } catch (err) {
         console.error('obtenerCategorias error:', err);
-        // Fallback to old method if table doesn't exist (safety)
-        if (err.code === 'ER_NO_SUCH_TABLE') {
-            try {
-                const [rows] = await clientConn.query('SELECT DISTINCT categoria as nombre FROM productos WHERE categoria IS NOT NULL AND categoria != "" ORDER BY categoria ASC');
-                return res.json({ success: true, data: rows.map(r => ({ id: null, nombre: r.nombre })) });
-            } catch (e) { }
-        }
         res.status(500).json({ success: false, message: 'Error al obtener categorías' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -751,41 +749,30 @@ exports.obtenerCategorias = async (req, res) => {
 };
 
 exports.crearCategoria = async (req, res) => {
-    let clientConn = null;
-    try {
-        const { nit } = req.user;
-        const { nombre, descripcion } = req.body;
-        if (!nombre) return res.status(400).json({ success: false, message: 'Nombre es obligatorio' });
-
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
-
-        await clientConn.query('INSERT INTO categorias_productos (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
-        res.json({ success: true, message: 'Categoría creada' });
-
-    } catch (err) {
-        console.error('crearCategoria error:', err);
-        if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ success: false, message: 'La categoría ya existe' });
-        res.status(500).json({ success: false, message: 'Error al crear categoría' });
-    } finally {
-        if (clientConn) await clientConn.end();
-    }
+    // En el modo simplificado, las categorías se "crean" al asignar el nombre en el producto.
+    // Retornamos éxito para no romper el flujo del frontend.
+    res.json({
+        success: true,
+        message: 'Categoría registrada virtualmente. Aparecerá en la lista cuando asigne un producto a ella.'
+    });
 };
 
 exports.actualizarCategoria = async (req, res) => {
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { id } = req.params;
-        const { nombre, descripcion, activo } = req.body;
+        const { id: nombreAnterior } = req.params; // Recibimos el nombre actual como ID
+        const { nombre: nuevoNombre } = req.body;
+
+        if (!nuevoNombre) return res.status(400).json({ success: false, message: 'Nuevo nombre es obligatorio' });
 
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        await clientConn.query('UPDATE categorias_productos SET nombre = ?, descripcion = ?, activo = ? WHERE id = ?',
-            [nombre, descripcion, activo !== undefined ? activo : 1, id]);
+        // Corregir todos los productos que tengan el nombre anterior
+        await clientConn.query('UPDATE productos SET categoria = ? WHERE categoria = ?', [nuevoNombre, nombreAnterior]);
 
-        res.json({ success: true, message: 'Categoría actualizada' });
+        res.json({ success: true, message: 'Categoría actualizada en todos los productos' });
 
     } catch (err) {
         console.error('actualizarCategoria error:', err);
@@ -799,15 +786,15 @@ exports.eliminarCategoria = async (req, res) => {
     let clientConn = null;
     try {
         const { nit } = req.user;
-        const { id } = req.params;
+        const { id: nombreCategoria } = req.params;
 
         const dbConfig = await getClientDbConfig(nit);
         clientConn = await connectToClientDB(dbConfig);
 
-        // Check availability? (Optional: Prevent delete if products use it)
-        // For now, soft delete or forceful? Let's just delete.
-        await clientConn.query('DELETE FROM categorias_productos WHERE id = ?', [id]);
-        res.json({ success: true, message: 'Categoría eliminada' });
+        // Opción 2: Resetear la categoría a "General" en lugar de borrar la fila de una tabla inexistente
+        await clientConn.query('UPDATE productos SET categoria = "General" WHERE categoria = ?', [nombreCategoria]);
+
+        res.json({ success: true, message: 'La categoría ha sido removida y los productos asociados ahora son "General"' });
 
     } catch (err) {
         console.error('eliminarCategoria error:', err);

@@ -4,171 +4,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATPAventura | Viajes, Moto y Placer</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap"
+    <title>ATP Aventura | Placer & Elegancia</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap"
         rel="stylesheet">
+    <!-- Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">ATP<span>AVENTURA</span></div>
-            <div class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+
+    <!-- Header / Navbar -->
+    <header class="navbar">
+        <div class="logo">ATP<span>Aventura</span></div>
+        <nav class="nav-links">
+            <a href="#" class="active" data-page="home">Inicio</a>
+            <a href="#" data-page="catalog">Catálogo</a>
+            <a href="#contacto">Contacto</a>
+        </nav>
+        <div class="nav-icons">
+            <div class="cart-trigger" id="cart-btn">
+                <i class="fas fa-shopping-bag" style="font-size: 1.2rem; color: var(--text-primary);"></i>
+                <span class="cart-count" id="cart-count">0</span>
             </div>
-            <ul class="nav-links">
-                <li><a href="#inicio">La Ruta</a></li>
-                <li><a href="#videos">Videos</a></li>
-                <li><a href="#comunidad">Comunidad</a></li>
-                <li><a href="tienda.html" class="btn-shop">Tienda Placer</a></li>
-            </ul>
+            <i class="fas fa-bars" id="hamburger-btn"
+                style="font-size: 1.2rem; color: var(--text-primary); display: none;"></i>
         </div>
-    </nav>
+    </header>
 
     <!-- Hero Section -->
-    <section id="inicio" class="hero">
+    <section class="hero">
+        <video autoplay muted loop playsinline id="hero-bg-video">
+            <source src="assets/video-fondo.mp4" type="video/mp4">
+            Tu navegador no soporta video HTML5.
+        </video>
+        <div class="hero-overlay"></div>
         <div class="hero-content">
-            <h1>LIBERTAD<br>EN<span>RUTA</span></h1>
-            <p>Explorando Colombia sobre dos ruedas. Una travesía por los paisajes más salvajes y los placeres más
-                profundos.</p>
-            <div class="hero-actions">
-                <a href="#videos" class="btn-primary">VER EXPEDICIONES</a>
-            </div>
+            <h1>Descubre tus Deseos</h1>
+            <p>Una selección exclusiva de juguetes y lencería para explorar nuevas sensaciones.</p>
+            <button class="btn-primary"
+                onclick="document.querySelector('.catalog-container').scrollIntoView({behavior: 'smooth'})">Ver
+                Colección</button>
         </div>
     </section>
 
-    <!-- Videos Section (PRIMARY) -->
-    <section id="videos" class="videos-section">
-        <div class="container">
-            <h2 class="section-title">RADIO<span>RUTA</span></h2>
-            <p class="section-subtitle">Nuestras aventuras documentadas en YouTube. Siente la adrenalina del asfalto y
-                la tierra.</p>
-
-            <div class="video-grid">
-                <div class="video-card">
-                    <div class="video-wrapper">
-                        <iframe src="https://www.youtube.com/embed/rIbkvof2dGo" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
-                    </div>
-                    <div class="video-info">
-                        <h3>¿ Que tan resistente es 🏍️⚠️? Primera caída en Xpulse 200 pro</h3>
-                        <p>No se agregó una descripción a este video.</p>
-                    </div>
-                </div>
-                <div class="video-card">
-                    <div class="video-wrapper">
-                        <iframe src="https://www.youtube.com/embed/KhPK_6EOoJs" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen></iframe>
-                    </div>
-                    <div class="video-info">
-                        <h3>🚨NOS DENEGARON LA ENTRADA AL NEVADO DEL RUIZ⚠️</h3>
-                        <p>Que tal aventureros por aquí le dejo información más completa y si desean viajar este puente
-                            les serviría mucho.
-
-                            Ingreso Nevado del Ruiz 2025
-                            Llegando en su propio vehículo
-                            menor de 25 años $37.000
-                            mayor de 25 años $48.500
-                            extranjeros $90.000
-
-                            Vehículo $9.500 Microbús: $26.600 Buseta 28 pasajeros máximo: $54.000
-
-                            Incluye:
-                            -Servicio de Guíanza
-                            -Entrada parques nacionales
-                            -Seguro de asistencia médica
-                            -Servicios ecoturísticos.
-                            El parque está abierto de 8am a 2pm Se recomienda que lleguen lo más temprano posible por
-                            que la entrada es con cupo limitado y para evitar congestiones.
-
-                            RECOMENDACIONES Y RESTRICCIONES:
-                            -No sé permite el ingreso de Mascotas de ningún tipo. ---No se permite el ingreso de niños
-                            menores de 6 años ni mayores de 69 años. No pueden ingresar mujeres en estado de embarazo.
-                            No se recomienda para personas con problemas cardíacos, problemas pulmonares, con
-                            operaciones recientes
-                            No se permite el ingreso y uso de Drones. - No sé permite el ingreso de motos ni
-                            cuatrimotos.
-
-                            NOTA: Para los que llegan en este tipo de vehículos los deben dejar en el parqueadero del
-                            parque y se debe pagar una Ruta circular adicional en vehículos del parque (varia entre
-                            $75.000 1 a 2 personas y $30.000 3 personas en adelante)
-
-                            Si van fin de semana o puente festivo deben validar el pico y placa ambiental
-
-                            Pico y placa ambiental para el 15 16 y 17 de NOVIEMBRE
-
-                            Los vehículos que pueden ingresar son los que la placa termina en 4 5 7. Feliz ruta.</p>
-                    </div>
+    <!-- Main Catalog Area -->
+    <main class="catalog-container">
+        <!-- Sidebar Filters -->
+        <aside class="filters">
+            <div class="filter-group">
+                <h3>Categorías</h3>
+                <div id="category-filters">
+                    <!-- Dynamic Filters -->
+                    <button class="filter-btn active" onclick="">Cargando...</button>
                 </div>
             </div>
-        </div>
-    </section>
+        </aside>
 
-    <!-- Blogs Section -->
-    <section id="blogs" class="blogs-section">
-        <div class="container">
-            <h2 class="section-title">BITÁCORA<span>SENSORIAL</span></h2>
-
-            <div class="blog-grid">
-                <article class="blog-card">
-                    <div class="blog-image">
-                        <img src="assets/nevado_ruiz.png" alt="Expedición Nevado del Ruiz">
-                        <span class="blog-category">Lifestyle</span>
-                    </div>
-                    <div class="blog-content">
-                        <h3>¿COMO FUE LA TRAVESIA DEL NEVADO DEL RUIZ?</h3>
-                        <p>Más allá de la moto, es conectar con los sentidos en cada kilómetro.</p>
-                        <a href="#" class="read-more">Leer Más &rarr;</a>
-                    </div>
-                </article>
+        <!-- Product Grid -->
+        <section id="products-container" class="products-grid">
+            <!-- Dynamic Products -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--accent-gold);"></i>
+                <p style="margin-top: 10px; color: var(--text-secondary);">Cargando catálogo...</p>
             </div>
-        </div>
-    </section>
-
-    <!-- Community Section -->
-    <section id="comunidad" class="community-section">
-        <div class="container community-container">
-            <div class="community-text">
-                <h2 class="section-title">ÚNETE AL<span>PARCHE</span></h2>
-                <p>Nuestra ruta nunca es solitaria. Suscríbete para recibir rutas secretas, descuentos en la tienda y
-                    ser el primero en ver los documentales.</p>
-
-                <form class="newsletter-form">
-                    <input type="email" placeholder="Tu email aventurero" required>
-                    <button type="submit" class="btn-primary">UNIRME</button>
-                </form>
-
-                <div class="social-links">
-                    <a href="#" title="Instagram"><img
-                            src="https://img.icons8.com/material-outlined/24/ffffff/instagram-new.png" alt="IG"></a>
-                    <a href="#" title="TikTok"><img src="https://img.icons8.com/material-outlined/24/ffffff/tiktok.png"
-                            alt="TK"></a>
-                    <a href="#" title="YouTube"><img
-                            src="https://img.icons8.com/material-outlined/24/ffffff/youtube-play--v1.png" alt="YT"></a>
-                </div>
-            </div>
-
-            <div class="community-stat">
-                <div class="stat-card">
-                    <span class="stat-number"></span>
-                    <span class="stat-label">ATP AVENTUREROS</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
+        </section>
+    </main>
 
     <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 ATPAventura. La ruta es un placer.</p>
+    <footer id="contacto">
+        <div class="footer-content">
+            <div class="footer-col">
+                <div class="logo" style="margin-bottom: 1rem; font-size: 1.5rem;">ATP<span>Aventura</span></div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Explorando el placer con elegancia y discreción. Envíos a todo el país.
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>Enlaces Rápidos</h4>
+                <a href="#">Inicio</a>
+                <a href="#">Catálogo</a>
+                <a href="#">Política de Privacidad</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <a href="#"><i class="fab fa-whatsapp"></i> +57 300 123 4567</a>
+                <a href="#"><i class="far fa-envelope"></i> contacto@atpaventura.com</a>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                    <a href="#"><i class="fab fa-instagram" style="font-size: 1.2rem;"></i></a>
+                    <a href="#"><i class="fab fa-facebook" style="font-size: 1.2rem;"></i></a>
+                </div>
+            </div>
+        </div>
+        <div
+            style="text-align: center; margin-top: 3rem; color: #444; font-size: 0.8rem; border-top: 1px solid #222; padding-top: 1rem;">
+            &copy; 2026 ATP Aventura. Todos los derechos reservados.
+        </div>
     </footer>
 
+    <!-- Cart Sidebar -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <aside class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3>Tu Selección</h3>
+            <span id="cart-close" style="cursor: pointer; font-size: 1.5rem;">&times;</span>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <!-- Items -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total</span>
+                <span id="cart-total-value">$0</span>
+            </div>
+            <button class="btn-primary" style="width: 100%;" onclick="startCheckout()">
+                Confirmar Pedido <i class="fab fa-whatsapp" style="margin-left: 5px;"></i>
+            </button>
+            <button id="cart-continue"
+                style="width: 100%; background: none; border: none; color: var(--text-secondary); margin-top: 10px; cursor: pointer; text-decoration: underline;">
+                Seguir Explorando
+            </button>
+        </div>
+    </aside>
+
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkoutModal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header" style="padding: 20px; border-bottom: 1px solid var(--glass-border);">
+                <h2 style="color: var(--accent-gold); margin: 0;">Finalizar Pedido</h2>
+                <span onclick="closeCheckoutModal()"
+                    style="cursor: pointer; font-size: 1.5rem; color: var(--text-primary);">&times;</span>
+            </div>
+            <form id="checkoutForm" style="padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Nombre Completo
+                        *</label>
+                    <input type="text" id="checkout_nombre" required
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Tipo Doc.
+                            *</label>
+                        <select id="checkout_tipo_documento" required
+                            style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                            <option value="CC">CC</option>
+                            <option value="NIT">NIT</option>
+                            <option value="CE">CE</option>
+                            <option value="PAS">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Número Documento
+                            *</label>
+                        <input type="text" id="checkout_documento" required
+                            style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Teléfono
+                            *</label>
+                        <input type="tel" id="checkout_telefono" required
+                            style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Email</label>
+                        <input type="email" id="checkout_email"
+                            style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">País *</label>
+                    <select id="checkout_pais" required
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Departamento
+                        *</label>
+                    <select id="checkout_departamento" required
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">Primero seleccione un país</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Ciudad *</label>
+                    <select id="checkout_ciudad" required
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                        <option value="">Primero seleccione un departamento</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Dirección Principal
+                        *</label>
+                    <input type="text" id="checkout_direccion" required placeholder="Ej: Calle 123 #45-67"
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; color: var(--text-primary);">Complemento de
+                        Dirección</label>
+                    <input type="text" id="checkout_direccion_adicional" placeholder="Ej: Apto 301, Torre B"
+                        style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeCheckoutModal()"
+                        style="flex: 1; padding: 12px; background: transparent; border: 1px solid var(--text-secondary); color: var(--text-secondary); cursor: pointer; border-radius: 4px;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary" style="flex: 2; padding: 12px; border-radius: 4px;">
+                        Confirmar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
     <script src="script.js"></script>
 </body>
 

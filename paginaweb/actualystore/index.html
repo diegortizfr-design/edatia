@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ActualyStore | Tu Tienda de Celulares Premium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="https://img.icons8.com/color/48/smartphone.png">
 </head>
@@ -14,7 +15,9 @@
     <!-- Navegación -->
     <nav>
         <div class="logo">
-            <img src="assets/logo.png" alt="ActualyStore Logo">
+            <a href="#">
+                <img src="assets/logo.png" alt="ActualyStore Logo" style="height: 45px; width: auto;">
+            </a>
         </div>
         <ul>
             <li><a href="#">Inicio</a></li>
@@ -22,12 +25,10 @@
             <li><a href="#contacto">Contacto</a></li>
         </ul>
         <div class="nav-actions" style="display: flex; align-items: center; gap: 20px;">
-            <div id="cart-btn-nav" class="btn-primary"
-                style="padding: 10px 25px; display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative;">
+            <div id="cart-btn-nav" class="nav-cart-btn">
                 <img src="https://img.icons8.com/material-outlined/24/ffffff/shopping-bag.png" alt="Cart">
                 <span>Mi Carrito</span>
-                <span id="cart-count"
-                    style="background: var(--brand-red); color: rgb(255, 255, 255); border-radius: 50%; width: 20px; height: 20px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
+                <span id="cart-count" class="nav-cart-badge">0</span>
             </div>
         </div>
         <div id="hamburger-btn" class="hamburger">
@@ -38,48 +39,46 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Tecnología en <br><span
-                    style="background: var(--gradient-brand); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Evolución</span>
-            </h1>
-            <p>Tu destino premium para los gadgets más avanzados. Celulares, audio de alta fidelidad y accesorios
-                exclusivos con la garantía y confianza que buscas.</p>
-            <div class="hero-btns">
-                <a href="#category-showcase" class="btn-primary">Ver Catálogo</a>
+    <!-- Hero Section (Video Background) -->
+    <section class="hero-video-section">
+        <video autoplay muted loop playsinline id="hero-bg-video">
+            <!-- Poner tu video aquí: assets/video-fondo.mp4 -->
+            <source src="assets/video-fondo.mp4" type="video/mp4">
+            Tu navegador no soporta video HTML5.
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content-video">
+            <h1 class="fade-in-up">Tecnología en <br><span class="text-gradient">Evolución</span></h1>
+            <div class="hero-btns fade-in-up delay-400">
+                <a href="#catalogo" class="btn-primary-glass">Explorar Catálogo</a>
             </div>
-        </div>
-        <div class="hero-image">
-            <img src="assets/logo.png" alt="logo">
         </div>
     </section>
 
-    <!-- Visual Category Showcase -->
-    <section id="category-showcase" class="category-showcase-section">
-        <div class="section-title">Explora por Categoría</div>
-        <div id="category-cards-container" class="category-cards-container">
-            <!-- Cards se cargarán aquí -->
-            <p style="text-align: center; width: 100%;">Cargando categorías...</p>
+    <!-- Main Catalog Layout (Sidebar + Grid) -->
+    <section class="main-catalog-section" id="catalogo">
+        <div class="catalog-wrapper">
+            <!-- Sidebar Filters -->
+            <aside class="catalog-sidebar">
+                <div class="sidebar-header">
+                    <h3>Categorías</h3>
+                </div>
+                <div id="category-filters-sidebar" class="filter-list">
+                    <!-- Filters injected by JS -->
+                    <div class="skeleton-filter"></div>
+                    <div class="skeleton-filter"></div>
+                    <div class="skeleton-filter"></div>
+                </div>
+            </aside>
+
+            <!-- Product Grid -->
+            <main id="dynamic-catalog-grid" class="catalog-main">
+                <div style="text-align: center; padding: 100px 0; width: 100%;">
+                    <p style="color: var(--text-secondary); font-size: 1.2rem;">Conectando con el inventario...</p>
+                </div>
+            </main>
         </div>
     </section>
-
-    <!-- Filtros de Categoría (Pills) -->
-    <div class="category-filter-container">
-        <div id="category-filters" class="category-filters">
-            <!-- Botones de categoría se cargarán aquí -->
-        </div>
-    </div>
-
-    <!-- Catálogo Dinámico por Categorías -->
-    <div id="dynamic-catalog-container">
-        <!-- Las secciones se cargarán aquí dinámicamente -->
-        <section class="products">
-            <div style="text-align: center; padding: 100px 20px;">
-                <p style="color: var(--text-secondary); font-size: 1.2rem;">Conectando con el almacén central...</p>
-            </div>
-        </section>
-    </div>
 
     <!-- Contacto Section -->
     <section id="contacto" class="contact-section">

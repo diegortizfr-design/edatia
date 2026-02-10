@@ -53,6 +53,7 @@ app.use('/api/camia', require('./routes/camiaRoutes'));
 app.use('/api/nomina', require('./routes/nominaRoutes'));
 app.use('/api/usuarios', require('./routes/usuariosRoutes'));
 app.use('/api/caja', require('./routes/cajaRoutes'));
+app.use('/api/geografica', require('./routes/geograficaRoutes'));
 
 
 // Servir archivos estáticos del frontend
