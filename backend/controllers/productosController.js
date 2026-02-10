@@ -737,12 +737,17 @@ exports.obtenerCategorias = async (req, res) => {
 
     } catch (err) {
         console.error('obtenerCategorias error:', err);
-        // Fallback to old method if table doesn't exist (safety)
         if (err.code === 'ER_NO_SUCH_TABLE') {
             try {
-                const [rows] = await clientConn.query('SELECT DISTINCT categoria as nombre FROM productos WHERE categoria IS NOT NULL AND categoria != "" ORDER BY categoria ASC');
-                return res.json({ success: true, data: rows.map(r => ({ id: null, nombre: r.nombre })) });
-            } catch (e) { }
+                const dbConfig = await getClientDbConfig(req.user.nit);
+                await initializeTenantDB(dbConfig);
+                // Re-conectar y re-intentar
+                clientConn = await connectToClientDB(dbConfig);
+                const [rows] = await clientConn.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
+                return res.json({ success: true, data: rows });
+            } catch (e) {
+                console.error('Auto-migration failed:', e);
+            }
         }
         res.status(500).json({ success: false, message: 'Error al obtener categorías' });
     } finally {
@@ -765,6 +770,19 @@ exports.crearCategoria = async (req, res) => {
 
     } catch (err) {
         console.error('crearCategoria error:', err);
+        if (err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                const dbConfig = await getClientDbConfig(req.user.nit);
+                await initializeTenantDB(dbConfig);
+                // Re-conectar y re-intentar
+                clientConn = await connectToClientDB(dbConfig);
+                const { nombre, descripcion } = req.body;
+                await clientConn.query('INSERT INTO categorias_productos (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
+                return res.json({ success: true, message: 'Categoría creada tras inicialización' });
+            } catch (e) {
+                console.error('Auto-migration failed:', e);
+            }
+        }
         if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ success: false, message: 'La categoría ya existe' });
         res.status(500).json({ success: false, message: 'Error al crear categoría' });
     } finally {
@@ -789,6 +807,13 @@ exports.actualizarCategoria = async (req, res) => {
 
     } catch (err) {
         console.error('actualizarCategoria error:', err);
+        if (err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                const dbConfig = await getClientDbConfig(req.user.nit);
+                await initializeTenantDB(dbConfig);
+                return res.status(500).json({ success: false, message: 'Tabla creada. Por favor, intente de nuevo.' });
+            } catch (e) { }
+        }
         res.status(500).json({ success: false, message: 'Error al actualizar categoría' });
     } finally {
         if (clientConn) await clientConn.end();
@@ -808,6 +833,14 @@ exports.eliminarCategoria = async (req, res) => {
         res.json({ success: true, message: 'Categoría eliminada' });
 
     } catch (err) {
+        console.error('eliminarCategoria error:', err);
+        if (err.code === 'ER_NO_SUCH_TABLE') {
+            try {
+                const dbConfig = await getClientDbConfig(req.user.nit);
+                await initializeTenantDB(dbConfig);
+                return res.status(500).json({ success: false, message: 'Tabla creada. Por favor, intente de nuevo.' });
+            } catch (e) { }
+        }
         if (err.code === 'ER_ROW_IS_REFERENCED_2') {
             return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene registros vinculados.' });
         }
