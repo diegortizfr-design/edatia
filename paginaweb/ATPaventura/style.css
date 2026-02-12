@@ -7,9 +7,12 @@
     --text-primary: #e0e0e0;
     --text-secondary: #a0a0a0;
     --accent-gold: #d4af37;
+    --accent-purple: #6a1b9a;
+    /* Darker Premium Purple */
     --accent-red: #800020;
+    /* Keep for legacy if needed, but primary is now purple */
     --glass-border: rgba(255, 255, 255, 0.1);
-    --font-heading: 'Playfair Display', serif;
+    --font-heading: 'Cormorant Garamond', serif;
     --font-body: 'Montserrat', sans-serif;
 }
 
@@ -44,30 +47,57 @@ a {
 /* --- HEADER --- */
 .navbar {
     position: fixed;
-    top: 0;
-    width: 100%;
-    padding: 1.5rem 5%;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1400px;
+    padding: 0.8rem 3%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(5, 5, 5, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(10, 10, 10, 0.75);
+    /* Dark Translucent */
+    backdrop-filter: blur(15px);
     z-index: 1000;
-    transition: all 0.3s ease;
-    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50px;
+    /* Capsule Shape */
+}
+
+/* Scrolled State for JS */
+.navbar.scrolled {
+    top: 10px;
+    width: 95%;
+    padding: 0.6rem 3%;
+    background: rgba(5, 5, 5, 0.9);
 }
 
 .logo {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 1.9rem;
+    /* Slightly larger for Cormorant */
+    font-weight: 600;
+    /* Semi-bold for elegance */
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    /* More air between letters */
+}
+
+.navbar .logo {
+    color: #ffffff;
+    /* White ATP in dark navbar */
+}
+
+.footer-col .logo {
+    color: #ffffff;
+    /* White in black footer */
 }
 
 .logo span {
-    color: var(--accent-red);
+    color: var(--accent-purple);
+    text-shadow: 0 0 10px rgba(106, 27, 154, 0.3);
 }
 
 .nav-links {
@@ -76,21 +106,37 @@ a {
 }
 
 .nav-links a {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--text-secondary);
+    color: #e0e0e0;
+    /* Light text for dark navbar */
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .nav-links a:hover,
 .nav-links a.active {
-    color: var(--accent-gold);
+    color: var(--accent-purple);
+    text-shadow: 0 0 8px rgba(155, 89, 182, 0.5);
 }
 
 .nav-icons {
     display: flex;
     gap: 1.5rem;
     align-items: center;
+    color: #ffffff;
+}
+
+.nav-icons i,
+#hamburger-btn {
+    color: inherit !important;
+    transition: transform 0.3s ease;
+}
+
+.nav-icons i:hover {
+    transform: scale(1.1);
+    color: var(--accent-purple);
 }
 
 .cart-trigger {
@@ -102,7 +148,8 @@ a {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: var(--accent-red);
+    background: var(--accent-purple);
+    /* Purple badge */
     color: white;
     font-size: 0.7rem;
     padding: 2px 6px;
@@ -166,7 +213,7 @@ a {
 
 .btn-primary {
     padding: 12px 30px;
-    background: var(--accent-red);
+    background: var(--accent-purple);
     color: white;
     border: none;
     text-transform: uppercase;
@@ -178,7 +225,7 @@ a {
 }
 
 .btn-primary:hover {
-    background: #600018;
+    background: #6c3483;
     transform: translateY(-2px);
 }
 
@@ -390,35 +437,168 @@ a {
     color: var(--accent-gold);
 }
 
-/* --- FOOTER --- */
+/* --- CONTACT SECTION --- */
+.contact-section {
+    padding: 100px 5%;
+    background: linear-gradient(to bottom, #050505, #000);
+    position: relative;
+    overflow: hidden;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+
+.contact-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+}
+
+.dark-glass {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 50px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.contact-info h3,
+.contact-form h3 {
+    font-size: 2rem;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+}
+
+.contact-info p {
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    line-height: 1.8;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.info-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(106, 27, 154, 0.2);
+    transform: translateX(10px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.info-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(106, 27, 154, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    color: var(--accent-purple);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(106, 27, 154, 0.2);
+}
+
+.info-item:hover .info-icon {
+    background: var(--accent-purple);
+    color: white;
+    box-shadow: 0 0 15px rgba(106, 27, 154, 0.5);
+    transform: rotate(-5deg);
+}
+
+.info-text h4 {
+    font-size: 1.1rem;
+    margin-bottom: 3px;
+    color: var(--text-primary);
+}
+
+.info-text p {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+    background: rgba(106, 27, 154, 0.05);
+    box-shadow: 0 0 10px rgba(106, 27, 154, 0.2);
+}
+
+/* --- FOOTER SIMPLIFIED --- */
 footer {
-    background: #000;
-    padding: 4rem 5%;
-    margin-top: auto;
-    border-top: 1px solid #222;
+    padding: 60px 5%;
 }
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
 }
 
-.footer-col h4 {
-    color: var(--text-primary);
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
-}
+/* Responsiveness */
+@media (max-width: 768px) {
 
-.footer-col a {
-    display: block;
-    color: var(--text-secondary);
-    margin-bottom: 0.8rem;
-    font-size: 0.9rem;
-}
+    .contact-info,
+    .contact-form {
+        padding: 30px;
+    }
 
-.footer-col a:hover {
-    color: var(--accent-gold);
+    .contact-info h3,
+    .contact-form h3 {
+        font-size: 1.6rem;
+    }
 }
 
 /* --- MODAL --- */
@@ -452,6 +632,41 @@ footer {
 }
 
 @media (max-width: 768px) {
+    .navbar {
+        top: 10px;
+        width: 95%;
+        padding: 0.7rem 5%;
+    }
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 110%;
+        left: 0;
+        width: 100%;
+        background: rgba(10, 10, 10, 0.98);
+        flex-direction: column;
+        padding: 2rem;
+        gap: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(20px);
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links a {
+        color: #ffffff !important;
+        /* Force white links on dark mobile menu */
+    }
+
+    #hamburger-btn {
+        display: block !important;
+        cursor: pointer;
+    }
+
     .catalog-container {
         grid-template-columns: 1fr;
     }
@@ -472,7 +687,7 @@ footer {
         width: auto;
         white-space: nowrap;
         background: rgba(255, 255, 255, 0.05);
-        padding: 5px 15px;
+        padding: 8px 20px;
         border-radius: 20px;
     }
 
@@ -484,4 +699,79 @@ footer {
         width: 100%;
         right: -100%;
     }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    /* Stack form grids in mobile */
+}
+
+/* --- WHATSAPP FLOATING BUTTON --- */
+.whatsapp-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    animation: whatsapp-pulse 2s infinite;
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(37, 211, 102, 0.6);
+}
+
+@keyframes whatsapp-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 30px rgba(37, 211, 102, 0.7);
+    }
+}
+
+@media (max-width: 768px) {
+    .whatsapp-float {
+        bottom: 20px;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+        font-size: 1.8rem;
+    }
+}
+
+/* --- PAYMENT SELECTION MODAL --- */
+.payment-option {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.payment-option:not(.disabled):hover {
+    background: rgba(106, 27, 154, 0.2) !important;
+    transform: translateY(-2px);
+    border-color: #25d366 !important;
+    box-shadow: 0 5px 15px rgba(37, 211, 102, 0.2);
+}
+
+.premium-title {
+    font-family: var(--font-heading);
+    color: var(--text-primary);
+    letter-spacing: 1px;
 }

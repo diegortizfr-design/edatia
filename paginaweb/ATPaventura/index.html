@@ -7,7 +7,7 @@
     <title>ATP Aventura | Placer & Elegancia</title>
     <!-- Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap"
         rel="stylesheet">
     <!-- Iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -74,34 +74,111 @@
         </section>
     </main>
 
+    <!-- Contact Section -->
+    <section id="contacto" class="contact-section">
+        <div class="container section-header">
+            <h2 class="section-title">Contacto</h2>
+            <p class="section-subtitle">Estamos aquí para asesorarte con total discreción.</p>
+        </div>
+
+        <div class="contact-container">
+            <!-- Contact Info -->
+            <div class="contact-info dark-glass">
+                <h3>Atención Personalizada</h3>
+                <p>¿Tienes dudas sobre algún producto o buscas una recomendación especial? Contáctanos por cualquiera de
+                    nuestros canales oficiales.</p>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="info-text">
+                        <h4>WhatsApp Directo</h4>
+                        <p>+57 321 791 7076</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                    <div class="info-text">
+                        <h4>Síguenos en Instagram</h4>
+                        <p>@atpaventura_premium</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="far fa-envelope"></i>
+                    </div>
+                    <div class="info-text">
+                        <h4>Correo Electrónico</h4>
+                        <p>contacto@aventuraextrema.shop</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="info-text">
+                        <h4>Privacidad Garantizada</h4>
+                        <p>Envíos 100% discretos en empaques sin marcas.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <form class="contact-form dark-glass">
+                <h3>Envíanos un mensaje</h3>
+                <div class="form-group">
+                    <label>Tu Nombre</label>
+                    <input type="text" placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Tu Correo</label>
+                    <input type="email" placeholder="juan@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Asunto o Producto de interés</label>
+                    <input type="text" placeholder="¿En qué podemos ayudarte?">
+                </div>
+                <div class="form-group">
+                    <label>Mensaje</label>
+                    <textarea rows="4" placeholder="Escribe aquí tu consulta..."></textarea>
+                </div>
+                <button type="button" class="btn-primary" style="width: 100%;">Enviar Mensaje</button>
+            </form>
+        </div>
+    </section>
+
     <!-- Footer -->
-    <footer id="contacto">
+    <footer>
         <div class="footer-content">
             <div class="footer-col">
                 <div class="logo" style="margin-bottom: 1rem; font-size: 1.5rem;">ATP<span>Aventura</span></div>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">
-                    Explorando el placer con elegancia y discreción. Envíos a todo el país.
+                    Explorando el placer con elegancia y discreción. Boutique premium de juguetes y lencería.
                 </p>
             </div>
             <div class="footer-col">
-                <h4>Enlaces Rápidos</h4>
+                <h4>Navegación</h4>
                 <a href="#">Inicio</a>
                 <a href="#">Catálogo</a>
-                <a href="#">Política de Privacidad</a>
+                <a href="#">Preguntas Frecuentes</a>
             </div>
             <div class="footer-col">
-                <h4>Contacto</h4>
-                <a href="#"><i class="fab fa-whatsapp"></i> +57 300 123 4567</a>
-                <a href="#"><i class="far fa-envelope"></i> contacto@atpaventura.com</a>
-                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                    <a href="#"><i class="fab fa-instagram" style="font-size: 1.2rem;"></i></a>
-                    <a href="#"><i class="fab fa-facebook" style="font-size: 1.2rem;"></i></a>
-                </div>
+                <h4>Legal</h4>
+                <a href="#">Términos y Condiciones</a>
+                <a href="#">Política de Privacidad</a>
+                <a href="#">Derecho de Retracto</a>
             </div>
         </div>
         <div
             style="text-align: center; margin-top: 3rem; color: #444; font-size: 0.8rem; border-top: 1px solid #222; padding-top: 1rem;">
-            &copy; 2026 ATP Aventura. Todos los derechos reservados.
+            &copy; 2026 ATP Aventura. Todos los derechos reservados. -- Desarrollado por DiegOrtiz www.diegortizfr.site
+            -- software de facturacion www.erpod.site 2026 &copy;
         </div>
     </footer>
 
@@ -219,18 +296,49 @@
                         style="width: 100%; padding: 10px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 4px;">
                 </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" onclick="closeCheckoutModal()"
-                        style="flex: 1; padding: 12px; background: transparent; border: 1px solid var(--text-secondary); color: var(--text-secondary); cursor: pointer; border-radius: 4px;">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn-primary" style="flex: 2; padding: 12px; border-radius: 4px;">
-                        Confirmar Pedido
-                    </button>
+                <div class="checkout-footer">
+                    <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">PASAR A PAGO</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Payment Menu Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content dark-glass" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="premium-title" style="font-size: 1.5rem;">Seleccione Método de Pago</h2>
+            </div>
+            <div class="payment-options" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 15px;">
+                <div class="payment-option disabled"
+                    style="opacity: 0.5; cursor: not-allowed; padding: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-credit-card" style="font-size: 1.5rem; color: var(--text-secondary);"></i>
+                    <div style="text-align: left;">
+                        <h4 style="margin: 0; color: var(--text-secondary);">Tarjeta Crédito / Débito</h4>
+                        <small style="color: var(--accent-purple);">Próximamente disponible</small>
+                    </div>
+                </div>
+
+                <div class="payment-option whatsapp-option" onclick="processWhatsAppPayment()"
+                    style="cursor: pointer; padding: 20px; border: 1px solid var(--accent-purple); background: rgba(106, 27, 154, 0.1); border-radius: 12px; display: flex; align-items: center; gap: 15px; transition: all 0.3s ease;">
+                    <i class="fab fa-whatsapp" style="font-size: 2rem; color: #25d366;"></i>
+                    <div style="text-align: left;">
+                        <h4 style="margin: 0; color: var(--text-primary);">Pagar por WhatsApp</h4>
+                        <small style="color: var(--text-secondary);">Recibe el link de pago y confirma tu pedido</small>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="closePaymentModal()"
+                style="margin-top: 2rem; width: 100%;">Volver</button>
+        </div>
+    </div>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/573217917076?text=Hola%20ATP%20Aventura,%20estoy%20interesado%20en%20sus%20productos"
+        target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Contactar por WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <!-- Scripts -->
     <script src="assets/js/config.js"></script>

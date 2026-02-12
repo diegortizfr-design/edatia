@@ -249,11 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('checkoutForm').reset();
     };
 
+    // Variables to store current order data
+    let currentOrderData = null;
+
     // Handle checkout form submission
     document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const formData = {
+        // 1. Prepare data
+        currentOrderData = {
             cliente: {
                 nombre: document.getElementById('checkout_nombre').value,
                 tipo_documento: document.getElementById('checkout_tipo_documento').value,
@@ -267,35 +271,78 @@ document.addEventListener('DOMContentLoaded', () => {
                 direccion_adicional: document.getElementById('checkout_direccion_adicional').value
             },
             items: cart.map(item => ({
-                producto_id: item.id,
+                id: item.id,
+                name: item.name,
                 cantidad: item.quantity,
                 precio_unitario: item.price
             }))
         };
 
+        // 2. Register order in database first (to ensure persistence)
         try {
             const response = await fetch(`${CONFIG.API_URL}/${CONFIG.NIT}/order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    cliente: currentOrderData.cliente,
+                    items: currentOrderData.items.map(i => ({
+                        producto_id: i.id,
+                        cantidad: i.cantidad,
+                        precio_unitario: i.precio_unitario
+                    }))
+                })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                alert('¡Pedido confirmado! Nos pondremos en contacto contigo pronto.');
-                cart = [];
-                updateCartUI();
+                currentOrderData.numero_pedido = result.numero_pedido;
+                // 3. Close checkout and open payment choice
                 closeCheckoutModal();
-                closeCart();
+                document.getElementById('paymentModal').style.display = 'flex';
             } else {
-                alert('Error al procesar el pedido: ' + result.message);
+                alert('Error al registrar pedido: ' + result.message);
             }
         } catch (error) {
             console.error('Error submitting order:', error);
-            alert('Error al enviar el pedido. Por favor intenta nuevamente.');
+            alert('Error al conectar con el servidor.');
         }
     });
+
+    window.closePaymentModal = () => {
+        document.getElementById('paymentModal').style.display = 'none';
+    };
+
+    window.processWhatsAppPayment = () => {
+        if (!currentOrderData) return;
+
+        const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+        // Build WhatsApp Message
+        let message = `*NUEVO PEDIDO - ATP AVENTURA*\n\n`;
+        message += `*Cliente:* ${currentOrderData.cliente.nombre}\n`;
+        message += `*Cédula:* ${currentOrderData.cliente.documento}\n`;
+        message += `*Dirección:* ${currentOrderData.cliente.direccion} ${currentOrderData.cliente.direccion_adicional}\n`;
+        message += `*Pedido #:* ${currentOrderData.numero_pedido}\n\n`;
+        message += `*PRODUCTOS:*\n`;
+
+        currentOrderData.items.forEach(item => {
+            message += `- ${item.cantidad}x ${item.name} ($${(item.precio_unitario * item.cantidad).toLocaleString('es-CO')})\n`;
+        });
+
+        message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n\n`;
+        message += `_Por favor envíeme los métodos de pago para completar mi compra._`;
+
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/573217917076?text=${encodedMessage}`;
+
+        // Clear cart and redirect
+        cart = [];
+        updateCartUI();
+        window.open(whatsappUrl, '_blank');
+        closePaymentModal();
+        closeCart();
+    };
 
     // --- UI EVENTS ---
     function openCart() {
@@ -308,20 +355,52 @@ document.addEventListener('DOMContentLoaded', () => {
         cartOverlay.classList.remove('active');
     }
 
+    // Toggle Mobile Menu
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const navLinks = document.querySelector('.nav-links');
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            // Toggle icon (optional)
+            hamburgerBtn.classList.toggle('fa-bars');
+            hamburgerBtn.classList.toggle('fa-times');
+        });
+    }
+
+    // Close mobile menu when a link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('active');
+            if (hamburgerBtn) {
+                hamburgerBtn.classList.add('fa-bars');
+                hamburgerBtn.classList.remove('fa-times');
+            }
+        });
+    });
+
     cartBtn.addEventListener('click', openCart);
     cartClose.addEventListener('click', closeCart);
     cartOverlay.addEventListener('click', closeCart);
     if (cartContinue) cartContinue.addEventListener('click', closeCart);
 
+    // Contact Form Handler
+    const contactBtn = document.querySelector('.contact-form .btn-primary');
+    if (contactBtn) {
+        contactBtn.addEventListener('click', () => {
+            alert('¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto con total discreción.');
+            // Optionally clear the form
+            document.querySelector('.contact-form').reset();
+        });
+    }
+
     // Navbar Scroll Effect
     window.addEventListener('scroll', () => {
         const nav = document.querySelector('.navbar');
         if (window.scrollY > 50) {
-            nav.style.padding = '1rem 5%';
-            nav.style.background = 'rgba(5, 5, 5, 0.95)';
+            nav.classList.add('scrolled');
         } else {
-            nav.style.padding = '1.5rem 5%';
-            nav.style.background = 'rgba(5, 5, 5, 0.8)';
+            nav.classList.remove('scrolled');
         }
     });
 });

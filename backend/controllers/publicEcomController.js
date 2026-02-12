@@ -22,6 +22,22 @@ exports.getCatalog = async (req, res) => {
         }
 
         clientConn = await connectToClientDB(dbConfig);
+        
+        // Lazy Migration: Check for ecommerce columns
+        const [columns] = await clientConn.query("SHOW COLUMNS FROM productos");
+        const columnNames = columns.map(c => c.Field);
+        
+        const missingColumns = [];
+        if (!columnNames.includes('ecommerce_descripcion')) missingColumns.push("ADD COLUMN ecommerce_descripcion TEXT AFTER imagen_url");
+        if (!columnNames.includes('ecommerce_imagenes')) missingColumns.push("ADD COLUMN ecommerce_imagenes TEXT AFTER ecommerce_descripcion");
+        if (!columnNames.includes('ecommerce_afecta_inventario')) missingColumns.push("ADD COLUMN ecommerce_afecta_inventario BOOLEAN DEFAULT 0 AFTER ecommerce_imagenes");
+        if (!columnNames.includes('mostrar_en_tienda')) missingColumns.push("ADD COLUMN mostrar_en_tienda BOOLEAN DEFAULT 0 AFTER ecommerce_afecta_inventario");
+        if (!columnNames.includes('stock_inicial')) missingColumns.push("ADD COLUMN stock_inicial INT DEFAULT 0 AFTER stock_actual");
+
+        if (missingColumns.length > 0) {
+            console.log(`Running lazy migration for ${nit}: adding ${missingColumns.length} columns`);
+            await clientConn.query(`ALTER TABLE productos ${missingColumns.join(', ')}`);
+        }
 
         // Fetch only products marked for store
         const sql = `
@@ -122,7 +138,7 @@ exports.createOrder = async (req, res) => {
         }
 
         // 2. Obtener Consecutivo de Factura
-        const [docs] = await clientConn.query("SELECT id, prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE categoria IN ('Factura de Venta', 'Factura') AND activo = 1 LIMIT 1 FOR UPDATE");
+        const [docs] = await clientConn.query("SELECT id, prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE categoria IN ('Factura de Venta', 'Factura') AND estado = 1 LIMIT 1 FOR UPDATE");
 
         if (docs.length === 0) {
             throw new Error('No hay configuración de facturación activa en el sistema');

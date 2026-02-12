@@ -131,6 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 renderErpCatalog(result.data);
+            } else {
+                console.error('API Error:', result.message);
+                const grid = document.getElementById('dynamic-catalog-grid');
+                if (grid) {
+                    grid.innerHTML = `<div style="text-align: center; width: 100%; padding: 50px;"><p style="color: var(--brand-red);">Error del servidor: ${result.message || 'No se pudieron cargar los productos'}.</p></div>`;
+                }
             }
         } catch (e) {
             console.error('Error cargando catálogo:', e);
