@@ -22,11 +22,11 @@ exports.getCatalog = async (req, res) => {
         }
 
         clientConn = await connectToClientDB(dbConfig);
-        
+
         // Lazy Migration: Check for ecommerce columns
         const [columns] = await clientConn.query("SHOW COLUMNS FROM productos");
         const columnNames = columns.map(c => c.Field);
-        
+
         const missingColumns = [];
         if (!columnNames.includes('ecommerce_descripcion')) missingColumns.push("ADD COLUMN ecommerce_descripcion TEXT AFTER imagen_url");
         if (!columnNames.includes('ecommerce_imagenes')) missingColumns.push("ADD COLUMN ecommerce_imagenes TEXT AFTER ecommerce_descripcion");
@@ -38,6 +38,37 @@ exports.getCatalog = async (req, res) => {
             console.log(`Running lazy migration for ${nit}: adding ${missingColumns.length} columns`);
             await clientConn.query(`ALTER TABLE productos ${missingColumns.join(', ')}`);
         }
+
+        // --- LAZY MIGRATION FOR WEB ORDERS ---
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS pedidos_web (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                numero_pedido VARCHAR(50) UNIQUE,
+                prefijo VARCHAR(10),
+                documento_id INT,
+                cliente_id INT,
+                subtotal DECIMAL(15,2),
+                impuesto_total DECIMAL(15,2) DEFAULT 0,
+                total DECIMAL(15,2),
+                estado ENUM('Pendiente', 'Preparado', 'Enviado', 'Facturado', 'Cancelado') DEFAULT 'Pendiente',
+                observaciones TEXT,
+                delivery_info TEXT,
+                fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await clientConn.query(`
+            CREATE TABLE IF NOT EXISTS pedidos_web_detalle (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                pedido_id INT,
+                producto_id INT,
+                cantidad DECIMAL(15,2),
+                precio_unitario DECIMAL(15,2),
+                impuesto_porcentaje DECIMAL(5,2) DEFAULT 0,
+                subtotal DECIMAL(15,2),
+                FOREIGN KEY (pedido_id) REFERENCES pedidos_web(id) ON DELETE CASCADE
+            )
+        `);
 
         // Fetch only products marked for store
         const sql = `
@@ -137,25 +168,39 @@ exports.createOrder = async (req, res) => {
             clienteId = resCli.insertId;
         }
 
-        // 2. Obtener Consecutivo de Factura
-        const [docs] = await clientConn.query("SELECT id, prefijo, consecutivo_actual, sucursal_id FROM documentos WHERE categoria IN ('Factura de Venta', 'Factura') AND estado = 1 LIMIT 1 FOR UPDATE");
+        // 2. Obtener Consecutivo de Pedido Web
+        let [docs] = await clientConn.query(`
+            SELECT id, prefijo, consecutivo_actual, sucursal_id 
+            FROM documentos 
+            WHERE categoria IN ('Pedido', 'Pedido Web') AND estado = 1 
+            ORDER BY (categoria = 'Pedido Web') DESC 
+            LIMIT 1 FOR UPDATE
+        `);
 
         if (docs.length === 0) {
-            throw new Error('No hay configuración de facturación activa en el sistema');
+            // AUTO-INIT: Create a default 'Pedido Web' document if none exists
+            const [suc] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+            const sucId = suc.length > 0 ? suc[0].id : 1;
+
+            const [newDoc] = await clientConn.query(`
+                INSERT INTO documentos (sucursal_id, categoria, nombre, prefijo, consecutivo_actual, estado)
+                VALUES (?, 'Pedido Web', 'Pedidos Tienda Online', 'PW', 1, 1)
+            `, [sucId]);
+
+            docs = [{ id: newDoc.insertId, prefijo: 'PW', consecutivo_actual: 1, sucursal_id: sucId }];
         }
+
         const docConfig = docs[0];
-        const numeroFactura = `${docConfig.prefijo || ''}${docConfig.consecutivo_actual}`;
+        const numeroPedido = `${docConfig.prefijo || ''}${docConfig.consecutivo_actual}`;
         const sucursalId = docConfig.sucursal_id;
 
         await clientConn.query('UPDATE documentos SET consecutivo_actual = consecutivo_actual + 1 WHERE id = ?', [docConfig.id]);
 
-        // 3. Procesar Items y Stock
-        let subtotal = 0;
-        let total = 0;
+        // 3. Procesar Items y Stock (Reserva preventivamente)
+        let subtotalTotal = 0;
+        let totalFinal = 0;
 
         for (const item of items) {
-            // IMPORTANTE: El frontend debe enviar el ID del producto ahora.
-            // Si no lo envía, intentamos buscar por nombre (menos seguro pero fallback necesario si no actualizamos todo el front)
             let prodId = item.id;
             let prod = null;
 
@@ -165,7 +210,6 @@ exports.createOrder = async (req, res) => {
             }
 
             if (!prod) {
-                // Fallback por nombre exacto
                 const [prodsByName] = await clientConn.query('SELECT * FROM productos WHERE nombre = ? LIMIT 1 FOR UPDATE', [item.name]);
                 if (prodsByName.length > 0) {
                     prod = prodsByName[0];
@@ -179,76 +223,74 @@ exports.createOrder = async (req, res) => {
             const precio = parseFloat(prod.precio1);
             const subtotalItem = precio * cantidad;
 
-            subtotal += subtotalItem;
-            total += subtotalItem;
+            subtotalTotal += subtotalItem;
+            totalFinal += subtotalItem;
 
             if (prod.ecommerce_afecta_inventario) {
                 if (prod.stock_actual < cantidad) {
                     throw new Error(`Stock insuficiente para ${prod.nombre}`);
                 }
 
-                // Actualizar Global
+                // Update Stock Global
                 await clientConn.query('UPDATE productos SET stock_actual = stock_actual - ? WHERE id = ?', [cantidad, prodId]);
 
-                // Actualizar Sucursal
+                // Update Stock Sucursal
                 if (sucursalId) {
-                    // Check if exists in branch
                     const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ?', [prodId, sucursalId]);
                     if (invSuc.length > 0) {
                         await clientConn.query('UPDATE inventario_sucursales SET cant_actual = cant_actual - ? WHERE producto_id = ? AND sucursal_id = ?', [cantidad, prodId, sucursalId]);
                     } else {
-                        // Insert negative stock or 0? better insert negative if allowed or just 0
-                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [-cantidad, prodId, sucursalId]);
+                        await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [prodId, sucursalId, -cantidad]);
                     }
                 }
 
+                // Movement record as 'RESERVA_WEB'
                 await clientConn.query(`
                     INSERT INTO movimientos_inventario 
                     (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                    VALUES (?, ?, 'VENTA_WEB', ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, 'ENTRADA', ?, ?, ?, ?, ?, ?)
                 `, [
-                    prodId, sucursalId, cantidad,
+                    prodId, sucursalId, -cantidad, // Usamos negativo en entrada para representar reserva/salida
                     prod.stock_actual,
                     prod.stock_actual - cantidad,
-                    'Venta E-commerce', numeroFactura, prod.costo
+                    'Reserva Pedido Web', numeroPedido, prod.costo
                 ]);
             }
 
-            // Guardar info para detalle
             item.dbProd = prod;
             item.dbPrecio = precio;
             item.dbSubtotal = subtotalItem;
         }
 
-        // 4. Insertar Header Factura
-        const [resFac] = await clientConn.query(`
-            INSERT INTO facturas 
-            (numero_factura, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, tipo_pago, metodo_pago, estado, observaciones, fecha)
-            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, NOW())
+        // 4. Insertar Header de Pedido Web (NUEVO TRABAJO)
+        const [resPed] = await clientConn.query(`
+            INSERT INTO pedidos_web 
+            (numero_pedido, prefijo, documento_id, cliente_id, subtotal, impuesto_total, total, estado, observaciones, delivery_info)
+            VALUES (?, ?, ?, ?, ?, 0, ?, 'Pendiente', ?, ?)
         `, [
-            numeroFactura, docConfig.prefijo, docConfig.id, clienteId,
-            subtotal, total,
-            'Contado', 'Efectivo',
-            'Pendiente',
-            `Pedido Web - Entrega: ${delivery}`
+            numeroPedido, docConfig.prefijo, docConfig.id, clienteId,
+            subtotalTotal, totalFinal,
+            `Pedido generado desde E-commerce`,
+            JSON.stringify(delivery || {})
         ]);
 
-        const facturaId = resFac.insertId;
+        const pedidoId = resPed.insertId;
 
-        // 5. Insertar Detalles
+        // 5. Insertar Detalles de Pedido Web
         for (const item of items) {
             await clientConn.query(`
-                INSERT INTO factura_detalle (factura_id, producto_id, cantidad, precio_unitario, impuesto_porcentaje, subtotal)
+                INSERT INTO pedidos_web_detalle (pedido_id, producto_id, cantidad, precio_unitario, impuesto_porcentaje, subtotal)
                 VALUES (?, ?, ?, ?, 0, ?)
-            `, [facturaId, item.dbProd.id, item.quantity, item.dbPrecio, item.dbSubtotal]);
+            `, [pedidoId, item.dbProd.id, item.quantity, item.dbPrecio, item.dbSubtotal]);
         }
 
         await clientConn.commit();
 
         res.json({
             success: true,
-            numero_pedido: numeroFactura,
-            total: total
+            numero_pedido: numeroPedido,
+            total: totalFinal,
+            message: 'Pedido recibido correctamente. Pronto nos contactaremos para finalizar el despacho.'
         });
 
     } catch (err) {

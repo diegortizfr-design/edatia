@@ -94,7 +94,7 @@ body {
 
 .nav-menu a {
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--white);
     font-weight: 500;
     transition: color 0.3s;
 }
@@ -126,7 +126,7 @@ body {
 .hamburger span {
     width: 25px;
     height: 3px;
-    background: var(--dark);
+    background: var(--white);
     border-radius: 3px;
     transition: 0.3s;
 }
@@ -312,7 +312,7 @@ body {
 
 .floating-card span {
     font-weight: 600;
-    color: var(--dark);
+    color: var(--white);
 }
 
 .card-1 {
@@ -783,7 +783,7 @@ body {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
-    color: var(--dark);
+    color: var(--white);
 }
 
 .form-group input,
