@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ecommerceController = require('../controllers/ecommerceController');
-const { authenticateToken } = require('../middlewares/auth');
+const { protect } = require('../middlewares/authMiddleware');
 
-router.get('/orders', authenticateToken, ecommerceController.getWebOrders);
-router.get('/orders/:id', authenticateToken, ecommerceController.getWebOrderDetail);
-router.put('/orders/:id/status', authenticateToken, ecommerceController.updateWebOrderStatus);
+router.get('/orders', protect, ecommerceController.getWebOrders);
+router.get('/orders/:id', protect, ecommerceController.getWebOrderDetail);
+router.put('/orders/:id/status', protect, ecommerceController.updateWebOrderStatus);
 
 module.exports = router;
