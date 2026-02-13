@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Pedido | Oro Laminado Premium</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .checkout-main {
+            padding: 150px 0;
+            background: #0a0a0a;
+            min-height: 100vh;
+        }
+
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 40px;
+        }
+
+        .checkout-form-area,
+        .order-summary {
+            padding: 40px;
+            background: #111;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            margin-bottom: 20px;
+            color: var(--gold-primary);
+            border-bottom: 1px solid var(--border-gold);
+            padding-bottom: 10px;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #222;
+        }
+
+        .summary-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border: 1px solid var(--border-gold);
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+            <a href="index.html" class="logo-text">ORO<span class="gold-text">LAMINADO</span></a>
+        </div>
+        <a href="index.html" class="gold-text"><i class="fa-solid fa-arrow-left"></i> Volver a la Tienda</a>
+    </nav>
+
+    <main class="checkout-main">
+        <div class="container">
+            <div class="checkout-grid">
+                <!-- Formulario -->
+                <div class="checkout-form-area gold-border">
+                    <form id="order-form">
+                        <div class="form-section">
+                            <h3>Datos de Contacto</h3>
+                            <div class="form-group">
+                                <input type="text" id="nombre" placeholder="Nombre completo" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" id="telefono" placeholder="WhatsApp / Teléfono" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="email" placeholder="Correo electrónico" required>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Dirección de Envío</h3>
+                            <div class="form-group">
+                                <input type="text" id="direccion" placeholder="Dirección completa" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="ciudad" placeholder="Ciudad / Municipio" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-gold-fill w-100" id="btn-submit-order">Confirmar
+                            Pedido</button>
+                    </form>
+                </div>
+
+                <!-- Resumen -->
+                <div class="order-summary gold-border">
+                    <h3 class="gold-text" style="margin-bottom: 20px; font-family: 'Playfair Display';">Resumen del
+                        Pedido</h3>
+                    <div id="summary-items-list">
+                        <!-- JS -->
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--gold-primary);">
+                        <div class="total-row">
+                            <span>Envío:</span>
+                            <span>Gratis</span>
+                        </div>
+                        <div class="total-row" style="font-size: 1.5rem;">
+                            <span>Total:</span>
+                            <span id="summary-total">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const LOCAL_STORAGE_KEY = 'oroLaminadoCart';
+        const NIT = '1143875756';
+        const cart = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || [];
+
+        if (cart.length === 0) window.location.href = 'index.html';
+
+        const list = document.getElementById('summary-items-list');
+        const totalDisp = document.getElementById('summary-total');
+        let total = 0;
+
+        cart.forEach(item => {
+            total += item.price * item.quantity;
+            const el = document.createElement('div');
+            el.className = 'summary-item';
+            el.innerHTML = `
+                <img src="${item.img}">
+                <div style="flex:1">
+                    <h4 style="font-size: 0.9rem;">${item.name}</h4>
+                    <small>${item.quantity} x $${item.price.toLocaleString()}</small>
+                </div>
+                <span class="gold-text">$${(item.price * item.quantity).toLocaleString()}</span>
+            `;
+            list.appendChild(el);
+        });
+        totalDisp.textContent = `$${total.toLocaleString()}`;
+
+        document.getElementById('order-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-order');
+            btn.disabled = true;
+            btn.textContent = 'Procesando...';
+
+            const data = {
+                nit_empresa: NIT,
+                cliente: {
+                    nombre: document.getElementById('nombre').value,
+                    telefono: document.getElementById('telefono').value,
+                    email: document.getElementById('email').value,
+                    direccion: document.getElementById('direccion').value,
+                    ciudad: document.getElementById('ciudad').value
+                },
+                productos: cart.map(i => ({ id_producto: i.id, cantidad: i.quantity, precio: i.price, nombre: i.name })),
+                total: total
+            };
+
+            try {
+                const resp = await fetch('https://erpod.onrender.com/api/public/ecommerce/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    alert('¡Pedido realizado con éxito! Nos contactaremos contigo pronto.');
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Error al procesar: ' + res.message);
+                }
+            } catch (err) {
+                alert('Ocurrió un error al conectar con el servidor.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Pedido';
+            }
+        });
+    </script>
+</body>
+
+</html>
