@@ -220,12 +220,17 @@ exports.createOrder = async (req, res) => {
 
             if (!prod) throw new Error(`Producto no encontrado: ${prodName || prodId || 'ID desconocido'}`);
 
-            const cantidad = parseFloat(item.quantity);
-            const precio = parseFloat(prod.precio1);
-            const subtotalItem = precio * cantidad;
+            const cantidad = parseFloat(item.cantidad || item.quantity || 0);
+            if (isNaN(cantidad)) throw new Error(`Cantidad inválida para el producto: ${prodName}`);
+
+            const precio = parseFloat(prod.precio1 || 0);
+            const subtotalItem = (isNaN(precio) || isNaN(cantidad)) ? 0 : (precio * cantidad);
 
             subtotalTotal += subtotalItem;
             totalFinal += subtotalItem;
+
+            // Guardar para inserción posterior
+            item.dbCantidad = cantidad;
 
             if (prod.ecommerce_afecta_inventario) {
                 if (prod.stock_actual < cantidad) {
@@ -281,8 +286,8 @@ exports.createOrder = async (req, res) => {
         for (const item of items) {
             await clientConn.query(`
                 INSERT INTO pedidos_web_detalle (pedido_id, producto_id, cantidad, precio_unitario, impuesto_porcentaje, subtotal)
-                VALUES (?, ?, ?, ?, 0, ?)
-            `, [pedidoId, item.dbProd.id, item.quantity, item.dbPrecio, item.dbSubtotal]);
+            VALUES (?, ?, ?, ?, 0, ?)
+            `, [pedidoId, item.dbProd.id, item.dbCantidad, item.dbPrecio, item.dbSubtotal]);
         }
 
         await clientConn.commit();
