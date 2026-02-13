@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERPod SOFTWARE | Configuración E-commerce</title>
+    <link rel="stylesheet" href="/frontend/assets/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+        <div id="header-container"></div>
+
+        <div class="action-bar"
+            style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <h2 style="color: var(--text-dark); margin: 0;"><i class="fas fa-cog"></i> Configuración de Tienda
+                    Online
+                </h2>
+                <div class="filter-group"
+                    style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                    <i class="fas fa-filter" style="color: #9CA3AF;"></i>
+                    <select id="category-filter" onchange="filterByCategory()"
+                        style="border: none; outline: none; background: transparent; color: #4B5563; font-weight: 500; cursor: pointer; min-width: 150px;">
+                        <option value="all">Todas las categorías</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="exportCatalog()"><i class="fas fa-file-export"></i> Exportar Catálogo
+                (JSON)</button>
+        </div>
+
+        <div class="card" style="margin-top: 20px; padding: 0;">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio Base</th>
+                        <th>Estado E-commerce</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="ecommerce-table-body">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px;">
+            <section class="form-section card" style="height: fit-content;">
+                <h3 style="margin-top: 0; color: var(--text-dark); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-tools"></i> Personaliza tu Widget
+                </h3>
+                <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 20px;">
+                    Configura el botón de compra flottante para tu sitio web.
+                </p>
+
+                <form id="widget-config-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-control">
+                            <label>Color Principal</label>
+                            <input type="color" id="widget-color" value="#4F46E5"
+                                style="height: 40px; padding: 5px; border-radius: 8px;">
+                        </div>
+                        <div class="form-control">
+                            <label>Posición</label>
+                            <select id="widget-position">
+                                <option value="bottom-right">Abajo Derecha</option>
+                                <option value="bottom-left">Abajo Izquierda</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-guardar" style="width: 100%;" onclick="saveWidgetConfig()">
+                        <i class="fas fa-save"></i> Actualizar Widget
+                    </button>
+                </form>
+            </section>
+
+            <section class="form-section card" style="background: #0f172a; border-color: #334155;">
+                <h3 style="margin-top: 0; color: white; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-code"></i> Código de Integración
+                </h3>
+                <div class="code-block"
+                    style="background: #1e293b; color: #a5b4fc; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; position: relative; margin-top: 10px;">
+                    <button class="copy-btn"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;"><i
+                            class="fas fa-copy"></i></button>
+                    <code id="integration-code">
+&lt;!-- ERPod E-commerce --&gt;
+&lt;script src="https://cdn.erpod.com/v1/shop.js" 
+        data-id="STORE-ID"&gt;&lt;/script&gt;
+                    </code>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- E-COMMERCE EDIT MODAL -->
+    <div class="modal-overlay" id="ecommerceModal">
+        <div class="modal-glass" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Detalles de E-commerce</h2>
+                <button class="close-btn" onclick="closeEcomModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="ecommerceForm">
+                    <input type="hidden" id="ecom_prod_id">
+                    <div class="form-group">
+                        <label>Nombre en Tienda (Si es diferente)</label>
+                        <input type="text" id="ecom_nombre" placeholder="Nombre para mostrar al cliente">
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Descripción Larga (HTML soportado)</label>
+                        <textarea id="ecom_descripcion" rows="6"
+                            style="width: 100%; border-radius: 8px; padding: 10px; border: 1px solid #ddd;"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Galería de Imágenes (URLs separadas por comas)</label>
+                        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                            <textarea id="ecom_imagenes" rows="3"
+                                style="flex: 1; border-radius: 8px; padding: 10px; border: 1px solid #ddd;"
+                                placeholder="https://imagen1.jpg, https://imagen2.jpg"></textarea>
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('upload-input-ecom').click()"
+                                style="padding: 10px; height: fit-content;">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            <input type="file" id="upload-input-ecom" style="display: none;" accept="image/*"
+                                onchange="uploadEcomImage(this)">
+                        </div>
+                    </div>
+
+                    <div class="form-group"
+                        style="margin-top: 20px; display: flex; align-items: center; gap: 10px; background: rgba(79, 70, 229, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--primary-color);">
+                        <input type="checkbox" id="ecom_afecta_inventario" style="width: 20px; height: 20px;">
+                        <div>
+                            <label for="ecom_afecta_inventario"
+                                style="font-weight: 600; color: var(--primary-color); display: block; margin-bottom: 0;">Afecta
+                                Inventario</label>
+                            <small style="color: #6B7280;">Si está marcado, la tienda mostrará "Agotado" cuando el stock
+                                llegue a 0.</small>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" class="btn-secondary" onclick="closeEcomModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/frontend/assets/js/layout-loader.js"></script>
+    <script src="/frontend/assets/js/auth_guard.js"></script>
+    <script src="/frontend/assets/js/notifications.js"></script>
+    <script src="/frontend/assets/js/ecommerce.js"></script>
+</body>
+
+</html>

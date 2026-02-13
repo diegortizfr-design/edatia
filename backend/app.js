@@ -54,6 +54,7 @@ app.use('/api/nomina', require('./routes/nominaRoutes'));
 app.use('/api/usuarios', require('./routes/usuariosRoutes'));
 app.use('/api/caja', require('./routes/cajaRoutes'));
 app.use('/api/geografica', require('./routes/geograficaRoutes'));
+app.use('/api/ecommerce', require('./routes/ecommerceRoutes'));
 
 
 // Servir archivos estáticos del frontend

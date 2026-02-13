@@ -201,7 +201,8 @@ exports.createOrder = async (req, res) => {
         let totalFinal = 0;
 
         for (const item of items) {
-            let prodId = item.id;
+            let prodId = item.producto_id || item.id;
+            let prodName = item.nombre || item.name;
             let prod = null;
 
             if (prodId) {
@@ -209,15 +210,15 @@ exports.createOrder = async (req, res) => {
                 if (prods.length > 0) prod = prods[0];
             }
 
-            if (!prod) {
-                const [prodsByName] = await clientConn.query('SELECT * FROM productos WHERE nombre = ? LIMIT 1 FOR UPDATE', [item.name]);
+            if (!prod && prodName) {
+                const [prodsByName] = await clientConn.query('SELECT * FROM productos WHERE nombre = ? LIMIT 1 FOR UPDATE', [prodName]);
                 if (prodsByName.length > 0) {
                     prod = prodsByName[0];
                     prodId = prod.id;
                 }
             }
 
-            if (!prod) throw new Error(`Producto no encontrado: ${item.name}`);
+            if (!prod) throw new Error(`Producto no encontrado: ${prodName || prodId || 'ID desconocido'}`);
 
             const cantidad = parseFloat(item.quantity);
             const precio = parseFloat(prod.precio1);
