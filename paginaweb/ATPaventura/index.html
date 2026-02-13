@@ -340,6 +340,38 @@
         <i class="fab fa-whatsapp"></i>
     </a>
 
+    <!-- Success/Confirmation Modal -->
+    <div class="modal-overlay" id="successModal" style="display: none;">
+        <div class="modal-content dark-glass" style="max-width: 500px; padding: 30px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div
+                    style="width: 70px; height: 70px; background: rgba(37, 211, 102, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-check" style="font-size: 2rem; color: #25d366;"></i>
+                </div>
+                <h2 class="premium-title">¡Pedido Confirmado!</h2>
+                <p style="color: var(--text-secondary);">Resumen de tu compra:</p>
+            </div>
+
+            <div id="order-summary-content"
+                style="max-height: 250px; overflow-y: auto; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <!-- Dynamic Summary -->
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h4 style="margin-bottom: 5px; color: var(--text-primary);" id="summary-client-name">Hola, Client</h4>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">Para agilizar tu despacho, por favor
+                    envíanos este resumen por WhatsApp para que un asesor personalice tu entrega.</p>
+            </div>
+
+            <button class="btn-primary" id="whatsapp-order-btn"
+                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #25d366; border: none; color: white; padding: 15px; border-radius:8px; font-weight:bold; cursor:pointer;">
+                CONCLUIR PEDIDO POR WHATSAPP <i class="fab fa-whatsapp" style="font-size: 1.3rem;"></i>
+            </button>
+            <button onclick="document.getElementById('successModal').style.display='none'; location.reload();"
+                style="width: 100%; background: none; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline;">Cerrar</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="assets/js/config.js"></script>
     <script src="script.js"></script>

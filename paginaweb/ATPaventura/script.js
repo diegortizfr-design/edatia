@@ -297,9 +297,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 currentOrderData.numero_pedido = result.numero_pedido;
-                // 3. Close checkout and open payment choice
+                // 3. Show Success Modal with Summary
                 closeCheckoutModal();
-                document.getElementById('paymentModal').style.display = 'flex';
+                showOrderSuccessModal(currentOrderData);
             } else {
                 alert('Error al registrar pedido: ' + result.message);
             }
@@ -309,39 +309,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function showOrderSuccessModal(order) {
+        const modal = document.getElementById('successModal');
+        const summaryContent = document.getElementById('order-summary-content');
+        const clientNameEl = document.getElementById('summary-client-name');
+        const whatsappBtn = document.getElementById('whatsapp-order-btn');
+
+        clientNameEl.textContent = `¡Hola, ${order.cliente.nombre}!`;
+
+        const total = order.items.reduce((acc, i) => acc + (i.precio_unitario * i.cantidad), 0);
+
+        // Build items HTML
+        let itemsHtml = order.items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;">
+                <span style="color: var(--text-primary); font-size: 0.9rem;">${item.cantidad}x ${item.name}</span>
+                <span style="color: var(--accent-gold); font-size: 0.9rem;">$${(item.precio_unitario * item.cantidad).toLocaleString('es-CO')}</span>
+            </div>
+        `).join('');
+
+        summaryContent.innerHTML = `
+            ${itemsHtml}
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold; border-top: 1px solid var(--accent-gold); padding-top: 10px;">
+                <span style="color: var(--text-primary);">TOTAL</span>
+                <span style="color: var(--accent-gold);">$${total.toLocaleString('es-CO')}</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-secondary); text-align: right;">
+                Pedido #${order.numero_pedido}
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+
+        // Update WhatsApp button handler
+        whatsappBtn.onclick = () => {
+            let message = `*NUEVO PEDIDO - ATP AVENTURA*\n\n`;
+            message += `*Cliente:* ${order.cliente.nombre}\n`;
+            message += `*Cédula:* ${order.cliente.documento}\n`;
+            message += `*Dirección:* ${order.cliente.direccion} ${order.cliente.direccion_adicional || ''}\n`;
+            message += `*Pedido #:* ${order.numero_pedido}\n\n`;
+            message += `*PRODUCTOS:*\n`;
+
+            order.items.forEach(item => {
+                message += `- ${item.cantidad}x ${item.name} ($${(item.precio_unitario * item.cantidad).toLocaleString('es-CO')})\n`;
+            });
+
+            message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n\n`;
+            message += `_Hola, acabo de confirmar mi pedido en la web. Por favor ayúdenme con el pago y despacho._`;
+
+            const whatsappUrl = `https://wa.me/573217917076?text=${encodeURIComponent(message)}`;
+
+            // Clear cart and redirect
+            cart = [];
+            updateCartUI();
+            localStorage.removeItem('atpCart');
+            window.open(whatsappUrl, '_blank');
+            modal.style.display = 'none';
+        };
+    }
+
     window.closePaymentModal = () => {
         document.getElementById('paymentModal').style.display = 'none';
-    };
-
-    window.processWhatsAppPayment = () => {
-        if (!currentOrderData) return;
-
-        const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
-        // Build WhatsApp Message
-        let message = `*NUEVO PEDIDO - ATP AVENTURA*\n\n`;
-        message += `*Cliente:* ${currentOrderData.cliente.nombre}\n`;
-        message += `*Cédula:* ${currentOrderData.cliente.documento}\n`;
-        message += `*Dirección:* ${currentOrderData.cliente.direccion} ${currentOrderData.cliente.direccion_adicional}\n`;
-        message += `*Pedido #:* ${currentOrderData.numero_pedido}\n\n`;
-        message += `*PRODUCTOS:*\n`;
-
-        currentOrderData.items.forEach(item => {
-            message += `- ${item.cantidad}x ${item.name} ($${(item.precio_unitario * item.cantidad).toLocaleString('es-CO')})\n`;
-        });
-
-        message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n\n`;
-        message += `_Por favor envíeme los métodos de pago para completar mi compra._`;
-
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/573217917076?text=${encodedMessage}`;
-
-        // Clear cart and redirect
-        cart = [];
-        updateCartUI();
-        window.open(whatsappUrl, '_blank');
-        closePaymentModal();
-        closeCart();
     };
 
     // --- UI EVENTS ---

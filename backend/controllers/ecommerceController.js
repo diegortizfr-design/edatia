@@ -1,8 +1,18 @@
-const { getClientConnection } = require('../config/db');
+const { getPool } = require('../config/db');
+const { connectToClientDB } = require('../config/dbFactory');
+
+async function getClientDbConfig(nit) {
+    const pool = getPool();
+    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
+    if (rows.length === 0) return null;
+    return rows[0];
+}
 
 exports.getWebOrders = async (req, res) => {
     try {
-        const clientConn = await getClientConnection(req.user.nit);
+        const dbConfig = await getClientDbConfig(req.user.nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+        const clientConn = await connectToClientDB(dbConfig);
         const [orders] = await clientConn.query(`
             SELECT p.*, t.nombre as cliente_nombre 
             FROM pedidos_web p
@@ -19,7 +29,9 @@ exports.getWebOrders = async (req, res) => {
 exports.getWebOrderDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        const clientConn = await getClientConnection(req.user.nit);
+        const dbConfig = await getClientDbConfig(req.user.nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+        const clientConn = await connectToClientDB(dbConfig);
 
         const [order] = await clientConn.query(`
             SELECT p.*, t.nombre as cliente_nombre, t.documento as cliente_documento, t.telefono, t.email
@@ -48,7 +60,9 @@ exports.updateWebOrderStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { estado } = req.body;
-        const clientConn = await getClientConnection(req.user.nit);
+        const dbConfig = await getClientDbConfig(req.user.nit);
+        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
+        const clientConn = await connectToClientDB(dbConfig);
 
         await clientConn.query('UPDATE pedidos_web SET estado = ? WHERE id = ?', [estado, id]);
         res.json({ success: true, message: 'Estado actualizado' });
