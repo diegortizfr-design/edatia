@@ -1,34 +1,43 @@
-/* ERPod Corporate Identity Variables */
+/* ERPod Corporate Identity Variables - Data-First Refactor */
 :root {
-    /* Primary Color - Derived from 'ERPod' text and main circuit lines */
+    /* Primary Color - Professional Indigo */
     --primary-color: #4F46E5;
-    /* Indigo/Purple Main */
+    --secondary-color: #6366f1;
+    --accent-color: #818CF8;
 
-    /* Secondary Color - Lighter accents */
-    --secondary-color: #818CF8;
-    /* Lighter Purple */
+    /* Backgrounds - cleaner, solid */
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-header: #ffffff;
 
-    /* Accent Color - For highlights */
-    --accent-color: #6366f1;
+    /* Text - High contrast for data */
+    --text-dark: #0f172a;
+    --text-main: #334155;
+    --text-gray: #64748b;
+    --text-light: #f8fafc;
 
-    /* Backgrounds */
-    --bg-body: #F3F4F6;
-    --bg-gradient: linear-gradient(135deg, #4F46E5 0%, #818CF8 100%);
+    /* UI Components - Compact & Sharp */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    
+    /* Density Tokens */
+    --padding-dense: 8px 12px;
+    --padding-standard: 12px 16px;
+    --row-height: 40px;
+    --sidebar-width: 240px;
+    --sidebar-collapsed: 68px;
 
-    /* Text */
-    --text-dark: #1F2937;
-    --text-light: #F9FAFB;
-    --text-gray: #6B7280;
-
-    /* UI Components */
-    --radius-md: 8px;
-    --radius-lg: 16px;
-    --transition: all 0.3s ease;
-    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --transition: all 0.2s ease;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
     /* Semantic Colors */
     --success-color: #10B981;
     --warning-color: #F59E0B;
     --error-color: #EF4444;
     --info-color: #3B82F6;
+    
+    /* Font */
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 }

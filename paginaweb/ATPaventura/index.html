@@ -4,7 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATP Aventura | Placer & Elegancia</title>
+    <meta name="description"
+        content="Aventura Extrema - Boutique premium de juguetes y lencería. Placer, elegancia y discreción absoluta en cada entrega.">
+    <meta name="keywords"
+        content="aventura extrema, sexy shop premium, lencería colombia, juguetes eróticos, placer y elegancia">
+    <meta name="author" content="Aventura Extrema">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://aventuraextrema.shop/">
+    <meta property="og:title" content="Aventura Extrema | Placer & Elegancia">
+    <meta property="og:description" content="Boutique premium de juguetes y lencería. Envíos 100% discretos.">
+    <meta property="og:image" content="https://aventuraextrema.shop/assets/og-image.jpg">
+
+    <title>Aventura Extrema | Placer & Elegancia</title>
     <!-- Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap"
@@ -19,7 +32,7 @@
 
     <!-- Header / Navbar -->
     <header class="navbar">
-        <div class="logo">ATP<span>Aventura</span></div>
+        <div class="logo"><img src="assets/logo.jpg" alt="Aventura Extrema Logo" style="height: 50px;"></div>
         <nav class="nav-links">
             <a href="#" class="active" data-page="home">Inicio</a>
             <a href="#" data-page="catalog">Catálogo</a>
@@ -27,11 +40,10 @@
         </nav>
         <div class="nav-icons">
             <div class="cart-trigger" id="cart-btn">
-                <i class="fas fa-shopping-bag" style="font-size: 1.2rem; color: var(--text-primary);"></i>
+                <i class="fas fa-shopping-bag"></i>
                 <span class="cart-count" id="cart-count">0</span>
             </div>
-            <i class="fas fa-bars" id="hamburger-btn"
-                style="font-size: 1.2rem; color: var(--text-primary); display: none;"></i>
+            <i class="fas fa-bars" id="hamburger-btn"></i>
         </div>
     </header>
 
@@ -67,9 +79,9 @@
         <!-- Product Grid -->
         <section id="products-container" class="products-grid">
             <!-- Dynamic Products -->
-            <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
-                <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--accent-gold);"></i>
-                <p style="margin-top: 10px; color: var(--text-secondary);">Cargando catálogo...</p>
+            <div class="loading-container">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Cargando catálogo...</p>
             </div>
         </section>
     </main>
@@ -104,7 +116,7 @@
                     </div>
                     <div class="info-text">
                         <h4>Síguenos en Instagram</h4>
-                        <p>@atpaventura_premium</p>
+                        <p>@aventuraextrema_premium</p>
                     </div>
                 </div>
 
@@ -157,7 +169,8 @@
     <footer>
         <div class="footer-content">
             <div class="footer-col">
-                <div class="logo" style="margin-bottom: 1rem; font-size: 1.5rem;">ATP<span>Aventura</span></div>
+                <div class="logo" style="margin-bottom: 1rem;"><img src="assets/logo.jpg" alt="Aventura Extrema Logo"
+                        style="height: 60px;"></div>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">
                     Explorando el placer con elegancia y discreción. Boutique premium de juguetes y lencería.
                 </p>
@@ -177,8 +190,8 @@
         </div>
         <div
             style="text-align: center; margin-top: 3rem; color: #444; font-size: 0.8rem; border-top: 1px solid #222; padding-top: 1rem;">
-            &copy; 2026 ATP Aventura. Todos los derechos reservados. -- Desarrollado por DiegOrtiz www.diegortizfr.site
-            -- software de facturacion www.erpod.site 2026 &copy;
+            &copy; 2026 Aventura Extrema. Todos los derechos reservados. -- Desarrollado por
+            <a href="https://diegortizfr.site/">Soproweb</a>
         </div>
     </footer>
 
@@ -200,8 +213,7 @@
             <button class="btn-primary" style="width: 100%;" onclick="startCheckout()">
                 Confirmar Pedido <i class="fab fa-whatsapp" style="margin-left: 5px;"></i>
             </button>
-            <button id="cart-continue"
-                style="width: 100%; background: none; border: none; color: var(--text-secondary); margin-top: 10px; cursor: pointer; text-decoration: underline;">
+            <button id="cart-continue" class="btn-secondary" style="width: 100%; margin-top: 10px;">
                 Seguir Explorando
             </button>
         </div>
@@ -209,7 +221,7 @@
 
     <!-- Checkout Modal -->
     <div class="modal" id="checkoutModal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content">
             <div class="modal-header" style="padding: 20px; border-bottom: 1px solid var(--glass-border);">
                 <h2 style="color: var(--accent-gold); margin: 0;">Finalizar Pedido</h2>
                 <span onclick="closeCheckoutModal()"
@@ -298,58 +310,39 @@
 
                 <div class="checkout-footer">
                     <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary">PASAR A PAGO</button>
+                    <button type="submit" class="btn-primary">VER RESUMEN DEL PEDIDO</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Payment Menu Modal -->
-    <div class="modal-overlay" id="paymentModal">
-        <div class="modal-content dark-glass" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2 class="premium-title" style="font-size: 1.5rem;">Seleccione Método de Pago</h2>
-            </div>
-            <div class="payment-options" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 15px;">
-                <div class="payment-option disabled"
-                    style="opacity: 0.5; cursor: not-allowed; padding: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; gap: 15px;">
-                    <i class="fas fa-credit-card" style="font-size: 1.5rem; color: var(--text-secondary);"></i>
-                    <div style="text-align: left;">
-                        <h4 style="margin: 0; color: var(--text-secondary);">Tarjeta Crédito / Débito</h4>
-                        <small style="color: var(--accent-purple);">Próximamente disponible</small>
-                    </div>
-                </div>
 
-                <div class="payment-option whatsapp-option" onclick="processWhatsAppPayment()"
-                    style="cursor: pointer; padding: 20px; border: 1px solid var(--accent-purple); background: rgba(106, 27, 154, 0.1); border-radius: 12px; display: flex; align-items: center; gap: 15px; transition: all 0.3s ease;">
-                    <i class="fab fa-whatsapp" style="font-size: 2rem; color: #25d366;"></i>
-                    <div style="text-align: left;">
-                        <h4 style="margin: 0; color: var(--text-primary);">Pagar por WhatsApp</h4>
-                        <small style="color: var(--text-secondary);">Recibe el link de pago y confirma tu pedido</small>
-                    </div>
-                </div>
-            </div>
-            <button class="btn-secondary" onclick="closePaymentModal()"
-                style="margin-top: 2rem; width: 100%;">Volver</button>
-        </div>
-    </div>
 
     <!-- Floating WhatsApp Button -->
-    <a href="https://wa.me/573217917076?text=Hola%20ATP%20Aventura,%20estoy%20interesado%20en%20sus%20productos"
+    <a href="https://wa.me/573217917076?text=Hola%20Aventura%20Extrema,%20estoy%20interesado%20en%20sus%20productos"
         target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Contactar por WhatsApp">
         <i class="fab fa-whatsapp"></i>
     </a>
 
     <!-- Success/Confirmation Modal -->
-    <div class="modal-overlay" id="successModal" style="display: none;">
+    <div class="modal" id="successModal" style="display: none;">
         <div class="modal-content dark-glass" style="max-width: 500px; padding: 30px;">
             <div style="text-align: center; margin-bottom: 20px;">
                 <div
                     style="width: 70px; height: 70px; background: rgba(37, 211, 102, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                     <i class="fas fa-check" style="font-size: 2rem; color: #25d366;"></i>
                 </div>
-                <h2 class="premium-title">¡Pedido Confirmado!</h2>
-                <p style="color: var(--text-secondary);">Resumen de tu compra:</p>
+                <h2 class="premium-title">Resumen de tu Pedido</h2>
+                <p style="color: var(--text-secondary);">Por favor verifica los detalles de tu compra:</p>
+            </div>
+
+            <div id="order-client-info"
+                style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                <h4
+                    style="color: var(--accent-gold); margin-bottom: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.1); padding-bottom: 5px;">
+                    Datos de Envío</h4>
+                <p id="summary-client-details"
+                    style="font-size: 0.9rem; color: var(--text-primary); margin: 0; line-height: 1.5;"></p>
             </div>
 
             <div id="order-summary-content"
@@ -367,8 +360,8 @@
                 style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #25d366; border: none; color: white; padding: 15px; border-radius:8px; font-weight:bold; cursor:pointer;">
                 CONCLUIR PEDIDO POR WHATSAPP <i class="fab fa-whatsapp" style="font-size: 1.3rem;"></i>
             </button>
-            <button onclick="document.getElementById('successModal').style.display='none'; location.reload();"
-                style="width: 100%; background: none; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline;">Cerrar</button>
+            <button class="btn-secondary" style="width: 100%; margin-top: 15px;"
+                onclick="document.getElementById('successModal').style.display='none'; location.reload();">Cerrar</button>
         </div>
     </div>
 

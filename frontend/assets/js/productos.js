@@ -109,27 +109,28 @@ function renderTable(products) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 32px; height: 32px; border-radius: 6px; background: #eee; background-image: url('${p.imagen_url || ''}'); background-size: cover; background-position: center;"></div>
-                    <div>
-                        <strong>${p.nombre}</strong><br>
-                        <small style="color: #6B7280;">${p.nombre_alterno || ''}</small>
-                        ${p.codigo ? `<br><small style="color: #6366f1; font-family: monospace;">${p.codigo}</small>` : ''}
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 28px; height: 28px; border-radius: 4px; background: #f1f5f9; background-image: url('${p.imagen_url || ''}'); background-size: cover; background-position: center; flex-shrink: 0;"></div>
+                    <div style="min-width: 0;">
+                        <div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.nombre}">${p.nombre}</div>
+                        ${p.codigo ? `<small style="color: #6366f1; font-family: monospace; font-size: 0.75rem;">${p.codigo}</small>` : ''}
                     </div>
                 </div>
             </td>
-            <td>${p.referencia_fabrica || '-'}</td>
-            <td><span class="badge" style="background: rgba(79, 70, 229, 0.1); color: var(--primary-color);">${p.categoria}</span></td>
-            <td><strong>$${parseFloat(p.precio1).toLocaleString()}</strong></td>
-            <td><span style="color: ${p.stock_actual <= p.stock_minimo ? '#EF4444' : 'inherit'}; font-weight: bold;">${p.stock_actual}</span></td>
-            <td>
+            <td><small>${p.referencia_fabrica || '-'}</small></td>
+            <td><span class="badge-sm" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">${p.categoria}</span></td>
+            <td><span style="font-weight: 600;">$${parseFloat(p.precio1).toLocaleString()}</span></td>
+            <td><span style="color: ${p.stock_actual <= p.stock_minimo ? '#EF4444' : 'inherit'}; font-weight: 700;">${p.stock_actual}</span></td>
+            <td style="text-align: center;">
                 ${p.activo
-                ? '<span class="status-active"><i class="fas fa-check-circle"></i> Activo</span>'
-                : '<span class="status-inactive"><i class="fas fa-times-circle"></i> Inactivo</span>'}
+                ? '<i class="fas fa-check-circle" style="color: #10B981;" title="Activo"></i>'
+                : '<i class="fas fa-times-circle" style="color: #94a3b8;" title="Inactivo"></i>'}
             </td>
             <td>
-                <button class="btn-icon" onclick="openModal(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon" onclick="deleteProduct(${p.id})" title="Eliminar" style="color: #EF4444;"><i class="fas fa-trash"></i></button>
+                <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="btn-icon-glass" onclick="openModal(${p.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon-glass" onclick="deleteProduct(${p.id})" title="Eliminar" style="color: #EF4444;"><i class="fas fa-trash"></i></button>
+                </div>
             </td>
         `;
         tableBody.appendChild(tr);

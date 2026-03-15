@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
     let allProducts = [];
     let cart = JSON.parse(localStorage.getItem('atpCart')) || [];
-    let activeCategory = 'Todo';
+    let activeCategory = 'TODO';
     let paises = [];
     let departamentos = [];
     let ciudades = [];
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- RENDER FUNCTIONS ---
     function renderFilters() {
-        const categories = ['Todo', ...new Set(allProducts.map(p => p.categoria || 'Otros'))];
+        const categories = ['TODO', ...new Set(allProducts.map(p => p.categoria || 'Otros'))];
 
         categoryFilters.innerHTML = categories.map(cat => `
             <button class="filter-btn ${cat === activeCategory ? 'active' : ''}" 
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderProducts() {
         let filtered = allProducts;
-        if (activeCategory !== 'Todo') {
+        if (activeCategory !== 'TODO') {
             filtered = allProducts.filter(p => (p.categoria || 'Otros') === activeCategory);
         }
 
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="product-card">
                     <div style="overflow: hidden;">
-                        <img src="${image}" alt="${p.nombre}" class="product-img">
+                        <img src="${image}" alt="Producto: ${p.nombre} - ATP Aventura" class="product-img" loading="lazy">
                     </div>
                     <div class="product-info">
                         <h3 class="product-title">${p.nombre}</h3>
@@ -312,10 +312,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function showOrderSuccessModal(order) {
         const modal = document.getElementById('successModal');
         const summaryContent = document.getElementById('order-summary-content');
-        const clientNameEl = document.getElementById('summary-client-name');
+        const clientDetailsEl = document.getElementById('summary-client-details');
         const whatsappBtn = document.getElementById('whatsapp-order-btn');
 
-        clientNameEl.textContent = `¡Hola, ${order.cliente.nombre}!`;
+        // Find city and department names
+        const dept = departamentos.find(d => d.id == order.cliente.departamento_id);
+        const city = ciudades.find(c => c.id == order.cliente.ciudad_id);
+        const cityLabel = city ? city.nombre : 'No especificada';
+        const deptLabel = dept ? dept.nombre : '';
+
+        // Populate client details in the modal
+        clientDetailsEl.innerHTML = `
+            <strong>Nombre:</strong> ${order.cliente.nombre}<br>
+            <strong>Documento:</strong> ${order.cliente.tipo_documento} ${order.cliente.documento}<br>
+            <strong>Dirección:</strong> ${order.cliente.direccion}<br>
+            ${order.cliente.direccion_adicional ? `<strong>Adicional:</strong> ${order.cliente.direccion_adicional}<br>` : ''}
+            <strong>Ciudad:</strong> ${cityLabel} ${deptLabel ? `- ${deptLabel}` : ''}
+        `;
 
         const total = order.items.reduce((acc, i) => acc + (i.precio_unitario * i.cantidad), 0);
 
@@ -342,18 +355,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update WhatsApp button handler
         whatsappBtn.onclick = () => {
-            let message = `*NUEVO PEDIDO - ATP AVENTURA*\n\n`;
-            message += `*Cliente:* ${order.cliente.nombre}\n`;
-            message += `*Cédula:* ${order.cliente.documento}\n`;
-            message += `*Dirección:* ${order.cliente.direccion} ${order.cliente.direccion_adicional || ''}\n`;
-            message += `*Pedido #:* ${order.numero_pedido}\n\n`;
-            message += `*PRODUCTOS:*\n`;
+            let message = `*NUEVO PEDIDO - AVENTURA EXTREMA*\n\n`;
+            message += `*CLIENTE:*\n`;
+            message += `- Nombre: ${order.cliente.nombre}\n`;
+            message += `- Doc: ${order.cliente.tipo_documento} ${order.cliente.documento}\n`;
+            message += `- Tel: ${order.cliente.telefono}\n\n`;
 
+            message += `*DATOS DE ENVÍO:*\n`;
+            message += `- Dirección: ${order.cliente.direccion}\n`;
+            if (order.cliente.direccion_adicional) message += `- Adicional: ${order.cliente.direccion_adicional}\n`;
+            message += `- Ciudad: ${cityLabel} ${deptLabel}\n\n`;
+
+            message += `*PRODUCTOS:*\n`;
             order.items.forEach(item => {
                 message += `- ${item.cantidad}x ${item.name} ($${(item.precio_unitario * item.cantidad).toLocaleString('es-CO')})\n`;
             });
 
-            message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n\n`;
+            message += `\n*TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n`;
+            message += `*Pedido #:* ${order.numero_pedido}\n\n`;
             message += `_Hola, acabo de confirmar mi pedido en la web. Por favor ayúdenme con el pago y despacho._`;
 
             const whatsappUrl = `https://wa.me/573217917076?text=${encodeURIComponent(message)}`;
@@ -364,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('atpCart');
             window.open(whatsappUrl, '_blank');
             modal.style.display = 'none';
+            location.reload(); // Refresh to clean state after purchase
         };
     }
 

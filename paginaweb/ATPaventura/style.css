@@ -75,29 +75,18 @@ a {
 }
 
 .logo {
-    font-family: var(--font-heading);
-    font-size: 1.9rem;
-    /* Slightly larger for Cormorant */
-    font-weight: 600;
-    /* Semi-bold for elegance */
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    /* More air between letters */
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease;
 }
 
-.navbar .logo {
-    color: #ffffff;
-    /* White ATP in dark navbar */
+.logo img {
+    max-width: 100%;
+    object-fit: contain;
 }
 
-.footer-col .logo {
-    color: #ffffff;
-    /* White in black footer */
-}
-
-.logo span {
-    color: var(--accent-purple);
-    text-shadow: 0 0 10px rgba(106, 27, 154, 0.3);
+.logo:hover {
+    transform: scale(1.05);
 }
 
 .nav-links {
@@ -229,6 +218,25 @@ a {
     transform: translateY(-2px);
 }
 
+.btn-secondary {
+    padding: 12px 30px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(212, 175, 55, 0.05);
+}
+
 /* --- CATALOG LAYOUT --- */
 .catalog-container {
     max-width: 1400px;
@@ -260,6 +268,8 @@ a {
     border-bottom: 1px solid var(--accent-gold);
     padding-bottom: 0.5rem;
     display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .filter-btn {
@@ -272,7 +282,9 @@ a {
     padding: 8px 0;
     cursor: pointer;
     transition: color 0.2s;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .filter-btn:hover,
@@ -623,6 +635,8 @@ footer {
     width: 100%;
     max-width: 600px;
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-header {
@@ -636,6 +650,10 @@ footer {
         top: 10px;
         width: 95%;
         padding: 0.7rem 5%;
+    }
+
+    .navbar .logo img {
+        height: 40px !important;
     }
 
     .nav-links {
@@ -659,7 +677,6 @@ footer {
 
     .nav-links a {
         color: #ffffff !important;
-        /* Force white links on dark mobile menu */
     }
 
     #hamburger-btn {
@@ -699,6 +716,14 @@ footer {
         width: 100%;
         right: -100%;
     }
+
+    .modal {
+        padding: 10px;
+    }
+
+    .modal-content {
+        padding: 20px !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -707,6 +732,18 @@ footer {
     }
 
     /* Stack form grids in mobile */
+    .modal-content form div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+
+    .modal-content h2 {
+        font-size: 1.5rem !important;
+    }
+
+    .premium-title {
+        font-size: 1.4rem !important;
+    }
 }
 
 /* --- WHATSAPP FLOATING BUTTON --- */
@@ -774,4 +811,31 @@ footer {
     font-family: var(--font-heading);
     color: var(--text-primary);
     letter-spacing: 1px;
+}
+
+/* --- UTILITIES & CLEANUP --- */
+.nav-icons i,
+#hamburger-btn {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+#hamburger-btn {
+    display: none;
+}
+
+.loading-container {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 50px;
+}
+
+.loading-container i {
+    font-size: 2rem;
+    color: var(--accent-gold);
+}
+
+.loading-container p {
+    margin-top: 10px;
+    color: var(--text-secondary);
 }
