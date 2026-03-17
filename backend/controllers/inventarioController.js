@@ -1,20 +1,9 @@
-const { getPool } = require('../config/db');
-const { connectToClientDB } = require('../config/dbFactory');
-
-async function getClientDbConfig(nit) {
-    const pool = getPool();
-    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
-    if (rows.length === 0) return null;
-    return rows[0];
-}
+// Módulo de Inventario con soporte Multi-tenant y Auditoría
 
 exports.verKardex = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         const { producto_id } = req.params;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
 
         // DDL Removed
 
@@ -34,17 +23,12 @@ exports.verKardex = async (req, res) => {
     } catch (err) {
         console.error('verKardex error:', err);
         res.status(500).json({ success: false, message: 'Error al obtener el kardex' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.crearAjuste = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
 
         const { producto_id, tipo, cantidad, motivo, sucursal_id } = req.body;
 
@@ -121,14 +105,15 @@ exports.crearAjuste = async (req, res) => {
             prod.costo || 0
         ]);
 
+        // 6. Auditoría
+        await clientConn.query(`INSERT INTO audit_log (usuario_id, tabla, registro_id, accion, datos_nuevos) VALUES (?, 'inventario', ?, 'AJUSTE', ?)`, [req.user.id, producto_id, JSON.stringify(req.body)]);
+
         await clientConn.commit();
         res.json({ success: true, message: 'Ajuste realizado exitosamente', nuevo_stock_sucursal: newBranchStock, nuevo_stock_global: newGlobalStock });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('crearAjuste error:', err);
         res.status(500).json({ success: false, message: 'Error al realizar el ajuste: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };

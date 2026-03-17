@@ -1,30 +1,8 @@
-const { getPool } = require('../config/db');
-const { connectToClientDB } = require('../config/dbFactory');
-const { initializeTenantDB } = require('../utils/tenantInit');
-
-async function getClientDbConfig(nit) {
-    const pool = getPool();
-    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
-    if (rows.length === 0) return null;
-    return rows[0];
-}
-
-// Helper to ensure schema exists (Mini-migration system)
-async function ensureComprasSchema(clientConn) {
-    // DDL Removed - Handled by tenantInit
-}
+const eventBus = require('../shared/events');
 
 exports.listarCompras = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
-
-        clientConn = await connectToClientDB(dbConfig);
-
-        // Ensure schema exists before querying (prevents 500 if columns missing)
-        await ensureComprasSchema(clientConn);
+        const clientConn = req.tenant.db;
 
         // JOIN with Terceros and Documentos for full details
         const sql = `
@@ -51,17 +29,12 @@ exports.listarCompras = async (req, res) => {
     } catch (err) {
         console.error('listarCompras error:', err);
         res.status(500).json({ success: false, message: 'Error interno: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.actualizarCompra = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
         const { id } = req.params;
         const {
             estado, estado_pago, proveedor_id, sucursal_id, fecha, total, items,
@@ -164,15 +137,24 @@ exports.actualizarCompra = async (req, res) => {
             }
         }
 
-        await clientConn.commit();
+        if (estado === 'Completada') {
+            eventBus.emit('purchase.completed', {
+                tenant: req.tenant,
+                data: {
+                    id: id,
+                    total: total || ordenActual.total,
+                    proveedor_id: proveedor_id || ordenActual.proveedor_id,
+                    items: items || [] // Idealmente cargar items si no vienen
+                }
+            });
+        }
+
         res.json({ success: true, message: 'Compra actualizada correctamente' });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('actualizarCompra error:', err);
         res.status(500).json({ success: false, message: 'Error actualizando compra: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
@@ -247,33 +229,15 @@ exports.crearCompra = async (req, res) => {
         res.status(201).json({ success: true, message: 'Orden de compra creada', id: compraId, comprobante: numero_comprobante });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
-
-        // Auto-fix schema mismatch (Lazy Migration)
-        if (err.code === 'ER_BAD_FIELD_ERROR' || err.code === 'ER_NO_SUCH_TABLE') {
-            console.warn(`[Schema Mismatch] in crearCompra for NIT ${req.user.nit}. Running migration...`);
-            try {
-                await initializeTenantDB(await getClientDbConfig(req.user.nit));
-                return res.status(503).json({ success: false, message: 'El sistema ha actualizado la base de datos. Por favor, intente guardar de nuevo.' });
-            } catch (migErr) {
-                console.error('Migration failed:', migErr);
-            }
-        }
-
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('crearCompra error:', err);
         res.status(500).json({ success: false, message: 'Error al procesar la compra: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.obtenerDetallesCompra = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
-
+        const clientConn = req.tenant.db;
         const { id } = req.params;
 
         const [items] = await clientConn.query(`
@@ -287,17 +251,12 @@ exports.obtenerDetallesCompra = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Error obteniendo detalles' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.eliminarCompra = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
         const { id } = req.params;
 
         // 1. Check if exists and state
@@ -308,7 +267,7 @@ exports.eliminarCompra = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No se puede eliminar una compra completada porque ya afectó el stock e inventario.' });
         }
 
-        // 2. Delete (Detail will be deleted via CASCADE if FK is set, but let's be explicit)
+        // 2. Delete
         await clientConn.beginTransaction();
         await clientConn.query('DELETE FROM compras_detalle WHERE compra_id = ?', [id]);
         await clientConn.query('DELETE FROM compras WHERE id = ?', [id]);
@@ -317,10 +276,8 @@ exports.eliminarCompra = async (req, res) => {
         res.json({ success: true, message: 'Compra eliminada correctamente' });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('eliminarCompra error:', err);
         res.status(500).json({ success: false, message: 'Error eliminando compra: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };

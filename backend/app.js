@@ -34,27 +34,21 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
 
-// Rutas API
+// Configuración de versión 1 de la API
+const v1Router = require('./routes/v1');
+app.use('/api/v1', v1Router);
+
+// Redirecciones de compatibilidad (Legacy Support)
+// Esto permite que el frontend actual siga funcionando sin cambios inmediatos
 app.use('/api/auth', authRoutes);
-app.use('/api/empresa', empresaRoutes);
-app.use('/api/sucursales', require('./routes/sucursalesRoutes'));
-app.use('/api/terceros', require('./routes/tercerosRoutes'));
-app.use('/api/productos', require('./routes/productosRoutes'));
-app.use('/api/compras', require('./routes/comprasRoutes'));
 app.use('/api/facturacion', require('./routes/facturacionRoutes'));
-app.use('/api/documentos', require('./routes/documentosRoutes'));
-app.use('/api/upload', require('./routes/uploadRoutes'));
-app.use('/api/public/ecommerce', require('./routes/publicEcomRoutes'));
+app.use('/api/productos', require('./routes/productosRoutes'));
 app.use('/api/inventario', require('./routes/inventarioRoutes'));
-app.use('/api/reportes', reportesRoutes); // Added use statement
+app.use('/api/compras', require('./routes/comprasRoutes'));
+app.use('/api/terceros', require('./routes/tercerosRoutes'));
 app.use('/api/contabilidad', require('./routes/contabilidadRoutes'));
-app.use('/api/averias', require('./routes/averiasRoutes'));
-app.use('/api/camia', require('./routes/camiaRoutes'));
-app.use('/api/nomina', require('./routes/nominaRoutes'));
-app.use('/api/usuarios', require('./routes/usuariosRoutes'));
 app.use('/api/caja', require('./routes/cajaRoutes'));
-app.use('/api/geografica', require('./routes/geograficaRoutes'));
-app.use('/api/ecommerce', require('./routes/ecommerceRoutes'));
+app.use('/api/nomina', require('./routes/nominaRoutes'));
 
 
 // Servir archivos estáticos del frontend

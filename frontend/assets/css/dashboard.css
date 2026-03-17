@@ -160,6 +160,13 @@ textarea {
     gap: 4px;
     overflow-y: auto;
     overflow-x: hidden;
+    /* Hide scrollbar */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.menu::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 
 .menu a {

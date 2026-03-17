@@ -1,24 +1,10 @@
-const { getPool } = require('../config/db');
-const { connectToClientDB } = require('../config/dbFactory');
-const { initializeTenantDB } = require('../utils/tenantInit');
-
 const XLSX = require('xlsx');
-
-async function getClientDbConfig(nit) {
-    const pool = getPool();
-    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
-    if (rows.length === 0) return null;
-    return rows[0];
-}
+// const eventBus = require('../shared/events'); // Para futuras integraciones asíncronas
 
 exports.bulkUpload = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         if (!req.file) return res.status(400).json({ success: false, message: 'No se subió ningún archivo' });
-
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
 
         // Leer Excel
         const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
@@ -242,15 +228,9 @@ exports.listarProductos = async (req, res) => {
 
 // RE-WRITING THE WHOLE FUNCTION TO BE CLEANER
 exports.listarProductos = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         const { busqueda, barcode, categoria, sucursal_id, page = 1, limit = 50 } = req.query;
-
-        const dbConfig = await getClientDbConfig(nit);
-        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
-        clientConn = await connectToClientDB(dbConfig);
-
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let baseQuery = `FROM productos p LEFT JOIN terceros t ON p.proveedor_id = t.id`;
@@ -265,24 +245,15 @@ exports.listarProductos = async (req, res) => {
 
         const conditions = [];
         const params = [];
-
         if (sucursal_id) params.push(sucursal_id);
 
         if (barcode) {
             conditions.push('p.codigo = ?');
             params.push(barcode);
         } else if (busqueda) {
-            conditions.push(`(
-                p.nombre LIKE ? OR 
-                p.codigo LIKE ? OR 
-                p.referencia_fabrica LIKE ? OR 
-                p.nombre_alterno LIKE ? OR 
-                p.descripcion LIKE ? OR
-                p.categoria LIKE ? OR
-                t.nombre_comercial LIKE ?
-            )`);
+            conditions.push(`(p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia_fabrica LIKE ? OR t.nombre_comercial LIKE ?)`);
             const term = `%${busqueda}%`;
-            params.push(term, term, term, term, term, term, term);
+            params.push(term, term, term, term);
         }
 
         if (categoria) {
@@ -290,468 +261,170 @@ exports.listarProductos = async (req, res) => {
             params.push(categoria);
         }
 
-        if (conditions.length > 0) {
-            baseQuery += ' WHERE ' + conditions.join(' AND ');
-        }
+        if (conditions.length > 0) baseQuery += ' WHERE ' + conditions.join(' AND ');
 
-        // Get Total Count
-        // For count, we don't need the sucursal join unless we filter by it? 
-        // Actually sucursal join is LEFT join, so it doesn't filter rows unless we add WHERE isuc.blah.
-        // But wait, the params array includes sucursal_id IF provided.
-        // So we must use the SAME baseQuery for count but replace SELECT part.
         const countSql = `SELECT COUNT(*) as total ${baseQuery}`;
         const [countRows] = await clientConn.query(countSql, params);
         const total = countRows[0].total;
 
-        // Get Data
         const dataSql = `${selectQuery} ${baseQuery} ORDER BY p.nombre ASC LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), parseInt(offset));
-
         const [rows] = await clientConn.query(dataSql, params);
 
-        res.json({
-            success: true,
-            data: rows,
-            pagination: {
-                total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                totalPages: Math.ceil(total / limit)
-            }
-        });
-
+        res.json({ success: true, data: rows, pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) } });
     } catch (err) {
         console.error('listarProductos error:', err);
-        if (err.code === 'ER_NO_SUCH_TABLE') {
-            const { initializeTenantDB } = require('../utils/tenantInit');
-            await initializeTenantDB(await getClientDbConfig(req.user.nit));
-            return res.status(500).json({ success: false, message: 'Base de datos inicializada. Intente de nuevo.' });
-        }
         res.status(500).json({ success: false, message: 'Error al listar productos' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.crearProducto = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
+        const { codigo, nombre, categoria, precio1, costo, stock_inicial, maneja_inventario } = req.body;
+        if (!nombre) return res.status(400).json({ success: false, message: 'Nombre del producto es obligatorio' });
 
-        const {
-            codigo, referencia_fabrica, nombre, nombre_alterno, categoria,
-            unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje,
-            proveedor_id, stock_minimo, descripcion, imagen_url, activo,
-            es_servicio, maneja_inventario, mostrar_en_tienda,
-            ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario,
-            stock_inicial // New field
-        } = req.body;
-
-        if (!nombre) {
-            return res.status(400).json({ success: false, message: 'Nombre del producto es obligatorio' });
-        }
-
-        // AUTO-GENERAR CÓDIGO SI ESTÁ VACÍO
-        let finalCodigo = codigo;
-        if (!finalCodigo || finalCodigo.trim() === '') {
-            // Generar código único: AUTO-[TIMESTAMP]-[RANDOM 3 DIGIT]
-            const timestamp = Date.now().toString().slice(-6);
-            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-            finalCodigo = `AUTO-${timestamp}${random}`;
-        }
-
+        let finalCodigo = codigo || `AUTO-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         const stockIni = parseInt(stock_inicial) || 0;
 
         await clientConn.beginTransaction();
 
-        try {
-            const sql = `
-                INSERT INTO productos 
-                (codigo, referencia_fabrica, nombre, nombre_alterno, categoria, 
-                 unidad_medida, precio1, precio2, precio3, costo, impuesto_porcentaje, 
-                 proveedor_id, stock_minimo, stock_actual, descripcion, imagen_url, activo,
-                 es_servicio, maneja_inventario, mostrar_en_tienda,
-                 ecommerce_descripcion, ecommerce_imagenes, ecommerce_afecta_inventario)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `;
+        const [result] = await clientConn.query(`
+            INSERT INTO productos (codigo, nombre, categoria, precio1, costo, stock_actual, maneja_inventario)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [finalCodigo, nombre, categoria || 'General', precio1 || 0, costo || 0, stockIni, maneja_inventario !== undefined ? maneja_inventario : 1]);
 
-            const [result] = await clientConn.query(sql, [
-                finalCodigo, referencia_fabrica || null, nombre, nombre_alterno || null, categoria || 'General',
-                unidad_medida || 'UND', precio1 || 0, precio2 || 0, precio3 || 0, costo || 0, impuesto_porcentaje || 0,
-                proveedor_id || null, stock_minimo !== undefined ? stock_minimo : 0, stockIni, descripcion || null, imagen_url || null,
-                activo !== undefined ? activo : 1, es_servicio || 0, maneja_inventario !== undefined ? maneja_inventario : 1,
-                mostrar_en_tienda || 0, ecommerce_descripcion || null, ecommerce_imagenes || null, ecommerce_afecta_inventario || 0
-            ]);
+        const productoId = result.insertId;
 
-            const productoId = result.insertId;
+        if (stockIni > 0) {
+            const [sucs] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
+            const targetSucursal = sucs.length > 0 ? sucs[0].id : 1;
 
-            // Handle Initial Stock Movement
-            if (stockIni > 0) {
-                // 1. Determine target branch (Specified OR Single branch OR Principal)
-                let targetSucursal = req.body.sucursal_id;
-
-                if (!targetSucursal) {
-                    const [sucs] = await clientConn.query("SELECT id FROM sucursales");
-                    if (sucs.length === 1) {
-                        targetSucursal = sucs[0].id;
-                    } else {
-                        const [principal] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-                        targetSucursal = principal.length > 0 ? principal[0].id : (sucs.length > 0 ? sucs[0].id : 1);
-                    }
-                }
-
-                // 2. Insert into inventario_sucursales
-                await clientConn.query(`
-                    INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual)
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE cant_actual = cant_actual + VALUES(cant_actual)
-                `, [productoId, targetSucursal, stockIni]);
-
-                // 3. Record Kardex Movement
-                await clientConn.query(`
-                    INSERT INTO movimientos_inventario 
-                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                    VALUES (?, ?, 'ENTRADA', ?, ?, ?, ?, ?, ?)
-                `, [
-                    productoId,
-                    targetSucursal,
-                    stockIni,
-                    0,
-                    stockIni,
-                    'Ajuste Inicial',
-                    'N/A',
-                    costo || 0
-                ]);
-            }
-
-            await clientConn.commit();
-            res.status(201).json({ success: true, message: 'Producto creado exitosamente', id: productoId });
-
-        } catch (txErr) {
-            await clientConn.rollback();
-            throw txErr;
+            await clientConn.query(`INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)`, [productoId, targetSucursal, stockIni]);
+            await clientConn.query(`INSERT INTO movimientos_inventario (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo) VALUES (?, ?, 'ENTRADA', ?, 0, ?, 'Ajuste Inicial')`, [productoId, targetSucursal, stockIni, stockIni]);
         }
 
+        // Auditoría
+        await clientConn.query(`INSERT INTO audit_log (usuario_id, tabla, registro_id, accion, datos_nuevos) VALUES (?, 'productos', ?, 'INSERT', ?)`, [req.user.id, productoId, JSON.stringify(req.body)]);
+
+        await clientConn.commit();
+        res.status(201).json({ success: true, message: 'Producto creado exitosamente', id: productoId });
     } catch (err) {
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('crearProducto error:', err);
-        res.status(500).json({ success: false, message: 'Error al crear producto: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
+        res.status(500).json({ success: false, message: 'Error al crear producto' });
     }
 };
 
 exports.actualizarProducto = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         const { id } = req.params;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
-
-        const allowedFields = [
-            'codigo', 'referencia_fabrica', 'nombre', 'nombre_alterno', 'categoria',
-            'unidad_medida', 'precio1', 'precio2', 'precio3', 'costo', 'impuesto_porcentaje',
-            'proveedor_id', 'stock_minimo', 'descripcion', 'imagen_url', 'activo',
-            'es_servicio', 'maneja_inventario', 'mostrar_en_tienda',
-            'ecommerce_descripcion', 'ecommerce_imagenes', 'ecommerce_afecta_inventario'
-        ];
-
+        const allowedFields = ['codigo', 'nombre', 'categoria', 'precio1', 'costo', 'maneja_inventario', 'activo'];
         const updates = [];
         const values = [];
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
-                let val = req.body[field];
-
-                // Sanitize empty strings to NULL for optional text fields
-                if ((field === 'codigo' || field === 'referencia_fabrica' || field === 'nombre_alterno' || field === 'proveedor_id' || field === 'descripcion') && val === '') {
-                    val = null;
-                }
-
-                // FIX: If imagen_url is empty string, do NOT update it (keep existing)
-                // If user wants to delete image, frontend should send null or we need explicit flag, 
-                // but checking for '' usually means "no new file selected" in this context.
-                if (field === 'imagen_url' && val === '') {
-                    continue;
-                }
-
-                if (field === 'imagen_url' && val === null) {
-                    // Explicit null update allowed if needed
-                }
-
-                // Sanitize numeric fields - ensure they are 0 if empty string or null
-                // Note: precio1 is required usually, but we safeguard here.
-                if ((field === 'stock_minimo' || field === 'impuesto_porcentaje' || field === 'precio1' || field === 'precio2' || field === 'precio3' || field === 'costo') && (val === '' || val === null)) {
-                    val = 0;
-                }
-
                 updates.push(`${field} = ?`);
-                values.push(val);
+                values.push(req.body[field] === '' ? null : req.body[field]);
             }
         }
 
-        if (updates.length === 0) {
-            return res.json({ success: true, message: 'Nada que actualizar' });
-        }
-
-        const sql = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
-        values.push(id);
-
-        await clientConn.beginTransaction();
-
-        try {
-            // 1. Update Basic Fields
-            await clientConn.query(sql, values);
-
-            // 2. Handle Stock Adjustment if provided
-            const { ajuste_cantidad, ajuste_motivo } = req.body;
-            if (ajuste_cantidad && ajuste_cantidad !== 0) {
-                // Fetch current stock to calculate new stock
-                const [curr] = await clientConn.query('SELECT stock_actual, costo FROM productos WHERE id = ?', [id]);
-                const oldStock = curr[0].stock_actual || 0;
-                const cost = curr[0].costo || 0;
-                const newStock = oldStock + ajuste_cantidad;
-
-                // Update Global Stock
-                await clientConn.query('UPDATE productos SET stock_actual = ? WHERE id = ?', [newStock, id]);
-
-                // Update Branch Stock
-                let targetSucursal = req.body.sucursal_id;
-
-                if (!targetSucursal) {
-                    const [sucs] = await clientConn.query("SELECT id FROM sucursales");
-                    if (sucs.length === 1) {
-                        targetSucursal = sucs[0].id;
-                    } else {
-                        const [principal] = await clientConn.query("SELECT id FROM sucursales WHERE es_principal = 1 LIMIT 1");
-                        targetSucursal = principal.length > 0 ? principal[0].id : (sucs.length > 0 ? sucs[0].id : 1);
-                    }
-                }
-
-                const [invSuc] = await clientConn.query('SELECT cant_actual FROM inventario_sucursales WHERE producto_id = ? AND sucursal_id = ? FOR UPDATE', [id, targetSucursal]);
-                const oldBranchStock = invSuc.length > 0 ? parseFloat(invSuc[0].cant_actual) : 0;
-                const newBranchStock = oldBranchStock + ajuste_cantidad;
-
-                if (invSuc.length > 0) {
-                    await clientConn.query('UPDATE inventario_sucursales SET cant_actual = ? WHERE producto_id = ? AND sucursal_id = ?', [newBranchStock, id, targetSucursal]);
-                } else {
-                    await clientConn.query('INSERT INTO inventario_sucursales (producto_id, sucursal_id, cant_actual) VALUES (?, ?, ?)', [id, targetSucursal, newBranchStock]);
-                }
-
-                // Record Movement (Kardex)
-                await clientConn.query(`
-                    INSERT INTO movimientos_inventario 
-                    (producto_id, sucursal_id, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, documento_referencia, costo_unitario)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `, [
-                    id,
-                    targetSucursal,
-                    ajuste_cantidad > 0 ? 'ENTRADA' : 'SALIDA',
-                    Math.abs(ajuste_cantidad),
-                    oldBranchStock,
-                    newBranchStock,
-                    ajuste_motivo || 'Ajuste Manual',
-                    'Ajuste Sistema',
-                    cost
-                ]);
-            }
-
+        if (updates.length > 0) {
+            values.push(id);
+            await clientConn.beginTransaction();
+            await clientConn.query(`UPDATE productos SET ${updates.join(', ')} WHERE id = ?`, values);
+            
+            // Auditoría
+            await clientConn.query(`INSERT INTO audit_log (usuario_id, tabla, registro_id, accion, datos_nuevos) VALUES (?, 'productos', ?, 'UPDATE', ?)`, [req.user.id, id, JSON.stringify(req.body)]);
+            
             await clientConn.commit();
-            res.json({ success: true, message: 'Producto actualizado correctamente' });
-
-        } catch (txErr) {
-            await clientConn.rollback();
-            throw txErr;
         }
 
+        res.json({ success: true, message: 'Producto actualizado correctamente' });
     } catch (err) {
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('actualizarProducto error:', err);
-        res.status(500).json({ success: false, message: 'Error al actualizar: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
+        res.status(500).json({ success: false, message: 'Error al actualizar' });
     }
 };
 
 exports.eliminarProducto = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         const { id } = req.params;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
 
         await clientConn.query('DELETE FROM productos WHERE id = ?', [id]);
-        res.json({ success: true, message: 'Producto eliminado' });
+        
+        // Auditoría
+        await clientConn.query(`INSERT INTO audit_log (usuario_id, tabla, registro_id, accion) VALUES (?, 'productos', ?, 'DELETE')`, [req.user.id, id]);
 
+        res.json({ success: true, message: 'Producto eliminado' });
     } catch (err) {
-        if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene registros vinculados.' });
-        }
+        if (err.code === 'ER_ROW_IS_REFERENCED_2') return res.status(400).json({ success: false, message: 'No se puede eliminar: Tiene registros vinculados.' });
         res.status(500).json({ success: false, message: 'Error al eliminar producto' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.unificarProductos = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
+        const clientConn = req.tenant.db;
         const { principal_id, duplicados_ids, sumar_stock } = req.body;
-
-        if (!principal_id || !duplicados_ids || !Array.isArray(duplicados_ids) || duplicados_ids.length === 0) {
-            return res.status(400).json({ success: false, message: 'Datos incompletos para unificación' });
-        }
-
-        // Validate that principal is not in duplicates
-        if (duplicados_ids.includes(principal_id)) {
-            return res.status(400).json({ success: false, message: 'El producto principal no puede ser uno de los duplicados a eliminar' });
-        }
-
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        if (!principal_id || !duplicados_ids || !Array.isArray(duplicados_ids) || duplicados_ids.length === 0) return res.status(400).json({ success: false, message: 'Datos incompletos' });
 
         await clientConn.beginTransaction();
 
-        try {
-            // 1. Calculate stock to add (if requested)
-            if (sumar_stock) {
-                // Get stock sum of duplicates
-                const [stockRes] = await clientConn.query(
-                    `SELECT SUM(stock_actual) as total_stock FROM productos WHERE id IN (?)`,
-                    [duplicados_ids]
-                );
-                const stockToAdd = stockRes[0].total_stock || 0;
-
-                if (stockToAdd > 0) {
-                    await clientConn.query(
-                        `UPDATE productos SET stock_actual = stock_actual + ? WHERE id = ?`,
-                        [stockToAdd, principal_id]
-                    );
-                }
-            }
-
-            // 2. Re-assign dependencies (This is critical: Facturas, Compras, Movimientos)
-            // Note: This matches foreign key naming in typical ER schemas.
-            // If table doesn't exist or column is diff, this might fail, so we wrap.
-
-            const tablesToUpdate = [
-                { table: 'factura_detalle', col: 'producto_id' },
-                { table: 'compras_detalle', col: 'producto_id' },
-                { table: 'movimientos_inventario', col: 'producto_id' },
-                { table: 'inventario_sucursales', col: 'producto_id' }, // Multi-branch stock
-                { table: 'ajuste_inventario', col: 'producto_id' }
-            ];
-
-            for (const t of tablesToUpdate) {
-                // Check if table exists first to avoid crashes on partial migrations? 
-                // Alternatively, just try catch specific update
-                try {
-                    await clientConn.query(
-                        `UPDATE ${t.table} SET ${t.col} = ? WHERE ${t.col} IN (?)`,
-                        [principal_id, duplicados_ids]
-                    );
-                } catch (ignore) {
-                    // Ignore table not found, but log it
-                    console.warn(`Table ${t.table} possibly missing or not needing update during unification.`);
-                }
-            }
-
-            // 3. Delete Duplicates
-            // Force delete even if they have other constraints? Re-assignment should have cleared FKs.
-            await clientConn.query('DELETE FROM productos WHERE id IN (?)', [duplicados_ids]);
-
-            await clientConn.commit();
-            res.json({ success: true, message: 'Productos unificados correctamente' });
-
-        } catch (err) {
-            await clientConn.rollback();
-            throw err;
+        if (sumar_stock) {
+            const [stockRes] = await clientConn.query(`SELECT SUM(stock_actual) as total_stock FROM productos WHERE id IN (?)`, [duplicados_ids]);
+            if (stockRes[0].total_stock > 0) await clientConn.query(`UPDATE productos SET stock_actual = stock_actual + ? WHERE id = ?`, [stockRes[0].total_stock, principal_id]);
         }
 
+        const tables = ['factura_detalle', 'compras_detalle', 'movimientos_inventario', 'inventario_sucursales'];
+        for (const t of tables) {
+            try { await clientConn.query(`UPDATE ${t} SET producto_id = ? WHERE producto_id IN (?)`, [principal_id, duplicados_ids]); } catch (e) {}
+        }
+
+        await clientConn.query('DELETE FROM productos WHERE id IN (?)', [duplicados_ids]);
+        await clientConn.commit();
+
+        res.json({ success: true, message: 'Productos unificados correctamente' });
     } catch (err) {
-        console.error('unificarProductos error:', err);
-        res.status(500).json({ success: false, message: 'Error durante la unificación: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
+        if (req.tenant?.db) await req.tenant.db.rollback();
+        res.status(500).json({ success: false, message: 'Error durante la unificación' });
     }
 };
 
 exports.obtenerDuplicados = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
-
-        // Find duplicates by Name (case insensitive roughly)
-        // Using LOWER() for better matching
+        const clientConn = req.tenant.db;
         const [rows] = await clientConn.query(`
             SELECT p.*, t.nombre_comercial as proveedor_nombre
             FROM productos p
             LEFT JOIN terceros t ON p.proveedor_id = t.id
-            INNER JOIN (
-                SELECT nombre FROM productos GROUP BY nombre HAVING COUNT(*) > 1
-            ) dup ON p.nombre = dup.nombre
+            INNER JOIN (SELECT nombre FROM productos GROUP BY nombre HAVING COUNT(*) > 1) dup ON p.nombre = dup.nombre
             ORDER BY p.nombre ASC
         `);
 
-        // Group by name
         const groups = {};
         rows.forEach(p => {
-            const key = p.nombre.trim(); // Key is the name itself
+            const key = p.nombre.trim();
             if (!groups[key]) groups[key] = [];
             groups[key].push(p);
         });
 
-        // Format for frontend
-        const result = Object.entries(groups).map(([key, items]) => ({
-            key,
-            name: key,
-            count: items.length,
-            codes: items.map(i => i.codigo || 'Sin SKU').join(', '),
-            items
-        }));
-
-        res.json({ success: true, data: result });
-
+        res.json({ success: true, data: Object.entries(groups).map(([key, items]) => ({ key, name: key, count: items.length, items })) });
     } catch (err) {
-        console.error('obtenerDuplicados error:', err);
         res.status(500).json({ success: false, message: 'Error al obtener duplicados' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.obtenerCategorias = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
-
-        const [rows] = await clientConn.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
+        const [rows] = await req.tenant.db.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
         res.json({ success: true, data: rows });
-
     } catch (err) {
-        console.error('obtenerCategorias error:', err);
-        if (err.code === 'ER_NO_SUCH_TABLE') {
-            try {
-                const dbConfig = await getClientDbConfig(req.user.nit);
-                await initializeTenantDB(dbConfig);
-                // Re-conectar y re-intentar
-                clientConn = await connectToClientDB(dbConfig);
-                const [rows] = await clientConn.query('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre ASC');
-                return res.json({ success: true, data: rows });
-            } catch (e) {
-                console.error('Auto-migration failed:', e);
-            }
-        }
         res.status(500).json({ success: false, message: 'Error al obtener categorías' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 

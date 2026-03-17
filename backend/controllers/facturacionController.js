@@ -1,21 +1,8 @@
-const { getPool } = require('../config/db');
-const { connectToClientDB } = require('../config/dbFactory');
-
-async function getClientDbConfig(nit) {
-    const pool = getPool();
-    const [rows] = await pool.query('SELECT * FROM empresasconfig WHERE nit = ?', [nit]);
-    if (rows.length === 0) return null;
-    return rows[0];
-}
+const eventBus = require('../shared/events');
 
 exports.listarFacturas = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        if (!dbConfig) return res.status(404).json({ success: false, message: 'Empresa no encontrada' });
-
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
 
         const { sucursal_id, prefijo, busqueda, fecha } = req.query;
 
@@ -68,17 +55,12 @@ exports.listarFacturas = async (req, res) => {
     } catch (err) {
         console.error('listarFacturas error:', err);
         res.status(500).json({ success: false, message: 'Error interno' });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
 exports.crearFactura = async (req, res) => {
-    let clientConn = null;
     try {
-        const { nit } = req.user;
-        const dbConfig = await getClientDbConfig(nit);
-        clientConn = await connectToClientDB(dbConfig);
+        const clientConn = req.tenant.db;
 
         // DDL Removed
 
@@ -252,8 +234,22 @@ exports.crearFactura = async (req, res) => {
                 [caja_sesion_id, total, `Venta Crédito ${numero_factura}`, metodo_pago, facturaId]
             );
         }
-
+        
         await clientConn.commit();
+
+        // 6. Disparar Evento para Contabilidad y DIAN (Asíncrono)
+        eventBus.emit('sale.completed', {
+            tenant: req.tenant,
+            data: {
+                id: facturaId,
+                numero_factura,
+                cliente_id,
+                subtotal,
+                impuesto_total,
+                total,
+                items
+            }
+        });
 
         res.status(201).json({
             success: true,
@@ -264,11 +260,9 @@ exports.crearFactura = async (req, res) => {
         });
 
     } catch (err) {
-        if (clientConn) await clientConn.rollback();
+        if (req.tenant?.db) await req.tenant.db.rollback();
         console.error('crearFactura error:', err);
         res.status(500).json({ success: false, message: 'Error al procesar la venta: ' + err.message });
-    } finally {
-        if (clientConn) await clientConn.end();
     }
 };
 
