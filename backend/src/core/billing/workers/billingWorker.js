@@ -1,6 +1,6 @@
 // backend/src/core/billing/workers/billingWorker.js
-const { getPool } = require('../../../config/db');
-const eventBus = require('../../../../shared/events');
+const { getPool } = require('../../../../config/db');
+const eventBus = require('../../../../../shared/events');
 
 /**
  * Motor de Facturación SaaS Profesional v2.1

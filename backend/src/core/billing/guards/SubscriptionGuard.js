@@ -1,5 +1,5 @@
 // backend/src/core/billing/guards/SubscriptionGuard.js
-const { getPool } = require('../../../config/db');
+const { getPool } = require('../../../../config/db');
 
 /**
  * SubscriptionGuard v2.0

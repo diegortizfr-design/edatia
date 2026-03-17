@@ -1,5 +1,5 @@
 // backend/src/repositories/BillingRepository.js
-const { getPool } = require('../config/db');
+const { getPool } = require('../../config/db');
 
 class BillingRepository {
     static async getSubscriptionByEmpresa(empresaId) {
