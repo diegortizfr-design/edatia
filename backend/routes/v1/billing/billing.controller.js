@@ -1,5 +1,5 @@
-// backend/src/api/v1/billing/billing.controller.js
-const BillingService = require('../../../domain/billing/services/BillingService');
+// backend/routes/v1/billing/billing.controller.js
+const BillingService = require('../../../src/domain/billing/services/BillingService');
 
 /**
  * Controlador para la gestión comercial del SaaS
