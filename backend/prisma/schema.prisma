@@ -1,0 +1,42 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  nombre    String?
+  usuario   String   @unique
+  password  String
+  rol       String   @default("user") // admin, user, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile?
+  empresaId Int?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int     @unique
+  user   User    @relation(fields: [userId], references: [id])
+}
+
+model Empresa {
+  id        Int      @id @default(autoincrement())
+  nit       String   @unique
+  nombre    String
+  direccion String?
+  telefono  String?
+  usuarios  User[]
+  createdAt DateTime @default(now())
+}

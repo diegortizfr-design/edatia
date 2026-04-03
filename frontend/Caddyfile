@@ -1,0 +1,27 @@
+# frontend/Caddyfile
+{
+    admin off
+}
+
+:80 {
+    root * /usr/share/caddy
+    file_server
+    
+    # Manejo de SPA: Redirigir todas las rutas a index.html
+    try_files {path} /index.html
+    
+    # Compresión para tiempos de carga rápidos
+    encode gzip
+    
+    # Cabeceras de seguridad SaaS
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent Clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent Sniffing
+        X-Content-Type-Options "nosniff"
+        # Permissions Policy
+        Permissions-Policy "geolocation=(self), microphone=()"
+    }
+}
