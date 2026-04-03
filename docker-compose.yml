@@ -24,10 +24,15 @@ services:
       - ./backend/.env
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.edatia.com`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=mytlschallenge"
-      - "traefik.http.services.api.loadbalancer.server.port=4000"
+      # Router HTTPS (tráfico principal)
+      - "traefik.http.routers.edatia-api.rule=Host(`api.edatia.com`)"
+      - "traefik.http.routers.edatia-api.entrypoints=websecure"
+      - "traefik.http.routers.edatia-api.tls=true"
+      - "traefik.http.routers.edatia-api.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.edatia-api.loadbalancer.server.port=4000"
+      # Router HTTP (permite challenge y redirige a HTTPS)
+      - "traefik.http.routers.edatia-api-http.rule=Host(`api.edatia.com`)"
+      - "traefik.http.routers.edatia-api-http.entrypoints=web"
     networks:
       - default
 
@@ -39,10 +44,15 @@ services:
     restart: always
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`erp.edatia.com`)"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.routers.web.tls.certresolver=mytlschallenge"
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+      # Router HTTPS (tráfico principal)
+      - "traefik.http.routers.edatia-web.rule=Host(`erp.edatia.com`)"
+      - "traefik.http.routers.edatia-web.entrypoints=websecure"
+      - "traefik.http.routers.edatia-web.tls=true"
+      - "traefik.http.routers.edatia-web.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.edatia-web.loadbalancer.server.port=80"
+      # Router HTTP (permite challenge y redirige a HTTPS)
+      - "traefik.http.routers.edatia-web-http.rule=Host(`erp.edatia.com`)"
+      - "traefik.http.routers.edatia-web-http.entrypoints=web"
     networks:
       - default
 
