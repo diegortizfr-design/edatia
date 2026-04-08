@@ -58,6 +58,37 @@ services:
           cpus: '1.0'
           memory: 512M
 
+  landing:
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+    container_name: edatia-landing
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS — dominio raíz y www
+      - "traefik.http.routers.edatia-landing.rule=Host(`edatia.com`) || Host(`www.edatia.com`)"
+      - "traefik.http.routers.edatia-landing.entrypoints=websecure"
+      - "traefik.http.routers.edatia-landing.tls=true"
+      - "traefik.http.routers.edatia-landing.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.edatia-landing.loadbalancer.server.port=80"
+      # Router HTTP — redirige a HTTPS
+      - "traefik.http.routers.edatia-landing-http.rule=Host(`edatia.com`) || Host(`www.edatia.com`)"
+      - "traefik.http.routers.edatia-landing-http.entrypoints=web"
+      - "traefik.http.routers.edatia-landing-http.middlewares=redirect-https"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+
   web:
     build:
       context: ./frontend
