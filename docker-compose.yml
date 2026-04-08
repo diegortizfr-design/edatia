@@ -1,60 +1,94 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15.6-alpine
     container_name: edatia-db
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: edatia_erp
-      POSTGRES_USER: ${DB_USER:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-edatia_secret_2026}
+      POSTGRES_DB: ${DB_NAME:-edatia_erp}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-edatia_erp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: edatia-backend
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     labels:
       - "traefik.enable=true"
-      # Router HTTPS (tráfico principal)
+      # Router HTTPS
       - "traefik.http.routers.edatia-api.rule=Host(`api.edatia.com`)"
       - "traefik.http.routers.edatia-api.entrypoints=websecure"
       - "traefik.http.routers.edatia-api.tls=true"
       - "traefik.http.routers.edatia-api.tls.certresolver=mytlschallenge"
       - "traefik.http.services.edatia-api.loadbalancer.server.port=4000"
-      # Router HTTP (permite challenge y redirige a HTTPS)
+      # Router HTTP (redirige a HTTPS)
       - "traefik.http.routers.edatia-api-http.rule=Host(`api.edatia.com`)"
       - "traefik.http.routers.edatia-api-http.entrypoints=web"
+      - "traefik.http.routers.edatia-api-http.middlewares=redirect-https"
+      # Middleware de redirección HTTPS
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
     networks:
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: edatia-frontend
-    restart: always
+    restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      # Router HTTPS (tráfico principal)
+      # Router HTTPS
       - "traefik.http.routers.edatia-web.rule=Host(`erp.edatia.com`)"
       - "traefik.http.routers.edatia-web.entrypoints=websecure"
       - "traefik.http.routers.edatia-web.tls=true"
       - "traefik.http.routers.edatia-web.tls.certresolver=mytlschallenge"
       - "traefik.http.services.edatia-web.loadbalancer.server.port=80"
-      # Router HTTP (permite challenge y redirige a HTTPS)
+      # Router HTTP (redirige a HTTPS)
       - "traefik.http.routers.edatia-web-http.rule=Host(`erp.edatia.com`)"
       - "traefik.http.routers.edatia-web-http.entrypoints=web"
+      - "traefik.http.routers.edatia-web-http.middlewares=redirect-https"
     networks:
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
 
 networks:
   default:
@@ -63,3 +97,4 @@ networks:
 
 volumes:
   db-data:
+    driver: local
