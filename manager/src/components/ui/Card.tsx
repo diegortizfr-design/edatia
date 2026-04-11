@@ -11,15 +11,15 @@ export function Card({ children, className, glow = 'none', hover = false }: Card
   const glowClasses = {
     blue:   'border-brand-blue/20 hover:border-brand-blue/40',
     purple: 'border-brand-purple/20 hover:border-brand-purple/40',
-    none:   'border-white/5 hover:border-white/10',
+    none:   'border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10',
   };
 
   return (
     <div
       className={cn(
-        'rounded-xl border bg-gradient-card p-5 shadow-card',
+        'rounded-xl border bg-white dark:bg-gradient-card p-5 shadow-sm dark:shadow-card',
         glowClasses[glow],
-        hover && 'transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5',
+        hover && 'transition-all duration-200 hover:shadow-md dark:hover:shadow-card-hover hover:-translate-y-0.5',
         className,
       )}
     >
@@ -56,11 +56,11 @@ export function StatCard({ label, value, icon, trend, color = 'blue' }: StatCard
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-          <p className="text-2xl font-bold text-white truncate">{value}</p>
-          {trend && <p className="text-xs text-slate-500 mt-1">{trend}</p>}
+          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
+          {trend && <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{trend}</p>}
         </div>
-        <div className={cn('shrink-0 p-2 rounded-lg bg-white/5', colorMap[color].split(' ')[3])}>
+        <div className={cn('shrink-0 p-2 rounded-lg bg-black/5 dark:bg-white/5', colorMap[color].split(' ')[3])}>
           {icon}
         </div>
       </div>

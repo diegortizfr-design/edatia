@@ -16,7 +16,7 @@ model User {
   nombre    String?
   usuario   String   @unique
   password  String
-  rol       String   @default("user") // admin, user, etc.
+  rol       String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,25 +45,96 @@ model Empresa {
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
 
 model PerfilCargo {
-  id            Int           @id @default(autoincrement())
-  nombre        String        @unique
-  descripcion   String?
-  permisos      String[]
-  colaboradores Colaborador[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                Int           @id @default(autoincrement())
+  nombre            String        @unique
+  descripcion       String?
+  responsabilidades String?       // Texto libre con responsabilidades del cargo
+  correoPrincipal   String?       // ej. comercial@edatia.com
+  subcorreos        String[]      // ej. [comercial1@edatia.com, comercial2@edatia.com]
+  permisos          String[]
+  documentoUrl      String?       // URL o path al manual de funciones / PDF del área
+  colaboradores     Colaborador[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model Colaborador {
   id            Int          @id @default(autoincrement())
-  email         String       @unique
-  nombre        String
+
+  // ── Acceso al sistema ──────────────────────────────
+  email         String       @unique  // correo corporativo = login
   password      String
   rol           String       // ADMIN | COMERCIAL | COORDINACION | OPERACION
   activo        Boolean      @default(true)
+
+  // ── Datos personales ───────────────────────────────
+  nombre            String
+  tipoDocumento     String?   // CC / CE / Pasaporte / NIT
+  numeroDocumento   String?
+  fechaNacimiento   DateTime?
+  sexo              String?   // Masculino / Femenino / Otro / Prefiero no indicar
+  nacionalidad      String?
+  estadoCivil       String?   // Soltero/a / Casado/a / Unión libre / Divorciado/a / Viudo/a
+
+  // ── Información de contacto ───────────────────────
+  telefonoPersonal  String?
+  emailPersonal     String?
+  direccion         String?
+  ciudad            String?
+  pais              String?   @default("Colombia")
+
+  // ── Información laboral ───────────────────────────
+  cargo             String?
+  area              String?
+  tipoContrato      String?   // Fijo / Indefinido / Prestación de servicios / Aprendizaje / Obra o labor
+  fechaIngreso      DateTime?
+  salario           Decimal?  @db.Decimal(12, 2)
+  jornadaLaboral    String?   // Completa / Medio tiempo / Por horas / Flexible
+  jefeDirecto       String?
+  telefonoCorporativo String?
+
+  // ── Formación académica ───────────────────────────
+  nivelEducativo    String?
+  titulo            String?
+  institucion       String?
+  anoGraduacion     Int?
+
+  // ── Experiencia laboral ───────────────────────────
+  empresaAnterior      String?
+  cargoAnterior        String?
+  tiempoTrabajado      String?
+  funcionesAnteriores  String?
+
+  // ── Habilidades y competencias ────────────────────
+  habilidadesTecnicas String[]
+  habilidadesBlandas  String[]
+  idiomas             Json?    // [{idioma: string, nivel: string}]
+
+  // ── Seguridad social ──────────────────────────────
+  eps               String?
+  fondoPension      String?
+  arl               String?
+  cajaCompensacion  String?
+
+  // ── Información financiera ────────────────────────
+  banco             String?
+  tipoCuenta        String?   // Ahorros / Corriente
+  numeroCuenta      String?
+
+  // ── Contacto de emergencia ────────────────────────
+  emergenciaNombre   String?
+  emergenciaRelacion String?
+  emergenciaTelefono String?
+
+  // ── Documentación legal (rutas/URLs) ─────────────
+  cedulaArchivo     String?
+  hojaVidaArchivo   String?
+
+  // ── Relaciones ────────────────────────────────────
   perfilCargoId Int?
   perfilCargo   PerfilCargo? @relation(fields: [perfilCargoId], references: [id])
   clientes      ClienteManager[] @relation("AsesorClientes")
+
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -80,16 +151,16 @@ model PlanBase {
 }
 
 model ModuloSoftware {
-  id           Int           @id @default(autoincrement())
-  nombre       String        @unique
-  slug         String        @unique
-  descripcion  String?
-  icono        String?
-  precioAnual  Decimal       @db.Decimal(12, 2)
-  activo       Boolean       @default(true)
+  id            Int           @id @default(autoincrement())
+  nombre        String        @unique
+  slug          String        @unique
+  descripcion   String?
+  icono         String?
+  precioAnual   Decimal       @db.Decimal(12, 2)
+  activo        Boolean       @default(true)
   planesCliente PlanCliente[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model ClienteManager {
@@ -101,7 +172,7 @@ model ClienteManager {
   direccion     String?
   ciudad        String?
   contacto      String?
-  estado        String        @default("PROSPECTO") // PROSPECTO | ACTIVO | SUSPENDIDO | CANCELADO
+  estado        String        @default("PROSPECTO")
   observaciones String?
   planBaseId    Int?
   planBase      PlanBase?     @relation(fields: [planBaseId], references: [id])
@@ -113,13 +184,13 @@ model ClienteManager {
 }
 
 model PlanCliente {
-  id               Int            @id @default(autoincrement())
-  clienteId        Int
-  cliente          ClienteManager @relation(fields: [clienteId], references: [id])
-  moduloId         Int
-  modulo           ModuloSoftware @relation(fields: [moduloId], references: [id])
-  precioNegociado  Decimal?       @db.Decimal(12, 2)
-  activo           Boolean        @default(true)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id              Int            @id @default(autoincrement())
+  clienteId       Int
+  cliente         ClienteManager @relation(fields: [clienteId], references: [id])
+  moduloId        Int
+  modulo          ModuloSoftware @relation(fields: [moduloId], references: [id])
+  precioNegociado Decimal?       @db.Decimal(12, 2)
+  activo          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }

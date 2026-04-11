@@ -38,17 +38,17 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-950 flex items-center justify-center p-4 overflow-hidden relative">
-      {/* Background ambient glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-violet-50 dark:bg-navy-950 flex items-center justify-center p-4 overflow-hidden relative">
+      {/* Background ambient glow (dark only) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none dark:block hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-blue/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-brand-purple/5 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-indigo/3 rounded-full blur-3xl" />
       </div>
 
-      {/* Grid pattern */}
+      {/* Grid pattern (dark only) */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.02] dark:block hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(79,142,247,1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(79,142,247,1) 1px, transparent 1px)`,
@@ -58,15 +58,15 @@ export function LoginPage() {
 
       <div className="relative w-full max-w-md animate-fade-in">
         {/* Card */}
-        <div className="rounded-2xl border border-white/8 bg-navy-800/80 backdrop-blur-xl shadow-[0_32px_80px_rgba(0,0,0,0.6)] p-8">
+        <div className="rounded-2xl border border-gray-200 dark:border-white/8 bg-white dark:bg-navy-800/80 backdrop-blur-xl shadow-xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.6)] p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <EdatiaLogo size="lg" showTagline />
             </div>
             <div className="mt-4">
-              <h2 className="text-xl font-semibold text-white">Manager Portal</h2>
-              <p className="text-sm text-slate-500 mt-1">Acceso exclusivo para el equipo Edatia</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Manager Portal</h2>
+              <p className="text-sm text-gray-500 dark:text-slate-500 mt-1">Acceso exclusivo para el equipo Edatia</p>
             </div>
           </div>
 
@@ -94,7 +94,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                  className="text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -104,7 +104,7 @@ export function LoginPage() {
             />
 
             {error && (
-              <div className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
+              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-2.5">
                 <AlertCircle size={15} className="shrink-0" />
                 <span>{error}</span>
               </div>
@@ -116,7 +116,7 @@ export function LoginPage() {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-xs text-slate-600 mt-6">
+          <p className="text-center text-xs text-gray-400 dark:text-slate-600 mt-6">
             Acceso restringido · Edatia © {new Date().getFullYear()}
           </p>
         </div>

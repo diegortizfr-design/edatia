@@ -12,10 +12,30 @@ export class CreatePerfilCargoDto {
   @IsString()
   descripcion?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responsabilidades?: string;
+
+  @ApiPropertyOptional({ example: 'comercial@edatia.com' })
+  @IsOptional()
+  @IsString()
+  correoPrincipal?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  subcorreos?: string[];
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   permisos?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  documentoUrl?: string;
 }
 
 export class UpdatePerfilCargoDto {
@@ -30,8 +50,28 @@ export class UpdatePerfilCargoDto {
   @IsString()
   descripcion?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responsabilidades?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  correoPrincipal?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  subcorreos?: string[];
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   permisos?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  documentoUrl?: string;
 }

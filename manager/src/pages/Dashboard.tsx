@@ -52,15 +52,15 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {saludo}, {colaborador?.nombre?.split(' ')[0]} 👋
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
             Panel de control · Edatia Manager
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500 bg-navy-700 border border-white/5 rounded-lg px-3 py-2">
-          <Activity size={13} className="text-emerald-400" />
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-500 bg-white dark:bg-navy-700 border border-gray-200 dark:border-white/5 rounded-lg px-3 py-2">
+          <Activity size={13} className="text-emerald-500" />
           <span>
             {new Intl.DateTimeFormat('es-CO', {
               weekday: 'long', day: 'numeric', month: 'long',
@@ -105,9 +105,9 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Clientes por estado */}
-        <div className="lg:col-span-2 rounded-xl border border-white/5 bg-gradient-card p-5 shadow-card">
+        <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-gradient-card p-5 shadow-sm dark:shadow-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-white text-sm">Clientes por Estado</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Clientes por Estado</h2>
             <a
               href="/clientes"
               className="text-xs text-brand-blue hover:text-brand-indigo flex items-center gap-1 transition-colors"
@@ -119,18 +119,18 @@ export function DashboardPage() {
             {(['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'] as const).map((estado) => (
               <div
                 key={estado}
-                className="rounded-lg bg-navy-700/50 border border-white/5 px-4 py-3 flex items-center justify-between"
+                className="rounded-lg bg-gray-50 dark:bg-navy-700/50 border border-gray-200 dark:border-white/5 px-4 py-3 flex items-center justify-between"
               >
-                <span className="text-xs text-slate-400">{estado}</span>
+                <span className="text-xs text-gray-500 dark:text-slate-400">{estado}</span>
                 <span
                   className={`text-lg font-bold ${
                     estado === 'ACTIVO'
-                      ? 'text-emerald-400'
+                      ? 'text-emerald-600 dark:text-emerald-400'
                       : estado === 'PROSPECTO'
-                      ? 'text-yellow-400'
+                      ? 'text-yellow-600 dark:text-yellow-400'
                       : estado === 'SUSPENDIDO'
-                      ? 'text-orange-400'
-                      : 'text-red-400'
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {clienteStats?.porEstado?.[estado] ?? 0}
@@ -141,8 +141,8 @@ export function DashboardPage() {
         </div>
 
         {/* Módulos disponibles */}
-        <div className="rounded-xl border border-white/5 bg-gradient-card p-5 shadow-card">
-          <h2 className="font-semibold text-white text-sm mb-4">Módulos Software</h2>
+        <div className="rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-gradient-card p-5 shadow-sm dark:shadow-card">
+          <h2 className="font-semibold text-gray-900 dark:text-white text-sm mb-4">Módulos Software</h2>
           <div className="space-y-2">
             {modulos?.map((m) => (
               <div
@@ -153,7 +153,7 @@ export function DashboardPage() {
                   <span className="text-base shrink-0">
                     {m.slug === 'inventario' ? '📦' : m.slug === 'ventas' ? '💼' : m.slug === 'administrativo' ? '🏢' : m.slug === 'contable' ? '📊' : '🌐'}
                   </span>
-                  <span className="text-xs text-slate-300 truncate">{m.nombre}</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300 truncate">{m.nombre}</span>
                 </div>
                 <Badge variant={m.activo ? 'success' : 'danger'}>
                   {m.activo ? 'Activo' : 'Inactivo'}
@@ -161,7 +161,7 @@ export function DashboardPage() {
               </div>
             ))}
             {!modulos?.length && (
-              <p className="text-xs text-slate-500 text-center py-4">Sin módulos configurados</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">Sin módulos configurados</p>
             )}
           </div>
         </div>
@@ -169,9 +169,9 @@ export function DashboardPage() {
 
       {/* Colaboradores por rol (ADMIN only) */}
       {isAdmin && colabStats && (
-        <div className="rounded-xl border border-white/5 bg-gradient-card p-5 shadow-card">
+        <div className="rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-gradient-card p-5 shadow-sm dark:shadow-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-white text-sm">Equipo por Rol</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Equipo por Rol</h2>
             <a
               href="/colaboradores"
               className="text-xs text-brand-blue hover:text-brand-indigo flex items-center gap-1 transition-colors"
@@ -183,9 +183,9 @@ export function DashboardPage() {
             {(['ADMIN', 'COMERCIAL', 'COORDINACION', 'OPERACION'] as const).map((rol) => (
               <div
                 key={rol}
-                className="rounded-lg bg-navy-700/50 border border-white/5 px-4 py-3 text-center"
+                className="rounded-lg bg-gray-50 dark:bg-navy-700/50 border border-gray-200 dark:border-white/5 px-4 py-3 text-center"
               >
-                <p className="text-2xl font-bold text-white mb-1">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {colabStats.porRol?.[rol] ?? 0}
                 </p>
                 <span

@@ -14,6 +14,16 @@ import { CreateColaboradorDto, UpdateColaboradorDto } from './dto/colaborador.dt
 import { ManagerJwtAuthGuard } from '../manager-auth/manager-jwt-auth.guard';
 import { ManagerRolesGuard } from '../manager-auth/roles.guard';
 import { ManagerRoles } from '../manager-auth/roles.decorator';
+import { IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+
+class TransferirDto {
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  nuevoPerfilCargoId!: number;
+}
 
 @ApiTags('Manager - Colaboradores')
 @ApiBearerAuth()
@@ -37,21 +47,21 @@ export class ColaboradoresController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener colaborador por ID' })
+  @ApiOperation({ summary: 'Obtener colaborador completo por ID' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.colaboradoresService.findOne(id);
   }
 
   @Post()
   @ManagerRoles('ADMIN')
-  @ApiOperation({ summary: 'Crear colaborador (ADMIN)' })
+  @ApiOperation({ summary: 'Crear colaborador con todos sus datos (ADMIN)' })
   create(@Body() dto: CreateColaboradorDto) {
     return this.colaboradoresService.create(dto);
   }
 
   @Patch(':id')
   @ManagerRoles('ADMIN')
-  @ApiOperation({ summary: 'Actualizar colaborador (ADMIN)' })
+  @ApiOperation({ summary: 'Actualizar datos del colaborador (ADMIN)' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateColaboradorDto,
@@ -64,5 +74,15 @@ export class ColaboradoresController {
   @ApiOperation({ summary: 'Activar/desactivar colaborador (ADMIN)' })
   toggleActivo(@Param('id', ParseIntPipe) id: number) {
     return this.colaboradoresService.toggleActivo(id);
+  }
+
+  @Patch(':id/transferir')
+  @ManagerRoles('ADMIN')
+  @ApiOperation({ summary: 'Transferir colaborador a otro perfil de cargo (ADMIN)' })
+  transferir(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: TransferirDto,
+  ) {
+    return this.colaboradoresService.transferir(id, dto.nuevoPerfilCargoId);
   }
 }

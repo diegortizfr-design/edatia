@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Plus, X, Pencil, Users } from 'lucide-react';
+import { CreditCard, Plus, X, Pencil, Users, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -82,23 +82,27 @@ export function PlanesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <CreditCard size={20} className="text-brand-blue" />
             Planes Base
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">Planes de suscripción base para los clientes</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Planes de suscripción base para los clientes</p>
         </div>
-        <Button onClick={() => { setShowForm(true); setEditing(null); }}>
-          <Plus size={15} /> Nuevo Plan
-        </Button>
+        <button
+          onClick={() => { setShowForm(true); setEditing(null); }}
+          title="Nuevo plan"
+          className="p-2 rounded-lg bg-gradient-brand text-white shadow-glow-brand hover:opacity-90 transition-all"
+        >
+          <Plus size={18} />
+        </button>
       </div>
 
       {/* Cards */}
       {isLoading ? (
-        <div className="text-center py-12 text-slate-500 text-sm">Cargando planes...</div>
+        <div className="text-center py-12 text-gray-400 dark:text-slate-500 text-sm">Cargando planes...</div>
       ) : planes.length === 0 ? (
         <Card className="py-12 text-center">
-          <p className="text-slate-500 text-sm">No hay planes configurados</p>
+          <p className="text-gray-400 dark:text-slate-500 text-sm">No hay planes configurados</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,37 +113,38 @@ export function PlanesPage() {
               className={`bg-gradient-to-br ${planGradients[i % planGradients.length]} border`}
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center">
                   <CreditCard size={18} className="text-brand-blue" />
                 </div>
                 <button
                   onClick={() => openEdit(p)}
-                  className="text-slate-500 hover:text-brand-blue transition-colors p-1"
+                  title="Editar plan"
+                  className="text-gray-400 dark:text-slate-500 hover:text-brand-blue transition-colors p-1"
                 >
                   <Pencil size={13} />
                 </button>
               </div>
 
-              <h3 className="font-bold text-white text-lg mb-1">{p.nombre}</h3>
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">{p.nombre}</h3>
               {p.descripcion && (
-                <p className="text-xs text-slate-400 mb-3">{p.descripcion}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">{p.descripcion}</p>
               )}
 
               <div className="space-y-2 mt-4">
                 <div>
-                  <p className="text-xs text-slate-500">Precio mensual</p>
-                  <p className="text-2xl font-bold text-white">{formatCOP(p.precioBase)}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">Precio mensual</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCOP(p.precioBase)}</p>
                 </div>
 
                 {p.limiteUsuarios && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                     <Users size={12} />
                     <span>Hasta {p.limiteUsuarios} usuarios</span>
                   </div>
                 )}
               </div>
 
-              <p className="text-[10px] text-slate-600 mt-4 pt-3 border-t border-white/5">
+              <p className="text-[10px] text-gray-300 dark:text-slate-600 mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
                 Creado {formatDate(p.createdAt)}
               </p>
             </Card>
@@ -149,13 +154,17 @@ export function PlanesPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-navy-800 rounded-2xl border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
-              <h2 className="font-semibold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
+              <h2 className="font-semibold text-gray-900 dark:text-white">
                 {editing ? 'Editar Plan' : 'Nuevo Plan Base'}
               </h2>
-              <button onClick={closeForm} className="text-slate-400 hover:text-white">
+              <button
+                onClick={closeForm}
+                title="Cerrar"
+                className="text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -167,13 +176,13 @@ export function PlanesPage() {
                 onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
               />
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-1.5">Descripción</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Descripción</label>
                 <textarea
                   value={form.descripcion}
                   onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
                   rows={2}
                   placeholder="Describe qué incluye este plan..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
                 />
               </div>
               <Input
@@ -191,7 +200,7 @@ export function PlanesPage() {
                 onChange={(e) => setForm((f) => ({ ...f, limiteUsuarios: e.target.value }))}
               />
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-white/5">
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-100 dark:border-white/5">
               <Button variant="ghost" onClick={closeForm}>Cancelar</Button>
               <Button
                 loading={saveMutation.isPending}
@@ -205,7 +214,8 @@ export function PlanesPage() {
                 }
                 disabled={!form.nombre || !form.precioBase}
               >
-                {editing ? 'Guardar' : 'Crear Plan'}
+                {!saveMutation.isPending && <Check size={15} />}
+                {editing ? 'Guardar' : 'Crear'}
               </Button>
             </div>
           </div>

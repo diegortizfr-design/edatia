@@ -12,6 +12,7 @@ import {
   Mail,
   User,
   Package,
+  Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
@@ -115,18 +116,22 @@ export function ClientesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Building2 size={20} className="text-brand-blue" />
             Clientes
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {clientes.length} clientes registrados
           </p>
         </div>
         {canEdit && (
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus size={15} /> Nuevo Cliente
-          </Button>
+          <button
+            onClick={() => setShowCreate(true)}
+            title="Nuevo cliente"
+            className="p-2 rounded-lg bg-gradient-brand text-white shadow-glow-brand hover:opacity-90 transition-all"
+          >
+            <Plus size={18} />
+          </button>
         )}
       </div>
 
@@ -144,43 +149,43 @@ export function ClientesPage() {
           <select
             value={filterEstado}
             onChange={(e) => setFilterEstado(e.target.value)}
-            className="pl-9 pr-8 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-slate-300 appearance-none focus:outline-none focus:border-brand-blue/60 min-w-[150px]"
+            className="pl-9 pr-8 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-700 dark:text-slate-300 appearance-none focus:outline-none focus:border-brand-blue/60 min-w-[150px]"
           >
             <option value="">Todos los estados</option>
             {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
           </select>
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 pointer-events-none" />
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 pointer-events-none" />
         </div>
       </div>
 
       {/* Table */}
       <Card className="overflow-hidden p-0">
         {isLoading ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Cargando clientes...</div>
+          <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-sm">Cargando clientes...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">
+          <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-sm">
             {search || filterEstado ? 'Sin resultados para tu búsqueda' : 'Aún no hay clientes registrados'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5 text-left">
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider hidden sm:table-cell">NIT</th>
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">Ciudad</th>
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider hidden lg:table-cell">Módulos</th>
-                  <th className="px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider hidden lg:table-cell">Creado</th>
+                <tr className="border-b border-gray-100 dark:border-white/5 text-left">
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider hidden sm:table-cell">NIT</th>
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider hidden md:table-cell">Ciudad</th>
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider hidden lg:table-cell">Módulos</th>
+                  <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider hidden lg:table-cell">Creado</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {filtered.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-white/2 transition-colors cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-white/2 transition-colors cursor-pointer"
                     onClick={() => setSelectedCliente(c)}
                   >
                     <td className="px-5 py-3.5">
@@ -189,34 +194,35 @@ export function ClientesPage() {
                           {c.nombre.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-medium text-white text-sm">{c.nombre}</p>
+                          <p className="font-medium text-gray-900 dark:text-white text-sm">{c.nombre}</p>
                           {c.email && (
-                            <p className="text-xs text-slate-500">{c.email}</p>
+                            <p className="text-xs text-gray-400 dark:text-slate-500">{c.email}</p>
                           )}
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 hidden sm:table-cell">
-                      <span className="text-slate-400 font-mono text-xs">{c.nit}</span>
+                      <span className="text-gray-400 dark:text-slate-400 font-mono text-xs">{c.nit}</span>
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell text-slate-400 text-xs">{c.ciudad ?? '—'}</td>
+                    <td className="px-5 py-3.5 hidden md:table-cell text-gray-400 dark:text-slate-400 text-xs">{c.ciudad ?? '—'}</td>
                     <td className="px-5 py-3.5">
                       <Badge variant={estadoVariant[c.estado] ?? 'default'}>
                         {c.estado}
                       </Badge>
                     </td>
                     <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <span className="text-slate-400 text-xs">
+                      <span className="text-gray-400 dark:text-slate-400 text-xs">
                         {c.modulosActivos?.filter((m) => m.activo).length ?? 0} módulos
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell text-slate-500 text-xs">
+                    <td className="px-5 py-3.5 hidden lg:table-cell text-gray-400 dark:text-slate-500 text-xs">
                       {formatDate(c.createdAt)}
                     </td>
                     <td className="px-5 py-3.5">
                       <button
                         onClick={(e) => { e.stopPropagation(); setSelectedCliente(c); }}
-                        className="text-slate-500 hover:text-brand-blue transition-colors text-xs"
+                        title="Ver detalle"
+                        className="text-gray-300 dark:text-slate-500 hover:text-brand-blue transition-colors text-xs"
                       >
                         Ver →
                       </button>
@@ -231,11 +237,15 @@ export function ClientesPage() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-navy-800 rounded-2xl border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
-              <h2 className="font-semibold text-white">Nuevo Cliente</h2>
-              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
+              <h2 className="font-semibold text-gray-900 dark:text-white">Nuevo Cliente</h2>
+              <button
+                onClick={() => setShowCreate(false)}
+                title="Cerrar"
+                className="text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -248,11 +258,11 @@ export function ClientesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, nit: e.target.value }))}
                 />
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-1.5">Estado</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Estado</label>
                   <select
                     value={form.estado}
                     onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-slate-300 focus:outline-none focus:border-brand-blue/60"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-slate-300 focus:outline-none focus:border-brand-blue/60"
                   >
                     {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
                   </select>
@@ -294,17 +304,17 @@ export function ClientesPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-1.5">Observaciones</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Observaciones</label>
                 <textarea
                   value={form.observaciones}
                   onChange={(e) => setForm((f) => ({ ...f, observaciones: e.target.value }))}
                   rows={2}
                   placeholder="Notas sobre el prospecto..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-white/5">
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-100 dark:border-white/5">
               <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
               <Button
                 loading={createMutation.isPending}
@@ -322,7 +332,8 @@ export function ClientesPage() {
                 }
                 disabled={!form.nit || !form.nombre}
               >
-                Crear Cliente
+                {!createMutation.isPending && <Check size={15} />}
+                Crear
               </Button>
             </div>
           </div>
@@ -331,19 +342,23 @@ export function ClientesPage() {
 
       {/* Detail Modal */}
       {selectedCliente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-navy-800 rounded-2xl border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center text-white font-bold">
                   {selectedCliente.nombre.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-white">{selectedCliente.nombre}</h2>
-                  <p className="text-xs text-slate-500">{selectedCliente.nit}</p>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">{selectedCliente.nombre}</h2>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">{selectedCliente.nit}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedCliente(null)} className="text-slate-400 hover:text-white">
+              <button
+                onClick={() => setSelectedCliente(null)}
+                title="Cerrar"
+                className="text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -351,7 +366,7 @@ export function ClientesPage() {
             <div className="p-5 space-y-4">
               {/* Estado */}
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-500">Estado:</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500">Estado:</span>
                 {canEdit ? (
                   <select
                     value={selectedCliente.estado}
@@ -376,26 +391,26 @@ export function ClientesPage() {
               {/* Info grid */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {selectedCliente.email && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Mail size={13} className="text-slate-500 shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                    <Mail size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
                     <span className="truncate">{selectedCliente.email}</span>
                   </div>
                 )}
                 {selectedCliente.telefono && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Phone size={13} className="text-slate-500 shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                    <Phone size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
                     <span>{selectedCliente.telefono}</span>
                   </div>
                 )}
                 {selectedCliente.ciudad && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <MapPin size={13} className="text-slate-500 shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                    <MapPin size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
                     <span>{selectedCliente.ciudad}</span>
                   </div>
                 )}
                 {selectedCliente.contacto && (
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <User size={13} className="text-slate-500 shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-slate-400">
+                    <User size={13} className="text-gray-400 dark:text-slate-500 shrink-0" />
                     <span>{selectedCliente.contacto}</span>
                   </div>
                 )}
@@ -404,7 +419,7 @@ export function ClientesPage() {
               {/* Módulos */}
               {selectedCliente.modulosActivos && selectedCliente.modulosActivos.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5">
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mb-2 flex items-center gap-1.5">
                     <Package size={12} /> Módulos activos
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -424,16 +439,16 @@ export function ClientesPage() {
 
               {/* Plan base */}
               {selectedCliente.planBase && (
-                <div className="rounded-lg bg-navy-700/50 border border-white/5 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Plan base</span>
+                <div className="rounded-lg bg-gray-50 dark:bg-navy-700/50 border border-gray-200 dark:border-white/5 px-3 py-2.5 flex items-center justify-between">
+                  <span className="text-xs text-gray-400 dark:text-slate-400">Plan base</span>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-white">{selectedCliente.planBase.nombre}</p>
-                    <p className="text-xs text-slate-500">{formatCOP(selectedCliente.planBase.precioBase)}/mes</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedCliente.planBase.nombre}</p>
+                    <p className="text-xs text-gray-400 dark:text-slate-500">{formatCOP(selectedCliente.planBase.precioBase)}/mes</p>
                   </div>
                 </div>
               )}
 
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-gray-300 dark:text-slate-600">
                 Registrado {formatDate(selectedCliente.createdAt)}
               </p>
             </div>

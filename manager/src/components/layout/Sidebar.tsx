@@ -52,11 +52,11 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex flex-col w-60 shrink-0 min-h-screen bg-navy-800 border-r border-white/5">
+    <aside className="flex flex-col w-60 shrink-0 min-h-screen bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-white/5">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/5">
+      <div className="px-5 py-5 border-b border-gray-200 dark:border-white/5">
         <EdatiaLogo size="md" />
-        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">
+        <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-1 uppercase tracking-widest font-medium">
           Manager · Internal
         </p>
       </div>
@@ -72,13 +72,18 @@ export function Sidebar() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group',
                 isActive
                   ? 'bg-gradient-brand text-white shadow-glow-blue'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5',
+                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5',
               )
             }
           >
             {({ isActive }) => (
               <>
-                <span className={cn('shrink-0', isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300')}>
+                <span className={cn(
+                  'shrink-0',
+                  isActive
+                    ? 'text-white'
+                    : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-slate-300',
+                )}>
                   {item.icon}
                 </span>
                 <span className="flex-1">{item.label}</span>
@@ -92,16 +97,16 @@ export function Sidebar() {
       </nav>
 
       {/* User info + logout */}
-      <div className="px-3 pb-4 border-t border-white/5 pt-3 space-y-2">
+      <div className="px-3 pb-4 border-t border-gray-200 dark:border-white/5 pt-3 space-y-2">
         {/* Colaborador card */}
-        <div className="rounded-lg bg-navy-700 border border-white/5 px-3 py-2.5">
+        <div className="rounded-lg bg-gray-50 dark:bg-navy-700 border border-gray-200 dark:border-white/5 px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center text-white text-xs font-bold shrink-0">
               {colaborador?.nombre?.charAt(0).toUpperCase() ?? 'U'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">{colaborador?.nombre}</p>
-              <p className="text-xs text-slate-500 truncate">{colaborador?.email}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{colaborador?.nombre}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-500 truncate">{colaborador?.email}</p>
             </div>
             {colaborador?.rol === 'ADMIN' && (
               <Shield size={14} className="text-brand-purple shrink-0" />
@@ -121,7 +126,7 @@ export function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
         >
           <LogOut size={16} />
           <span>Cerrar sesión</span>

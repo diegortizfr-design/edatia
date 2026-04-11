@@ -14,6 +14,10 @@ export class PerfilesCargoService {
     return (this.prisma as any).perfilCargo.findMany({
       include: {
         _count: { select: { colaboradores: true } },
+        colaboradores: {
+          select: { id: true, nombre: true, rol: true, activo: true },
+          orderBy: { nombre: 'asc' },
+        },
       },
       orderBy: { nombre: 'asc' },
     });
@@ -24,6 +28,17 @@ export class PerfilesCargoService {
       where: { id },
       include: {
         _count: { select: { colaboradores: true } },
+        colaboradores: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rol: true,
+            activo: true,
+            perfilCargoId: true,
+          },
+          orderBy: { nombre: 'asc' },
+        },
       },
     });
 
@@ -47,7 +62,11 @@ export class PerfilesCargoService {
       data: {
         nombre: dto.nombre,
         descripcion: dto.descripcion,
+        responsabilidades: dto.responsabilidades,
+        correoPrincipal: dto.correoPrincipal,
+        subcorreos: dto.subcorreos ?? [],
         permisos: dto.permisos ?? [],
+        documentoUrl: dto.documentoUrl,
       },
     });
   }
@@ -58,7 +77,11 @@ export class PerfilesCargoService {
     const data: Record<string, unknown> = {};
     if (dto.nombre !== undefined) data.nombre = dto.nombre;
     if (dto.descripcion !== undefined) data.descripcion = dto.descripcion;
+    if (dto.responsabilidades !== undefined) data.responsabilidades = dto.responsabilidades;
+    if (dto.correoPrincipal !== undefined) data.correoPrincipal = dto.correoPrincipal;
+    if (dto.subcorreos !== undefined) data.subcorreos = dto.subcorreos;
     if (dto.permisos !== undefined) data.permisos = dto.permisos;
+    if (dto.documentoUrl !== undefined) data.documentoUrl = dto.documentoUrl;
 
     return (this.prisma as any).perfilCargo.update({
       where: { id },

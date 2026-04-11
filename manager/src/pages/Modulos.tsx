@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Package, Plus, X, Pencil } from 'lucide-react';
+import { Package, Plus, X, Pencil, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { formatCOP, MODULO_ICONS } from '@/lib/utils';
+import { cn, formatCOP, MODULO_ICONS } from '@/lib/utils';
 
 interface Modulo {
   id: number;
@@ -92,22 +92,26 @@ export function ModulosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Package size={20} className="text-brand-blue" />
             Módulos de Software
           </h1>
-          <p className="text-sm text-slate-400 mt-0.5">Módulos disponibles en la plataforma Edatia</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Módulos disponibles en la plataforma Edatia</p>
         </div>
         {isAdmin && (
-          <Button onClick={() => { setShowCreate(true); setEditing(null); }}>
-            <Plus size={15} /> Nuevo Módulo
-          </Button>
+          <button
+            onClick={() => { setShowCreate(true); setEditing(null); }}
+            title="Nuevo módulo"
+            className="p-2 rounded-lg bg-gradient-brand text-white shadow-glow-brand hover:opacity-90 transition-all"
+          >
+            <Plus size={18} />
+          </button>
         )}
       </div>
 
       {/* Cards */}
       {isLoading ? (
-        <div className="text-center py-12 text-slate-500 text-sm">Cargando módulos...</div>
+        <div className="text-center py-12 text-gray-400 dark:text-slate-500 text-sm">Cargando módulos...</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {modulos.map((m) => (
@@ -126,7 +130,8 @@ export function ModulosPage() {
                   {isAdmin && (
                     <button
                       onClick={() => openEdit(m)}
-                      className="text-slate-500 hover:text-brand-blue transition-colors"
+                      title="Editar módulo"
+                      className="text-gray-400 dark:text-slate-500 hover:text-brand-blue transition-colors p-1"
                     >
                       <Pencil size={14} />
                     </button>
@@ -134,23 +139,24 @@ export function ModulosPage() {
                 </div>
               </div>
 
-              <h3 className="font-semibold text-white text-base mb-1">{m.nombre}</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{m.nombre}</h3>
               {m.descripcion && (
-                <p className="text-xs text-slate-400 mb-3 line-clamp-2">{m.descripcion}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-3 line-clamp-2">{m.descripcion}</p>
               )}
 
-              <div className="pt-3 border-t border-white/5">
-                <p className="text-xs text-slate-500 mb-0.5">Precio anual</p>
+              <div className="pt-3 border-t border-gray-100 dark:border-white/5">
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">Precio anual</p>
                 <p className="text-lg font-bold bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">
                   {formatCOP(m.precioAnual)}
                 </p>
-                <p className="text-xs text-slate-500">{formatCOP(Math.round(m.precioAnual / 12))}/mes</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">{formatCOP(Math.round(m.precioAnual / 12))}/mes</p>
               </div>
 
               {isAdmin && (
                 <button
                   onClick={() => toggleMutation.mutate(m.id)}
-                  className="mt-3 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  title={m.activo ? 'Desactivar módulo' : 'Activar módulo'}
+                  className="mt-3 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
                 >
                   {m.activo ? 'Desactivar' : 'Activar'} módulo
                 </button>
@@ -159,7 +165,7 @@ export function ModulosPage() {
           ))}
 
           {!modulos.length && (
-            <div className="col-span-3 text-center py-12 text-slate-500 text-sm">
+            <div className="col-span-3 text-center py-12 text-gray-400 dark:text-slate-500 text-sm">
               No hay módulos configurados
             </div>
           )}
@@ -168,15 +174,16 @@ export function ModulosPage() {
 
       {/* Create / Edit Modal */}
       {(showCreate || editing) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-navy-800 rounded-2xl border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
-              <h2 className="font-semibold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
+              <h2 className="font-semibold text-gray-900 dark:text-white">
                 {editing ? 'Editar Módulo' : 'Nuevo Módulo'}
               </h2>
               <button
                 onClick={() => { setShowCreate(false); setEditing(null); }}
-                className="text-slate-400 hover:text-white"
+                title="Cerrar"
+                className="text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white transition-colors"
               >
                 <X size={18} />
               </button>
@@ -190,11 +197,11 @@ export function ModulosPage() {
               />
               {!editing && (
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-1.5">Slug *</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Slug *</label>
                   <select
                     value={form.slug}
                     onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-slate-300 focus:outline-none focus:border-brand-blue/60"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-slate-300 focus:outline-none focus:border-brand-blue/60"
                   >
                     <option value="">Selecciona un slug</option>
                     {SLUGS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -202,13 +209,13 @@ export function ModulosPage() {
                 </div>
               )}
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-1.5">Descripción</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">Descripción</label>
                 <textarea
                   value={form.descripcion}
                   onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
                   rows={2}
                   placeholder="Descripción del módulo..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-white/10 bg-navy-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
                 />
               </div>
               <Input
@@ -219,12 +226,12 @@ export function ModulosPage() {
                 onChange={(e) => setForm((f) => ({ ...f, precioAnual: e.target.value }))}
               />
               {form.precioAnual && !isNaN(Number(form.precioAnual)) && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-gray-400 dark:text-slate-500">
                   = {formatCOP(Math.round(Number(form.precioAnual) / 12))}/mes
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-3 p-5 border-t border-white/5">
+            <div className="flex justify-end gap-3 p-5 border-t border-gray-100 dark:border-white/5">
               <Button variant="ghost" onClick={() => { setShowCreate(false); setEditing(null); }}>
                 Cancelar
               </Button>
@@ -250,8 +257,12 @@ export function ModulosPage() {
                   }
                 }}
                 disabled={!form.nombre || !form.precioAnual || (!editing && !form.slug)}
+                className={cn(!createMutation.isPending && !updateMutation.isPending && 'gap-1')}
               >
-                {editing ? 'Guardar Cambios' : 'Crear Módulo'}
+                {createMutation.isPending || updateMutation.isPending
+                  ? null
+                  : <Check size={16} />}
+                {editing ? 'Guardar' : 'Crear'}
               </Button>
             </div>
           </div>
