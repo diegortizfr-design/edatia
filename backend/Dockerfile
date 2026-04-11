@@ -1,6 +1,8 @@
 # ---- Build stage ----
 FROM node:18-alpine AS build
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Instalar dependencias primero (aprovecha caché de Docker)
@@ -14,6 +16,9 @@ RUN npm run build
 
 # ---- Production stage ----
 FROM node:18-alpine
+
+# OpenSSL necesario para que Prisma detecte la versión correcta (OpenSSL 3.x)
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
