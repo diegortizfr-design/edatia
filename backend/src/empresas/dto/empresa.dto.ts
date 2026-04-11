@@ -5,12 +5,12 @@ export class CreateEmpresaDto {
   @ApiProperty({ example: '900123456-7', description: 'NIT de la empresa (único)' })
   @IsString()
   @MinLength(5)
-  nit: string;
+  nit!: string;
 
   @ApiProperty({ example: 'Empresa SAS' })
   @IsString()
   @MinLength(2)
-  nombre: string;
+  nombre!: string;
 
   @ApiPropertyOptional({ example: 'Calle 123 # 45-67, Bogotá' })
   @IsOptional()

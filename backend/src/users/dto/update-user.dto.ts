@@ -23,5 +23,5 @@ export class UpdateUserDto {
 export class UpdateUserRolDto {
   @ApiPropertyOptional({ enum: ['admin', 'user', 'manager'], example: 'manager' })
   @IsEnum(['admin', 'user', 'manager'], { message: 'El rol debe ser admin, user o manager' })
-  rol: string;
+  rol!: string;
 }
