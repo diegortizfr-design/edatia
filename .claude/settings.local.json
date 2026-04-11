@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/diego/Desktop/edatia/backend/src/*.ts /c/Users/diego/Desktop/edatia/frontend/src/*.tsx)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
