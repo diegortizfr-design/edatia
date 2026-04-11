@@ -42,7 +42,7 @@ fi
 
 # 4. Validar variables críticas en .env
 ENV_FILE="backend/.env"
-for VAR in DATABASE_URL JWT_SECRET DB_USER DB_PASSWORD; do
+for VAR in DATABASE_URL JWT_SECRET MANAGER_JWT_SECRET DB_USER DB_PASSWORD; do
   if ! grep -q "^${VAR}=" "$ENV_FILE" 2>/dev/null; then
     warn "Variable ${VAR} no encontrada en backend/.env"
   fi
@@ -88,7 +88,9 @@ log "=========================================="
 log " Despliegue completado exitosamente"
 log "=========================================="
 echo ""
+log "Landing:       https://edatia.com"
 log "ERP Frontend:  https://erp.edatia.com"
+log "Manager:       https://manager.edatia.com"
 log "API REST:      https://api.edatia.com/api/v1"
 log "Swagger Docs:  https://api.edatia.com/api/docs"
 log "Health Check:  https://api.edatia.com/api/v1/health"

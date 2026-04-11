@@ -121,6 +121,38 @@ services:
           cpus: '0.5'
           memory: 128M
 
+  manager:
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
+    container_name: edatia-manager
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS
+      - "traefik.http.routers.edatia-manager.rule=Host(`manager.edatia.com`)"
+      - "traefik.http.routers.edatia-manager.entrypoints=websecure"
+      - "traefik.http.routers.edatia-manager.tls=true"
+      - "traefik.http.routers.edatia-manager.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.edatia-manager.loadbalancer.server.port=80"
+      # Router HTTP (redirige a HTTPS)
+      - "traefik.http.routers.edatia-manager-http.rule=Host(`manager.edatia.com`)"
+      - "traefik.http.routers.edatia-manager-http.entrypoints=web"
+      - "traefik.http.routers.edatia-manager-http.middlewares=redirect-https"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
 networks:
   default:
     external: true

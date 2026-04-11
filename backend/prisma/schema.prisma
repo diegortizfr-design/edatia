@@ -41,3 +41,85 @@ model Empresa {
   usuarios  User[]
   createdAt DateTime @default(now())
 }
+
+// ─── Edatia Manager ───────────────────────────────────────────────────────────
+
+model PerfilCargo {
+  id            Int           @id @default(autoincrement())
+  nombre        String        @unique
+  descripcion   String?
+  permisos      String[]
+  colaboradores Colaborador[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Colaborador {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  nombre        String
+  password      String
+  rol           String       // ADMIN | COMERCIAL | COORDINACION | OPERACION
+  activo        Boolean      @default(true)
+  perfilCargoId Int?
+  perfilCargo   PerfilCargo? @relation(fields: [perfilCargoId], references: [id])
+  clientes      ClienteManager[] @relation("AsesorClientes")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model PlanBase {
+  id             Int              @id @default(autoincrement())
+  nombre         String           @unique
+  descripcion    String?
+  precioBase     Decimal          @db.Decimal(12, 2)
+  limiteUsuarios Int?
+  clientes       ClienteManager[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model ModuloSoftware {
+  id           Int           @id @default(autoincrement())
+  nombre       String        @unique
+  slug         String        @unique
+  descripcion  String?
+  icono        String?
+  precioAnual  Decimal       @db.Decimal(12, 2)
+  activo       Boolean       @default(true)
+  planesCliente PlanCliente[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ClienteManager {
+  id            Int           @id @default(autoincrement())
+  nit           String        @unique
+  nombre        String
+  email         String?
+  telefono      String?
+  direccion     String?
+  ciudad        String?
+  contacto      String?
+  estado        String        @default("PROSPECTO") // PROSPECTO | ACTIVO | SUSPENDIDO | CANCELADO
+  observaciones String?
+  planBaseId    Int?
+  planBase      PlanBase?     @relation(fields: [planBaseId], references: [id])
+  asesorId      Int?
+  asesor        Colaborador?  @relation("AsesorClientes", fields: [asesorId], references: [id])
+  modulosActivos PlanCliente[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model PlanCliente {
+  id               Int            @id @default(autoincrement())
+  clienteId        Int
+  cliente          ClienteManager @relation(fields: [clienteId], references: [id])
+  moduloId         Int
+  modulo           ModuloSoftware @relation(fields: [moduloId], references: [id])
+  precioNegociado  Decimal?       @db.Decimal(12, 2)
+  activo           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
