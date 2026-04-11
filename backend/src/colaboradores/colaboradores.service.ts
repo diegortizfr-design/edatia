@@ -243,6 +243,19 @@ export class ColaboradoresService {
 
   async toggleActivo(id: number) {
     const colaborador = await this.findOne(id);
+
+    // Protección: no se puede desactivar al único ADMIN activo
+    if (colaborador.activo && colaborador.rol === 'ADMIN') {
+      const otrosAdminsActivos = await (this.prisma as any).colaborador.count({
+        where: { rol: 'ADMIN', activo: true, id: { not: id } },
+      });
+      if (otrosAdminsActivos === 0) {
+        throw new ConflictException(
+          'No se puede desactivar el único administrador activo del sistema',
+        );
+      }
+    }
+
     return (this.prisma as any).colaborador.update({
       where: { id },
       data: { activo: !colaborador.activo },
