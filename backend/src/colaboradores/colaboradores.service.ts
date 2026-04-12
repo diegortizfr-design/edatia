@@ -98,21 +98,26 @@ export class ColaboradoresService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, isAdmin = false) {
+    const select = isAdmin ? SELECT_FULL : SELECT_PUBLIC;
     const colaborador = await (this.prisma as any).colaborador.findUnique({
       where: { id },
-      select: SELECT_FULL,
+      select,
     });
 
     if (!colaborador) {
       throw new NotFoundException(`Colaborador #${id} no encontrado`);
     }
 
-    // Convertir Decimal a number
-    return {
-      ...colaborador,
-      salario: colaborador.salario !== null ? Number(colaborador.salario) : null,
-    };
+    // Convertir Decimal a number (solo en respuesta completa)
+    if (isAdmin && colaborador.salario !== undefined) {
+      return {
+        ...colaborador,
+        salario: colaborador.salario !== null ? Number(colaborador.salario) : null,
+      };
+    }
+
+    return colaborador;
   }
 
   async create(dto: CreateColaboradorDto) {
@@ -194,7 +199,7 @@ export class ColaboradoresService {
   }
 
   async update(id: number, dto: UpdateColaboradorDto) {
-    await this.findOne(id);
+    await this.findOne(id, true);
 
     const data: Record<string, unknown> = {};
 
@@ -242,7 +247,7 @@ export class ColaboradoresService {
   }
 
   async toggleActivo(id: number) {
-    const colaborador = await this.findOne(id);
+    const colaborador = await this.findOne(id, true);
 
     // Protección: no se puede desactivar al único ADMIN activo
     if (colaborador.activo && colaborador.rol === 'ADMIN') {
@@ -264,7 +269,7 @@ export class ColaboradoresService {
   }
 
   async transferir(id: number, nuevoPerfilCargoId: number) {
-    await this.findOne(id);
+    await this.findOne(id, true);
     return (this.prisma as any).colaborador.update({
       where: { id },
       data: { perfilCargoId: nuevoPerfilCargoId },

@@ -7,6 +7,7 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ColaboradoresService } from './colaboradores.service';
@@ -47,9 +48,10 @@ export class ColaboradoresController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener colaborador completo por ID' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.colaboradoresService.findOne(id);
+  @ApiOperation({ summary: 'Obtener colaborador por ID (ADMIN: datos completos, otros roles: datos públicos)' })
+  findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const isAdmin = req.user?.rol === 'ADMIN';
+    return this.colaboradoresService.findOne(id, isAdmin);
   }
 
   @Post()

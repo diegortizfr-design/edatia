@@ -130,6 +130,10 @@ model Colaborador {
   cedulaArchivo     String?
   hojaVidaArchivo   String?
 
+  // ── Sesión / Refresh tokens ───────────────────────
+  refreshTokenHash    String?   @db.VarChar(128)  // SHA-256 del refresh token
+  refreshTokenExpiry  DateTime?
+
   // ── Relaciones ────────────────────────────────────
   perfilCargoId Int?
   perfilCargo   PerfilCargo? @relation(fields: [perfilCargoId], references: [id])
@@ -291,4 +295,37 @@ model TicketMensaje {
   interno  Boolean @default(false) // nota interna, no visible al cliente
 
   createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT LOG — Registro de eventos de seguridad y acceso a datos sensibles
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id               Int       @id @default(autoincrement())
+
+  // Tipo de evento
+  accion           String    // LOGIN_OK | LOGIN_FAIL | LOGOUT | TOKEN_REFRESH | ACCESS_PII | COLABORADOR_CREATE | COLABORADOR_UPDATE | etc.
+
+  // Entidad afectada (opcional — para acciones sobre recursos)
+  entidad          String?   // Colaborador | ClienteManager | Ticket | etc.
+  entidadId        Int?
+
+  // Quién ejecutó la acción
+  colaboradorId    Int?      // null en intentos de login fallidos con email desconocido
+  colaboradorEmail String?   // guardamos el email aunque el colaborador sea eliminado después
+
+  // Contexto de red
+  ip               String?
+  userAgent        String?
+
+  // Información adicional libre
+  detalles         Json?
+
+  createdAt        DateTime  @default(now())
+
+  @@index([accion])
+  @@index([colaboradorId])
+  @@index([colaboradorEmail])
+  @@index([createdAt])
 }

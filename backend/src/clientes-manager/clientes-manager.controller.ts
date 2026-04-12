@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Query,
+  Request,
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
@@ -25,17 +26,18 @@ export class ClientesManagerController {
   constructor(private readonly clientesManagerService: ClientesManagerService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar clientes (todos los roles)' })
+  @ApiOperation({ summary: 'Listar clientes — COMERCIAL ve solo los suyos, ADMIN ve todos' })
   @ApiQuery({ name: 'estado', required: false, enum: ['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'] })
   @ApiQuery({ name: 'asesorId', required: false, type: Number })
   findAll(
     @Query('estado') estado?: string,
     @Query('asesorId') asesorId?: string,
+    @Request() req?: any,
   ) {
-    return this.clientesManagerService.findAll({
-      estado,
-      asesorId: asesorId ? Number(asesorId) : undefined,
-    });
+    return this.clientesManagerService.findAll(
+      { estado, asesorId: asesorId ? Number(asesorId) : undefined },
+      req?.user,
+    );
   }
 
   @Get('stats')
@@ -45,26 +47,27 @@ export class ClientesManagerController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener cliente por ID (todos los roles)' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.clientesManagerService.findOne(id);
+  @ApiOperation({ summary: 'Obtener cliente por ID — COMERCIAL solo accede a los suyos' })
+  findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.clientesManagerService.findOne(id, req.user);
   }
 
   @Post()
   @ManagerRoles('ADMIN', 'COMERCIAL')
-  @ApiOperation({ summary: 'Crear cliente (ADMIN, COMERCIAL)' })
-  create(@Body() dto: CreateClienteDto) {
-    return this.clientesManagerService.create(dto);
+  @ApiOperation({ summary: 'Crear cliente — COMERCIAL queda asignado automáticamente como asesor' })
+  create(@Body() dto: CreateClienteDto, @Request() req: any) {
+    return this.clientesManagerService.create(dto, req.user);
   }
 
   @Patch(':id')
   @ManagerRoles('ADMIN', 'COMERCIAL')
-  @ApiOperation({ summary: 'Actualizar cliente (ADMIN, COMERCIAL)' })
+  @ApiOperation({ summary: 'Actualizar cliente — COMERCIAL solo puede editar los suyos y no reasignar asesor' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClienteDto,
+    @Request() req: any,
   ) {
-    return this.clientesManagerService.update(id, dto);
+    return this.clientesManagerService.update(id, dto, req.user);
   }
 
   @Post(':id/modulos')

@@ -10,7 +10,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -18,14 +18,14 @@ export function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!identifier || !password) {
+    if (!email || !password) {
       setError('Completa todos los campos');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await login(identifier, password);
+      await login(email, password);
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const msg =
@@ -73,14 +73,14 @@ export function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Email o nombre"
-              type="text"
+              label="Email"
+              type="email"
               placeholder="admin@edatia.com"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail size={16} />}
               autoFocus
-              autoComplete="username"
+              autoComplete="email"
             />
 
             <Input

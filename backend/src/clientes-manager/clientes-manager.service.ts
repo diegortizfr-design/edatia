@@ -2,24 +2,36 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto } from './dto/cliente.dto';
 
-const ESTADOS = ['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'] as const;
+// Contexto del usuario autenticado pasado desde el controller
+export interface UserCtx {
+  sub: number;
+  rol: string;
+}
 
 @Injectable()
 export class ClientesManagerService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(filters?: { estado?: string; asesorId?: number }) {
+  async findAll(
+    filters?: { estado?: string; asesorId?: number },
+    userCtx?: UserCtx,
+  ) {
     const where: Record<string, unknown> = {};
 
     if (filters?.estado) {
       where['estado'] = filters.estado;
     }
 
-    if (filters?.asesorId) {
+    if (userCtx?.rol === 'COMERCIAL') {
+      // COMERCIAL solo ve sus propios clientes — no se puede sobrescribir con query param
+      where['asesorId'] = userCtx.sub;
+    } else if (filters?.asesorId) {
+      // ADMIN / COORDINACION / OPERACION pueden filtrar por asesor
       where['asesorId'] = filters.asesorId;
     }
 
@@ -50,7 +62,7 @@ export class ClientesManagerService {
     }));
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userCtx?: UserCtx) {
     const cliente = await (this.prisma as any).clienteManager.findUnique({
       where: { id },
       include: {
@@ -68,6 +80,11 @@ export class ClientesManagerService {
       throw new NotFoundException(`Cliente #${id} no encontrado`);
     }
 
+    // COMERCIAL solo puede ver sus propios clientes
+    if (userCtx?.rol === 'COMERCIAL' && cliente.asesorId !== userCtx.sub) {
+      throw new ForbiddenException('No tienes acceso a este cliente');
+    }
+
     return {
       ...cliente,
       planBase: cliente.planBase
@@ -81,7 +98,7 @@ export class ClientesManagerService {
     };
   }
 
-  async create(dto: CreateClienteDto) {
+  async create(dto: CreateClienteDto, userCtx?: UserCtx) {
     const existing = await (this.prisma as any).clienteManager.findFirst({
       where: { nit: dto.nit },
     });
@@ -95,6 +112,13 @@ export class ClientesManagerService {
       nombre: dto.nombre,
       estado: dto.estado ?? 'PROSPECTO',
     };
+
+    // COMERCIAL siempre crea clientes asignados a sí mismo
+    if (userCtx?.rol === 'COMERCIAL') {
+      data.asesorId = userCtx.sub;
+    } else if (dto.asesorId !== undefined) {
+      data.asesorId = dto.asesorId;
+    }
 
     // Identificación
     if (dto.tipoPersona !== undefined) data.tipoPersona = dto.tipoPersona;
@@ -131,17 +155,18 @@ export class ClientesManagerService {
     // Interno
     if (dto.segmento !== undefined) data.segmento = dto.segmento;
     if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
-    // Relaciones
+    // Relaciones (excepto asesorId, ya manejado arriba)
     if (dto.planBaseId !== undefined) data.planBaseId = dto.planBaseId;
-    if (dto.asesorId !== undefined) data.asesorId = dto.asesorId;
 
     return (this.prisma as any).clienteManager.create({ data });
   }
 
-  async update(id: number, dto: UpdateClienteDto) {
-    await this.findOne(id);
+  async update(id: number, dto: UpdateClienteDto, userCtx?: UserCtx) {
+    // findOne ya valida que COMERCIAL solo acceda a sus propios clientes
+    await this.findOne(id, userCtx);
 
     const data: Record<string, unknown> = {};
+
     // Identificación
     if (dto.nit !== undefined) data.nit = dto.nit;
     if (dto.tipoPersona !== undefined) data.tipoPersona = dto.tipoPersona;
@@ -182,7 +207,10 @@ export class ClientesManagerService {
     if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
     // Relaciones
     if (dto.planBaseId !== undefined) data.planBaseId = dto.planBaseId;
-    if (dto.asesorId !== undefined) data.asesorId = dto.asesorId;
+    // COMERCIAL no puede reasignar clientes a otro asesor
+    if (dto.asesorId !== undefined && userCtx?.rol !== 'COMERCIAL') {
+      data.asesorId = dto.asesorId;
+    }
 
     return (this.prisma as any).clienteManager.update({ where: { id }, data });
   }

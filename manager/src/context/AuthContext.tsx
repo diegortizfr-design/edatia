@@ -14,8 +14,8 @@ interface AuthContextValue {
   colaborador: Colaborador | null;
   token: string | null;
   isLoading: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore session from localStorage
+  // Restaurar sesión desde localStorage al iniciar
   useEffect(() => {
     const storedToken = localStorage.getItem('manager_token');
     const storedUser  = localStorage.getItem('manager_user');
@@ -35,26 +35,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setColaborador(JSON.parse(storedUser) as Colaborador);
       } catch {
         localStorage.removeItem('manager_token');
+        localStorage.removeItem('manager_refresh_token');
         localStorage.removeItem('manager_user');
       }
     }
     setIsLoading(false);
   }, []);
 
-  async function login(identifier: string, password: string) {
-    const res = await api.post<{ access_token: string; colaborador: Colaborador }>(
-      '/manager/auth/login',
-      { identifier, password },
-    );
-    const { access_token, colaborador: col } = res.data;
+  async function login(email: string, password: string) {
+    const res = await api.post<{
+      access_token: string;
+      refresh_token: string;
+      colaborador: Colaborador;
+    }>('/manager/auth/login', { email, password });
+
+    const { access_token, refresh_token, colaborador: col } = res.data;
+
     localStorage.setItem('manager_token', access_token);
+    localStorage.setItem('manager_refresh_token', refresh_token);
     localStorage.setItem('manager_user', JSON.stringify(col));
+
     setToken(access_token);
     setColaborador(col);
   }
 
-  function logout() {
+  async function logout() {
+    // Invalidar refresh token en el servidor
+    try {
+      await api.post('/manager/auth/logout');
+    } catch {
+      // Ignorar errores (token ya puede haber expirado)
+    }
+
     localStorage.removeItem('manager_token');
+    localStorage.removeItem('manager_refresh_token');
     localStorage.removeItem('manager_user');
     setToken(null);
     setColaborador(null);

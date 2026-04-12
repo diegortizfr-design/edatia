@@ -16,7 +16,7 @@ import { ManagerRolesGuard } from './roles.guard';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('MANAGER_JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('MANAGER_JWT_EXPIRES_IN', '8h'),
+          expiresIn: config.get<string>('MANAGER_JWT_EXPIRES_IN', '2h'),
         },
       }),
     }),
