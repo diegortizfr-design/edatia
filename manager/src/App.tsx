@@ -8,6 +8,11 @@ import { LoginPage } from '@/pages/Login';
 import { DashboardPage } from '@/pages/Dashboard';
 import { ClientesPage } from '@/pages/Clientes';
 import { ClienteForm } from '@/pages/ClienteForm';
+import { OperacionSACPage } from '@/pages/OperacionSAC';
+import { OperacionDesarrolloPage } from '@/pages/OperacionDesarrollo';
+import { TicketDetalle } from '@/pages/TicketDetalle';
+import { CoordinacionDashboardPage } from '@/pages/CoordinacionDashboard';
+import { CoordinacionTicketsPage } from '@/pages/CoordinacionTickets';
 import { ColaboradoresPage } from '@/pages/Colaboradores';
 import { PerfilesCargoPage } from '@/pages/PerfilesCargo';
 import { PerfilCargoForm } from '@/pages/PerfilCargoForm';
@@ -47,6 +52,14 @@ export default function App() {
                 <Route path="/perfiles-cargo/:perfilId/colaboradores/nuevo" element={<ColaboradorForm />} />
                 <Route path="/modulos"        element={<ModulosPage />} />
                 <Route path="/planes"         element={<PlanesPage />} />
+                {/* Operación */}
+                <Route path="/operacion/sac"        element={<OperacionSACPage />} />
+                <Route path="/operacion/desarrollo"  element={<OperacionDesarrolloPage />} />
+                {/* Tickets */}
+                <Route path="/tickets/:id"           element={<TicketDetalle />} />
+                {/* Coordinación */}
+                <Route path="/coordinacion/dashboard" element={<CoordinacionDashboardPage />} />
+                <Route path="/coordinacion/tickets"   element={<CoordinacionTicketsPage />} />
               </Route>
 
               {/* Fallback */}

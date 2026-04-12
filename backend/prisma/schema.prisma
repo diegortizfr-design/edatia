@@ -133,7 +133,9 @@ model Colaborador {
   // ── Relaciones ────────────────────────────────────
   perfilCargoId Int?
   perfilCargo   PerfilCargo? @relation(fields: [perfilCargoId], references: [id])
-  clientes      ClienteManager[] @relation("AsesorClientes")
+  clientes           ClienteManager[] @relation("AsesorClientes")
+  ticketsSAC         Ticket[]         @relation("TicketsSAC")
+  ticketsDesarrollo  Ticket[]         @relation("TicketsDesarrollo")
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -217,6 +219,7 @@ model ClienteManager {
   asesorId      Int?
   asesor        Colaborador?  @relation("AsesorClientes", fields: [asesorId], references: [id])
   modulosActivos PlanCliente[]
+  tickets        Ticket[]
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -232,4 +235,60 @@ model PlanCliente {
   activo          Boolean        @default(true)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO DE SOPORTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ticket {
+  id       Int    @id @default(autoincrement())
+  numero   String @unique // TKT-2026-00001
+
+  // ── Origen ────────────────────────────────────────
+  origen     String  // CHAT, TICKET_DIRECTO
+  clienteId  Int
+  cliente    ClienteManager @relation(fields: [clienteId], references: [id])
+
+  // ── Contenido ─────────────────────────────────────
+  asunto      String
+  descripcion String
+  prioridad   String  @default("MEDIA")  // BAJA, MEDIA, ALTA, CRITICA
+  categoria   String? // BUG, MEJORA, CONSULTA, CONFIGURACION
+
+  // ── Estado y asignación ───────────────────────────
+  estado          String  @default("NUEVO") // NUEVO, SAC, DESARROLLO, DEVUELTO, RESUELTO, CALIFICADO
+  asesorSacId     Int?
+  asesorSac       Colaborador? @relation("TicketsSAC",         fields: [asesorSacId],     references: [id])
+  desarrolladorId Int?
+  desarrollador   Colaborador? @relation("TicketsDesarrollo",  fields: [desarrolladorId], references: [id])
+
+  // ── Calificación ──────────────────────────────────
+  calificacion     Int?
+  calificadoAt     DateTime?
+  calificacionAuto Boolean  @default(false)
+  venceCalifAt     DateTime?
+
+  // ── Fechas clave ──────────────────────────────────
+  resueltoAt DateTime?
+
+  // ── Relaciones ────────────────────────────────────
+  mensajes TicketMensaje[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TicketMensaje {
+  id       Int    @id @default(autoincrement())
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  autor    String  // CLIENTE, SAC, DESARROLLO, IA
+  autorId  Int?    // id del colaborador (null si es cliente o IA)
+  nombre   String? // nombre para mostrar
+  contenido String
+  interno  Boolean @default(false) // nota interna, no visible al cliente
+
+  createdAt DateTime @default(now())
 }
