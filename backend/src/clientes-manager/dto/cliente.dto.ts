@@ -183,6 +183,12 @@ export class UpdateClienteDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MinLength(5)
+  nit?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   tipoPersona?: string;
 
   @ApiPropertyOptional()

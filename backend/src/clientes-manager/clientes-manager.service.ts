@@ -143,6 +143,7 @@ export class ClientesManagerService {
 
     const data: Record<string, unknown> = {};
     // Identificación
+    if (dto.nit !== undefined) data.nit = dto.nit;
     if (dto.tipoPersona !== undefined) data.tipoPersona = dto.tipoPersona;
     if (dto.tipoDocumento !== undefined) data.tipoDocumento = dto.tipoDocumento;
     if (dto.digitoVerificacion !== undefined) data.digitoVerificacion = dto.digitoVerificacion;
