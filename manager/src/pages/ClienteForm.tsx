@@ -126,8 +126,8 @@ export function ClienteForm() {
     queryFn: () => api.get('/manager/colaboradores').then((r) => r.data),
   });
   const { data: planes = [] } = useQuery<PlanBase[]>({
-    queryKey: ['manager', 'planes'],
-    queryFn: () => api.get('/manager/planes').then((r) => r.data),
+    queryKey: ['manager', 'planes-base'],
+    queryFn: () => api.get('/manager/planes-base').then((r) => r.data),
   });
 
   useEffect(() => {
