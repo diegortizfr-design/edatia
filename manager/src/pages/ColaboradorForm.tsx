@@ -252,9 +252,9 @@ export function ColaboradorForm() {
       institucion: form.institucion || undefined,
       anoGraduacion: form.anoGraduacion ? Number(form.anoGraduacion) : undefined,
       empresaAnterior: form.empresaAnterior || undefined,
-      cargoDesempenado: form.cargoDesempenado || undefined,
+      cargoAnterior: form.cargoDesempenado || undefined,
       tiempoTrabajado: form.tiempoTrabajado || undefined,
-      funcionesPrincipales: form.funcionesPrincipales || undefined,
+      funcionesAnteriores: form.funcionesPrincipales || undefined,
       habilidadesTecnicas: form.habilidadesTecnicas.length ? form.habilidadesTecnicas : undefined,
       habilidadesBlandas: form.habilidadesBlandas.length ? form.habilidadesBlandas : undefined,
       idiomas: form.idiomas.length ? form.idiomas : undefined,
@@ -265,11 +265,11 @@ export function ColaboradorForm() {
       banco: form.banco || undefined,
       tipoCuenta: form.tipoCuenta || undefined,
       numeroCuenta: form.numeroCuenta || undefined,
-      contactoEmergenciaNombre: form.contactoEmergenciaNombre || undefined,
-      contactoEmergenciaRelacion: form.contactoEmergenciaRelacion || undefined,
-      contactoEmergenciaTelefono: form.contactoEmergenciaTelefono || undefined,
-      cedula: form.cedula || undefined,
-      hojaDeVida: form.hojaDeVida || undefined,
+      emergenciaNombre: form.contactoEmergenciaNombre || undefined,
+      emergenciaRelacion: form.contactoEmergenciaRelacion || undefined,
+      emergenciaTelefono: form.contactoEmergenciaTelefono || undefined,
+      cedulaArchivo: form.cedula || undefined,
+      hojaVidaArchivo: form.hojaDeVida || undefined,
     });
   }
 
