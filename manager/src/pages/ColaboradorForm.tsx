@@ -20,7 +20,7 @@ import {
   FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api } from '@/lib/api';
+import { api, getApiError } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -211,8 +211,7 @@ export function ColaboradorForm() {
       navigate(`/perfiles-cargo/${perfilId}`);
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error';
-      toast.error(Array.isArray(msg) ? msg[0] : String(msg));
+      toast.error(getApiError(err, 'Error al crear colaborador'));
     },
   });
 

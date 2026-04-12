@@ -6,7 +6,7 @@ import {
   Receipt, Landmark, SlidersHorizontal, ChevronRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api } from '@/lib/api';
+import { api, getApiError } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -234,8 +234,7 @@ export function ClienteForm() {
       navigate('/clientes');
     },
     onError: (err: unknown) => {
-      const msg = (err as any)?.response?.data?.message ?? 'Error al crear cliente';
-      toast.error(Array.isArray(msg) ? msg[0] : msg);
+      toast.error(getApiError(err, 'Error al crear cliente'));
     },
   });
 
@@ -247,8 +246,7 @@ export function ClienteForm() {
       navigate('/clientes');
     },
     onError: (err: unknown) => {
-      const msg = (err as any)?.response?.data?.message ?? 'Error al actualizar';
-      toast.error(Array.isArray(msg) ? msg[0] : msg);
+      toast.error(getApiError(err, 'Error al actualizar cliente'));
     },
   });
 
