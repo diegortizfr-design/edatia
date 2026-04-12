@@ -96,14 +96,44 @@ export class ClientesManagerService {
       estado: dto.estado ?? 'PROSPECTO',
     };
 
+    // Identificación
+    if (dto.tipoPersona !== undefined) data.tipoPersona = dto.tipoPersona;
+    if (dto.tipoDocumento !== undefined) data.tipoDocumento = dto.tipoDocumento;
+    if (dto.digitoVerificacion !== undefined) data.digitoVerificacion = dto.digitoVerificacion;
+    // Ubicación
+    if (dto.pais !== undefined) data.pais = dto.pais;
+    if (dto.departamento !== undefined) data.departamento = dto.departamento;
+    if (dto.ciudad !== undefined) data.ciudad = dto.ciudad;
+    if (dto.direccion !== undefined) data.direccion = dto.direccion;
+    if (dto.codigoPostal !== undefined) data.codigoPostal = dto.codigoPostal;
+    // Contacto
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.telefono !== undefined) data.telefono = dto.telefono;
-    if (dto.direccion !== undefined) data.direccion = dto.direccion;
-    if (dto.ciudad !== undefined) data.ciudad = dto.ciudad;
+    if (dto.telefonoAlternativo !== undefined) data.telefonoAlternativo = dto.telefonoAlternativo;
+    if (dto.paginaWeb !== undefined) data.paginaWeb = dto.paginaWeb;
     if (dto.contacto !== undefined) data.contacto = dto.contacto;
+    // Comercial
+    if (dto.tipoCliente !== undefined) data.tipoCliente = dto.tipoCliente;
+    if (dto.listaPrecios !== undefined) data.listaPrecios = dto.listaPrecios;
+    if (dto.cupoCredito !== undefined) data.cupoCredito = dto.cupoCredito;
+    if (dto.condicionesPago !== undefined) data.condicionesPago = dto.condicionesPago;
+    // Tributario
+    if (dto.regimenTributario !== undefined) data.regimenTributario = dto.regimenTributario;
+    if (dto.responsabilidadFiscal !== undefined) data.responsabilidadFiscal = dto.responsabilidadFiscal;
+    if (dto.actividadEconomica !== undefined) data.actividadEconomica = dto.actividadEconomica;
+    if (dto.granContribuyente !== undefined) data.granContribuyente = dto.granContribuyente;
+    if (dto.autorretenedor !== undefined) data.autorretenedor = dto.autorretenedor;
+    if (dto.agenteRetencion !== undefined) data.agenteRetencion = dto.agenteRetencion;
+    // Financiero
+    if (dto.banco !== undefined) data.banco = dto.banco;
+    if (dto.tipoCuenta !== undefined) data.tipoCuenta = dto.tipoCuenta;
+    if (dto.numeroCuenta !== undefined) data.numeroCuenta = dto.numeroCuenta;
+    // Interno
+    if (dto.segmento !== undefined) data.segmento = dto.segmento;
+    if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
+    // Relaciones
     if (dto.planBaseId !== undefined) data.planBaseId = dto.planBaseId;
     if (dto.asesorId !== undefined) data.asesorId = dto.asesorId;
-    if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
 
     return (this.prisma as any).clienteManager.create({ data });
   }
@@ -112,16 +142,46 @@ export class ClientesManagerService {
     await this.findOne(id);
 
     const data: Record<string, unknown> = {};
+    // Identificación
+    if (dto.tipoPersona !== undefined) data.tipoPersona = dto.tipoPersona;
+    if (dto.tipoDocumento !== undefined) data.tipoDocumento = dto.tipoDocumento;
+    if (dto.digitoVerificacion !== undefined) data.digitoVerificacion = dto.digitoVerificacion;
     if (dto.nombre !== undefined) data.nombre = dto.nombre;
+    // Ubicación
+    if (dto.pais !== undefined) data.pais = dto.pais;
+    if (dto.departamento !== undefined) data.departamento = dto.departamento;
+    if (dto.ciudad !== undefined) data.ciudad = dto.ciudad;
+    if (dto.direccion !== undefined) data.direccion = dto.direccion;
+    if (dto.codigoPostal !== undefined) data.codigoPostal = dto.codigoPostal;
+    // Contacto
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.telefono !== undefined) data.telefono = dto.telefono;
-    if (dto.direccion !== undefined) data.direccion = dto.direccion;
-    if (dto.ciudad !== undefined) data.ciudad = dto.ciudad;
+    if (dto.telefonoAlternativo !== undefined) data.telefonoAlternativo = dto.telefonoAlternativo;
+    if (dto.paginaWeb !== undefined) data.paginaWeb = dto.paginaWeb;
     if (dto.contacto !== undefined) data.contacto = dto.contacto;
+    // Comercial
+    if (dto.tipoCliente !== undefined) data.tipoCliente = dto.tipoCliente;
+    if (dto.listaPrecios !== undefined) data.listaPrecios = dto.listaPrecios;
+    if (dto.cupoCredito !== undefined) data.cupoCredito = dto.cupoCredito;
+    if (dto.condicionesPago !== undefined) data.condicionesPago = dto.condicionesPago;
     if (dto.estado !== undefined) data.estado = dto.estado;
+    // Tributario
+    if (dto.regimenTributario !== undefined) data.regimenTributario = dto.regimenTributario;
+    if (dto.responsabilidadFiscal !== undefined) data.responsabilidadFiscal = dto.responsabilidadFiscal;
+    if (dto.actividadEconomica !== undefined) data.actividadEconomica = dto.actividadEconomica;
+    if (dto.granContribuyente !== undefined) data.granContribuyente = dto.granContribuyente;
+    if (dto.autorretenedor !== undefined) data.autorretenedor = dto.autorretenedor;
+    if (dto.agenteRetencion !== undefined) data.agenteRetencion = dto.agenteRetencion;
+    // Financiero
+    if (dto.banco !== undefined) data.banco = dto.banco;
+    if (dto.tipoCuenta !== undefined) data.tipoCuenta = dto.tipoCuenta;
+    if (dto.numeroCuenta !== undefined) data.numeroCuenta = dto.numeroCuenta;
+    // Interno
+    if (dto.segmento !== undefined) data.segmento = dto.segmento;
+    if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
+    // Relaciones
     if (dto.planBaseId !== undefined) data.planBaseId = dto.planBaseId;
     if (dto.asesorId !== undefined) data.asesorId = dto.asesorId;
-    if (dto.observaciones !== undefined) data.observaciones = dto.observaciones;
 
     return (this.prisma as any).clienteManager.update({ where: { id }, data });
   }

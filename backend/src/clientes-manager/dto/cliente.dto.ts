@@ -1,17 +1,63 @@
-import { IsString, IsOptional, IsEmail, IsEnum, IsInt, MinLength } from 'class-validator';
+import {
+  IsString, IsOptional, IsEmail, IsEnum, IsInt,
+  IsBoolean, IsNumber, MinLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClienteDto {
-  @ApiProperty({ example: '900123456-7' })
+  // ── Identificación ──────────────────────────────
+  @ApiPropertyOptional({ enum: ['NATURAL', 'JURIDICA'] })
+  @IsOptional()
+  @IsEnum(['NATURAL', 'JURIDICA'])
+  tipoPersona?: string;
+
+  @ApiPropertyOptional({ enum: ['NIT', 'CC', 'CE', 'PASAPORTE', 'TI', 'RUT'] })
+  @IsOptional()
+  @IsString()
+  tipoDocumento?: string;
+
+  @ApiProperty({ example: '900123456' })
   @IsString()
   @MinLength(5)
   nit!: string;
+
+  @ApiPropertyOptional({ example: '7' })
+  @IsOptional()
+  @IsString()
+  digitoVerificacion?: string;
 
   @ApiProperty({ example: 'Distribuidora XYZ SAS' })
   @IsString()
   @MinLength(2)
   nombre!: string;
 
+  // ── Ubicación ────────────────────────────────────
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  pais?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  departamento?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ciudad?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  codigoPostal?: string;
+
+  // ── Contacto ─────────────────────────────────────
   @ApiPropertyOptional()
   @IsOptional()
   @IsEmail()
@@ -25,23 +71,103 @@ export class CreateClienteDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  direccion?: string;
+  telefonoAlternativo?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  ciudad?: string;
+  paginaWeb?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   contacto?: string;
 
+  // ── Comercial ────────────────────────────────────
+  @ApiPropertyOptional({ enum: ['MINORISTA', 'MAYORISTA', 'VIP', 'DISTRIBUIDOR'] })
+  @IsOptional()
+  @IsString()
+  tipoCliente?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  listaPrecios?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  cupoCredito?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  condicionesPago?: string;
+
   @ApiPropertyOptional({ enum: ['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'] })
   @IsOptional()
   @IsEnum(['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'])
   estado?: string;
 
+  // ── Tributario ────────────────────────────────────
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  regimenTributario?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responsabilidadFiscal?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  actividadEconomica?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  granContribuyente?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  autorretenedor?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  agenteRetencion?: boolean;
+
+  // ── Financiero ────────────────────────────────────
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  banco?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tipoCuenta?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  numeroCuenta?: string;
+
+  // ── Interno ───────────────────────────────────────
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  segmento?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
+
+  // ── Relaciones ────────────────────────────────────
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -51,14 +177,24 @@ export class CreateClienteDto {
   @IsOptional()
   @IsInt()
   asesorId?: number;
+}
+
+export class UpdateClienteDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tipoPersona?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  observaciones?: string;
-}
+  tipoDocumento?: string;
 
-export class UpdateClienteDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  digitoVerificacion?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -67,6 +203,31 @@ export class UpdateClienteDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  pais?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  departamento?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ciudad?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  codigoPostal?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsEmail()
   email?: string;
 
@@ -78,22 +239,97 @@ export class UpdateClienteDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  direccion?: string;
+  telefonoAlternativo?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  ciudad?: string;
+  paginaWeb?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   contacto?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tipoCliente?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  listaPrecios?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  cupoCredito?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  condicionesPago?: string;
+
   @ApiPropertyOptional({ enum: ['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'] })
   @IsOptional()
   @IsEnum(['PROSPECTO', 'ACTIVO', 'SUSPENDIDO', 'CANCELADO'])
   estado?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  regimenTributario?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responsabilidadFiscal?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  actividadEconomica?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  granContribuyente?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  autorretenedor?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  agenteRetencion?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  banco?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tipoCuenta?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  numeroCuenta?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  segmento?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  observaciones?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -104,11 +340,6 @@ export class UpdateClienteDto {
   @IsOptional()
   @IsInt()
   asesorId?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  observaciones?: string;
 }
 
 export class AsignarModuloDto {

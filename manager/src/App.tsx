@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/Login';
 import { DashboardPage } from '@/pages/Dashboard';
 import { ClientesPage } from '@/pages/Clientes';
+import { ClienteForm } from '@/pages/ClienteForm';
 import { ColaboradoresPage } from '@/pages/Colaboradores';
 import { PerfilesCargoPage } from '@/pages/PerfilesCargo';
 import { PerfilCargoForm } from '@/pages/PerfilCargoForm';
@@ -36,7 +37,9 @@ export default function App() {
               <Route element={<AppLayout />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard"      element={<DashboardPage />} />
-                <Route path="/clientes"       element={<ClientesPage />} />
+                <Route path="/clientes"           element={<ClientesPage />} />
+                <Route path="/clientes/nuevo"    element={<ClienteForm />} />
+                <Route path="/clientes/:id"      element={<ClienteForm />} />
                 <Route path="/colaboradores"  element={<ColaboradoresPage />} />
                 <Route path="/perfiles-cargo" element={<PerfilesCargoPage />} />
                 <Route path="/perfiles-cargo/nuevo" element={<PerfilCargoForm />} />

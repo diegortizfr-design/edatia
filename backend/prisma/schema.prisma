@@ -165,20 +165,59 @@ model ModuloSoftware {
 
 model ClienteManager {
   id            Int           @id @default(autoincrement())
-  nit           String        @unique
-  nombre        String
-  email         String?
-  telefono      String?
-  direccion     String?
-  ciudad        String?
-  contacto      String?
-  estado        String        @default("PROSPECTO")
-  observaciones String?
+
+  // ── Identificación ────────────────────────────────
+  tipoPersona       String?   // NATURAL, JURIDICA
+  tipoDocumento     String?   // NIT, CC, CE, PASAPORTE
+  nit               String    @unique  // número de identificación principal
+  digitoVerificacion String?
+  nombre            String    // nombre completo o razón social
+
+  // ── Ubicación ─────────────────────────────────────
+  pais              String?
+  departamento      String?
+  ciudad            String?
+  direccion         String?
+  codigoPostal      String?
+
+  // ── Contacto ──────────────────────────────────────
+  email             String?
+  telefonoAlternativo String?
+  telefono          String?
+  paginaWeb         String?
+  contacto          String?   // nombre del contacto principal
+
+  // ── Comercial ─────────────────────────────────────
+  tipoCliente       String?   // MINORISTA, MAYORISTA, VIP, DISTRIBUIDOR
+  listaPrecios      String?
+  cupoCredito       Decimal?  @db.Decimal(14, 2)
+  condicionesPago   String?   // CONTADO, CREDITO_15, CREDITO_30, CREDITO_60
+  estado            String    @default("PROSPECTO")
+
+  // ── Tributario (DIAN) ─────────────────────────────
+  regimenTributario     String?   // RESPONSABLE_IVA, NO_RESPONSABLE, SIMPLE
+  responsabilidadFiscal String?   // texto libre o códigos RUT
+  actividadEconomica    String?   // código CIIU
+  granContribuyente     Boolean   @default(false)
+  autorretenedor        Boolean   @default(false)
+  agenteRetencion       Boolean   @default(false)
+
+  // ── Financiero ────────────────────────────────────
+  banco             String?
+  tipoCuenta        String?   // AHORROS, CORRIENTE
+  numeroCuenta      String?
+
+  // ── Interno ───────────────────────────────────────
+  segmento          String?
+  observaciones     String?
+
+  // ── Relaciones ────────────────────────────────────
   planBaseId    Int?
   planBase      PlanBase?     @relation(fields: [planBaseId], references: [id])
   asesorId      Int?
   asesor        Colaborador?  @relation("AsesorClientes", fields: [asesorId], references: [id])
   modulosActivos PlanCliente[]
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
