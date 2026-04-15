@@ -19,6 +19,7 @@ import { PerfilCargoForm } from '@/pages/PerfilCargoForm';
 import { ColaboradorForm } from '@/pages/ColaboradorForm';
 import { ModulosPage } from '@/pages/Modulos';
 import { PlanesPage } from '@/pages/Planes';
+import { AuditLogPage } from '@/pages/AuditLog';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,8 @@ export default function App() {
                 {/* Coordinación */}
                 <Route path="/coordinacion/dashboard" element={<CoordinacionDashboardPage />} />
                 <Route path="/coordinacion/tickets"   element={<CoordinacionTicketsPage />} />
+                {/* Seguridad */}
+                <Route path="/auditlog" element={<AuditLogPage />} />
               </Route>
 
               {/* Fallback */}

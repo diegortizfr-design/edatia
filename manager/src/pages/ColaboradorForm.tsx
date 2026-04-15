@@ -1,4 +1,4 @@
-import { useState, useEffect, KeyboardEvent } from 'react';
+import { useState, useEffect, KeyboardEvent, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -181,6 +181,55 @@ const defaultForm: FormState = {
   cedula: '',
   hojaDeVida: '',
 };
+
+// ── Componente: indicador de fortaleza de contraseña ─────────────────────────
+function PasswordStrength({ password }: { password: string }) {
+  const checks = useMemo(() => ({
+    length:  password.length >= 12,
+    lower:   /[a-z]/.test(password),
+    upper:   /[A-Z]/.test(password),
+    number:  /\d/.test(password),
+    special: /[@$!%*?&.#_\-]/.test(password),
+  }), [password]);
+
+  const passed = Object.values(checks).filter(Boolean).length;
+  const colors = ['bg-red-500', 'bg-red-400', 'bg-yellow-400', 'bg-yellow-300', 'bg-green-500'];
+  const labels = ['Muy débil', 'Débil', 'Regular', 'Buena', 'Fuerte'];
+
+  return (
+    <div className="mt-2 space-y-2">
+      {/* Barra de fortaleza */}
+      <div className="flex gap-1">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+              i < passed ? colors[passed - 1] : 'bg-gray-200 dark:bg-white/10'
+            }`}
+          />
+        ))}
+      </div>
+      <p className={`text-xs font-medium ${passed === 5 ? 'text-green-500' : passed >= 3 ? 'text-yellow-500' : 'text-red-500'}`}>
+        {labels[passed - 1] ?? 'Muy débil'}
+      </p>
+      {/* Requisitos */}
+      <ul className="space-y-0.5">
+        {[
+          { ok: checks.length,  label: 'Mínimo 12 caracteres' },
+          { ok: checks.upper,   label: 'Al menos una mayúscula' },
+          { ok: checks.lower,   label: 'Al menos una minúscula' },
+          { ok: checks.number,  label: 'Al menos un número' },
+          { ok: checks.special, label: 'Al menos un carácter especial (@$!%*?&.#_-)' },
+        ].map(({ ok, label }) => (
+          <li key={label} className={`flex items-center gap-1.5 text-xs ${ok ? 'text-green-500' : 'text-slate-400'}`}>
+            <span>{ok ? '✓' : '○'}</span>
+            <span>{label}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function ColaboradorForm() {
   const { perfilId } = useParams<{ perfilId: string }>();
@@ -380,13 +429,18 @@ export function ColaboradorForm() {
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
-              <Input
-                label="Contraseña temporal *"
-                type="password"
-                placeholder="Mínimo 8 caracteres"
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              />
+              <div>
+                <Input
+                  label="Contraseña temporal *"
+                  type="password"
+                  placeholder="Mínimo 12 caracteres"
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                />
+                {form.password.length > 0 && (
+                  <PasswordStrength password={form.password} />
+                )}
+              </div>
               <div>
                 <label className={labelClass}>Rol *</label>
                 <select

@@ -5,10 +5,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EmpresasModule } from './empresas/empresas.module';
 import { ManagerModule } from './manager.module';
+import { InventarioModule } from './inventario/inventario.module';
 
 @Module({
   imports: [
@@ -22,10 +24,12 @@ import { ManagerModule } from './manager.module';
       },
     ]),
     PrismaModule,
+    AuditLogModule,   // global — AuditLogService disponible en toda la app
     AuthModule,
     UsersModule,
     EmpresasModule,
     ManagerModule,
+    InventarioModule,
   ],
   controllers: [AppController],
   providers: [

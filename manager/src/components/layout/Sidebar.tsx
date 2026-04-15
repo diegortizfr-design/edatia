@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Briefcase, Package, Building2,
   CreditCard, LogOut, Shield, ChevronRight, ChevronDown,
-  Headphones, Code2, BarChart3, Ticket,
+  Headphones, Code2, BarChart3, Ticket, ShieldAlert,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { to: '/perfiles-cargo', icon: <Briefcase size={18} />,       label: 'Perfiles de Cargo', roles: ['ADMIN'] },
   { to: '/modulos',        icon: <Package size={18} />,         label: 'Módulos Software' },
   { to: '/planes',         icon: <CreditCard size={18} />,      label: 'Planes Base',      roles: ['ADMIN'] },
+  { to: '/auditlog',      icon: <ShieldAlert size={18} />,    label: 'Monitor Seguridad', roles: ['ADMIN'] },
 ];
 
 const navGroups: NavGroup[] = [

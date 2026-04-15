@@ -38,8 +38,21 @@ model Empresa {
   nombre    String
   direccion String?
   telefono  String?
+  permiteStockNegativo Boolean @default(false)
   usuarios  User[]
   createdAt DateTime @default(now())
+
+  // ── Inventario ────────────────────────────────────
+  categorias           Categoria[]
+  marcas               Marca[]
+  unidadesMedida       UnidadMedida[]
+  productos            Producto[]
+  bodegas              Bodega[]
+  stock                Stock[]
+  movimientosInventario MovimientoInventario[]
+  proveedores          Proveedor[]
+  ordenesCompra        OrdenCompra[]
+  recepcionesMercancia RecepcionMercancia[]
 }
 
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
@@ -133,6 +146,10 @@ model Colaborador {
   // ── Sesión / Refresh tokens ───────────────────────
   refreshTokenHash    String?   @db.VarChar(128)  // SHA-256 del refresh token
   refreshTokenExpiry  DateTime?
+
+  // ── Control de acceso / Bloqueo por fuerza bruta ──
+  loginFallidosConsecutivos  Int       @default(0)
+  loginBloqueadoHasta        DateTime? // null = no bloqueado
 
   // ── Relaciones ────────────────────────────────────
   perfilCargoId Int?
@@ -299,6 +316,309 @@ model TicketMensaje {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUDIT LOG — Registro de eventos de seguridad y acceso a datos sensibles
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── MÓDULO INVENTARIO ERP ────────────────────────────────────────────────────
+
+model Categoria {
+  id          Int          @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa      @relation(fields: [empresaId], references: [id])
+  nombre      String
+  slug        String
+  descripcion String?
+  parentId    Int?
+  parent      Categoria?   @relation("Subcategorias", fields: [parentId], references: [id])
+  hijos       Categoria[]  @relation("Subcategorias")
+  productos   Producto[]
+  activo      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([empresaId, slug])
+  @@index([empresaId])
+}
+
+model Marca {
+  id        Int        @id @default(autoincrement())
+  empresaId Int
+  empresa   Empresa    @relation(fields: [empresaId], references: [id])
+  nombre    String
+  activo    Boolean    @default(true)
+  productos Producto[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+}
+
+model UnidadMedida {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  nombre      String
+  abreviatura String
+  tipo        String     @default("UNIDAD")
+  factorBase  Decimal    @default(1) @db.Decimal(12, 6)
+  activo      Boolean    @default(true)
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
+
+  @@unique([empresaId, abreviatura])
+}
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  sku             String
+  codigoBarras    String?
+  nombre          String
+  descripcion     String?
+  referencia      String?
+
+  categoriaId     Int?
+  categoria       Categoria?    @relation(fields: [categoriaId], references: [id])
+  marcaId         Int?
+  marca           Marca?        @relation(fields: [marcaId], references: [id])
+  unidadMedidaId  Int?
+  unidadMedida    UnidadMedida? @relation(fields: [unidadMedidaId], references: [id])
+
+  costoPromedio   Decimal  @default(0) @db.Decimal(14, 4)
+  precioBase      Decimal  @default(0) @db.Decimal(14, 2)
+
+  tipoIva         String   @default("GRAVADO_19")
+
+  manejaBodega    Boolean  @default(true)
+  manejaLotes     Boolean  @default(false)
+  manejaSerial    Boolean  @default(false)
+  stockMinimo     Decimal  @default(0)  @db.Decimal(12, 3)
+  stockMaximo     Decimal? @db.Decimal(12, 3)
+  puntoReorden    Decimal  @default(0)  @db.Decimal(12, 3)
+  diasRotacion    Int?
+
+  claseAbc        String?
+  claseAbcFecha   DateTime?
+
+  activo          Boolean  @default(true)
+  imagen          String?
+
+  stock           Stock[]
+  movimientos     MovimientoInventario[]
+  ordenesCompraItems OrdenCompraItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([empresaId, sku])
+  @@index([empresaId])
+  @@index([empresaId, codigoBarras])
+  @@index([empresaId, activo])
+}
+
+model Bodega {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo      String
+  nombre      String
+  tipo        String   @default("ALMACEN")
+  direccion   String?
+  esPrincipal Boolean  @default(false)
+  activo      Boolean  @default(true)
+
+  stock                Stock[]
+  movimientosOrigen    MovimientoInventario[] @relation("MovOrigen")
+  movimientosDestino   MovimientoInventario[] @relation("MovDestino")
+  ordenesCompra        OrdenCompra[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model Stock {
+  id                Int      @id @default(autoincrement())
+  empresaId         Int
+  empresa           Empresa  @relation(fields: [empresaId], references: [id])
+  productoId        Int
+  producto          Producto @relation(fields: [productoId], references: [id])
+  bodegaId          Int
+  bodega            Bodega   @relation(fields: [bodegaId], references: [id])
+
+  cantidad          Decimal  @default(0) @db.Decimal(12, 3)
+  cantidadReservada Decimal  @default(0) @db.Decimal(12, 3)
+
+  updatedAt         DateTime @updatedAt
+
+  @@unique([productoId, bodegaId])
+  @@index([empresaId])
+  @@index([empresaId, productoId])
+}
+
+model MovimientoInventario {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  numero      String   @unique
+
+  tipo        String
+  concepto    String
+
+  productoId       Int
+  producto         Producto @relation(fields: [productoId], references: [id])
+  bodegaOrigenId   Int?
+  bodegaOrigen     Bodega?  @relation("MovOrigen",  fields: [bodegaOrigenId],  references: [id])
+  bodegaDestinoId  Int?
+  bodegaDestino    Bodega?  @relation("MovDestino", fields: [bodegaDestinoId], references: [id])
+
+  cantidad         Decimal  @db.Decimal(12, 3)
+  costoUnitario    Decimal  @default(0) @db.Decimal(14, 4)
+  costoTotal       Decimal  @default(0) @db.Decimal(14, 2)
+
+  saldoCantidad    Decimal  @db.Decimal(12, 3)
+  saldoCostoTotal  Decimal  @db.Decimal(14, 2)
+  saldoCpp         Decimal  @db.Decimal(14, 4)
+
+  usuarioId        Int?
+  referenciaId     String?
+  referenciaTipo   String?
+  movimientoParId  Int?
+  notas            String?
+
+  fechaMovimiento  DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@index([empresaId, productoId])
+  @@index([empresaId, productoId, fechaMovimiento])
+  @@index([empresaId, tipo])
+  @@index([empresaId, fechaMovimiento])
+  @@index([referenciaId, referenciaTipo])
+}
+
+model Proveedor {
+  id              Int           @id @default(autoincrement())
+  empresaId       Int
+  empresa         Empresa       @relation(fields: [empresaId], references: [id])
+
+  tipoDocumento   String?
+  numeroDocumento String?
+  nombre          String
+  nombreComercial String?
+
+  email           String?
+  telefono        String?
+  contactoNombre  String?
+  direccion       String?
+  ciudad          String?
+  pais            String        @default("Colombia")
+
+  plazoEntregaDias Int?
+  condicionesPago  String?
+  descuentoBase    Decimal?     @db.Decimal(5, 2)
+  moneda           String       @default("COP")
+
+  activo          Boolean       @default(true)
+  notas           String?
+  ordenesCompra   OrdenCompra[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([empresaId])
+}
+
+model OrdenCompra {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  numero      String   @unique
+  proveedorId Int
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
+  bodegaId    Int
+  bodega      Bodega   @relation(fields: [bodegaId], references: [id])
+
+  estado      String   @default("BORRADOR")
+
+  fechaEmision    DateTime  @default(now())
+  fechaEsperada   DateTime?
+  fechaRecepcion  DateTime?
+
+  subtotal    Decimal  @default(0) @db.Decimal(14, 2)
+  descuento   Decimal  @default(0) @db.Decimal(14, 2)
+  iva         Decimal  @default(0) @db.Decimal(14, 2)
+  total       Decimal  @default(0) @db.Decimal(14, 2)
+
+  usuarioId   Int?
+  notas       String?
+
+  items       OrdenCompraItem[]
+  recepciones RecepcionMercancia[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([empresaId, estado])
+  @@index([empresaId, proveedorId])
+}
+
+model OrdenCompraItem {
+  id            Int         @id @default(autoincrement())
+  ordenCompraId Int
+  ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+  productoId    Int
+  producto      Producto    @relation(fields: [productoId], references: [id])
+
+  cantidad          Decimal  @db.Decimal(12, 3)
+  cantidadRecibida  Decimal  @default(0) @db.Decimal(12, 3)
+  costoUnitario     Decimal  @db.Decimal(14, 4)
+  descuentoPct      Decimal  @default(0) @db.Decimal(5, 2)
+  subtotal          Decimal  @db.Decimal(14, 2)
+  ivaValor          Decimal  @default(0) @db.Decimal(14, 2)
+  total             Decimal  @db.Decimal(14, 2)
+
+  recepcionItems    RecepcionItem[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RecepcionMercancia {
+  id            Int         @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa     @relation(fields: [empresaId], references: [id])
+  ordenCompraId Int
+  ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+
+  numero        String      @unique
+  fecha         DateTime    @default(now())
+  usuarioId     Int?
+  notas         String?
+
+  items         RecepcionItem[]
+
+  createdAt     DateTime    @default(now())
+}
+
+model RecepcionItem {
+  id                  Int                 @id @default(autoincrement())
+  recepcionId         Int
+  recepcion           RecepcionMercancia  @relation(fields: [recepcionId], references: [id])
+  ordenCompraItemId   Int
+  ordenCompraItem     OrdenCompraItem     @relation(fields: [ordenCompraItemId], references: [id])
+
+  cantidadRecibida    Decimal  @db.Decimal(12, 3)
+  costoUnitario       Decimal  @db.Decimal(14, 4)
+
+  createdAt           DateTime @default(now())
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 model AuditLog {

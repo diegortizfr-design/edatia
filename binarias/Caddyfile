@@ -1,0 +1,28 @@
+{
+	admin off
+}
+
+:80 {
+	root * /usr/share/caddy
+	file_server
+
+	# Seguridad
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Compresión
+	encode gzip
+
+	# Fallback SPA
+	try_files {path} /index.html
+
+	log {
+		output stdout
+		format console
+	}
+}

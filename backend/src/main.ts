@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -16,6 +17,9 @@ async function bootstrap() {
 
   // Prefijo global
   app.setGlobalPrefix('api/v1');
+
+  // ── Cookie parser (necesario para leer httpOnly cookies en refresh/logout) ──
+  app.use(cookieParser());
 
   // ── Seguridad: headers HTTP ────────────────────────────────────────────────
   app.use(

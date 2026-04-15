@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Binarias Edatia — Plataforma de trading de opciones binarias. Opera los mercados financieros con señales en tiempo real, análisis técnico avanzado y gestión de riesgo inteligente." />
+  <meta name="theme-color" content="#00d4a1" />
+  <title>Binarias · Edatia — Trading de Opciones Binarias</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Binarias · Edatia" />
+  <meta property="og:description" content="Plataforma de trading de opciones binarias con señales en tiempo real." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://binarias.edatia.com" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-900:    #080c14;
+      --bg-800:    #0d1220;
+      --bg-700:    #111827;
+      --bg-600:    #1a2234;
+      --bg-500:    #1e2a40;
+      --border:    rgba(255,255,255,0.07);
+      --border-lg: rgba(255,255,255,0.12);
+
+      --green:     #00d4a1;
+      --green-dim: rgba(0,212,161,0.12);
+      --green-glow:rgba(0,212,161,0.25);
+      --red:       #ff4d6a;
+      --red-dim:   rgba(255,77,106,0.12);
+      --red-glow:  rgba(255,77,106,0.25);
+      --amber:     #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --blue:      #3b82f6;
+      --blue-dim:  rgba(59,130,246,0.12);
+      --purple:    #8b5cf6;
+
+      --text-100:  #f1f5f9;
+      --text-200:  #cbd5e1;
+      --text-400:  #64748b;
+      --text-500:  #475569;
+
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-900);
+      color: var(--text-200);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── SCROLLBAR ─────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-800); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-500); border-radius: 99px; }
+
+    /* ── NAV ─────────────────────────── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 100;
+      background: rgba(8,12,20,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--green), #00a87e);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+    .nav-logo-icon svg { width: 20px; height: 20px; }
+    .nav-logo-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-100);
+      letter-spacing: -.02em;
+    }
+    .nav-logo-sub {
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--green);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .nav-brand { display: flex; flex-direction: column; line-height: 1.1; }
+
+    .nav-ticker-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+    }
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .ticker-symbol { color: var(--text-400); font-weight: 500; }
+    .ticker-price { color: var(--text-100); font-weight: 600; }
+    .ticker-change { font-size: .72rem; padding: .15rem .4rem; border-radius: 4px; font-weight: 600; }
+    .up { background: var(--green-dim); color: var(--green); }
+    .down { background: var(--red-dim); color: var(--red); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .btn-outline-nav {
+      padding: .45rem 1rem;
+      background: transparent;
+      border: 1px solid var(--border-lg);
+      color: var(--text-200);
+      font-size: .82rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-outline-nav:hover { border-color: var(--green); color: var(--green); }
+    .btn-green-nav {
+      padding: .5rem 1.25rem;
+      background: var(--green);
+      color: #000;
+      font-size: .82rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: opacity .2s, transform .15s;
+      box-shadow: 0 0 16px var(--green-glow);
+    }
+    .btn-green-nav:hover { opacity: .9; transform: translateY(-1px); }
+
+    /* ── HERO ─────────────────────────── */
+    .hero {
+      padding: 120px 1.5rem 80px;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .3rem .9rem;
+      background: var(--green-dim);
+      border: 1px solid rgba(0,212,161,.25);
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 1.25rem;
+      font-family: var(--font-mono);
+    }
+    .pulse {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); box-shadow: 0 0 0 0 var(--green-glow); }
+      50% { opacity:.8; transform:scale(.9); box-shadow: 0 0 0 6px transparent; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -.04em;
+      color: var(--text-100);
+      margin-bottom: .75rem;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, var(--green) 0%, #00a8ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-400);
+      max-width: 460px;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .85rem 2rem;
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: .95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      box-shadow: 0 4px 24px var(--green-glow);
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+    }
+    .btn-primary:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 8px 40px var(--green-glow); }
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .85rem 1.75rem;
+      background: var(--bg-600);
+      color: var(--text-200);
+      font-weight: 600;
+      font-size: .95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      border: 1px solid var(--border-lg);
+      transition: border-color .2s, color .2s, transform .15s;
+    }
+    .btn-ghost:hover { border-color: var(--green); color: var(--green); transform:translateY(-2px); }
+
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .hero-stat-val {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-100);
+      letter-spacing: -.03em;
+      font-family: var(--font-mono);
+    }
+    .hero-stat-val.green { color: var(--green); }
+    .hero-stat-label {
+      font-size: .75rem;
+      color: var(--text-500);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* ── HERO CHART WIDGET ─────────── */
+    .hero-chart-wrap {
+      position: relative;
+    }
+    .chart-card {
+      background: var(--bg-700);
+      border: 1px solid var(--border-lg);
+      border-radius: 20px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, var(--green-glow) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .chart-pair {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .pair-icons {
+      display: flex;
+      align-items: center;
+    }
+    .pair-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 700;
+      border: 2px solid var(--bg-700);
+    }
+    .pair-icon:nth-child(2) { margin-left: -8px; }
+    .icon-btc { background: #f59e0b; color: #000; }
+    .icon-usd { background: #22c55e; color: #000; }
+    .icon-eur { background: #3b82f6; color: #fff; }
+    .pair-name { font-weight: 700; color: var(--text-100); font-size: .95rem; }
+    .pair-type { font-size: .7rem; color: var(--text-500); font-family: var(--font-mono); }
+
+    .chart-price-display {
+      text-align: right;
+    }
+    .chart-current-price {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-100);
+      font-family: var(--font-mono);
+      letter-spacing: -.02em;
+    }
+    .chart-change {
+      font-size: .75rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ── MINI CANDLESTICK CHART ─────── */
+    .mini-chart {
+      width: 100%;
+      height: 140px;
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .mini-chart svg { width: 100%; height: 100%; }
+
+    /* ── TRADE BUTTONS ──────────────── */
+    .trade-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .trade-btn {
+      padding: .9rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: .95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      transition: opacity .2s, transform .15s;
+    }
+    .trade-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-call {
+      background: var(--green);
+      color: #000;
+      box-shadow: 0 4px 16px var(--green-glow);
+    }
+    .btn-put {
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--red-glow);
+    }
+
+    .trade-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .trade-meta-item { display: flex; flex-direction: column; gap: .1rem; }
+    .trade-meta-label { font-size: .65rem; color: var(--text-500); text-transform: uppercase; letter-spacing: .05em; font-family: var(--font-mono); }
+    .trade-meta-val { font-size: .85rem; font-weight: 600; color: var(--text-100); font-family: var(--font-mono); }
+    .trade-meta-val.green { color: var(--green); }
+
+    /* ── SECTION BASE ───────────────── */
+    .section-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 80px 1.5rem;
+    }
+    .section-label {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: .75rem;
+      font-family: var(--font-mono);
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text-100);
+      line-height: 1.2;
+    }
+    .section-sub {
+      font-size: .95rem;
+      color: var(--text-400);
+      margin-top: .6rem;
+      max-width: 500px;
+      line-height: 1.7;
+    }
+
+    /* ── MARKET DATA API SECTION ─────── */
+    .market-section {
+      background: var(--bg-800);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .market-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .market-tabs {
+      display: flex;
+      gap: .25rem;
+      background: var(--bg-700);
+      padding: .25rem;
+      border-radius: 10px;
+    }
+    .market-tab {
+      padding: .4rem .9rem;
+      border-radius: 7px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: background .2s, color .2s;
+      color: var(--text-400);
+      background: transparent;
+    }
+    .market-tab.active {
+      background: var(--bg-900);
+      color: var(--text-100);
+    }
+
+    /* ── API MARKET WIDGET ────────────── */
+    #market-api-container {
+      background: var(--bg-700);
+      border: 1px solid var(--border-lg);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    /* Header del widget de mercado */
+    .market-widget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-600);
+    }
+    .market-widget-title {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text-200);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .api-status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    .api-status-dot.offline { background: var(--text-500); animation: none; }
+    .market-last-update {
+      font-size: .7rem;
+      color: var(--text-500);
+      font-family: var(--font-mono);
+    }
+
+    /* Tabla de mercado */
+    .market-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .market-table thead th {
+      padding: .65rem 1.25rem;
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--text-500);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-family: var(--font-mono);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .market-table thead th:not(:first-child) { text-align: right; }
+    .market-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+      cursor: pointer;
+    }
+    .market-table tbody tr:last-child { border-bottom: none; }
+    .market-table tbody tr:hover { background: var(--bg-600); }
+    .market-table td {
+      padding: .85rem 1.25rem;
+      font-size: .85rem;
+      font-family: var(--font-mono);
+    }
+    .market-table td:not(:first-child) { text-align: right; }
+
+    .asset-info { display: flex; align-items: center; gap: .75rem; }
+    .asset-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .asset-name { font-weight: 600; color: var(--text-100); }
+    .asset-pair { font-size: .72rem; color: var(--text-500); }
+    .price-cell { color: var(--text-100); font-weight: 500; }
+    .change-cell { font-weight: 600; }
+    .change-cell.pos { color: var(--green); }
+    .change-cell.neg { color: var(--red); }
+
+    .payout-cell {
+      color: var(--green);
+      font-weight: 700;
+    }
+    .vol-bar-wrap { display: flex; align-items: center; gap: .5rem; justify-content: flex-end; }
+    .vol-bar { width: 60px; height: 4px; background: var(--bg-500); border-radius: 99px; overflow: hidden; }
+    .vol-fill { height: 100%; background: var(--green); border-radius: 99px; }
+
+    /* Estado de carga del API */
+    .api-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      gap: 1rem;
+    }
+    .loader-ring {
+      width: 40px; height: 40px;
+      border: 3px solid var(--bg-500);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .api-loading p { font-size: .82rem; color: var(--text-500); font-family: var(--font-mono); }
+
+    /* ── FEATURES GRID ────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+    .feature-card {
+      background: var(--bg-700);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover {
+      border-color: var(--border-lg);
+      transform: translateY(-3px);
+    }
+    .feature-icon-wrap {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .feature-icon-wrap svg { width: 22px; height: 22px; }
+    .fi-green { background: var(--green-dim); color: var(--green); }
+    .fi-red { background: var(--red-dim); color: var(--red); }
+    .fi-amber { background: var(--amber-dim); color: var(--amber); }
+    .fi-blue { background: var(--blue-dim); color: var(--blue); }
+    .fi-purple { background: rgba(139,92,246,.12); color: var(--purple); }
+    .feature-title { font-size: .95rem; font-weight: 700; color: var(--text-100); margin-bottom: .4rem; }
+    .feature-desc { font-size: .85rem; color: var(--text-400); line-height: 1.6; }
+
+    /* ── SIGNALS SECTION ─────────────── */
+    .signals-bg { background: var(--bg-800); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .signals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+      align-items: start;
+    }
+    .signal-card {
+      background: var(--bg-700);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color .2s, transform .2s;
+    }
+    .signal-card:hover { border-color: var(--border-lg); transform: translateX(4px); }
+    .signal-left { display: flex; align-items: center; gap: .85rem; }
+    .signal-dir {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .dir-call { background: var(--green-dim); color: var(--green); }
+    .dir-put { background: var(--red-dim); color: var(--red); }
+    .signal-pair { font-size: .9rem; font-weight: 700; color: var(--text-100); }
+    .signal-time { font-size: .72rem; color: var(--text-500); font-family: var(--font-mono); }
+    .signal-right { text-align: right; }
+    .signal-payout { font-size: .85rem; font-weight: 700; color: var(--green); font-family: var(--font-mono); }
+    .signal-precision { font-size: .72rem; color: var(--text-500); font-family: var(--font-mono); }
+
+    .signals-cta {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .signals-cta-title { font-size: 1.5rem; font-weight: 700; color: var(--text-100); letter-spacing: -.02em; line-height: 1.2; }
+    .signals-cta-sub { font-size: .9rem; color: var(--text-400); line-height: 1.7; }
+
+    /* ── PLAN CARDS ──────────────────── */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+    .plan-card {
+      background: var(--bg-700);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      transition: border-color .2s, transform .2s;
+      position: relative;
+    }
+    .plan-card:hover { transform: translateY(-4px); border-color: var(--border-lg); }
+    .plan-card.featured {
+      border-color: var(--green);
+      box-shadow: 0 0 40px rgba(0,212,161,.1);
+    }
+    .plan-badge {
+      position: absolute;
+      top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      font-size: .65rem;
+      font-weight: 700;
+      padding: .2rem .8rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      letter-spacing: .05em;
+    }
+    .plan-name { font-size: .8rem; font-weight: 600; color: var(--text-400); text-transform: uppercase; letter-spacing: .08em; font-family: var(--font-mono); }
+    .plan-price { display: flex; align-items: baseline; gap: .3rem; }
+    .plan-amount { font-size: 2.2rem; font-weight: 700; color: var(--text-100); letter-spacing: -.04em; font-family: var(--font-mono); }
+    .plan-period { font-size: .8rem; color: var(--text-500); }
+    .plan-features { display: flex; flex-direction: column; gap: .65rem; }
+    .plan-feat { display: flex; align-items: center; gap: .6rem; font-size: .85rem; color: var(--text-200); }
+    .feat-check { color: var(--green); font-size: .9rem; }
+    .feat-x { color: var(--text-500); font-size: .9rem; }
+    .plan-cta {
+      display: block;
+      padding: .75rem;
+      text-align: center;
+      border-radius: 10px;
+      font-size: .88rem;
+      font-weight: 700;
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: opacity .2s, transform .15s;
+    }
+    .cta-green { background: var(--green); color: #000; box-shadow: 0 4px 16px var(--green-glow); }
+    .cta-green:hover { opacity:.9; transform:translateY(-1px); }
+    .cta-outline { background: transparent; border: 1px solid var(--border-lg); color: var(--text-200); }
+    .cta-outline:hover { border-color: var(--green); color: var(--green); }
+
+    /* ── RISK DISCLAIMER ─────────────── */
+    .disclaimer {
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,158,11,.2);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: .75rem;
+      align-items: flex-start;
+    }
+    .disclaimer-icon { color: var(--amber); font-size: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
+    .disclaimer p { font-size: .78rem; color: var(--amber); line-height: 1.6; }
+    .disclaimer strong { font-weight: 700; }
+
+    /* ── CTA BANNER ──────────────────── */
+    .cta-banner {
+      background: linear-gradient(135deg, #0a1628 0%, #0d2218 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 80px 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(0,212,161,.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .cta-banner h2 {
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text-100);
+      margin-bottom: .75rem;
+    }
+    .cta-banner p {
+      color: var(--text-400);
+      font-size: .95rem;
+      max-width: 480px;
+      margin: 0 auto 2rem;
+      line-height: 1.7;
+    }
+    .cta-banner .btn-primary { font-size: 1rem; padding: 1rem 2.5rem; }
+
+    /* ── FOOTER ──────────────────────── */
+    footer {
+      background: var(--bg-800);
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+    }
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .footer-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      text-decoration: none;
+    }
+    .footer-logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--green), #00a87e);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .footer-logo-icon svg { width: 16px; height: 16px; }
+    .footer-brand { font-size: .95rem; font-weight: 700; color: var(--text-100); }
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      font-size: .8rem;
+      color: var(--text-500);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .footer-links a:hover { color: var(--text-200); }
+    .footer-copy {
+      font-size: .75rem;
+      color: var(--text-500);
+    }
+    .footer-disclaimer {
+      max-width: 1280px;
+      margin: 1.5rem auto 0;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .7rem;
+      color: var(--text-500);
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* ── RESPONSIVE ──────────────────── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 2.5rem; padding: 100px 1.5rem 60px; }
+      .hero-chart-wrap { max-width: 480px; }
+      .nav-ticker-bar { display: none; }
+      .signals-grid { grid-template-columns: 1fr; }
+      .plans-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .nav-actions .btn-outline-nav { display: none; }
+      .hero h1 { font-size: 2rem; }
+    }
+
+    /* ── MICRO-ANIMACIONES ───────────── */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-hero > * {
+      animation: fadeSlideUp .6s ease both;
+    }
+    .animate-hero > *:nth-child(1) { animation-delay: .1s; }
+    .animate-hero > *:nth-child(2) { animation-delay: .2s; }
+    .animate-hero > *:nth-child(3) { animation-delay: .3s; }
+    .animate-hero > *:nth-child(4) { animation-delay: .4s; }
+    .animate-hero > *:nth-child(5) { animation-delay: .5s; }
+
+    /* ── TICKER SCROLL BAR ───────────── */
+    .ticker-scroll-wrap {
+      background: var(--bg-800);
+      border-bottom: 1px solid var(--border);
+      padding: .5rem 0;
+      overflow: hidden;
+    }
+    .ticker-scroll-track {
+      display: flex;
+      gap: 3rem;
+      animation: scrollLeft 30s linear infinite;
+      width: max-content;
+    }
+    @keyframes scrollLeft {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-scroll-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      white-space: nowrap;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+    }
+    .ts-sym { color: var(--text-400); font-weight: 600; }
+    .ts-price { color: var(--text-100); }
+    .ts-chg { font-size: .7rem; padding: .1rem .35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <div class="nav-brand">
+        <span class="nav-logo-text">Binarias</span>
+        <span class="nav-logo-sub">by Edatia</span>
+      </div>
+    </a>
+
+    <!-- Live tickers en nav -->
+    <div class="nav-ticker-bar" id="nav-tickers">
+      <div class="ticker-item">
+        <span class="ticker-symbol">BTC/USD</span>
+        <span class="ticker-price" id="nt-btc">$--,---</span>
+        <span class="ticker-change up" id="nt-btc-chg">--</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-symbol">EUR/USD</span>
+        <span class="ticker-price" id="nt-eur">1.----</span>
+        <span class="ticker-change up" id="nt-eur-chg">--</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-symbol">XAU/USD</span>
+        <span class="ticker-price" id="nt-gold">$--,---</span>
+        <span class="ticker-change down" id="nt-gold-chg">--</span>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <a href="https://edatia.com" class="btn-outline-nav">← Edatia</a>
+      <a href="#mercado" class="btn-green-nav">Ver Mercado</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── TICKER SCROLL ─────────────────── -->
+<div class="ticker-scroll-wrap">
+  <div class="ticker-scroll-track" id="ticker-track">
+    <!-- Se duplica por JS para scroll infinito -->
+    <div class="ticker-scroll-item"><span class="ts-sym">BTC/USD</span><span class="ts-price">$--,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">ETH/USD</span><span class="ts-price">$-,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">EUR/USD</span><span class="ts-price">1.----</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">GBP/USD</span><span class="ts-price">1.----</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">XAU/USD</span><span class="ts-price">$-,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">USD/JPY</span><span class="ts-price">---.-</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">OIL/USD</span><span class="ts-price">$--.--</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">SPX500</span><span class="ts-price">-,---</span><span class="ts-chg up">+--</span></div>
+    <!-- duplicado para scroll continuo -->
+    <div class="ticker-scroll-item"><span class="ts-sym">BTC/USD</span><span class="ts-price">$--,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">ETH/USD</span><span class="ts-price">$-,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">EUR/USD</span><span class="ts-price">1.----</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">GBP/USD</span><span class="ts-price">1.----</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">XAU/USD</span><span class="ts-price">$-,---</span><span class="ts-chg up">+--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">USD/JPY</span><span class="ts-price">---.-</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">OIL/USD</span><span class="ts-price">$--.--</span><span class="ts-chg down">-0.--</span></div>
+    <div class="ticker-scroll-item"><span class="ts-sym">SPX500</span><span class="ts-price">-,---</span><span class="ts-chg up">+--</span></div>
+  </div>
+</div>
+
+<!-- ── HERO ───────────────────────────── -->
+<section>
+  <div class="hero">
+    <!-- izquierda -->
+    <div class="animate-hero">
+      <div class="hero-badge">
+        <span class="pulse"></span>
+        MERCADO EN VIVO · OPCIONES BINARIAS
+      </div>
+      <h1>Opera los mercados<br/><span class="accent">con precisión total</span></h1>
+      <p class="hero-sub">
+        Plataforma de trading de opciones binarias con señales algorítmicas, análisis técnico en tiempo real y gestión inteligente del riesgo. Cada decisión respaldada por datos.
+      </p>
+      <div class="hero-actions">
+        <a href="#mercado" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+          </svg>
+          Ver Mercado en Vivo
+        </a>
+        <a href="#senales" class="btn-ghost">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Ver Señales
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <span class="hero-stat-val green">87%</span>
+          <span class="hero-stat-label">Precisión señales</span>
+        </div>
+        <div>
+          <span class="hero-stat-val">+85%</span>
+          <span class="hero-stat-label">Payout promedio</span>
+        </div>
+        <div>
+          <span class="hero-stat-val">24/7</span>
+          <span class="hero-stat-label">Mercado activo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- derecha — widget de trading -->
+    <div class="hero-chart-wrap">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-pair">
+            <div class="pair-icons">
+              <div class="pair-icon icon-btc">₿</div>
+              <div class="pair-icon icon-usd">$</div>
+            </div>
+            <div>
+              <div class="pair-name">BTC / USD</div>
+              <div class="pair-type">OTC · 5 min</div>
+            </div>
+          </div>
+          <div class="chart-price-display">
+            <div class="chart-current-price" id="hero-price">$67,421.50</div>
+            <div class="chart-change up" id="hero-change">▲ +2.34%</div>
+          </div>
+        </div>
+
+        <!-- Gráfico SVG animado -->
+        <div class="mini-chart">
+          <svg viewBox="0 0 400 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00d4a1" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#00d4a1" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <!-- Área bajo la curva -->
+            <path id="chart-area" d="M0,110 C30,100 50,80 80,75 C110,70 130,90 160,65 C190,45 210,55 240,40 C270,25 290,50 320,30 C350,15 380,25 400,20 L400,140 L0,140 Z" fill="url(#chartGrad)" />
+            <!-- Línea -->
+            <path id="chart-line" d="M0,110 C30,100 50,80 80,75 C110,70 130,90 160,65 C190,45 210,55 240,40 C270,25 290,50 320,30 C350,15 380,25 400,20" fill="none" stroke="#00d4a1" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Punto actual -->
+            <circle cx="400" cy="20" r="5" fill="#00d4a1"/>
+            <circle cx="400" cy="20" r="10" fill="#00d4a1" opacity="0.25">
+              <animate attributeName="r" values="5;14;5" dur="2s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- Velas (decorativas) -->
+            <g opacity="0.5">
+              <rect x="15" y="95" width="6" height="25" rx="1" fill="#00d4a1"/>
+              <line x1="18" y1="90" x2="18" y2="95" stroke="#00d4a1" stroke-width="1.5"/>
+              <line x1="18" y1="120" x2="18" y2="126" stroke="#00d4a1" stroke-width="1.5"/>
+              <rect x="35" y="75" width="6" height="30" rx="1" fill="#ff4d6a"/>
+              <line x1="38" y1="68" x2="38" y2="75" stroke="#ff4d6a" stroke-width="1.5"/>
+              <line x1="38" y1="105" x2="38" y2="112" stroke="#ff4d6a" stroke-width="1.5"/>
+              <rect x="55" y="65" width="6" height="22" rx="1" fill="#00d4a1"/>
+              <rect x="75" y="60" width="6" height="20" rx="1" fill="#00d4a1"/>
+            </g>
+
+            <!-- Línea de precio referencia -->
+            <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4,6"/>
+            <line x1="0" y1="90" x2="400" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4,6"/>
+          </svg>
+        </div>
+
+        <!-- Botones CALL / PUT -->
+        <div class="trade-btns">
+          <button class="trade-btn btn-call" id="btn-call-hero">
+            ▲ CALL
+          </button>
+          <button class="trade-btn btn-put" id="btn-put-hero">
+            ▼ PUT
+          </button>
+        </div>
+
+        <div class="trade-meta">
+          <div class="trade-meta-item">
+            <span class="trade-meta-label">Inversión</span>
+            <span class="trade-meta-val">$100</span>
+          </div>
+          <div class="trade-meta-item" style="align-items:center">
+            <span class="trade-meta-label">Expiración</span>
+            <span class="trade-meta-val" id="hero-timer">05:00</span>
+          </div>
+          <div class="trade-meta-item" style="align-items:flex-end">
+            <span class="trade-meta-label">Retorno</span>
+            <span class="trade-meta-val green">+$85</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MERCADO EN VIVO (API SLOT) ───────── -->
+<section class="market-section" id="mercado">
+  <div class="section-wrap">
+    <div class="market-header">
+      <div>
+        <p class="section-label">Mercado en vivo</p>
+        <h2 class="section-title">Activos disponibles</h2>
+        <p class="section-sub">Precios en tiempo real conectados vía API. Opera directamente desde la tabla.</p>
+      </div>
+      <div class="market-tabs">
+        <button class="market-tab active" onclick="setTab(this,'forex')">Forex</button>
+        <button class="market-tab" onclick="setTab(this,'crypto')">Crypto</button>
+        <button class="market-tab" onclick="setTab(this,'materias')">Materias</button>
+        <button class="market-tab" onclick="setTab(this,'indices')">Índices</button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SLOT DE INTEGRACIÓN API
+         Para conectar tu fuente de datos, busca la función
+         `connectMarketAPI()` en el script de abajo y reemplaza
+         el endpoint y la lógica de transformación de datos.
+         Los datos esperados son:
+         [{ symbol, name, price, change, changePct, payout, volume }]
+    ============================================================ -->
+    <div id="market-api-container">
+      <div class="market-widget-header">
+        <span class="market-widget-title">
+          <span class="api-status-dot" id="api-dot"></span>
+          FEED EN VIVO
+        </span>
+        <span class="market-last-update" id="api-last-update">--:--:--</span>
+      </div>
+      <!-- La tabla se renderiza aquí vía JS -->
+      <div id="market-table-wrap">
+        <div class="api-loading" id="api-loading">
+          <div class="loader-ring"></div>
+          <p>Conectando al feed de mercado…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disclaimer de riesgo visible bajo el mercado -->
+    <div class="disclaimer" style="margin-top:1.5rem">
+      <span class="disclaimer-icon">⚠</span>
+      <p><strong>Advertencia de riesgo:</strong> Las operaciones con opciones binarias implican un alto nivel de riesgo y pueden resultar en la pérdida del capital invertido. No invierta fondos que no pueda permitirse perder. Los rendimientos pasados no garantizan resultados futuros.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CARACTERÍSTICAS ─────────────────── -->
+<section>
+  <div class="section-wrap">
+    <p class="section-label">Plataforma</p>
+    <h2 class="section-title">Todo para operar con ventaja</h2>
+    <p class="section-sub">Herramientas institucionales, accesibles para cualquier trader.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <p class="feature-title">Señales Algorítmicas</p>
+        <p class="feature-desc">Motor de señales con IA que analiza RSI, MACD, Bandas de Bollinger y volumen para generar entradas de alta precisión en tiempo real.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <p class="feature-title">Dashboard de Trading</p>
+        <p class="feature-desc">Panel de control completo con historial de operaciones, P&L en vivo, métricas de rendimiento y análisis de racha ganadoras/perdedoras.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <p class="feature-title">Gestión del Riesgo</p>
+        <p class="feature-desc">Límites configurables de pérdida diaria, stop-loss automático por sesión y control del capital por operación con regla de Kelly integrada.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <p class="feature-title">API de Mercado</p>
+        <p class="feature-desc">Feed de precios en tiempo real con datos de Forex, Criptomonedas, Commodities e Índices. Latencia ultra-baja para ejecución precisa.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <p class="feature-title">Multi-Activo</p>
+        <p class="feature-desc">Opera simultáneamente en Forex (40+ pares), Crypto (BTC, ETH, BNB y más), Oro, Petróleo e Índices bursátiles globales.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap fi-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.08 3.4 2 2 0 0 1 3.06 1.25h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16.92z"/>
+          </svg>
+        </div>
+        <p class="feature-title">Alertas Instantáneas</p>
+        <p class="feature-desc">Notificaciones push, por email y Telegram cuando tus señales activan, una operación expira o el mercado alcanza tus niveles clave.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SEÑALES ─────────────────────────── -->
+<div class="signals-bg" id="senales">
+  <div class="section-wrap">
+    <div class="signals-grid">
+      <div>
+        <p class="section-label">Señales activas</p>
+        <h2 class="section-title" style="margin-bottom:1.5rem">Entradas en tiempo real</h2>
+
+        <div style="display:flex;flex-direction:column;gap:.65rem;" id="signals-list">
+          <!-- generadas por JS -->
+        </div>
+      </div>
+
+      <div class="signals-cta">
+        <div>
+          <p class="section-label">Inteligencia artificial</p>
+          <p class="signals-cta-title">Señales generadas por<br/>algoritmos cuantitativos</p>
+        </div>
+        <p class="signals-cta-sub">
+          Nuestro motor analiza más de 20 indicadores técnicos simultáneamente, filtra el ruido del mercado y emite señales solo cuando la probabilidad estadística supera el umbral de precisión definido.
+        </p>
+        <div class="disclaimer">
+          <span class="disclaimer-icon">⚠</span>
+          <p>Las señales son herramientas informativas. El trading implica riesgo real de pérdida. Opera siempre con gestión de capital.</p>
+        </div>
+        <a href="#planes" class="btn-primary" style="width:fit-content">
+          Acceder a señales premium →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLANES ──────────────────────────── -->
+<section id="planes">
+  <div class="section-wrap">
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <p class="section-label">Planes</p>
+      <h2 class="section-title" style="margin:0 auto .6rem">Elige tu nivel</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center">Desde principiante hasta trader profesional. Sin contratos a largo plazo.</p>
+    </div>
+
+    <div class="plans-grid">
+      <!-- Básico -->
+      <div class="plan-card">
+        <div>
+          <p class="plan-name">Básico</p>
+          <div class="plan-price">
+            <span class="plan-amount">Gratis</span>
+          </div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feat"><span class="feat-check">✓</span> 5 activos disponibles</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Feed de precios en vivo</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Historial 7 días</div>
+          <div class="plan-feat"><span class="feat-x">✕</span> Señales algorítmicas</div>
+          <div class="plan-feat"><span class="feat-x">✕</span> Gestión de riesgo avanzada</div>
+          <div class="plan-feat"><span class="feat-x">✕</span> Alertas Telegram/Email</div>
+        </div>
+        <a href="#" class="plan-cta cta-outline">Comenzar gratis</a>
+      </div>
+
+      <!-- Pro (featured) -->
+      <div class="plan-card featured">
+        <span class="plan-badge">MÁS POPULAR</span>
+        <div>
+          <p class="plan-name">Pro</p>
+          <div class="plan-price">
+            <span class="plan-amount">$49</span>
+            <span class="plan-period">/ mes</span>
+          </div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feat"><span class="feat-check">✓</span> 40+ activos Forex & Crypto</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Feed de precios en vivo</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Historial ilimitado</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Señales algorítmicas (20/día)</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Gestión de riesgo avanzada</div>
+          <div class="plan-feat"><span class="feat-x">✕</span> Alertas Telegram/Email</div>
+        </div>
+        <a href="#" class="plan-cta cta-green">Activar Pro</a>
+      </div>
+
+      <!-- Institucional -->
+      <div class="plan-card">
+        <div>
+          <p class="plan-name">Institucional</p>
+          <div class="plan-price">
+            <span class="plan-amount">$149</span>
+            <span class="plan-period">/ mes</span>
+          </div>
+        </div>
+        <div class="plan-features">
+          <div class="plan-feat"><span class="feat-check">✓</span> Todos los activos disponibles</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Feed de precios en vivo</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Historial ilimitado</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Señales algorítmicas (ilimitadas)</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Gestión de riesgo avanzada</div>
+          <div class="plan-feat"><span class="feat-check">✓</span> Alertas Telegram/Email</div>
+        </div>
+        <a href="#" class="plan-cta cta-outline">Contactar ventas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA BANNER ──────────────────────── -->
+<section class="cta-banner">
+  <h2>Opera smarter, no harder.</h2>
+  <p>Únete a la plataforma de opciones binarias construida para traders serios. Datos reales, señales precisas, resultados medibles.</p>
+  <a href="#mercado" class="btn-primary">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+    </svg>
+    Ver mercado en vivo
+  </a>
+</section>
+
+<!-- ── FOOTER ──────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="footer-logo-wrap">
+      <div class="footer-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+        </svg>
+      </div>
+      <span class="footer-brand">Binarias · Edatia</span>
+    </a>
+    <div class="footer-links">
+      <a href="https://edatia.com">Edatia ERP</a>
+      <a href="https://erp.edatia.com">Portal ERP</a>
+      <a href="#mercado">Mercado</a>
+      <a href="#senales">Señales</a>
+      <a href="#planes">Planes</a>
+    </div>
+    <span class="footer-copy">© <span id="footer-yr"></span> Edatia SaaS</span>
+  </div>
+  <p class="footer-disclaimer">
+    <strong>Advertencia legal:</strong> Las opciones binarias son instrumentos financieros de alto riesgo. Binarias Edatia es una plataforma informativa y de análisis. No somos un broker regulado ni ofrecemos servicios de inversión. Las decisiones de trading son responsabilidad exclusiva del usuario. Los datos de mercado son informativos y pueden presentar retrasos. Consulte un asesor financiero antes de operar. El trading puede resultar en pérdida total del capital.
+  </p>
+</footer>
+
+<script>
+  // ── AÑO EN FOOTER ─────────────────────
+  document.getElementById('footer-yr').textContent = new Date().getFullYear();
+
+  // ── TIMER HERO ────────────────────────
+  let timerSec = 300;
+  function updateTimer() {
+    timerSec--;
+    if (timerSec < 0) timerSec = 300;
+    const m = Math.floor(timerSec / 60).toString().padStart(2,'0');
+    const s = (timerSec % 60).toString().padStart(2,'0');
+    const el = document.getElementById('hero-timer');
+    if (el) el.textContent = m + ':' + s;
+  }
+  setInterval(updateTimer, 1000);
+
+  // ── PRECIO HERO SIMULADO (reemplazar con API real) ──
+  let basePrice = 67421.50;
+  function updateHeroPrice() {
+    const delta = (Math.random() - 0.49) * 120;
+    basePrice += delta;
+    const el = document.getElementById('hero-price');
+    const chEl = document.getElementById('hero-change');
+    if (el) el.textContent = '$' + basePrice.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    if (chEl) {
+      const pct = ((delta / basePrice) * 100).toFixed(3);
+      const isUp = delta >= 0;
+      chEl.textContent = (isUp ? '▲ +' : '▼ ') + pct + '%';
+      chEl.className = 'chart-change ' + (isUp ? 'up' : 'down');
+    }
+  }
+  setInterval(updateHeroPrice, 1500);
+
+  // ── TABS DE MERCADO ───────────────────
+  let currentTab = 'forex';
+  function setTab(el, tab) {
+    document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentTab = tab;
+    renderMarketTable(getMockData(tab));
+  }
+
+  // ── DATOS MOCK DE MERCADO ─────────────
+  // ⬇ INTEGRACIÓN API: reemplaza esta función con tu endpoint real
+  // Endpoint esperado: GET /api/market?category={tab}
+  // Respuesta esperada: [{ symbol, name, price, change, changePct, payout, volume, color }]
+  function getMockData(tab) {
+    const datasets = {
+      forex: [
+        { symbol:'EUR/USD', name:'Euro / US Dollar',    price:'1.0812', change:'+0.0023', changePct:'+0.21%', payout:'82%', volume:0.9, color:'#3b82f6' },
+        { symbol:'GBP/USD', name:'British Pound / USD', price:'1.2634', change:'+0.0041', changePct:'+0.33%', payout:'85%', volume:0.75, color:'#8b5cf6' },
+        { symbol:'USD/JPY', name:'US Dollar / Yen',     price:'153.42', change:'-0.28',   changePct:'-0.18%', payout:'80%', volume:0.8, color:'#f59e0b' },
+        { symbol:'AUD/USD', name:'Australian / USD',    price:'0.6521', change:'-0.0012', changePct:'-0.18%', payout:'78%', volume:0.55, color:'#22c55e' },
+        { symbol:'USD/CAD', name:'US Dollar / CAD',     price:'1.3742', change:'+0.0019', changePct:'+0.14%', payout:'80%', volume:0.6, color:'#f43f5e' },
+        { symbol:'USD/CHF', name:'US Dollar / CHF',     price:'0.9021', change:'-0.0008', changePct:'-0.09%', payout:'79%', volume:0.45, color:'#06b6d4' },
+      ],
+      crypto: [
+        { symbol:'BTC/USD', name:'Bitcoin',   price:'$67,421', change:'+1,240', changePct:'+1.88%', payout:'88%', volume:1.0, color:'#f59e0b' },
+        { symbol:'ETH/USD', name:'Ethereum',  price:'$3,421',  change:'+87',    changePct:'+2.61%', payout:'85%', volume:0.85, color:'#8b5cf6' },
+        { symbol:'BNB/USD', name:'BNB',       price:'$412.5',  change:'-5.2',   changePct:'-1.24%', payout:'82%', volume:0.6, color:'#f59e0b' },
+        { symbol:'SOL/USD', name:'Solana',    price:'$142.8',  change:'+4.1',   changePct:'+2.96%', payout:'84%', volume:0.7, color:'#00d4a1' },
+        { symbol:'XRP/USD', name:'Ripple',    price:'$0.5812', change:'+0.012', changePct:'+2.10%', payout:'80%', volume:0.65, color:'#3b82f6' },
+      ],
+      materias: [
+        { symbol:'XAU/USD', name:'Oro',      price:'$2,312', change:'+18.4',  changePct:'+0.80%', payout:'83%', volume:0.9, color:'#f59e0b' },
+        { symbol:'XAG/USD', name:'Plata',    price:'$27.42', change:'-0.31',  changePct:'-1.12%', payout:'80%', volume:0.6, color:'#94a3b8' },
+        { symbol:'OIL/USD', name:'Petróleo WTI', price:'$82.14', change:'-0.92', changePct:'-1.11%', payout:'81%', volume:0.75, color:'#0ea5e9' },
+        { symbol:'GAS/USD', name:'Gas Natural', price:'$2.31',  change:'+0.08', changePct:'+3.59%', payout:'79%', volume:0.5, color:'#22c55e' },
+      ],
+      indices: [
+        { symbol:'SPX500',  name:'S&P 500',    price:'5,218', change:'+34.2', changePct:'+0.66%', payout:'82%', volume:0.95, color:'#3b82f6' },
+        { symbol:'NAS100',  name:'Nasdaq 100', price:'18,241', change:'+98.4', changePct:'+0.54%', payout:'83%', volume:0.9, color:'#8b5cf6' },
+        { symbol:'DOW30',   name:'Dow Jones',  price:'38,842', change:'-41.2', changePct:'-0.11%', payout:'80%', volume:0.7, color:'#f59e0b' },
+        { symbol:'DAX40',   name:'DAX 40',     price:'17,821', change:'+112',  changePct:'+0.63%', payout:'81%', volume:0.65, color:'#00d4a1' },
+      ],
+    };
+    return datasets[tab] || datasets.forex;
+  }
+
+  // ── RENDERIZAR TABLA DE MERCADO ────────
+  function renderMarketTable(data) {
+    const dot = document.getElementById('api-dot');
+    if (dot) dot.classList.remove('offline');
+    document.getElementById('api-last-update').textContent = new Date().toLocaleTimeString('es-CO');
+
+    const wrap = document.getElementById('market-table-wrap');
+    if (!wrap) return;
+
+    const rows = data.map(d => {
+      const isPos = !d.changePct.startsWith('-');
+      const volPct = Math.round(d.volume * 100);
+      return `
+        <tr>
+          <td>
+            <div class="asset-info">
+              <span class="asset-dot" style="background:${d.color}"></span>
+              <div>
+                <div class="asset-name">${d.symbol}</div>
+                <div class="asset-pair">${d.name}</div>
+              </div>
+            </div>
+          </td>
+          <td class="price-cell">${d.price}</td>
+          <td class="change-cell ${isPos ? 'pos' : 'neg'}">${d.change}</td>
+          <td class="change-cell ${isPos ? 'pos' : 'neg'}">${d.changePct}</td>
+          <td class="payout-cell">${d.payout}</td>
+          <td>
+            <div class="vol-bar-wrap">
+              <span style="font-size:.7rem;color:var(--text-500)">${volPct}%</span>
+              <div class="vol-bar"><div class="vol-fill" style="width:${volPct}%"></div></div>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table class="market-table">
+        <thead>
+          <tr>
+            <th>Activo</th>
+            <th>Precio</th>
+            <th>Cambio</th>
+            <th>% Cambio</th>
+            <th>Payout</th>
+            <th>Volumen</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── CONECTAR API REAL ──────────────────
+  // ⬇ PUNTO DE INTEGRACIÓN PRINCIPAL:
+  // Descomentar y adaptar cuando tengas el endpoint disponible.
+  //
+  // async function connectMarketAPI() {
+  //   try {
+  //     const res = await fetch('https://api.tuproveedor.com/v1/quotes?symbols=EURUSD,GBPUSD,BTCUSD', {
+  //       headers: { 'Authorization': 'Bearer TU_API_KEY' }
+  //     });
+  //     const json = await res.json();
+  //     // Transformar al formato esperado:
+  //     const data = json.data.map(q => ({
+  //       symbol:    q.symbol,
+  //       name:      q.description,
+  //       price:     q.last_price.toFixed(4),
+  //       change:    (q.change >= 0 ? '+' : '') + q.change.toFixed(4),
+  //       changePct: (q.change_pct >= 0 ? '+' : '') + q.change_pct.toFixed(2) + '%',
+  //       payout:    q.payout + '%',
+  //       volume:    q.volume_normalized,
+  //       color:     '#00d4a1'
+  //     }));
+  //     renderMarketTable(data);
+  //   } catch (e) {
+  //     console.error('API error:', e);
+  //     document.getElementById('api-dot').classList.add('offline');
+  //   }
+  // }
+  //
+  // // Llamar al cargar y refrescar cada N segundos:
+  // connectMarketAPI();
+  // setInterval(connectMarketAPI, 5000);
+
+  // ── INICIALIZACIÓN ─────────────────────
+  // Por ahora carga datos mock al inicio
+  setTimeout(() => {
+    renderMarketTable(getMockData('forex'));
+    // Simular actualización de precios cada 3s
+    setInterval(() => {
+      const currentData = getMockData(currentTab);
+      // Pequeña variación aleatoria en precios
+      currentData.forEach(d => {
+        if(d.symbol !== 'BTC/USD' && !d.price.includes('$')) {
+          const pv = parseFloat(d.price.replace(/[^0-9.]/g,''));
+          const nv = pv + (Math.random() - 0.49) * pv * 0.0003;
+          d.price = nv.toFixed(4);
+        }
+      });
+      renderMarketTable(currentData);
+    }, 3000);
+  }, 800);
+
+  // ── SEÑALES SIMULADAS ──────────────────
+  const signalPairs = [
+    { pair:'EUR/USD', dir:'CALL', time:'5 min', payout:'+82%', prec: '89%' },
+    { pair:'BTC/USD', dir:'CALL', time:'15 min', payout:'+88%', prec: '84%' },
+    { pair:'GBP/JPY', dir:'PUT',  time:'2 min',  payout:'+80%', prec: '77%' },
+    { pair:'XAU/USD', dir:'CALL', time:'10 min', payout:'+83%', prec: '91%' },
+    { pair:'ETH/USD', dir:'PUT',  time:'5 min',  payout:'+85%', prec: '82%' },
+    { pair:'USD/CAD', dir:'CALL', time:'1 min',  payout:'+78%', prec: '75%' },
+  ];
+
+  function renderSignals() {
+    const list = document.getElementById('signals-list');
+    if (!list) return;
+    list.innerHTML = signalPairs.map(s => `
+      <div class="signal-card">
+        <div class="signal-left">
+          <div class="signal-dir ${s.dir === 'CALL' ? 'dir-call' : 'dir-put'}">
+            ${s.dir === 'CALL' ? '▲' : '▼'}
+          </div>
+          <div>
+            <div class="signal-pair">${s.pair}</div>
+            <div class="signal-time">${s.dir} · Exp. ${s.time} · Ahora</div>
+          </div>
+        </div>
+        <div class="signal-right">
+          <div class="signal-payout">${s.payout}</div>
+          <div class="signal-precision">Precisión: ${s.prec}</div>
+        </div>
+      </div>`).join('');
+  }
+  renderSignals();
+  setInterval(() => {
+    // Rotar señales para dar sensación de vida
+    signalPairs.push(signalPairs.shift());
+    renderSignals();
+  }, 8000);
+
+  // ── BOTONES CALL/PUT (demo) ────────────
+  document.getElementById('btn-call-hero').addEventListener('click', () => {
+    const btn = document.getElementById('btn-call-hero');
+    btn.textContent = '✓ Operación enviada';
+    btn.style.opacity = '.7';
+    setTimeout(() => { btn.textContent = '▲ CALL'; btn.style.opacity = '1'; }, 2000);
+  });
+  document.getElementById('btn-put-hero').addEventListener('click', () => {
+    const btn = document.getElementById('btn-put-hero');
+    btn.textContent = '✓ Operación enviada';
+    btn.style.opacity = '.7';
+    setTimeout(() => { btn.textContent = '▼ PUT'; btn.style.opacity = '1'; }, 2000);
+  });
+</script>
+
+</body>
+</html>

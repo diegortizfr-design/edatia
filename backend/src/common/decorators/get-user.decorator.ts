@@ -6,6 +6,7 @@ export interface JwtPayload {
   email: string;
   usuario: string;
   rol: string;
+  empresaId?: number;
 }
 
 export const GetUser = createParamDecorator(

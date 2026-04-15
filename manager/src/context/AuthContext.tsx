@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setColaborador(JSON.parse(storedUser) as Colaborador);
       } catch {
         localStorage.removeItem('manager_token');
-        localStorage.removeItem('manager_refresh_token');
         localStorage.removeItem('manager_user');
       }
     }
@@ -43,16 +42,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
+    // El backend devuelve { access_token, colaborador }
+    // El refresh token viene en una cookie httpOnly — no aparece en el body
     const res = await api.post<{
       access_token: string;
-      refresh_token: string;
       colaborador: Colaborador;
     }>('/manager/auth/login', { email, password });
 
-    const { access_token, refresh_token, colaborador: col } = res.data;
+    const { access_token, colaborador: col } = res.data;
 
     localStorage.setItem('manager_token', access_token);
-    localStorage.setItem('manager_refresh_token', refresh_token);
     localStorage.setItem('manager_user', JSON.stringify(col));
 
     setToken(access_token);
@@ -60,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
-    // Invalidar refresh token en el servidor
+    // Llama al servidor para invalidar el refresh token en BD y borrar la cookie httpOnly
     try {
       await api.post('/manager/auth/logout');
     } catch {
@@ -68,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     localStorage.removeItem('manager_token');
-    localStorage.removeItem('manager_refresh_token');
     localStorage.removeItem('manager_user');
     setToken(null);
     setColaborador(null);

@@ -1,7 +1,7 @@
 import {
   IsString, IsEmail, IsOptional, IsEnum,
   MinLength, IsInt, IsDateString, IsNumber,
-  IsArray, IsPositive,
+  IsArray, IsPositive, Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -12,9 +12,15 @@ export class CreateColaboradorDto {
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ example: 'Password123!' })
+  @ApiProperty({
+    example: 'MiPassword#2026!',
+    description: 'Mínimo 12 caracteres, debe incluir mayúscula, minúscula, número y carácter especial',
+  })
   @IsString()
-  @MinLength(8)
+  @MinLength(12, { message: 'La contraseña debe tener mínimo 12 caracteres' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_\-]).{12,}$/, {
+    message: 'La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&.#_-)',
+  })
   password!: string;
 
   @ApiProperty({ enum: ['ADMIN', 'COMERCIAL', 'COORDINACION', 'OPERACION'] })
@@ -232,8 +238,15 @@ export class UpdateColaboradorDto {
   @IsInt()
   perfilCargoId?: number;
 
-  @ApiPropertyOptional()
-  @IsOptional() @IsString() @MinLength(8)
+  @ApiPropertyOptional({
+    description: 'Mínimo 12 caracteres, mayúscula, minúscula, número y carácter especial',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(12, { message: 'La contraseña debe tener mínimo 12 caracteres' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_\-]).{12,}$/, {
+    message: 'La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&.#_-)',
+  })
   password?: string;
 
   @ApiPropertyOptional()
