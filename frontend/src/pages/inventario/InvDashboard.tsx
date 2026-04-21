@@ -116,9 +116,9 @@ export function InvDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <KpiCard icon={<Package size={20} />}      label="Productos activos"   value={fmtNum(data.totalProductos)}     color="indigo" to="/inventario/productos" />
         <KpiCard icon={<Warehouse size={20} />}     label="Bodegas activas"     value={fmtNum(data.totalBodegas)}       color="blue"   to="/inventario/bodegas" />
-        <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={fmtNum(data.totalProveedores)}   color="teal"   to="/inventario/proveedores" />
-        <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={fmt(data.valorTotal)}            color="green"  sub="CPP vigente" />
-        <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={fmtNum(data.movimientosDelMes)}  color="indigo" to="/inventario/movimientos" />
+        <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={fmtNum(data.totalProveedores ?? 0)}   color="teal"   to="/inventario/proveedores" />
+        <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={fmt(data.valorTotal)}                 color="green"  sub="CPP vigente" />
+        <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={fmtNum(data.movimientosDelMes ?? 0)}  color="indigo" to="/inventario/movimientos" />
         <KpiCard
           icon={<AlertTriangle size={20} />}
           label="Alertas de stock"
