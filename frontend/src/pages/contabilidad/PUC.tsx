@@ -28,7 +28,7 @@ export function PUC() {
   const [showForm, setShowForm] = useState(false)
   const [seedResult, setSeedResult] = useState<any>(null)
 
-  const { data: cuentasData, isLoading } = useQuery({ queryKey: ['puc'], queryFn: getCuentasPUC })
+  const { data: cuentasData, isLoading } = useQuery(['puc'], getCuentasPUC)
   const cuentas: any[] = (cuentasData as any[]) ?? []
 
   const mutSeed = useMutation({
