@@ -322,11 +322,11 @@ export class FacturasService {
     const saldo      = Number(factura.total) - retefuente - reteiva - reteica
     const costoTotal = factura.items.reduce((s: number, i: any) => s + Number(i.costoTotal ?? 0), 0)
 
-    const lineas: { cuentaId: number; concepto: string; debito: number; credito: number }[] = []
+    const lineas: { cuentaId: number; descripcion: string; debito: number; credito: number }[] = []
 
-    const push = (cuentaId: number | null, concepto: string, debito: number, credito: number) => {
+    const push = (cuentaId: number | null, descripcion: string, debito: number, credito: number) => {
       if (!cuentaId || (debito === 0 && credito === 0)) return
-      lineas.push({ cuentaId, concepto, debito, credito })
+      lineas.push({ cuentaId, descripcion, debito, credito })
     }
 
     // Débitos
