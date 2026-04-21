@@ -175,7 +175,7 @@ export function Clientes() {
 
 function ClienteModal({ initial, readOnly, onClose, onSubmit, isLoading, error }: any) {
   const [form, setForm] = useState({ ...CAMPO_DEFAULT, ...(initial ?? {}) })
-  const set = (k: string) => (e: any) => setForm(f => ({ ...f, [k]: e.target.value }))
+  const set = (k: string) => (e: any) => setForm((f: any) => ({ ...f, [k]: e.target.value }))
 
   const handleSubmit = (e: any) => {
     e.preventDefault()

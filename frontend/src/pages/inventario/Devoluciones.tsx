@@ -100,14 +100,14 @@ export function Devoluciones() {
           ? <DevolucionProveedorForm
               productos={productos as any[]}
               bodegas={bodegas as any[]}
-              onSubmit={(d) => mutProveedor.mutate(d)}
+              onSubmit={(d: any) => mutProveedor.mutate(d)}
               isLoading={isPending}
               error={error}
             />
           : <DevolucionClienteForm
               productos={productos as any[]}
               bodegas={bodegas as any[]}
-              onSubmit={(d) => mutCliente.mutate(d)}
+              onSubmit={(d: any) => mutCliente.mutate(d)}
               isLoading={isPending}
               error={error}
             />

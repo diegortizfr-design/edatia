@@ -320,7 +320,7 @@ function NuevaNotaCreditoModal({ onClose, onSuccess }: any) {
             </div>
           </div>
 
-          {mutCreate.error && (
+          {mutCreate.isError && (
             <p className="text-red-600 text-sm">
               {(mutCreate.error as any)?.response?.data?.message ?? 'Error al crear nota crédito'}
             </p>

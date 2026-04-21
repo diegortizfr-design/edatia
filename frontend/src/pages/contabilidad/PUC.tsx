@@ -28,7 +28,7 @@ export function PUC() {
   const [showForm, setShowForm] = useState(false)
   const [seedResult, setSeedResult] = useState<any>(null)
 
-  const { data: cuentas = [], isLoading } = useQuery({ queryKey: ['puc'], queryFn: getCuentasPUC })
+  const { data: cuentas = [], isLoading } = useQuery<any[]>({ queryKey: ['puc'], queryFn: getCuentasPUC })
 
   const mutSeed = useMutation({
     mutationFn: seedPUC,
@@ -224,7 +224,7 @@ function NuevaCuentaModal({ onClose, onSuccess }: any) {
               </select>
             </div>
           </div>
-          {mut.error && <p className="text-red-600 text-sm">{(mut.error as any)?.response?.data?.message ?? 'Error'}</p>}
+          {mut.isError && <p className="text-red-600 text-sm">{(mut.error as any)?.response?.data?.message ?? 'Error'}</p>}
           <div className="flex gap-3 justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancelar</button>
             <button type="submit" disabled={mut.isPending}

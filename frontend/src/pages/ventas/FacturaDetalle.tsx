@@ -139,7 +139,7 @@ export function FacturaDetalle() {
       </div>
 
       {/* Error de emitir */}
-      {mutEmitir.error && (
+      {mutEmitir.isError && (
         <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
           <AlertTriangle size={16} className="text-red-600 shrink-0" />
           <span className="text-red-800 text-sm">

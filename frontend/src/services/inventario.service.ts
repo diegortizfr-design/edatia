@@ -58,8 +58,15 @@ export interface InvKpis {
   totalProductos: number; totalBodegas: number
   movimientosRecientes: number; valorTotal: number
   productosAlertas: number
-  topProductos: Array<{ productoId: number; nombre: string; sku: string; cantidad: number; valor: number }>
+  topProductos: Array<{ productoId: number; nombre: string; sku: string; cantidad: number; valor: number; claseAbc?: string }>
   alertasCriticas: StockItem[]
+  // Extended dashboard fields
+  totalProveedores?: number
+  movimientosDelMes?: number
+  movimientosPorTipo?: Array<{ tipo: string; cantidad: number; total: number }>
+  claseAbcDistribucion?: { A?: number; B?: number; C?: number; sinClase?: number; [k: string]: number | undefined }
+  ocPorEstado?: Record<string, number>
+  ultimosMovimientos?: Array<any>
 }
 
 // ── API calls ──────────────────────────────────────────────────────────────

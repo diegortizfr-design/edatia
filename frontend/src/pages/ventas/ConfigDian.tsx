@@ -158,7 +158,7 @@ export function ConfigDian() {
             </select>
           </div>
 
-          {proveedorTec !== 'DIRECTO' && (
+          {proveedorTec !== 'DIRECTO' ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">API Key del proveedor</label>
@@ -172,7 +172,7 @@ export function ConfigDian() {
                   className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-3">
             <Toggle checked={activo} onChange={() => setActivo(v => !v)} />
@@ -186,7 +186,7 @@ export function ConfigDian() {
             ) : null}
           </div>
 
-          {mutUpsert.error && (
+          {mutUpsert.isError && (
             <p className="text-red-600 text-sm">
               {(mutUpsert.error as any)?.response?.data?.message ?? 'Error al guardar configuración'}
             </p>
@@ -361,7 +361,7 @@ function ResolucionModal({ onClose, onSuccess }: any) {
             </div>
           </div>
 
-          {mutAdd.error && (
+          {mutAdd.isError && (
             <p className="text-red-600 text-sm">
               {(mutAdd.error as any)?.response?.data?.message ?? 'Error al agregar resolución'}
             </p>

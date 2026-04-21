@@ -372,7 +372,7 @@ function NuevoComprobanteModal({ onClose, onSuccess }: any) {
             </div>
           </div>
 
-          {mut.error && (
+          {mut.isError && (
             <p className="text-red-600 text-sm">{(mut.error as any)?.response?.data?.message ?? 'Error al crear comprobante'}</p>
           )}
           <div className="flex gap-3 justify-end">

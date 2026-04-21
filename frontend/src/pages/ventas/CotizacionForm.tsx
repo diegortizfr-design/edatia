@@ -76,7 +76,7 @@ export function CotizacionForm() {
   const [lines, setLines] = useState([LINE_DEFAULT()])
   const [productoQ, setProductoQ] = useState<Record<string, string>>({})
 
-  const { data: cotizacionData } = useQuery({
+  const { data: cotizacionData } = useQuery<any>({
     queryKey: ['cotizacion', id],
     queryFn: () => getCotizacion(Number(id)),
     enabled: isView,
@@ -514,7 +514,7 @@ export function CotizacionForm() {
                 </div>
               </div>
 
-              {mutCreate.error && (
+              {mutCreate.isError && (
                 <p className="text-red-600 text-sm">
                   {(mutCreate.error as any)?.response?.data?.message ?? 'Error al crear la cotización'}
                 </p>

@@ -56,7 +56,7 @@ export function Lotes() {
 
   const buscarFefo = async () => {
     if (!fefoForm.productoId || !fefoForm.bodegaId || !fefoForm.cantidad) return
-    const res = await getLoteFefo(+fefoForm.productoId, +fefoForm.bodegaId, parseFloat(fefoForm.cantidad))
+    const res = await getLoteFefo(+fefoForm.productoId, parseFloat(fefoForm.cantidad))
     setFefoData(res)
   }
 
@@ -253,7 +253,7 @@ export function Lotes() {
           productos={productosManejaLotes}
           bodegas={bodegas as any[]}
           onClose={() => setShowForm(false)}
-          onSubmit={(data) => mutCreate.mutate(data)}
+          onSubmit={(data: any) => mutCreate.mutate(data)}
           isLoading={mutCreate.isPending}
           error={mutCreate.error as any}
         />
