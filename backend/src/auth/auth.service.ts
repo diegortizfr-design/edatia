@@ -58,8 +58,19 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    // 1. Verificar que la empresa con ese NIT existe
+    const empresa = await this.prisma.empresa.findUnique({
+      where: { nit: dto.nit.trim() },
+    });
+
+    if (!empresa) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    // 2. Buscar el usuario dentro de esa empresa
     const user = await this.prisma.user.findFirst({
       where: {
+        empresaId: empresa.id,
         OR: [{ email: dto.identifier }, { usuario: dto.identifier }],
       },
     });
@@ -68,6 +79,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    // 3. Validar contraseña
     const passwordValid = await bcrypt.compare(dto.password, user.password);
     if (!passwordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -83,6 +95,7 @@ export class AuthService {
         nombre: user.nombre,
         rol: user.rol,
         empresaId: user.empresaId,
+        empresa: { id: empresa.id, nombre: empresa.nombre, nit: empresa.nit },
       },
       access_token: token,
     };

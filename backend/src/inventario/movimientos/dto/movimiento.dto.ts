@@ -70,3 +70,40 @@ export class TrasladoDto {
   @IsOptional() @IsString()
   notas?: string;
 }
+
+export class DevolucionProveedorDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsInt()
+  bodegaId!: number;
+
+  @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
+  cantidad!: number;
+
+  @IsOptional() @IsString()
+  referenciaId?: string;   // número OC o recepción original
+
+  @IsOptional() @IsString()
+  notas?: string;
+}
+
+export class DevolucionClienteDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsInt()
+  bodegaId!: number;
+
+  @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
+  cantidad!: number;
+
+  @IsNumber({ maxDecimalPlaces: 4 }) @Min(0)
+  costoUnitario!: number;
+
+  @IsOptional() @IsString()
+  referenciaId?: string;   // número de factura o documento de venta
+
+  @IsOptional() @IsString()
+  notas?: string;
+}

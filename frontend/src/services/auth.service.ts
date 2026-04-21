@@ -2,6 +2,7 @@ import api from './api'
 import type { AuthResponse, User } from '../types'
 
 export interface LoginPayload {
+  nit: string
   identifier: string
   password: string
 }

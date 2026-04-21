@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { MovimientosService } from './movimientos.service';
-import { EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto } from './dto/movimiento.dto';
+import {
+  EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
+  DevolucionProveedorDto, DevolucionClienteDto,
+} from './dto/movimiento.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
 
@@ -54,5 +57,15 @@ export class MovimientosController {
   @Post('traslado')
   traslado(@Body() dto: TrasladoDto, @GetUser() user: JwtPayload) {
     return this.svc.procesarTraslado(dto, user.empresaId!, user.sub);
+  }
+
+  @Post('devolucion-proveedor')
+  devolucionProveedor(@Body() dto: DevolucionProveedorDto, @GetUser() user: JwtPayload) {
+    return this.svc.procesarDevolucionProveedor(dto, user.empresaId!, user.sub);
+  }
+
+  @Post('devolucion-cliente')
+  devolucionCliente(@Body() dto: DevolucionClienteDto, @GetUser() user: JwtPayload) {
+    return this.svc.procesarDevolucionCliente(dto, user.empresaId!, user.sub);
   }
 }

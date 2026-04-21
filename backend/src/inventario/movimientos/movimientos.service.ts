@@ -2,7 +2,10 @@ import {
   Injectable, NotFoundException, BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto } from './dto/movimiento.dto';
+import {
+  EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
+  DevolucionProveedorDto, DevolucionClienteDto,
+} from './dto/movimiento.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -346,6 +349,113 @@ export class MovimientosService {
       });
 
       return { traslado: mov1, movimientos: [mov1, mov2] };
+    });
+  }
+
+  // ── Devolución a Proveedor ─────────────────────────────────────────────────
+  // Reduce stock (producto regresa al proveedor por defecto de calidad, etc.)
+
+  async procesarDevolucionProveedor(dto: DevolucionProveedorDto, empresaId: number, usuarioId: number) {
+    const producto = await this.getProducto(dto.productoId, empresaId);
+    const bodega = await (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } });
+    if (!bodega) throw new NotFoundException('Bodega no encontrada');
+
+    const stock = await (this.prisma as any).stock.findUnique({
+      where: { productoId_bodegaId: { productoId: dto.productoId, bodegaId: dto.bodegaId } },
+    });
+    const disponible = stock ? parseFloat(stock.cantidad.toString()) : 0;
+    if (disponible < dto.cantidad) {
+      throw new BadRequestException(`Stock insuficiente. Disponible: ${disponible}, solicitado: ${dto.cantidad}`);
+    }
+
+    const numero = await this.generarNumero('DEV', empresaId);
+    const cpp = parseFloat(producto.costoPromedio.toString());
+    const saldoCantidad = disponible - dto.cantidad;
+
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.stock.updateMany({
+        where: { productoId: dto.productoId, bodegaId: dto.bodegaId },
+        data: { cantidad: { decrement: dto.cantidad } },
+      });
+
+      return tx.movimientoInventario.create({
+        data: {
+          numero,
+          empresaId,
+          tipo: 'DEVOLUCION_PROVEEDOR',
+          concepto: 'DEVOLUCION_PROVEEDOR',
+          productoId: dto.productoId,
+          bodegaOrigenId: dto.bodegaId,
+          cantidad: dto.cantidad,
+          costoUnitario: cpp,
+          costoTotal: dto.cantidad * cpp,
+          saldoCantidad,
+          saldoCostoTotal: saldoCantidad * cpp,
+          saldoCpp: cpp,
+          usuarioId,
+          referenciaId: dto.referenciaId,
+          referenciaTipo: dto.referenciaId ? 'OrdenCompra' : 'Manual',
+          notas: dto.notas,
+        },
+      });
+    });
+  }
+
+  // ── Devolución de Cliente ──────────────────────────────────────────────────
+  // Aumenta stock (cliente devuelve mercancía — puede recalcular CPP)
+
+  async procesarDevolucionCliente(dto: DevolucionClienteDto, empresaId: number, usuarioId: number) {
+    const producto = await this.getProducto(dto.productoId, empresaId);
+    const bodega = await (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } });
+    if (!bodega) throw new NotFoundException('Bodega no encontrada');
+
+    const numero = await this.generarNumero('DEV', empresaId);
+
+    return this.prisma.$transaction(async (tx: any) => {
+      const stock = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, tx);
+
+      const cantAnterior = parseFloat(stock.cantidad.toString());
+      const cppAnterior  = parseFloat(producto.costoPromedio.toString());
+      const cantNueva    = dto.cantidad;
+      const costoNuevo   = dto.costoUnitario;
+
+      // Recalcula CPP ponderado
+      const totalAnterior = cantAnterior * cppAnterior;
+      const totalNuevo    = cantNueva * costoNuevo;
+      const cantTotal     = cantAnterior + cantNueva;
+      const nuevoCPP      = cantTotal > 0 ? (totalAnterior + totalNuevo) / cantTotal : costoNuevo;
+      const saldoCantidad = cantTotal;
+
+      await tx.stock.update({
+        where: { productoId_bodegaId: { productoId: dto.productoId, bodegaId: dto.bodegaId } },
+        data: { cantidad: { increment: cantNueva } },
+      });
+
+      await tx.producto.update({
+        where: { id: dto.productoId },
+        data: { costoPromedio: nuevoCPP },
+      });
+
+      return tx.movimientoInventario.create({
+        data: {
+          numero,
+          empresaId,
+          tipo: 'DEVOLUCION_CLIENTE',
+          concepto: 'DEVOLUCION_CLIENTE',
+          productoId: dto.productoId,
+          bodegaDestinoId: dto.bodegaId,
+          cantidad: cantNueva,
+          costoUnitario: costoNuevo,
+          costoTotal: cantNueva * costoNuevo,
+          saldoCantidad,
+          saldoCostoTotal: saldoCantidad * nuevoCPP,
+          saldoCpp: nuevoCPP,
+          usuarioId,
+          referenciaId: dto.referenciaId,
+          referenciaTipo: dto.referenciaId ? 'Factura' : 'Manual',
+          notas: dto.notas,
+        },
+      });
     });
   }
 }

@@ -112,6 +112,15 @@ export const postTraslado = (data: any) => api.post('/inventario/movimientos/tra
 // Dashboard
 export const getInvKpis = () => api.get<InvKpis>('/inventario/dashboard').then(r => r.data)
 
+// ABC
+export const clasificarAbc = () => api.post('/inventario/productos/clasificar-abc').then(r => r.data)
+
+// Reportes Sprint 3
+export const getReporteStock = () => api.get('/inventario/reportes/stock').then(r => r.data)
+export const getReporteMovimientos = (params?: { desde?: string; hasta?: string; tipo?: string; bodegaId?: number }) =>
+  api.get('/inventario/reportes/movimientos', { params }).then(r => r.data)
+export const getReporteAbc = () => api.get('/inventario/reportes/abc').then(r => r.data)
+
 // ── Sprint 2 types ─────────────────────────────────────────────────────────
 
 export interface Proveedor {
@@ -209,3 +218,43 @@ export const anularOrdenCompra = (id: number) =>
   api.post(`/inventario/ordenes-compra/${id}/anular`).then(r => r.data)
 export const recibirOrdenCompra = (id: number, data: any) =>
   api.post(`/inventario/ordenes-compra/${id}/recibir`, data).then(r => r.data)
+
+// ── Sprint 4: Devoluciones ─────────────────────────────────────────────────
+export const postDevolucionProveedor = (data: any) =>
+  api.post('/inventario/movimientos/devolucion-proveedor', data).then(r => r.data)
+export const postDevolucionCliente = (data: any) =>
+  api.post('/inventario/movimientos/devolucion-cliente', data).then(r => r.data)
+
+// ── Sprint 4: Lotes ────────────────────────────────────────────────────────
+export const getLotes = (params?: { productoId?: number; soloConStock?: boolean }) =>
+  api.get('/inventario/lotes', { params }).then(r => r.data)
+export const getProximosVencer = (dias = 30) =>
+  api.get('/inventario/lotes/proximos-vencer', { params: { dias } }).then(r => r.data)
+export const getLoteFefo = (productoId: number, cantidad: number) =>
+  api.get('/inventario/lotes/fefo', { params: { productoId, cantidad } }).then(r => r.data)
+export const createLote = (data: any) =>
+  api.post('/inventario/lotes', data).then(r => r.data)
+export const updateLote = (id: number, data: any) =>
+  api.patch(`/inventario/lotes/${id}`, data).then(r => r.data)
+
+// ── Sprint 4: Seriales ─────────────────────────────────────────────────────
+export const getSeriales = (params?: { estado?: string; productoId?: number }) =>
+  api.get('/inventario/seriales', { params }).then(r => r.data)
+export const getStatsSeriales = () =>
+  api.get('/inventario/seriales/stats').then(r => r.data)
+export const ingresarSeriales = (data: any) =>
+  api.post('/inventario/seriales/ingresar', data).then(r => r.data)
+export const actualizarEstadoSerial = (id: number, data: { estado: string }) =>
+  api.patch(`/inventario/seriales/${id}/estado`, data).then(r => r.data)
+
+// ── Sprint 4: Variantes ────────────────────────────────────────────────────
+export const getVariantes = (productoId: number) =>
+  api.get(`/inventario/variantes/producto/${productoId}`).then(r => r.data)
+export const createVariante = (data: any) =>
+  api.post('/inventario/variantes', data).then(r => r.data)
+export const updateVariante = (id: number, data: any) =>
+  api.patch(`/inventario/variantes/${id}`, data).then(r => r.data)
+export const toggleVariante = (id: number) =>
+  api.patch(`/inventario/variantes/${id}/toggle`).then(r => r.data)
+export const ajustarStockVariante = (id: number, data: any) =>
+  api.post(`/inventario/variantes/${id}/stock`, data).then(r => r.data)

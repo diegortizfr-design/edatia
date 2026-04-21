@@ -14,6 +14,11 @@ export class ProductosController {
     return this.svc.buscar(q, user.empresaId!);
   }
 
+  @Post('clasificar-abc')
+  clasificarAbc(@GetUser() user: JwtPayload) {
+    return this.svc.clasificarAbc(user.empresaId!);
+  }
+
   @Get()
   findAll(
     @GetUser() user: JwtPayload,

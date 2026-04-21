@@ -4,6 +4,7 @@ import { BarChart3, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export function Login() {
+  const [nit, setNit] = useState('')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -18,13 +19,17 @@ export function Login() {
     e.preventDefault()
     setError(null)
 
+    if (!nit.trim()) {
+      setError('Ingresa el NIT de tu empresa.')
+      return
+    }
     if (!identifier.trim() || !password) {
       setError('Ingresa tu usuario/email y contraseña.')
       return
     }
 
     try {
-      await login({ identifier, password })
+      await login({ nit: nit.trim(), identifier, password })
       navigate(from, { replace: true })
     } catch (err: unknown) {
       const msg =
@@ -53,6 +58,22 @@ export function Login() {
 
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div>
+              <label htmlFor="nit" className="block text-sm font-medium text-slate-700 mb-1.5">
+                NIT de la empresa
+              </label>
+              <input
+                id="nit"
+                type="text"
+                autoComplete="organization"
+                placeholder="900123456-7"
+                value={nit}
+                onChange={(e) => setNit(e.target.value)}
+                disabled={isLoading}
+                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all disabled:opacity-50"
+              />
+            </div>
+
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-slate-700 mb-1.5">
                 Email o usuario

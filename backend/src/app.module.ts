@@ -11,6 +11,8 @@ import { UsersModule } from './users/users.module';
 import { EmpresasModule } from './empresas/empresas.module';
 import { ManagerModule } from './manager.module';
 import { InventarioModule } from './inventario/inventario.module';
+import { VentasModule } from './ventas/ventas.module';
+import { ContabilidadModule } from './contabilidad/contabilidad.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { InventarioModule } from './inventario/inventario.module';
     EmpresasModule,
     ManagerModule,
     InventarioModule,
+    VentasModule,
+    ContabilidadModule,
   ],
   controllers: [AppController],
   providers: [

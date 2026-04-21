@@ -83,4 +83,41 @@ export class ProductosService {
     }
     return (this.prisma as any).producto.update({ where: { id }, data: dto, include: PRODUCTO_INCLUDE });
   }
+
+  /**
+   * Clasifica todos los productos de la empresa según el método ABC:
+   *   A → acumula hasta el 80 % del valor de inventario
+   *   B → del 80 % al 95 %
+   *   C → del 95 % en adelante
+   */
+  async clasificarAbc(empresaId: number) {
+    const stocks = await (this.prisma as any).stock.findMany({
+      where: { empresaId },
+      include: { producto: { select: { id: true, costoPromedio: true } } },
+    });
+
+    // Agrupar por producto (suma de todas las bodegas)
+    const valorPorProducto = new Map<number, number>();
+    for (const s of stocks) {
+      const valor = parseFloat(s.cantidad) * parseFloat(s.producto.costoPromedio);
+      valorPorProducto.set(s.productoId, (valorPorProducto.get(s.productoId) ?? 0) + valor);
+    }
+
+    const valorTotal = [...valorPorProducto.values()].reduce((a, v) => a + v, 0);
+    const ordenados = [...valorPorProducto.entries()].sort((a, b) => b[1] - a[1]);
+
+    let acumulado = 0;
+    const updates: Promise<any>[] = [];
+    for (const [productoId, valor] of ordenados) {
+      acumulado += valor;
+      const pct = valorTotal > 0 ? (acumulado / valorTotal) * 100 : 100;
+      const clase = pct <= 80 ? 'A' : pct <= 95 ? 'B' : 'C';
+      updates.push(
+        (this.prisma as any).producto.update({ where: { id: productoId }, data: { claseAbc: clase } }),
+      );
+    }
+
+    await Promise.all(updates);
+    return { clasificados: updates.length, mensaje: 'Clasificación ABC actualizada correctamente' };
+  }
 }

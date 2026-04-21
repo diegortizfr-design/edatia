@@ -38,6 +38,18 @@ model Empresa {
   nombre    String
   direccion String?
   telefono  String?
+  email     String?
+  // Datos DIAN
+  municipio            String?
+  departamento         String?
+  codigoDane           String?   // código DANE municipio (ej: 11001 = Bogotá)
+  codigoPostal         String?
+  regimenFiscal        String?   @default("48")  // 48=Responsable IVA, 49=No responsable
+  actividadEconomica   String?   // CIIU
+  responsabilidades    String[]  // códigos responsabilidad tributaria DIAN
+  tipoPersona          String?   @default("JURIDICA")
+  digitoVerificacion   String?
+  logo                 String?
   permiteStockNegativo Boolean @default(false)
   usuarios  User[]
   createdAt DateTime @default(now())
@@ -53,6 +65,22 @@ model Empresa {
   proveedores          Proveedor[]
   ordenesCompra        OrdenCompra[]
   recepcionesMercancia RecepcionMercancia[]
+  lotes                Lote[]
+  seriales             NumeroSerie[]
+  variantes            VarianteProducto[]
+
+  // ── Ventas ────────────────────────────────────────
+  clientes             ClienteERP[]
+  cotizaciones         Cotizacion[]
+  facturasVenta        FacturaVenta[]
+  notasCredito         NotaCredito[]
+  recibosCaja          ReciboCaja[]
+  configDIAN           ConfiguracionDIAN?
+
+  // ── Contabilidad ──────────────────────────────────
+  cuentasPUC           CuentaPUC[]
+  periodos             PeriodoContable[]
+  comprobantes         Comprobante[]
 }
 
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
@@ -407,6 +435,11 @@ model Producto {
   stock           Stock[]
   movimientos     MovimientoInventario[]
   ordenesCompraItems OrdenCompraItem[]
+  lotes           Lote[]
+  seriales        NumeroSerie[]
+  variantes       VarianteProducto[]
+  facturaItems    FacturaVentaItem[]
+  cotizacionItems CotizacionItem[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -433,6 +466,10 @@ model Bodega {
   movimientosOrigen    MovimientoInventario[] @relation("MovOrigen")
   movimientosDestino   MovimientoInventario[] @relation("MovDestino")
   ordenesCompra        OrdenCompra[]
+  lotes                Lote[]
+  seriales             NumeroSerie[]
+  stockVariantes       StockVariante[]
+  facturasVenta        FacturaVenta[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -617,6 +654,531 @@ model RecepcionItem {
   costoUnitario       Decimal  @db.Decimal(14, 4)
 
   createdAt           DateTime @default(now())
+}
+
+// ─── SPRINT 4: Lotes, Seriales, Variantes ────────────────────────────────────
+
+model Lote {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  productoId       Int
+  producto         Producto @relation(fields: [productoId], references: [id])
+  bodegaId         Int
+  bodega           Bodega   @relation(fields: [bodegaId], references: [id])
+
+  numero           String
+  fechaVencimiento DateTime?
+  fechaFabricacion DateTime?
+  proveedor        String?
+  cantidadInicial  Decimal  @default(0) @db.Decimal(12, 3)
+  cantidad         Decimal  @default(0) @db.Decimal(12, 3)
+  activo           Boolean  @default(true)
+  notas            String?
+
+  seriales         NumeroSerie[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([empresaId, productoId, bodegaId, numero])
+  @@index([empresaId, productoId])
+  @@index([empresaId, fechaVencimiento])
+}
+
+model NumeroSerie {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  productoId  Int
+  producto    Producto @relation(fields: [productoId], references: [id])
+  bodegaId    Int?
+  bodega      Bodega?  @relation(fields: [bodegaId], references: [id])
+  loteId      Int?
+  lote        Lote?    @relation(fields: [loteId], references: [id])
+
+  serial      String
+  estado      String   @default("DISPONIBLE") // DISPONIBLE | VENDIDO | DEVUELTO | BAJA
+  notas       String?
+
+  movimientoEntradaId Int?
+  movimientoSalidaId  Int?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, productoId, serial])
+  @@index([empresaId, productoId])
+  @@index([empresaId, estado])
+}
+
+model VarianteProducto {
+  id             Int      @id @default(autoincrement())
+  empresaId      Int
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+  productoId     Int
+  producto       Producto @relation(fields: [productoId], references: [id])
+
+  sku            String
+  nombre         String
+  atributos      Json     // [{ nombre: "Talla", valor: "L" }, { nombre: "Color", valor: "Rojo" }]
+  costoPromedio  Decimal  @default(0) @db.Decimal(14, 4)
+  precioBase     Decimal  @default(0) @db.Decimal(14, 2)
+  codigoBarras   String?
+  imagen         String?
+  activo         Boolean  @default(true)
+
+  stock          StockVariante[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([empresaId, sku])
+  @@index([empresaId, productoId])
+}
+
+model StockVariante {
+  id                Int              @id @default(autoincrement())
+  empresaId         Int
+  varianteId        Int
+  variante          VarianteProducto @relation(fields: [varianteId], references: [id])
+  bodegaId          Int
+  bodega            Bodega           @relation(fields: [bodegaId], references: [id])
+
+  cantidad          Decimal  @default(0) @db.Decimal(12, 3)
+  cantidadReservada Decimal  @default(0) @db.Decimal(12, 3)
+
+  updatedAt         DateTime @updatedAt
+
+  @@unique([varianteId, bodegaId])
+  @@index([empresaId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MÓDULO VENTAS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ClienteERP {
+  id                  Int      @id @default(autoincrement())
+  empresaId           Int
+  empresa             Empresa  @relation(fields: [empresaId], references: [id])
+
+  // Identificación
+  tipoPersona         String   @default("JURIDICA")    // NATURAL | JURIDICA
+  tipoDocumento       String   @default("NIT")         // NIT | CC | CE | PASAPORTE | PEP
+  numeroDocumento     String
+  digitoVerificacion  String?
+  nombre              String
+  nombreComercial     String?
+
+  // Tributario DIAN
+  regimenFiscal       String   @default("49")   // 48=Responsable IVA, 49=No responsable
+  responsabilidades   String[]                  // O-13, O-15, O-23, O-47
+  actividadEconomica  String?                   // CIIU
+
+  // Contacto
+  email               String?
+  telefono            String?
+  celular             String?
+
+  // Dirección (para UBL 2.1)
+  pais                String   @default("CO")
+  departamento        String?
+  municipio           String?
+  codigoDane          String?
+  codigoPostal        String?
+  direccion           String?
+
+  // Comercial
+  plazoCredito        Int      @default(0)
+  cupoCredito         Decimal? @db.Decimal(15,2)
+  descuentoBase       Decimal  @default(0) @db.Decimal(5,2)
+  vendedorId          Int?
+
+  activo              Boolean  @default(true)
+  notas               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  cotizaciones        Cotizacion[]
+  facturas            FacturaVenta[]
+  notasCredito        NotaCredito[]
+  recibos             ReciboCaja[]
+
+  @@unique([empresaId, tipoDocumento, numeroDocumento])
+  @@index([empresaId])
+  @@index([empresaId, activo])
+}
+
+model ConfiguracionDIAN {
+  id                Int      @id @default(autoincrement())
+  empresaId         Int      @unique
+  empresa           Empresa  @relation(fields: [empresaId], references: [id])
+
+  ambiente          String   @default("PRUEBAS")  // PRUEBAS | PRODUCCION
+  softwareId        String?
+  softwarePin       String?
+  certificadoPath   String?
+  certificadoPass   String?
+
+  // Proveedor tecnológico (alternativa al envío directo)
+  proveedorTec      String?   // CARVAJAL | GOSOCKET | EDICOM | DIRECTO
+  proveedorApiKey   String?
+  proveedorUrl      String?
+
+  activo            Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  resoluciones      ResolucionDIAN[]
+}
+
+model ResolucionDIAN {
+  id                Int               @id @default(autoincrement())
+  configId          Int
+  config            ConfiguracionDIAN @relation(fields: [configId], references: [id])
+
+  tipoDocumento     String   @default("01")  // 01=FV, 91=NC, 92=ND
+  prefijo           String   @default("")
+  numeroCurrent     Int      @default(0)
+  numeroInicial     Int
+  numeroFinal       Int
+  fechaResolucion   DateTime
+  fechaVigencia     DateTime
+  numeroResolucion  String
+  claveTecnica      String   // para calcular CUFE
+
+  activo            Boolean  @default(true)
+
+  facturas          FacturaVenta[]
+  notasCredito      NotaCredito[]
+}
+
+model Cotizacion {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  numero           String
+
+  clienteId        Int
+  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  bodegaId         Int
+
+  fecha            DateTime @default(now())
+  fechaVencimiento DateTime
+
+  estado           String   @default("BORRADOR")
+  // BORRADOR | ENVIADA | ACEPTADA | RECHAZADA | VENCIDA | FACTURADA
+
+  // Totales
+  subtotal         Decimal  @default(0) @db.Decimal(15,2)
+  descuento        Decimal  @default(0) @db.Decimal(15,2)
+  baseIva19        Decimal  @default(0) @db.Decimal(15,2)
+  iva19            Decimal  @default(0) @db.Decimal(15,2)
+  baseIva5         Decimal  @default(0) @db.Decimal(15,2)
+  iva5             Decimal  @default(0) @db.Decimal(15,2)
+  total            Decimal  @default(0) @db.Decimal(15,2)
+
+  notas            String?
+  condicionesPago  String?
+  usuarioId        Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  items            CotizacionItem[]
+  facturas         FacturaVenta[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, estado])
+}
+
+model CotizacionItem {
+  id               Int        @id @default(autoincrement())
+  cotizacionId     Int
+  cotizacion       Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  productoId       Int
+  producto         Producto   @relation(fields: [productoId], references: [id])
+
+  descripcion      String
+  unidad           String     @default("UND")
+  cantidad         Decimal    @db.Decimal(15,4)
+  precioUnitario   Decimal    @db.Decimal(15,2)
+  descuentoPct     Decimal    @default(0) @db.Decimal(5,2)
+  descuentoValor   Decimal    @default(0) @db.Decimal(15,2)
+  tipoIva          String     @default("IVA_19")
+  // IVA_19 | IVA_5 | IVA_0 | EXCLUIDO
+  baseIva          Decimal    @default(0) @db.Decimal(15,2)
+  ivaValor         Decimal    @default(0) @db.Decimal(15,2)
+  subtotal         Decimal    @db.Decimal(15,2)
+  total            Decimal    @db.Decimal(15,2)
+  orden            Int        @default(0)
+}
+
+model FacturaVenta {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+
+  numero           String   // prefijoDIAN + numeroDIAN
+  clienteId        Int
+  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  bodegaId         Int
+  bodega           Bodega   @relation(fields: [bodegaId], references: [id])
+
+  cotizacionId     Int?
+  cotizacion       Cotizacion? @relation(fields: [cotizacionId], references: [id])
+
+  // DIAN
+  resolucionId     Int?
+  resolucion       ResolucionDIAN? @relation(fields: [resolucionId], references: [id])
+  prefijoDIAN      String?
+  numeroDIAN       Int?
+  cufe             String?   @db.Text
+  qrUrl            String?
+  xmlDIAN          String?   @db.Text
+  respuestaDIAN    Json?
+  estadoDIAN       String    @default("PENDIENTE")
+  // PENDIENTE | ENVIADA | ACEPTADA | RECHAZADA | ERROR
+
+  fecha            DateTime  @default(now())
+  fechaVencimiento DateTime?
+
+  formaPago        String    @default("CREDITO")  // CONTADO | CREDITO
+  medioPago        String    @default("TRANSFERENCIA")
+  // EFECTIVO | TRANSFERENCIA | CHEQUE | TARJETA_CREDITO | TARJETA_DEBITO
+
+  estado           String    @default("BORRADOR")
+  // BORRADOR | EMITIDA | PAGADA | PARCIAL | ANULADA
+
+  // Retenciones (aplicadas por el cliente agente retenedor)
+  retefuente       Decimal   @default(0) @db.Decimal(15,2)
+  reteiva          Decimal   @default(0) @db.Decimal(15,2)
+  reteica          Decimal   @default(0) @db.Decimal(15,2)
+
+  // Totales
+  subtotal         Decimal   @default(0) @db.Decimal(15,2)
+  descuento        Decimal   @default(0) @db.Decimal(15,2)
+  baseIva19        Decimal   @default(0) @db.Decimal(15,2)
+  iva19            Decimal   @default(0) @db.Decimal(15,2)
+  baseIva5         Decimal   @default(0) @db.Decimal(15,2)
+  iva5             Decimal   @default(0) @db.Decimal(15,2)
+  total            Decimal   @default(0) @db.Decimal(15,2)
+  totalPagado      Decimal   @default(0) @db.Decimal(15,2)
+  saldo            Decimal   @default(0) @db.Decimal(15,2)
+
+  notas            String?
+  usuarioId        Int?
+  comprobanteId    Int?      // asiento contable generado
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  items            FacturaVentaItem[]
+  notasCredito     NotaCredito[]
+  recibos          ReciboCajaFactura[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, estado])
+  @@index([empresaId, clienteId])
+  @@index([empresaId, fecha])
+  @@index([empresaId, estadoDIAN])
+}
+
+model FacturaVentaItem {
+  id               Int          @id @default(autoincrement())
+  facturaId        Int
+  factura          FacturaVenta @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  productoId       Int
+  producto         Producto     @relation(fields: [productoId], references: [id])
+
+  descripcion      String
+  unidad           String       @default("UND")
+  cantidad         Decimal      @db.Decimal(15,4)
+  precioUnitario   Decimal      @db.Decimal(15,2)
+  descuentoPct     Decimal      @default(0) @db.Decimal(5,2)
+  descuentoValor   Decimal      @default(0) @db.Decimal(15,2)
+  tipoIva          String       @default("IVA_19")
+  baseIva          Decimal      @default(0) @db.Decimal(15,2)
+  ivaValor         Decimal      @default(0) @db.Decimal(15,2)
+  subtotal         Decimal      @db.Decimal(15,2)
+  total            Decimal      @db.Decimal(15,2)
+
+  // Costo (snapshot al momento de facturar)
+  costoUnitario    Decimal      @default(0) @db.Decimal(15,4)
+  costoTotal       Decimal      @default(0) @db.Decimal(15,2)
+
+  orden            Int          @default(0)
+}
+
+model NotaCredito {
+  id               Int          @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa      @relation(fields: [empresaId], references: [id])
+  numero           String
+
+  facturaId        Int
+  factura          FacturaVenta @relation(fields: [facturaId], references: [id])
+  clienteId        Int
+  cliente          ClienteERP   @relation(fields: [clienteId], references: [id])
+  resolucionId     Int?
+  resolucion       ResolucionDIAN? @relation(fields: [resolucionId], references: [id])
+
+  // DIAN
+  cufde            String?      @db.Text  // CUDE para NC
+  xmlDIAN          String?      @db.Text
+  estadoDIAN       String       @default("PENDIENTE")
+
+  fecha            DateTime     @default(now())
+  motivo           String       // DEVOLUCION | DESCUENTO | ANULACION | OTRO
+  descripcion      String
+
+  subtotal         Decimal      @default(0) @db.Decimal(15,2)
+  iva              Decimal      @default(0) @db.Decimal(15,2)
+  total            Decimal      @default(0) @db.Decimal(15,2)
+
+  estado           String       @default("BORRADOR")
+
+  items            NotaCreditoItem[]
+  usuarioId        Int?
+  createdAt        DateTime     @default(now())
+
+  @@unique([empresaId, numero])
+  @@index([empresaId])
+}
+
+model NotaCreditoItem {
+  id               Int         @id @default(autoincrement())
+  notaCreditoId    Int
+  notaCredito      NotaCredito @relation(fields: [notaCreditoId], references: [id], onDelete: Cascade)
+  productoId       Int?
+
+  descripcion      String
+  cantidad         Decimal     @db.Decimal(15,4)
+  precioUnitario   Decimal     @db.Decimal(15,2)
+  tipoIva          String      @default("IVA_19")
+  ivaValor         Decimal     @default(0) @db.Decimal(15,2)
+  subtotal         Decimal     @db.Decimal(15,2)
+  total            Decimal     @db.Decimal(15,2)
+}
+
+model ReciboCaja {
+  id               Int        @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa    @relation(fields: [empresaId], references: [id])
+  numero           String
+  clienteId        Int
+  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+
+  fecha            DateTime   @default(now())
+  concepto         String
+  valor            Decimal    @db.Decimal(15,2)
+  medioPago        String
+  referencia       String?
+  estado           String     @default("ACTIVO")  // ACTIVO | ANULADO
+  usuarioId        Int?
+  createdAt        DateTime   @default(now())
+
+  aplicaciones     ReciboCajaFactura[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId])
+}
+
+model ReciboCajaFactura {
+  id               Int          @id @default(autoincrement())
+  reciboId         Int
+  recibo           ReciboCaja   @relation(fields: [reciboId], references: [id])
+  facturaId        Int
+  factura          FacturaVenta @relation(fields: [facturaId], references: [id])
+  valor            Decimal      @db.Decimal(15,2)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MÓDULO CONTABILIDAD (PUC colombiano — Decreto 2650)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model CuentaPUC {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo           String   // ej: "1105", "41350501"
+  nombre           String
+  // Nivel: 1=Clase(1 dígito), 2=Grupo(2), 3=Cuenta(4), 4=Subcuenta(6), 5=Auxiliar(8)
+  nivel            Int
+  codigoPadre      String?
+  naturaleza       String   @default("DEBITO")   // DEBITO | CREDITO
+  // Tipo macro para clasificación de estados financieros
+  tipo             String
+  // ACTIVO | PASIVO | PATRIMONIO | INGRESO | GASTO | COSTO
+
+  ajustable        Boolean  @default(false)
+  requiereNit      Boolean  @default(false)
+  requiereCentro   Boolean  @default(false)
+  activo           Boolean  @default(true)
+
+  lineas           ComprobanteLinea[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId, nivel])
+  @@index([empresaId, codigoPadre])
+}
+
+model PeriodoContable {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  anio             Int
+  mes              Int      // 1-12
+  estado           String   @default("ABIERTO")  // ABIERTO | CERRADO | BLOQUEADO
+  fechaCierre      DateTime?
+
+  comprobantes     Comprobante[]
+
+  @@unique([empresaId, anio, mes])
+}
+
+model Comprobante {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+
+  numero           String
+  tipo             String
+  // FV=FacturaVenta | FP=FacturaProveedor | RC=ReciboCaja | CP=ComprobantePago
+  // AJ=Ajuste | NC=NotaContabilidad | NI=NotaInterna
+
+  concepto         String
+  fecha            DateTime
+  periodoId        Int
+  periodo          PeriodoContable @relation(fields: [periodoId], references: [id])
+  estado           String   @default("APROBADO")  // BORRADOR | APROBADO | ANULADO
+
+  // Referencia al documento origen
+  referenciaId     Int?
+  referenciaTipo   String?  // FACTURA_VENTA | NOTA_CREDITO | RECIBO_CAJA | etc.
+
+  usuarioId        Int?
+
+  lineas           ComprobanteLinea[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, tipo])
+  @@index([empresaId, fecha])
+}
+
+model ComprobanteLinea {
+  id               Int         @id @default(autoincrement())
+  comprobanteId    Int
+  comprobante      Comprobante @relation(fields: [comprobanteId], references: [id], onDelete: Cascade)
+  cuentaId         Int
+  cuenta           CuentaPUC   @relation(fields: [cuentaId], references: [id])
+
+  descripcion      String
+  debito           Decimal     @default(0) @db.Decimal(15,2)
+  credito          Decimal     @default(0) @db.Decimal(15,2)
+  terceroNit       String?
+  terceroNombre    String?
+  centroCosto      String?
+  orden            Int         @default(0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

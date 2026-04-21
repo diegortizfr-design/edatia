@@ -6,7 +6,38 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Ejecutando seed de base de datos...');
 
-  // Empresa demo
+  // ── Empresa de pruebas (Diego Ortiz) ─────────────────────────────────────
+  const empresaDiego = await prisma.empresa.upsert({
+    where: { nit: '1143875756-0' },
+    update: {},
+    create: {
+      nit: '1143875756-0',
+      nombre: 'Diego Ortiz - Pruebas ERP',
+      direccion: 'Colombia',
+      telefono: '',
+      email: 'admin@diegortiz.site',
+      regimenFiscal: 'SIMPLIFICADO',
+      tipoPersona: 'NATURAL',
+    },
+  });
+  console.log(`✅ Empresa: ${empresaDiego.nombre} (NIT: ${empresaDiego.nit})`);
+
+  const hashDiego = await bcrypt.hash('Admin123', 12);
+  const adminDiego = await prisma.user.upsert({
+    where: { email: 'admin@diegortiz.site' },
+    update: {},
+    create: {
+      email: 'admin@diegortiz.site',
+      usuario: 'admin_diego',
+      nombre: 'Diego Ortiz',
+      password: hashDiego,
+      rol: 'admin',
+      empresaId: empresaDiego.id,
+    },
+  });
+  console.log(`✅ Usuario: ${adminDiego.email}  /  contraseña: Admin123`);
+
+  // ── Empresa demo Edatia ───────────────────────────────────────────────────
   const empresa = await prisma.empresa.upsert({
     where: { nit: '900000000-0' },
     update: {},
@@ -17,12 +48,10 @@ async function main() {
       telefono: '+57 300 000 0000',
     },
   });
-  console.log(`✅ Empresa creada: ${empresa.nombre} (NIT: ${empresa.nit})`);
+  console.log(`✅ Empresa: ${empresa.nombre} (NIT: ${empresa.nit})`);
 
-  // Usuario administrador
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123!';
   const hash = await bcrypt.hash(adminPassword, 12);
-
   const admin = await prisma.user.upsert({
     where: { email: 'admin@edatia.com' },
     update: {},
@@ -35,10 +64,10 @@ async function main() {
       empresaId: empresa.id,
     },
   });
-  console.log(`✅ Admin creado: ${admin.email} (usuario: ${admin.usuario})`);
-  console.log(`   Contraseña: ${adminPassword}`);
+  console.log(`✅ Usuario: ${admin.email}  /  contraseña: ${adminPassword}`);
+
   console.log('');
-  console.log('⚠️  Cambia la contraseña del admin luego del primer login.');
+  console.log('⚠️  Cambia las contraseñas luego del primer login.');
 }
 
 main()

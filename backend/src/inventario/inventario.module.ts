@@ -21,6 +21,14 @@ import { ProveedoresController } from './proveedores/proveedores.controller';
 import { ProveedoresService } from './proveedores/proveedores.service';
 import { OrdenesCompraController } from './ordenes-compra/ordenes-compra.controller';
 import { OrdenesCompraService } from './ordenes-compra/ordenes-compra.service';
+import { ReportesController } from './reportes/reportes.controller';
+import { ReportesService } from './reportes/reportes.service';
+import { LotesController } from './lotes/lotes.controller';
+import { LotesService } from './lotes/lotes.service';
+import { SerialesController } from './seriales/seriales.controller';
+import { SerialesService } from './seriales/seriales.service';
+import { VariantesController } from './variantes/variantes.controller';
+import { VariantesService } from './variantes/variantes.service';
 
 @Module({
   imports: [AuthModule],
@@ -35,6 +43,10 @@ import { OrdenesCompraService } from './ordenes-compra/ordenes-compra.service';
     InvDashboardController,
     ProveedoresController,
     OrdenesCompraController,
+    ReportesController,
+    LotesController,
+    SerialesController,
+    VariantesController,
   ],
   providers: [
     CategoriasService,
@@ -47,6 +59,10 @@ import { OrdenesCompraService } from './ordenes-compra/ordenes-compra.service';
     InvDashboardService,
     ProveedoresService,
     OrdenesCompraService,
+    ReportesService,
+    LotesService,
+    SerialesService,
+    VariantesService,
   ],
 })
 export class InventarioModule {}
