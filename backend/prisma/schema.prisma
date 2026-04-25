@@ -81,6 +81,11 @@ model Empresa {
   cuentasPUC           CuentaPUC[]
   periodos             PeriodoContable[]
   comprobantes         Comprobante[]
+
+  // ── POS ───────────────────────────────────────────
+  cajasPos             CajaPos[]
+  sesionesPos          SesionCaja[]
+  ventasPos            VentaPos[]
 }
 
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
@@ -440,6 +445,7 @@ model Producto {
   variantes       VarianteProducto[]
   facturaItems    FacturaVentaItem[]
   cotizacionItems CotizacionItem[]
+  ventaPosItems   VentaPosItem[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -470,6 +476,7 @@ model Bodega {
   seriales             NumeroSerie[]
   stockVariantes       StockVariante[]
   facturasVenta        FacturaVenta[]
+  cajasPos             CajaPos[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -804,6 +811,7 @@ model ClienteERP {
   facturas            FacturaVenta[]
   notasCredito        NotaCredito[]
   recibos             ReciboCaja[]
+  ventasPos           VentaPos[]
 
   @@unique([empresaId, tipoDocumento, numeroDocumento])
   @@index([empresaId])
@@ -1116,6 +1124,7 @@ model CuentaPUC {
   activo           Boolean  @default(true)
 
   lineas           ComprobanteLinea[]
+  cajasPos         CajaPos[]
 
   @@unique([empresaId, codigo])
   @@index([empresaId, nivel])
@@ -1179,6 +1188,206 @@ model ComprobanteLinea {
   terceroNombre    String?
   centroCosto      String?
   orden            Int         @default(0)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MÓDULO POS — Punto de Venta
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model CajaPos {
+  id               Int       @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa   @relation(fields: [empresaId], references: [id])
+
+  nombre           String    // "Caja 1", "Caja Principal"
+  bodegaId         Int
+  bodega           Bodega    @relation(fields: [bodegaId], references: [id])
+  cuentaPUCId      Int?      // Cuenta PUC efectivo (ej: 110505)
+  cuentaPUC        CuentaPUC? @relation(fields: [cuentaPUCId], references: [id])
+
+  // Vendedor por defecto
+  vendedorId       Int?
+  vendedorNombre   String?
+
+  // Impresora
+  impresora        String?   // IP:puerto o nombre de dispositivo
+  tipoConexion     String?   @default("NETWORK") // NETWORK | USB | SERIAL | NINGUNA
+  anchoPapel       Int       @default(80)  // 58 | 80 mm
+
+  // Reglas de venta
+  permiteCreditoPos Boolean  @default(false)
+  permiteDescuento  Boolean  @default(true)
+  maxDescuento      Decimal  @default(100) @db.Decimal(5,2)
+
+  activo           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sesiones         SesionCaja[]
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model SesionCaja {
+  id               Int       @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa   @relation(fields: [empresaId], references: [id])
+  cajaId           Int
+  caja             CajaPos   @relation(fields: [cajaId], references: [id])
+
+  vendedorId       Int?
+  vendedorNombre   String?
+
+  estado           String    @default("ABIERTA")  // ABIERTA | CERRADA
+
+  montoInicial     Decimal   @db.Decimal(15,2)
+
+  // Totales acumulados del turno
+  totalVentas      Decimal   @default(0) @db.Decimal(15,2)
+  numTransacciones Int       @default(0)
+  totalEfectivo    Decimal   @default(0) @db.Decimal(15,2)
+  totalTarjeta     Decimal   @default(0) @db.Decimal(15,2)
+  totalTransferencia Decimal @default(0) @db.Decimal(15,2)
+  totalNequi       Decimal   @default(0) @db.Decimal(15,2)
+  totalAnuladas    Decimal   @default(0) @db.Decimal(15,2)
+
+  // Cierre
+  montoFinalDeclarado Decimal? @db.Decimal(15,2)
+  diferencia       Decimal?  @db.Decimal(15,2)
+  observacionesCierre String?
+
+  abiertaAt        DateTime  @default(now())
+  cerradaAt        DateTime?
+
+  ventas           VentaPos[]
+  movimientos      MovimientoCaja[]
+  arqueo           ArqueoCaja?
+
+  @@index([empresaId, estado])
+  @@index([empresaId, cajaId])
+}
+
+model VentaPos {
+  id               Int        @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa    @relation(fields: [empresaId], references: [id])
+  sesionId         Int
+  sesion           SesionCaja @relation(fields: [sesionId], references: [id])
+
+  numero           String     // POS-2026-00001
+
+  // Cliente (null = Consumidor Final)
+  clienteId        Int?
+  cliente          ClienteERP? @relation(fields: [clienteId], references: [id])
+  clienteNombre    String      @default("Consumidor Final")
+  clienteDoc       String?
+
+  vendedorId       Int?
+  vendedorNombre   String?
+
+  fecha            DateTime    @default(now())
+
+  // Totales
+  subtotal         Decimal     @db.Decimal(15,2)
+  descuento        Decimal     @default(0) @db.Decimal(15,2)
+  baseIva19        Decimal     @default(0) @db.Decimal(15,2)
+  iva19            Decimal     @default(0) @db.Decimal(15,2)
+  baseIva5         Decimal     @default(0) @db.Decimal(15,2)
+  iva5             Decimal     @default(0) @db.Decimal(15,2)
+  total            Decimal     @db.Decimal(15,2)
+
+  // Pago (puede ser mixto)
+  pagoEfectivo     Decimal     @default(0) @db.Decimal(15,2)
+  pagoTarjetaDebito Decimal   @default(0) @db.Decimal(15,2)
+  pagoTarjetaCredito Decimal  @default(0) @db.Decimal(15,2)
+  pagoTransferencia Decimal   @default(0) @db.Decimal(15,2)
+  pagoNequi        Decimal     @default(0) @db.Decimal(15,2)
+  cambio           Decimal     @default(0) @db.Decimal(15,2)
+
+  estado           String      @default("COMPLETADA") // COMPLETADA | ANULADA
+  motivoAnulacion  String?
+
+  // Referencia a FacturaVenta si el cliente pidió factura electrónica
+  facturaId        Int?
+
+  // Referencia comprobante contable
+  comprobanteId    Int?
+
+  items            VentaPosItem[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, sesionId])
+  @@index([empresaId, fecha])
+  @@index([empresaId, estado])
+}
+
+model VentaPosItem {
+  id               Int       @id @default(autoincrement())
+  ventaId          Int
+  venta            VentaPos  @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  productoId       Int
+  producto         Producto  @relation(fields: [productoId], references: [id])
+
+  descripcion      String
+  sku              String?
+  cantidad         Decimal   @db.Decimal(12,3)
+  precioUnitario   Decimal   @db.Decimal(15,2)
+  descuentoPct     Decimal   @default(0) @db.Decimal(5,2)
+  descuentoValor   Decimal   @default(0) @db.Decimal(15,2)
+  tipoIva          String    @default("IVA_19")
+  baseIva          Decimal   @default(0) @db.Decimal(15,2)
+  ivaValor         Decimal   @default(0) @db.Decimal(15,2)
+  subtotal         Decimal   @db.Decimal(15,2)
+  total            Decimal   @db.Decimal(15,2)
+  costoUnitario    Decimal   @default(0) @db.Decimal(15,4)
+  costoTotal       Decimal   @default(0) @db.Decimal(15,2)
+
+  orden            Int       @default(0)
+}
+
+model MovimientoCaja {
+  id               Int        @id @default(autoincrement())
+  sesionId         Int
+  sesion           SesionCaja @relation(fields: [sesionId], references: [id])
+
+  tipo             String     // APERTURA | VENTA | ANULACION | INGRESO | RETIRO | CIERRE
+  concepto         String
+  monto            Decimal    @db.Decimal(15,2)
+  referencia       String?    // número de venta POS
+
+  createdAt        DateTime   @default(now())
+
+  @@index([sesionId])
+}
+
+model ArqueoCaja {
+  id               Int        @id @default(autoincrement())
+  sesionId         Int        @unique
+  sesion           SesionCaja @relation(fields: [sesionId], references: [id])
+
+  // Billetes colombianos
+  b100000          Int        @default(0)
+  b50000           Int        @default(0)
+  b20000           Int        @default(0)
+  b10000           Int        @default(0)
+  b5000            Int        @default(0)
+  b2000            Int        @default(0)
+  b1000            Int        @default(0)
+
+  // Monedas
+  m1000            Int        @default(0)
+  m500             Int        @default(0)
+  m200             Int        @default(0)
+  m100             Int        @default(0)
+  m50              Int        @default(0)
+
+  totalContado     Decimal    @db.Decimal(15,2)
+  totalSistema     Decimal    @db.Decimal(15,2)
+  diferencia       Decimal    @db.Decimal(15,2)  // + sobrante, - faltante
+
+  observaciones    String?
+  createdAt        DateTime   @default(now())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

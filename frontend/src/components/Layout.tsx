@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { LogOut, User, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Users, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck } from 'lucide-react'
+import { LogOut, User, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Users, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
@@ -172,6 +172,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
+
+            {/* POS link directo */}
+            <NavLink to="/pos" className={({ isActive }) =>
+              `flex items-center gap-1 text-xs font-semibold uppercase tracking-wide px-1 py-0.5 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`
+            }>
+              <Monitor size={13} />POS
+            </NavLink>
 
             <NavLink to="/empresas" className={navLinkCls}>Empresas</NavLink>
             <NavLink to="/usuarios" className={navLinkCls}>Usuarios</NavLink>

@@ -13,6 +13,7 @@ import { ManagerModule } from './manager.module';
 import { InventarioModule } from './inventario/inventario.module';
 import { VentasModule } from './ventas/ventas.module';
 import { ContabilidadModule } from './contabilidad/contabilidad.module';
+import { PosModule } from './pos/pos.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ContabilidadModule } from './contabilidad/contabilidad.module';
     InventarioModule,
     VentasModule,
     ContabilidadModule,
+    PosModule,
   ],
   controllers: [AppController],
   providers: [

@@ -36,6 +36,12 @@ import { NotasCredito } from './pages/ventas/NotasCredito'
 import { ReciboCaja } from './pages/ventas/ReciboCaja'
 import { ConfigDian } from './pages/ventas/ConfigDian'
 
+// ── POS ──
+import { PosDashboard } from './pages/pos/PosDashboard'
+import { PosScreen } from './pages/pos/PosScreen'
+import { PosConfig } from './pages/pos/PosConfig'
+import { PosCierre } from './pages/pos/PosCierre'
+
 // ── Contabilidad ──
 import { PUC } from './pages/contabilidad/PUC'
 import { Comprobantes } from './pages/contabilidad/Comprobantes'
@@ -47,6 +53,11 @@ function P({ children }: { children: React.ReactNode }) {
       <Layout>{children}</Layout>
     </ProtectedRoute>
   )
+}
+
+// POS pantalla completa (sin Layout normal)
+function PosWrap({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>
 }
 
 function App() {
@@ -95,6 +106,12 @@ function App() {
         <Route path="/ventas/notas-credito" element={<P><NotasCredito /></P>} />
         <Route path="/ventas/recibos"       element={<P><ReciboCaja /></P>} />
         <Route path="/ventas/config-dian"   element={<P><ConfigDian /></P>} />
+
+        {/* ── POS ── */}
+        <Route path="/pos" element={<P><PosDashboard /></P>} />
+        <Route path="/pos/config" element={<P><PosConfig /></P>} />
+        <Route path="/pos/cierre/:sesionId" element={<P><PosCierre /></P>} />
+        <Route path="/pos/screen/:sesionId" element={<PosWrap><PosScreen /></PosWrap>} />
 
         {/* ── Contabilidad ── */}
         <Route path="/contabilidad" element={<Navigate to="/contabilidad/puc" replace />} />

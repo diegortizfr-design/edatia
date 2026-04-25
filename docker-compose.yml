@@ -31,19 +31,11 @@ services:
       - ./backend/.env
     labels:
       - "traefik.enable=true"
-      # Router HTTPS
       - "traefik.http.routers.edatia-api.rule=Host(`api.edatia.com`)"
       - "traefik.http.routers.edatia-api.entrypoints=websecure"
       - "traefik.http.routers.edatia-api.tls=true"
-      - "traefik.http.routers.edatia-api.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.edatia-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.edatia-api.loadbalancer.server.port=4000"
-      # Router HTTP (redirige a HTTPS)
-      - "traefik.http.routers.edatia-api-http.rule=Host(`api.edatia.com`)"
-      - "traefik.http.routers.edatia-api-http.entrypoints=web"
-      - "traefik.http.routers.edatia-api-http.middlewares=redirect-https"
-      # Middleware de redirección HTTPS
-      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
     networks:
       - default
     healthcheck:
@@ -66,16 +58,11 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      # Router HTTPS — dominio raíz y www
       - "traefik.http.routers.edatia-landing.rule=Host(`edatia.com`) || Host(`www.edatia.com`)"
       - "traefik.http.routers.edatia-landing.entrypoints=websecure"
       - "traefik.http.routers.edatia-landing.tls=true"
-      - "traefik.http.routers.edatia-landing.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.edatia-landing.tls.certresolver=letsencrypt"
       - "traefik.http.services.edatia-landing.loadbalancer.server.port=80"
-      # Router HTTP — redirige a HTTPS
-      - "traefik.http.routers.edatia-landing-http.rule=Host(`edatia.com`) || Host(`www.edatia.com`)"
-      - "traefik.http.routers.edatia-landing-http.entrypoints=web"
-      - "traefik.http.routers.edatia-landing-http.middlewares=redirect-https"
     networks:
       - default
     healthcheck:
@@ -97,16 +84,11 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      # Router HTTPS
       - "traefik.http.routers.edatia-web.rule=Host(`erp.edatia.com`)"
       - "traefik.http.routers.edatia-web.entrypoints=websecure"
       - "traefik.http.routers.edatia-web.tls=true"
-      - "traefik.http.routers.edatia-web.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.edatia-web.tls.certresolver=letsencrypt"
       - "traefik.http.services.edatia-web.loadbalancer.server.port=80"
-      # Router HTTP (redirige a HTTPS)
-      - "traefik.http.routers.edatia-web-http.rule=Host(`erp.edatia.com`)"
-      - "traefik.http.routers.edatia-web-http.entrypoints=web"
-      - "traefik.http.routers.edatia-web-http.middlewares=redirect-https"
     networks:
       - default
     healthcheck:
@@ -132,11 +114,8 @@ services:
       - "traefik.http.routers.edatia-binarias.rule=Host(`binarias.edatia.com`)"
       - "traefik.http.routers.edatia-binarias.entrypoints=websecure"
       - "traefik.http.routers.edatia-binarias.tls=true"
-      - "traefik.http.routers.edatia-binarias.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.edatia-binarias.tls.certresolver=letsencrypt"
       - "traefik.http.services.edatia-binarias.loadbalancer.server.port=80"
-      - "traefik.http.routers.edatia-binarias-http.rule=Host(`binarias.edatia.com`)"
-      - "traefik.http.routers.edatia-binarias-http.entrypoints=web"
-      - "traefik.http.routers.edatia-binarias-http.middlewares=redirect-https"
     networks:
       - default
     healthcheck:
@@ -158,16 +137,11 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      # Router HTTPS
       - "traefik.http.routers.edatia-manager.rule=Host(`manager.edatia.com`)"
       - "traefik.http.routers.edatia-manager.entrypoints=websecure"
       - "traefik.http.routers.edatia-manager.tls=true"
-      - "traefik.http.routers.edatia-manager.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.edatia-manager.tls.certresolver=letsencrypt"
       - "traefik.http.services.edatia-manager.loadbalancer.server.port=80"
-      # Router HTTP (redirige a HTTPS)
-      - "traefik.http.routers.edatia-manager-http.rule=Host(`manager.edatia.com`)"
-      - "traefik.http.routers.edatia-manager-http.entrypoints=web"
-      - "traefik.http.routers.edatia-manager-http.middlewares=redirect-https"
     networks:
       - default
     healthcheck:
