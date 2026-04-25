@@ -7,7 +7,7 @@ import {
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Barcode,
+  Tag, Scan,
 } from 'lucide-react'
 
 const IVA_RATES: Record<string, number> = {
@@ -272,7 +272,7 @@ export function PosScreen() {
           <div className="p-3 bg-slate-800 shrink-0">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Barcode size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Scan size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 ref={searchRef}
                 value={q}
@@ -316,7 +316,7 @@ export function PosScreen() {
               )
             ) : (
               <div className="text-center text-slate-500 py-20">
-                <Barcode size={48} className="mx-auto mb-3 opacity-30" />
+                <Scan size={48} className="mx-auto mb-3 opacity-30" />
                 <p className="text-lg">Busca un producto o escanea el código de barras</p>
                 <p className="text-xs mt-1 text-slate-600">El lector de código de barras funciona automáticamente</p>
               </div>
