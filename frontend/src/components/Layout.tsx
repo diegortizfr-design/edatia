@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { LogOut, User, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Users, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor } from 'lucide-react'
+import { LogOut, User, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor, Building2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
@@ -12,6 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [invOpen, setInvOpen] = useState(false)
   const [ventasOpen, setVentasOpen] = useState(false)
   const [contOpen, setContOpen] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -180,8 +181,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Monitor size={13} />POS
             </NavLink>
 
-            <NavLink to="/empresas" className={navLinkCls}>Empresas</NavLink>
-            <NavLink to="/usuarios" className={navLinkCls}>Usuarios</NavLink>
+            {/* Configuración dropdown */}
+            <div className="relative" onMouseEnter={() => setConfigOpen(true)} onMouseLeave={() => setConfigOpen(false)}>
+              <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-indigo-600 transition-colors px-1 py-0.5">
+                <Settings size={13} />Configuración<ChevronDown size={11} className={`transition-transform ${configOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {configOpen && (
+                <div className="absolute top-full right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="px-3 pt-2 pb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">General</p>
+                  </div>
+                  {[
+                    { to: '/configuracion/empresa', icon: <Building2 size={14} />, label: 'Mi Empresa' },
+                    { to: '/ventas/config-dian',    icon: <FileText size={14} />,  label: 'Facturación DIAN' },
+                  ].map(item => (
+                    <NavLink key={item.to} to={item.to}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${isActive ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`
+                      }>
+                      <span className="text-slate-400">{item.icon}</span>
+                      {item.label}
+                    </NavLink>
+                  ))}
+                  <div className="pb-2" />
+                </div>
+              )}
+            </div>
           </nav>
         </div>
         <div className="flex items-center gap-3">

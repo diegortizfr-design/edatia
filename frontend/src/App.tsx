@@ -36,6 +36,9 @@ import { NotasCredito } from './pages/ventas/NotasCredito'
 import { ReciboCaja } from './pages/ventas/ReciboCaja'
 import { ConfigDian } from './pages/ventas/ConfigDian'
 
+// ── Configuración ──
+import { ConfigEmpresa } from './pages/configuracion/ConfigEmpresa'
+
 // ── POS ──
 import { PosDashboard } from './pages/pos/PosDashboard'
 import { PosScreen } from './pages/pos/PosScreen'
@@ -67,8 +70,6 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/" element={<P><Dashboard /></P>} />
-        <Route path="/empresas" element={<P><div className="text-slate-500 text-center py-20">Módulo de Empresas — próximamente</div></P>} />
-        <Route path="/usuarios" element={<P><div className="text-slate-500 text-center py-20">Módulo de Usuarios — próximamente</div></P>} />
 
         {/* ── Inventario ── */}
         <Route path="/inventario" element={<Navigate to="/inventario/dashboard" replace />} />
@@ -106,6 +107,9 @@ function App() {
         <Route path="/ventas/notas-credito" element={<P><NotasCredito /></P>} />
         <Route path="/ventas/recibos"       element={<P><ReciboCaja /></P>} />
         <Route path="/ventas/config-dian"   element={<P><ConfigDian /></P>} />
+
+        {/* ── Configuración ── */}
+        <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />
 
         {/* ── POS ── */}
         <Route path="/pos" element={<P><PosDashboard /></P>} />

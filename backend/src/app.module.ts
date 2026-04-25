@@ -14,6 +14,7 @@ import { InventarioModule } from './inventario/inventario.module';
 import { VentasModule } from './ventas/ventas.module';
 import { ContabilidadModule } from './contabilidad/contabilidad.module';
 import { PosModule } from './pos/pos.module';
+import { ConfiguracionModule } from './configuracion/configuracion.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PosModule } from './pos/pos.module';
     VentasModule,
     ContabilidadModule,
     PosModule,
+    ConfiguracionModule,
   ],
   controllers: [AppController],
   providers: [

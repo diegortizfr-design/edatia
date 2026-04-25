@@ -34,25 +34,54 @@ model Profile {
 
 model Empresa {
   id        Int      @id @default(autoincrement())
-  nit       String   @unique
-  nombre    String
-  direccion String?
-  telefono  String?
-  email     String?
-  // Datos DIAN
+
+  // ── Identificación legal ──────────────────────────
+  nit                  String   @unique
+  digitoVerificacion   String?
+  nombre               String              // Razón social / nombre legal
+  nombreComercial      String?             // Nombre comercial (como se muestra al público)
+  tipoPersona          String?  @default("JURIDICA")  // JURIDICA | NATURAL
+  representanteLegal   String?             // Nombre representante legal
+  representanteLegalDoc String?            // Cédula representante legal
+
+  // ── Cámara de Comercio ────────────────────────────
+  matriculaMercantil        String?
+  fechaMatriculaMercantil   DateTime?
+  ciudadMatricula           String?
+
+  // ── Tributario ────────────────────────────────────
+  regimenFiscal        String?  @default("48")  // 48=Responsable IVA, 49=No responsable
+  actividadEconomica   String?                  // Código CIIU
+  responsabilidades    String[]                 // Códigos DIAN (ej: ["O-13","O-15"])
+  granContribuyente    Boolean  @default(false)
+  autoretenedor        Boolean  @default(false)
+  agenteRetencion      Boolean  @default(false)
+
+  // ── Ubicación ─────────────────────────────────────
+  direccion            String?
   municipio            String?
   departamento         String?
-  codigoDane           String?   // código DANE municipio (ej: 11001 = Bogotá)
+  codigoDane           String?  // Código DANE municipio (ej: 11001 = Bogotá)
   codigoPostal         String?
-  regimenFiscal        String?   @default("48")  // 48=Responsable IVA, 49=No responsable
-  actividadEconomica   String?   // CIIU
-  responsabilidades    String[]  // códigos responsabilidad tributaria DIAN
-  tipoPersona          String?   @default("JURIDICA")
-  digitoVerificacion   String?
+  pais                 String?  @default("CO")
+
+  // ── Contacto ──────────────────────────────────────
+  telefono             String?
+  email                String?
+  correoFacturacion    String?  // Email específico para envío de facturas
+  web                  String?
+
+  // ── Marca / Branding ──────────────────────────────
   logo                 String?
-  permiteStockNegativo Boolean @default(false)
+  colorPrimario        String?  @default("#4F46E5")
+  slogan               String?
+
+  // ── Configuración operativa ───────────────────────
+  permiteStockNegativo Boolean  @default(false)
+
   usuarios  User[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   // ── Inventario ────────────────────────────────────
   categorias           Categoria[]
