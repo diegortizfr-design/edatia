@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { LogOut, User, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor, Building2 } from 'lucide-react'
+import { LogOut, User, Users, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor, Building2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
