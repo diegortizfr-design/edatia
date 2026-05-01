@@ -2,21 +2,21 @@ import { IsEmail, IsString, IsNotEmpty, IsArray } from 'class-validator';
 
 export class GuardarCarteraDto {
   @IsEmail()
-  correo: string;
+  correo!: string;
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 
   @IsArray()
-  datosJson: any[];
+  datosJson!: any[];
 }
 
 export class RecuperarCarteraDto {
   @IsEmail()
-  correo: string;
+  correo!: string;
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 }

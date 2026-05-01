@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { PosService } from './pos.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { GetUser } from '../auth/decorators/get-user.decorator'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { GetUser } from '../common/decorators/get-user.decorator'
 
 @UseGuards(JwtAuthGuard)
 @Controller('pos')
