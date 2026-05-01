@@ -156,6 +156,32 @@ services:
           cpus: '0.5'
           memory: 128M
 
+  herramientas:
+    build:
+      context: ./herramientas
+      dockerfile: Dockerfile
+    container_name: edatia-herramientas
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.edatia-herramientas.rule=Host(`herramientas.edatia.com`)"
+      - "traefik.http.routers.edatia-herramientas.entrypoints=websecure"
+      - "traefik.http.routers.edatia-herramientas.tls=true"
+      - "traefik.http.routers.edatia-herramientas.tls.certresolver=letsencrypt"
+      - "traefik.http.services.edatia-herramientas.loadbalancer.server.port=80"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+
 networks:
   default:
     external: true

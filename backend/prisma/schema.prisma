@@ -1449,3 +1449,16 @@ model AuditLog {
   @@index([colaboradorEmail])
   @@index([createdAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERRAMIENTAS GRATUITAS (Lead Magnets)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model HerramientaCartera {
+  id              Int      @id @default(autoincrement())
+  correo          String   @unique
+  password        String
+  datosJson       Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
