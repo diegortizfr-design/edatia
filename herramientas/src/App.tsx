@@ -2,7 +2,8 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Placeholder for Cartera page
+// Pages
+const Landing = React.lazy(() => import('./pages/Landing'));
 const Cartera = React.lazy(() => import('./pages/Cartera'));
 
 function App() {
@@ -11,7 +12,7 @@ function App() {
       <Toaster position="top-right" toastOptions={{ className: 'dark:bg-navy-800 dark:text-white border dark:border-navy-700' }} />
       <React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
         <Routes>
-          <Route path="/" element={<div className="p-8"><h1 className="text-3xl font-bold">Herramientas Edatia</h1><a href="/cartera" className="text-brand-blue hover:underline">Gestión de Cartera</a></div>} />
+          <Route path="/" element={<Landing />} />
           <Route path="/cartera" element={<Cartera />} />
         </Routes>
       </React.Suspense>
