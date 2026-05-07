@@ -28,19 +28,11 @@ export class DashboardService {
       }),
       // Clientes totales
       this.prisma.clienteERP.count({ where: { empresaId, activo: true } }),
-      // Alertas de stock (cantidad < stockMinimo)
-      this.prisma.stock.count({
-        where: {
-          empresaId,
-          producto: { stockMinimo: { gt: 0 } },
-          cantidad: { lt: this.prisma.stock.fields.productoId } // This is tricky in Prisma without raw SQL or a specific logic
-        }
-      }).catch(() => 0), // Fallback if complex query fails
       // Sesiones POS abiertas
       this.prisma.sesionCaja.count({ where: { empresaId, estado: 'ABIERTA' } }),
     ]);
 
-    // Re-calculamos alertas de stock de forma más precisa
+    // Calculamos alertas de stock de forma precisa (cantidad < stockMinimo)
     const stocks = await this.prisma.stock.findMany({
       where: { empresaId },
       include: { producto: { select: { stockMinimo: true } } }
