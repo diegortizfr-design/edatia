@@ -2,9 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service'
 import { Decimal } from '@prisma/client/runtime/library'
 
+import { ComprobantesService } from '../contabilidad/comprobantes/comprobantes.service'
+
 @Injectable()
 export class PosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private comprobantes: ComprobantesService,
+  ) {}
 
   // ─── Cajas ───────────────────────────────────────────────────────────────────
 
@@ -434,6 +439,9 @@ export class PosService {
         },
       })
 
+      // 5. Crear Asiento Contable Automático
+      await this.crearAsientoVentaPos(tx, v, empresaId, dto.sesionId)
+
       return v
     })
 
@@ -556,5 +564,115 @@ export class PosService {
       imagen: p.imagen,
       stock: p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada) : 0,
     }))
+  }
+
+  // ─── Integración Contable ───────────────────────────────────────────────────
+
+  private async crearAsientoVentaPos(tx: any, venta: any, empresaId: number, sesionId: number) {
+    // 1. Obtener configuración de la sesión/caja para la cuenta de efectivo
+    const sesion = await tx.sesionCaja.findUnique({
+      where: { id: sesionId },
+      include: { caja: true },
+    })
+
+    // 2. Definir cuentas (códigos estándar PUC Colombia)
+    const codigos = ['1105', '4135', '240801', '240802', '6135', '1435']
+    const cuentas = await tx.cuentaPUC.findMany({
+      where: { empresaId, codigo: { in: codigos } },
+    })
+    const byCode = new Map(cuentas.map((c: any) => [c.codigo, c.id]))
+
+    const cCaja = sesion?.caja?.cuentaPUCId || byCode.get('1105')
+    const cIngresos = byCode.get('4135')
+    const cIva19 = byCode.get('240801')
+    const cIva5 = byCode.get('240802')
+    const cCostoVta = byCode.get('6135')
+    const cInventario = byCode.get('1435')
+
+    if (!cCaja || !cIngresos) return // Sin configuración contable base, omitir
+
+    // 3. Preparar líneas del asiento
+    const lineas = []
+    const desc = `Venta POS ${venta.numero}`
+
+    // Débito a Caja (Total recibido)
+    lineas.push({
+      cuentaId: cCaja,
+      descripcion: desc,
+      debito: Number(venta.total),
+      credito: 0,
+      terceroNit: venta.clienteDoc,
+      terceroNombre: venta.clienteNombre,
+    })
+
+    // Crédito a Ingresos (Base)
+    lineas.push({
+      cuentaId: cIngresos,
+      descripcion: desc,
+      debito: 0,
+      credito: Number(venta.subtotal) - Number(venta.descuento),
+      terceroNit: venta.clienteDoc,
+      terceroNombre: venta.clienteNombre,
+    })
+
+    // Crédito a IVA
+    if (Number(venta.iva19) > 0 && cIva19) {
+      lineas.push({ cuentaId: cIva19, descripcion: `${desc} - IVA 19%`, debito: 0, credito: Number(venta.iva19) })
+    }
+    if (Number(venta.iva5) > 0 && cIva5) {
+      lineas.push({ cuentaId: cIva5, descripcion: `${desc} - IVA 5%`, debito: 0, credito: Number(venta.iva5) })
+    }
+
+    // Costo de Ventas (si hay costo registrado)
+    const costoTotal = venta.items.reduce((acc: number, item: any) => acc + Number(item.costoTotal || 0), 0)
+    if (costoTotal > 0 && cCostoVta && cInventario) {
+      lineas.push({ cuentaId: cCostoVta, descripcion: `Costo ${desc}`, debito: costoTotal, credito: 0 })
+      lineas.push({ cuentaId: cInventario, descripcion: `Salida Inv ${desc}`, debito: 0, credito: costoTotal })
+    }
+
+    // 4. Validar partida doble (margen de error 0.01)
+    const totalDb = lineas.reduce((acc, l) => acc + l.debito, 0)
+    const totalCr = lineas.reduce((acc, l) => acc + l.credito, 0)
+    if (Math.abs(totalDb - totalCr) > 0.1) return // No cuadra, no crear asiento para evitar errores
+
+    // 5. Crear el comprobante
+    const fecha = new Date(venta.fecha)
+    const anio = fecha.getFullYear()
+    const mes = fecha.getMonth() + 1
+
+    const periodo = await tx.periodoContable.upsert({
+      where: { empresaId_anio_mes: { empresaId, anio, mes } },
+      create: { empresaId, anio, mes, estado: 'ABIERTA' },
+      update: {},
+    })
+
+    const ultimo = await tx.comprobante.findFirst({
+      where: { empresaId, tipo: 'POS' },
+      orderBy: { id: 'desc' },
+    })
+    const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() || '0') + 1 : 1
+    const numeroComp = `POS-${anio}-${String(seq).padStart(5, '0')}`
+
+    const comprobante = await tx.comprobante.create({
+      data: {
+        empresaId,
+        numero: numeroComp,
+        tipo: 'POS',
+        concepto: `Venta POS ${venta.numero} - ${venta.clienteNombre}`,
+        fecha,
+        periodoId: periodo.id,
+        referenciaId: venta.id,
+        referenciaTipo: 'VENTA_POS',
+        lineas: {
+          create: lineas.map((l, idx) => ({ ...l, orden: idx })),
+        },
+      },
+    })
+
+    // 6. Vincular comprobante a la venta
+    await tx.ventaPos.update({
+      where: { id: venta.id },
+      data: { comprobanteId: comprobante.id },
+    })
   }
 }
