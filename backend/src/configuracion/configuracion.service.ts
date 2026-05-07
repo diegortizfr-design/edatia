@@ -60,9 +60,11 @@ export class ConfiguracionService {
     // No permitir cambiar el NIT desde el ERP (solo el Manager puede)
     const { nit, id, createdAt, ...data } = dto
 
-    // Convertir fecha si viene como string
-    if (data.fechaMatriculaMercantil && typeof data.fechaMatriculaMercantil === 'string') {
-      data.fechaMatriculaMercantil = new Date(data.fechaMatriculaMercantil)
+    // Convertir fecha si viene como string (manejar vacíos como null)
+    if (typeof data.fechaMatriculaMercantil === 'string') {
+      data.fechaMatriculaMercantil = data.fechaMatriculaMercantil.trim() === ''
+        ? null
+        : new Date(data.fechaMatriculaMercantil)
     }
 
     return this.prisma.empresa.update({

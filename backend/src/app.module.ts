@@ -16,6 +16,7 @@ import { ContabilidadModule } from './contabilidad/contabilidad.module';
 import { PosModule } from './pos/pos.module';
 import { ConfiguracionModule } from './configuracion/configuracion.module';
 import { HerramientasModule } from './herramientas/herramientas.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { HerramientasModule } from './herramientas/herramientas.module';
     PosModule,
     ConfiguracionModule,
     HerramientasModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
