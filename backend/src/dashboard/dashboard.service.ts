@@ -13,7 +13,6 @@ export class DashboardService {
       ventasHoyPos,
       ventasHoyFacturas,
       totalClientes,
-      alertasStock,
       sesionesAbiertas,
     ] = await Promise.all([
       // Ventas POS de hoy
