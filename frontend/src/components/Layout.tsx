@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { LogOut, User, Users, BarChart3, Package, Warehouse, Activity, BookOpen, LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, Monitor, Building2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { SupportButton } from './SupportButton'
 
 const navLinkCls = ({ isActive }: { isActive: boolean }) =>
   `text-xs font-semibold uppercase tracking-wide transition-colors px-1 py-0.5 ${isActive ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`
@@ -20,7 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 relative">
       <header className="h-16 px-6 flex items-center justify-between bg-white border-b border-slate-200 shadow-sm">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -214,7 +215,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <User className="h-4 w-4" />
             <span className="font-medium">{user?.nombre ?? user?.usuario}</span>
             {user?.rol === 'admin' && (
-              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+               <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
                 Admin
               </span>
             )}
@@ -237,6 +238,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className="py-4 px-6 text-center text-slate-400 text-xs border-t border-slate-200">
         &copy; {new Date().getFullYear()} Edatia SaaS. Todos los derechos reservados.
       </footer>
+      
+      {/* Botón Flotante de Soporte Global */}
+      <SupportButton />
     </div>
   )
 }

@@ -170,8 +170,9 @@ export function PosConfig() {
                     <select value={form.tipoConexion} onChange={set('tipoConexion')}
                       className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
                       <option value="NINGUNA">Sin impresora</option>
+                      <option value="AGENTE_LOCAL">Edatia Print (Recomendado)</option>
                       <option value="NETWORK">Red (IP:Puerto)</option>
-                      <option value="USB">USB</option>
+                      <option value="USB">USB directo (No soporta Web)</option>
                       <option value="SERIAL">Serial/COM</option>
                     </select>
                   </div>

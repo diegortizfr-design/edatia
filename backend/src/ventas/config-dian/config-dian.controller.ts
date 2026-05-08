@@ -1,31 +1,29 @@
-import { Controller, Get, Post, Put, Patch, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { ConfigDianService } from './config-dian.service'
-import { UpsertConfigDianDto, CreateResolucionDto } from './dto/config-dian.dto'
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard'
-import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator'
+import { Controller, Get, Put, Post, Patch, Body, Param, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
+import { ConfigDianService } from './config-dian.service';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
-@Controller('ventas/config-dian')
+@Controller('api/v1/ventas/config-dian')
 export class ConfigDianController {
-  constructor(private svc: ConfigDianService) {}
+  constructor(private readonly configService: ConfigDianService) {}
 
   @Get()
-  get(@GetUser() u: JwtPayload) {
-    return this.svc.getConfig(u.empresaId!)
+  getConfig(@Request() req: any) {
+    return this.configService.getConfig(req.user.empresaId);
   }
 
   @Put()
-  upsert(@Body() dto: UpsertConfigDianDto, @GetUser() u: JwtPayload) {
-    return this.svc.upsert(dto, u.empresaId!)
+  upsertConfig(@Request() req: any, @Body() body: any) {
+    return this.configService.upsertConfig(req.user.empresaId, body);
   }
 
   @Post('resoluciones')
-  addResolucion(@Body() dto: CreateResolucionDto, @GetUser() u: JwtPayload) {
-    return this.svc.addResolucion(dto, u.empresaId!)
+  addResolucion(@Request() req: any, @Body() body: any) {
+    return this.configService.addResolucion(req.user.empresaId, body);
   }
 
   @Patch('resoluciones/:id/toggle')
-  toggleResolucion(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.toggleResolucion(id)
+  toggleResolucion(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.configService.toggleResolucion(req.user.empresaId, id);
   }
 }

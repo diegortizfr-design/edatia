@@ -1,67 +1,74 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { PrismaService } from '../../prisma/prisma.service'
-import { UpsertConfigDianDto, CreateResolucionDto } from './dto/config-dian.dto'
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ConfigDianService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getConfig(empresaId: number) {
-    return this.prisma.configuracionDIAN.findUnique({
+    let config = await this.prisma.configuracionDIAN.findUnique({
       where: { empresaId },
       include: { resoluciones: { orderBy: { id: 'desc' } } },
-    })
+    });
+
+    if (!config) {
+      config = await this.prisma.configuracionDIAN.create({
+        data: { empresaId },
+        include: { resoluciones: true },
+      });
+    }
+    return config;
   }
 
-  async upsert(dto: UpsertConfigDianDto, empresaId: number) {
-    return this.prisma.configuracionDIAN.upsert({
-      where: { empresaId },
-      create: { ...dto, empresaId },
-      update: dto,
-    })
+  async upsertConfig(empresaId: number, data: any) {
+    const config = await this.prisma.configuracionDIAN.findUnique({ where: { empresaId } });
+    if (config) {
+      return this.prisma.configuracionDIAN.update({
+        where: { empresaId },
+        data,
+      });
+    } else {
+      return this.prisma.configuracionDIAN.create({
+        data: { empresaId, ...data },
+      });
+    }
   }
 
-  async addResolucion(dto: CreateResolucionDto, empresaId: number) {
-    const config = await this.prisma.configuracionDIAN.findUnique({ where: { empresaId } })
-    if (!config) throw new NotFoundException('Configure primero los datos DIAN')
-
+  async addResolucion(empresaId: number, data: any) {
+    const config = await this.getConfig(empresaId);
+    
+    // Parsear fechas al final del día o inicio para DIAN si es necesario
     return this.prisma.resolucionDIAN.create({
       data: {
-        ...dto,
-        numeroCurrent: dto.numeroInicial - 1,
-        fechaResolucion: new Date(dto.fechaResolucion),
-        fechaVigencia: new Date(dto.fechaVigencia),
         configId: config.id,
-      },
-    })
-  }
-
-  async getResolucionActiva(empresaId: number, tipoDocumento = '01') {
-    const config = await this.prisma.configuracionDIAN.findUnique({ where: { empresaId } })
-    if (!config) return null
-
-    return this.prisma.resolucionDIAN.findFirst({
-      where: {
-        configId: config.id,
-        tipoDocumento,
+        tipoDocumento: data.tipoDocumento,
+        prefijo: data.prefijo || '',
+        numeroInicial: data.rangoInicial,
+        numeroFinal: data.rangoFinal,
+        numeroCurrent: data.rangoInicial,
+        fechaResolucion: new Date(data.fechaResolucion),
+        fechaVigencia: new Date(data.fechaVigencia),
+        numeroResolucion: data.numeroResolucion,
+        claveTecnica: data.claveTecnica || 'PENDIENTE', // Ficticio por ahora
         activo: true,
-        fechaVigencia: { gte: new Date() },
-        numeroCurrent: { lt: this.prisma.resolucionDIAN.fields.numeroFinal as any },
       },
-      orderBy: { id: 'desc' },
-    })
+    });
   }
 
-  async incrementarNumero(resolucionId: number) {
+  async toggleResolucion(empresaId: number, id: number) {
+    // Validar propiedad de la resolución a través de configuracionDIAN
+    const resolucion = await this.prisma.resolucionDIAN.findUnique({ 
+      where: { id },
+      include: { config: true }
+    });
+    
+    if (!resolucion || resolucion.config.empresaId !== empresaId) {
+      throw new NotFoundException('Resolución no encontrada');
+    }
+    
     return this.prisma.resolucionDIAN.update({
-      where: { id: resolucionId },
-      data: { numeroCurrent: { increment: 1 } },
-    })
-  }
-
-  async toggleResolucion(id: number) {
-    const r = await this.prisma.resolucionDIAN.findUnique({ where: { id } })
-    if (!r) throw new NotFoundException('Resolución no encontrada')
-    return this.prisma.resolucionDIAN.update({ where: { id }, data: { activo: !r.activo } })
+      where: { id },
+      data: { activo: !resolucion.activo },
+    });
   }
 }
