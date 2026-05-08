@@ -1,6 +1,3 @@
 FROM caddy:2-alpine
-
+COPY . /usr/share/caddy/
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY index.html /usr/share/caddy/index.html
-
-EXPOSE 80 443

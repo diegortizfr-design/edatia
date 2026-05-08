@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edatia Developers - Software & Automatización</title>
+    <meta name="description" content="Edatia Developers: Expertos en desarrollo web, tiendas virtuales, automatizaciones con n8n y bots de IA.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- AOS CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        dev: {
+                            purple: '#8b5cf6',
+                            indigo: '#6366f1',
+                            dark: '#0f172a',
+                            black: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { background-color: #020617; color: #f8fafc; }
+        .code-gradient {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .service-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .service-card:hover {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full z-50 bg-dev-black/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2 font-bold text-xl group">
+                <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+                Edatia <span class="text-dev-purple">Developers</span>
+            </a>
+            <a href="#contacto" class="bg-dev-purple hover:bg-dev-indigo text-white px-6 py-2 rounded-full text-sm font-bold transition-all">Cotizar Proyecto</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pt-40 pb-20 px-6">
+        <div class="max-w-7xl mx-auto text-center" data-aos="fade-up">
+            <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">
+                Codificamos soluciones que <br><span class="code-gradient">escalan tu visión</span>.
+            </h1>
+            <p class="text-xl text-slate-400 max-w-3xl mx-auto mb-10">
+                Desde landing pages de alto impacto hasta ecosistemas complejos de automatización con IA y n8n.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Next.js</div>
+                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Node.js</div>
+                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">n8n</div>
+                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Python</div>
+                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">React</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Grid -->
+    <section class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Web Dev -->
+                <div class="service-card p-8 rounded-3xl" data-aos="fade-up">
+                    <div class="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="monitor"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Desarrollo Web & Apps</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Creamos experiencias digitales rápidas, seguras y optimizadas para SEO. SPAs, PWAs y aplicaciones empresariales a medida.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> React / Next.js</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Diseño UI/UX Premium</li>
+                    </ul>
+                </div>
+
+                <!-- E-commerce -->
+                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="100">
+                    <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="shopping-cart"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Tiendas Virtuales</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Vende sin límites. Configuramos tu e-commerce con pasarelas de pago, gestión de inventario y analítica avanzada.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Shopify / WooCommerce</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> E-commerce Custom</li>
+                    </ul>
+                </div>
+
+                <!-- n8n Automation -->
+                <div class="service-card p-8 rounded-3xl border-dev-purple/20 bg-dev-purple/5" data-aos="fade-up" data-aos-delay="200">
+                    <div class="w-12 h-12 bg-dev-purple/20 text-dev-purple rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="git-branch"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Automatización n8n</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Conectamos tus herramientas favoritas. Ahorra cientos de horas mensuales automatizando flujos de trabajo complejos.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Integración de APIs</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Flujos de datos en tiempo real</li>
+                    </ul>
+                </div>
+
+                <!-- Bots & AI -->
+                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="300">
+                    <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="bot"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Bots & IA</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Implementamos agentes de IA para atención al cliente en WhatsApp, Telegram y Web, integrados con tu base de datos.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> OpenAI / Anthropic Integration</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Chatbots de Venta</li>
+                    </ul>
+                </div>
+
+                <!-- Software a Medida -->
+                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="400">
+                    <div class="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="layers"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Software a Medida</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        ¿Tienes una idea única? Desarrollamos soluciones específicas que el software comercial no puede resolver.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Arquitecturas Escalables</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Consultoría Técnica</li>
+                    </ul>
+                </div>
+
+                <!-- Mantenimiento -->
+                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="500">
+                    <div class="w-12 h-12 bg-slate-500/10 text-slate-400 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Soporte & DevOps</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Nos encargamos de que tu software esté siempre online, seguro y actualizado. Gestión de servidores y despliegues.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-2">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Docker / Cloud Hosting</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Auditorías de Seguridad</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section id="contacto" class="py-32 px-6 bg-dev-purple/10">
+        <div class="max-w-4xl mx-auto text-center" data-aos="zoom-in">
+            <h2 class="text-4xl font-bold mb-6">¿Listo para el siguiente nivel?</h2>
+            <p class="text-slate-400 text-lg mb-10">Cuéntanos sobre tu proyecto y te daremos una propuesta técnica en menos de 48 horas.</p>
+            <a href="mailto:developers@edatia.com" class="bg-dev-purple hover:bg-dev-indigo text-white px-12 py-4 rounded-full text-lg font-bold transition-all shadow-xl shadow-dev-purple/20">
+                Contactar a un Experto
+            </a>
+        </div>
+    </section>
+
+    <footer class="py-10 px-6 border-t border-white/5 text-center text-slate-600 text-sm">
+        &copy; 2026 Edatia Developers. Una unidad de Edatia Group.
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        lucide.createIcons();
+        AOS.init({ duration: 800, once: true });
+    </script>
+</body>
+</html>

@@ -18,8 +18,8 @@
 	# Compresión
 	encode gzip
 
-	# Fallback (solo index en landing, no es SPA)
-	try_files {path} /index.html
+	# Clean URLs for .html files
+	try_files {path} {path}.html /index.html
 
 	log {
 		output stdout
