@@ -5,8 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edatia | Grupo Empresarial</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <style>
         :root {
             --bg: #050505;
@@ -31,13 +34,15 @@
             overflow-x: hidden;
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             font-family: 'Space Grotesk', sans-serif;
         }
 
         /* NAVBAR */
         nav {
-            padding: 1.5rem 5%;
+            padding: 1rem 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -83,15 +88,52 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
+            background-color: #000;
+        }
+
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.4;
+            /* Ajustamos la opacidad para que no distraiga */
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(5, 5, 5, 0.2) 0%, rgba(5, 5, 5, 0.9) 100%);
+            z-index: 1;
         }
 
         .orbit-wrapper {
             position: relative;
-            width: 800px;
-            height: 800px;
+            width: 100%;
+            height: 85vh;
+            max-width: 1200px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: var(--transition);
+        }
+
+        /* Responsive scaling only for very short viewports */
+        @media (max-height: 700px) {
+            .orbit-wrapper {
+                transform: scale(0.9);
+            }
         }
 
         .central-core {
@@ -126,18 +168,19 @@
             position: absolute;
             background: var(--card-bg);
             border: 1px solid var(--border);
-            padding: 1.2rem 1.5rem;
-            border-radius: 16px;
+            padding: 1.4rem 1.8rem;
+            border-radius: 20px;
             cursor: pointer;
             transition: var(--transition);
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 0.5rem;
-            width: 180px;
+            width: 220px;
             text-align: center;
             text-decoration: none;
             color: inherit;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .project-node i {
@@ -154,55 +197,88 @@
         .project-node:hover {
             border-color: var(--accent);
             transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
         }
 
-        /* Posicionamiento Desktop */
-        .node-erp { top: 5%; left: 50%; transform: translateX(-50%); }
-        .node-analytics { top: 30%; right: 5%; }
-        .node-web { bottom: 15%; right: 15%; }
-        .node-personas { bottom: 15%; left: 15%; }
-        .node-tools { top: 30%; left: 5%; }
+        /* Especial para el nodo centrado para que no salte */
+        .node-erp:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        /* Posicionamiento Distribuido (Cloud Layout) */
+        .node-erp {
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .node-analytics {
+            top: 25%;
+            right: 2%;
+        }
+
+        .node-web {
+            bottom: 5%;
+            right: 15%;
+        }
+
+        .node-personas {
+            bottom: 5%;
+            left: 15%;
+        }
+
+        .node-tools {
+            top: 25%;
+            left: 2%;
+        }
 
         /* SECCIÓN QUIÉNES SOMOS */
         .about {
-            padding: 8rem 5%;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 5rem 5% 6rem 5%;
+            background-color: #f8fafc;
+            color: #0f172a;
         }
 
         .about-container {
+            max-width: 1200px;
+            margin: 0 auto;
             display: grid;
-            grid-template-cols: 1fr 1.2fr;
+            grid-template-cols: 1.2fr 1fr;
             gap: 4rem;
             align-items: center;
         }
 
         .about-text h2 {
             font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            color: #0f172a;
         }
 
         .about-text p {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
+            font-size: 1.1rem;
+            color: #334155;
             line-height: 1.8;
+            margin-bottom: 1.5rem;
         }
 
         .about-video {
             position: relative;
             width: 100%;
             padding-top: 56.25%;
-            background: #111;
+            background: #e2e8f0;
             border-radius: 24px;
             overflow: hidden;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
         }
 
         .video-placeholder {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -217,13 +293,216 @@
             opacity: 0.5;
         }
 
+        /* SECCIÓN CONTACTO DINÁMICO - AZUL EDATIA */
+        .contact {
+            padding: 8rem 5% 10rem 5%;
+            background: #000;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .contact-video-bg video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.5;
+        }
+
+        .contact-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.65) 0%, rgba(30, 64, 175, 0.65) 100%);
+            z-index: 1;
+        }
+
+        .contact-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .contact h2 {
+            font-size: 4rem;
+            margin-bottom: 4rem;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .social-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .social-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2.5rem;
+            border-radius: 24px;
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .social-card:nth-child(2n) { animation-delay: -1s; }
+        .social-card:nth-child(3n) { animation-delay: -2s; }
+
+        .social-card i {
+            font-size: 2.5rem;
+            transition: transform 0.5s ease;
+        }
+
+        .social-card span {
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        /* Colores y Glows por plataforma */
+        .card-whatsapp:hover { border-color: #25d366; box-shadow: 0 0 30px rgba(37, 211, 102, 0.2); }
+        .card-whatsapp:hover i { color: #25d366; transform: scale(1.2); }
+
+        .card-instagram:hover { border-color: #e4405f; box-shadow: 0 0 30px rgba(228, 64, 95, 0.2); }
+        .card-instagram:hover i { color: #e4405f; transform: scale(1.2); }
+
+        .card-email:hover { border-color: #38bdf8; box-shadow: 0 0 30px rgba(56, 189, 248, 0.2); }
+        .card-email:hover i { color: #38bdf8; transform: scale(1.2); }
+
+        .card-facebook:hover { border-color: #1877f2; box-shadow: 0 0 30px rgba(24, 119, 242, 0.2); }
+        .card-facebook:hover i { color: #1877f2; transform: scale(1.2); }
+
+        .card-tiktok:hover { border-color: #ff0050; box-shadow: 0 0 30px rgba(255, 0, 80, 0.2); }
+        .card-tiktok:hover i { color: #ff0050; transform: scale(1.2); }
+
+        .card-twitter:hover { border-color: #fff; box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); }
+        .card-twitter:hover i { color: #fff; transform: scale(1.2); }
+
+        /* SECCIÓN NOTICIAS IA */
+        .news-section {
+            padding: 8rem 5%;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .news-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .news-slider {
+            width: 100%;
+            padding: 2rem 0 4rem 0;
+        }
+
+        .news-card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .news-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .news-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        .news-card h3 {
+            font-size: 1.2rem;
+            line-height: 1.4;
+            color: #0f172a;
+        }
+
+        .news-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .swiper-pagination-bullet-active {
+            background: var(--accent);
+        }
+
         /* RESPONSIVE */
         @media (max-width: 1024px) {
-            .hero { height: auto; padding: 150px 0; }
-            .orbit-wrapper { width: 95%; height: auto; flex-direction: column; gap: 1.5rem; }
-            .project-node { position: static !important; width: 100%; max-width: 400px; transform: none !important; }
-            .about-container { grid-template-cols: 1fr; text-align: center; }
-            .logo-text { font-size: 2.2rem; }
+            .hero {
+                height: auto;
+                padding: 150px 0;
+            }
+
+            .orbit-wrapper {
+                width: 95%;
+                height: auto;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .project-node {
+                position: static !important;
+                width: 100%;
+                max-width: 400px;
+                transform: none !important;
+            }
+
+            .about-container {
+                grid-template-cols: 1fr;
+                text-align: center;
+            }
+
+            .logo-text {
+                font-size: 2.2rem;
+            }
         }
     </style>
 </head>
@@ -238,7 +517,14 @@
     </nav>
 
     <section class="hero">
-        <div class="orbit-wrapper">
+        <div class="video-background">
+            <video autoplay muted loop playsinline>
+                <source src="assets/intro.mp4" type="video/mp4">
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+
+        <div class="orbit-wrapper" style="z-index: 2;">
             <div class="central-core">
                 <!-- LOGO CLONADO CON SVG + CSS -->
                 <div class="coded-logo">
@@ -294,26 +580,179 @@
 
     <section class="about">
         <div class="about-container">
-            <div class="about-text">
-                <p style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-size: 0.8rem;">Innovación sin límites</p>
-                <h2 style="font-size: 2.5rem; line-height: 1.2; margin-bottom: 2rem;">Transformamos tu visión en <span style="color: var(--accent);">realidad digital</span>.</h2>
-                <p>
-                    <strong>Edatia</strong> es un grupo empresarial dedicado a brindar soluciones tecnológicas y empresariales de alto impacto. 
-                    Creemos que el único límite es la imaginación; por eso, nos especializamos en materializar tus ideas a través de un ecosistema integral de servicios.
-                </p>
-                <br>
-                <p style="font-size: 1rem; opacity: 0.9;">
-                    Desde potentes sistemas <strong>ERP</strong> y <strong>análisis de datos</strong>, hasta <strong>automatizaciones con n8n</strong> y desarrollo de <strong>software a medida</strong>, proporcionamos las herramientas inteligentes necesarias para simplificar tus procesos y escalar tu potencial al máximo.
-                </p>
-            </div>
             <div class="about-video">
                 <div class="video-placeholder">
                     <i class="fa-solid fa-circle-play"></i>
                     <span>Espacio para Video Corporativo</span>
                 </div>
             </div>
+            <div class="about-text">
+                <p
+                    style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-size: 0.8rem;">
+                    Innovación sin límites</p>
+                <h2 style="font-size: 2.5rem; line-height: 1.2; margin-bottom: 2rem;">Transformamos tu visión en <span
+                        style="color: var(--accent);">realidad digital</span>.</h2>
+                <p>
+                    <strong>Edatia</strong> es un grupo empresarial dedicado a brindar soluciones tecnológicas y
+                    empresariales de alto impacto.
+                    Creemos que el único límite es la imaginación; por eso, nos especializamos en materializar tus ideas
+                    a través de un ecosistema integral de servicios.
+                </p>
+                <p>
+                    Desde potentes sistemas <strong>ERP</strong> y <strong>análisis de datos</strong>, hasta
+                    <strong>automatizaciones con n8n</strong> y desarrollo de <strong>software a medida</strong>,
+                    proporcionamos las herramientas inteligentes necesarias para simplificar tus procesos y escalar tu
+                    potencial al máximo.
+                </p>
+            </div>
+        </div>
+    <section class="contact">
+        <!-- VIDEO BACKGROUND CONTACTO -->
+        <div class="contact-video-bg">
+            <video autoplay muted loop playsinline>
+                <source src="assets/intro2.mp4" type="video/mp4">
+            </video>
+            <div class="contact-overlay"></div>
+        </div>
+
+        <div class="contact-content">
+            <div class="reveal">
+                <p
+                    style="color: rgba(255,255,255,0.9); font-weight: 700; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 1rem; font-size: 0.8rem;">
+                    Hablemos</p>
+                <h2>Llevemos tu negocio al <span
+                        style="color: #ffffff; text-decoration: underline; text-underline-offset: 8px;">siguiente
+                        nivel</span>.</h2>
+            </div>
+
+            <div class="social-grid">
+                <a href="https://wa.me/tu-numero" class="social-card card-whatsapp reveal">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>WHATSAPP</span>
+                </a>
+                <a href="https://instagram.com/edatia" class="social-card card-instagram reveal">
+                    <i class="fa-brands fa-instagram"></i>
+                    <span>INSTAGRAM</span>
+                </a>
+                <a href="mailto:contacto@edatia.com" class="social-card card-email reveal">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>EMAIL</span>
+                </a>
+                <a href="https://facebook.com/edatia" class="social-card card-facebook reveal">
+                    <i class="fa-brands fa-facebook-f"></i>
+                    <span>FACEBOOK</span>
+                </a>
+                <a href="https://tiktok.com/@edatia" class="social-card card-tiktok reveal">
+                    <i class="fa-brands fa-tiktok"></i>
+                    <span>TIKTOK</span>
+                </a>
+                <a href="https://twitter.com/edatia" class="social-card card-twitter reveal">
+                    <i class="fa-brands fa-x-twitter"></i>
+                    <span>TWITTER</span>
+                </a>
+            </div>
+
+            <div style="margin-top: 8rem; opacity: 0.5; font-size: 0.7rem; letter-spacing: 2px;">
+                © 2026 EDATIA GRUPO EMPRESARIAL. TODOS LOS DERECHOS RESERVADOS.
+            </div>
         </div>
     </section>
 
+    <section class="news-section">
+        <div class="reveal">
+            <p
+                style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-size: 0.8rem; text-align: center;">
+                Comunidad</p>
+            <h2>Actualizaciones y <span style="color: var(--accent);">Recomendaciones Edatia</span></h2>
+        </div>
+
+        <div class="swiper news-slider reveal">
+            <div class="swiper-wrapper" id="news-container">
+                <!-- Las noticias se cargarán aquí vía JS -->
+            </div>
+            <div class="swiper-pagination"></div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // Mock de actualizaciones y recomendaciones Edatia
+        const mockNews = [
+            {
+                title: "Lanzamiento: Nuevo módulo de facturación electrónica automática",
+                source: "Actualización",
+                date: "v2.4"
+            },
+            {
+                title: "Recomendación: 5 formas de optimizar tu inventario este mes",
+                source: "Tips Edatia",
+                date: "Lectura 3 min"
+            },
+            {
+                title: "Próximamente: Integración nativa con pasarelas de pago internacionales",
+                source: "Roadmap",
+                date: "Q3 2026"
+            },
+            {
+                title: "Mejora de rendimiento: Procesamiento de datos 40% más rápido",
+                source: "Infraestructura",
+                date: "Finalizado"
+            }
+        ];
+
+        function loadNews() {
+            const container = document.getElementById('news-container');
+            mockNews.forEach(news => {
+                const slide = document.createElement('div');
+                slide.className = 'swiper-slide';
+                slide.innerHTML = `
+                    <div class="news-card">
+                        <span class="news-tag">${news.source}</span>
+                        <h3>${news.title}</h3>
+                        <div class="news-footer">
+                            <span>Edatia Team</span>
+                            <span>${news.date}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(slide);
+            });
+
+            // Inicializar Swiper
+            new Swiper(".news-slider", {
+                slidesPerView: 1,
+                spaceBetween: 30,
+                pagination: {
+                    el: ".swiper-pagination",
+                    clickable: true,
+                },
+                autoplay: {
+                    delay: 3000,
+                },
+                breakpoints: {
+                    768: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 }
+                }
+            });
+        }
+
+        window.addEventListener('load', loadNews);
+
+        // Intersection Observer para el efecto de entrada
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
 </body>
+
 </html>
