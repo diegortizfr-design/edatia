@@ -271,10 +271,18 @@ export default function Cartera() {
           return true;
         });
 
+        const findKey = (row: any, keys: string[]) => {
+          const rowKeys = Object.keys(row);
+          for (const k of keys) {
+            const match = rowKeys.find(rk => rk.toLowerCase().trim() === k.toLowerCase());
+            if (match) return row[match];
+          }
+          return undefined;
+        };
+
         const formatDate = (val: any) => {
           if (!val) return '';
           if (val instanceof Date) return val.toISOString().split('T')[0];
-          // Si es un número de Excel
           if (typeof val === 'number' && val > 40000) {
             const date = new Date(Math.round((val - 25569) * 86400 * 1000));
             return date.toISOString().split('T')[0];
@@ -282,26 +290,32 @@ export default function Cartera() {
           return String(val);
         };
 
-        const importedItems: CarteraItem[] = cleanData.map((row: any) => ({
-          id: crypto.randomUUID(),
-          nit: String(row['NIT'] || row['Nit'] || '').trim(),
-          fechaCreacionCliente: formatDate(row['Fecha creación cliente'] || row['Fecha Creación'] || row['CREACION']),
-          cliente: String(row['Cliente'] || row['CLIENTE'] || '').trim(),
-          ciudad: String(row['Ciudad'] || row['CIUDAD'] || '').trim(),
-          vendedor: String(row['Nombre vendedor'] || row['Vendedor'] || row['VENDEDOR'] || '').trim(),
-          responsable: String(row['Responsable'] || row['RESPONSABLE'] || row['Encargado'] || '').trim(),
-          terminoPago: String(row['Término de pago'] || row['Termino'] || row['Dias Pago'] || '30'),
-          factura: String(row['Factura'] || row['FACTURA'] || row['Documento'] || '').trim(),
-          fechaFactura: formatDate(row['Fecha Factura'] || row['Fecha factura'] || row['FECHA']),
-          fechaVencimiento: formatDate(row['Fecha de vencimiento'] || row['Vencimiento'] || row['VENCIMIENTO']),
-          valorFactura: Number(row['Valor de factura'] || row['Total'] || row['TOTAL'] || row['Saldo'] || 0),
-          pagoAbono: 0,
-          contactos: '',
-          telefono: String(row['Teléfono'] || row['TELEFONO'] || row['Telefono'] || row['Celular'] || '').trim(),
-          fechaPago: formatDate(row['Fecha de pago'] || row['Pago']),
-          observacion1: String(row['Observaciones 1'] || row['Observacion 1'] || row['OBS 1'] || row['Nota 1'] || '').trim(),
-          observacion2: String(row['Observaciones 2'] || row['Observacion 2'] || row['OBS 2'] || row['Nota 2'] || '').trim(),
-        }));
+        const importedItems: CarteraItem[] = cleanData.map((row: any) => {
+          const nit = String(findKey(row, ['NIT', 'Nit', 'Id']) || '').trim();
+          const cliente = String(findKey(row, ['Cliente', 'CLIENTE', 'Nombre', 'RAZON SOCIAL']) || '').trim();
+          const factura = String(findKey(row, ['Factura', 'FACTURA', 'Documento', 'Referencia']) || '').trim();
+          
+          return {
+            id: crypto.randomUUID(),
+            nit,
+            fechaCreacionCliente: formatDate(findKey(row, ['Fecha creación cliente', 'Fecha Creación', 'CREACION'])),
+            cliente,
+            ciudad: String(findKey(row, ['Ciudad', 'CIUDAD', 'Sede']) || '').trim(),
+            vendedor: String(findKey(row, ['Nombre vendedor', 'Vendedor', 'VENDEDOR']) || '').trim(),
+            responsable: String(findKey(row, ['Responsable', 'RESPONSABLE', 'Encargado', 'Cobrador', 'Responsable Cartera']) || '').trim(),
+            terminoPago: String(findKey(row, ['Término de pago', 'Termino', 'Dias Pago']) || '30'),
+            factura,
+            fechaFactura: formatDate(findKey(row, ['Fecha Factura', 'Fecha factura', 'FECHA'])),
+            fechaVencimiento: formatDate(findKey(row, ['Fecha de vencimiento', 'Vencimiento', 'VENCIMIENTO'])),
+            valorFactura: Number(findKey(row, ['Valor de factura', 'Total', 'TOTAL', 'Saldo', 'Valor']) || 0),
+            pagoAbono: 0,
+            contactos: '',
+            telefono: String(findKey(row, ['Teléfono', 'TELEFONO', 'Telefono', 'Celular']) || '').trim(),
+            fechaPago: formatDate(findKey(row, ['Fecha de pago', 'Pago'])),
+            observacion1: String(findKey(row, ['Observaciones 1', 'Observacion 1', 'OBS 1', 'Nota 1', 'Observación']) || '').trim(),
+            observacion2: String(findKey(row, ['Observaciones 2', 'Observacion 2', 'OBS 2', 'Nota 2']) || '').trim(),
+          };
+        });
 
         if (importedItems.length === 0) {
           toast.error('No se encontraron datos válidos para importar');
@@ -820,11 +834,30 @@ export default function Cartera() {
                             {isVisible('telefono') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
                               <input type="text" value={item.telefono} onChange={(e) => updateItem(item.id, 'telefono', e.target.value)} placeholder="Tel" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
                             </td>}
-                            {isVisible('pago') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
-                              <button onClick={() => updateItem(item.id, 'pagoAbono', item.pagoAbono === item.valorFactura ? 0 : item.valorFactura)} className={`w-5 h-5 mx-auto rounded flex items-center justify-center border transition-colors ${item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? 'bg-green-500 border-green-600 text-white' : 'border-gray-300 dark:border-navy-700'}`}>
-                                {item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? '✓' : ''}
-                              </button>
-                            </td>}
+                            {isVisible('pago') && (
+                              <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                                <div className="flex items-center gap-1 group/pago">
+                                  <input 
+                                    type="number" 
+                                    value={item.pagoAbono || ''} 
+                                    onChange={(e) => updateItem(item.id, 'pagoAbono', Number(e.target.value))} 
+                                    placeholder="Abono"
+                                    className="w-16 bg-transparent border-0 text-right focus:ring-1 focus:ring-green-500 rounded px-1 py-0.5 text-[10px] text-green-600 font-bold" 
+                                  />
+                                  <button 
+                                    onClick={() => updateItem(item.id, 'pagoAbono', item.pagoAbono === item.valorFactura ? 0 : item.valorFactura)}
+                                    className={`flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center border transition-all ${
+                                      item.pagoAbono >= item.valorFactura && item.valorFactura > 0 
+                                        ? 'bg-green-500 border-green-600 text-white' 
+                                        : 'border-gray-300 hover:border-green-500 text-transparent hover:text-green-500'
+                                    }`}
+                                    title="Pagar total"
+                                  >
+                                    <Check className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
                             {isVisible('fechaPago') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
                               <input type="date" value={item.fechaPago} onChange={(e) => updateItem(item.id, 'fechaPago', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
                             </td>}
