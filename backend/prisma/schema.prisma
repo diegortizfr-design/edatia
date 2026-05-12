@@ -79,6 +79,8 @@ model Empresa {
   // ── Configuración operativa ───────────────────────
   permiteStockNegativo Boolean  @default(false)
 
+  configuracionDigital ConfiguracionTienda?
+  
   usuarios  User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
@@ -476,13 +478,48 @@ model Producto {
   cotizacionItems CotizacionItem[]
   ventaPosItems   VentaPosItem[]
 
+  // 🌐 Módulo Digital
+  publicadoWeb    Boolean  @default(false)
+  precioWeb       Decimal? @db.Decimal(14, 2)
+  slug            String?
+  descripcionWeb  String?  @db.Text
+  esDestacado     Boolean  @default(false)
+  metadataWeb     Json?    // Para SEO, tags extra, etc.
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@unique([empresaId, sku])
+  @@unique([empresaId, slug])
   @@index([empresaId])
   @@index([empresaId, codigoBarras])
   @@index([empresaId, activo])
+  @@index([empresaId, publicadoWeb])
+}
+
+model ConfiguracionTienda {
+  id              Int      @id @default(autoincrement())
+  empresaId       Int      @unique
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombreTienda    String?
+  slugTienda      String   @unique
+  
+  logoUrl         String?
+  bannerUrl       String?
+  colorPrimario   String   @default("#4F46E5")
+  
+  whatsappVentas  String?
+  instagramUrl    String?
+  facebookUrl     String?
+  
+  metodosPago     Json?
+  costoEnvioBase  Decimal  @default(0) @db.Decimal(14, 2)
+  
+  activo          Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Bodega {

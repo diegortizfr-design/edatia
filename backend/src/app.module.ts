@@ -17,6 +17,7 @@ import { PosModule } from './pos/pos.module';
 import { ConfiguracionModule } from './configuracion/configuracion.module';
 import { HerramientasModule } from './herramientas/herramientas.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DigitalModule } from './digital/digital.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ConfiguracionModule,
     HerramientasModule,
     DashboardModule,
+    DigitalModule,
   ],
   controllers: [AppController],
   providers: [
