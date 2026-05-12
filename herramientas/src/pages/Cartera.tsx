@@ -244,40 +244,75 @@ export default function Cartera() {
     reader.onload = (evt) => {
       try {
         const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
 
-        const importedItems: CarteraItem[] = data.map((row: any) => ({
+        // Limpiar y filtrar datos antes de procesar
+        const cleanData = data.filter((row: any) => {
+          const cliente = String(row['Cliente'] || '').toLowerCase();
+          const factura = String(row['Factura'] || '');
+          const nit = String(row['NIT'] || '');
+          
+          // Ignorar filas de totales o vacías
+          if (cliente.includes('total')) return false;
+          if (!nit && !factura && !cliente) return false;
+          
+          return true;
+        });
+
+        const formatDate = (val: any) => {
+          if (!val) return '';
+          if (val instanceof Date) return val.toISOString().split('T')[0];
+          // Si es un número de Excel
+          if (typeof val === 'number' && val > 40000) {
+            const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+            return date.toISOString().split('T')[0];
+          }
+          return String(val);
+        };
+
+        const importedItems: CarteraItem[] = cleanData.map((row: any) => ({
           id: crypto.randomUUID(),
-          nit: row['NIT'] || '',
-          fechaCreacionCliente: row['Fecha creación cliente'] || '',
-          cliente: row['Cliente'] || '',
-          ciudad: row['Ciudad'] || '',
-          vendedor: row['Nombre vendedor'] || '',
-          responsable: row['Responsable'] || '',
-          terminoPago: row['Término de pago'] || '30',
-          factura: row['Factura'] || '',
-          fechaFactura: row['Fecha Factura'] || new Date().toISOString().split('T')[0],
-          fechaVencimiento: row['Fecha de vencimiento'] || '',
+          nit: String(row['NIT'] || '').trim(),
+          fechaCreacionCliente: formatDate(row['Fecha creación cliente']),
+          cliente: String(row['Cliente'] || '').trim(),
+          ciudad: String(row['Ciudad'] || '').trim(),
+          vendedor: String(row['Nombre vendedor'] || '').trim(),
+          responsable: String(row['Responsable'] || '').trim(),
+          terminoPago: String(row['Término de pago'] || '30'),
+          factura: String(row['Factura'] || '').trim(),
+          fechaFactura: formatDate(row['Fecha Factura'] || row['Fecha factura']),
+          fechaVencimiento: formatDate(row['Fecha de vencimiento']),
           valorFactura: Number(row['Valor de factura'] || row['Total'] || 0),
-          pagoAbono: 0, // Generalmente se importa el saldo
+          pagoAbono: 0,
           contactos: '',
-          telefono: row['Teléfono'] || '',
-          fechaPago: row['Fecha de pago'] || '',
-          observacion1: row['Observaciones 1'] || '',
-          observacion2: row['Observaciones 2'] || '',
+          telefono: String(row['Teléfono'] || '').trim(),
+          fechaPago: formatDate(row['Fecha de pago']),
+          observacion1: String(row['Observaciones 1'] || '').trim(),
+          observacion2: String(row['Observaciones 2'] || '').trim(),
         }));
 
-        setItems([...importedItems, ...items]);
-        toast.success('Datos importados correctamente');
+        if (importedItems.length === 0) {
+          toast.error('No se encontraron datos válidos para importar');
+          return;
+        }
+
+        // El usuario prefiere "limpiar" antes de importar si trae un reporte completo
+        if (window.confirm(`Se encontraron ${importedItems.length} registros. ¿Deseas REEMPLAZAR la lista actual con estos datos? (Cancela para ADJUNTARLOS)`)) {
+          setItems(importedItems);
+        } else {
+          setItems([...importedItems, ...items]);
+        }
+        
+        toast.success('Datos procesados y limpiados correctamente');
       } catch (error) {
+        console.error('Import error:', error);
         toast.error('Error al importar el archivo');
       }
     };
     reader.readAsBinaryString(file);
-    // Reset file input
     e.target.value = '';
   };
 
