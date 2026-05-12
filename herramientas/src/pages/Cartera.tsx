@@ -416,14 +416,14 @@ export default function Cartera() {
 
     try {
       if (modalMode === 'guardar') {
-        await axios.post('/api/herramientas/cartera/guardar', {
+        await axios.post('/api/v1/herramientas/cartera/guardar', {
           correo,
           password,
           datosJson: items,
         });
         toast.success('Gestión de cartera guardada correctamente');
       } else {
-        const res = await axios.post('/api/herramientas/cartera/recuperar', {
+        const res = await axios.post('/api/v1/herramientas/cartera/recuperar', {
           correo,
           password,
         });
