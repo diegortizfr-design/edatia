@@ -221,7 +221,8 @@ export default function Cartera() {
   const handleExport = () => {
     const filteredItems = filtroCiudad === 'Todas' ? items : items.filter(it => it.ciudad === filtroCiudad);
     
-    const dataToExport = filteredItems.map((item) => ({
+    // Hoja 1: Base de Datos Plana
+    const flatData = filteredItems.map((item) => ({
       'NIT': item.nit,
       'Fecha creación cliente': item.fechaCreacionCliente,
       'Cliente': item.cliente,
@@ -235,7 +236,7 @@ export default function Cartera() {
       'Saldo 31 - 60 días': getBucketValue(item, BUCKETS[1]),
       'Saldo 61 - 90 días': getBucketValue(item, BUCKETS[2]),
       'Saldo 91 días o más': getBucketValue(item, BUCKETS[3]),
-      'Total': calcularSaldo(item.valorFactura, item.pagoAbono),
+      'Saldo Total': calcularSaldo(item.valorFactura, item.pagoAbono),
       'Días en cartera': calcularEdad(item.fechaFactura),
       'Días vencidos': calcularDiasVencidos(item.fechaVencimiento),
       'Responsable': item.responsable,
@@ -244,14 +245,61 @@ export default function Cartera() {
       'Observaciones 1': item.observacion1,
       'Observaciones 2': item.observacion2,
     }));
+
+    // Hoja 2: Vista Gerencial (Agrupada por Cliente)
+    const viewData: any[] = [];
+    groupedItems.forEach(group => {
+      // Fila de Título del Grupo
+      viewData.push({
+        'Cliente': `>>> CLIENTE: ${group.cliente} (${group.records.length} facturas)`,
+        'Saldo 0 - 30 días': group.buckets[0],
+        'Saldo 31 - 60 días': group.buckets[1],
+        'Saldo 61 - 90 días': group.buckets[2],
+        'Saldo 91 días o más': group.buckets[3],
+        'Saldo Total': group.total,
+      });
+
+      // Detalle de Facturas
+      group.records.forEach(item => {
+        viewData.push({
+          'NIT': item.nit,
+          'Factura': item.factura,
+          'Fecha Factura': item.fechaFactura,
+          'Vencimiento': item.fechaVencimiento,
+          'Saldo 0 - 30 días': getBucketValue(item, BUCKETS[0]),
+          'Saldo 31 - 60 días': getBucketValue(item, BUCKETS[1]),
+          'Saldo 61 - 90 días': getBucketValue(item, BUCKETS[2]),
+          'Saldo 91 días o más': getBucketValue(item, BUCKETS[3]),
+          'Saldo Total': calcularSaldo(item.valorFactura, item.pagoAbono),
+          'Responsable': item.responsable,
+          'Obs 1': item.observacion1
+        });
+      });
+
+      // Fila de Espacio
+      viewData.push({});
+    });
+
+    // Fila de Total General al final de la Vista Gerencial
+    viewData.push({
+      'Cliente': 'TOTAL GENERAL DE CARTERA',
+      'Saldo 0 - 30 días': stats.buckets[0].value,
+      'Saldo 31 - 60 días': stats.buckets[1].value,
+      'Saldo 61 - 90 días': stats.buckets[2].value,
+      'Saldo 91 días o más': stats.buckets[3].value,
+      'Saldo Total': stats.total,
+    });
     
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cartera');
     
-    // Add styling/totals could be complex with XLSX basic, but let's at least keep columns
-    XLSX.writeFile(workbook, `Gestion_Cartera_${filtroCiudad}.xlsx`);
-    toast.success('Archivo exportado correctamente');
+    const wsFlat = XLSX.utils.json_to_sheet(flatData);
+    XLSX.utils.book_append_sheet(workbook, wsFlat, 'Base de Datos');
+    
+    const wsView = XLSX.utils.json_to_sheet(viewData);
+    XLSX.utils.book_append_sheet(workbook, wsView, 'Vista Gerencial');
+    
+    XLSX.writeFile(workbook, `Gestion_Cartera_Edatia_${filtroCiudad}.xlsx`);
+    toast.success('Excel generado con éxito (2 pestañas)');
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -269,13 +317,24 @@ export default function Cartera() {
 
         // Limpiar y filtrar datos antes de procesar
         const cleanData = data.filter((row: any) => {
-          const cliente = String(row['Cliente'] || '').toLowerCase();
-          const factura = String(row['Factura'] || '');
-          const nit = String(row['NIT'] || '');
+          const findVal = (keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of keys) {
+              const match = rowKeys.find(rk => rk.toLowerCase().trim() === k.toLowerCase());
+              if (match) return String(row[match] || '').trim();
+            }
+            return '';
+          };
+
+          const cliente = findVal(['Cliente', 'CLIENTE']).toLowerCase();
+          const factura = findVal(['Factura', 'FACTURA', 'Documento']);
+          const nit = findVal(['NIT', 'Nit', 'Id']);
           
-          // Ignorar filas de totales o vacías
+          // REGLA DE ORO: Solo importar si tiene Factura y NIT reales
+          // Esto elimina filas de "TOTALES" o encabezados repetidos del Excel
+          if (!factura || factura.toLowerCase() === 'factura' || factura.toLowerCase().includes('total')) return false;
+          if (!nit || nit.toLowerCase() === 'nit' || nit.toLowerCase().includes('total')) return false;
           if (cliente.includes('total')) return false;
-          if (!nit && !factura && !cliente) return false;
           
           return true;
         });
