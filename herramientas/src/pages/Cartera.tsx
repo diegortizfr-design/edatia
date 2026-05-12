@@ -64,6 +64,7 @@ export default function Cartera() {
   const [correo, setCorreo] = useState('');
   const [nombreReporte, setNombreReporte] = useState('');
   const [password, setPassword] = useState('');
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
   const [filtroCiudad, setFiltroCiudad] = useState('Todas');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
@@ -447,9 +448,12 @@ export default function Cartera() {
         }, 100);
       }
       setIsModalOpen(false);
-      setCorreo('');
-      setPassword('');
-      setNombreReporte('');
+      setPassword(''); // Solo limpiamos la contraseña por seguridad
+      
+      if (modalMode === 'recuperar') {
+        // Al recuperar, establecemos que hay una sesión activa
+        setHasActiveSession(true);
+      }
     } catch (error: any) {
 // ... existing error handling ...
       const errorData = error.response?.data;
@@ -457,6 +461,15 @@ export default function Cartera() {
       toast.error(typeof message === 'string' ? message : 'Error inesperado del servidor');
       console.error('Error al guardar/recuperar:', error);
     }
+  };
+
+  const handleLogout = () => {
+    setHasActiveSession(false);
+    setCorreo('');
+    setNombreReporte('');
+    setItems([]);
+    localStorage.removeItem('edatia_cartera_temp');
+    toast.success('Sesión cerrada. Los datos locales han sido limpiados.');
   };
 
   const openModal = (mode: 'guardar' | 'recuperar') => {
@@ -670,6 +683,16 @@ export default function Cartera() {
           >
             <LogIn className="w-4 h-4" /> Continuar gestión
           </button>
+          
+          {hasActiveSession && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 rounded-lg transition-colors font-medium text-sm"
+              title="Cerrar sesión del reporte actual"
+            >
+              <X className="w-4 h-4" /> Cerrar Sesión
+            </button>
+          )}
           
           <button
             onClick={clearItems}
@@ -1014,11 +1037,22 @@ export default function Cartera() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                {modalMode === 'guardar'
-                  ? 'Ingresa tu correo y crea una contraseña para asegurar tus datos. Tienes 3 meses de uso gratuito.'
-                  : 'Ingresa el correo y contraseña con el que guardaste tu gestión previamente para retomarla.'}
-              </p>
+              <div className="mb-6">
+                {hasActiveSession ? (
+                  <div className="p-3 bg-brand-blue/10 border border-brand-blue/20 rounded-lg">
+                    <p className="text-xs font-bold text-brand-blue uppercase tracking-wider mb-1">Sesión Activa</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Estás trabajando en: <span className="font-bold">{nombreReporte}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {modalMode === 'guardar'
+                      ? 'Ingresa tu correo y crea una contraseña para asegurar tus datos. Tienes 90 días de uso gratuito.'
+                      : 'Ingresa el nombre, correo y contraseña con el que guardaste tu gestión previamente para retomarla.'}
+                  </p>
+                )}
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -1026,9 +1060,10 @@ export default function Cartera() {
                   <input
                     type="text"
                     required
+                    readOnly={hasActiveSession}
                     value={nombreReporte}
                     onChange={(e) => setNombreReporte(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-navy-950 border border-gray-300 dark:border-navy-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+                    className={`w-full bg-gray-50 dark:bg-navy-950 border border-gray-300 dark:border-navy-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none ${hasActiveSession ? 'opacity-70 cursor-not-allowed' : ''}`}
                     placeholder="Ej: Reporte Mayo - Empresa ABC"
                   />
                 </div>
@@ -1037,9 +1072,10 @@ export default function Cartera() {
                   <input
                     type="email"
                     required
+                    readOnly={hasActiveSession}
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-navy-950 border border-gray-300 dark:border-navy-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+                    className={`w-full bg-gray-50 dark:bg-navy-950 border border-gray-300 dark:border-navy-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none ${hasActiveSession ? 'opacity-70 cursor-not-allowed' : ''}`}
                     placeholder="empresa@correo.com"
                   />
                 </div>
