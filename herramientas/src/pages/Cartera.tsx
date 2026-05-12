@@ -435,7 +435,10 @@ export default function Cartera() {
       setCorreo('');
       setPassword('');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error en la operación');
+      const errorData = error.response?.data;
+      const message = errorData?.message || errorData?.error || 'Error en la operación';
+      toast.error(typeof message === 'string' ? message : 'Error inesperado del servidor');
+      console.error('Error al guardar/recuperar:', error);
     }
   };
 
