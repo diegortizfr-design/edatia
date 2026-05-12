@@ -2,9 +2,14 @@
     root * /srv
     encode gzip
 
-    # Proxy para la API de Edatia
-    reverse_proxy /api/* api:4000
+    # Bloque exclusivo para la API
+    handle /api/* {
+        reverse_proxy api:4000
+    }
 
-    try_files {path} /index.html
-    file_server
+    # Bloque para la aplicación estática (SPA)
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
 }
