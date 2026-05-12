@@ -14,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [ventasOpen, setVentasOpen] = useState(false)
   const [contOpen, setContOpen] = useState(false)
   const [configOpen, setConfigOpen] = useState(false)
+  const [digitalOpen, setDigitalOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -176,11 +177,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* POS link directo */}
-            <NavLink to="/pos" className={({ isActive }) =>
-              `flex items-center gap-1 text-xs font-semibold uppercase tracking-wide px-1 py-0.5 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`
-            }>
+            <NavLink to="/pos" className={navLinkCls}>
               <Monitor size={13} />POS
             </NavLink>
+
+            {/* Digital dropdown */}
+            <div className="relative" onMouseEnter={() => setDigitalOpen(true)} onMouseLeave={() => setDigitalOpen(false)}>
+              <button className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-indigo-600 transition-colors px-1 py-0.5">
+                <Globe size={13} />Digital<ChevronDown size={11} className={`transition-transform ${digitalOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {digitalOpen && (
+                <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                  {[
+                    { to: '/digital/dashboard', icon: <LayoutDashboard size={14}/>, label: 'Dashboard' },
+                    { to: '/digital/catalogo',  icon: <Package size={14}/>,         label: 'Catálogo Web' },
+                    { to: '/digital/config',    icon: <Settings size={14}/>,        label: 'Configuración' },
+                  ].map(item => (
+                    <NavLink key={item.to} to={item.to}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-4 py-2 text-sm transition-colors ${isActive ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`
+                      }>
+                      <span className="text-slate-400">{item.icon}</span>{item.label}
+                    </NavLink>
+                  ))}
+                  <div className="pb-2" />
+                </div>
+              )}
+            </div>
 
             {/* Configuración dropdown */}
             <div className="relative" onMouseEnter={() => setConfigOpen(true)} onMouseLeave={() => setConfigOpen(false)}>

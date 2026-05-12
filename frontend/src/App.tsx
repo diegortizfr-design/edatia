@@ -23,6 +23,10 @@ import { Lotes } from './pages/inventario/Lotes'
 import { Seriales } from './pages/inventario/Seriales'
 import { Variantes } from './pages/inventario/Variantes'
 import { Devoluciones } from './pages/inventario/Devoluciones'
+// ── Digital ──
+import { DigitalDashboard } from './pages/digital/DigitalDashboard'
+import { CatalogoDigital } from './pages/digital/CatalogoDigital'
+import { ConfigTienda } from './pages/digital/ConfigTienda'
 
 // ── Ventas ──
 import { VentasDashboard } from './pages/ventas/VentasDashboard'
@@ -110,6 +114,12 @@ function App() {
 
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />
+
+        {/* ── Digital ── */}
+        <Route path="/digital" element={<Navigate to="/digital/dashboard" replace />} />
+        <Route path="/digital/dashboard" element={<P><DigitalDashboard /></P>} />
+        <Route path="/digital/catalogo"  element={<P><CatalogoDigital /></P>} />
+        <Route path="/digital/config"    element={<P><ConfigTienda /></P>} />
 
         {/* ── POS ── */}
         <Route path="/pos" element={<P><PosDashboard /></P>} />
