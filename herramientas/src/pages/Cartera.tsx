@@ -427,9 +427,17 @@ export default function Cartera() {
           correo,
           password,
         });
-        setItems(res.data.datosJson || []);
-        setDiasRestantes(res.data.diasRestantes);
-        toast.success(`Datos recuperados. Te quedan ${res.data.diasRestantes} días de prueba.`);
+        
+        // Limpiar estado actual antes de cargar los recuperados para forzar re-render
+        setItems([]);
+        
+        setTimeout(() => {
+          const recoveredData = res.data.datosJson || [];
+          setItems(recoveredData);
+          setDiasRestantes(res.data.diasRestantes);
+          localStorage.setItem('edatia_cartera_temp', JSON.stringify(recoveredData));
+          toast.success(`¡Éxito! Se han recuperado ${recoveredData.length} registros. Días de prueba restantes: ${res.data.diasRestantes}`);
+        }, 100);
       }
       setIsModalOpen(false);
       setCorreo('');
