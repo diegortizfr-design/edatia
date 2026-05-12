@@ -62,6 +62,7 @@ export default function Cartera() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'guardar' | 'recuperar'>('guardar');
   const [correo, setCorreo] = useState('');
+  const [nombreReporte, setNombreReporte] = useState('');
   const [password, setPassword] = useState('');
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
   const [filtroCiudad, setFiltroCiudad] = useState('Todas');
@@ -409,14 +410,15 @@ export default function Cartera() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!correo || !password) {
-      toast.error('Por favor ingresa correo y contraseña');
+    if (!correo || !password || !nombreReporte) {
+      toast.error('Por favor ingresa nombre, correo y contraseña');
       return;
     }
 
     try {
       if (modalMode === 'guardar') {
         await axios.post('/api/v1/herramientas/cartera/guardar', {
+          nombre: nombreReporte,
           correo,
           password,
           datosJson: items,
@@ -424,6 +426,7 @@ export default function Cartera() {
         toast.success('Gestión de cartera guardada correctamente');
       } else {
         const res = await axios.post('/api/v1/herramientas/cartera/recuperar', {
+          nombre: nombreReporte,
           correo,
           password,
         });
@@ -433,6 +436,10 @@ export default function Cartera() {
         
         setTimeout(() => {
           const recoveredData = res.data.datosJson || [];
+          console.log('--- DATOS RECUPERADOS DEL SERVIDOR ---');
+          console.log('Total registros:', recoveredData.length);
+          console.log('Muestra (primer registro):', recoveredData[0]);
+          
           setItems(recoveredData);
           setDiasRestantes(res.data.diasRestantes);
           localStorage.setItem('edatia_cartera_temp', JSON.stringify(recoveredData));
@@ -442,7 +449,9 @@ export default function Cartera() {
       setIsModalOpen(false);
       setCorreo('');
       setPassword('');
+      setNombreReporte('');
     } catch (error: any) {
+// ... existing error handling ...
       const errorData = error.response?.data;
       const message = errorData?.message || errorData?.error || 'Error en la operación';
       toast.error(typeof message === 'string' ? message : 'Error inesperado del servidor');
@@ -1012,6 +1021,17 @@ export default function Cartera() {
               </p>
 
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Nombre del Reporte / Empresa</label>
+                  <input
+                    type="text"
+                    required
+                    value={nombreReporte}
+                    onChange={(e) => setNombreReporte(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-navy-950 border border-gray-300 dark:border-navy-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-blue focus:outline-none"
+                    placeholder="Ej: Reporte Mayo - Empresa ABC"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Correo electrónico</label>
                   <input

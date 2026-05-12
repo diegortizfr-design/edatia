@@ -1,0 +1,55 @@
+// backend/prisma/herramientas.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client-herramientas"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("HERRAMIENTAS_DATABASE_URL")
+}
+
+// ─── GESTIÓN DE CARTERA GRATUITA ─────────────────────────────────────────────
+
+model GestionCarteraGratuita {
+  id            Int      @id @default(autoincrement())
+  nombre        String   // Nombre que le pone el usuario (ej: Empresa ABC)
+  correo        String
+  password      String   // Hash de la contraseña
+  identificador String   @unique // nombre + 2 letras correo + 2 letras clave
+  
+  facturas      FacturaCarteraGratuita[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([identificador])
+  @@index([correo])
+}
+
+model FacturaCarteraGratuita {
+  id              Int      @id @default(autoincrement())
+  gestionId       Int
+  gestion         GestionCarteraGratuita @relation(fields: [gestionId], references: [id], onDelete: Cascade)
+
+  nit             String?
+  cliente         String?
+  ciudad          String?
+  vendedor        String?
+  terminoPago     String?
+  factura         String?
+  fechaFactura    String?
+  fechaVencimiento String?
+  valorFactura    Decimal  @db.Decimal(18, 2)
+  pagoAbono       Decimal  @default(0) @db.Decimal(18, 2)
+  responsable     String?
+  telefono        String?
+  fechaPago       String?
+  observacion1    String?
+  observacion2    String?
+
+  createdAt       DateTime @default(now())
+
+  @@index([gestionId])
+}

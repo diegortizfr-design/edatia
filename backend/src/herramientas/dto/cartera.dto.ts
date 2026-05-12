@@ -1,6 +1,10 @@
 import { IsEmail, IsString, IsNotEmpty, IsArray } from 'class-validator';
 
 export class GuardarCarteraDto {
+  @IsString()
+  @IsNotEmpty()
+  nombre!: string;
+
   @IsEmail()
   correo!: string;
 
@@ -8,11 +12,15 @@ export class GuardarCarteraDto {
   @IsNotEmpty()
   password!: string;
 
-  @IsArray()
-  datosJson!: any[];
+  @IsNotEmpty()
+  datosJson!: any;
 }
 
 export class RecuperarCarteraDto {
+  @IsString()
+  @IsNotEmpty()
+  nombre!: string;
+
   @IsEmail()
   correo!: string;
 

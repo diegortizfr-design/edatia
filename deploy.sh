@@ -78,11 +78,19 @@ else
   log "API lista y saludable."
 fi
 
-# 8. Ejecutar migraciones de base de datos
-log "Ejecutando migraciones de Prisma..."
-docker compose exec api npx prisma migrate deploy || warn "Fallo en migraciones. Revisa: docker compose logs api"
+# 8. Generar Clientes de Prisma
+log "Generando clientes de Prisma..."
+docker compose exec api npx prisma generate --schema prisma/schema.prisma
+docker compose exec api npx prisma generate --schema prisma/herramientas.prisma
 
-# 9. Resultado final
+# 9. Ejecutar migraciones y sincronización de base de datos
+log "Sincronizando bases de datos..."
+# Main DB (Migraciones)
+docker compose exec api npx prisma migrate deploy --schema prisma/schema.prisma || warn "Fallo en migraciones ERP."
+# Herramientas DB (Push directo para agilidad inicial)
+docker compose exec api npx prisma db push --schema prisma/herramientas.prisma --accept-data-loss || warn "Fallo en sincronización Herramientas."
+
+# 10. Resultado final
 echo ""
 log "=========================================="
 log " Despliegue completado exitosamente"
