@@ -112,6 +112,15 @@ export default function Cartera() {
 
   const isVisible = (id: string) => visibleColumns.includes(id);
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val || 0);
+  };
+
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -764,18 +773,18 @@ export default function Cartera() {
                           <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleGroup(group.cliente)}>
                              <span className="uppercase tracking-wider">Cliente: {group.cliente}</span>
                              <span className="text-[10px] font-normal bg-brand-indigo/10 px-1.5 py-0.5 rounded-full">
-                               {group.records.length} facturas
+                               {group.records.length} {group.records.length === 1 ? 'factura' : 'facturas'}
                              </span>
                           </div>
                         </td>
                         
-                        {isVisible('bucket_0_30') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[0].toLocaleString()}</td>}
-                        {isVisible('bucket_31_60') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[1].toLocaleString()}</td>}
-                        {isVisible('bucket_61_90') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[2].toLocaleString()}</td>}
-                        {isVisible('bucket_91_plus') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[3].toLocaleString()}</td>}
+                        {isVisible('bucket_0_30') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">{formatCurrency(group.buckets[0])}</td>}
+                        {isVisible('bucket_31_60') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">{formatCurrency(group.buckets[1])}</td>}
+                        {isVisible('bucket_61_90') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">{formatCurrency(group.buckets[2])}</td>}
+                        {isVisible('bucket_91_plus') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">{formatCurrency(group.buckets[3])}</td>}
                         
                         {isVisible('total') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10 bg-brand-indigo/10">
-                          ${group.total.toLocaleString()}
+                          {formatCurrency(group.total)}
                         </td>}
                         
                         <td colSpan={visibleColumns.filter(c => ['dias_cartera', 'dias_vencidos', 'responsable', 'telefono', 'pago', 'fechaPago', 'observacion1', 'observacion2'].includes(c)).length + 1}></td>
@@ -814,14 +823,26 @@ export default function Cartera() {
                               <input type="date" value={item.fechaVencimiento} onChange={(e) => updateItem(item.id, 'fechaVencimiento', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
                             </td>}
                             
-                            {isVisible('bucket_0_30') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[0]) > 0 ? `$${getBucketValue(item, BUCKETS[0]).toLocaleString()}` : '-'}</td>}
-                            {isVisible('bucket_31_60') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[1]) > 0 ? `$${getBucketValue(item, BUCKETS[1]).toLocaleString()}` : '-'}</td>}
-                            {isVisible('bucket_61_90') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[2]) > 0 ? `$${getBucketValue(item, BUCKETS[2]).toLocaleString()}` : '-'}</td>}
-                            {isVisible('bucket_91_plus') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[3]) > 0 ? `$${getBucketValue(item, BUCKETS[3]).toLocaleString()}` : '-'}</td>}
+                            {isVisible('bucket_0_30') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[0]) > 0 ? formatCurrency(getBucketValue(item, BUCKETS[0])) : '-'}</td>}
+                            {isVisible('bucket_31_60') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[1]) > 0 ? formatCurrency(getBucketValue(item, BUCKETS[1])) : '-'}</td>}
+                            {isVisible('bucket_61_90') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[2]) > 0 ? formatCurrency(getBucketValue(item, BUCKETS[2])) : '-'}</td>}
+                            {isVisible('bucket_91_plus') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[3]) > 0 ? formatCurrency(getBucketValue(item, BUCKETS[3])) : '-'}</td>}
                             
-                            {isVisible('total') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800 font-bold bg-gray-50/30 dark:bg-navy-950/30">
-                              <input type="number" value={item.valorFactura || ''} onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)} className="w-full bg-transparent border-0 text-right focus:ring-1 focus:ring-brand-blue rounded px-1" />
-                            </td>}
+                            {isVisible('total') && (
+                              <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800 font-bold bg-gray-50/30 dark:bg-navy-950/30 group/totalcell">
+                                <div className="relative">
+                                  <input 
+                                    type="number" 
+                                    value={item.valorFactura || ''} 
+                                    onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)} 
+                                    className="w-full bg-transparent border-0 text-right focus:ring-1 focus:ring-brand-blue rounded px-1 opacity-0 absolute inset-0 z-10 focus:opacity-100 transition-opacity" 
+                                  />
+                                  <span className="block truncate pointer-events-none group-focus-within/totalcell:hidden">
+                                    {formatCurrency(calcularSaldo(item.valorFactura, item.pagoAbono))}
+                                  </span>
+                                </div>
+                              </td>
+                            )}
                             {isVisible('dias_cartera') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
                               <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${edad > 60 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{edad}</span>
                             </td>}
@@ -886,12 +907,12 @@ export default function Cartera() {
                 <tr>
                   <td className="border-r border-gray-800"></td>
                   <td colSpan={visibleColumns.filter(c => ['nit', 'fechaCreacionCliente', 'cliente', 'vendedor', 'terminoPago', 'factura', 'fechaFactura', 'fechaVencimiento'].includes(c)).length} className="px-4 py-3 text-right uppercase tracking-wider">Total General:</td>
-                  {isVisible('bucket_0_30') && <td className="px-2 py-3 text-right">${stats.buckets[0].value.toLocaleString()}</td>}
-                  {isVisible('bucket_31_60') && <td className="px-2 py-3 text-right">${stats.buckets[1].value.toLocaleString()}</td>}
-                  {isVisible('bucket_61_90') && <td className="px-2 py-3 text-right">${stats.buckets[2].value.toLocaleString()}</td>}
-                  {isVisible('bucket_91_plus') && <td className="px-2 py-3 text-right">${stats.buckets[3].value.toLocaleString()}</td>}
+                  {isVisible('bucket_0_30') && <td className="px-2 py-3 text-right">{formatCurrency(stats.buckets[0].value)}</td>}
+                  {isVisible('bucket_31_60') && <td className="px-2 py-3 text-right">{formatCurrency(stats.buckets[1].value)}</td>}
+                  {isVisible('bucket_61_90') && <td className="px-2 py-3 text-right">{formatCurrency(stats.buckets[2].value)}</td>}
+                  {isVisible('bucket_91_plus') && <td className="px-2 py-3 text-right">{formatCurrency(stats.buckets[3].value)}</td>}
                   
-                  {isVisible('total') && <td className="px-2 py-3 text-right bg-brand-indigo">${stats.total.toLocaleString()}</td>}
+                  {isVisible('total') && <td className="px-2 py-3 text-right bg-brand-indigo">{formatCurrency(stats.total)}</td>}
                   <td colSpan={visibleColumns.filter(c => ['dias_cartera', 'dias_vencidos', 'responsable', 'telefono', 'pago', 'fechaPago', 'observacion1', 'observacion2'].includes(c)).length + 1}></td>
                 </tr>
               </tfoot>
