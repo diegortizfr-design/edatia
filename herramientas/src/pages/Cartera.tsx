@@ -68,6 +68,7 @@ export default function Cartera() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Auto-cargar del LocalStorage
   useEffect(() => {
@@ -110,6 +111,14 @@ export default function Cartera() {
   };
 
   const isVisible = (id: string) => visibleColumns.includes(id);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const toggleGroup = (cliente: string) => {
     setExpandedGroups(prev => 
@@ -275,23 +284,23 @@ export default function Cartera() {
 
         const importedItems: CarteraItem[] = cleanData.map((row: any) => ({
           id: crypto.randomUUID(),
-          nit: String(row['NIT'] || '').trim(),
-          fechaCreacionCliente: formatDate(row['Fecha creación cliente']),
-          cliente: String(row['Cliente'] || '').trim(),
-          ciudad: String(row['Ciudad'] || '').trim(),
-          vendedor: String(row['Nombre vendedor'] || '').trim(),
-          responsable: String(row['Responsable'] || '').trim(),
-          terminoPago: String(row['Término de pago'] || '30'),
-          factura: String(row['Factura'] || '').trim(),
-          fechaFactura: formatDate(row['Fecha Factura'] || row['Fecha factura']),
-          fechaVencimiento: formatDate(row['Fecha de vencimiento']),
-          valorFactura: Number(row['Valor de factura'] || row['Total'] || 0),
+          nit: String(row['NIT'] || row['Nit'] || '').trim(),
+          fechaCreacionCliente: formatDate(row['Fecha creación cliente'] || row['Fecha Creación'] || row['CREACION']),
+          cliente: String(row['Cliente'] || row['CLIENTE'] || '').trim(),
+          ciudad: String(row['Ciudad'] || row['CIUDAD'] || '').trim(),
+          vendedor: String(row['Nombre vendedor'] || row['Vendedor'] || row['VENDEDOR'] || '').trim(),
+          responsable: String(row['Responsable'] || row['RESPONSABLE'] || row['Encargado'] || '').trim(),
+          terminoPago: String(row['Término de pago'] || row['Termino'] || row['Dias Pago'] || '30'),
+          factura: String(row['Factura'] || row['FACTURA'] || row['Documento'] || '').trim(),
+          fechaFactura: formatDate(row['Fecha Factura'] || row['Fecha factura'] || row['FECHA']),
+          fechaVencimiento: formatDate(row['Fecha de vencimiento'] || row['Vencimiento'] || row['VENCIMIENTO']),
+          valorFactura: Number(row['Valor de factura'] || row['Total'] || row['TOTAL'] || row['Saldo'] || 0),
           pagoAbono: 0,
           contactos: '',
-          telefono: String(row['Teléfono'] || '').trim(),
-          fechaPago: formatDate(row['Fecha de pago']),
-          observacion1: String(row['Observaciones 1'] || '').trim(),
-          observacion2: String(row['Observaciones 2'] || '').trim(),
+          telefono: String(row['Teléfono'] || row['TELEFONO'] || row['Telefono'] || row['Celular'] || '').trim(),
+          fechaPago: formatDate(row['Fecha de pago'] || row['Pago']),
+          observacion1: String(row['Observaciones 1'] || row['Observacion 1'] || row['OBS 1'] || row['Nota 1'] || '').trim(),
+          observacion2: String(row['Observaciones 2'] || row['Observacion 2'] || row['OBS 2'] || row['Nota 2'] || '').trim(),
         }));
 
         if (importedItems.length === 0) {
@@ -377,22 +386,74 @@ export default function Cartera() {
   }, [items]);
 
   const groupedItems = useMemo(() => {
-    const filtered = filtroCiudad === 'Todas' ? items : items.filter(it => it.ciudad === filtroCiudad);
-    const groups: Record<string, CarteraItem[]> = {};
+    let filtered = items.filter(it => filtroCiudad === 'Todas' || it.ciudad === filtroCiudad);
+    
+    // Aplicar ordenamiento a los registros individuales
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        let aVal = a[sortConfig.key as keyof CarteraItem] || '';
+        let bVal = b[sortConfig.key as keyof CarteraItem] || '';
+        
+        // Manejar números
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        // Manejar strings
+        aVal = String(aVal).toLowerCase();
+        bVal = String(bVal).toLowerCase();
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const groups: Record<string, { records: CarteraItem[]; total: number; buckets: number[] }> = {};
     
     filtered.forEach(item => {
       const key = item.cliente || 'Sin Cliente';
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(item);
+      if (!groups[key]) {
+        groups[key] = {
+          records: [],
+          total: 0,
+          buckets: [0, 0, 0, 0]
+        };
+      }
+      groups[key].records.push(item);
+      groups[key].total += calcularSaldo(item.valorFactura, item.pagoAbono);
+      BUCKETS.forEach((b, i) => {
+        groups[key].buckets[i] += getBucketValue(item, b);
+      });
     });
 
-    return Object.entries(groups).map(([cliente, records]) => ({
+    let result = Object.entries(groups).map(([cliente, data]) => ({
       cliente,
-      records,
-      total: records.reduce((acc, curr) => acc + calcularSaldo(curr.valorFactura, curr.pagoAbono), 0),
-      buckets: BUCKETS.map(b => records.reduce((acc, curr) => acc + getBucketValue(curr, b), 0))
-    })).sort((a, b) => b.total - a.total);
-  }, [items, filtroCiudad]);
+      ...data
+    }));
+
+    // Ordenar los grupos si el criterio es cliente o total (valorFactura)
+    if (sortConfig && (sortConfig.key === 'cliente' || sortConfig.key === 'valorFactura')) {
+      result.sort((a, b) => {
+        const aVal = sortConfig.key === 'cliente' ? a.cliente : a.total;
+        const bVal = sortConfig.key === 'cliente' ? b.cliente : b.total;
+        
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        const sa = String(aVal).toLowerCase();
+        const sb = String(bVal).toLowerCase();
+        if (sa < sb) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (sa > sb) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else if (!sortConfig) {
+      // Orden por defecto: Total descendente
+      result.sort((a, b) => b.total - a.total);
+    }
+
+    return result;
+  }, [items, filtroCiudad, sortConfig]);
 
   return (
     <div className="p-6 max-w-[1600px] mx-auto">
@@ -579,24 +640,87 @@ export default function Cartera() {
             <thead className="text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-navy-950/50 uppercase font-bold border-b border-gray-200 dark:border-navy-800">
               <tr>
                 <th className="px-2 py-3 w-8 border-r border-gray-200 dark:border-navy-800"></th>
-                {isVisible('nit') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">NIT</th>}
-                {isVisible('fechaCreacionCliente') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Creación</th>}
-                {isVisible('cliente') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Cliente</th>}
-                {isVisible('vendedor') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Vendedor</th>}
+                {isVisible('nit') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('nit')}
+                  >
+                    <div className="flex items-center gap-1">NIT {sortConfig?.key === 'nit' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
+                {isVisible('fechaCreacionCliente') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('fechaCreacionCliente')}
+                  >
+                    <div className="flex items-center gap-1">Fecha Creación {sortConfig?.key === 'fechaCreacionCliente' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
+                {isVisible('cliente') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('cliente')}
+                  >
+                    <div className="flex items-center gap-1">Cliente {sortConfig?.key === 'cliente' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
+                {isVisible('vendedor') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('vendedor')}
+                  >
+                    <div className="flex items-center gap-1">Vendedor {sortConfig?.key === 'vendedor' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
                 {isVisible('terminoPago') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Término</th>}
-                {isVisible('factura') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Factura</th>}
-                {isVisible('fechaFactura') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Fact.</th>}
-                {isVisible('fechaVencimiento') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Vencimiento</th>}
+                {isVisible('factura') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('factura')}
+                  >
+                    <div className="flex items-center gap-1">Factura {sortConfig?.key === 'factura' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
+                {isVisible('fechaFactura') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('fechaFactura')}
+                  >
+                    <div className="flex items-center gap-1">Fecha Fact. {sortConfig?.key === 'fechaFactura' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
+                {isVisible('fechaVencimiento') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('fechaVencimiento')}
+                  >
+                    <div className="flex items-center gap-1">Vencimiento {sortConfig?.key === 'fechaVencimiento' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
                 
                 {isVisible('bucket_0_30') && <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 bg-brand-blue/5">0-30 días</th>}
                 {isVisible('bucket_31_60') && <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 bg-brand-blue/5">31-60 días</th>}
                 {isVisible('bucket_61_90') && <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 bg-brand-blue/5">61-90 días</th>}
                 {isVisible('bucket_91_plus') && <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 bg-brand-blue/5">91+ días</th>}
                 
-                {isVisible('total') && <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 font-bold bg-gray-100 dark:bg-navy-950">Total</th>}
+                {isVisible('total') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 font-bold bg-gray-100 dark:bg-navy-950 cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => handleSort('valorFactura')}
+                  >
+                    <div className="flex items-center justify-end gap-1">Total {sortConfig?.key === 'valorFactura' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
                 {isVisible('dias_cartera') && <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Días Cartera</th>}
                 {isVisible('dias_vencidos') && <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Días Vencidos</th>}
-                {isVisible('responsable') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Responsable</th>}
+                {isVisible('responsable') && (
+                  <th 
+                    className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('responsable')}
+                  >
+                    <div className="flex items-center gap-1">Responsable {sortConfig?.key === 'responsable' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</div>
+                  </th>
+                )}
                 {isVisible('telefono') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Teléfono</th>}
                 {isVisible('pago') && <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Pago</th>}
                 {isVisible('fechaPago') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Pago</th>}
