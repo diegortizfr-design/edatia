@@ -11,7 +11,8 @@ RUN npm install
 
 # Copiar fuente y compilar
 COPY . .
-RUN npx prisma generate
+RUN npx prisma generate --schema prisma/schema.prisma
+RUN npx prisma generate --schema prisma/herramientas.prisma
 RUN npm run build
 
 # ---- Production stage ----
