@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Save, Download, Upload, Plus, Trash2, LogIn, X, Settings2, Check } from 'lucide-react';
+import { Save, Download, Upload, Plus, Trash2, LogIn, X, Settings2, Check, ChevronRight, ChevronDown, FoldVertical, UnfoldVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
@@ -67,6 +67,7 @@ export default function Cartera() {
   const [filtroCiudad, setFiltroCiudad] = useState('Todas');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   // Auto-cargar del LocalStorage
   useEffect(() => {
@@ -110,6 +111,15 @@ export default function Cartera() {
 
   const isVisible = (id: string) => visibleColumns.includes(id);
 
+  const toggleGroup = (cliente: string) => {
+    setExpandedGroups(prev => 
+      prev.includes(cliente) ? prev.filter(c => c !== cliente) : [...prev, cliente]
+    );
+  };
+
+  const expandAll = () => setExpandedGroups(groupedItems.map(g => g.cliente));
+  const collapseAll = () => setExpandedGroups([]);
+
   const addItem = () => {
     const newItem: CarteraItem = {
       id: crypto.randomUUID(),
@@ -135,7 +145,14 @@ export default function Cartera() {
   };
 
   const removeItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+    setItems(items.filter((it) => it.id !== id));
+  };
+
+  const clearItems = () => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
+      setItems([]);
+      toast.success('Tabla limpiada correctamente');
+    }
   };
 
   const updateItem = (id: string, field: keyof CarteraItem, value: any) => {
@@ -455,6 +472,14 @@ export default function Cartera() {
           >
             <LogIn className="w-4 h-4" /> Continuar gestión
           </button>
+          
+          <button
+            onClick={clearItems}
+            className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors font-medium text-sm"
+            title="Eliminar todos los registros"
+          >
+            <Trash2 className="w-4 h-4" /> Limpiar Tabla
+          </button>
         </div>
       </div>
 
@@ -492,18 +517,33 @@ export default function Cartera() {
             Registros de Cartera
             <span className="bg-brand-blue/10 text-brand-blue text-xs px-2 py-0.5 rounded-full">{items.length}</span>
           </h2>
-          <button
-            onClick={addItem}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-md text-sm transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Agregar Registro
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={expandAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-indigo hover:bg-brand-indigo/5 rounded-lg transition-colors border border-brand-indigo/20"
+            >
+              <UnfoldVertical className="w-3.5 h-3.5" /> Expandir Todo
+            </button>
+            <button
+              onClick={collapseAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-navy-800 rounded-lg transition-colors border border-gray-200 dark:border-navy-700"
+            >
+              <FoldVertical className="w-3.5 h-3.5" /> Contraer Todo
+            </button>
+            <button
+              onClick={addItem}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-indigo text-white rounded-lg hover:bg-brand-indigo/90 transition-colors shadow-sm font-bold text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" /> Agregar registro
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-[11px] text-left border-collapse">
             <thead className="text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-navy-950/50 uppercase font-bold border-b border-gray-200 dark:border-navy-800">
               <tr>
+                <th className="px-2 py-3 w-8 border-r border-gray-200 dark:border-navy-800"></th>
                 {isVisible('nit') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">NIT</th>}
                 {isVisible('fechaCreacionCliente') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Creación</th>}
                 {isVisible('cliente') && <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Cliente</th>}
@@ -533,107 +573,126 @@ export default function Cartera() {
             <tbody className="divide-y divide-gray-200 dark:divide-navy-800">
               {groupedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={visibleColumns.length + 1} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  <td colSpan={visibleColumns.length + 2} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
                     No hay registros en tu cartera. Agrega uno nuevo o importa un archivo.
                   </td>
                 </tr>
               ) : (
-                groupedItems.map((group) => (
-                  <React.Fragment key={group.cliente}>
-                    {group.records.map((item) => {
-                      const edad = calcularEdad(item.fechaFactura);
-                      const diasVencidos = calcularDiasVencidos(item.fechaVencimiento);
-                      
-                      return (
-                        <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-navy-800/50 transition-colors group">
-                          {isVisible('nit') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.nit} onChange={(e) => updateItem(item.id, 'nit', e.target.value)} placeholder="NIT" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('fechaCreacionCliente') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.fechaCreacionCliente} onChange={(e) => updateItem(item.id, 'fechaCreacionCliente', e.target.value)} placeholder="dd/mm/aaaa" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('cliente') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.cliente} onChange={(e) => updateItem(item.id, 'cliente', e.target.value)} placeholder="Cliente" className="w-full min-w-[140px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-medium" />
-                          </td>}
-                          {isVisible('vendedor') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.vendedor} onChange={(e) => updateItem(item.id, 'vendedor', e.target.value)} placeholder="Vendedor" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('terminoPago') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="number" value={item.terminoPago} onChange={(e) => updateItem(item.id, 'terminoPago', e.target.value)} className="w-12 bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 text-center" />
-                          </td>}
-                          {isVisible('factura') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.factura} onChange={(e) => updateItem(item.id, 'factura', e.target.value)} placeholder="Factura" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-mono" />
-                          </td>}
-                          {isVisible('fechaFactura') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="date" value={item.fechaFactura} onChange={(e) => updateItem(item.id, 'fechaFactura', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
-                          </td>}
-                          {isVisible('fechaVencimiento') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="date" value={item.fechaVencimiento} onChange={(e) => updateItem(item.id, 'fechaVencimiento', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
-                          </td>}
-                          
-                          {isVisible('bucket_0_30') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[0]) > 0 ? `$${getBucketValue(item, BUCKETS[0]).toLocaleString()}` : '-'}</td>}
-                          {isVisible('bucket_31_60') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[1]) > 0 ? `$${getBucketValue(item, BUCKETS[1]).toLocaleString()}` : '-'}</td>}
-                          {isVisible('bucket_61_90') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[2]) > 0 ? `$${getBucketValue(item, BUCKETS[2]).toLocaleString()}` : '-'}</td>}
-                          {isVisible('bucket_91_plus') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[3]) > 0 ? `$${getBucketValue(item, BUCKETS[3]).toLocaleString()}` : '-'}</td>}
-                          
-                          {isVisible('total') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800 font-bold bg-gray-50/30 dark:bg-navy-950/30">
-                            <input type="number" value={item.valorFactura || ''} onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)} className="w-full bg-transparent border-0 text-right focus:ring-1 focus:ring-brand-blue rounded px-1" />
-                          </td>}
-                          {isVisible('dias_cartera') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${edad > 60 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{edad}</span>
-                          </td>}
-                          {isVisible('dias_vencidos') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${diasVencidos > 0 ? 'bg-red-500 text-white' : 'bg-green-100 text-green-700'}`}>{diasVencidos}</span>
-                          </td>}
-                          {isVisible('responsable') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.responsable} onChange={(e) => updateItem(item.id, 'responsable', e.target.value)} placeholder="Responsable" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('telefono') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.telefono} onChange={(e) => updateItem(item.id, 'telefono', e.target.value)} placeholder="Tel" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('pago') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
-                            <button onClick={() => updateItem(item.id, 'pagoAbono', item.pagoAbono === item.valorFactura ? 0 : item.valorFactura)} className={`w-5 h-5 mx-auto rounded flex items-center justify-center border transition-colors ${item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? 'bg-green-500 border-green-600 text-white' : 'border-gray-300 dark:border-navy-700'}`}>
-                              {item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? '✓' : ''}
-                            </button>
-                          </td>}
-                          {isVisible('fechaPago') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="date" value={item.fechaPago} onChange={(e) => updateItem(item.id, 'fechaPago', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
-                          </td>}
-                          {isVisible('observacion1') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.observacion1} onChange={(e) => updateItem(item.id, 'observacion1', e.target.value)} placeholder="..." className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          {isVisible('observacion2') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
-                            <input type="text" value={item.observacion2} onChange={(e) => updateItem(item.id, 'observacion2', e.target.value)} placeholder="..." className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
-                          </td>}
-                          
-                          <td className="px-2 py-1 text-center">
-                            <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {/* Fila de Totales del Grupo */}
-                    <tr className="bg-brand-blue/5 font-bold text-brand-blue">
-                      <td colSpan={visibleColumns.filter(c => ['nit', 'fechaCreacionCliente', 'cliente', 'vendedor', 'terminoPago', 'factura', 'fechaFactura', 'fechaVencimiento'].includes(c)).length} className="px-2 py-2 text-right uppercase italic">Total {group.cliente}:</td>
-                      {isVisible('bucket_0_30') && <td className="px-2 py-2 text-right border-r border-brand-blue/10">${group.buckets[0].toLocaleString()}</td>}
-                      {isVisible('bucket_31_60') && <td className="px-2 py-2 text-right border-r border-brand-blue/10">${group.buckets[1].toLocaleString()}</td>}
-                      {isVisible('bucket_61_90') && <td className="px-2 py-2 text-right border-r border-brand-blue/10">${group.buckets[2].toLocaleString()}</td>}
-                      {isVisible('bucket_91_plus') && <td className="px-2 py-2 text-right border-r border-brand-blue/10">${group.buckets[3].toLocaleString()}</td>}
-                      
-                      {isVisible('total') && <td className="px-2 py-2 text-right border-r border-brand-blue/10 bg-brand-blue/10">
-                        ${group.total.toLocaleString()}
-                      </td>}
-                      <td colSpan={visibleColumns.filter(c => ['dias_cartera', 'dias_vencidos', 'responsable', 'telefono', 'pago', 'fechaPago', 'observacion1', 'observacion2'].includes(c)).length + 1}></td>
-                    </tr>
-                  </React.Fragment>
-                ))
+                groupedItems.map((group) => {
+                  const isExpanded = expandedGroups.includes(group.cliente);
+                  return (
+                    <React.Fragment key={group.cliente}>
+                      {/* FILA DE GRUPO (CABECERA DEL CLIENTE) */}
+                      <tr className="bg-brand-indigo/5 hover:bg-brand-indigo/10 transition-colors group/header font-bold text-brand-indigo">
+                        <td className="px-2 py-2 text-center border-r border-brand-indigo/10 cursor-pointer" onClick={() => toggleGroup(group.cliente)}>
+                          {isExpanded ? <ChevronDown className="w-4 h-4 mx-auto" /> : <ChevronRight className="w-4 h-4 mx-auto" />}
+                        </td>
+                        <td colSpan={visibleColumns.filter(c => ['nit', 'fechaCreacionCliente', 'cliente', 'vendedor', 'terminoPago', 'factura', 'fechaFactura', 'fechaVencimiento'].includes(c)).length} className="px-2 py-2 border-r border-brand-indigo/10">
+                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleGroup(group.cliente)}>
+                             <span className="uppercase tracking-wider">Cliente: {group.cliente}</span>
+                             <span className="text-[10px] font-normal bg-brand-indigo/10 px-1.5 py-0.5 rounded-full">
+                               {group.records.length} facturas
+                             </span>
+                          </div>
+                        </td>
+                        
+                        {isVisible('bucket_0_30') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[0].toLocaleString()}</td>}
+                        {isVisible('bucket_31_60') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[1].toLocaleString()}</td>}
+                        {isVisible('bucket_61_90') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[2].toLocaleString()}</td>}
+                        {isVisible('bucket_91_plus') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10">${group.buckets[3].toLocaleString()}</td>}
+                        
+                        {isVisible('total') && <td className="px-2 py-2 text-right border-r border-brand-indigo/10 bg-brand-indigo/10">
+                          ${group.total.toLocaleString()}
+                        </td>}
+                        
+                        <td colSpan={visibleColumns.filter(c => ['dias_cartera', 'dias_vencidos', 'responsable', 'telefono', 'pago', 'fechaPago', 'observacion1', 'observacion2'].includes(c)).length + 1}></td>
+                      </tr>
+
+                      {/* FILAS DE DETALLE (FACTURAS) */}
+                      {isExpanded && group.records.map((item) => {
+                        const edad = calcularEdad(item.fechaFactura);
+                        const diasVencidos = calcularDiasVencidos(item.fechaVencimiento);
+                        
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-navy-800/50 transition-colors group">
+                            <td className="border-r border-gray-100 dark:border-navy-800"></td>
+                            {isVisible('nit') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.nit} onChange={(e) => updateItem(item.id, 'nit', e.target.value)} placeholder="NIT" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('fechaCreacionCliente') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.fechaCreacionCliente} onChange={(e) => updateItem(item.id, 'fechaCreacionCliente', e.target.value)} placeholder="dd/mm/aaaa" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('cliente') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.cliente} onChange={(e) => updateItem(item.id, 'cliente', e.target.value)} placeholder="Cliente" className="w-full min-w-[140px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-medium" />
+                            </td>}
+                            {isVisible('vendedor') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.vendedor} onChange={(e) => updateItem(item.id, 'vendedor', e.target.value)} placeholder="Vendedor" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('terminoPago') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="number" value={item.terminoPago} onChange={(e) => updateItem(item.id, 'terminoPago', e.target.value)} className="w-12 bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 text-center" />
+                            </td>}
+                            {isVisible('factura') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.factura} onChange={(e) => updateItem(item.id, 'factura', e.target.value)} placeholder="Factura" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-mono" />
+                            </td>}
+                            {isVisible('fechaFactura') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="date" value={item.fechaFactura} onChange={(e) => updateItem(item.id, 'fechaFactura', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
+                            </td>}
+                            {isVisible('fechaVencimiento') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="date" value={item.fechaVencimiento} onChange={(e) => updateItem(item.id, 'fechaVencimiento', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
+                            </td>}
+                            
+                            {isVisible('bucket_0_30') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[0]) > 0 ? `$${getBucketValue(item, BUCKETS[0]).toLocaleString()}` : '-'}</td>}
+                            {isVisible('bucket_31_60') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[1]) > 0 ? `$${getBucketValue(item, BUCKETS[1]).toLocaleString()}` : '-'}</td>}
+                            {isVisible('bucket_61_90') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[2]) > 0 ? `$${getBucketValue(item, BUCKETS[2]).toLocaleString()}` : '-'}</td>}
+                            {isVisible('bucket_91_plus') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">{getBucketValue(item, BUCKETS[3]) > 0 ? `$${getBucketValue(item, BUCKETS[3]).toLocaleString()}` : '-'}</td>}
+                            
+                            {isVisible('total') && <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800 font-bold bg-gray-50/30 dark:bg-navy-950/30">
+                              <input type="number" value={item.valorFactura || ''} onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)} className="w-full bg-transparent border-0 text-right focus:ring-1 focus:ring-brand-blue rounded px-1" />
+                            </td>}
+                            {isVisible('dias_cartera') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${edad > 60 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{edad}</span>
+                            </td>}
+                            {isVisible('dias_vencidos') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${diasVencidos > 0 ? 'bg-red-500 text-white' : 'bg-green-100 text-green-700'}`}>{diasVencidos}</span>
+                            </td>}
+                            {isVisible('responsable') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.responsable} onChange={(e) => updateItem(item.id, 'responsable', e.target.value)} placeholder="Responsable" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('telefono') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.telefono} onChange={(e) => updateItem(item.id, 'telefono', e.target.value)} placeholder="Tel" className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('pago') && <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                              <button onClick={() => updateItem(item.id, 'pagoAbono', item.pagoAbono === item.valorFactura ? 0 : item.valorFactura)} className={`w-5 h-5 mx-auto rounded flex items-center justify-center border transition-colors ${item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? 'bg-green-500 border-green-600 text-white' : 'border-gray-300 dark:border-navy-700'}`}>
+                                {item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? '✓' : ''}
+                              </button>
+                            </td>}
+                            {isVisible('fechaPago') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="date" value={item.fechaPago} onChange={(e) => updateItem(item.id, 'fechaPago', e.target.value)} className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]" />
+                            </td>}
+                            {isVisible('observacion1') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.observacion1} onChange={(e) => updateItem(item.id, 'observacion1', e.target.value)} placeholder="..." className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            {isVisible('observacion2') && <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                              <input type="text" value={item.observacion2} onChange={(e) => updateItem(item.id, 'observacion2', e.target.value)} placeholder="..." className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5" />
+                            </td>}
+                            
+                            <td className="px-2 py-1 text-center">
+                              <button onClick={() => removeItem(item.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })
               )}
             </tbody>
             {groupedItems.length > 0 && (
               <tfoot className="bg-gray-900 text-white font-bold sticky bottom-0">
                 <tr>
+                  <td className="border-r border-gray-800"></td>
                   <td colSpan={visibleColumns.filter(c => ['nit', 'fechaCreacionCliente', 'cliente', 'vendedor', 'terminoPago', 'factura', 'fechaFactura', 'fechaVencimiento'].includes(c)).length} className="px-4 py-3 text-right uppercase tracking-wider">Total General:</td>
                   {isVisible('bucket_0_30') && <td className="px-2 py-3 text-right">${stats.buckets[0].value.toLocaleString()}</td>}
                   {isVisible('bucket_31_60') && <td className="px-2 py-3 text-right">${stats.buckets[1].value.toLocaleString()}</td>}
