@@ -121,10 +121,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Logo Section */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 shrink-0 overflow-hidden">
           <Link to="/" className="flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
-              <BarChart3 className="h-5 w-5 text-white" />
+            {/* Logo Oficial Edatia (SVG) */}
+            <div className="w-9 h-9 shrink-0 flex items-center justify-center">
+              <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#1E293B" />
+                    <stop offset="100%" stopColor="#4F46E5" />
+                  </linearGradient>
+                  <linearGradient id="barGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="#2563EB" />
+                    <stop offset="100%" stopColor="#60A5FA" />
+                  </linearGradient>
+                </defs>
+                <rect x="5" y="5" width="90" height="90" rx="20" fill="url(#logoGradient)" />
+                {/* Barras del gráfico */}
+                <rect x="25" y="60" width="8" height="15" rx="2" fill="white" />
+                <rect x="40" y="45" width="8" height="30" rx="2" fill="white" />
+                <rect x="55" y="52" width="8" height="23" rx="2" fill="white" />
+                <rect x="70" y="35" width="8" height="40" rx="2" fill="white" />
+                {/* Línea de tendencia */}
+                <path d="M29 60 L44 45 L59 52 L74 35" stroke="#60A5FA" strokeWidth="3" fill="none" strokeLinecap="round" />
+                <circle cx="29" cy="60" r="3" fill="#60A5FA" />
+                <circle cx="44" cy="45" r="3" fill="#60A5FA" />
+                <circle cx="59" cy="52" r="3" fill="#60A5FA" />
+                <circle cx="74" cy="35" r="3" fill="#60A5FA" />
+              </svg>
             </div>
-            {!isCollapsed && <h1 className="text-xl font-bold tracking-tight text-slate-800">Edatia <span className="text-indigo-600 text-xs">ERP</span></h1>}
+            {!isCollapsed && (
+              <div className="flex flex-col leading-none">
+                <span className="text-lg font-extrabold tracking-tight text-slate-800">EDATIA</span>
+                <span className="text-[10px] font-bold text-indigo-600 tracking-[0.2em] ml-0.5">SOFTWARE ERP</span>
+              </div>
+            )}
           </Link>
         </div>
 
