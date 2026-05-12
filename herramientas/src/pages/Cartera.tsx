@@ -7,18 +7,31 @@ import * as XLSX from 'xlsx';
 // Tipos
 interface CarteraItem {
   id: string;
+  nit: string;
+  fechaCreacionCliente: string;
   cliente: string;
+  ciudad: string;
+  vendedor: string;
   responsable: string;
+  terminoPago: string; // días
   factura: string;
   fechaFactura: string; // YYYY-MM-DD
-  terminoPago: string; // días
-  fechaCompromiso: string;
+  fechaVencimiento: string;
   valorFactura: number;
-  contactos: string;
   pagoAbono: number;
+  contactos: string;
+  telefono: string;
   fechaPago: string;
-  observacion: string;
+  observacion1: string;
+  observacion2: string;
 }
+
+const BUCKETS = [
+  { label: '0 - 30 días', min: 0, max: 30 },
+  { label: '31 - 60 días', min: 31, max: 60 },
+  { label: '61 - 90 días', min: 61, max: 90 },
+  { label: '91 días o más', min: 91, max: 999999 },
+];
 
 export default function Cartera() {
   const [items, setItems] = useState<CarteraItem[]>([]);
@@ -27,6 +40,7 @@ export default function Cartera() {
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null);
+  const [filtroCiudad, setFiltroCiudad] = useState('Todas');
 
   // Auto-cargar del LocalStorage
   useEffect(() => {
@@ -48,17 +62,23 @@ export default function Cartera() {
   const addItem = () => {
     const newItem: CarteraItem = {
       id: crypto.randomUUID(),
+      nit: '',
+      fechaCreacionCliente: '',
       cliente: '',
+      ciudad: '',
+      vendedor: '',
       responsable: '',
+      terminoPago: '30',
       factura: '',
       fechaFactura: new Date().toISOString().split('T')[0],
-      terminoPago: '30',
-      fechaCompromiso: '',
+      fechaVencimiento: '',
       valorFactura: 0,
-      contactos: '',
       pagoAbono: 0,
+      contactos: '',
+      telefono: '',
       fechaPago: '',
-      observacion: '',
+      observacion1: '',
+      observacion2: '',
     };
     setItems([newItem, ...items]);
   };
@@ -82,8 +102,30 @@ export default function Cartera() {
     if (!fechaFactura) return 0;
     const date1 = new Date(fechaFactura);
     const date2 = new Date();
-    const diffTime = Math.abs(date2.getTime() - date1.getTime());
+    // Reset hours to compare only days
+    date1.setHours(0, 0, 0, 0);
+    date2.setHours(0, 0, 0, 0);
+    const diffTime = date2.getTime() - date1.getTime();
+    return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  };
+
+  const calcularDiasVencidos = (fechaVencimiento: string) => {
+    if (!fechaVencimiento) return 0;
+    const date1 = new Date(fechaVencimiento);
+    const date2 = new Date();
+    date1.setHours(0, 0, 0, 0);
+    date2.setHours(0, 0, 0, 0);
+    const diffTime = date2.getTime() - date1.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const getBucketValue = (item: CarteraItem, bucket: typeof BUCKETS[0]) => {
+    const edad = calcularEdad(item.fechaFactura);
+    const saldo = (item.valorFactura || 0) - (item.pagoAbono || 0);
+    if (edad >= bucket.min && edad <= bucket.max) {
+      return saldo;
+    }
+    return 0;
   };
 
   const calcularSaldo = (valor: number, abono: number) => {
@@ -91,25 +133,38 @@ export default function Cartera() {
   };
 
   const handleExport = () => {
-    const dataToExport = items.map((item) => ({
-      Cliente: item.cliente,
-      'Responsable de clientes': item.responsable,
-      Factura: item.factura,
-      'Fecha de factura': item.fechaFactura,
-      'Término de pago (Días)': item.terminoPago,
-      'Fecha compromiso pago': item.fechaCompromiso,
-      'Edad de cartera (Días)': calcularEdad(item.fechaFactura),
-      'Valor de factura': item.valorFactura,
-      Contactos: item.contactos,
-      'Pago o abono': item.pagoAbono,
-      'Saldo Pendiente': calcularSaldo(item.valorFactura, item.pagoAbono),
+    const filteredItems = filtroCiudad === 'Todas' ? items : items.filter(it => it.ciudad === filtroCiudad);
+    
+    const dataToExport = filteredItems.map((item) => ({
+      'NIT': item.nit,
+      'Fecha creación cliente': item.fechaCreacionCliente,
+      'Cliente': item.cliente,
+      'Ciudad': item.ciudad,
+      'Nombre vendedor': item.vendedor,
+      'Término de pago': item.terminoPago,
+      'Factura': item.factura,
+      'Fecha Factura': item.fechaFactura,
+      'Fecha de vencimiento': item.fechaVencimiento,
+      'Saldo 0 - 30 días': getBucketValue(item, BUCKETS[0]),
+      'Saldo 31 - 60 días': getBucketValue(item, BUCKETS[1]),
+      'Saldo 61 - 90 días': getBucketValue(item, BUCKETS[2]),
+      'Saldo 91 días o más': getBucketValue(item, BUCKETS[3]),
+      'Total': calcularSaldo(item.valorFactura, item.pagoAbono),
+      'Días en cartera': calcularEdad(item.fechaFactura),
+      'Días vencidos': calcularDiasVencidos(item.fechaVencimiento),
+      'Responsable': item.responsable,
+      'Teléfono': item.telefono,
       'Fecha de pago': item.fechaPago,
-      Observación: item.observacion,
+      'Observaciones 1': item.observacion1,
+      'Observaciones 2': item.observacion2,
     }));
+    
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cartera');
-    XLSX.writeFile(workbook, 'Gestion_Cartera.xlsx');
+    
+    // Add styling/totals could be complex with XLSX basic, but let's at least keep columns
+    XLSX.writeFile(workbook, `Gestion_Cartera_${filtroCiudad}.xlsx`);
     toast.success('Archivo exportado correctamente');
   };
 
@@ -128,17 +183,23 @@ export default function Cartera() {
 
         const importedItems: CarteraItem[] = data.map((row: any) => ({
           id: crypto.randomUUID(),
+          nit: row['NIT'] || '',
+          fechaCreacionCliente: row['Fecha creación cliente'] || '',
           cliente: row['Cliente'] || '',
-          responsable: row['Responsable de clientes'] || '',
+          ciudad: row['Ciudad'] || '',
+          vendedor: row['Nombre vendedor'] || '',
+          responsable: row['Responsable'] || '',
+          terminoPago: row['Término de pago'] || '30',
           factura: row['Factura'] || '',
-          fechaFactura: row['Fecha de factura'] || new Date().toISOString().split('T')[0],
-          terminoPago: row['Término de pago (Días)'] || '30',
-          fechaCompromiso: row['Fecha compromiso pago'] || '',
-          valorFactura: Number(row['Valor de factura']) || 0,
-          contactos: row['Contactos'] || '',
-          pagoAbono: Number(row['Pago o abono']) || 0,
+          fechaFactura: row['Fecha Factura'] || new Date().toISOString().split('T')[0],
+          fechaVencimiento: row['Fecha de vencimiento'] || '',
+          valorFactura: Number(row['Valor de factura'] || row['Total'] || 0),
+          pagoAbono: 0, // Generalmente se importa el saldo
+          contactos: '',
+          telefono: row['Teléfono'] || '',
           fechaPago: row['Fecha de pago'] || '',
-          observacion: row['Observación'] || '',
+          observacion1: row['Observaciones 1'] || '',
+          observacion2: row['Observaciones 2'] || '',
         }));
 
         setItems([...importedItems, ...items]);
@@ -189,15 +250,46 @@ export default function Cartera() {
     setIsModalOpen(true);
   };
 
-  const totales = useMemo(() => {
-    return items.reduce(
-      (acc, curr) => ({
-        valor: acc.valor + Number(curr.valorFactura || 0),
-        abono: acc.abono + Number(curr.pagoAbono || 0),
-      }),
-      { valor: 0, abono: 0 }
-    );
+  const stats = useMemo(() => {
+    const filtered = filtroCiudad === 'Todas' ? items : items.filter(it => it.ciudad === filtroCiudad);
+    const total = filtered.reduce((acc, curr) => acc + calcularSaldo(curr.valorFactura, curr.pagoAbono), 0);
+    
+    const bucketsTotals = BUCKETS.map(b => ({
+      label: b.label,
+      value: filtered.reduce((acc, curr) => acc + getBucketValue(curr, b), 0)
+    }));
+
+    return {
+      total,
+      buckets: bucketsTotals.map(b => ({
+        ...b,
+        percent: total > 0 ? (b.value / total) * 100 : 0
+      }))
+    };
+  }, [items, filtroCiudad]);
+
+  const ciudadas = useMemo(() => {
+    const set = new Set(items.map(it => it.ciudad).filter(Boolean));
+    return ['Todas', ...Array.from(set)];
   }, [items]);
+
+  const groupedItems = useMemo(() => {
+    const filtered = filtroCiudad === 'Todas' ? items : items.filter(it => it.ciudad === filtroCiudad);
+    const groups: Record<string, CarteraItem[]> = {};
+    
+    filtered.forEach(item => {
+      const key = item.cliente || 'Sin Cliente';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+
+    return Object.entries(groups).map(([cliente, records]) => ({
+      cliente,
+      records,
+      total: records.reduce((acc, curr) => acc + calcularSaldo(curr.valorFactura, curr.pagoAbono), 0),
+      buckets: BUCKETS.map(b => records.reduce((acc, curr) => acc + getBucketValue(curr, b), 0))
+    })).sort((a, b) => b.total - a.total);
+  }, [items, filtroCiudad]);
 
   return (
     <div className="p-6 max-w-[1600px] mx-auto">
@@ -215,12 +307,23 @@ export default function Cartera() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple">
-            Gestión de Cartera
+            Análisis de Cartera (Aging)
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Controla tus cuentas por cobrar de forma sencilla y gratuita.</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Control integral de cuentas por cobrar y antigüedad.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 mr-4 bg-white dark:bg-navy-900 border border-gray-200 dark:border-navy-800 rounded-lg px-3 py-1.5 shadow-sm">
+            <span className="text-xs font-semibold text-gray-500 uppercase">Filtrar Ciudad:</span>
+            <select 
+              value={filtroCiudad}
+              onChange={(e) => setFiltroCiudad(e.target.value)}
+              className="bg-transparent border-0 text-sm font-medium focus:ring-0 cursor-pointer"
+            >
+              {ciudadas.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
           <div className="relative">
             <input
               type="file"
@@ -254,6 +357,34 @@ export default function Cartera() {
         </div>
       </div>
 
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="bg-white dark:bg-navy-900 p-4 rounded-xl border border-gray-200 dark:border-navy-800 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Saldo Total</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">${stats.total.toLocaleString()}</p>
+          <div className="mt-2 h-1.5 w-full bg-gray-100 dark:bg-navy-800 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-indigo w-full"></div>
+          </div>
+        </div>
+        {stats.buckets.map((b, i) => (
+          <div key={i} className="bg-white dark:bg-navy-900 p-4 rounded-xl border border-gray-200 dark:border-navy-800 shadow-sm">
+            <div className="flex justify-between items-start mb-1">
+              <p className="text-xs font-semibold text-gray-500 uppercase">{b.label}</p>
+              <span className="text-[10px] font-bold bg-gray-100 dark:bg-navy-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400">
+                {b.percent.toFixed(1)}%
+              </span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">${b.value.toLocaleString()}</p>
+            <div className="mt-2 h-1.5 w-full bg-gray-100 dark:bg-navy-800 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${i === 0 ? 'bg-green-500' : i === 1 ? 'bg-yellow-500' : i === 2 ? 'bg-orange-500' : 'bg-red-500'}`} 
+                style={{ width: `${b.percent}%` }}
+              ></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white dark:bg-navy-900 border border-gray-200 dark:border-navy-800 rounded-xl shadow-sm overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 dark:border-navy-800 flex justify-between items-center bg-gray-50/50 dark:bg-navy-950/50">
           <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -269,180 +400,239 @@ export default function Cartera() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-navy-950/50 uppercase">
+          <table className="w-full text-[11px] text-left border-collapse">
+            <thead className="text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-navy-950/50 uppercase font-bold border-b border-gray-200 dark:border-navy-800">
               <tr>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Cliente</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Responsable</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Factura</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Fecha Fact.</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Término</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Vencimiento</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Edad</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap text-right">Valor Factura</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Contactos</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap text-right">Abono</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap text-right">Saldo</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">Fecha Pago</th>
-                <th className="px-4 py-3 font-medium">Observación</th>
-                <th className="px-4 py-3 font-medium text-center">Acciones</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">NIT</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Creación</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Cliente</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Vendedor</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Término</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Factura</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Fact.</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Vencimiento</th>
+                {BUCKETS.map((b, i) => (
+                  <th key={i} className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 bg-brand-blue/5">
+                    {b.label}
+                  </th>
+                ))}
+                <th className="px-2 py-3 whitespace-nowrap text-right border-r border-gray-200 dark:border-navy-800 font-bold bg-gray-100 dark:bg-navy-950">Total</th>
+                <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Días Cartera</th>
+                <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Días Vencidos</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Responsable</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Teléfono</th>
+                <th className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-200 dark:border-navy-800">Pago</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Fecha Pago</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Obs 1</th>
+                <th className="px-2 py-3 whitespace-nowrap border-r border-gray-200 dark:border-navy-800">Obs 2</th>
+                <th className="px-2 py-3 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-navy-800">
-              {items.length === 0 ? (
+              {groupedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={25} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400 text-sm">
                     No hay registros en tu cartera. Agrega uno nuevo o importa un archivo.
                   </td>
                 </tr>
               ) : (
-                items.map((item) => {
-                  const edad = calcularEdad(item.fechaFactura);
-                  const saldo = calcularSaldo(item.valorFactura, item.pagoAbono);
-                  const isVencida = item.fechaCompromiso && new Date(item.fechaCompromiso) < new Date() && saldo > 0;
-
-                  return (
-                    <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-navy-800/50 transition-colors group">
-                      <td className="px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.cliente}
-                          onChange={(e) => updateItem(item.id, 'cliente', e.target.value)}
-                          placeholder="Nombre cliente"
-                          className="w-full min-w-[150px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 placeholder-gray-400 dark:placeholder-gray-600"
-                        />
+                groupedItems.map((group) => (
+                  <React.Fragment key={group.cliente}>
+                    {group.records.map((item) => {
+                      const edad = calcularEdad(item.fechaFactura);
+                      const diasVencidos = calcularDiasVencidos(item.fechaVencimiento);
+                      const saldo = calcularSaldo(item.valorFactura, item.pagoAbono);
+                      
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-navy-800/50 transition-colors group">
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.nit}
+                              onChange={(e) => updateItem(item.id, 'nit', e.target.value)}
+                              placeholder="NIT"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.fechaCreacionCliente}
+                              onChange={(e) => updateItem(item.id, 'fechaCreacionCliente', e.target.value)}
+                              placeholder="dd/mm/aaaa"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.cliente}
+                              onChange={(e) => updateItem(item.id, 'cliente', e.target.value)}
+                              placeholder="Cliente"
+                              className="w-full min-w-[140px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-medium"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.vendedor}
+                              onChange={(e) => updateItem(item.id, 'vendedor', e.target.value)}
+                              placeholder="Vendedor"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="number"
+                              value={item.terminoPago}
+                              onChange={(e) => updateItem(item.id, 'terminoPago', e.target.value)}
+                              className="w-12 bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 text-center"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.factura}
+                              onChange={(e) => updateItem(item.id, 'factura', e.target.value)}
+                              placeholder="Factura"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 font-mono"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="date"
+                              value={item.fechaFactura}
+                              onChange={(e) => updateItem(item.id, 'fechaFactura', e.target.value)}
+                              className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="date"
+                              value={item.fechaVencimiento}
+                              onChange={(e) => updateItem(item.id, 'fechaVencimiento', e.target.value)}
+                              className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]"
+                            />
+                          </td>
+                          {BUCKETS.map((b, i) => {
+                            const val = getBucketValue(item, b);
+                            return (
+                              <td key={i} className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800">
+                                {val > 0 ? `$${val.toLocaleString()}` : '-'}
+                              </td>
+                            );
+                          })}
+                          <td className="px-2 py-1 text-right border-r border-gray-100 dark:border-navy-800 font-bold bg-gray-50/30 dark:bg-navy-950/30">
+                            <input
+                              type="number"
+                              value={item.valorFactura || ''}
+                              onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)}
+                              className="w-full bg-transparent border-0 text-right focus:ring-1 focus:ring-brand-blue rounded px-1"
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${edad > 60 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                              {edad}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${diasVencidos > 0 ? 'bg-red-500 text-white' : 'bg-green-100 text-green-700'}`}>
+                              {diasVencidos}
+                            </span>
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.responsable}
+                              onChange={(e) => updateItem(item.id, 'responsable', e.target.value)}
+                              placeholder="Responsable"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.telefono}
+                              onChange={(e) => updateItem(item.id, 'telefono', e.target.value)}
+                              placeholder="Tel"
+                              className="w-full bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-center border-r border-gray-100 dark:border-navy-800">
+                            <button 
+                              onClick={() => updateItem(item.id, 'pagoAbono', item.pagoAbono === item.valorFactura ? 0 : item.valorFactura)}
+                              className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
+                                item.pagoAbono >= item.valorFactura && item.valorFactura > 0 
+                                  ? 'bg-green-500 border-green-600 text-white' 
+                                  : 'border-gray-300 dark:border-navy-700'
+                              }`}
+                            >
+                              {item.pagoAbono >= item.valorFactura && item.valorFactura > 0 ? '✓' : ''}
+                            </button>
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="date"
+                              value={item.fechaPago}
+                              onChange={(e) => updateItem(item.id, 'fechaPago', e.target.value)}
+                              className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5 w-[110px]"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.observacion1}
+                              onChange={(e) => updateItem(item.id, 'observacion1', e.target.value)}
+                              placeholder="..."
+                              className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-1 py-1 border-r border-gray-100 dark:border-navy-800">
+                            <input
+                              type="text"
+                              value={item.observacion2}
+                              onChange={(e) => updateItem(item.id, 'observacion2', e.target.value)}
+                              placeholder="..."
+                              className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-1 py-0.5"
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-center">
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Fila de Totales del Grupo */}
+                    <tr className="bg-brand-blue/5 font-bold text-brand-blue">
+                      <td colSpan={8} className="px-2 py-2 text-right uppercase italic">Total {group.cliente}:</td>
+                      {group.buckets.map((val, i) => (
+                        <td key={i} className="px-2 py-2 text-right border-r border-brand-blue/10">
+                          ${val.toLocaleString()}
+                        </td>
+                      ))}
+                      <td className="px-2 py-2 text-right border-r border-brand-blue/10 bg-brand-blue/10">
+                        ${group.total.toLocaleString()}
                       </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.responsable}
-                          onChange={(e) => updateItem(item.id, 'responsable', e.target.value)}
-                          placeholder="Responsable"
-                          className="w-full min-w-[120px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 placeholder-gray-400 dark:placeholder-gray-600"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.factura}
-                          onChange={(e) => updateItem(item.id, 'factura', e.target.value)}
-                          placeholder="# Fact"
-                          className="w-full min-w-[100px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 font-mono text-xs placeholder-gray-400 dark:placeholder-gray-600"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="date"
-                          value={item.fechaFactura}
-                          onChange={(e) => updateItem(item.id, 'fechaFactura', e.target.value)}
-                          className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 w-[130px]"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={item.terminoPago}
-                            onChange={(e) => updateItem(item.id, 'terminoPago', e.target.value)}
-                            className="w-16 bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 text-right"
-                          />
-                          <span className="text-gray-500 text-xs">días</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="date"
-                          value={item.fechaCompromiso}
-                          onChange={(e) => updateItem(item.id, 'fechaCompromiso', e.target.value)}
-                          className={`bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 w-[130px] ${
-                            isVencida ? 'text-red-500 font-medium' : ''
-                          }`}
-                        />
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          edad > 90 ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                          edad > 60 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                          edad > 30 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        }`}>
-                          {edad} días
-                        </span>
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.valorFactura || ''}
-                          onChange={(e) => updateItem(item.id, 'valorFactura', e.target.value)}
-                          placeholder="0.00"
-                          className="w-full min-w-[100px] text-right bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.contactos}
-                          onChange={(e) => updateItem(item.id, 'contactos', e.target.value)}
-                          placeholder="Tel / Email"
-                          className="w-full min-w-[150px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 placeholder-gray-400 dark:placeholder-gray-600"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="number"
-                          value={item.pagoAbono || ''}
-                          onChange={(e) => updateItem(item.id, 'pagoAbono', e.target.value)}
-                          placeholder="0.00"
-                          className="w-full min-w-[100px] text-right bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 text-green-600 dark:text-green-400"
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-right font-medium whitespace-nowrap">
-                        {saldo > 0 ? (
-                          <span className="text-gray-900 dark:text-gray-100">${saldo.toLocaleString()}</span>
-                        ) : (
-                          <span className="text-green-500">Pagado</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="date"
-                          value={item.fechaPago}
-                          onChange={(e) => updateItem(item.id, 'fechaPago', e.target.value)}
-                          className="bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 w-[130px]"
-                        />
-                      </td>
-                      <td className="px-2 py-2">
-                        <input
-                          type="text"
-                          value={item.observacion}
-                          onChange={(e) => updateItem(item.id, 'observacion', e.target.value)}
-                          placeholder="Notas..."
-                          className="w-full min-w-[150px] bg-transparent border-0 focus:ring-1 focus:ring-brand-blue rounded px-2 py-1 placeholder-gray-400 dark:placeholder-gray-600"
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
+                      <td colSpan={9}></td>
                     </tr>
-                  );
-                })
+                  </React.Fragment>
+                ))
               )}
             </tbody>
-            {items.length > 0 && (
-              <tfoot className="bg-gray-50 dark:bg-navy-950/80 font-semibold border-t border-gray-200 dark:border-navy-800">
+            {groupedItems.length > 0 && (
+              <tfoot className="bg-gray-900 text-white font-bold sticky bottom-0">
                 <tr>
-                  <td colSpan={7} className="px-4 py-3 text-right">TOTALES:</td>
-                  <td className="px-4 py-3 text-right text-brand-blue">${totales.valor.toLocaleString()}</td>
-                  <td></td>
-                  <td className="px-4 py-3 text-right text-green-500">${totales.abono.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right">${(totales.valor - totales.abono).toLocaleString()}</td>
-                  <td colSpan={3}></td>
+                  <td colSpan={8} className="px-4 py-3 text-right uppercase tracking-wider">Total General:</td>
+                  {stats.buckets.map((b, i) => (
+                    <td key={i} className="px-2 py-3 text-right">${b.value.toLocaleString()}</td>
+                  ))}
+                  <td className="px-2 py-3 text-right bg-brand-indigo">${stats.total.toLocaleString()}</td>
+                  <td colSpan={9}></td>
                 </tr>
               </tfoot>
             )}
