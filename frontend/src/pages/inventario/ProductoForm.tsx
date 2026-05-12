@@ -14,6 +14,17 @@ const TIPOS_IVA = [
   { value: 'EXCLUIDO', label: 'Excluido' },
 ]
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+
 export function ProductoForm() {
   const { id } = useParams<{ id: string }>()
   const isEdit = !!id
@@ -97,17 +108,6 @@ export function ProductoForm() {
     if (isEdit) payload.activo = form.activo
     mutation.mutate(payload)
   }
-
-  function Field({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-      <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wide">{label}</label>
-        {children}
-      </div>
-    )
-  }
-
-  const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

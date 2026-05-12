@@ -31,6 +31,7 @@ import { ConfigTienda } from './pages/digital/ConfigTienda'
 // ── Ventas ──
 import { VentasDashboard } from './pages/ventas/VentasDashboard'
 import { Clientes } from './pages/ventas/Clientes'
+import { ClienteForm } from './pages/ventas/ClienteForm'
 import { Cotizaciones } from './pages/ventas/Cotizaciones'
 import { CotizacionForm } from './pages/ventas/CotizacionForm'
 import { Facturas } from './pages/ventas/Facturas'
@@ -102,6 +103,8 @@ function App() {
         <Route path="/ventas" element={<Navigate to="/ventas/dashboard" replace />} />
         <Route path="/ventas/dashboard"     element={<P><VentasDashboard /></P>} />
         <Route path="/ventas/clientes"           element={<P><Clientes /></P>} />
+        <Route path="/ventas/clientes/nuevo"     element={<P><ClienteForm /></P>} />
+        <Route path="/ventas/clientes/:id"       element={<P><ClienteForm /></P>} />
         <Route path="/ventas/cotizaciones"       element={<P><Cotizaciones /></P>} />
         <Route path="/ventas/cotizaciones/nueva" element={<P><CotizacionForm /></P>} />
         <Route path="/ventas/cotizaciones/:id"   element={<P><CotizacionForm /></P>} />
