@@ -4,16 +4,17 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const nitEmpresa = '1143875756';
+  const nitEmpresa = '1143875756-0';
   const emailUser = 'gerencia@edatia.com';
   const passwordUser = '3D4t142026*';
   const username = 'gerencia';
 
   console.log(`🚀 Iniciando provisión para la empresa con NIT: ${nitEmpresa}...`);
 
-  // 1. Buscar la empresa
-  const empresa = await prisma.empresa.findUnique({
-    where: { nit: nitEmpresa }
+  // 1. Buscar y actualizar la empresa (Asegurar nombre EDATIA)
+  const empresa = await prisma.empresa.update({
+    where: { nit: nitEmpresa },
+    data: { nombre: 'EDATIA' }
   });
 
   if (!empresa) {
