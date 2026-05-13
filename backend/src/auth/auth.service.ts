@@ -58,13 +58,21 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    // 1. Verificar que la empresa con ese NIT existe
-    const empresa = await this.prisma.empresa.findUnique({
-      where: { nit: dto.nit.trim() },
+    // 1. Verificar que la empresa con ese NIT existe (Búsqueda flexible)
+    const nitLimpio = dto.nit.trim();
+    let empresa = await this.prisma.empresa.findUnique({
+      where: { nit: nitLimpio },
     });
 
+    // Si no lo encuentra exacto (ej. falta el -0), intentamos buscar por prefijo
     if (!empresa) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      empresa = await this.prisma.empresa.findFirst({
+        where: { nit: { startsWith: nitLimpio } },
+      });
+    }
+
+    if (!empresa) {
+      throw new UnauthorizedException('La empresa con este NIT no existe');
     }
 
     // 2. Buscar el usuario dentro de esa empresa
