@@ -8,22 +8,26 @@ async function main() {
   const password = '3D4t142026*';
   const hash = await bcrypt.hash(password, 12);
 
-  // Buscar el perfil de admin existente
-  const perfil = await prisma.perfilCargo.findFirst({
-    where: { nombre: { contains: 'Administrador' } }
+  // Asegurar que existe el perfil de administrador
+  const perfil = await prisma.perfilCargo.upsert({
+    where: { nombre: 'Administrador del Sistema' },
+    update: {},
+    create: {
+      nombre: 'Administrador del Sistema',
+      descripcion: 'Acceso total al portal Manager de Edatia',
+      permisos: ['*'],
+    },
   });
 
-  if (!perfil) {
-    console.log('❌ Error: No se encontró un perfil de Administrador en la base de datos.');
-    return;
-  }
+  console.log(`✅ Perfil de cargo verificado: ${perfil.nombre}`);
 
   const user = await (prisma as any).colaborador.upsert({
     where: { email },
     update: {
       password: hash,
       activo: true,
-      rol: 'ADMIN'
+      rol: 'ADMIN',
+      perfilCargoId: perfil.id,
     },
     create: {
       email,
