@@ -87,7 +87,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.edatia-web.rule=Host(`erp.edatia.com`)"
+      - "traefik.http.routers.edatia-web.rule=Host(`erp.edatia.com`) || Host(`app.edatia.com`)"
       - "traefik.http.routers.edatia-web.entrypoints=websecure"
       - "traefik.http.routers.edatia-web.tls=true"
       - "traefik.http.routers.edatia-web.tls.certresolver=letsencrypt"
