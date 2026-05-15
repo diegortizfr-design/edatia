@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getInvKpis, clasificarAbc,
 } from '../../services/inventario.service'
+import { formatCOP, formatNum } from '../../lib/utils'
 import {
   Package, Warehouse, TrendingUp, AlertTriangle, ArrowRight,
   Activity, Truck, ShoppingCart, RefreshCw, BarChart2,
@@ -9,13 +10,6 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-
-function fmt(n: number) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
-}
-function fmtNum(n: number) {
-  return new Intl.NumberFormat('es-CO').format(n)
-}
 
 function KpiCard({ icon, label, value, sub, color = 'indigo', to }: any) {
   const colors: any = {
@@ -117,7 +111,7 @@ export function InvDashboard() {
         <KpiCard icon={<Package size={20} />}      label="Productos activos"   value={fmtNum(data.totalProductos)}     color="indigo" to="/inventario/productos" />
         <KpiCard icon={<Warehouse size={20} />}     label="Bodegas activas"     value={fmtNum(data.totalBodegas)}       color="blue"   to="/inventario/bodegas" />
         <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={fmtNum(data.totalProveedores ?? 0)}   color="teal"   to="/inventario/proveedores" />
-        <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={fmt(data.valorTotal)}                 color="green"  sub="CPP vigente" />
+        <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={formatCOP(data.valorTotal)}                 color="green"  sub="CPP vigente" />
         <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={fmtNum(data.movimientosDelMes ?? 0)}  color="indigo" to="/inventario/movimientos" />
         <KpiCard
           icon={<AlertTriangle size={20} />}
@@ -159,7 +153,7 @@ export function InvDashboard() {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-slate-500">
                       <span>{m.cantidad} movs.</span>
-                      <span className="font-semibold text-slate-700">{fmt(m.total)}</span>
+                      <span className="font-semibold text-slate-700">{formatCOP(m.total)}</span>
                     </div>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2">
@@ -219,7 +213,7 @@ export function InvDashboard() {
                   <p className="text-xs text-slate-400">{p.sku} · {fmtNum(p.cantidad)} und</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-slate-700">{fmt(p.valor)}</p>
+                  <p className="text-sm font-semibold text-slate-700">{formatCOP(p.valor)}</p>
                   {p.claseAbc && (
                     <span className={`text-xs font-bold ${ABC_TEXT[p.claseAbc] ?? 'text-slate-500'}`}>
                       Clase {p.claseAbc}
@@ -339,8 +333,8 @@ export function InvDashboard() {
                     <td className="px-5 py-3 text-slate-500 text-xs">
                       {m.bodegaOrigen?.nombre ?? m.bodegaDestino?.nombre ?? '—'}
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold text-slate-800">{fmtNum(parseFloat(m.cantidad))}</td>
-                    <td className="px-5 py-3 text-right text-slate-600">{fmt(parseFloat(m.costoTotal))}</td>
+                    <td className="px-5 py-3 text-right font-semibold text-slate-800">{formatNum(parseFloat(m.cantidad))}</td>
+                    <td className="px-5 py-3 text-right text-slate-600">{formatCOP(parseFloat(m.costoTotal))}</td>
                   </tr>
                 )
               })}

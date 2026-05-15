@@ -8,7 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { EmpresasModule } from './empresas/empresas.module';
+
 import { ManagerModule } from './manager.module';
 import { InventarioModule } from './inventario/inventario.module';
 import { VentasModule } from './ventas/ventas.module';
@@ -34,7 +34,7 @@ import { DigitalModule } from './digital/digital.module';
     AuditLogModule,   // global — AuditLogService disponible en toda la app
     AuthModule,
     UsersModule,
-    EmpresasModule,
+
     ManagerModule,
     InventarioModule,
     VentasModule,

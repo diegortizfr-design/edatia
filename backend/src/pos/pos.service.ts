@@ -3,12 +3,14 @@ import { PrismaService } from '../prisma/prisma.service'
 import { Decimal } from '@prisma/client/runtime/library'
 
 import { ComprobantesService } from '../contabilidad/comprobantes/comprobantes.service'
+import { MovimientosService } from '../inventario/movimientos/movimientos.service'
 
 @Injectable()
 export class PosService {
   constructor(
     private prisma: PrismaService,
     private comprobantes: ComprobantesService,
+    private movimientos: MovimientosService,
   ) {}
 
   // ─── Cajas ───────────────────────────────────────────────────────────────────
@@ -377,36 +379,16 @@ export class PosService {
         const prod = await tx.producto.findUnique({ where: { id: item.productoId } })
         if (!prod?.manejaBodega) continue
 
-        const stockRec = await tx.stock.findFirst({
-          where: { productoId: item.productoId, bodegaId: sesion.caja.bodegaId },
-        })
-        const saldoAnt = stockRec ? Number(stockRec.cantidad) : 0
-        const saldoNuevo = saldoAnt - item.cantidad
-        const saldoCostoNuevo = saldoNuevo * item.costoUnitario
-
-        await tx.movimientoInventario.create({
-          data: {
-            empresaId,
-            numero: `POS-${numero}-${item.productoId}`,
-            tipo: 'SALIDA',
-            concepto: `Venta POS ${numero}`,
-            productoId: item.productoId,
-            bodegaOrigenId: sesion.caja.bodegaId,
-            cantidad: -item.cantidad,
-            costoUnitario: item.costoUnitario,
-            costoTotal: -(item.costoTotal),
-            saldoCantidad: saldoNuevo,
-            saldoCostoTotal: saldoCostoNuevo,
-            saldoCpp: item.costoUnitario,
-            referenciaId: String(v.id),
-            referenciaTipo: 'VENTA_POS',
-          },
-        })
-
-        await tx.stock.upsert({
-          where: { productoId_bodegaId: { productoId: item.productoId, bodegaId: sesion.caja.bodegaId } },
-          create: { empresaId, productoId: item.productoId, bodegaId: sesion.caja.bodegaId, cantidad: saldoNuevo },
-          update: { cantidad: { decrement: item.cantidad } },
+        await this.movimientos.registrarSalidaInterna(tx, {
+          empresaId,
+          productoId: item.productoId,
+          bodegaId: sesion.caja.bodegaId,
+          cantidad: item.cantidad,
+          concepto: `Venta POS ${numero}`,
+          tipo: 'SALIDA',
+          referenciaId: String(v.id),
+          referenciaTipo: 'VENTA_POS',
+          numeroMov: `POS-${numero}-${item.productoId}`,
         })
       }
 

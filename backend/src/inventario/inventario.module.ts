@@ -64,5 +64,6 @@ import { VariantesService } from './variantes/variantes.service';
     SerialesService,
     VariantesService,
   ],
+  exports: [MovimientosService, ProductosService, StockService],
 })
 export class InventarioModule {}

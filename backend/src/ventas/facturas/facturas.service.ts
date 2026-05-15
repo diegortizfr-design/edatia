@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { CreateFacturaDto } from './dto/factura.dto'
 import { CufeService } from './cufe.service'
 import { UblService } from './ubl.service'
+import { MovimientosService } from '../../inventario/movimientos/movimientos.service'
 import { calcularItem, calcularTotales } from '../cotizaciones/cotizaciones.service'
 
 const INCLUDE_FULL = {
@@ -22,6 +23,7 @@ export class FacturasService {
     private prisma: PrismaService,
     private cufeService: CufeService,
     private ublService: UblService,
+    private movimientos: MovimientosService,
   ) {}
 
   findAll(empresaId: number, params?: { clienteId?: number; estado?: string; desde?: string; hasta?: string }) {
@@ -136,50 +138,17 @@ export class FacturasService {
 
     // ── 1. Descontar inventario ───────────────────────────────────────────────
     for (const item of factura.items as any[]) {
-      const stock = await this.prisma.stock.findUnique({
-        where: { productoId_bodegaId: { productoId: item.productoId, bodegaId: factura.bodegaId } },
-      })
-      const disponible = Number(stock?.cantidad ?? 0)
-      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
-
-      if (!empresa?.permiteStockNegativo && disponible < Number(item.cantidad)) {
-        throw new BadRequestException(`Stock insuficiente para ${item.producto?.nombre ?? item.productoId}`)
-      }
-
-      // Movimiento de salida (VENTA)
-      const ultimoMov = await this.prisma.movimientoInventario.findFirst({
-        where: { empresaId, productoId: item.productoId },
-        orderBy: { fechaMovimiento: 'desc' },
-        select: { saldoCantidad: true, saldoCostoTotal: true, saldoCpp: true },
-      })
-      const saldoAnt = Number(ultimoMov?.saldoCantidad ?? disponible)
-      const nuevoSaldo = saldoAnt - Number(item.cantidad)
-      const cpp = Number(ultimoMov?.saldoCpp ?? item.costoUnitario)
-
-      await this.prisma.stock.upsert({
-        where: { productoId_bodegaId: { productoId: item.productoId, bodegaId: factura.bodegaId } },
-        create: { empresaId, productoId: item.productoId, bodegaId: factura.bodegaId, cantidad: -Number(item.cantidad) },
-        update: { cantidad: { decrement: Number(item.cantidad) } },
-      })
-
-      await this.prisma.movimientoInventario.create({
-        data: {
-          empresaId,
-          numero: `VTA-${factura.numero}-${item.id}`,
-          tipo: 'VENTA',
-          concepto: `Factura ${factura.numero}`,
-          productoId: item.productoId,
-          bodegaOrigenId: factura.bodegaId,
-          cantidad: Number(item.cantidad),
-          costoUnitario: cpp,
-          costoTotal: cpp * Number(item.cantidad),
-          saldoCantidad: nuevoSaldo,
-          saldoCostoTotal: nuevoSaldo * cpp,
-          saldoCpp: cpp,
-          usuarioId,
-          referenciaId: String(factura.id),
-          referenciaTipo: 'FACTURA_VENTA',
-        },
+      await this.movimientos.registrarSalidaInterna(this.prisma, {
+        empresaId,
+        productoId: item.productoId,
+        bodegaId: factura.bodegaId,
+        cantidad: Number(item.cantidad),
+        concepto: `Factura ${factura.numero}`,
+        tipo: 'VENTA',
+        usuarioId,
+        referenciaId: String(factura.id),
+        referenciaTipo: 'FACTURA_VENTA',
+        numeroMov: `VTA-${factura.numero}-${item.id}`,
       })
     }
 

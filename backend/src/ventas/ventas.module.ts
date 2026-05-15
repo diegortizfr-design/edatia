@@ -24,8 +24,10 @@ import { RecibosService } from './recibos/recibos.service'
 import { VentasDashboardController } from './dashboard/ventas-dashboard.controller'
 import { VentasDashboardService } from './dashboard/ventas-dashboard.service'
 
+import { InventarioModule } from '../inventario/inventario.module'
+
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, InventarioModule],
   controllers: [
     ClientesController,
     ConfigDianController,

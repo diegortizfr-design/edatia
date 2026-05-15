@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto } from './dto/cliente.dto';
+import * as bcrypt from 'bcrypt';
 
 // Contexto del usuario autenticado pasado desde el controller
 export interface UserCtx {
@@ -158,7 +159,13 @@ export class ClientesManagerService {
     // Relaciones (excepto asesorId, ya manejado arriba)
     if (dto.planBaseId !== undefined) data.planBaseId = dto.planBaseId;
 
-    return (this.prisma as any).clienteManager.create({ data });
+    const nuevoCliente = await (this.prisma as any).clienteManager.create({ data });
+    
+    if (nuevoCliente.estado === 'ACTIVO') {
+      await this.aprovisionarEmpresa(nuevoCliente);
+    }
+    
+    return nuevoCliente;
   }
 
   async update(id: number, dto: UpdateClienteDto, userCtx?: UserCtx) {
@@ -212,7 +219,13 @@ export class ClientesManagerService {
       data.asesorId = dto.asesorId;
     }
 
-    return (this.prisma as any).clienteManager.update({ where: { id }, data });
+    const clienteActualizado = await (this.prisma as any).clienteManager.update({ where: { id }, data });
+    
+    if (clienteActualizado.estado === 'ACTIVO') {
+      await this.aprovisionarEmpresa(clienteActualizado);
+    }
+    
+    return clienteActualizado;
   }
 
   async stats() {
@@ -307,5 +320,53 @@ export class ClientesManagerService {
       where: { id: plan.id },
       data: { activo: false },
     });
+  }
+
+  /**
+   * Sincroniza el ClienteManager con el modelo Empresa del ERP
+   * Crea la empresa y un usuario admin por defecto si no existen.
+   */
+  private async aprovisionarEmpresa(cliente: any) {
+    if (!cliente.nit) return;
+    
+    // 1. Verificar o crear la Empresa en el ERP
+    let empresa = await this.prisma.empresa.findUnique({ where: { nit: cliente.nit } });
+    
+    if (!empresa) {
+      empresa = await this.prisma.empresa.create({
+        data: {
+          nit: cliente.nit,
+          nombre: cliente.nombre,
+          direccion: cliente.direccion || undefined,
+          telefono: cliente.telefono || undefined,
+          email: cliente.email || undefined,
+        }
+      });
+    }
+
+    // 2. Verificar o crear el Usuario principal
+    if (cliente.email) {
+      const existingUser = await this.prisma.user.findUnique({ where: { email: cliente.email } });
+      
+      if (!existingUser) {
+        // Contraseña temporal por defecto
+        const defaultPassword = 'Edatia' + new Date().getFullYear() + '*';
+        const hash = await bcrypt.hash(defaultPassword, 12);
+        
+        // Generar un username seguro a partir del email
+        const username = cliente.email.split('@')[0] + Math.floor(Math.random() * 1000);
+        
+        await this.prisma.user.create({
+          data: {
+            email: cliente.email,
+            usuario: username,
+            nombre: 'Admin ' + cliente.nombre,
+            password: hash,
+            rol: 'admin',
+            empresaId: empresa.id
+          }
+        });
+      }
+    }
   }
 }

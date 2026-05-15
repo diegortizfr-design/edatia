@@ -23,6 +23,13 @@ model User {
   profile   Profile?
   empresaId Int?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
+
+  // ── Seguridad y Auditoría ─────────────────────────
+  activo                    Boolean   @default(true)
+  loginFallidosConsecutivos  Int       @default(0)
+  loginBloqueadoHasta        DateTime? // null = no bloqueado
+  refreshTokenHash           String?   @db.VarChar(128)
+  refreshTokenExpiry         DateTime?
 }
 
 model Profile {

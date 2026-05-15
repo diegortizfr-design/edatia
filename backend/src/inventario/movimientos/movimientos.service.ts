@@ -2,6 +2,8 @@ import {
   Injectable, NotFoundException, BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StockService } from '../stock/stock.service';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 import {
   EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
   DevolucionProveedorDto, DevolucionClienteDto,
@@ -10,7 +12,102 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class MovimientosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stock: StockService,
+    private readonly auditLog: AuditLogService,
+  ) {}
+
+  /**
+   * Registra una salida de inventario de forma centralizada.
+   * Puede ser llamada desde otros servicios dentro de una transacción.
+   */
+  async registrarSalidaInterna(
+    tx: any,
+    data: {
+      empresaId: number;
+      productoId: number;
+      bodegaId: number;
+      cantidad: number;
+      concepto: string;
+      tipo: string;
+      referenciaId?: string;
+      referenciaTipo?: string;
+      usuarioId?: number;
+      numeroMov?: string;
+      notas?: string;
+    },
+  ) {
+    const producto = await tx.producto.findUnique({ where: { id: data.productoId } });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+
+    const stock = await this.getOrCreateStock(data.productoId, data.bodegaId, data.empresaId, tx);
+    const cantidadDisponible = Number(stock.cantidad) - Number(stock.cantidadReservada ?? 0);
+
+    // Verificar política de stock negativo
+    const empresa = await tx.empresa.findUnique({
+      where: { id: data.empresaId },
+      select: { permiteStockNegativo: true },
+    });
+    
+    if (!empresa?.permiteStockNegativo && cantidadDisponible < data.cantidad) {
+      throw new BadRequestException(
+        `Stock insuficiente para ${producto.nombre}. Disponible: ${cantidadDisponible}, solicitado: ${data.cantidad}`,
+      );
+    }
+
+    const cpp = Number(producto.costoPromedio);
+    const saldoAnterior = Number(stock.cantidad);
+    const nuevoSaldo = saldoAnterior - data.cantidad;
+    const numero = data.numeroMov || (await this.generarNumero('MOV', data.empresaId));
+
+    // 1. Actualizar Stock
+    await tx.stock.update({
+      where: { id: stock.id },
+      data: { cantidad: { decrement: data.cantidad } },
+    });
+
+    // 2. Crear Movimiento (Kardex)
+    // NOTA: Guardamos cantidad absoluta (positiva), el tipo define la dirección.
+    const mov = await tx.movimientoInventario.create({
+      data: {
+        empresaId: data.empresaId,
+        numero,
+        tipo: data.tipo,
+        concepto: data.concepto,
+        productoId: data.productoId,
+        bodegaOrigenId: data.bodegaId,
+        cantidad: data.cantidad,
+        costoUnitario: cpp,
+        costoTotal: data.cantidad * cpp,
+        saldoCantidad: nuevoSaldo,
+        saldoCostoTotal: nuevoSaldo * cpp,
+        saldoCpp: cpp,
+        usuarioId: data.usuarioId,
+        referenciaId: data.referenciaId,
+        referenciaTipo: data.referenciaTipo,
+        notas: data.notas,
+      },
+    });
+
+    // 3. Auditoría
+    void this.auditLog.log({
+      accion: 'STOCK_OUT',
+      entidad: 'Producto',
+      entidadId: data.productoId,
+      colaboradorId: data.usuarioId,
+      detalles: {
+        cantidad: data.cantidad,
+        tipo: data.tipo,
+        concepto: data.concepto,
+        bodegaId: data.bodegaId,
+        numeroMov: numero,
+      },
+    });
+
+    return mov;
+  }
+
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -181,29 +278,15 @@ export class MovimientosService {
     const saldoCantidad = cantAnterior - dto.cantidad;
 
     return this.prisma.$transaction(async (tx: any) => {
-      await tx.stock.updateMany({
-        where: { productoId: dto.productoId, bodegaId: dto.bodegaId },
-        data: { cantidad: { decrement: dto.cantidad } },
-      });
-
-      return tx.movimientoInventario.create({
-        data: {
-          numero,
-          empresaId,
-          tipo: 'SALIDA',
-          concepto: dto.concepto ?? 'OTRO',
-          productoId: dto.productoId,
-          bodegaOrigenId: dto.bodegaId,
-          cantidad: dto.cantidad,
-          costoUnitario: cpp,
-          costoTotal: dto.cantidad * cpp,
-          saldoCantidad,
-          saldoCostoTotal: saldoCantidad * cpp,
-          saldoCpp: cpp,
-          usuarioId,
-          notas: dto.notas,
-          referenciaTipo: 'Manual',
-        },
+      return this.registrarSalidaInterna(tx, {
+        empresaId,
+        productoId: dto.productoId,
+        bodegaId: dto.bodegaId,
+        cantidad: dto.cantidad,
+        concepto: dto.concepto ?? 'Salida Manual',
+        tipo: 'SALIDA',
+        usuarioId,
+        notas: dto.notas,
       });
     });
   }

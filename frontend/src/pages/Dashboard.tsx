@@ -3,6 +3,7 @@ import { TrendingUp, Users, AlertTriangle, Store, RefreshCw, LayoutDashboard } f
 import { MetricCard } from '../components/MetricCard'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { formatCOP, formatDate } from '../lib/utils'
 
 interface BusinessKpis {
   totalVentasHoy: number
@@ -23,9 +24,6 @@ export function Dashboard() {
   const { user } = useAuth()
   const { data, isLoading, isError, refetch } = useBusinessStats()
 
-  const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val)
-
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-start justify-between">
@@ -34,7 +32,7 @@ export function Dashboard() {
             Bienvenido{user?.nombre ? `, ${user.nombre.split(' ')[0]}` : ''}
           </h2>
           <p className="text-slate-500 mt-1">
-            Resumen de negocio — {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            Resumen de negocio — {formatDate(new Date())}
           </p>
         </div>
         <button
@@ -56,7 +54,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <MetricCard
           title="Ventas de Hoy"
-          value={data ? formatCurrency(data.totalVentasHoy) : '—'}
+          value={data ? formatCOP(data.totalVentasHoy) : '—'}
           subtitle="POS + Facturación"
           icon={TrendingUp}
           color="indigo"
