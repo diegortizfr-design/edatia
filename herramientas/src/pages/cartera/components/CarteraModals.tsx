@@ -1,6 +1,5 @@
 import React from 'react';
 import { LogIn, Save, X } from 'lucide-react';
-import { Input } from './Input'; // Assuming Input exists in components/ui
 
 interface CarteraModalsProps {
   isOpen: boolean;
