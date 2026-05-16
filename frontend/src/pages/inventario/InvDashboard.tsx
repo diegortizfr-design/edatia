@@ -108,15 +108,15 @@ export function InvDashboard() {
 
       {/* ── KPIs principales (6 tarjetas) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard icon={<Package size={20} />}      label="Productos activos"   value={fmtNum(data.totalProductos)}     color="indigo" to="/inventario/productos" />
-        <KpiCard icon={<Warehouse size={20} />}     label="Bodegas activas"     value={fmtNum(data.totalBodegas)}       color="blue"   to="/inventario/bodegas" />
-        <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={fmtNum(data.totalProveedores ?? 0)}   color="teal"   to="/inventario/proveedores" />
+        <KpiCard icon={<Package size={20} />}      label="Productos activos"   value={formatNum(data.totalProductos)}     color="indigo" to="/inventario/productos" />
+        <KpiCard icon={<Warehouse size={20} />}     label="Bodegas activas"     value={formatNum(data.totalBodegas)}       color="blue"   to="/inventario/bodegas" />
+        <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={formatNum(data.totalProveedores ?? 0)}   color="teal"   to="/inventario/proveedores" />
         <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={formatCOP(data.valorTotal)}                 color="green"  sub="CPP vigente" />
-        <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={fmtNum(data.movimientosDelMes ?? 0)}  color="indigo" to="/inventario/movimientos" />
+        <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={formatNum(data.movimientosDelMes ?? 0)}  color="indigo" to="/inventario/movimientos" />
         <KpiCard
           icon={<AlertTriangle size={20} />}
           label="Alertas de stock"
-          value={fmtNum(data.productosAlertas)}
+          value={formatNum(data.productosAlertas)}
           color={data.productosAlertas > 0 ? 'amber' : 'green'}
           sub="Bajo punto de reorden"
           to="/inventario/alertas"
@@ -210,7 +210,7 @@ export function InvDashboard() {
                 <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate">{p.nombre}</p>
-                  <p className="text-xs text-slate-400">{p.sku} · {fmtNum(p.cantidad)} und</p>
+                  <p className="text-xs text-slate-400">{p.sku} · {formatNum(p.cantidad)} und</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-semibold text-slate-700">{formatCOP(p.valor)}</p>
