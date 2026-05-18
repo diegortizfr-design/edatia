@@ -99,4 +99,14 @@ export class ClientesManagerController {
   ) {
     return this.clientesManagerService.provisionarErp(id, dto);
   }
+
+  @Delete(':id/erp-usuarios/:userId')
+  @ManagerRoles('ADMIN')
+  @ApiOperation({ summary: 'Eliminar un usuario del ERP asociado al cliente' })
+  eliminarUsuarioErp(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.clientesManagerService.eliminarUsuarioErp(id, userId);
+  }
 }

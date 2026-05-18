@@ -74,6 +74,20 @@ export class ClientesManagerService {
         modulosActivos: {
           include: { modulo: true },
         },
+        empresa: {
+          include: {
+            usuarios: {
+              select: {
+                id: true,
+                email: true,
+                usuario: true,
+                nombre: true,
+                activo: true,
+                rol: true,
+              }
+            }
+          }
+        }
       },
     });
 
@@ -384,5 +398,31 @@ export class ClientesManagerService {
 
       return { message: 'Inquilino ERP y credenciales creadas correctamente' };
     }
+  }
+
+  /**
+   * Elimina un usuario del ERP asociado a este cliente
+   */
+  async eliminarUsuarioErp(clienteId: number, userId: number) {
+    const cliente = await this.findOne(clienteId);
+
+    if (!cliente.empresaId) {
+      throw new ConflictException('El cliente no tiene un inquilino ERP enlazado');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        empresaId: cliente.empresaId,
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException('El usuario no existe o no pertenece a este cliente');
+    }
+
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    return { message: 'Usuario del ERP eliminado exitosamente' };
   }
 }

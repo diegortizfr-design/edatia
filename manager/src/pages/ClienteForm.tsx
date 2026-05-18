@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Check, Building2, MapPin, Phone, Briefcase,
-  Receipt, Landmark, SlidersHorizontal, ChevronRight, Key, ShieldCheck
+  Receipt, Landmark, SlidersHorizontal, ChevronRight, Key, ShieldCheck, User, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, getApiError } from '@/lib/api';
@@ -261,11 +261,24 @@ export function ClienteForm() {
     mutationFn: (data: { usuario: string; password: string }) => 
       api.post(`/manager/clientes/${id}/provisionar-erp`, data),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['manager', 'clientes', id] });
       toast.success('Inquilino ERP y credenciales aprovisionadas correctamente');
       setErpPassword('');
     },
     onError: (err: unknown) => {
       toast.error(getApiError(err, 'Error al aprovisionar en el ERP'));
+    },
+  });
+
+  const eliminarUsuarioErpMutation = useMutation({
+    mutationFn: (userId: number) => 
+      api.delete(`/manager/clientes/${id}/erp-usuarios/${userId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['manager', 'clientes', id] });
+      toast.success('Usuario del ERP eliminado');
+    },
+    onError: (err: unknown) => {
+      toast.error(getApiError(err, 'Error al eliminar usuario'));
     },
   });
 
@@ -644,6 +657,43 @@ export function ClienteForm() {
                     </p>
                   )}
                 </div>
+
+                {cliente?.empresa?.usuarios && cliente.empresa.usuarios.length > 0 && (
+                  <div className="mt-8 pt-6 border-t border-indigo-100 dark:border-white/5">
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">
+                      Usuarios Activos en el ERP
+                    </h4>
+                    <div className="space-y-3">
+                      {cliente.empresa.usuarios.map((u: any) => (
+                        <div key={u.id} className="flex items-center justify-between p-3 rounded-xl bg-white/60 dark:bg-navy-900 border border-indigo-50 dark:border-white/5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center">
+                              <User size={14} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                                {u.nombre || u.usuario}
+                              </p>
+                              <p className="text-xs text-slate-500">{u.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`¿Estás seguro de eliminar el usuario ${u.email} del ERP?`)) {
+                                eliminarUsuarioErpMutation.mutate(u.id);
+                              }
+                            }}
+                            disabled={eliminarUsuarioErpMutation.isPending}
+                            title="Eliminar usuario"
+                            className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           )}
