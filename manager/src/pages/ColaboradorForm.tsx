@@ -954,8 +954,8 @@ export function ColaboradorForm() {
             </Button>
             <Button
               onClick={handleSave}
-              loading={createMutation.isPending}
-              disabled={!form.nombre || !form.email || !form.password}
+              loading={saveMutation.isPending}
+              disabled={!form.nombre || !form.email || (!isEditing && !form.password)}
               size="lg"
             >
               <Check size={16} />
