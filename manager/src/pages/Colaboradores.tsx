@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Shield, ToggleLeft, ToggleRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { Badge } from '@/components/ui/Badge';
@@ -25,6 +26,7 @@ const rolVariant: Record<string, 'info' | 'success' | 'default' | 'warning'> = {
 };
 
 export function ColaboradoresPage() {
+  const navigate = useNavigate();
   const { colaborador: currentUser } = useAuth();
   const isAdmin = currentUser?.rol === 'ADMIN';
   const qc = useQueryClient();
@@ -104,20 +106,29 @@ export function ColaboradoresPage() {
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 dark:text-slate-600">Desde {formatDate(c.createdAt)}</span>
                 {isAdmin && (
-                  <button
-                    onClick={() => toggleMutation.mutate(c.id)}
-                    title={c.activo ? 'Desactivar colaborador' : 'Activar colaborador'}
-                    className={cn(
-                      'flex items-center gap-1 text-[10px] font-medium transition-colors',
-                      c.activo
-                        ? 'text-emerald-600 dark:text-emerald-400 hover:text-red-500 dark:hover:text-red-400'
-                        : 'text-gray-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400',
-                    )}
-                  >
-                    {c.activo
-                      ? <><ToggleRight size={14} /> Activo</>
-                      : <><ToggleLeft size={14} /> Inactivo</>}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/colaboradores/${c.id}`)}
+                      title="Editar colaborador"
+                      className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-brand-blue/10 transition-all"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    </button>
+                    <button
+                      onClick={() => toggleMutation.mutate(c.id)}
+                      title={c.activo ? 'Desactivar colaborador' : 'Activar colaborador'}
+                      className={cn(
+                        'flex items-center gap-1 text-[10px] font-medium transition-colors',
+                        c.activo
+                          ? 'text-emerald-600 dark:text-emerald-400 hover:text-red-500 dark:hover:text-red-400'
+                          : 'text-gray-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400',
+                      )}
+                    >
+                      {c.activo
+                        ? <><ToggleRight size={14} /> Activo</>
+                        : <><ToggleLeft size={14} /> Inactivo</>}
+                    </button>
+                  </div>
                 )}
                 {!isAdmin && (
                   <span className={cn(

@@ -49,6 +49,7 @@ export default function App() {
                 <Route element={<RoleGuard roles={['ADMIN']} />}>
                   <Route path="/dashboard"      element={<DashboardPage />} />
                   <Route path="/colaboradores"  element={<ColaboradoresPage />} />
+                  <Route path="/colaboradores/:id" element={<ColaboradorForm />} />
                   <Route path="/perfiles-cargo" element={<PerfilesCargoPage />} />
                   <Route path="/perfiles-cargo/nuevo" element={<PerfilCargoForm />} />
                   <Route path="/perfiles-cargo/:id" element={<PerfilCargoForm />} />

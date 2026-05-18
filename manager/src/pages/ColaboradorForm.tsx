@@ -232,11 +232,33 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export function ColaboradorForm() {
-  const { perfilId } = useParams<{ perfilId: string }>();
+  const { perfilId, id } = useParams<{ perfilId?: string, id?: string }>();
+  const isEditing = !!id;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(defaultForm);
   const [activeSection, setActiveSection] = useState('acceso');
+
+  const { data: colaboradorData, isLoading: isLoadingColaborador } = useQuery<any>({
+    queryKey: ['manager', 'colaboradores', id],
+    queryFn: () => api.get(`/manager/colaboradores/${id}`).then((r) => r.data),
+    enabled: isEditing,
+  });
+
+  useEffect(() => {
+    if (colaboradorData) {
+      setForm((f) => ({
+        ...f,
+        ...colaboradorData,
+        password: '', // do not populate password field
+        fechaNacimiento: colaboradorData.fechaNacimiento ? colaboradorData.fechaNacimiento.split('T')[0] : '',
+        fechaIngreso: colaboradorData.fechaIngreso ? colaboradorData.fechaIngreso.split('T')[0] : '',
+        habilidadesTecnicas: colaboradorData.habilidadesTecnicas || [],
+        habilidadesBlandas: colaboradorData.habilidadesBlandas || [],
+        idiomas: colaboradorData.idiomas || [],
+      }));
+    }
+  }, [colaboradorData]);
 
   // Fetch perfil for pre-fill and title
   const { data: perfil } = useQuery<PerfilCargo>({
@@ -252,27 +274,30 @@ export function ColaboradorForm() {
     }
   }, [perfil]);
 
-  const createMutation = useMutation({
-    mutationFn: (data: object) => api.post('/manager/colaboradores', data),
+  const saveMutation = useMutation({
+    mutationFn: (data: object) => 
+      isEditing 
+        ? api.patch(`/manager/colaboradores/${id}`, data)
+        : api.post('/manager/colaboradores', data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['manager', 'colaboradores'] });
-      toast.success('Colaborador creado exitosamente');
-      navigate(`/perfiles-cargo/${perfilId}`);
+      toast.success(isEditing ? 'Colaborador actualizado exitosamente' : 'Colaborador creado exitosamente');
+      navigate(perfilId ? `/perfiles-cargo/${perfilId}` : '/colaboradores');
     },
     onError: (err: unknown) => {
-      toast.error(getApiError(err, 'Error al crear colaborador'));
+      toast.error(getApiError(err, isEditing ? 'Error al actualizar colaborador' : 'Error al crear colaborador'));
     },
   });
 
   function handleSave() {
     if (!form.nombre.trim()) { toast.error('El nombre completo es requerido'); return; }
     if (!form.email.trim()) { toast.error('El correo corporativo es requerido'); return; }
-    if (!form.password.trim()) { toast.error('La contraseña temporal es requerida'); return; }
+    if (!isEditing && !form.password.trim()) { toast.error('La contraseña temporal es requerida'); return; }
 
-    createMutation.mutate({
+    saveMutation.mutate({
       nombre: form.nombre,
       email: form.email,
-      password: form.password,
+      password: form.password ? form.password : undefined,
       rol: form.rol,
       perfilCargoId: perfilId ? Number(perfilId) : undefined,
       // All extra fields sent as metadata or direct fields based on backend
@@ -374,7 +399,7 @@ export function ColaboradorForm() {
 
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-bold text-gray-900 dark:text-white truncate">
-            Nuevo Colaborador
+            {isEditing ? 'Editar Colaborador' : 'Nuevo Colaborador'}
             {perfil?.nombre && (
               <span className="text-gray-400 dark:text-slate-500 font-normal"> — {perfil.nombre}</span>
             )}
@@ -383,11 +408,11 @@ export function ColaboradorForm() {
 
         <button
           onClick={handleSave}
-          disabled={createMutation.isPending}
+          disabled={saveMutation.isPending}
           title="Guardar colaborador"
           className="p-2 rounded-lg bg-gradient-brand text-white shadow-glow-brand hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {createMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+          {saveMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
         </button>
       </div>
 
@@ -431,9 +456,9 @@ export function ColaboradorForm() {
               />
               <div>
                 <Input
-                  label="Contraseña temporal *"
+                  label={isEditing ? "Nueva contraseña (opcional)" : "Contraseña temporal *"}
                   type="password"
-                  placeholder="Mínimo 12 caracteres"
+                  placeholder={isEditing ? "Dejar en blanco para no cambiar" : "Mínimo 12 caracteres"}
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 />
