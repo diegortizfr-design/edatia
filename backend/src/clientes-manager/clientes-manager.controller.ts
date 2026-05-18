@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ClientesManagerService } from './clientes-manager.service';
-import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto } from './dto/cliente.dto';
+import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto, ProvisionarErpDto } from './dto/cliente.dto';
 import { ManagerJwtAuthGuard } from '../manager-auth/manager-jwt-auth.guard';
 import { ManagerRolesGuard } from '../manager-auth/roles.guard';
 import { ManagerRoles } from '../manager-auth/roles.decorator';
@@ -88,5 +88,15 @@ export class ClientesManagerController {
     @Param('moduloId', ParseIntPipe) moduloId: number,
   ) {
     return this.clientesManagerService.desactivarModulo(id, moduloId);
+  }
+
+  @Post(':id/provisionar-erp')
+  @ManagerRoles('ADMIN', 'COMERCIAL')
+  @ApiOperation({ summary: 'Crear credenciales ERP para un cliente y enlazar la Empresa' })
+  provisionarErp(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ProvisionarErpDto,
+  ) {
+    return this.clientesManagerService.provisionarErp(id, dto);
   }
 }

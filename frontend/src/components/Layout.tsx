@@ -109,6 +109,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     navigate('/login')
   }
 
+  const hasModule = (slug: string) => {
+    // Si no hay modulos permitidos (no debería pasar), mostramos todo por defecto o nada
+    if (!user?.modulosPermitidos) return true;
+    return user.modulosPermitidos.includes(slug);
+  }
+
   return (
     <div className="h-screen flex bg-slate-50 overflow-hidden font-sans">
       {/* SIDEBAR */}
@@ -167,35 +173,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="py-2">
             {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Operaciones</p>}
             
-            <NavGroup label="Inventario" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.inventario} onClick={() => toggleGroup('inventario')}>
-              <NavItem to="/inventario/dashboard" icon={<Activity size={14}/>} label="Análisis" isCollapsed={isCollapsed} />
-              <NavItem to="/inventario/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} />
-              <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Bodegas" isCollapsed={isCollapsed} />
-              <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos" isCollapsed={isCollapsed} />
-            </NavGroup>
+            {hasModule('inventario') && (
+              <NavGroup label="Inventario" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.inventario} onClick={() => toggleGroup('inventario')}>
+                <NavItem to="/inventario/dashboard" icon={<Activity size={14}/>} label="Análisis" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Bodegas" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos" isCollapsed={isCollapsed} />
+              </NavGroup>
+            )}
 
-            <NavGroup label="Ventas" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
-              <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Dashboard" isCollapsed={isCollapsed} />
-              <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
-              <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
-            </NavGroup>
-
-            <NavItem to="/pos" icon={<Monitor size={18} />} label="Punto de Venta" isCollapsed={isCollapsed} />
+            {hasModule('ventas') && (
+              <>
+                <NavGroup label="Ventas" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
+                  <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Dashboard" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
+                </NavGroup>
+                
+                <NavItem to="/pos" icon={<Monitor size={18} />} label="Punto de Venta" isCollapsed={isCollapsed} />
+              </>
+            )}
             
-            <NavGroup label="Digital" icon={<Globe size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.digital} onClick={() => toggleGroup('digital')}>
-              <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={isCollapsed} />
-              <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={isCollapsed} />
-              <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={isCollapsed} />
-            </NavGroup>
+            {hasModule('digital') && (
+              <NavGroup label="Digital" icon={<Globe size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.digital} onClick={() => toggleGroup('digital')}>
+                <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={isCollapsed} />
+                <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={isCollapsed} />
+                <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={isCollapsed} />
+              </NavGroup>
+            )}
           </div>
 
-          <div className="py-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Finanzas</p>}
-            <NavGroup label="Contabilidad" icon={<Calculator size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.contabilidad} onClick={() => toggleGroup('contabilidad')}>
-              <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={isCollapsed} />
-              <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={isCollapsed} />
-            </NavGroup>
-          </div>
+          {hasModule('contable') && (
+            <div className="py-2">
+              {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Finanzas</p>}
+              <NavGroup label="Contabilidad" icon={<Calculator size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.contabilidad} onClick={() => toggleGroup('contabilidad')}>
+                <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={isCollapsed} />
+                <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={isCollapsed} />
+              </NavGroup>
+            </div>
+          )}
 
           <div className="py-2">
             {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Soporte</p>}

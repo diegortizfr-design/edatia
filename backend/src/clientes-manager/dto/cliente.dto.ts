@@ -357,3 +357,14 @@ export class AsignarModuloDto {
   @IsOptional()
   precioNegociado?: number;
 }
+
+export class ProvisionarErpDto {
+  @ApiProperty()
+  @IsEmail()
+  usuario!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(6)
+  password!: string;
+}

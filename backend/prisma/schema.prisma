@@ -124,6 +124,9 @@ model Empresa {
   cajasPos             CajaPos[]
   sesionesPos          SesionCaja[]
   ventasPos            VentaPos[]
+
+  // ── Manager ───────────────────────────────────────
+  clienteManager       ClienteManager?
 }
 
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
@@ -327,6 +330,8 @@ model ClienteManager {
   observaciones     String?
 
   // ── Relaciones ────────────────────────────────────
+  empresaId     Int?          @unique
+  empresa       Empresa?      @relation(fields: [empresaId], references: [id])
   planBaseId    Int?
   planBase      PlanBase?     @relation(fields: [planBaseId], references: [id])
   asesorId      Int?

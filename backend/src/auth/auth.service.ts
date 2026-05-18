@@ -72,13 +72,25 @@ export class AuthService {
   async login(dto: LoginDto, ctx: RequestCtx = {}) {
     // 1. Verificar que la empresa con ese NIT existe
     const nitLimpio = dto.nit.trim();
+    
+    const includeQuery = {
+      clienteManager: {
+        include: {
+          planBase: { include: { modulos: { include: { modulo: true } } } },
+          modulosActivos: { include: { modulo: true } },
+        },
+      },
+    };
+
     let empresa = await this.prisma.empresa.findUnique({
       where: { nit: nitLimpio },
+      include: includeQuery,
     });
 
     if (!empresa) {
       empresa = await this.prisma.empresa.findFirst({
         where: { nit: { startsWith: nitLimpio } },
+        include: includeQuery,
       });
     }
 
@@ -130,8 +142,36 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // 5. Login exitoso
-    const token = this.signToken(user.id, user.email, user.usuario, user.rol);
+    // 5. Extraer módulos permitidos
+    const modulosPermitidos = new Set<string>();
+    
+    // Core (siempre disponibles)
+    modulosPermitidos.add('configuracion');
+    
+    if (empresa.clienteManager) {
+      const cm = empresa.clienteManager;
+      
+      // Módulos incluidos en el plan base
+      if (cm.planBase && cm.planBase.modulos) {
+        cm.planBase.modulos.forEach((pm: any) => {
+          modulosPermitidos.add(pm.modulo.slug);
+        });
+      }
+      
+      // Módulos adicionales adquiridos o negociados a la carta
+      if (cm.modulosActivos) {
+        cm.modulosActivos.forEach((ma: any) => {
+          if (ma.activo) {
+            modulosPermitidos.add(ma.modulo.slug);
+          }
+        });
+      }
+    }
+
+    const modulosArray = Array.from(modulosPermitidos);
+
+    // 6. Login exitoso
+    const token = this.signToken(user.id, user.email, user.usuario, user.rol, modulosArray);
     
     await this.prisma.user.update({
       where: { id: user.id },
@@ -155,6 +195,7 @@ export class AuthService {
         rol: user.rol,
         empresaId: user.empresaId,
         empresa: { id: empresa.id, nombre: empresa.nombre, nit: empresa.nit },
+        modulosPermitidos: modulosArray,
       },
       access_token: token,
     };
@@ -181,7 +222,7 @@ export class AuthService {
     });
   }
 
-  private signToken(id: number, email: string, usuario: string, rol: string) {
-    return this.jwtService.sign({ sub: id, email, usuario, rol });
+  private signToken(id: number, email: string, usuario: string, rol: string, modulosPermitidos: string[] = []) {
+    return this.jwtService.sign({ sub: id, email, usuario, rol, modulosPermitidos });
   }
 }

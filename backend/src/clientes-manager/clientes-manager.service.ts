@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto } from './dto/cliente.dto';
+import { CreateClienteDto, UpdateClienteDto, AsignarModuloDto, ProvisionarErpDto } from './dto/cliente.dto';
 import * as bcrypt from 'bcrypt';
 
 // Contexto del usuario autenticado pasado desde el controller
@@ -161,10 +161,6 @@ export class ClientesManagerService {
 
     const nuevoCliente = await (this.prisma as any).clienteManager.create({ data });
     
-    if (nuevoCliente.estado === 'ACTIVO') {
-      await this.aprovisionarEmpresa(nuevoCliente);
-    }
-    
     return nuevoCliente;
   }
 
@@ -220,10 +216,6 @@ export class ClientesManagerService {
     }
 
     const clienteActualizado = await (this.prisma as any).clienteManager.update({ where: { id }, data });
-    
-    if (clienteActualizado.estado === 'ACTIVO') {
-      await this.aprovisionarEmpresa(clienteActualizado);
-    }
     
     return clienteActualizado;
   }
@@ -323,15 +315,18 @@ export class ClientesManagerService {
   }
 
   /**
-   * Sincroniza el ClienteManager con el modelo Empresa del ERP
-   * Crea la empresa y un usuario admin por defecto si no existen.
+   * Crea las credenciales manuales para el cliente en el ERP
    */
-  private async aprovisionarEmpresa(cliente: any) {
-    if (!cliente.nit) return;
-    
+  async provisionarErp(clienteId: number, dto: ProvisionarErpDto) {
+    const cliente = await this.findOne(clienteId);
+
+    if (!cliente.nit) {
+      throw new ConflictException('El cliente debe tener NIT para provisionar en el ERP');
+    }
+
     // 1. Verificar o crear la Empresa en el ERP
     let empresa = await this.prisma.empresa.findUnique({ where: { nit: cliente.nit } });
-    
+
     if (!empresa) {
       empresa = await this.prisma.empresa.create({
         data: {
@@ -340,33 +335,54 @@ export class ClientesManagerService {
           direccion: cliente.direccion || undefined,
           telefono: cliente.telefono || undefined,
           email: cliente.email || undefined,
-        }
+        },
       });
     }
 
-    // 2. Verificar o crear el Usuario principal
-    if (cliente.email) {
-      const existingUser = await this.prisma.user.findUnique({ where: { email: cliente.email } });
-      
-      if (!existingUser) {
-        // Contraseña temporal por defecto
-        const defaultPassword = 'Edatia' + new Date().getFullYear() + '*';
-        const hash = await bcrypt.hash(defaultPassword, 12);
-        
-        // Generar un username seguro a partir del email
-        const username = cliente.email.split('@')[0] + Math.floor(Math.random() * 1000);
-        
-        await this.prisma.user.create({
-          data: {
-            email: cliente.email,
-            usuario: username,
-            nombre: 'Admin ' + cliente.nombre,
-            password: hash,
-            rol: 'admin',
-            empresaId: empresa.id
-          }
-        });
+    // 2. Enlazar la Empresa al ClienteManager si no lo estaba
+    if (cliente.empresaId !== empresa.id) {
+      await (this.prisma as any).clienteManager.update({
+        where: { id: clienteId },
+        data: { empresaId: empresa.id },
+      });
+    }
+
+    // 3. Crear o actualizar el Usuario principal
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: dto.usuario }, { usuario: dto.usuario }]
       }
+    });
+
+    const hash = await bcrypt.hash(dto.password, 12);
+
+    if (existingUser) {
+      // Si el usuario existe y pertenece a otra empresa, es un error
+      if (existingUser.empresaId !== empresa.id) {
+        throw new ConflictException('El usuario/email ya pertenece a otra empresa en el ERP');
+      }
+
+      // Actualizar password
+      await this.prisma.user.update({
+        where: { id: existingUser.id },
+        data: { password: hash },
+      });
+
+      return { message: 'Credenciales actualizadas correctamente' };
+    } else {
+      // Crear nuevo usuario admin
+      await this.prisma.user.create({
+        data: {
+          email: dto.usuario,
+          usuario: dto.usuario, // Usamos el email como username
+          nombre: 'Admin ' + cliente.nombre,
+          password: hash,
+          rol: 'admin',
+          empresaId: empresa.id,
+        },
+      });
+
+      return { message: 'Inquilino ERP y credenciales creadas correctamente' };
     }
   }
 }

@@ -8,6 +8,7 @@ export interface User {
   createdAt: string
   empresa?: { id: number; nombre: string; nit: string } | null
   profile?: { id: number; bio: string | null } | null
+  modulosPermitidos?: string[]
 }
 
 export interface AuthResponse {

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Check, Building2, MapPin, Phone, Briefcase,
-  Receipt, Landmark, SlidersHorizontal, ChevronRight,
+  Receipt, Landmark, SlidersHorizontal, ChevronRight, Key, ShieldCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, getApiError } from '@/lib/api';
@@ -76,6 +76,7 @@ const SECCIONES = [
   { id: 'tributario',     label: 'Tributario',       icon: Receipt },
   { id: 'financiero',     label: 'Financiero',       icon: Landmark },
   { id: 'interno',        label: 'Interno',          icon: SlidersHorizontal },
+  { id: 'erp',            label: 'Accesos ERP',      icon: Key },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,6 +113,9 @@ export function ClienteForm() {
   const [form, setForm]           = useState<FormData>(EMPTY);
   const [activeSection, setActive] = useState('identificacion');
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  const [erpUsuario, setErpUsuario] = useState('');
+  const [erpPassword, setErpPassword] = useState('');
 
   // Cargar datos si es edición
   const { data: cliente, isLoading } = useQuery({
@@ -167,6 +171,9 @@ export function ClienteForm() {
         segmento: cliente.segmento ?? '',
         observaciones: cliente.observaciones ?? '',
       });
+      if (cliente.email && !erpUsuario) {
+        setErpUsuario(cliente.email);
+      }
     }
   }, [cliente]);
 
@@ -250,6 +257,18 @@ export function ClienteForm() {
     },
   });
 
+  const provisionarMutation = useMutation({
+    mutationFn: (data: { usuario: string; password: string }) => 
+      api.post(`/manager/clientes/${id}/provisionar-erp`, data),
+    onSuccess: () => {
+      toast.success('Inquilino ERP y credenciales aprovisionadas correctamente');
+      setErpPassword('');
+    },
+    onError: (err: unknown) => {
+      toast.error(getApiError(err, 'Error al aprovisionar en el ERP'));
+    },
+  });
+
   const handleSave = () => {
     if (!form.nit.trim() || !form.nombre.trim()) {
       toast.error('Nombre e identificación son obligatorios');
@@ -257,6 +276,14 @@ export function ClienteForm() {
     }
     if (isEdit) updateMutation.mutate(payload());
     else createMutation.mutate(payload());
+  };
+
+  const handleProvisionar = () => {
+    if (!erpUsuario || erpPassword.length < 6) {
+      toast.error('El usuario es requerido y la contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    provisionarMutation.mutate({ usuario: erpUsuario, password: erpPassword });
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -559,6 +586,67 @@ export function ClienteForm() {
               </div>
             </div>
           </section>
+
+          {/* ── 8. Accesos ERP ── */}
+          {isEdit && (
+            <section id="erp" ref={(el) => { sectionRefs.current['erp'] = el; }}>
+              <SectionTitle>Aprovisionamiento ERP</SectionTitle>
+              
+              <div className="bg-gradient-to-br from-slate-50 to-indigo-50/30 dark:from-navy-800 dark:to-navy-800/80 rounded-2xl border border-indigo-100 dark:border-white/5 p-6 space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">
+                      Entorno de Trabajo ERP
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                      Crea o restablece las credenciales del administrador principal para este cliente. 
+                      Al aprovisionar, el sistema creará automáticamente la Empresa en el ERP (con NIT <strong>{form.nit}</strong>) y le asignará este usuario raíz. El ERP limitará su acceso a los módulos incluidos en su <strong>Plan Base</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                  <Input
+                    label="Usuario (Email corporativo)"
+                    type="email"
+                    placeholder="admin@empresa.com"
+                    value={erpUsuario}
+                    onChange={(e) => setErpUsuario(e.target.value)}
+                  />
+                  <Input
+                    label="Contraseña"
+                    type="text"
+                    placeholder="Min 6 caracteres"
+                    value={erpPassword}
+                    onChange={(e) => setErpPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={handleProvisionar}
+                    disabled={provisionarMutation.isPending || !form.nit || form.estado !== 'ACTIVO'}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {provisionarMutation.isPending ? (
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Key size={16} />
+                    )}
+                    {provisionarMutation.isPending ? 'Provisionando...' : 'Aprovisionar / Actualizar Credenciales'}
+                  </button>
+                  {form.estado !== 'ACTIVO' && (
+                    <p className="text-[10px] text-amber-600 mt-2 font-medium">
+                      * El cliente debe estar en estado ACTIVO para aprovisionar su entorno.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Spacer final */}
           <div className="h-24" />
