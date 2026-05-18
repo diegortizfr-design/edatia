@@ -59,6 +59,22 @@ const rolVariant: Record<string, 'info' | 'success' | 'default' | 'warning'> = {
   OPERACION: 'default',
 };
 
+const PERMISOS_DISPONIBLES = [
+  { id: 'clientes:read', label: 'Ver clientes' },
+  { id: 'clientes:write', label: 'Crear/Editar clientes' },
+  { id: 'colaboradores:read', label: 'Ver colaboradores' },
+  { id: 'colaboradores:write', label: 'Crear/Editar colaboradores' },
+  { id: 'perfiles:read', label: 'Ver perfiles de cargo' },
+  { id: 'perfiles:write', label: 'Crear/Editar perfiles de cargo' },
+  { id: 'modulos:read', label: 'Ver módulos software' },
+  { id: 'modulos:write', label: 'Gestionar módulos' },
+  { id: 'planes:read', label: 'Ver planes base' },
+  { id: 'planes:write', label: 'Gestionar planes base' },
+  { id: 'tickets:sac', label: 'Gestión general de tickets SAC' },
+  { id: 'tickets:dev', label: 'Gestión general de tickets Desarrollo' },
+  { id: 'seguridad:read', label: 'Ver logs de seguridad' },
+];
+
 export function PerfilCargoForm() {
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'nuevo';
@@ -336,45 +352,33 @@ export function PerfilCargoForm() {
         <div className="lg:col-span-2 space-y-5">
           {/* Permisos */}
           <section className="rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-navy-800 p-5 shadow-sm dark:shadow-card">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Permisos</h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={form.permisoInput}
-                onChange={(e) => setForm((f) => ({ ...f, permisoInput: e.target.value }))}
-                onKeyDown={(e) => handleTagKeyDown(e, addPermiso)}
-                placeholder="ej. clientes:read — Enter"
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 font-mono"
-              />
-              <button
-                onClick={addPermiso}
-                title="Agregar permiso"
-                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-navy-600 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-navy-500 transition-colors"
-              >
-                <Plus size={15} />
-              </button>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Permisos Asignados</h2>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {PERMISOS_DISPONIBLES.map((perm) => (
+                <label key={perm.id} className="flex items-start gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={form.permisos.includes(perm.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setForm((f) => ({ ...f, permisos: [...f.permisos, perm.id] }));
+                      } else {
+                        setForm((f) => ({ ...f, permisos: f.permisos.filter(p => p !== perm.id) }));
+                      }
+                    }}
+                    className="mt-0.5 w-4 h-4 text-brand-blue rounded border-gray-300 dark:border-white/10 dark:bg-navy-900 focus:ring-brand-blue transition-colors cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">
+                      {perm.label}
+                    </span>
+                    <span className="text-[11px] text-gray-400 dark:text-slate-500 font-mono">
+                      {perm.id}
+                    </span>
+                  </div>
+                </label>
+              ))}
             </div>
-            {form.permisos.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {form.permisos.map((perm) => (
-                  <span
-                    key={perm}
-                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-brand-indigo/10 border border-indigo-200 dark:border-brand-indigo/20 text-indigo-700 dark:text-brand-indigo font-mono"
-                  >
-                    {perm}
-                    <button
-                      onClick={() => setForm((f) => ({ ...f, permisos: f.permisos.filter((x) => x !== perm) }))}
-                      title="Quitar permiso"
-                      className="text-indigo-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-300 dark:text-slate-600 mt-3">Sin permisos asignados</p>
-            )}
           </section>
 
           {/* Colaboradores del Perfil */}

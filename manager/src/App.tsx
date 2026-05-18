@@ -22,6 +22,7 @@ import { PlanesPage } from '@/pages/Planes';
 import { AuditLogPage } from '@/pages/AuditLog';
 import { ComercialDashboardPage } from '@/pages/ComercialDashboard';
 import { OperacionDashboardPage } from '@/pages/OperacionDashboard';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,38 +46,62 @@ export default function App() {
               <Route element={<AppLayout />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 {/* ADMINISTRACIÓN */}
-                <Route path="/dashboard"      element={<DashboardPage />} />
-                <Route path="/colaboradores"  element={<ColaboradoresPage />} />
-                <Route path="/perfiles-cargo" element={<PerfilesCargoPage />} />
-                <Route path="/perfiles-cargo/nuevo" element={<PerfilCargoForm />} />
-                <Route path="/perfiles-cargo/:id" element={<PerfilCargoForm />} />
-                <Route path="/perfiles-cargo/:perfilId/colaboradores/nuevo" element={<ColaboradorForm />} />
-                <Route path="/modulos"        element={<ModulosPage />} />
-                <Route path="/planes"         element={<PlanesPage />} />
-                <Route path="/auditlog"       element={<AuditLogPage />} />
+                <Route element={<RoleGuard roles={['ADMIN']} />}>
+                  <Route path="/dashboard"      element={<DashboardPage />} />
+                  <Route path="/colaboradores"  element={<ColaboradoresPage />} />
+                  <Route path="/perfiles-cargo" element={<PerfilesCargoPage />} />
+                  <Route path="/perfiles-cargo/nuevo" element={<PerfilCargoForm />} />
+                  <Route path="/perfiles-cargo/:id" element={<PerfilCargoForm />} />
+                  <Route path="/perfiles-cargo/:perfilId/colaboradores/nuevo" element={<ColaboradorForm />} />
+                  <Route path="/modulos"        element={<ModulosPage />} />
+                  <Route path="/planes"         element={<PlanesPage />} />
+                  <Route path="/auditlog"       element={<AuditLogPage />} />
+                </Route>
 
                 {/* COMERCIAL */}
-                <Route path="/comercial/dashboard" element={<ComercialDashboardPage />} />
-                <Route path="/clientes"           element={<ClientesPage />} />
-                <Route path="/clientes/nuevo"    element={<ClienteForm />} />
-                <Route path="/clientes/:id"      element={<ClienteForm />} />
+                <Route element={<RoleGuard roles={['ADMIN', 'COMERCIAL']} />}>
+                  <Route path="/comercial/dashboard" element={<ComercialDashboardPage />} />
+                  <Route path="/clientes"           element={<ClientesPage />} />
+                  <Route path="/clientes/nuevo"    element={<ClienteForm />} />
+                  <Route path="/clientes/:id"      element={<ClienteForm />} />
+                </Route>
 
-                {/* COORDINACIÓN */}
-                <Route path="/coordinacion/dashboard" element={<CoordinacionDashboardPage />} />
-                <Route path="/coordinacion/sac/clientes" element={<ClientesPage />} />
-                <Route path="/coordinacion/sac/tickets/nuevo" element={<CoordinacionTicketsPage />} />
-                <Route path="/coordinacion/desarrollo/clientes" element={<ClientesPage />} />
-                <Route path="/coordinacion/desarrollo/tickets" element={<CoordinacionTicketsPage />} />
-                <Route path="/coordinacion/agentes" element={<ColaboradoresPage />} />
+                {/* COORDINACIÓN GENERAL */}
+                <Route element={<RoleGuard roles={['ADMIN', 'COORDINACION']} />}>
+                  <Route path="/coordinacion/dashboard" element={<CoordinacionDashboardPage />} />
+                  <Route path="/coordinacion/agentes" element={<ColaboradoresPage />} />
+                </Route>
 
-                {/* OPERACIÓN */}
-                <Route path="/operacion/dashboard" element={<OperacionDashboardPage />} />
-                <Route path="/operacion/sac/clientes" element={<ClientesPage />} />
-                <Route path="/operacion/sac/tickets/nuevo" element={<OperacionSACPage />} />
-                <Route path="/operacion/desarrollo/clientes" element={<ClientesPage />} />
-                <Route path="/operacion/desarrollo/tickets" element={<OperacionDesarrolloPage />} />
+                {/* COORDINACIÓN SAC */}
+                <Route element={<RoleGuard roles={['ADMIN', 'COORDINACION']} area="SAC" />}>
+                  <Route path="/coordinacion/sac/clientes" element={<ClientesPage />} />
+                  <Route path="/coordinacion/sac/tickets/nuevo" element={<CoordinacionTicketsPage />} />
+                </Route>
 
-                {/* COMUNES */}
+                {/* COORDINACIÓN DESARROLLO */}
+                <Route element={<RoleGuard roles={['ADMIN', 'COORDINACION']} area="DESARROLLO" />}>
+                  <Route path="/coordinacion/desarrollo/clientes" element={<ClientesPage />} />
+                  <Route path="/coordinacion/desarrollo/tickets" element={<CoordinacionTicketsPage />} />
+                </Route>
+
+                {/* OPERACIÓN GENERAL */}
+                <Route element={<RoleGuard roles={['ADMIN', 'OPERACION']} />}>
+                  <Route path="/operacion/dashboard" element={<OperacionDashboardPage />} />
+                </Route>
+
+                {/* OPERACIÓN SAC */}
+                <Route element={<RoleGuard roles={['ADMIN', 'OPERACION']} area="SAC" />}>
+                  <Route path="/operacion/sac/clientes" element={<ClientesPage />} />
+                  <Route path="/operacion/sac/tickets/nuevo" element={<OperacionSACPage />} />
+                </Route>
+
+                {/* OPERACIÓN DESARROLLO */}
+                <Route element={<RoleGuard roles={['ADMIN', 'OPERACION']} area="DESARROLLO" />}>
+                  <Route path="/operacion/desarrollo/clientes" element={<ClientesPage />} />
+                  <Route path="/operacion/desarrollo/tickets" element={<OperacionDesarrolloPage />} />
+                </Route>
+
+                {/* COMUNES (requieren estar autenticados) */}
                 <Route path="/tickets/:id"           element={<TicketDetalle />} />
               </Route>
 

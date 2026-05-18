@@ -7,6 +7,7 @@ interface Colaborador {
   nombre: string;
   rol: string;
   activo: boolean;
+  area?: string | null;
   perfilCargo?: { id: number; nombre: string } | null;
 }
 

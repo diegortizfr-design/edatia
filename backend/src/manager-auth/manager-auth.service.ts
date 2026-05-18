@@ -119,6 +119,7 @@ export class ManagerAuthService {
       email: colaborador.email,
       nombre: colaborador.nombre,
       rol: colaborador.rol,
+      area: colaborador.area,
     };
 
     const accessToken    = this.jwtService.sign(payload);
@@ -152,6 +153,7 @@ export class ManagerAuthService {
         email: colaborador.email,
         nombre: colaborador.nombre,
         rol: colaborador.rol,
+        area: colaborador.area,
       },
     };
   }
@@ -195,6 +197,7 @@ export class ManagerAuthService {
       email: colaborador.email,
       nombre: colaborador.nombre,
       rol: colaborador.rol,
+      area: colaborador.area,
     };
 
     void this.auditLog.log({
@@ -237,7 +240,7 @@ export class ManagerAuthService {
     const colaborador = await (this.prisma as any).colaborador.findUnique({
       where: { id },
       select: {
-        id: true, email: true, nombre: true, rol: true,
+        id: true, email: true, nombre: true, rol: true, area: true,
         activo: true, createdAt: true, perfilCargo: true,
       },
     });

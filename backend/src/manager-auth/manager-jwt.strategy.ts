@@ -9,6 +9,7 @@ export interface ManagerJwtPayload {
   email: string;
   nombre: string;
   rol: string;
+  area: string | null;
 }
 
 @Injectable()
@@ -27,7 +28,7 @@ export class ManagerJwtStrategy extends PassportStrategy(Strategy, 'manager-jwt'
   async validate(payload: ManagerJwtPayload): Promise<ManagerJwtPayload> {
     const colaborador = await (this.prisma as any).colaborador.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, nombre: true, rol: true, activo: true },
+      select: { id: true, email: true, nombre: true, rol: true, area: true, activo: true },
     });
 
     if (!colaborador) {
@@ -43,6 +44,7 @@ export class ManagerJwtStrategy extends PassportStrategy(Strategy, 'manager-jwt'
       email: colaborador.email,
       nombre: colaborador.nombre,
       rol: colaborador.rol,
+      area: colaborador.area,
     };
   }
 }

@@ -588,12 +588,28 @@ export function ColaboradorForm() {
                 value={form.cargo}
                 onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))}
               />
-              <Input
-                label="Área / Departamento"
-                placeholder="Comercial"
-                value={form.area}
-                onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
-              />
+              <div>
+                <label className={labelClass}>Área / Departamento {(form.rol === 'COORDINACION' || form.rol === 'OPERACION') && '*'}</label>
+                {(form.rol === 'COORDINACION' || form.rol === 'OPERACION') ? (
+                  <select
+                    value={form.area}
+                    onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="">Selecciona una especialidad...</option>
+                    <option value="SAC">SAC</option>
+                    <option value="DESARROLLO">DESARROLLO</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={form.area}
+                    onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
+                    placeholder="Ej. Comercial, RRHH"
+                    className={selectClass}
+                  />
+                )}
+              </div>
               <div>
                 <label className={labelClass}>Tipo de contrato</label>
                 <select

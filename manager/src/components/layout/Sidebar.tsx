@@ -21,6 +21,7 @@ interface NavSubGroup {
   label: string;
   icon?: React.ReactNode;
   items: NavItem[];
+  area?: string; // e.g. 'SAC' o 'DESARROLLO'
 }
 
 interface NavGroup {
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
       {
         type: 'subgroup',
         label: 'SAC',
+        area: 'SAC',
         icon: <Headphones size={16} />,
         items: [
           { to: '/coordinacion/sac/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
@@ -68,6 +70,7 @@ const navGroups: NavGroup[] = [
       {
         type: 'subgroup',
         label: 'DESARROLLO',
+        area: 'DESARROLLO',
         icon: <Code2 size={16} />,
         items: [
           { to: '/coordinacion/desarrollo/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
@@ -85,6 +88,7 @@ const navGroups: NavGroup[] = [
       {
         type: 'subgroup',
         label: 'SAC',
+        area: 'SAC',
         icon: <Headphones size={16} />,
         items: [
           { to: '/operacion/sac/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
@@ -94,6 +98,7 @@ const navGroups: NavGroup[] = [
       {
         type: 'subgroup',
         label: 'DESARROLLO',
+        area: 'DESARROLLO',
         icon: <Code2 size={16} />,
         items: [
           { to: '/operacion/desarrollo/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
@@ -108,6 +113,7 @@ export function Sidebar() {
   const { colaborador, logout } = useAuth();
   const navigate = useNavigate();
   const rol = colaborador?.rol ?? '';
+  const area = colaborador?.area ?? '';
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     'ADMINISTRACIÓN': true,
@@ -187,6 +193,11 @@ export function Sidebar() {
               <div className="mt-0.5 space-y-0.5 pl-2">
                 {group.items.map((item, idx) => {
                   if ('type' in item && item.type === 'subgroup') {
+                    // Filtrar subgrupos por área si aplica (y si no es admin)
+                    if (item.area && rol !== 'ADMIN' && item.area !== area) {
+                      return null;
+                    }
+                    
                     const subGroupId = `${group.label}-${item.label}`;
                     return (
                       <div key={idx} className="mt-1 mb-1 border-l border-gray-200 dark:border-white/10 ml-2 pl-2">
