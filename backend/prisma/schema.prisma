@@ -237,11 +237,31 @@ model PlanBase {
   id             Int              @id @default(autoincrement())
   nombre         String           @unique
   descripcion    String?
-  precioBase     Decimal          @db.Decimal(12, 2)
+  precioBase     Decimal          @db.Decimal(12, 2) // Precio original sumado (Mensual)
   limiteUsuarios Int?
+  
+  // Descuentos y Precios Finales
+  descuentoDefinitivo   Decimal? @default(0) @db.Decimal(5, 2)
+  descuentoParcial      Decimal? @default(0) @db.Decimal(5, 2)
+  mesesDescuentoParcial Int?     @default(0)
+  precioAnualFinal      Decimal  @default(0) @db.Decimal(14, 2)
+  precioMensualFinal    Decimal  @default(0) @db.Decimal(14, 2)
+
   clientes       ClienteManager[]
+  modulos        PlanBaseModulo[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+}
+
+model PlanBaseModulo {
+  planBaseId Int
+  planBase   PlanBase @relation(fields: [planBaseId], references: [id], onDelete: Cascade)
+  moduloId   Int
+  modulo     ModuloSoftware @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@id([planBaseId, moduloId])
 }
 
 model ModuloSoftware {
@@ -253,6 +273,7 @@ model ModuloSoftware {
   precioAnual   Decimal       @db.Decimal(12, 2)
   activo        Boolean       @default(true)
   planesCliente PlanCliente[]
+  planesBase    PlanBaseModulo[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }

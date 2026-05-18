@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsPositive, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsPositive, MinLength, IsArray, IsNumber, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -25,6 +25,47 @@ export class CreatePlanBaseDto {
   @IsInt()
   @IsPositive()
   limiteUsuarios?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  moduloIds?: number[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  descuentoDefinitivo?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  descuentoParcial?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  mesesDescuentoParcial?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  precioAnualFinal?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  precioMensualFinal?: number;
 }
 
 export class UpdatePlanBaseDto {
@@ -52,4 +93,45 @@ export class UpdatePlanBaseDto {
   @IsInt()
   @IsPositive()
   limiteUsuarios?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  moduloIds?: number[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  descuentoDefinitivo?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  descuentoParcial?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  mesesDescuentoParcial?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  precioAnualFinal?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  precioMensualFinal?: number;
 }
