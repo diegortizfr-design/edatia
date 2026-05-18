@@ -206,7 +206,8 @@ export function Sidebar() {
                       </div>
                     );
                   }
-                  return <NavLinkItem key={item.to} item={item} />;
+                  const navItem = item as NavItem;
+                  return <NavLinkItem key={navItem.to} item={navItem} />;
                 })}
               </div>
             )}

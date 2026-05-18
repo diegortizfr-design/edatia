@@ -34,7 +34,7 @@ export function OperacionDashboardPage() {
           value={'—'}
           icon={<Headphones size={20} />}
           trend="abiertos"
-          color="slate"
+          color="purple"
         />
         <StatCard
           label="Tickets Dev Asignados"
