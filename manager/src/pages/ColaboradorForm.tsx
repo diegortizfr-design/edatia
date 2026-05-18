@@ -296,7 +296,7 @@ export function ColaboradorForm() {
 
     saveMutation.mutate({
       nombre: form.nombre,
-      email: form.email,
+      ...(isEditing ? {} : { email: form.email }),
       password: form.password ? form.password : undefined,
       rol: form.rol,
       perfilCargoId: perfilId ? Number(perfilId) : undefined,
