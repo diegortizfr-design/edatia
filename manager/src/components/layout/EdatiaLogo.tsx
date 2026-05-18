@@ -11,26 +11,25 @@ export function EdatiaLogo({ size = 'md', showTagline = false }: EdatiaLogoProps
   return (
     <div className="flex items-center gap-2.5">
       {/* Triangle logo */}
-      <svg width={d} height={d} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width={d} height={d} viewBox="0 0 100 100" className="drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4F8EF7" />
-            <stop offset="100%" stopColor="#8B5CF6" />
-          </linearGradient>
-          <linearGradient id="logo-inner" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4F8EF7" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.1" />
+          <linearGradient id="logoGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#1E293B" />
+            <stop offset="100%" stopColor="#4F46E5" />
           </linearGradient>
         </defs>
-        {/* Outer triangle */}
-        <polygon points="20,3 37,35 3,35" fill="url(#logo-gradient)" />
-        {/* Inner triangle (cutout effect) */}
-        <polygon points="20,10 31,32 9,32" fill="url(#logo-inner)" />
-        {/* Data nodes */}
-        <circle cx="20" cy="3" r="1.5" fill="#4F8EF7" />
-        <circle cx="37" cy="35" r="1.5" fill="#8B5CF6" />
-        <circle cx="3" cy="35" r="1.5" fill="#6366F1" />
-        <circle cx="20" cy="20" r="1" fill="white" fillOpacity="0.6" />
+        <rect x="5" y="5" width="90" height="90" rx="20" fill="url(#logoGradient)" />
+        {/* Barras del gráfico */}
+        <rect x="25" y="60" width="8" height="15" rx="2" fill="white" />
+        <rect x="40" y="45" width="8" height="30" rx="2" fill="white" />
+        <rect x="55" y="52" width="8" height="23" rx="2" fill="white" />
+        <rect x="70" y="35" width="8" height="40" rx="2" fill="white" />
+        {/* Línea de tendencia */}
+        <path d="M29 60 L44 45 L59 52 L74 35" stroke="#60A5FA" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <circle cx="29" cy="60" r="3" fill="#60A5FA" />
+        <circle cx="44" cy="45" r="3" fill="#60A5FA" />
+        <circle cx="59" cy="52" r="3" fill="#60A5FA" />
+        <circle cx="74" cy="35" r="3" fill="#60A5FA" />
       </svg>
 
       <div>

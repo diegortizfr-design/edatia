@@ -16,40 +16,90 @@ interface NavItem {
   roles?: string[];
 }
 
-interface NavGroup {
+interface NavSubGroup {
+  type: 'subgroup';
   label: string;
-  icon: React.ReactNode;
-  roles?: string[];
+  icon?: React.ReactNode;
   items: NavItem[];
 }
 
-const navItems: NavItem[] = [
-  { to: '/dashboard',      icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
-  { to: '/clientes',       icon: <Building2 size={18} />,       label: 'Clientes' },
-  { to: '/colaboradores',  icon: <Users size={18} />,           label: 'Colaboradores',    roles: ['ADMIN'] },
-  { to: '/perfiles-cargo', icon: <Briefcase size={18} />,       label: 'Perfiles de Cargo', roles: ['ADMIN'] },
-  { to: '/modulos',        icon: <Package size={18} />,         label: 'Módulos Software' },
-  { to: '/planes',         icon: <CreditCard size={18} />,      label: 'Planes Base',      roles: ['ADMIN'] },
-  { to: '/auditlog',      icon: <ShieldAlert size={18} />,    label: 'Monitor Seguridad', roles: ['ADMIN'] },
-];
+interface NavGroup {
+  label: string;
+  icon?: React.ReactNode;
+  roles?: string[];
+  items: (NavItem | NavSubGroup)[];
+}
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Operación',
-    icon: <Headphones size={16} />,
-    roles: ['ADMIN', 'OPERACION', 'COORDINACION'],
+    label: 'ADMINISTRACIÓN',
+    roles: ['ADMIN'],
     items: [
-      { to: '/operacion/sac',         icon: <Ticket size={16} />,  label: 'SAC — Mis Tickets' },
-      { to: '/operacion/desarrollo',  icon: <Code2 size={16} />,   label: 'Desarrollo' },
+      { to: '/dashboard',      icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+      { to: '/colaboradores',  icon: <Users size={18} />,           label: 'Colaboradores' },
+      { to: '/perfiles-cargo', icon: <Briefcase size={18} />,       label: 'Perfiles de Cargo' },
+      { to: '/modulos',        icon: <Package size={18} />,         label: 'Módulos Software' },
+      { to: '/planes',         icon: <CreditCard size={18} />,      label: 'Planes Base' },
+      { to: '/auditlog',      icon: <ShieldAlert size={18} />,    label: 'Monitor Seguridad' },
     ],
   },
   {
-    label: 'Coordinación',
-    icon: <BarChart3 size={16} />,
+    label: 'COMERCIAL',
+    roles: ['ADMIN', 'COMERCIAL'],
+    items: [
+      { to: '/comercial/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' },
+      { to: '/clientes',            icon: <Building2 size={18} />, label: 'Clientes' },
+    ],
+  },
+  {
+    label: 'COORDINACIÓN',
     roles: ['ADMIN', 'COORDINACION'],
     items: [
-      { to: '/coordinacion/dashboard', icon: <BarChart3 size={16} />,      label: 'Dashboard' },
-      { to: '/coordinacion/tickets',   icon: <Ticket size={16} />,         label: 'Todos los Tickets' },
+      { to: '/coordinacion/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' },
+      {
+        type: 'subgroup',
+        label: 'SAC',
+        icon: <Headphones size={16} />,
+        items: [
+          { to: '/coordinacion/sac/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
+          { to: '/coordinacion/sac/tickets/nuevo', icon: <Ticket size={16} />, label: 'Creación Tickets' },
+        ]
+      },
+      {
+        type: 'subgroup',
+        label: 'DESARROLLO',
+        icon: <Code2 size={16} />,
+        items: [
+          { to: '/coordinacion/desarrollo/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
+          { to: '/coordinacion/desarrollo/tickets', icon: <Ticket size={16} />, label: 'Gestión Tickets' },
+        ]
+      },
+      { to: '/coordinacion/agentes', icon: <Users size={18} />, label: 'Mis Agentes' },
+    ],
+  },
+  {
+    label: 'OPERACIÓN',
+    roles: ['ADMIN', 'OPERACION'],
+    items: [
+      { to: '/operacion/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' },
+      {
+        type: 'subgroup',
+        label: 'SAC',
+        icon: <Headphones size={16} />,
+        items: [
+          { to: '/operacion/sac/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
+          { to: '/operacion/sac/tickets/nuevo', icon: <Ticket size={16} />, label: 'Creación Tickets' },
+        ]
+      },
+      {
+        type: 'subgroup',
+        label: 'DESARROLLO',
+        icon: <Code2 size={16} />,
+        items: [
+          { to: '/operacion/desarrollo/clientes', icon: <Users size={16} />, label: 'Consulta Clientes' },
+          { to: '/operacion/desarrollo/tickets', icon: <Ticket size={16} />, label: 'Gestión Tickets' },
+        ]
+      },
     ],
   },
 ];
@@ -60,18 +110,18 @@ export function Sidebar() {
   const rol = colaborador?.rol ?? '';
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'Operación': true,
-    'Coordinación': true,
+    'ADMINISTRACIÓN': true,
+    'COMERCIAL': true,
+    'COORDINACIÓN': true,
+    'OPERACIÓN': true,
   });
+
+  const [openSubGroups, setOpenSubGroups] = useState<Record<string, boolean>>({});
 
   async function handleLogout() {
     await logout();
     navigate('/login');
   }
-
-  const visibleItems = navItems.filter(
-    (item) => !item.roles || item.roles.includes(rol),
-  );
 
   const visibleGroups = navGroups.filter(
     (g) => !g.roles || g.roles.includes(rol),
@@ -122,10 +172,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {/* Items sueltos */}
-        {visibleItems.map((item) => <NavLinkItem key={item.to} item={item} />)}
-
-        {/* Grupos colapsables */}
+        {/* Grupos principales */}
         {visibleGroups.map((group) => (
           <div key={group.label} className="mt-3">
             <button
@@ -138,7 +185,29 @@ export function Sidebar() {
             </button>
             {openGroups[group.label] && (
               <div className="mt-0.5 space-y-0.5 pl-2">
-                {group.items.map((item) => <NavLinkItem key={item.to} item={item} />)}
+                {group.items.map((item, idx) => {
+                  if ('type' in item && item.type === 'subgroup') {
+                    const subGroupId = `${group.label}-${item.label}`;
+                    return (
+                      <div key={idx} className="mt-1 mb-1 border-l border-gray-200 dark:border-white/10 ml-2 pl-2">
+                        <button
+                          onClick={() => setOpenSubGroups((p) => ({ ...p, [subGroupId]: !p[subGroupId] }))}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
+                        >
+                          {item.icon && <span className="shrink-0">{item.icon}</span>}
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <ChevronDown size={12} className={cn('transition-transform', openSubGroups[subGroupId] ? 'rotate-0' : '-rotate-90')} />
+                        </button>
+                        {openSubGroups[subGroupId] && (
+                          <div className="mt-0.5 space-y-0.5 pl-2">
+                            {item.items.map((subItem) => <NavLinkItem key={subItem.to} item={subItem} />)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return <NavLinkItem key={item.to} item={item} />;
+                })}
               </div>
             )}
           </div>

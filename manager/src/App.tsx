@@ -20,6 +20,8 @@ import { ColaboradorForm } from '@/pages/ColaboradorForm';
 import { ModulosPage } from '@/pages/Modulos';
 import { PlanesPage } from '@/pages/Planes';
 import { AuditLogPage } from '@/pages/AuditLog';
+import { ComercialDashboardPage } from '@/pages/ComercialDashboard';
+import { OperacionDashboardPage } from '@/pages/OperacionDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,10 +44,8 @@ export default function App() {
 
               <Route element={<AppLayout />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
+                {/* ADMINISTRACIÓN */}
                 <Route path="/dashboard"      element={<DashboardPage />} />
-                <Route path="/clientes"           element={<ClientesPage />} />
-                <Route path="/clientes/nuevo"    element={<ClienteForm />} />
-                <Route path="/clientes/:id"      element={<ClienteForm />} />
                 <Route path="/colaboradores"  element={<ColaboradoresPage />} />
                 <Route path="/perfiles-cargo" element={<PerfilesCargoPage />} />
                 <Route path="/perfiles-cargo/nuevo" element={<PerfilCargoForm />} />
@@ -53,16 +53,31 @@ export default function App() {
                 <Route path="/perfiles-cargo/:perfilId/colaboradores/nuevo" element={<ColaboradorForm />} />
                 <Route path="/modulos"        element={<ModulosPage />} />
                 <Route path="/planes"         element={<PlanesPage />} />
-                {/* Operación */}
-                <Route path="/operacion/sac"        element={<OperacionSACPage />} />
-                <Route path="/operacion/desarrollo"  element={<OperacionDesarrolloPage />} />
-                {/* Tickets */}
-                <Route path="/tickets/:id"           element={<TicketDetalle />} />
-                {/* Coordinación */}
+                <Route path="/auditlog"       element={<AuditLogPage />} />
+
+                {/* COMERCIAL */}
+                <Route path="/comercial/dashboard" element={<ComercialDashboardPage />} />
+                <Route path="/clientes"           element={<ClientesPage />} />
+                <Route path="/clientes/nuevo"    element={<ClienteForm />} />
+                <Route path="/clientes/:id"      element={<ClienteForm />} />
+
+                {/* COORDINACIÓN */}
                 <Route path="/coordinacion/dashboard" element={<CoordinacionDashboardPage />} />
-                <Route path="/coordinacion/tickets"   element={<CoordinacionTicketsPage />} />
-                {/* Seguridad */}
-                <Route path="/auditlog" element={<AuditLogPage />} />
+                <Route path="/coordinacion/sac/clientes" element={<ClientesPage />} />
+                <Route path="/coordinacion/sac/tickets/nuevo" element={<CoordinacionTicketsPage />} />
+                <Route path="/coordinacion/desarrollo/clientes" element={<ClientesPage />} />
+                <Route path="/coordinacion/desarrollo/tickets" element={<CoordinacionTicketsPage />} />
+                <Route path="/coordinacion/agentes" element={<ColaboradoresPage />} />
+
+                {/* OPERACIÓN */}
+                <Route path="/operacion/dashboard" element={<OperacionDashboardPage />} />
+                <Route path="/operacion/sac/clientes" element={<ClientesPage />} />
+                <Route path="/operacion/sac/tickets/nuevo" element={<OperacionSACPage />} />
+                <Route path="/operacion/desarrollo/clientes" element={<ClientesPage />} />
+                <Route path="/operacion/desarrollo/tickets" element={<OperacionDesarrolloPage />} />
+
+                {/* COMUNES */}
+                <Route path="/tickets/:id"           element={<TicketDetalle />} />
               </Route>
 
               {/* Fallback */}
