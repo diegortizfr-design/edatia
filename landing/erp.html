@@ -1,490 +1,3424 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edatia ERP - Presentación Oficial</title>
-    <meta name="description" content="Edatia ERP: Controla tu negocio en un solo lugar. Software para retail y distribución masiva.">
+    <title>Edatia ERP | Sistema Nervioso Central</title>
+    <meta name="description" content="Controla finanzas, ventas, inventario y canales digitales en una sola plataforma en la nube diseñada para negocios ambiciosos.">
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
-    <!-- AOS CSS for Animations -->
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
-                        mono: ['Inter', 'monospace'],
-                    },
-                    colors: {
-                        brand: {
-                            blue: '#1d4ed8',     // Blue
-                            lightblue: '#3b82f6',
-                            green: '#10b981',    // Tech Green
-                            darkgreen: '#047857',
-                            dark: '#0f172a',     // Slate 900
-                            gray: '#334155',     // Slate 700
-                            light: '#f8fafc'     // Slate 50
-                        }
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        /* Estilos base y utilidades personalizadas */
-        body { background-color: #f8fafc; color: #0f172a; }
-        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
-        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,1); }
-        
-        /* Sistema de Slides con scroll natural pero forzando altura mínima */
-        .slide-section {
+        :root {
+            --bg: #050505;
+            --card-bg: #111111;
+            --card-hover: #1a1a1a;
+            --accent: #38bdf8;
+            --accent-green: #10b981;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* NAVBAR */
+        nav {
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            background: rgba(5, 5, 5, 0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .coded-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            text-decoration: none;
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 2.2rem;
+            letter-spacing: 4px;
+            color: #fff;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .logo-text .lambda { color: var(--accent); position: relative; margin: 0 2px; }
+        .logo-sub { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 2px; font-family: 'Inter', sans-serif; }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 100px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg);
+            padding: 0.6rem 1.2rem;
+            border-radius: 100px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 3rem 1.5rem;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .video-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+        }
+
+        .video-background video {
+            width: 100%; height: 100%; object-fit: cover; opacity: 0.55;
+        }
+
+        .video-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(5,5,5,0.35) 0%, rgba(5,5,5,0.85) 100%);
+            z-index: 1;
+        }
+
+        .orbit-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            max-width: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .central-core {
+            text-align: center;
+            z-index: 20;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .hero-badge {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .central-core h1 {
+            font-size: clamp(2.5rem, 4vw, 4rem);
+            line-height: 1.1;
+            letter-spacing: -2px;
+        }
+
+        .central-core h1 .highlight {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .module-node {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            width: 220px;
+            text-decoration: none;
+            color: var(--text-primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: var(--transition);
+        }
+
+        /* Posicionamiento Estático (Cloud Layout) */
+        .module-node.n1 { top: 15%; left: 5%; }
+        .module-node.n2 { top: 15%; right: 5%; }
+        .module-node.n3 { bottom: 30%; left: 2%; }
+        .module-node.n4 { bottom: 30%; right: 2%; }
+        .module-node.n5 { bottom: 5%; left: 50%; transform: translateX(-50%); }
+
+        .module-node i {
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .module-node span {
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .module-node:hover {
+            border-color: var(--accent);
+            background: var(--card-hover);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+            transform: scale(1.05);
+            z-index: 30;
+        }
+        .module-node.n5:hover {
+            transform: translateX(-50%) scale(1.05); /* Mantener centrado al hacer hover */
+        }
+
+        /* RESPONSIVE HERO */
+        @media (max-width: 768px) {
+            .orbit-container {
+                transform: scale(0.6);
+            }
+            .central-core {
+                transform: scale(1.6); /* Counter-scale the text so it's readable */
+            }
+            .central-core p {
+                font-size: 0.9rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .orbit-container {
+                transform: scale(0.45);
+            }
+            .central-core {
+                transform: scale(2.2);
+            }
+        }
+
+        /* BENTO GRID (MODULES) - LIGHT THEME */
+        .modules {
+            padding: 6rem 5%;
+            background: #ffffff;
+            color: #0f172a;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .modules .section-header h2 {
+            font-size: 2.5rem;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+            color: #0f172a;
+        }
+        
+        .modules .section-header p {
+            color: #64748b !important;
+            font-size: 1.05rem;
+        }
+
+        .bento-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto auto;
+            gap: 1.2rem;
+        }
+
+        .bento-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 2rem 1.8rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 0%, rgba(56,189,248,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px);
+            border-color: #cbd5e1;
+            background: #ffffff;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.06);
+        }
+
+        .bento-card:hover::before { opacity: 1; }
+
+        .bento-card i {
+            font-size: 2rem;
+            color: #334155;
+            margin-bottom: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .bento-card:hover i {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .bento-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.6rem;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+
+        .bento-card p {
+            color: #475569;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Specific grid placements */
+        .card-large {
+            grid-column: span 2;
+        }
+
+        .card-tall {
+            grid-row: span 2;
+        }
+
+        .glow-blue:hover i { color: var(--accent); text-shadow: 0 0 20px rgba(56,189,248,0.5); }
+        .glow-green:hover i { color: var(--accent-green); text-shadow: 0 0 20px rgba(16,185,129,0.5); }
+        .glow-purple:hover i { color: #a855f7; text-shadow: 0 0 20px rgba(168,85,247,0.5); }
+        .glow-amber:hover i { color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,0.5); }
+
+        /* ONBOARDING */
+        /* ============ NUESTROS CLIENTES ============ */
+        .clientes-section {
+            background: #051b35;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .clientes-top {
+            background: transparent;
+            padding: 9rem 5% 0 5%;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            overflow: visible;
+        }
+
+        .clientes-bottom {
+            background: transparent;
+            padding: 0 5% 6rem 5%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Decoraciones de Fondo */
+        .clientes-bg-decorations {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .decor-hexagon-network {
+            position: absolute;
+            right: 0;
+            top: 5%;
+            width: 320px;
+            height: 320px;
+            background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' viewBox='0 0 300 300' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M150 37 L225 80 L225 168 L150 212 L75 168 L75 80 Z' stroke='rgba(56, 189, 248, 0.08)' stroke-width='1.5'/%3E%3Cpath d='M225 80 L300 37 L300 -50 L225 -93 L150 -50 L150 37' stroke='rgba(56, 189, 248, 0.08)' stroke-width='1.5'/%3E%3Cpath d='M75 80 L0 37 L0 -50 L75 -93 L150 -50' stroke='rgba(56, 189, 248, 0.08)' stroke-width='1.5'/%3E%3Cpath d='M225 168 L300 212 L300 300 L225 343 L150 300 L150 168' stroke='rgba(56, 189, 248, 0.08)' stroke-width='1.5'/%3E%3Cpath d='M75 168 L0 212 L0 300 L75 343 L150 300' stroke='rgba(56, 189, 248, 0.08)' stroke-width='1.5'/%3E%3Ccircle cx='150' cy='37' r='3.5' fill='rgba%2856, 189, 248, 0.25%29'/%3E%3Ccircle cx='225' cy='80' r='2.5' fill='rgba%2856, 189, 248, 0.2%29'/%3E%3Ccircle cx='225' cy='168' r='3.5' fill='rgba%2856, 189, 248, 0.25%29'/%3E%3Ccircle cx='150' cy='212' r='2.5' fill='rgba%2856, 189, 248, 0.2%29'/%3E%3Ccircle cx='75' cy='168' r='3.5' fill='rgba%2856, 189, 248, 0.25%29'/%3E%3Ccircle cx='75' cy='80' r='2.5' fill='rgba%2856, 189, 248, 0.2%29'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.8;
+        }
+
+        .decor-chat-bubble {
+            position: absolute;
+            right: 20%;
+            bottom: 35px;
+            width: 54px;
+            height: 54px;
+            background: #041224;
+            border: 2px solid rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1;
+        }
+
+        .decor-chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 10px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 8px 0 0;
+            border-color: #041224 transparent transparent transparent;
+        }
+
+        .decor-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.4);
+        }
+
+        /* Contenido del Header */
+        .clientes-subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            color: #38bdf8;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clientes-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1.2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clientes-desc {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto 4rem auto;
+            line-height: 1.6;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Slider Wrapper */
+        .clientes-slider-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            z-index: 10;
+        }
+
+        .clientes-slide {
+            display: none;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            animation: fadeSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .clientes-slide.active {
+            display: grid;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card de Cliente (Como domo de fondo) */
+        .client-card {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            height: 180px;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 0;
+            box-sizing: border-box;
+            box-shadow: none;
+            transition: none;
+            text-decoration: none;
+        }
+
+        .client-logo-wrapper {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-radius: 20px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            padding: 1.5rem;
+        }
+
+        .client-card:hover .client-logo-wrapper {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .client-logo-wrapper svg {
+            max-width: 85%;
+            max-height: 85%;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        /* Controles: Dots */
+        .clientes-controls {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .clientes-dots {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .cliente-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.25);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .cliente-dot.active {
+            background: #00d2ff; /* Bright light blue/cyan */
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.6);
+        }
+
+        /* Media Queries de Responsividad */
+        @media (max-width: 1024px) {
+            .clientes-top {
+                padding-top: 8rem;
+            }
+            .clientes-title {
+                font-size: 2.2rem;
+            }
+            .clientes-slider-wrapper {
+                margin-bottom: 2rem;
+            }
+            .clientes-bottom {
+                padding-top: 0;
+            }
+            .clientes-slide {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.2rem;
+            }
+            .client-card {
+                height: 150px;
+            }
+            .client-logo-wrapper {
+                border-radius: 16px;
+                padding: 1rem;
+            }
+            /* Ocultamos los últimos 2 logos en tablets para mantener el grid limpio */
+            .clientes-slide .client-card:nth-child(n+4) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .clientes-top {
+                padding-top: 6rem;
+            }
+            .clientes-title {
+                font-size: 1.8rem;
+            }
+            .clientes-desc {
+                font-size: 0.95rem;
+                margin-bottom: 3rem;
+            }
+            .clientes-slider-wrapper {
+                margin-bottom: 1.5rem;
+            }
+            .clientes-bottom {
+                padding-top: 0;
+                padding-bottom: 3rem;
+            }
+            .client-card {
+                height: 120px;
+            }
+            .client-logo-wrapper {
+                border-radius: 12px;
+                padding: 0.8rem;
+            }
+            .clientes-slide {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            /* Ocultamos los últimos 3 logos en móviles */
+            .clientes-slide .client-card:nth-child(n+3) {
+                display: none;
+            }
+        }
+
+
+        /* SECCIÓN FUSIONADA: IMPLEMENTACIÓN ÁGIL + FORMULARIO (SPLIT BACKGROUNDS) */
+
+        .onboarding-piloto {
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            gap: 0;
+            box-sizing: border-box;
+            background: none;
+        }
+
+        /* Columna izquierda - Pasos */
+        .onboarding-col {
+            background: #050505;
+            padding: 8rem 3.5rem 8rem 6%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .onboarding-col-content {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .onboarding-col h2 {
+            font-size: 2.8rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.1;
+        }
+
+        .onboarding-label {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Pasos verticales */
+        .steps-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .step-v {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .step-v-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .step-v-number {
+            width: 48px;
+            height: 48px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .step-v-number.active {
+            background: var(--text-primary);
+            color: var(--bg);
+            border-color: var(--text-primary);
+            box-shadow: 0 0 20px rgba(255,255,255,0.15);
+        }
+
+        .step-v-line {
+            width: 1px;
+            flex-grow: 1;
+            min-height: 40px;
+            background: var(--border);
+            margin: 6px 0;
+        }
+
+        .step-v-content {
+            padding-bottom: 2.5rem;
+        }
+
+        .step-v-content h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.4rem;
+            margin-top: 0.6rem;
+        }
+
+        .step-v-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Badges de garantía */
+        .onboarding-badge-row {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .onboarding-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.4rem 0.9rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .onboarding-badge i {
+            color: var(--accent);
+            font-size: 0.75rem;
+        }
+
+        /* Columna derecha - Formulario (Fondo Blanco) */
+        .piloto-col {
+            background: #ffffff;
+            padding: 8rem 6% 8rem 3.5rem;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .piloto-col-content {
+            width: 100%;
+            max-width: 580px;
+        }
+
+        .piloto-col .piloto-form-card {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+            backdrop-filter: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .piloto-col .piloto-form-header {
+            margin-bottom: 2rem;
+        }
+
+        .piloto-col .piloto-form-header h3 {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+            color: #0a0a0a;
+        }
+
+        .piloto-col .piloto-form-header p {
+            color: #52525b;
+            font-size: 0.9rem;
+        }
+
+        /* Formulario - Sobreescrituras para fondo blanco */
+        .piloto-col .form-input {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+
+        .piloto-col .form-input:focus {
+            background: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 0 15px rgba(2, 132, 199, 0.1);
+        }
+
+        .piloto-col .form-label {
+            color: #64748b;
+        }
+
+        .piloto-col .form-input:focus ~ .form-label,
+        .piloto-col .form-input:not(:placeholder-shown) ~ .form-label {
+            color: #0284c7;
+            background: #ffffff;
+        }
+
+        .piloto-col .form-modules-title {
+            color: #0f172a;
+        }
+
+        .piloto-col .module-checkbox-label {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .piloto-col .module-checkbox-label:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .piloto-col .checkbox-custom {
+            border: 2px solid #cbd5e1;
+        }
+
+        .piloto-col .module-checkbox-label input:checked ~ .checkbox-custom {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+
+        .piloto-col .module-checkbox-label input:checked ~ span {
+            color: #0284c7;
+        }
+
+        .piloto-col .module-checkbox-label.checked {
+            border-color: rgba(2, 132, 199, 0.3);
+            background: rgba(2, 132, 199, 0.03);
+        }
+
+        .piloto-col .form-submit-btn {
+            background: #25D366;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+        }
+
+        .piloto-col .form-submit-btn:hover {
+            background: #20ba5a;
+            color: #ffffff;
+            box-shadow: 0 10px 20px rgba(37, 211, 102, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .piloto-col #whatsapp-retry-btn:hover {
+            background: #20ba5a !important;
+            box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3) !important;
+            transform: translateY(-2px);
+        }
+
+        .piloto-col .piloto-success h2 {
+            color: #0a0a0a;
+        }
+
+        .piloto-col .piloto-success p {
+            color: #52525b !important;
+        }
+
+        .piloto-col .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .piloto-col .form-modules-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive - Laptop & Tablet */
+        @media (max-width: 1600px) {
+            .onboarding-col {
+                padding: 6rem 2.5rem 6rem 4%;
+            }
+            .piloto-col {
+                padding: 6rem 4% 6rem 2.5rem;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1.2rem;
+                margin-bottom: 2rem;
+            }
+            .form-modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.8rem;
+                margin-bottom: 2rem;
+            }
+            .piloto-form-card {
+                padding: 2rem;
+            }
+        }
+
+        @media (max-width: 1150px) {
+            .onboarding-piloto {
+                grid-template-columns: 1fr;
+            }
+            .onboarding-col {
+                padding: 6rem 5%;
+                justify-content: center;
+            }
+            .onboarding-col-content {
+                max-width: 600px;
+            }
+            .piloto-col {
+                padding: 6rem 5%;
+                justify-content: center;
+            }
+            .piloto-col-content {
+                max-width: 600px;
+            }
+        }
+
+
+
+        /* CTA */
+        .cta {
+            padding: 10rem 5%;
+            text-align: center;
+            background: #000;
             position: relative;
             overflow: hidden;
         }
-@media (max-height: 800px) {
-    .slide-section { padding: 2rem 1.5rem; }
-}
 
-        /* Gradientes Decorativos */
-        .bg-gradient-radial {
-            background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
         }
+
+        .cta-content { position: relative; z-index: 10; }
+
+        .cta h2 { font-size: 4rem; margin-bottom: 2rem; }
+
+        /* RESPONSIVE VIEJO REMOVIDO */
         
-        /* Progress Bar */
-        #progress-bar {
-            transition: width 0.2s ease-out;
+        /* SLIDER DE MÓDULOS (GLASSMORPHISM & LIGHT BG / DARK CARDS CONTRAST) */
+        .modules {
+            padding: 8rem 5%;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            color: #0f172a;
+            position: relative;
+            border-bottom: 1px solid #e2e8f0;
+            overflow: hidden;
         }
+
+        .modules .section-header h2 {
+            color: #0f172a;
+        }
+
+        .modules .section-header p {
+            color: #475569 !important;
+        }
+
+        /* SIMULADOR INTERACTIVO DE ERP (PROPUESTA 1 - LIGHT BG) */
+        .modules-interactive-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 3rem;
+            align-items: stretch;
+            padding: 2rem 0;
+        }
+
+        /* Menú Izquierdo */
+        .modules-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .module-menu-btn {
+            background: rgba(15, 23, 42, 0.02);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .module-menu-btn i {
+            font-size: 1.8rem;
+            color: #64748b;
+            transition: var(--transition);
+        }
+
+        .module-menu-btn-content h3 {
+            font-size: 1.1rem;
+            color: #0f172a;
+            margin-bottom: 0.2rem;
+            font-weight: 600;
+        }
+
+        .module-menu-btn-content p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        /* Hover y Activos */
+        .module-menu-btn:hover {
+            background: rgba(15, 23, 42, 0.05);
+            transform: translateX(5px);
+        }
+
+        .module-menu-btn.active {
+            background: #ffffff;
+            border-color: var(--accent-color, var(--accent));
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            transform: translateX(10px);
+        }
+
+        .module-menu-btn.active i {
+            color: var(--accent-color, var(--accent));
+            transform: scale(1.1);
+        }
+
+        /* Variables por botón del menú */
+        .btn-ventas { --accent-color: #38bdf8; }
+        .btn-contabilidad { --accent-color: #10b981; }
+        .btn-inventario { --accent-color: #f59e0b; }
+        .btn-ecommerce { --accent-color: #a855f7; }
+        .btn-admin { --accent-color: #06b6d4; }
+
+        /* Panel de Previsualización Derecho (Estilo Aplicación ERP) */
+        .modules-preview-panel {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 500px;
+            position: relative;
+        }
+
+        /* Barra superior tipo ventana macOS */
+        .preview-header {
+            background: #0f172a;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .window-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .window-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .preview-address-bar {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            flex-grow: 1;
+            padding: 0.4rem 1rem;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-body {
+            flex-grow: 1;
+            padding: 2.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: #f8fafc;
+        }
+
+        /* Contenido de vistas */
+        .preview-tab-content {
+            display: none;
+            animation: fadeIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+            height: 100%;
+            width: 100%;
+        }
+
+        .preview-tab-content.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos específicos de los Dashboards del ERP */
+        
+        /* 1. POS Ventas */
+        .pos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .pos-products {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .pos-product-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pos-product-card:hover {
+            background: rgba(56, 189, 248, 0.08);
+            border-color: #38bdf8;
+            transform: scale(1.03);
+        }
+
+        .pos-product-card i {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            margin-bottom: 0.4rem;
+        }
+
+        .pos-product-card span {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .pos-product-card small {
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        .pos-receipt {
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 250px;
+            position: relative;
+        }
+
+        .receipt-header {
+            text-align: center;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .receipt-items {
+            flex-grow: 1;
+            padding: 0.8rem 0;
+            font-size: 0.8rem;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+        }
+
+        .receipt-totals {
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .pos-action-btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .pos-action-btn:hover {
+            background: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* 2. Contabilidad Graph */
+        .chart-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--kpi-color, #10b981);
+            border-radius: 0 8px 8px 0;
+            padding: 0.8rem;
+        }
+
+        .kpi-card small { color: #94a3b8; font-size: 0.75rem; }
+        .kpi-card span { display: block; font-weight: bold; font-size: 1rem; margin-top: 0.2rem; }
+
+        .svg-chart-container {
+            width: 100%;
+            height: 150px;
+        }
+
+        .chart-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 2s ease forwards;
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* 3. Inventario Stock */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .stock-table th {
+            text-align: left;
+            color: #94a3b8;
+            padding: 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 500;
+        }
+
+        .stock-table td {
+            padding: 0.8rem 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .badge-status {
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .badge-ok { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-low { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .stock-progress-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            height: 10px;
+            overflow: hidden;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .stock-progress-bar {
+            background: #f59e0b;
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.8s ease;
+        }
+
+        /* 4. E-Commerce Sync */
+        .sync-grid {
+            display: grid;
+            grid-template-columns: 1fr 120px 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .sync-window {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 1.2rem;
+            min-height: 200px;
+        }
+
+        .sync-title {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .sync-arrow {
+            text-align: center;
+            color: #a855f7;
+            font-size: 1.5rem;
+        }
+
+        .arrow-pulse {
+            animation: arrowPulse 1.5s infinite;
+        }
+
+        @keyframes arrowPulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        .ecom-store-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 0.6rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .ecom-buy-btn {
+            background: #a855f7;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .ecom-buy-btn:hover { background: #9333ea; }
+
+        .erp-sync-list {
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .erp-sync-item {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 3px solid #10b981;
+            border-radius: 0 6px 6px 0;
+            padding: 0.5rem;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 5. Administrativo y Recursos Humanos (Nómina y Clima) */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .payroll-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .employee-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .employee-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .employee-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .employee-details h5 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        .employee-details small {
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        .payroll-amount {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f8fafc;
+            text-align: right;
+        }
+
+        .payroll-status {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 0.2rem;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .status-paid {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            animation: pulseSuccess 1s ease;
+        }
+
+        @keyframes pulseSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Colaborador Encuestas / Clima */
+        .clima-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 250px;
+        }
+
+        .enps-score-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .enps-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid #06b6d4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .enps-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #06b6d4;
+        }
+
+        .enps-label {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            margin-top: -3px;
+        }
+
+        .satisfaction-bar-container {
+            background: rgba(255, 255, 255, 0.05);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .satisfaction-bar {
+            background: linear-gradient(90deg, #06b6d4 0%, #10b981 100%);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Estilos Responsivos para el Simulador */
+        @media (max-width: 1024px) {
+            .modules-interactive-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .modules-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+                justify-content: flex-start;
+                gap: 0.8rem;
+            }
+            .module-menu-btn {
+                flex-shrink: 0;
+                width: 240px;
+                padding: 1rem 1.2rem;
+            }
+            .module-menu-btn.active {
+                transform: translateY(-5px) translateX(0);
+            }
+        }
+
+        /* SECCIÓN PLANES Y PRECIOS */
+        .pricing {
+            padding: 8rem 5%;
+            background: #000000;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing::before {
+            content: '';
+            position: absolute;
+            bottom: -150px; right: -150px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .pricing-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-bottom: 5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .pricing-toggle-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-toggle-label.active {
+            color: var(--text-primary);
+        }
+
+        .pricing-switch {
+            position: relative;
+            width: 64px;
+            height: 34px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .pricing-switch::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px;
+            width: 24px; height: 24px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .pricing-switch.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .pricing-switch.active::after {
+            left: calc(100% - 28px);
+            background: #000;
+        }
+
+        .pricing-discount-badge {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-green);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 100px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            align-items: stretch;
+            position: relative;
+            z-index: 10;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 28px;
+            padding: 3.5rem 2.2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: var(--transition);
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .pricing-card.popular {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.03);
+            box-shadow: 0 20px 40px rgba(56, 189, 248, 0.05);
+        }
+
+        .pricing-card.popular::before {
+            content: 'RECOMENDADO';
+            position: absolute;
+            top: 24px; right: 24px;
+            background: var(--accent);
+            color: #000;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 100px;
+            letter-spacing: 1px;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .pricing-card.popular:hover {
+            border-color: var(--accent);
+            box-shadow: 0 30px 60px rgba(56, 189, 248, 0.15);
+        }
+
+        .pricing-header h3 {
+            font-size: 1.6rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .pricing-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.5;
+        }
+
+        .pricing-price {
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .pricing-amount {
+            font-size: 3.2rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -1px;
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .pricing-period {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-features li {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .pricing-features li i {
+            color: var(--accent);
+            font-size: 0.95rem;
+        }
+
+        .pricing-features li.disabled {
+            opacity: 0.35;
+            text-decoration: line-through;
+        }
+
+        .pricing-features li.disabled i {
+            color: var(--text-secondary);
+        }
+
+        .pricing-card .btn-primary, .pricing-card .btn-outline {
+            width: 100%;
+            text-align: center;
+            margin-top: auto;
+            padding: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* SECCIÓN FORMULARIO PILOTO */
+        .piloto {
+            padding: 8rem 5%;
+            background: linear-gradient(to bottom, #000000 0%, #050505 100%);
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .piloto::before {
+            content: '';
+            position: absolute;
+            top: -200px; left: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.04) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .piloto-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 4.5rem 3.5rem;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1.1rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        .form-label {
+            position: absolute;
+            left: 1.1rem;
+            top: 1.1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .form-input:focus ~ .form-label,
+        .form-input:not(:placeholder-shown) ~ .form-label {
+            top: -0.6rem;
+            left: 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            background: #080808;
+            padding: 0 6px;
+            border-radius: 4px;
+        }
+
+        .form-modules-title {
+            font-size: 1.1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 1.2rem;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .form-modules-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .module-checkbox-label {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 1.1rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .module-checkbox-label input {
+            display: none;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: #000;
+            font-size: 0.75rem;
+        }
+
+        .module-checkbox-label input:checked ~ .checkbox-custom {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .module-checkbox-label input:checked ~ .checkbox-custom::after {
+            content: '✔';
+        }
+
+        .module-checkbox-label:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .module-checkbox-label input:checked ~ span {
+            color: var(--accent);
+        }
+
+        .module-checkbox-label.checked {
+            border-color: rgba(56, 189, 248, 0.3);
+            background: rgba(56, 189, 248, 0.03);
+        }
+
+        .form-submit-btn {
+            width: 100%;
+            padding: 1.2rem;
+            border: none;
+            background: var(--text-primary);
+            color: var(--bg);
+            font-weight: 700;
+            font-size: 1.1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .form-submit-btn:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Pantalla de éxito */
+        .piloto-success {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1.5rem;
+            padding: 2rem 0;
+        }
+
+        .success-icon-container {
+            width: 80px;
+            height: 80px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            animation: scaleUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* RESPONSIVIDAD GENERAL */
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+            .pricing-card.popular {
+                grid-column: span 2;
+            }
+            .form-modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            .pricing-card.popular {
+                grid-column: span 1;
+            }
+            .form-grid,
+            .piloto-col .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .form-modules-grid,
+            .piloto-col .form-modules-grid {
+                grid-template-columns: 1fr;
+            }
+            .piloto-container {
+                padding: 3rem 1.5rem;
+            }
+            .modules-slider-container {
+                padding: 0 10px;
+            }
+            .modules-slider-container .swiper-button-next,
+            .modules-slider-container .swiper-button-prev {
+                display: none;
+            }
+            .steps-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 4rem;
+            }
+            .steps-line {
+                display: none;
+            }
+            .nav-actions {
+                display: none;
+            }
+        }
+
     </style>
 </head>
-<body class="antialiased selection:bg-brand-blue selection:text-white relative">
 
-    <!-- Navegación & Progreso (Fijo superior) -->
-    <header class="fixed top-0 left-0 w-full z-50 glass-nav border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-blue to-brand-green flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-110">
-                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                </div>
-                <span class="font-bold text-xl tracking-tight text-brand-dark">Edatia<span class="text-brand-blue">ERP</span></span>
+<body>
+
+    <nav>
+        <a href="index.html" class="coded-logo">
+            <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
+            <div class="logo-sub hidden md:block">ERP</div>
+        </a>
+        <div class="nav-actions">
+            <a href="https://erp.edatia.com" class="btn-outline"><i class="fa-solid fa-lock mr-2"></i> Acceso ERP</a>
+            <a href="#solicitar-piloto" class="btn-primary">Pedir Piloto</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="video-background">
+            <video autoplay muted loop playsinline preload="auto">
+                <source src="assets/erp-intro.mp4" type="video/mp4">
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+
+        <div class="orbit-container reveal">
+            <!-- Núcleo central -->
+            <div class="central-core">
+                <h1>EDATIA <span class="highlight">CORE</span></h1>
+                <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 450px;">El sistema nervioso central que conecta toda tu operación en tiempo real.</p>
+                <a href="#modulos" class="btn-primary" style="margin-top: 1rem;">Ver Arquitectura</a>
+            </div>
+
+            <!-- Módulos flotantes estáticos -->
+            <a href="#modulos" class="module-node n1">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span>Ventas y POS</span>
             </a>
-            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-brand-gray">
-                <span id="slide-indicator" class="bg-slate-100 px-3 py-1 rounded-full">Slide 1 de 15</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="https://erp.edatia.com" class="border border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white px-5 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5">
-                    <i data-lucide="log-in" class="w-4 h-4"></i> Ingresar
-                </a>
-                <a href="#cta" class="bg-brand-dark hover:bg-black text-white px-5 py-2 rounded-full text-sm font-medium transition-colors">Empezar Piloto</a>
-            </div>
-        </div>
-        <!-- Barra de progreso de lectura -->
-        <div class="w-full h-1 bg-gray-100">
-            <div id="progress-bar" class="h-full bg-gradient-to-r from-brand-blue to-brand-green w-0"></div>
-        </div>
-    </header>
-
-    <!-- SLIDE 1: Portada -->
-    <section id="slide-1" class="slide-section bg-gradient-to-br from-slate-50 relative to-blue-50/50">
-        <div class="absolute inset-0 z-0 opacity-20">
-            <div class="absolute top-20 left-20 w-72 h-72 bg-brand-blue rounded-full mix-blend-multiply filter blur-3xl animate-pulse-slow"></div>
-            <div class="absolute bottom-20 right-20 w-72 h-72 bg-brand-green rounded-full mix-blend-multiply filter blur-3xl animate-pulse-slow" style="animation-delay: 1.5s;"></div>
-        </div>
-        
-        <div class="max-w-4xl mx-auto text-center z-10" data-aos="zoom-in" data-aos-duration="1000">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm mb-6">
-                <span class="flex h-2 w-2 rounded-full bg-brand-green"></span>
-                <span class="text-xs font-semibold uppercase tracking-wider text-brand-gray">La nueva era de la gestión empresarial</span>
-            </div>
-            <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-brand-dark mb-6 tracking-tight leading-tight">
-                Controla tu negocio en <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-green">un solo lugar</span>.
-            </h1>
-            <p class="text-xl md:text-2xl text-brand-gray mb-10 max-w-2xl mx-auto">
-                El ERP definitivo para empresas de retail y distribución masiva. Inteligente, rápido y seguro.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="#slide-2" class="bg-brand-blue hover:bg-brand-lightblue text-white px-8 py-4 rounded-full text-lg font-semibold transition-all shadow-lg hover:shadow-brand-blue/30 flex items-center justify-center gap-2">
-                    Ver Presentación <i data-lucide="arrow-down" class="w-5 h-5"></i>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- SLIDE 2: Agenda -->
-    <section id="slide-2" class="slide-section bg-white">
-        <div class="max-w-6xl mx-auto w-full" data-aos="fade-up">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-bold text-brand-dark mb-4">Agenda del Recorrido</h2>
-                <p class="text-lg text-brand-gray">¿Qué veremos en esta presentación?</p>
-            </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Temas -->
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-blue-100 text-brand-blue rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="target"></i></div>
-                    <h3 class="text-xl font-bold mb-2">1. Misión y Visión</h3>
-                    <p class="text-brand-gray">Quiénes somos y hacia dónde vamos.</p>
-                </div>
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-emerald-100 text-brand-green rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="layout-dashboard"></i></div>
-                    <h3 class="text-xl font-bold mb-2">2. Módulos del ERP</h3>
-                    <p class="text-brand-gray">Contable, Administrativo, Operativo, Comercial y Digital.</p>
-                </div>
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="zap"></i></div>
-                    <h3 class="text-xl font-bold mb-2">3. Propuesta de Valor</h3>
-                    <p class="text-brand-gray">Beneficios exclusivos para retail y distribución masiva.</p>
-                </div>
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="credit-card"></i></div>
-                    <h3 class="text-xl font-bold mb-2">4. Planes y Precios</h3>
-                    <p class="text-brand-gray">Soluciones adaptables al tamaño de tu negocio.</p>
-                </div>
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="rocket"></i></div>
-                    <h3 class="text-xl font-bold mb-2">5. Onboarding</h3>
-                    <p class="text-brand-gray">Cómo implementamos Edatia en tiempo récord.</p>
-                </div>
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition-shadow group">
-                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><i data-lucide="play-circle"></i></div>
-                    <h3 class="text-xl font-bold mb-2">6. Demo Visual</h3>
-                    <p class="text-brand-gray">Un vistazo rápido a la interfaz de nuestro ERP.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SLIDE 3: Misión y Visión -->
-    <section id="slide-3" class="slide-section bg-slate-50">
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div data-aos="fade-right">
-                    <div class="inline-flex items-center gap-2 mb-4 text-brand-blue font-semibold">
-                        <i data-lucide="compass" class="w-5 h-5"></i> Propósito Corporativo
-                    </div>
-                    <h2 class="text-4xl md:text-5xl font-bold text-brand-dark mb-8">Nuestra brújula para tu éxito.</h2>
-                    
-                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-6 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-bl-[100px]"></div>
-                        <h3 class="text-2xl font-bold text-brand-dark mb-4 flex items-center gap-3">
-                            <i data-lucide="flag" class="text-brand-blue"></i> Misión
-                        </h3>
-                        <p class="text-brand-gray text-lg leading-relaxed relative z-10">
-                            "Facilitar la gestión integral de los negocios mediante una plataforma simple, conectada y eficiente que permita controlar operaciones, optimizar recursos y tomar decisiones con claridad."
-                        </p>
-                    </div>
-                </div>
-                <div data-aos="fade-left" data-aos-delay="200">
-                    <div class="bg-brand-dark p-8 rounded-3xl shadow-xl mb-6 relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-brand-green/20 rounded-full blur-2xl"></div>
-                        <h3 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
-                            <i data-lucide="eye" class="text-brand-green"></i> Visión
-                        </h3>
-                        <p class="text-slate-300 text-lg leading-relaxed relative z-10">
-                            "Ser una solución líder en gestión empresarial para negocios en crecimiento, reconocida por su simplicidad, integración y capacidad de transformar la operación en información útil para decidir."
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SLIDE 4: Propuesta de valor resumida -->
-    <section id="slide-4" class="slide-section bg-white overflow-hidden">
-        <div class="max-w-6xl mx-auto w-full text-center relative z-10">
-            <h2 class="text-4xl md:text-5xl font-bold text-brand-dark mb-6" data-aos="zoom-in">La Propuesta de Valor</h2>
-            <p class="text-xl md:text-2xl text-brand-gray max-w-4xl mx-auto mb-16 leading-tight" data-aos="zoom-in" data-aos-delay="100">
-                “Un ERP todo en uno que conecta operaciones, ventas, finanzas, empleados y canales digitales, dándote información clara para tomar decisiones inteligentes.”
-            </p>
+            <a href="#modulos" class="module-node n2">
+                <i class="fa-solid fa-calculator" style="color: var(--accent-green);"></i>
+                <span>Contabilidad</span>
+            </a>
             
-            <div class="relative max-w-4xl mx-auto h-[400px]" data-aos="fade-up" data-aos-delay="300">
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-br from-brand-blue to-brand-green rounded-full shadow-2xl flex flex-col items-center justify-center text-white z-20 animate-float">
-                    <i data-lucide="server" class="w-10 h-10 mb-2"></i>
-                    <span class="font-bold text-xl">EDATIA Core</span>
-                </div>
-                <svg class="absolute inset-0 w-full h-full z-0 opacity-20" viewBox="0 0 800 400">
-                    <path d="M400,200 L200,100" stroke="#1d4ed8" stroke-width="4" stroke-dasharray="8 8" class="animate-pulse"></path>
-                    <path d="M400,200 L600,100" stroke="#10b981" stroke-width="4" stroke-dasharray="8 8" class="animate-pulse"></path>
-                    <path d="M400,200 L150,300" stroke="#f59e0b" stroke-width="4" stroke-dasharray="8 8" class="animate-pulse"></path>
-                    <path d="M400,200 L650,300" stroke="#8b5cf6" stroke-width="4" stroke-dasharray="8 8" class="animate-pulse"></path>
-                </svg>
-                <div class="absolute top-10 left-32 bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 w-48">
-                    <div class="p-2 bg-blue-100 text-blue-600 rounded-lg"><i data-lucide="calculator"></i></div>
-                    <span class="font-semibold text-sm">Finanzas</span>
-                </div>
-                <div class="absolute top-10 right-32 bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 w-48">
-                    <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><i data-lucide="shopping-cart"></i></div>
-                    <span class="font-semibold text-sm">Ventas</span>
-                </div>
-                <div class="absolute bottom-10 left-20 bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 w-48">
-                    <div class="p-2 bg-amber-100 text-amber-600 rounded-lg"><i data-lucide="box"></i></div>
-                    <span class="font-semibold text-sm">Operaciones</span>
-                </div>
-                <div class="absolute bottom-10 right-20 bg-white p-4 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3 w-48">
-                    <div class="p-2 bg-purple-100 text-purple-600 rounded-lg"><i data-lucide="globe"></i></div>
-                    <span class="font-semibold text-sm">Canales Digitales</span>
-                </div>
-            </div>
+            <a href="#modulos" class="module-node n3">
+                <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
+                <span>Inventario</span>
+            </a>
+            
+            <a href="#modulos" class="module-node n4">
+                <i class="fa-solid fa-globe" style="color: #a855f7;"></i>
+                <span>E-Commerce</span>
+            </a>
+            
+            <a href="#modulos" class="module-node n5">
+                <i class="fa-solid fa-users-gear" style="color: #38bdf8;"></i>
+                <span>RRHH y Admin</span>
+            </a>
         </div>
     </section>
 
-    <!-- SLIDE 5: Módulo Contable -->
-    <section id="slide-5" class="slide-section bg-slate-900 text-white">
-        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div data-aos="fade-right">
-                <div class="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mb-6">
-                    <i data-lucide="pie-chart" class="w-8 h-8"></i>
-                </div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Módulo Contable</h2>
-                <p class="text-slate-400 text-lg mb-8">Números claros, decisiones seguras. El corazón financiero de tu empresa estructurado a la perfección.</p>
-                <ul class="space-y-4">
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-green mt-1 flex-shrink-0"></i><span class="text-slate-300"><strong>Contabilidad automatizada:</strong> Asientos en tiempo real desde la facturación.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-green mt-1 flex-shrink-0"></i><span class="text-slate-300"><strong>Reportes financieros:</strong> P&G, Balances generales y flujos de caja a un clic.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-green mt-1 flex-shrink-0"></i><span class="text-slate-300"><strong>Gestión de impuestos:</strong> Cumplimiento normativo y calculadoras integradas.</span></li>
-                </ul>
-            </div>
-            <div class="relative" data-aos="fade-left">
-                <div class="rounded-xl shadow-2xl bg-slate-800 border border-slate-700 overflow-hidden absolute top-0 -right-10 w-[120%] rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <div class="bg-slate-900 px-4 py-3 flex items-center justify-between border-b border-slate-700">
-                        <div class="flex gap-2"><div class="w-3 h-3 rounded-full bg-slate-600"></div><div class="w-3 h-3 rounded-full bg-slate-600"></div><div class="w-3 h-3 rounded-full bg-slate-600"></div></div>
-                        <div class="text-xs text-slate-400 font-mono">Reporte Financiero FY26</div>
-                    </div>
-                    <div class="p-6 bg-slate-800">
-                        <div class="grid grid-cols-3 gap-4 mb-6">
-                            <div class="bg-slate-700 p-4 rounded-lg"><div class="text-slate-400 text-xs mb-1">Ingresos Totales</div><div class="text-xl font-bold text-white">$1.2M</div></div>
-                            <div class="bg-slate-700 p-4 rounded-lg"><div class="text-slate-400 text-xs mb-1">EBITDA</div><div class="text-xl font-bold text-brand-green">+24.5%</div></div>
-                            <div class="bg-slate-700 p-4 rounded-lg"><div class="text-slate-400 text-xs mb-1">Impuestos</div><div class="text-xl font-bold text-rose-400">$180K</div></div>
-                        </div>
-                        <div class="h-40 flex items-end gap-2 justify-between border-b border-slate-600 pb-2">
-                            <div class="w-full bg-brand-blue/20 rounded-t h-1/4"></div>
-                            <div class="w-full bg-brand-blue/40 rounded-t h-2/4"></div>
-                            <div class="w-full bg-brand-blue/60 rounded-t h-3/4"></div>
-                            <div class="w-full bg-brand-blue rounded-t h-full"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="h-auto max-h-[40vh] min-h-[300px]"></div>
-            </div>
+    <section id="modulos" class="modules">
+        <div class="section-header reveal">
+            <h2>Ingeniería Modular</h2>
+            <p style="color: var(--text-secondary);">Selecciona un módulo a la izquierda y pruébalo en tiempo real en la pantalla interactiva de la derecha.</p>
         </div>
-    </section>
 
-    <!-- SLIDE 6: Módulo Administrativo -->
-    <section id="slide-6" class="slide-section bg-white text-brand-dark">
-        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div class="hidden lg:block relative" data-aos="fade-right">
-                <div class="rounded-xl shadow-2xl bg-white border border-gray-200 overflow-hidden -rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <div class="bg-gray-100 px-4 py-3 flex items-center justify-between border-b border-gray-200">
-                        <div class="flex gap-2"><div class="w-3 h-3 rounded-full bg-rose-400"></div><div class="w-3 h-3 rounded-full bg-amber-400"></div><div class="w-3 h-3 rounded-full bg-emerald-400"></div></div>
-                        <div class="text-xs text-brand-gray font-mono">Directorio RRHH</div>
+        <div class="modules-interactive-container reveal">
+            <!-- Menú de Selección Izquierdo -->
+            <div class="modules-menu">
+                <button class="module-menu-btn btn-ventas active" onclick="switchPreviewTab('ventas')">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <div class="module-menu-btn-content">
+                        <h3>Ventas y POS</h3>
+                        <p>Facturación DIAN y mostrador ágil</p>
                     </div>
-                    <div class="p-6 bg-slate-50 flex flex-col gap-4">
-                        <div class="bg-white p-4 rounded-lg border border-slate-100 flex items-center gap-4 shadow-sm">
-                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex justify-center items-center text-indigo-600 font-bold">JD</div>
-                            <div class="flex-1"><div class="h-4 w-32 bg-slate-200 rounded mb-2"></div><div class="h-3 w-20 bg-slate-100 rounded"></div></div>
-                            <div class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">Activo</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-slate-100 flex items-center gap-4 shadow-sm">
-                            <div class="w-10 h-10 bg-amber-100 rounded-full flex justify-center items-center text-amber-600 font-bold">MP</div>
-                            <div class="flex-1"><div class="h-4 w-40 bg-slate-200 rounded mb-2"></div><div class="h-3 w-24 bg-slate-100 rounded"></div></div>
-                            <div class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">Activo</div>
-                        </div>
+                </button>
+                <button class="module-menu-btn btn-contabilidad" onclick="switchPreviewTab('contabilidad')">
+                    <i class="fa-solid fa-calculator"></i>
+                    <div class="module-menu-btn-content">
+                        <h3>Contabilidad Automatizada</h3>
+                        <p>Asientos automáticos y reportes</p>
                     </div>
-                </div>
+                </button>
+                <button class="module-menu-btn btn-inventario" onclick="switchPreviewTab('inventario')">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <div class="module-menu-btn-content">
+                        <h3>Inventario Inteligente</h3>
+                        <p>Multi-bodega y control de lotes</p>
+                    </div>
+                </button>
+                <button class="module-menu-btn btn-ecommerce" onclick="switchPreviewTab('ecommerce')">
+                    <i class="fa-solid fa-globe"></i>
+                    <div class="module-menu-btn-content">
+                        <h3>E-Commerce Nativo</h3>
+                        <p>Tienda sincronizada con inventario</p>
+                    </div>
+                </button>
+                <button class="module-menu-btn btn-admin" onclick="switchPreviewTab('admin')">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <div class="module-menu-btn-content">
+                        <h3>Administrativo y RH</h3>
+                        <p>Auditoría de operaciones y nómina</p>
+                    </div>
+                </button>
             </div>
-            <div data-aos="fade-left">
-                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-                    <i data-lucide="users" class="w-8 h-8"></i>
-                </div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Módulo Administrativo</h2>
-                <p class="text-brand-gray text-lg mb-8">El talento humano y la estructura organizativa controlados con máxima seguridad y eficiencia.</p>
-                <ul class="space-y-4">
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-blue mt-1 flex-shrink-0"></i><span class="text-brand-dark"><strong>Gestión de empleados:</strong> Expedientes digitales 360°, perfiles de cargo y habilidades.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-blue mt-1 flex-shrink-0"></i><span class="text-brand-dark"><strong>Nómina y asistencias:</strong> Control de turnos, liquidaciones pre-configuradas.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-blue mt-1 flex-shrink-0"></i><span class="text-brand-dark"><strong>Roles y Accesos:</strong> Auditoría estricta (AuditLog) y segregación de permisos.</span></li>
-                </ul>
-            </div>
-        </div>
-    </section>
 
-    <!-- SLIDE 7: Módulo Operativo -->
-    <section id="slide-7" class="slide-section bg-gradient-to-b from-slate-50 to-white text-brand-dark">
-        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div data-aos="fade-right">
-                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
-                    <i data-lucide="boxes" class="w-8 h-8"></i>
-                </div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Módulo Operativo</h2>
-                <p class="text-brand-gray text-lg mb-8">Control total del ciclo de vida del producto. Vital para el retail y la distribución masiva.</p>
-                <ul class="space-y-4">
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-emerald-500 mt-1 flex-shrink-0"></i><span class="text-brand-dark"><strong>Inventario Inteligente:</strong> Control de stock multi-bodega con trazabilidad de lotes.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-emerald-500 mt-1 flex-shrink-0"></i><span class="text-brand-dark"><strong>Gestión de compras:</strong> Sugeridos de reabastecimiento automáticos basados en demanda.</span></li>
-                </ul>
-            </div>
-            <div class="relative" data-aos="fade-left">
-                <div class="rounded-xl shadow-xl bg-white border border-gray-200 overflow-hidden w-full rotate-1 hover:rotate-0 transition-transform duration-500">
-                    <div class="bg-gray-100 px-4 py-2 border-b border-gray-200"><span class="text-xs font-semibold text-gray-500">Bodega Central - Trazabilidad</span></div>
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-brand-gray border-b border-slate-200"><tr><th class="p-3">SKU</th><th class="p-3">Ubicación</th><th class="p-3">Stock</th><th class="p-3">Estado</th></tr></thead>
-                        <tbody>
-                            <tr class="border-b border-slate-100"><td class="p-3 font-mono text-xs">SKU-001</td><td class="p-3">Pasillo A4</td><td class="p-3 font-bold">1,200</td><td class="p-3"><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs">Óptimo</span></td></tr>
-                            <tr class="border-b border-slate-100"><td class="p-3 font-mono text-xs">SKU-089</td><td class="p-3">Pasillo B2</td><td class="p-3 font-bold text-amber-600">45</td><td class="p-3"><span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs">Reabastecer</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SLIDE 8: Módulo Comercial -->
-    <section id="slide-8" class="slide-section bg-brand-blue text-white">
-        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-             <div class="hidden lg:block relative" data-aos="fade-right">
-                <div class="rounded-xl shadow-2xl bg-white text-brand-dark border border-gray-200 overflow-hidden w-[110%] -left-10">
-                    <div class="p-4 border-b border-gray-100 flex justify-between items-center"><div class="font-bold">Pipeline de Ventas B2B</div></div>
-                    <div class="bg-slate-50 p-4 flex gap-4">
-                        <div class="w-1/3 flex flex-col gap-3"><div class="text-xs font-bold text-slate-500 uppercase">Cotizados (4)</div><div class="bg-white p-3 rounded shadow-sm border-l-4 border-l-brand-blue"><div class="font-semibold text-sm">Retail Center S.A</div></div></div>
-                        <div class="w-1/3 flex flex-col gap-3"><div class="text-xs font-bold text-slate-500 uppercase">Cerrados (8)</div><div class="bg-white p-3 rounded shadow-sm border-l-4 border-l-brand-green"><div class="font-semibold text-sm">Supermercados Max</div></div></div>
+            <!-- Pantalla Simuladora de ERP Derecha -->
+            <div class="modules-preview-panel">
+                <div class="preview-header">
+                    <div class="window-dots">
+                        <div class="window-dot dot-red"></div>
+                        <div class="window-dot dot-yellow"></div>
+                        <div class="window-dot dot-green"></div>
+                    </div>
+                    <div class="preview-address-bar">
+                        <i class="fa-solid fa-lock"></i>
+                        <span id="preview-url">erp.edatia.com/ventas-pos</span>
                     </div>
                 </div>
-            </div>
-            <div data-aos="fade-left">
-                <div class="w-16 h-16 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-6 border border-white/20"><i data-lucide="shopping-bag" class="w-8 h-8"></i></div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Módulo Comercial</h2>
-                <p class="text-blue-100 text-lg mb-8">Acelera tus ingresos. Facturación POS rápida y un CRM robusto para fidelizar grandes clientes corporativos.</p>
-                <ul class="space-y-4">
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-green mt-1 flex-shrink-0"></i><span class="text-white"><strong>Ventas POS B2B/B2C:</strong> Terminales de punto de venta ágiles.</span></li>
-                    <li class="flex items-start gap-3"><i data-lucide="check-circle-2" class="text-brand-green mt-1 flex-shrink-0"></i><span class="text-white"><strong>CRM Completo:</strong> Gestión de carteras y prospectos.</span></li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <!-- SLIDE 9: Módulo Digital -->
-    <section id="slide-9" class="slide-section bg-slate-50 text-brand-dark">
-        <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div data-aos="fade-right">
-                <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6"><i data-lucide="monitor-smartphone" class="w-8 h-8"></i></div>
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">Módulo Digital</h2>
-                <p class="text-brand-gray text-lg mb-8">El comercio electrónico unificado directamente con tu inventario. Vende 24/7 sin doble digitación.</p>
-            </div>
-            <div class="relative" data-aos="fade-left">
-                <div class="rounded-t-2xl shadow-2xl bg-white border border-gray-200 overflow-hidden w-full h-auto min-h-[300px]">
-                    <div class="bg-gray-100 px-4 py-2 flex items-center gap-4 border-b border-gray-200">
-                        <div class="bg-white flex-1 rounded px-3 py-1 text-xs text-center text-gray-400">B2B Portal Cliente</div>
-                    </div>
-                    <div class="p-6 bg-slate-50 h-full flex flex-col gap-4">
-                        <div class="flex justify-between items-center bg-white p-3 border border-gray-100 rounded shadow-sm">
-                            <div class="flex gap-3 items-center"><div class="w-8 h-8 bg-slate-200 rounded"></div><div class="h-3 w-32 bg-slate-200 rounded"></div></div>
+                
+                <div class="preview-body">
+                    <!-- Vista 1: Ventas y POS -->
+                    <div class="preview-tab-content active" id="preview-ventas">
+                        <div class="pos-grid">
+                            <div>
+                                <h4 style="margin-bottom: 1rem; color: #38bdf8; font-size: 1rem;"><i class="fa-solid fa-cash-register mr-2"></i> POS Mostrador Ágil</h4>
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Haz clic en los productos para agregarlos a la venta actual:</p>
+                                <div class="pos-products">
+                                    <div class="pos-product-card" onclick="addPosItem('Café Latte', 8500, 'fa-mug-hot')">
+                                        <i class="fa-solid fa-mug-hot"></i>
+                                        <span>Café Latte</span>
+                                        <small>$8.500</small>
+                                    </div>
+                                    <div class="pos-product-card" onclick="addPosItem('Pastel Choco', 12000, 'fa-cake-candles')">
+                                        <i class="fa-solid fa-cake-candles"></i>
+                                        <span>Pastel Choco</span>
+                                        <small>$12.000</small>
+                                    </div>
+                                    <div class="pos-product-card" onclick="addPosItem('Soda Italiana', 9500, 'fa-glass-water')">
+                                        <i class="fa-solid fa-glass-water"></i>
+                                        <span>Soda Ital.</span>
+                                        <small>$9.500</small>
+                                    </div>
+                                    <div class="pos-product-card" onclick="addPosItem('Panini Pavo', 16500, 'fa-bread-slice')">
+                                        <i class="fa-solid fa-bread-slice"></i>
+                                        <span>Panini Pavo</span>
+                                        <small>$16.500</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="pos-receipt" id="pos-receipt">
+                                <div class="receipt-header">
+                                    <strong>EDATIA CAFE & RESTAURANTE</strong><br>
+                                    NIT: 901.452.883-1<br>
+                                    Factura de Venta POS Nro: <span style="font-family: monospace;">E-2026-4421</span>
+                                </div>
+                                <div class="receipt-items" id="receipt-items">
+                                    <div style="text-align: center; color: #64748b; margin-top: 2rem; font-size: 0.8rem;">El ticket está vacío.<br>Agrega productos a la izquierda.</div>
+                                </div>
+                                <div class="receipt-totals">
+                                    <span>TOTAL FACTURA:</span>
+                                    <span id="receipt-total-val">$0</span>
+                                </div>
+                                <button class="pos-action-btn" id="pos-billing-btn" onclick="billPos()" disabled>
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> Facturar Electrónicamente (DIAN)
+                                </button>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Vista 2: Contabilidad -->
+                    <div class="preview-tab-content" id="preview-contabilidad">
+                        <h4 style="color: #10b981; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-chart-line mr-2"></i> Contabilidad y Estados Financieros en Vivo</h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Todo proceso en el ERP genera asientos contables en tiempo real sin doble digitación.</p>
+                        
+                        <div class="kpis-grid">
+                            <div class="kpi-card" style="--kpi-color: #10b981;">
+                                <small>INGRESOS HOY</small>
+                                <span>$4.820.000</span>
+                            </div>
+                            <div class="kpi-card" style="--kpi-color: #ef4444;">
+                                <small>EGRESOS HOY</small>
+                                <span>$1.240.000</span>
+                            </div>
+                            <div class="kpi-card" style="--kpi-color: #38bdf8;">
+                                <small>SALDO CAJAS</small>
+                                <span>$3.580.000</span>
+                            </div>
+                        </div>
+
+                        <div class="chart-box">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.8rem;">
+                                <span>Flujo de Caja - Últimas 6 horas</span>
+                                <span style="color: #10b981;"><i class="fa-solid fa-circle mr-1" style="font-size: 6px;"></i> Generado en Tiempo Real</span>
+                            </div>
+                            <div class="svg-chart-container">
+                                <svg viewBox="0 0 500 150" width="100%" height="100%">
+                                    <!-- Gráfico de fondo -->
+                                    <path d="M 0,150 L 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20 L 500,150 Z" fill="rgba(16, 185, 129, 0.05)"></path>
+                                    <!-- Línea de tendencia -->
+                                    <path d="M 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20" fill="none" stroke="#10b981" stroke-width="3" class="chart-line"></path>
+                                    <!-- Puntos del gráfico -->
+                                    <circle cx="100" cy="90" r="5" fill="#10b981"></circle>
+                                    <circle cx="200" cy="120" r="5" fill="#10b981"></circle>
+                                    <circle cx="300" cy="70" r="5" fill="#10b981"></circle>
+                                    <circle cx="400" cy="50" r="5" fill="#10b981"></circle>
+                                    <circle cx="500" cy="20" r="5" fill="#10b981"></circle>
+                                    
+                                    <text x="90" y="80" fill="#94a3b8" font-size="9" font-family="sans-serif">$2.5M</text>
+                                    <text x="290" y="60" fill="#94a3b8" font-size="9" font-family="sans-serif">$3.8M</text>
+                                    <text x="470" y="35" fill="#10b981" font-size="10" font-family="sans-serif" font-weight="bold">$4.8M</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista 3: Inventario -->
+                    <div class="preview-tab-content" id="preview-inventario">
+                        <h4 style="color: #f59e0b; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario Inteligente Multi-Bodega</h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Control preciso de existencias, costos y alertas automáticas de reabastecimiento.</p>
+                        
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1.2rem;">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>PRODUCTO</th>
+                                        <th>BODEGA</th>
+                                        <th>EXISTENCIA</th>
+                                        <th>ESTADO</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Café Orgánico 1Kg</td>
+                                        <td>Principal</td>
+                                        <td id="stock-val-1">12 Unidades</td>
+                                        <td><span class="badge-status badge-low" id="stock-badge-1">Bajo Stock</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Vasos Biodegradables</td>
+                                        <td>Principal</td>
+                                        <td id="stock-val-2">450 Unidades</td>
+                                        <td><span class="badge-status badge-ok">Disponible</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Materia Prima Panini</td>
+                                        <td>Bodega Norte</td>
+                                        <td id="stock-val-3">85 Unidades</td>
+                                        <td><span class="badge-status badge-ok">Disponible</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+                                <div style="flex-grow: 1;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.2rem;">
+                                        <span>Capacidad Total de Bodega Central</span>
+                                        <span id="stock-percentage-text">45%</span>
+                                    </div>
+                                    <div class="stock-progress-container">
+                                        <div class="stock-progress-bar" id="stock-progress" style="width: 45%;"></div>
+                                    </div>
+                                </div>
+                                <button class="pos-action-btn" onclick="replenishStock()" style="background: #f59e0b; color: #0f172a; width: auto; font-size: 0.8rem; padding: 0.6rem 1.2rem;">
+                                    <i class="fa-solid fa-truck-ramp-box"></i> Ordenar Compra (Reabastecer)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista 4: E-Commerce -->
+                    <div class="preview-tab-content" id="preview-ecommerce">
+                        <h4 style="color: #a855f7; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-network-wired mr-2"></i> Omnicanalidad: Sincronización Web E-Commerce</h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Cuando un cliente compra en tu sitio web, el pedido entra de inmediato en el ERP de Edatia.</p>
+                        
+                        <div class="sync-grid">
+                            <!-- Tienda Digital Virtual -->
+                            <div class="sync-window">
+                                <div class="sync-title"><i class="fa-solid fa-store" style="color: #a855f7;"></i> Tienda Online Edatia</div>
+                                <div class="ecom-store-item">
+                                    <div>
+                                        <strong>Café Molido 500g</strong><br>
+                                        <span style="color: #a855f7; font-weight: bold; font-size: 0.75rem;">$24.500 COP</span>
+                                    </div>
+                                    <button class="ecom-buy-btn" onclick="simulateEcomPurchase('Café Molido 500g', 24500)">Comprar</button>
+                                </div>
+                                <div class="ecom-store-item">
+                                    <div>
+                                        <strong>Prensa Francesa</strong><br>
+                                        <span style="color: #a855f7; font-weight: bold; font-size: 0.75rem;">$85.000 COP</span>
+                                    </div>
+                                    <button class="ecom-buy-btn" onclick="simulateEcomPurchase('Prensa Francesa', 85000)">Comprar</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Canal de Sincronización -->
+                            <div class="sync-arrow">
+                                <i class="fa-solid fa-arrows-spin fa-spin" style="margin-bottom: 0.5rem; display: block;"></i>
+                                <span style="font-size: 0.65rem; color: #94a3b8; font-family: monospace; display: block;">API REST</span>
+                                <i class="fa-solid fa-right-long arrow-pulse" style="margin-top: 0.5rem;"></i>
+                            </div>
+                            
+                            <!-- Edatia ERP Central -->
+                            <div class="sync-window">
+                                <div class="sync-title"><i class="fa-solid fa-server" style="color: #10b981;"></i> Edatia Central ERP</div>
+                                <div class="erp-sync-list" id="erp-sync-list">
+                                    <div style="text-align: center; color: #64748b; margin-top: 2rem;">Esperando ventas en tienda web...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista 5: Administrativo y RH -->
+                    <div class="preview-tab-content" id="preview-admin">
+                        <h4 style="color: #06b6d4; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-users-gear mr-2"></i> Gestión de Nómina y Clima Organizacional</h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Liquida la nómina de tus colaboradores y monitorea su satisfacción de forma centralizada.</p>
+                        
+                        <div class="admin-grid">
+                            <!-- Liquidación de Nómina -->
+                            <div class="payroll-box">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
+                                    <span style="font-size: 0.8rem; font-weight: bold; color: #06b6d4;">Nómina del Período</span>
+                                    <span style="font-size: 0.75rem; color: #94a3b8;">Mayo 2026</span>
+                                </div>
+                                <div class="employee-card">
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">SC</div>
+                                        <div class="employee-details">
+                                            <h5>Sofía Castro</h5>
+                                            <small>Diseñadora UI/UX</small>
+                                        </div>
+                                    </div>
+                                    <div class="payroll-amount">
+                                        <span>$4.200.000</span><br>
+                                        <span class="payroll-status status-pending" id="payroll-status-1">Pendiente</span>
+                                    </div>
+                                </div>
+                                <div class="employee-card">
+                                    <div class="employee-info">
+                                        <div class="employee-avatar" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">CR</div>
+                                        <div class="employee-details">
+                                            <h5>Carlos Ruiz</h5>
+                                            <small>Dev Backend</small>
+                                        </div>
+                                    </div>
+                                    <div class="payroll-amount">
+                                        <span>$5.800.000</span><br>
+                                        <span class="payroll-status status-pending" id="payroll-status-2">Pendiente</span>
+                                    </div>
+                                </div>
+                                <button class="pos-action-btn" id="payroll-run-btn" onclick="runPayroll()" style="background: #06b6d4; color: #0f172a; font-size: 0.8rem; padding: 0.6rem 1rem;">
+                                    <i class="fa-solid fa-calculator"></i> Liquidar y Dispersar Nómina
+                                </button>
+                            </div>
+                            
+                            <!-- Clima y Encuestas -->
+                            <div class="clima-box">
+                                <div>
+                                    <span style="font-size: 0.8rem; font-weight: bold; color: #10b981; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; margin-bottom: 0.8rem;">Clima Organizacional</span>
+                                    <div class="enps-score-container">
+                                        <div class="enps-circle">
+                                            <span class="enps-value" id="enps-score-val">+74</span>
+                                            <span class="enps-label">eNPS</span>
+                                        </div>
+                                        <div style="font-size: 0.8rem;">
+                                            <strong style="color: #10b981;">Excelente</strong><br>
+                                            <span style="color: #94a3b8; font-size: 0.75rem;" id="enps-responses-count">Basado en 15 respuestas</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.2rem;">
+                                            <span>Satisfacción Colaboradores</span>
+                                            <span id="satisfaction-pct-text">88%</span>
+                                        </div>
+                                        <div class="satisfaction-bar-container">
+                                            <div class="satisfaction-bar" id="satisfaction-bar" style="width: 88%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="pos-action-btn" id="survey-btn" onclick="sendClimateSurvey()" style="background: transparent; border: 1px solid #10b981; color: #10b981; font-size: 0.8rem; padding: 0.6rem 1rem; margin-top: 1rem;">
+                                    <i class="fa-solid fa-paper-plane"></i> Enviar Encuesta de Clima
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SLIDE 10: Planes -->
-    <section id="slide-10" class="slide-section bg-white text-center">
-        <div class="max-w-7xl mx-auto w-full">
-            <h2 class="text-4xl md:text-5xl font-bold text-brand-dark mb-4">Planes a tu medida</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end max-w-5xl mx-auto mt-16">
-                <div class="bg-slate-50 rounded-3xl p-8 border border-slate-200"><h3 class="text-2xl font-bold mb-2">Retail Básico</h3><button class="w-full py-3 rounded-lg border border-brand-blue text-brand-blue font-semibold mt-8">Comenzar</button></div>
-                <div class="bg-brand-dark text-white rounded-3xl p-8 border border-slate-700 shadow-2xl relative transform md:-translate-y-4"><h3 class="text-2xl font-bold mb-2">Retail Profesional</h3><button class="w-full py-3 rounded-lg bg-brand-blue text-white font-semibold mt-8 shadow-lg">Comenzar</button></div>
-                <div class="bg-slate-50 rounded-3xl p-8 border border-slate-200"><h3 class="text-2xl font-bold mb-2">Retail + Dist.</h3><button class="w-full py-3 rounded-lg border border-brand-blue text-brand-blue font-semibold mt-8">Contactar</button></div>
+    <!-- ====== SECCIÓN: NUESTROS CLIENTES ====== -->
+    <section class="clientes-section">
+        <div class="clientes-top">
+            <!-- Decoraciones de fondo -->
+            <div class="clientes-bg-decorations">
+                <div class="decor-hexagon-network"></div>
+                <div class="decor-chat-bubble">
+                    <span class="decor-dot"></span>
+                    <span class="decor-dot"></span>
+                    <span class="decor-dot"></span>
+                </div>
+            </div>
+
+            <div class="clientes-subtitle">CLIENTES EDATIA</div>
+            <h2 class="clientes-title">Clientes que han confiado en EDATIA</h2>
+            <p class="clientes-desc">Más de 5 años de experiencia y más de 700 clientes satisfechos nos dan la confianza y la seguridad para ser su mejor aliado tecnológico.</p>
+
+            <div class="clientes-slider-wrapper reveal">
+                <!-- Slide 1 -->
+                <div class="clientes-slide active">
+                    <a class="client-card" href="https://nexttechnology.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <text x="15" y="44" font-family="'Inter', sans-serif" font-weight="900" font-size="34" fill="#111111" letter-spacing="-1">NEXT</text>
+                                <path d="M120 22 L132 34 L120 46 M132 22 L144 34 L132 46" fill="none" stroke="#e11d48" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+                                <text x="17" y="60" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#777777" letter-spacing="4.5">TECHNOLOGY</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://niatec.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(10, 16)">
+                                    <polygon points="15,0 30,8 30,26 15,34 0,26 0,8" fill="none" stroke="#111111" stroke-width="2.5" stroke-linejoin="round"/>
+                                    <path d="M0,8 L15,16 L15,34 M30,8 L15,16 M15,0 L15,16" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round"/>
+                                </g>
+                                <text x="52" y="39" font-family="'Inter', sans-serif" font-weight="900" font-size="25" fill="#111111" letter-spacing="-0.5">NIATEC</text>
+                                <text x="52" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="5.5" fill="#555555" letter-spacing="0.2">TECNOLOGIA QUE IMPACTA TUS SENTIDOS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://brillocolor.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 100" width="100" height="50" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="75" y="4" width="50" height="50" rx="8" fill="#111111" />
+                                <text x="100" y="41" font-family="'Georgia', serif" font-weight="bold" font-size="30" fill="#ffffff" text-anchor="middle">BC</text>
+                                <text x="100" y="78" font-family="'Inter', sans-serif" font-weight="700" font-size="16" fill="#111111" text-anchor="middle" letter-spacing="-0.5">BrilloColor</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://bodegaelrincon.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 90" width="130" height="58" xmlns="http://www.w3.org/2000/svg">
+                                <path id="curve-rincon" d="M 25,32 A 80,80 0 0,1 175,32" fill="none" />
+                                <text font-family="'Inter', sans-serif" font-weight="700" font-size="8.5" fill="#e11d48" letter-spacing="1.8" text-anchor="middle">
+                                    <textPath href="#curve-rincon" startOffset="50%">BODEGA MAYORISTA</textPath>
+                                </text>
+                                <text x="100" y="65" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" text-anchor="middle" letter-spacing="-0.5">
+                                    EL <tspan fill="#e11d48">R</tspan>INCON
+                                </text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://hangar.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 100" width="84" height="84" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="50" r="42" fill="#111111" />
+                                <text x="100" y="56" font-family="'Inter', sans-serif" font-weight="300" font-size="14" fill="#ffffff" letter-spacing="4.5" text-anchor="middle">HANGAR</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://cafelamontana.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20,50 L35,25 L45,38 L60,18 L80,50 Z" fill="none" stroke="#0f766e" stroke-width="3" stroke-linejoin="round"/>
+                                <circle cx="50" cy="45" r="5" fill="#b45309"/>
+                                <text x="90" y="38" font-family="'Georgia', serif" font-weight="bold" font-size="18" fill="#111111">Café</text>
+                                <text x="90" y="54" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#0f766e" letter-spacing="1">LA MONTAÑA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://clinicasaludtotal.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,25 L25,25 L25,15 L35,15 L35,25 L45,25 L45,35 L35,35 L35,45 L25,45 L25,35 L15,35 Z" fill="#10b981" />
+                                <path d="M48,30 L58,30 L63,20 L68,40 L73,26 L78,34 L88,30" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <text x="96" y="34" font-family="'Inter', sans-serif" font-weight="800" font-size="17" fill="#111111">Salud</text>
+                                <text x="96" y="48" font-family="'Inter', sans-serif" font-weight="500" font-size="13" fill="#6b7280" letter-spacing="1">TOTAL</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://distribuidoraandina.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(15, 20)">
+                                    <path d="M0,25 L15,0 L30,25 Z" fill="#1d4ed8" />
+                                    <path d="M10,25 L25,0 L40,25 Z" fill="#3b82f6" opacity="0.7" />
+                                </g>
+                                <text x="68" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="16" fill="#111111">DISTRIBUIDORA</text>
+                                <text x="68" y="52" font-family="'Inter', sans-serif" font-weight="700" font-size="13" fill="#1d4ed8" letter-spacing="2">ANDINA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://hotelnativo.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="20" fill="none" stroke="#d97706" stroke-width="2"/>
+                                <path d="M35,25 C35,25 43,33 35,45 C27,33 35,25 35,25 Z" fill="#d97706"/>
+                                <text x="70" y="36" font-family="'Georgia', serif" font-style="italic" font-weight="bold" font-size="20" fill="#111111">Nativo</text>
+                                <text x="70" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="9" fill="#78350f" letter-spacing="4">HOTEL & SPA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://logisticaveloz.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10,20 L30,20 L40,40 L20,40 Z" fill="#ea580c"/>
+                                <path d="M28,20 L48,20 L58,40 L38,40 Z" fill="#f97316"/>
+                                <text x="66" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">VELOZ</text>
+                                <text x="66" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#ea580c" letter-spacing="3">LOGISTICA</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://agrodalleverde.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="18" fill="none" stroke="#15803d" stroke-width="2"/>
+                                <path d="M27,45 C27,35 35,32 35,32 C35,32 43,35 43,45" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M35,22 L35,32" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+                                <text x="68" y="36" font-family="'Inter', sans-serif" font-weight="800" font-size="16" fill="#111111" letter-spacing="-0.5">VALLE VERDE</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="10" fill="#15803d" letter-spacing="4">AGROPECUARIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://minimarketrapido.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10,25 L40,25 L35,45 L15,45 Z" fill="none" stroke="#dc2626" stroke-width="3" stroke-linejoin="round"/>
+                                <circle cx="20" cy="55" r="4" fill="#111111"/>
+                                <circle cx="30" cy="55" r="4" fill="#111111"/>
+                                <path d="M5,18 L15,25" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+                                <text x="52" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" letter-spacing="-1">RÁPIDO</text>
+                                <text x="52" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#dc2626" letter-spacing="2">MINIMARKET</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://gymprofitness.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="120" height="48" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="15" y="32" width="6" height="16" rx="2" fill="#111111"/>
+                                <rect x="23" y="24" width="8" height="32" rx="2" fill="#111111"/>
+                                <rect x="33" y="37" width="24" height="6" fill="#111111"/>
+                                <rect x="59" y="24" width="8" height="32" rx="2" fill="#111111"/>
+                                <rect x="69" y="32" width="6" height="16" rx="2" fill="#111111"/>
+                                <text x="90" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" letter-spacing="-0.5">GYMPRO</text>
+                                <text x="90" y="52" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#6b7280" letter-spacing="3">FITNESS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://textilco.com.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,40 C15,20 30,15 45,30 C60,45 45,55 35,45 C25,35 40,20 50,40" fill="none" stroke="#0891b2" stroke-width="3" stroke-linecap="round"/>
+                                <text x="70" y="38" font-family="'Inter', sans-serif" font-weight="800" font-size="19" fill="#111111" letter-spacing="-0.5">TEXTILCO</text>
+                                <text x="70" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="8.5" fill="#0891b2" letter-spacing="3.5">CONFECCIONES</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://ferreteriaelconstructor.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L35,25 L45,35 L25,55 Z" fill="#d97706"/>
+                                <path d="M35,25 L45,15 L55,25 L45,35 Z" fill="#1e293b"/>
+                                <text x="64" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="16" fill="#111111">CONSTRUCTOR</text>
+                                <text x="64" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#d97706" letter-spacing="2">FERRETERIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 4 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://grupoavala.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L35,15 L55,45 Z" fill="#0f766e" />
+                                <path d="M30,45 L50,15 L70,45 Z" fill="#0d9488" opacity="0.8" />
+                                <text x="85" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">AVALA</text>
+                                <text x="85" y="51" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#0f766e" letter-spacing="3">GRUPO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://lexandco.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="120" height="48" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L45,45 M30,45 L30,20 M20,28 L40,28 M20,28 L20,38 M40,28 L40,38" fill="none" stroke="#b45309" stroke-width="2"/>
+                                <text x="60" y="38" font-family="'Georgia', serif" font-weight="bold" font-size="22" fill="#111111">LEX &amp; CO</text>
+                                <text x="60" y="52" font-family="'Inter', sans-serif" font-weight="600" font-size="9" fill="#78350f" letter-spacing="4">ABOGADOS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://primefoods.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="18" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+                                <path d="M27,33 L43,33 C43,33 43,45 35,45 C27,45 27,33 27,33 Z" fill="#e11d48"/>
+                                <text x="68" y="36" font-family="'Georgia', serif" font-weight="bold" font-size="20" fill="#111111">Prime</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#e11d48" letter-spacing="2">FOODS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://novaseguros.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M30,15 C45,15 45,20 45,35 C45,50 30,55 30,55 C30,55 15,50 15,35 C15,20 15,15 30,15 Z" fill="#6d28d9"/>
+                                <polygon points="30,23 33,30 40,30 35,34 37,41 30,37 23,41 25,34 20,30 27,30" fill="#ffffff"/>
+                                <text x="62" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">NOVA</text>
+                                <text x="62" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#6d28d9" letter-spacing="3.5">SEGUROS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://urbanbuilders.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L15,15 L35,15 M35,15 L35,45 M25,45 L25,25 M25,25 L45,25 M45,25 L45,45" fill="none" stroke="#475569" stroke-width="2.5"/>
+                                <text x="60" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">URBAN</text>
+                                <text x="60" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#475569" letter-spacing="3">BUILDERS</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 5 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://institutofuturo.edu.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,30 L35,20 L55,30 L35,40 Z" fill="#2563eb" />
+                                <path d="M22,33.5 L22,45 C22,45 30,50 35,50 C40,50 48,45 48,45 L48,33.5" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+                                <text x="68" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">FUTURO</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#2563eb" letter-spacing="3.5">INSTITUTO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://kromastudio.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="16" fill="none" stroke="#db2777" stroke-width="3"/>
+                                <circle cx="45" cy="40" r="12" fill="none" stroke="#ea580c" stroke-width="3" opacity="0.8"/>
+                                <text x="75" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="19" fill="#111111">KROMA</text>
+                                <text x="75" y="51" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#db2777" letter-spacing="3">STUDIO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://apexlogistics.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,25 L45,25 L35,40 L15,40 Z" fill="#0369a1"/>
+                                <polygon points="40,20 52,32.5 40,45" fill="#f97316"/>
+                                <text x="66" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">APEX</text>
+                                <text x="66" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#0369a1" letter-spacing="3">LOGISTICS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://vanguardmedia.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="15,20 45,35 15,50" fill="#4f46e5"/>
+                                <polygon points="30,20 60,35 30,50" fill="#818cf8" opacity="0.6"/>
+                                <text x="72" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">VANGUARD</text>
+                                <text x="72" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#4f46e5" letter-spacing="3">MEDIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://solarenergy.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="15" fill="#eab308"/>
+                                <path d="M35,20 L35,12 M35,60 L35,52 M15,40 L7,40 M63,40 L55,40" stroke="#ca8a04" stroke-width="2" stroke-linecap="round"/>
+                                <text x="65" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="18" fill="#111111">SOLAR</text>
+                                <text x="65" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#15803d" letter-spacing="3.5">ENERGY</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="clientes-bottom">
+            <div class="clientes-controls">
+                <div class="clientes-dots" id="clientes-dots">
+                    <button class="cliente-dot active" onclick="goToClienteSlide(0)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(1)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(2)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(3)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(4)"></button>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- SLIDE 11: Onboarding -->
-    <section id="slide-11" class="slide-section bg-slate-900 text-white">
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-16"><h2 class="text-4xl md:text-5xl font-bold mb-4">Onboarding Ágil</h2></div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 text-center">
-                <div class="flex flex-col items-center gap-4"><div class="w-16 h-16 rounded-full bg-slate-800 border-4 border-slate-900 flex items-center justify-center text-xl font-bold text-brand-blue">1</div><h4 class="font-bold">Configuración Base</h4></div>
-                <div class="flex flex-col items-center gap-4"><div class="w-16 h-16 rounded-full bg-slate-800 border-4 border-slate-900 flex items-center justify-center text-xl font-bold text-brand-green">2</div><h4 class="font-bold">Migración de Data</h4></div>
-                <div class="flex flex-col items-center gap-4"><div class="w-16 h-16 rounded-full bg-slate-800 border-4 border-slate-900 flex items-center justify-center text-xl font-bold text-purple-400">3</div><h4 class="font-bold">Go-Live!</h4></div>
+
+    <section id="solicitar-piloto" class="onboarding-piloto">
+        <!-- Columna Izquierda: Implementación Ágil -->
+        <div class="onboarding-col reveal">
+            <div class="onboarding-col-content">
+                <div class="onboarding-label">PROCESO DE IMPLEMENTACIÓN</div>
+                <h2>Implementación <span style="color: var(--accent);">Ágil</span></h2>
+                <p style="color: var(--text-secondary); margin-bottom: 3rem;">Del caos a la tranquilidad en tiempo récord. Te acompañamos en cada paso.</p>
+
+                <div class="steps-vertical">
+                    <div class="step-v">
+                        <div class="step-v-marker">
+                            <div class="step-v-number">1</div>
+                            <div class="step-v-line"></div>
+                        </div>
+                        <div class="step-v-content">
+                            <h4>Configuración</h4>
+                            <p>Mapeamos tus procesos actuales y pre-configuramos la plataforma a tu medida.</p>
+                        </div>
+                    </div>
+                    <div class="step-v">
+                        <div class="step-v-marker">
+                            <div class="step-v-number active">2</div>
+                            <div class="step-v-line"></div>
+                        </div>
+                        <div class="step-v-content">
+                            <h4>Migración</h4>
+                            <p>Importamos tus clientes, productos y saldos iniciales desde Excel de forma masiva.</p>
+                        </div>
+                    </div>
+                    <div class="step-v">
+                        <div class="step-v-marker">
+                            <div class="step-v-number">3</div>
+                        </div>
+                        <div class="step-v-content">
+                            <h4>Go-Live</h4>
+                            <p>Capacitamos a tu equipo y encendemos el sistema. Operación 100% controlada.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="onboarding-badge-row">
+                    <div class="onboarding-badge"><i class="fa-solid fa-clock"></i> Setup en 48h</div>
+                    <div class="onboarding-badge"><i class="fa-solid fa-headset"></i> Soporte dedicado</div>
+                    <div class="onboarding-badge"><i class="fa-solid fa-shield-halved"></i> Sin riesgo</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Formulario -->
+        <div class="piloto-col reveal">
+            <div class="piloto-col-content">
+                <div class="piloto-form-card">
+                    <div class="piloto-form-header">
+                        <h3>Solicita tu Piloto Gratis</h3>
+                        <p>Prueba el poder de Edatia en tu negocio por <strong>15 días sin costo</strong>.</p>
+                    </div>
+
+                    <form id="piloto-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <input type="text" id="piloto-nombre" class="form-input" placeholder=" " required>
+                                <label for="piloto-nombre" class="form-label">Nombre Completo</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="piloto-email" class="form-input" placeholder=" " required>
+                                <label for="piloto-email" class="form-label">Correo Electrónico Corporativo</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" id="piloto-telefono" class="form-input" placeholder=" " required>
+                                <label for="piloto-telefono" class="form-label">Celular / WhatsApp</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="piloto-empresa" class="form-input" placeholder=" " required>
+                                <label for="piloto-empresa" class="form-label">NIT o Nombre de la Empresa</label>
+                            </div>
+                        </div>
+
+                        <h3 class="form-modules-title">Módulos que te interesa probar:</h3>
+                        <div class="form-modules-grid">
+                            <label class="module-checkbox-label">
+                                <input type="checkbox" name="modulos_interes" value="ventas">
+                                <div class="checkbox-custom"></div>
+                                <span>Ventas y POS</span>
+                            </label>
+                            <label class="module-checkbox-label">
+                                <input type="checkbox" name="modulos_interes" value="contabilidad">
+                                <div class="checkbox-custom"></div>
+                                <span>Contabilidad</span>
+                            </label>
+                            <label class="module-checkbox-label">
+                                <input type="checkbox" name="modulos_interes" value="inventario">
+                                <div class="checkbox-custom"></div>
+                                <span>Inventario</span>
+                            </label>
+                            <label class="module-checkbox-label">
+                                <input type="checkbox" name="modulos_interes" value="ecommerce">
+                                <div class="checkbox-custom"></div>
+                                <span>E-Commerce</span>
+                            </label>
+                            <label class="module-checkbox-label">
+                                <input type="checkbox" name="modulos_interes" value="admin">
+                                <div class="checkbox-custom"></div>
+                                <span>Administrativo</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="form-submit-btn" id="submit-btn">
+                            <i class="fa-brands fa-whatsapp" style="font-size: 1.4rem;"></i>
+                            <span>Enviar solicitud vía WhatsApp</span>
+                        </button>
+                    </form>
+
+                    <!-- Contenedor de éxito (inicialmente oculto) -->
+                    <div class="piloto-success" id="piloto-success">
+                        <div class="success-icon-container">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h2>¡Redirigiendo a WhatsApp!</h2>
+                        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto; margin-bottom: 1.5rem;">Hemos estructurado tu mensaje de solicitud. Serás redirigido a WhatsApp para completar el envío. Si no se abre la ventana, haz clic abajo:</p>
+                        <a id="whatsapp-retry-btn" href="#" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 12px; background: #25D366; color: #ffffff; font-weight: 600; font-family: 'Space Grotesk', sans-serif;">
+                            <i class="fa-brands fa-whatsapp"></i> Enviar Mensaje por WhatsApp
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- SLIDE 12: Beneficios -->
-    <section id="slide-12" class="slide-section bg-white">
-        <div class="max-w-6xl mx-auto w-full"><h2 class="text-4xl md:text-5xl font-bold text-center text-brand-dark mb-16">¿Por qué Edatia?</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="p-6 bg-slate-50 rounded-2xl"><i data-lucide="package-search" class="w-10 h-10 text-brand-blue mb-4"></i><h4 class="font-bold text-xl mb-2">Control total</h4></div>
-                <div class="p-6 bg-slate-50 rounded-2xl"><i data-lucide="zap" class="w-10 h-10 text-brand-green mb-4"></i><h4 class="font-bold text-xl mb-2">Registro rápido</h4></div>
-                <div class="p-6 bg-slate-50 rounded-2xl"><i data-lucide="globe-2" class="w-10 h-10 text-purple-500 mb-4"></i><h4 class="font-bold text-xl mb-2">Integración Digital</h4></div>
-            </div>
-        </div>
-    </section>
 
-    <!-- SLIDE 13: Demo Visual -->
-    <section id="slide-13" class="slide-section bg-brand-lightblue overflow-hidden relative">
-        <div class="max-w-7xl mx-auto w-full z-10 relative text-center">
-            <h2 class="text-4xl font-bold text-white mb-10">Experiencia visual</h2>
-            <div class="w-full max-w-5xl mx-auto bg-slate-900 rounded-lg shadow-2xl h-auto min-h-[300px]"></div>
-        </div>
-    </section>
+    <footer style="padding: 3rem 5%; text-align: center; opacity: 0.4; font-size: 0.7rem; letter-spacing: 2px; color: var(--text-secondary);">
+        © 2026 EDATIA GRUPO EMPRESARIAL.
+    </footer>
 
-    <!-- SLIDE 14: Soporte -->
-    <section id="slide-14" class="slide-section bg-slate-50">
-        <div class="max-w-6xl mx-auto w-full">
-            <h2 class="text-4xl md:text-5xl font-bold text-brand-dark mb-6">Soporte y Seguimiento</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12">
-                <div class="flex gap-4 items-start"><i data-lucide="file-text" class="text-brand-blue"></i><h4 class="font-bold">Manuales por Módulo</h4></div>
-                <div class="flex gap-4 items-start"><i data-lucide="message-square" class="text-emerald-600"></i><h4 class="font-bold">Ticket & Chat</h4></div>
-            </div>
-        </div>
-    </section>
 
-    <!-- SLIDE 15: CTA -->
-    <section id="cta" class="slide-section bg-brand-dark relative overflow-hidden">
-        <div class="max-w-4xl mx-auto text-center z-10">
-            <h2 class="text-5xl md:text-6xl font-extrabold text-white mb-6">El momento es <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-green">ahora</span>.</h2>
-            <a href="mailto:comercial@edatia.com" class="bg-gradient-to-r from-brand-blue to-brand-green text-white px-10 py-5 rounded-full text-xl font-bold mt-10 inline-block shadow-lg">Iniciar mi piloto de 14 días</a>
-        </div>
-    </section>
-
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        lucide.createIcons();
-        AOS.init();
-        const sections = document.querySelectorAll('.slide-section');
-        const progressBar = document.getElementById('progress-bar');
-        const indicator = document.getElementById('slide-indicator');
-        window.addEventListener('scroll', () => {
-            const scrolled = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-            progressBar.style.width = scrolled + "%";
-            let current = 0;
-            sections.forEach((sec, i) => { if(sec.getBoundingClientRect().top <= window.innerHeight/2) current = i + 1; });
-            indicator.textContent = `Slide ${current} de ${sections.length}`;
+        // LÓGICA DEL SIMULADOR INTERACTIVO DE ERP
+        
+        function switchPreviewTab(tabName) {
+            // Cambiar clase activa en los botones
+            const buttons = document.querySelectorAll('.module-menu-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            const activeBtn = document.querySelector(`.btn-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            // Cambiar clase activa en los tab content
+            const tabs = document.querySelectorAll('.preview-tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const activeTab = document.getElementById(`preview-${tabName}`);
+            if (activeTab) activeTab.classList.add('active');
+            
+            // Cambiar texto de la barra de direcciones virtual
+            const urlBar = document.getElementById('preview-url');
+            if (urlBar) {
+                urlBar.textContent = `erp.edatia.com/${tabName === 'ventas' ? 'ventas-pos' : tabName}`;
+            }
+
+            // Si es el tab de contabilidad, re-lanzar animación del SVG
+            if (tabName === 'contabilidad') {
+                const line = document.querySelector('.chart-line');
+                if (line) {
+                    line.style.animation = 'none';
+                    line.offsetHeight; // Trigger reflow
+                    line.style.animation = 'drawLine 2s ease forwards';
+                }
+            }
+        }
+
+        // --- 1. LÓGICA POS VENTAS ---
+        let posCart = [];
+        function addPosItem(name, price, icon) {
+            const existing = posCart.find(item => item.name === name);
+            if (existing) {
+                existing.qty++;
+            } else {
+                posCart.push({ name, price, qty: 1 });
+            }
+            renderPosReceipt();
+        }
+
+        function renderPosReceipt() {
+            const container = document.getElementById('receipt-items');
+            const totalVal = document.getElementById('receipt-total-val');
+            const billingBtn = document.getElementById('pos-billing-btn');
+            
+            if (!container) return;
+            
+            if (posCart.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #64748b; margin-top: 2rem; font-size: 0.8rem;">El ticket está vacío.<br>Agrega productos a la izquierda.</div>`;
+                totalVal.textContent = '$0';
+                billingBtn.disabled = true;
+                return;
+            }
+            
+            let html = '';
+            let total = 0;
+            posCart.forEach(item => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                html += `
+                    <div class="receipt-item">
+                        <span>${item.qty}x ${item.name}</span>
+                        <span>$${subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            totalVal.textContent = `$${total.toLocaleString('es-CO')}`;
+            billingBtn.disabled = false;
+        }
+
+        function billPos() {
+            const billingBtn = document.getElementById('pos-billing-btn');
+            const container = document.getElementById('receipt-items');
+            
+            billingBtn.disabled = true;
+            billingBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Firmando con DIAN...';
+            
+            setTimeout(() => {
+                billingBtn.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Factura Autorizada';
+                container.innerHTML = `
+                    <div style="text-align: center; color: #10b981; margin-top: 1.5rem; font-size: 0.85rem;">
+                        <i class="fa-solid fa-circle-check" style="font-size: 2.5rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <strong>FACTURA ELECTRÓNICA DIAN</strong><br>
+                        Autorizada con éxito.<br>
+                        <span style="font-size: 0.7rem; color: #64748b; font-family: monospace;">CUFE: 8df4...71b2</span>
+                    </div>
+                `;
+                
+                // Reiniciar carro tras 3 segundos
+                setTimeout(() => {
+                    posCart = [];
+                    renderPosReceipt();
+                    billingBtn.innerHTML = '<i class="fa-solid fa-file-invoice-dollar"></i> Facturar Electrónicamente (DIAN)';
+                }, 3000);
+            }, 1500);
+        }
+
+        // --- 2. LÓGICA INVENTARIO ---
+        let originalStock = 12;
+        let originalProgress = 45;
+        function replenishStock() {
+            const stockVal = document.getElementById('stock-val-1');
+            const stockBadge = document.getElementById('stock-badge-1');
+            const progress = document.getElementById('stock-progress');
+            const progressText = document.getElementById('stock-percentage-text');
+            
+            if (!stockVal) return;
+            
+            originalStock += 50;
+            originalProgress = Math.min(originalProgress + 15, 100);
+            
+            stockVal.textContent = `${originalStock} Unidades`;
+            stockBadge.className = 'badge-status badge-ok';
+            stockBadge.textContent = 'Disponible';
+            progress.style.width = `${originalProgress}%`;
+            progressText.textContent = `${originalProgress}%`;
+        }
+
+        // --- 3. LÓGICA E-COMMERCE ---
+        function simulateEcomPurchase(name, price) {
+            const list = document.getElementById('erp-sync-list');
+            if (!list) return;
+            
+            // Quitar mensaje de vacío si existe
+            if (list.querySelector('div')) {
+                list.innerHTML = '';
+            }
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const item = document.createElement('div');
+            item.className = 'erp-sync-item';
+            item.innerHTML = `
+                <strong>[WEB] Pedido Recibido</strong> - ${time}<br>
+                <span>${name} | $${price.toLocaleString('es-CO')}</span><br>
+                <small style="color: #94a3b8;">Sincronizado & Contabilizado</small>
+            `;
+            
+            list.insertBefore(item, list.firstChild);
+        }
+
+        // --- 4. LÓGICA ADMINISTRATIVO Y RECURSOS HUMANOS ---
+        function runPayroll() {
+            const runBtn = document.getElementById('payroll-run-btn');
+            const status1 = document.getElementById('payroll-status-1');
+            const status2 = document.getElementById('payroll-status-2');
+            
+            if (!runBtn) return;
+            
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando devengados...';
+            
+            setTimeout(() => {
+                runBtn.innerHTML = '<i class="fa-solid fa-circle-nodes fa-spin"></i> Dispersando fondos bancarios...';
+                
+                setTimeout(() => {
+                    runBtn.style.background = '#10b981';
+                    runBtn.style.color = '#ffffff';
+                    runBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Nómina Pagada Exitosamente';
+                    
+                    status1.className = 'payroll-status status-paid';
+                    status1.textContent = 'Pagado';
+                    status2.className = 'payroll-status status-paid';
+                    status2.textContent = 'Pagado';
+                    
+                    // Restablecer pasados 4 segundos
+                    setTimeout(() => {
+                        runBtn.disabled = false;
+                        runBtn.style.background = '#06b6d4';
+                        runBtn.style.color = '#0f172a';
+                        runBtn.innerHTML = '<i class="fa-solid fa-calculator"></i> Liquidar y Dispersar Nómina';
+                        
+                        status1.className = 'payroll-status status-pending';
+                        status1.textContent = 'Pendiente';
+                        status2.className = 'payroll-status status-pending';
+                        status2.textContent = 'Pendiente';
+                    }, 4000);
+                }, 1500);
+            }, 1200);
+        }
+
+        function sendClimateSurvey() {
+            const surveyBtn = document.getElementById('survey-btn');
+            const enpsVal = document.getElementById('enps-score-val');
+            const responsesCount = document.getElementById('enps-responses-count');
+            const satPctText = document.getElementById('satisfaction-pct-text');
+            const satBar = document.getElementById('satisfaction-bar');
+            
+            if (!surveyBtn) return;
+            
+            surveyBtn.disabled = true;
+            surveyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando a colaboradores...';
+            
+            setTimeout(() => {
+                surveyBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Encuestas Enviadas';
+                
+                // Simular recepción de respuestas
+                setTimeout(() => {
+                    surveyBtn.innerHTML = '<i class="fa-solid fa-chart-simple"></i> Recibiendo respuestas...';
+                    
+                    setTimeout(() => {
+                        enpsVal.style.color = '#10b981';
+                        enpsVal.textContent = '+82';
+                        responsesCount.textContent = 'Basado en 28 respuestas';
+                        satPctText.textContent = '94%';
+                        satBar.style.width = '94%';
+                        
+                        surveyBtn.style.borderColor = '#10b981';
+                        surveyBtn.style.color = '#10b981';
+                        surveyBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Clima Actualizado';
+                        
+                        // Restablecer pasados 5 segundos
+                        setTimeout(() => {
+                            surveyBtn.disabled = false;
+                            surveyBtn.style.borderColor = '#10b981';
+                            surveyBtn.style.color = '#10b981';
+                            surveyBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Encuesta de Clima';
+                            
+                            enpsVal.style.color = '#06b6d4';
+                            enpsVal.textContent = '+74';
+                            responsesCount.textContent = 'Basado en 15 respuestas';
+                            satPctText.textContent = '88%';
+                            satBar.style.width = '88%';
+                        }, 5000);
+                    }, 1200);
+                }, 1000);
+            }, 1200);
+        }
+
+        // --- SLIDER DE CLIENTES ---
+        let clienteSlideActual = 0;
+        const totalClienteSlides = 5;
+        const INTERVALO_MS = 10000;
+        let clienteTimer = null;
+
+        function goToClienteSlide(index) {
+            const slides = document.querySelectorAll('.clientes-slide');
+            const dots   = document.querySelectorAll('.cliente-dot');
+            if (!slides.length || !dots.length) return;
+
+            slides[clienteSlideActual].classList.remove('active');
+            dots[clienteSlideActual].classList.remove('active');
+
+            clienteSlideActual = (index + totalClienteSlides) % totalClienteSlides;
+
+            slides[clienteSlideActual].classList.add('active');
+            dots[clienteSlideActual].classList.add('active');
+
+            resetClienteTimer();
+        }
+
+        function resetClienteTimer() {
+            clearTimeout(clienteTimer);
+            clienteTimer = setTimeout(() => {
+                goToClienteSlide(clienteSlideActual + 1);
+            }, INTERVALO_MS);
+        }
+
+        resetClienteTimer();
+
+        // --- LÓGICA GENERAL EXISTENTE ---
+
+
+        // Lógica de Precios (Mensual vs Anual Toggle)
+        const pricingSwitch = document.getElementById('pricing-switch');
+        const labelMensual = document.getElementById('label-mensual');
+        const labelAnual = document.getElementById('label-anual');
+        
+        // Elementos de Precios
+        const priceBasico = document.getElementById('price-basico');
+        const priceEstandar = document.getElementById('price-estandar');
+        const pricePremium = document.getElementById('price-premium');
+
+        const precios = {
+            mensual: {
+                basico: '$99.000',
+                estandar: '$199.000',
+                premium: '$399.000'
+            },
+            anual: {
+                basico: '$79.000',
+                estandar: '$159.000',
+                premium: '$319.000'
+            }
+        };
+
+        pricingSwitch.addEventListener('click', () => {
+            const isAnual = pricingSwitch.classList.toggle('active');
+            
+            if (isAnual) {
+                labelMensual.classList.remove('active');
+                labelAnual.classList.add('active');
+                animatePrice(priceBasico, precios.anual.basico);
+                animatePrice(priceEstandar, precios.anual.estandar);
+                animatePrice(pricePremium, precios.anual.premium);
+            } else {
+                labelMensual.classList.add('active');
+                labelAnual.classList.remove('active');
+                animatePrice(priceBasico, precios.mensual.basico);
+                animatePrice(priceEstandar, precios.mensual.estandar);
+                animatePrice(pricePremium, precios.mensual.premium);
+            }
+        });
+
+        function animatePrice(element, newPrice) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                element.textContent = newPrice;
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, 200);
+        }
+
+        // Lógica de selección de plan e integración con formulario
+        function selectPlan(planName) {
+            // Llenar por defecto módulos recomendados basados en el plan
+            const checkboxes = document.querySelectorAll('input[name="modulos_interes"]');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                cb.closest('.module-checkbox-label').classList.remove('checked');
+            });
+
+            if (planName === 'Básico') {
+                selectCheckbox('ventas');
+            } else if (planName === 'Estándar') {
+                selectCheckbox('ventas');
+                selectCheckbox('contabilidad');
+                selectCheckbox('inventario');
+            } else if (planName === 'Premium') {
+                selectCheckbox('ventas');
+                selectCheckbox('contabilidad');
+                selectCheckbox('inventario');
+                selectCheckbox('ecommerce');
+                selectCheckbox('admin');
+            }
+
+            // Scroll suave hacia el formulario
+            const formSection = document.getElementById('solicitar-piloto');
+            if (formSection) {
+                formSection.scrollIntoView({ behavior: 'smooth' });
+                // Enfoque en el primer campo
+                setTimeout(() => {
+                    const nombreInput = document.getElementById('piloto-nombre');
+                    if (nombreInput) nombreInput.focus();
+                }, 800);
+            }
+        }
+
+        function selectCheckbox(val) {
+            const cb = document.querySelector(`input[name="modulos_interes"][value="${val}"]`);
+            if (cb) {
+                cb.checked = true;
+                cb.closest('.module-checkbox-label').classList.add('checked');
+            }
+        }
+
+        // Estilos dinámicos para los checkbox al hacer clic
+        const checkLabels = document.querySelectorAll('.module-checkbox-label');
+        checkLabels.forEach(label => {
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    label.classList.add('checked');
+                } else {
+                    label.classList.remove('checked');
+                }
+            });
+        });
+
+        // Manejo del Formulario de Piloto con redirección a WhatsApp
+        const pilotoForm = document.getElementById('piloto-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const pilotoSuccess = document.getElementById('piloto-success');
+        const whatsappRetryBtn = document.getElementById('whatsapp-retry-btn');
+
+        pilotoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Animación de Carga
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.8';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Estructurando Mensaje...</span>';
+
+            // Obtener valores del formulario
+            const nombre = document.getElementById('piloto-nombre').value.trim();
+            const email = document.getElementById('piloto-email').value.trim();
+            const telefono = document.getElementById('piloto-telefono').value.trim();
+            const empresa = document.getElementById('piloto-empresa').value.trim();
+
+            // Módulos de interés
+            const selectedModules = [];
+            document.querySelectorAll('input[name="modulos_interes"]:checked').forEach(cb => {
+                const labelSpan = cb.closest('.module-checkbox-label').querySelector('span');
+                if (labelSpan) {
+                    selectedModules.push(labelSpan.textContent.trim());
+                }
+            });
+
+            // Construir mensaje estructurado
+            let message = `¡Hola Edatia! 👋\n\n`;
+            message += `Quiero solicitar el piloto gratis de 15 días para mi negocio.\n\n`;
+            message += `📋 *Datos de la Solicitud:*\n`;
+            message += `• *Nombre:* ${nombre}\n`;
+            message += `• *Empresa/NIT:* ${empresa}\n`;
+            message += `• *Correo:* ${email}\n`;
+            message += `• *Celular/WhatsApp:* ${telefono}\n\n`;
+            
+            if (selectedModules.length > 0) {
+                message += `⚙️ *Módulos seleccionados:*\n`;
+                selectedModules.forEach(mod => {
+                    message += `  - ${mod}\n`;
+                });
+            } else {
+                message += `⚙️ *Módulos:* Ninguno especificado.\n`;
+            }
+            message += `\n¡Quedo atento para la activación! 🚀`;
+
+            // Número oficial de WhatsApp
+            const phoneNumber = '573168285514';
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+
+            // Asignar el enlace al botón de reintento manual
+            if (whatsappRetryBtn) {
+                whatsappRetryBtn.href = whatsappUrl;
+            }
+
+            setTimeout(() => {
+                // Mostrar pantalla de éxito
+                pilotoForm.style.display = 'none';
+                pilotoSuccess.style.display = 'flex';
+                
+                // Abrir WhatsApp en una pestaña nueva
+                window.open(whatsappUrl, '_blank');
+                
+                // Scroll suave al contenedor de éxito
+                pilotoSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 1000);
+        });
+
+        // Animación al hacer scroll
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+            observer.observe(el);
         });
     </script>
 </body>
