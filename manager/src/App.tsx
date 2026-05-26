@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/Login';
+import { RegistroClientePublico } from '@/pages/RegistroClientePublico';
 import { DashboardPage } from '@/pages/Dashboard';
 import { ClientesPage } from '@/pages/Clientes';
 import { ClienteForm } from '@/pages/ClienteForm';
@@ -42,8 +43,10 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/registro" element={<RegistroClientePublico />} />
 
               <Route element={<AppLayout />}>
+
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 {/* ADMINISTRACIÓN */}
                 <Route element={<RoleGuard roles={['ADMIN']} />}>

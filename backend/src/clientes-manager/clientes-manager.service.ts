@@ -425,4 +425,96 @@ export class ClientesManagerService {
 
     return { message: 'Usuario del ERP eliminado exitosamente' };
   }
+
+  /**
+   * Valida las credenciales de un comercial usando su número de cédula (código) y contraseña.
+   */
+  async validateCommercial(code: string, pass: string) {
+    const trimmedCode = code.trim();
+    
+    const colaborador = await (this.prisma as any).colaborador.findFirst({
+      where: {
+        numeroDocumento: trimmedCode,
+        activo: true,
+      },
+    });
+
+    if (!colaborador) {
+      throw new UnauthorizedException('El código comercial (cédula) ingresado no corresponde a ningún colaborador activo.');
+    }
+
+    if (colaborador.rol !== 'COMERCIAL' && colaborador.rol !== 'ADMIN') {
+      throw new UnauthorizedException('El colaborador encontrado no tiene perfil comercial o administrativo.');
+    }
+
+    const passwordValid = await bcrypt.compare(pass, colaborador.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Contraseña del comercial incorrecta.');
+    }
+
+    return {
+      valid: true,
+      advisor: {
+        id: colaborador.id,
+        nombre: colaborador.nombre,
+        email: colaborador.email,
+        rol: colaborador.rol,
+      },
+    };
+  }
+
+  /**
+   * Registra públicamente un prospecto de cliente con opcional asesor, plan base y módulos.
+   */
+  async createPublic(dto: any) {
+    const existing = await (this.prisma as any).clienteManager.findFirst({
+      where: { nit: dto.nit },
+    });
+
+    if (existing) {
+      throw new ConflictException('Ya existe una empresa o tercero registrado con este número de identificación.');
+    }
+
+    const data: Record<string, any> = {
+      tipoPersona: dto.tipoPersona || null,
+      tipoDocumento: dto.tipoDocumento || null,
+      nit: dto.nit,
+      digitoVerificacion: dto.digitoVerificacion || null,
+      nombre: dto.nombre,
+      pais: dto.pais || 'Colombia',
+      departamento: dto.departamento || null,
+      ciudad: dto.ciudad || null,
+      direccion: dto.direccion || null,
+      email: dto.email || null,
+      telefono: dto.telefono || null,
+      contacto: dto.contacto || null,
+      estado: 'PROSPECTO',
+      observaciones: dto.observaciones || null,
+    };
+
+    if (dto.asesorId) {
+      data.asesorId = Number(dto.asesorId);
+    }
+    if (dto.planBaseId) {
+      data.planBaseId = Number(dto.planBaseId);
+    }
+
+    const nuevoCliente = await (this.prisma as any).clienteManager.create({ data });
+
+    // Vincular módulos si se seleccionaron
+    if (dto.modulosIds && Array.isArray(dto.modulosIds)) {
+      for (const mId of dto.modulosIds) {
+        await (this.prisma as any).planCliente.create({
+          data: {
+            clienteId: nuevoCliente.id,
+            moduloId: Number(mId),
+            activo: true,
+          },
+        });
+      }
+    }
+
+    return nuevoCliente;
+  }
 }
+

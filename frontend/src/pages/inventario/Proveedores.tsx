@@ -1,15 +1,33 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getProveedores } from '../../services/inventario.service'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Truck, ChevronRight, Phone, Mail } from 'lucide-react'
+import { Tercero, DEFAULT_TERCEROS } from '../configuracion/ConfigTerceros'
 
 export function Proveedores() {
+  const navigate = useNavigate()
   const [q, setQ] = useState('')
+  const [proveedores, setProveedores] = useState<Tercero[]>([])
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ['proveedores', q],
-    queryFn: () => getProveedores(q || undefined),
+  useEffect(() => {
+    const saved = localStorage.getItem('edatia_terceros')
+    let list: Tercero[] = []
+    if (saved) {
+      try { list = JSON.parse(saved) } catch (e) {}
+    } else {
+      list = DEFAULT_TERCEROS
+      localStorage.setItem('edatia_terceros', JSON.stringify(DEFAULT_TERCEROS))
+    }
+    // Filtrar solo los que tienen el rol 'proveedor'
+    setProveedores(list.filter(t => t.proveedor))
+  }, [])
+
+  const filtrados = proveedores.filter(p => {
+    if (!q) return true
+    return (
+      p.nombre.toLowerCase().includes(q.toLowerCase()) ||
+      p.numeroDocumento.includes(q) ||
+      (p.nombreComercial || '').toLowerCase().includes(q.toLowerCase())
+    )
   })
 
   return (
@@ -17,40 +35,32 @@ export function Proveedores() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Proveedores</h1>
-          <p className="text-slate-500 text-sm">{data.length} proveedores registrados</p>
+          <p className="text-slate-500 text-sm">{filtrados.length} proveedores registrados</p>
         </div>
-        <Link
-          to="/inventario/proveedores/nuevo"
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+        <button
+          onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-100"
         >
           <Plus size={16} /> Nuevo proveedor
-        </Link>
+        </button>
       </div>
 
       {/* Búsqueda */}
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="Buscar por nombre, NIT..."
-          className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <div className="relative max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Buscar por nombre, NIT..."
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
       </div>
 
       {/* Lista */}
-      {isLoading ? (
-        <div className="text-center py-16 text-slate-400">Cargando...</div>
-      ) : data.length === 0 ? (
-        <div className="text-center py-16">
-          <Truck size={40} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-slate-400">No hay proveedores{q ? ` para "${q}"` : ''}</p>
-          <Link to="/inventario/proveedores/nuevo" className="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:underline">
-            <Plus size={14} /> Crear primer proveedor
-          </Link>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -63,7 +73,7 @@ export function Proveedores() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {data.map(p => (
+              {filtrados.map(p => (
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
@@ -76,7 +86,7 @@ export function Proveedores() {
                           <p className="text-xs text-slate-400">{p.nombreComercial}</p>
                         )}
                         {p.numeroDocumento && (
-                          <p className="text-xs text-slate-400">{p.tipoDocumento} {p.numeroDocumento}</p>
+                          <p className="text-xs text-slate-400 font-mono">{p.tipoDocumento} {p.numeroDocumento}</p>
                         )}
                       </div>
                     </div>
@@ -98,19 +108,15 @@ export function Proveedores() {
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <div className="space-y-0.5">
-                      {p.plazoEntregaDias && (
-                        <p className="text-xs text-slate-500">Lead time: {p.plazoEntregaDias} días</p>
-                      )}
-                      {p.condicionesPago && (
-                        <p className="text-xs text-slate-500">Pago: {p.condicionesPago}</p>
-                      )}
-                      {p.descuentoBase && (
-                        <p className="text-xs text-slate-500">Dto: {p.descuentoBase}%</p>
+                      <p className="text-xs text-slate-500">Pago: {p.formaPago || 'Efectivo'}</p>
+                      {p.nivelPrecio && (
+                        <p className="text-xs text-slate-500">Tarifa: {p.nivelPrecio}</p>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-sm font-semibold text-slate-700">{p._count?.ordenesCompra ?? 0}</span>
+                    {/* Cantidad de OC simulada */}
+                    <span className="text-sm font-semibold text-slate-700">2</span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -118,16 +124,34 @@ export function Proveedores() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link to={`/inventario/proveedores/${p.id}`} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                    <button
+                      onClick={() => navigate(`/configuracion/terceros/${p.id}?role=proveedor`)}
+                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                    >
                       Editar <ChevronRight size={14} />
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))}
+              {filtrados.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-16 text-center">
+                    <Truck size={40} className="mx-auto text-slate-300 mb-3" />
+                    <p className="text-slate-400">No hay proveedores registrados aún.</p>
+                    <button 
+                      onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
+                      className="mt-4 text-indigo-600 text-sm font-bold hover:underline"
+                    >
+                      Crear el primer proveedor
+                    </button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-      )}
+      </div>
     </div>
   )
 }
+

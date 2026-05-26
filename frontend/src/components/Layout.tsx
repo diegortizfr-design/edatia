@@ -4,7 +4,8 @@ import {
   LayoutDashboard, ChevronDown, Truck, ShoppingCart, AlertTriangle, 
   BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, 
   Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, 
-  Monitor, Building2, Globe, ChevronLeft, ChevronRight, Menu 
+  Monitor, Building2, Globe, ChevronLeft, ChevronRight, Menu, Percent, Coins, Store, Wallet,
+  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -85,7 +86,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar_collapsed')
-    return saved === 'true'
+    return saved !== null ? saved === 'true' : true
   })
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -93,8 +94,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     ventas: location.pathname.startsWith('/ventas'),
     contabilidad: location.pathname.startsWith('/contabilidad'),
     digital: location.pathname.startsWith('/digital'),
-    config: location.pathname.startsWith('/configuracion'),
+    config: location.pathname.startsWith('/configuracion') && !location.pathname.startsWith('/configuracion/productos') && !location.pathname.startsWith('/configuracion/terceros'),
+    configProductos: location.pathname.startsWith('/configuracion/productos'),
+    seguridad: location.pathname.startsWith('/seguridad'),
+    terceros: location.pathname.startsWith('/configuracion/terceros'),
   })
+
+
+  // Auto-colapsar menú al cambiar de ruta para priorizar el área de visualización
+  useEffect(() => {
+    setIsCollapsed(true)
+  }, [location.pathname])
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', String(isCollapsed))
@@ -171,6 +181,48 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="py-2">
+            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
+            <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
+              <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={isCollapsed} />
+              <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />
+            </NavGroup>
+
+            <NavGroup label="Gestión de Terceros" icon={<Users size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.terceros} onClick={() => toggleGroup('terceros')}>
+              <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
+              <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Codigos CIIU" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/clasificaciones" icon={<Layers size={14}/>} label="Clasificacion de tercero" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Tipo de Identificación" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/tipos-regimen" icon={<Shield size={14}/>} label="Tipo de Regimen" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Regimen Tributario" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/reportes-pagos" icon={<Receipt size={14}/>} label="Reportes Pagos" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/tags" icon={<Tag size={14}/>} label="Tags" isCollapsed={isCollapsed} />
+            </NavGroup>
+
+
+            <NavGroup label="Productos" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.configProductos} onClick={() => toggleGroup('configProductos')}>
+              <NavItem to="/configuracion/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} end={true} />
+              <NavItem to="/configuracion/productos/maestros" icon={<SlidersHorizontal size={14}/>} label="Maestros" isCollapsed={isCollapsed} />
+            </NavGroup>
+
+            <NavGroup label="Seguridad" icon={<ShieldAlert size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.seguridad} onClick={() => toggleGroup('seguridad')}>
+              <NavItem to="/seguridad/usuarios" icon={<Users size={14}/>} label="Usuarios" isCollapsed={isCollapsed} />
+              <NavItem to="/seguridad/roles" icon={<Shield size={14}/>} label="Roles" isCollapsed={isCollapsed} />
+              <NavItem to="/seguridad/notificaciones" icon={<Bell size={14}/>} label="Notificaciones" isCollapsed={isCollapsed} />
+              <NavItem to="/seguridad/cierre-periodo" icon={<Lock size={14}/>} label="Cierre Periodo" isCollapsed={isCollapsed} />
+              <NavItem to="/seguridad/auditoria" icon={<ClipboardList size={14}/>} label="Auditoría" isCollapsed={isCollapsed} />
+            </NavGroup>
+          </div>
+
+          <div className="py-2">
             {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Operaciones</p>}
             
             {hasModule('inventario') && (
@@ -212,18 +264,52 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </NavGroup>
             </div>
           )}
-
-          <div className="py-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Soporte</p>}
-            <NavGroup label="Configuración" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
-              <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Mi Empresa" isCollapsed={isCollapsed} />
-              <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />
-            </NavGroup>
-          </div>
         </nav>
 
-        {/* Sidebar Footer / Collapse Trigger */}
-        <div className="p-4 border-t border-slate-100">
+        {/* Sidebar Footer (Profile + Logout + Collapse Trigger) */}
+        <div className="p-4 border-t border-slate-100 space-y-3 shrink-0">
+          {/* User Profile & Logout Box */}
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 font-bold text-sm">
+                  {user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="min-w-0 leading-tight">
+                  <p className="text-xs font-bold text-slate-700 truncate">{user?.nombre ?? user?.usuario}</p>
+                  <p className="text-[9px] font-semibold text-indigo-500 uppercase tracking-wider">{user?.rol ?? 'Usuario'}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                title="Cerrar sesión"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm cursor-pointer group relative">
+                {user?.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'}
+                <div className="absolute left-12 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[60] whitespace-nowrap">
+                  {user?.nombre ?? user?.usuario} ({user?.rol ?? 'Usuario'})
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors group relative"
+                title="Cerrar sesión"
+              >
+                <LogOut size={16} />
+                <div className="absolute left-12 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[60] whitespace-nowrap">
+                  Cerrar sesión
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Collapse Button */}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="w-full flex items-center justify-center p-2 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
@@ -235,38 +321,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* HEADER */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 z-40 shadow-sm">
-          <div className="flex items-center gap-4">
-             <h2 className="text-sm font-medium text-slate-500 capitalize">
-               {location.pathname.split('/').filter(Boolean).join(' / ') || 'Dashboard'}
-             </h2>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                <User size={18} />
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 leading-tight">{user?.nombre ?? user?.usuario}</p>
-                <p className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider">{user?.rol ?? 'Usuario'}</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut size={20} />
-            </button>
-          </div>
-        </header>
-
         {/* CONTENT */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-6 lg:p-10 custom-scrollbar relative">
-          <div className="max-w-7xl mx-auto">
+          {/* Marca de agua translúcida de EDATIA */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-[0.03] p-10">
+            <svg viewBox="0 0 100 100" className="w-80 h-80 max-w-full">
+              <defs>
+                <linearGradient id="watermarkGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#1E293B" />
+                  <stop offset="100%" stopColor="#4F46E5" />
+                </linearGradient>
+              </defs>
+              <rect x="5" y="5" width="90" height="90" rx="20" fill="url(#watermarkGradient)" />
+              <rect x="25" y="60" width="8" height="15" rx="2" fill="white" />
+              <rect x="40" y="45" width="8" height="30" rx="2" fill="white" />
+              <rect x="55" y="52" width="8" height="23" rx="2" fill="white" />
+              <rect x="70" y="35" width="8" height="40" rx="2" fill="white" />
+              <path d="M29 60 L44 45 L59 52 L74 35" stroke="#60A5FA" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <circle cx="29" cy="60" r="3" fill="#60A5FA" />
+              <circle cx="44" cy="45" r="3" fill="#60A5FA" />
+              <circle cx="59" cy="52" r="3" fill="#60A5FA" />
+              <circle cx="74" cy="35" r="3" fill="#60A5FA" />
+            </svg>
+            <span className="text-6xl font-black tracking-[0.25em] text-slate-800 mt-6 select-none">EDATIA</span>
+          </div>
+
+          <div className="w-full relative z-10">
             {children}
           </div>
         </main>

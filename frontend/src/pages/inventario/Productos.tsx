@@ -50,11 +50,6 @@ export function Productos() {
           <h1 className="text-2xl font-bold text-slate-800">Productos</h1>
           <p className="text-slate-500 text-sm">{data.length} productos</p>
         </div>
-        <Link to="/inventario/productos/nuevo"
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-          <Plus size={16} />
-          Nuevo producto
-        </Link>
       </div>
 
       {/* Filtros */}
@@ -82,9 +77,6 @@ export function Productos() {
           <div className="text-center py-16">
             <Package size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-slate-400">No hay productos{q ? ` para "${q}"` : ''}</p>
-            <Link to="/inventario/productos/nuevo" className="mt-3 inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:underline">
-              <Plus size={14} /> Crear primer producto
-            </Link>
           </div>
         ) : (
           <table className="w-full text-sm">

@@ -43,6 +43,27 @@ import { ConfigDian } from './pages/ventas/ConfigDian'
 
 // ── Configuración ──
 import { ConfigEmpresa } from './pages/configuracion/ConfigEmpresa'
+import { ConfigDocumentos } from './pages/configuracion/ConfigDocumentos'
+import { ConfigImpuestos } from './pages/configuracion/ConfigImpuestos'
+import { ConfigGeolocalizacion } from './pages/configuracion/ConfigGeolocalizacion'
+import { ConfigMonedas } from './pages/configuracion/ConfigMonedas'
+import { ConfigSucursales } from './pages/configuracion/ConfigSucursales'
+import { ConfigCajasBancos } from './pages/configuracion/ConfigCajasBancos'
+import { ConfigProductos } from './pages/configuracion/ConfigProductos'
+import { ConfigProductosMaestros } from './pages/configuracion/ConfigProductosMaestros'
+import { ConfigProductoDetalle } from './pages/configuracion/ConfigProductoDetalle'
+import { ConfigTerceros } from './pages/configuracion/ConfigTerceros'
+import { ConfigTerceroForm } from './pages/configuracion/ConfigTerceroForm'
+import { ConfigTercerosExtra } from './pages/configuracion/ConfigTercerosExtra'
+
+
+
+// ── Seguridad ──
+import { Usuarios } from './pages/seguridad/Usuarios'
+import { Roles } from './pages/seguridad/Roles'
+import { Notificaciones } from './pages/seguridad/Notificaciones'
+import { CierrePeriodo } from './pages/seguridad/CierrePeriodo'
+import { Auditoria } from './pages/seguridad/Auditoria'
 
 // ── POS ──
 import { PosDashboard } from './pages/pos/PosDashboard'
@@ -117,6 +138,37 @@ function App() {
 
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />
+        <Route path="/configuracion/documentos" element={<P><ConfigDocumentos /></P>} />
+        <Route path="/configuracion/impuestos" element={<P><ConfigImpuestos /></P>} />
+        <Route path="/configuracion/geolocalizacion" element={<P><ConfigGeolocalizacion /></P>} />
+        <Route path="/configuracion/monedas" element={<P><ConfigMonedas /></P>} />
+        <Route path="/configuracion/sucursales" element={<P><ConfigSucursales /></P>} />
+        <Route path="/configuracion/cajas-bancos" element={<P><ConfigCajasBancos /></P>} />
+        <Route path="/configuracion/productos" element={<P><ConfigProductos /></P>} />
+        <Route path="/configuracion/productos/maestros" element={<P><ConfigProductosMaestros /></P>} />
+        <Route path="/configuracion/productos/:id/detalle" element={<P><ConfigProductoDetalle /></P>} />
+        <Route path="/configuracion/terceros" element={<P><ConfigTerceros /></P>} />
+        <Route path="/configuracion/terceros/nuevo" element={<P><ConfigTerceroForm /></P>} />
+        <Route path="/configuracion/terceros/vendedores" element={<P><ConfigTercerosExtra section="vendedores" /></P>} />
+        <Route path="/configuracion/terceros/unificar" element={<P><ConfigTercerosExtra section="unificar" /></P>} />
+        <Route path="/configuracion/terceros/ciiu" element={<P><ConfigTercerosExtra section="ciiu" /></P>} />
+        <Route path="/configuracion/terceros/clasificaciones" element={<P><ConfigTercerosExtra section="clasificaciones" /></P>} />
+        <Route path="/configuracion/terceros/tipos-identificacion" element={<P><ConfigTercerosExtra section="tipos-identificacion" /></P>} />
+        <Route path="/configuracion/terceros/tipos-regimen" element={<P><ConfigTercerosExtra section="tipos-regimen" /></P>} />
+        <Route path="/configuracion/terceros/regimen-tributario" element={<P><ConfigTercerosExtra section="regimen-tributario" /></P>} />
+        <Route path="/configuracion/terceros/reportes" element={<P><ConfigTercerosExtra section="reportes" /></P>} />
+        <Route path="/configuracion/terceros/reportes-pagos" element={<P><ConfigTercerosExtra section="reportes-pagos" /></P>} />
+        <Route path="/configuracion/terceros/tags" element={<P><ConfigTercerosExtra section="tags" /></P>} />
+        <Route path="/configuracion/terceros/:id" element={<P><ConfigTerceroForm /></P>} />
+
+
+
+        {/* ── Seguridad ── */}
+        <Route path="/seguridad/usuarios" element={<P><Usuarios /></P>} />
+        <Route path="/seguridad/roles" element={<P><Roles /></P>} />
+        <Route path="/seguridad/notificaciones" element={<P><Notificaciones /></P>} />
+        <Route path="/seguridad/cierre-periodo" element={<P><CierrePeriodo /></P>} />
+        <Route path="/seguridad/auditoria" element={<P><Auditoria /></P>} />
 
         {/* ── Digital ── */}
         <Route path="/digital" element={<Navigate to="/digital/dashboard" replace />} />

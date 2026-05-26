@@ -120,4 +120,24 @@ export class ProductosService {
     await Promise.all(updates);
     return { clasificados: updates.length, mensaje: 'Clasificación ABC actualizada correctamente' };
   }
+
+  async remove(id: number, empresaId: number) {
+    await this.findOne(id, empresaId);
+    try {
+      // Delete stock, lotes, serials, and variants first
+      await (this.prisma as any).stock.deleteMany({ where: { productoId: id } });
+      await (this.prisma as any).lote.deleteMany({ where: { productoId: id } });
+      await (this.prisma as any).numeroSerie.deleteMany({ where: { productoId: id } });
+      await (this.prisma as any).varianteProducto.deleteMany({ where: { productoId: id } });
+      
+      return await (this.prisma as any).producto.delete({ where: { id } });
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new ConflictException(
+          'No se puede eliminar el producto porque tiene movimientos de inventario, facturas o registros relacionados históricos.'
+        );
+      }
+      throw e;
+    }
+  }
 }

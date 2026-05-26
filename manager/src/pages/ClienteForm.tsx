@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Check, Building2, MapPin, Phone, Briefcase,
-  Receipt, Landmark, SlidersHorizontal, ChevronRight, Key, ShieldCheck, User, Trash2
+  Receipt, Landmark, SlidersHorizontal, ChevronRight, Key, ShieldCheck, User, Trash2, FileText, Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, getApiError } from '@/lib/api';
@@ -116,6 +116,18 @@ export function ClienteForm() {
 
   const [erpUsuario, setErpUsuario] = useState('');
   const [erpPassword, setErpPassword] = useState('');
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'https://api.edatia.com';
+
+  // Intentar parsear las observaciones si es un JSON estructurado de auto-registro
+  let parsedObs: any = null;
+  try {
+    if (form.observaciones && form.observaciones.trim().startsWith('{')) {
+      parsedObs = JSON.parse(form.observaciones);
+    }
+  } catch (e) {
+    // No es JSON
+  }
 
   // Cargar datos si es edición
   const { data: cliente, isLoading } = useQuery({
@@ -587,16 +599,119 @@ export function ClienteForm() {
                   <option value="STRATEGIC">Estratégico</option>
                 </select>
               </div>
-              <div className="sm:col-span-2">
-                <label className={labelCls}>Observaciones</label>
-                <textarea
-                  value={form.observaciones}
-                  onChange={set('observaciones')}
-                  rows={4}
-                  placeholder="Notas internas sobre el cliente, acuerdos especiales, historial relevante..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
-                />
-              </div>
+              {parsedObs ? (
+                <div className="sm:col-span-2 space-y-6 bg-slate-50 dark:bg-navy-800/40 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
+                  <div className="flex items-center gap-2 text-indigo-500 font-semibold text-xs uppercase tracking-wider">
+                    <Sparkles size={14} />
+                    <span>Datos de Auto-Registro</span>
+                  </div>
+
+                  {parsedObs.representanteLegal && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Representante Legal:</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-400">Nombre:</span>{' '}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {parsedObs.representanteLegal.nombre}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Cédula:</span>{' '}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {parsedObs.representanteLegal.cedula}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Correo:</span>{' '}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {parsedObs.representanteLegal.email}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Teléfono:</span>{' '}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {parsedObs.representanteLegal.telefono}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {parsedObs.archivos && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Documentos Adjuntos:</h4>
+                      <div className="flex flex-wrap gap-3">
+                        {parsedObs.archivos.rut && (
+                          <a
+                            href={`${API_BASE_URL}/api/v1/manager/public-clientes/documento/${parsedObs.archivos.rut.split('/').pop()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-white/5 rounded-xl text-xs text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 font-semibold transition-all"
+                          >
+                            <FileText size={14} />
+                            <span>RUT</span>
+                          </a>
+                        )}
+                        {parsedObs.archivos.cedula && (
+                          <a
+                            href={`${API_BASE_URL}/api/v1/manager/public-clientes/documento/${parsedObs.archivos.cedula.split('/').pop()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-white/5 rounded-xl text-xs text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 font-semibold transition-all"
+                          >
+                            <FileText size={14} />
+                            <span>Cédula</span>
+                          </a>
+                        )}
+                        {parsedObs.archivos.camaraComercio && (
+                          <a
+                            href={`${API_BASE_URL}/api/v1/manager/public-clientes/documento/${parsedObs.archivos.camaraComercio.split('/').pop()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-white/5 rounded-xl text-xs text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 font-semibold transition-all"
+                          >
+                            <FileText size={14} />
+                            <span>Cámara de Comercio</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className={labelCls}>Notas Adicionales</label>
+                    <textarea
+                      value={parsedObs.notasInternas || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = {
+                          ...parsedObs,
+                          notasInternas: val,
+                        };
+                        setForm((f) => ({ ...f, observaciones: JSON.stringify(updated) }));
+                      }}
+                      rows={3}
+                      placeholder="Escribe notas adicionales sobre este prospecto..."
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
+                    />
+                    <p className="text-[10px] text-amber-500 font-medium leading-relaxed">
+                      * Este cliente se registró vía auto-servicio. Modificar estas notas guardará los datos estructurados sin alterar las rutas de sus archivos y datos de representación legal.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Observaciones</label>
+                  <textarea
+                    value={form.observaciones}
+                    onChange={set('observaciones')}
+                    rows={4}
+                    placeholder="Notas internas sobre el cliente, acuerdos especiales, historial relevante..."
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-blue/60 resize-none"
+                  />
+                </div>
+              )}
             </div>
           </section>
 
