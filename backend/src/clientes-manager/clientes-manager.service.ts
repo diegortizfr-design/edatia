@@ -490,6 +490,12 @@ export class ClientesManagerService {
       telefono: dto.telefono || null,
       contacto: dto.contacto || null,
       estado: 'PROSPECTO',
+      regimenTributario: dto.regimenTributario || null,
+      responsabilidadFiscal: dto.responsabilidadFiscal || null,
+      actividadEconomica: dto.actividadEconomica || null,
+      granContribuyente: dto.granContribuyente ?? false,
+      autorretenedor: dto.autorretenedor ?? false,
+      agenteRetencion: dto.agenteRetencion ?? false,
       observaciones: dto.observaciones || null,
     };
 

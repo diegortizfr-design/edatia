@@ -167,6 +167,7 @@ export function ClienteForm() {
   const [surveyComment, setSurveyComment] = useState<string>('');
 
   const [nombreComercial, setNombreComercial] = useState('');
+  const [nombreComercialManuallyEdited, setNombreComercialManuallyEdited] = useState(false);
 
   // Archivos adjuntos y notas
   const [archivos, setArchivos] = useState<any>(null);
@@ -648,7 +649,13 @@ export function ClienteForm() {
                     label="Nombre o Razón Social *"
                     placeholder="Nombre Completo o Razón Social de la empresa"
                     value={form.nombre}
-                    onChange={set('nombre')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm(f => ({ ...f, nombre: val }));
+                      if (!nombreComercialManuallyEdited) {
+                        setNombreComercial(val);
+                      }
+                    }}
                   />
                 </div>
                 <div className="sm:col-span-3">
@@ -656,7 +663,10 @@ export function ClienteForm() {
                     label="Nombre comercial"
                     placeholder="Nombre de establecimiento o fantasía"
                     value={nombreComercial}
-                    onChange={(e) => setNombreComercial(e.target.value)}
+                    onChange={(e) => {
+                      setNombreComercial(e.target.value);
+                      setNombreComercialManuallyEdited(true);
+                    }}
                   />
                 </div>
 
@@ -843,46 +853,63 @@ export function ClienteForm() {
         )}
 
         {/* ─── TAB 2: REPRESENTANTE LEGAL ─── */}
-        {activeTab === 'representante' && form.tipoPersona === 'JURIDICA' && (
-          <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-white/5 rounded-2xl p-6 space-y-6 shadow-sm animate-fade-in">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-1 flex items-center gap-2">
-                <User size={16} className="text-indigo-500" />
-                Datos del Representante Legal
-              </h3>
-              <p className="text-xs text-slate-500">
-                Información del firmante autorizado de la empresa (requerido para contratos y auditorías).
-              </p>
-            </div>
+        {activeTab === 'representante' && (
+          form.tipoPersona === 'JURIDICA' ? (
+            <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-white/5 rounded-2xl p-6 space-y-6 shadow-sm animate-fade-in">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-1 flex items-center gap-2">
+                  <User size={16} className="text-indigo-500" />
+                  Datos del Representante Legal
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Información del firmante autorizado de la empresa (requerido para contratos y auditorías).
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Nombre completo del representante"
-                placeholder="Ej: Diego Ortiz"
-                value={repNombre}
-                onChange={(e) => setRepNombre(e.target.value)}
-              />
-              <Input
-                label="Cédula / Documento de identificación"
-                placeholder="Ej: 1018222333"
-                value={repCedula}
-                onChange={(e) => setRepCedula(e.target.value)}
-              />
-              <Input
-                label="Correo electrónico corporativo"
-                type="email"
-                placeholder="representante@empresa.com"
-                value={repEmail}
-                onChange={(e) => setRepEmail(e.target.value)}
-              />
-              <Input
-                label="Teléfono de contacto representante"
-                placeholder="Ej: +57 300 123 4567"
-                value={repTelefono}
-                onChange={(e) => setRepTelefono(e.target.value)}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Nombre completo del representante"
+                  placeholder="Ej: Diego Ortiz"
+                  value={repNombre}
+                  onChange={(e) => setRepNombre(e.target.value)}
+                />
+                <Input
+                  label="Cédula / Documento de identificación"
+                  placeholder="Ej: 1018222333"
+                  value={repCedula}
+                  onChange={(e) => setRepCedula(e.target.value)}
+                />
+                <Input
+                  label="Correo electrónico corporativo"
+                  type="email"
+                  placeholder="representante@empresa.com"
+                  value={repEmail}
+                  onChange={(e) => setRepEmail(e.target.value)}
+                />
+                <Input
+                  label="Teléfono de contacto representante"
+                  placeholder="Ej: +57 300 123 4567"
+                  value={repTelefono}
+                  onChange={(e) => setRepTelefono(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-white/5 rounded-2xl p-8 shadow-sm animate-fade-in text-center space-y-4">
+              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto">
+                <Building2 size={24} />
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h4 className="font-bold text-slate-800 dark:text-white text-sm">Representante Legal No Requerido</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  La pestaña de Representante Legal solo aplica para clientes registrados como <strong>Persona Jurídica</strong>.
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  Si este cliente es una empresa, cambie el <strong>Tipo de Persona</strong> a "Persona jurídica" en la pestaña <strong>Datos de la Empresa</strong>.
+                </p>
+              </div>
+            </div>
+          )
         )}
 
         {/* ─── TAB 3: DATOS DE CONTACTO ─── */}
@@ -953,7 +980,7 @@ export function ClienteForm() {
                       placeholder="Nombre de facturación"
                       value={facturacionNombre}
                       onChange={(e) => setFacturacionNombre(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -963,7 +990,7 @@ export function ClienteForm() {
                       placeholder="Email de facturación"
                       value={facturacionEmail}
                       onChange={(e) => setFacturacionEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -973,7 +1000,7 @@ export function ClienteForm() {
                       placeholder="Teléfono de facturación"
                       value={facturacionTelefono}
                       onChange={(e) => setFacturacionTelefono(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                 </div>
@@ -992,7 +1019,7 @@ export function ClienteForm() {
                       placeholder="Nombre del tesorero"
                       value={tesoreriaNombre}
                       onChange={(e) => setTesoreriaNombre(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1002,7 +1029,7 @@ export function ClienteForm() {
                       placeholder="Email de tesorería"
                       value={tesoreriaEmail}
                       onChange={(e) => setTesoreriaEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1012,7 +1039,7 @@ export function ClienteForm() {
                       placeholder="Teléfono de tesorería"
                       value={tesoreriaTelefono}
                       onChange={(e) => setTesoreriaTelefono(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                 </div>
@@ -1031,7 +1058,7 @@ export function ClienteForm() {
                       placeholder="Nombre del contador"
                       value={contabilidadNombre}
                       onChange={(e) => setContabilidadNombre(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1041,7 +1068,7 @@ export function ClienteForm() {
                       placeholder="Email de contabilidad"
                       value={contabilidadEmail}
                       onChange={(e) => setContabilidadEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1051,7 +1078,7 @@ export function ClienteForm() {
                       placeholder="Teléfono de contabilidad"
                       value={contabilidadTelefono}
                       onChange={(e) => setContabilidadTelefono(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                 </div>
@@ -1070,7 +1097,7 @@ export function ClienteForm() {
                       placeholder="Nombre del encargado RRHH"
                       value={rrhhNombre}
                       onChange={(e) => setRrhhNombre(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1080,7 +1107,7 @@ export function ClienteForm() {
                       placeholder="Email de RRHH"
                       value={rrhhEmail}
                       onChange={(e) => setRrhhEmail(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                   <div>
@@ -1090,7 +1117,7 @@ export function ClienteForm() {
                       placeholder="Teléfono de RRHH"
                       value={rrhhTelefono}
                       onChange={(e) => setRrhhTelefono(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs focus:outline-none focus:border-brand-blue"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-navy-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-blue"
                     />
                   </div>
                 </div>

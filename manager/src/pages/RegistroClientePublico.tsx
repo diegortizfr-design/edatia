@@ -32,6 +32,22 @@ interface ModuloSoftware {
   precioAnual: number;
 }
 
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const calcularDV = (nit: string): string => {
+  if (!nit || isNaN(Number(nit.trim()))) return "";
+  const tempNit = nit.trim();
+  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+  let sum = 0;
+  const len = tempNit.length;
+  for (let i = 0; i < len; i++) {
+    const digit = Number(tempNit.charAt(len - 1 - i));
+    sum += digit * weights[i];
+  }
+  const remainder = sum % 11;
+  return remainder > 1 ? String(11 - remainder) : String(remainder);
+};
+
 export function RegistroClientePublico() {
   const navigate = useNavigate();
 
@@ -49,6 +65,8 @@ export function RegistroClientePublico() {
 
   // Paso 3: Datos de Identificación y Contacto (Básicos)
   const [nombre, setNombre] = useState<string>('');
+  const [nombreComercial, setNombreComercial] = useState<string>('');
+  const [nombreComercialManuallyEdited, setNombreComercialManuallyEdited] = useState<boolean>(false);
   const [nit, setNit] = useState<string>('');
   const [digitoVerificacion, setDigitoVerificacion] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -67,6 +85,14 @@ export function RegistroClientePublico() {
   const [fileRut, setFileRut] = useState<{ name: string; path: string } | null>(null);
   const [fileCedula, setFileCedula] = useState<{ name: string; path: string } | null>(null);
   const [fileCamara, setFileCamara] = useState<{ name: string; path: string } | null>(null);
+  const [fileCertificacionBancaria, setFileCertificacionBancaria] = useState<{ name: string; path: string } | null>(null);
+  const [fileContrato, setFileContrato] = useState<{ name: string; path: string } | null>(null);
+  const [fileOtros, setFileOtros] = useState<{ name: string; path: string } | null>(null);
+
+  // Paso 3 Adicional: Información Tributaria (DIAN)
+  const [regimenTributario, setRegimenTributario] = useState<string>('');
+  const [actividadEconomica, setActividadEconomica] = useState<string>('');
+  const [responsabilidadFiscal, setResponsabilidadFiscal] = useState<string>('');
 
   // Progreso de subida
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -78,6 +104,16 @@ export function RegistroClientePublico() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [selectedModulosIds, setSelectedModulosIds] = useState<number[]>([]);
   const [requiereAsesoria, setRequiereAsesoria] = useState<boolean>(false);
+
+  // Calcular DV automáticamente para Persona Jurídica / NIT
+  useEffect(() => {
+    if (tipoPersona === 'JURIDICA' && nit) {
+      const calculated = calcularDV(nit);
+      setDigitoVerificacion(calculated);
+    } else if (tipoPersona !== 'JURIDICA') {
+      setDigitoVerificacion('');
+    }
+  }, [nit, tipoPersona]);
 
   // Cargar planes y módulos de la base de datos
   useEffect(() => {
@@ -149,6 +185,9 @@ export function RegistroClientePublico() {
       if (key === 'rut') setFileRut({ name: file.name, path: data.filepath });
       if (key === 'cedula') setFileCedula({ name: file.name, path: data.filepath });
       if (key === 'camara') setFileCamara({ name: file.name, path: data.filepath });
+      if (key === 'certificacionBancaria') setFileCertificacionBancaria({ name: file.name, path: data.filepath });
+      if (key === 'contrato') setFileContrato({ name: file.name, path: data.filepath });
+      if (key === 'otros') setFileOtros({ name: file.name, path: data.filepath });
 
       toast.success(`Archivo "${file.name}" cargado correctamente.`);
     } catch (err) {
@@ -185,21 +224,60 @@ export function RegistroClientePublico() {
       setStep(2);
     }
   };
+  // Obtener los detalles faltantes del Paso 3
+  const getStep3MissingDetails = () => {
+    const missing = [];
+    if (!nombre) missing.push('Nombre o Razón Social');
+    if (!nit) {
+      missing.push(tipoPersona === 'NATURAL' ? 'Número de Cédula' : 'NIT (Número de Identificación)');
+    } else if (!/^\d{5,12}$/.test(nit.trim())) {
+      missing.push(tipoPersona === 'NATURAL' ? 'Número de Cédula válido (5-12 dígitos numéricos)' : 'NIT válido (5-12 dígitos numéricos)');
+    }
+    if (!email) {
+      missing.push('Correo electrónico');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      missing.push('Correo electrónico con formato válido');
+    }
+    if (!telefono) {
+      missing.push('Teléfono/Celular de contacto');
+    } else if (!/^(3\d{9}|[+]?573\d{9}|\d{7,10})$/.test(telefono.trim())) {
+      missing.push('Celular de contacto válido (10 dígitos starting with 3 o teléfono)');
+    }
+    if (!direccion) missing.push('Dirección completa');
+    if (!ciudad) missing.push('Ciudad / Municipio');
+    if (!departamento) missing.push('Departamento');
+    if (!regimenTributario) missing.push('Régimen fiscal (DIAN)');
+
+    if (tipoPersona === 'JURIDICA') {
+      if (!repNombre) missing.push('Nombre completo del representante legal');
+      if (!repCedula) {
+        missing.push('Cédula del representante legal');
+      } else if (!/^\d{5,12}$/.test(repCedula.trim())) {
+        missing.push('Cédula del representante válida (5-12 dígitos numéricos)');
+      }
+      if (!repEmail) {
+        missing.push('Correo del representante legal');
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(repEmail)) {
+        missing.push('Correo del representante válido');
+      }
+      if (!repTelefono) {
+        missing.push('Teléfono del representante legal');
+      } else if (!/^(3\d{9}|[+]?573\d{9}|\d{7,10})$/.test(repTelefono.trim())) {
+        missing.push('Celular del representante válido (10 dígitos starting with 3)');
+      }
+    }
+
+    if (!fileRut) missing.push('Adjuntar el documento del RUT');
+    if (!fileCedula) missing.push('Adjuntar el documento de la Cédula');
+    if (tipoPersona === 'JURIDICA' && !fileCamara) missing.push('Adjuntar el certificado de Cámara de Comercio');
+
+    return missing;
+  };
 
   // Validación de Paso 3
   const isStep3Valid = () => {
-    const commonFields = nombre && nit && email && telefono && direccion && ciudad && departamento;
-    const filesValid = tipoPersona === 'NATURAL'
-      ? fileRut && fileCedula
-      : fileRut && fileCedula && fileCamara;
-
-    const repValid = tipoPersona === 'JURIDICA'
-      ? repNombre && repCedula && repEmail && repTelefono
-      : true;
-
-    return commonFields && filesValid && repValid;
+    return getStep3MissingDetails().length === 0;
   };
-
   // Enviar el formulario (Paso 4)
   const handleRegisterSubmit = async () => {
     setLoading(true);
@@ -214,14 +292,23 @@ export function RegistroClientePublico() {
       } : null,
       archivos: {
         rut: fileRut?.path || null,
-        cedula: fileCedula?.path || null,
-        camaraComercio: fileCamara?.path || null,
         rutNombre: fileRut?.name || null,
+        cedula: fileCedula?.path || null,
         cedulaNombre: fileCedula?.name || null,
+        camaraComercio: fileCamara?.path || null,
         camaraComercioNombre: fileCamara?.name || null,
+        certificacionBancaria: fileCertificacionBancaria?.path || null,
+        certificacionBancariaNombre: fileCertificacionBancaria?.name || null,
+        contrato: fileContrato?.path || null,
+        contratoNombre: fileContrato?.name || null,
+        otros: fileOtros?.path || null,
+        otrosNombre: fileOtros?.name || null,
       },
       requiereAsesoriaPlanes: requiereAsesoria,
+      nombreComercial,
     };
+
+    const respArray = responsabilidadFiscal ? responsabilidadFiscal.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     const payload = {
       tipoPersona,
@@ -238,6 +325,12 @@ export function RegistroClientePublico() {
       asesorId: comercialValido?.id || null,
       planBaseId: requiereAsesoria ? null : selectedPlanId,
       modulosIds: requiereAsesoria ? [] : selectedModulosIds,
+      regimenTributario,
+      responsabilidadFiscal,
+      actividadEconomica,
+      granContribuyente: respArray.includes('O-13'),
+      autorretenedor: respArray.includes('O-15'),
+      agenteRetencion: respArray.includes('O-23'),
       observaciones: JSON.stringify(observacionesObj),
     };
 
@@ -252,6 +345,7 @@ export function RegistroClientePublico() {
   };
 
   const labelCls = 'text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1';
+  const selectCls = 'w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-navy-800 text-sm text-gray-900 dark:text-slate-200 focus:outline-none focus:border-brand-blue/60';
   const inputContainerCls = 'space-y-1';
 
   return (
@@ -499,10 +593,28 @@ export function RegistroClientePublico() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <Input
-                    label={tipoPersona === 'NATURAL' ? 'Nombre Completo *' : 'Razón Social (Nombre de la Empresa) *'}
+                    label={tipoPersona === 'NATURAL' ? 'Nombre o Razón Social *' : 'Razón Social (Nombre de la Empresa) *'}
                     placeholder={tipoPersona === 'NATURAL' ? 'Ej: Diego Ortiz' : 'Ej: Distribuidora SAS'}
                     value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNombre(val);
+                      if (!nombreComercialManuallyEdited) {
+                        setNombreComercial(val);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Input
+                    label="Nombre comercial"
+                    placeholder="Nombre de establecimiento o fantasía"
+                    value={nombreComercial}
+                    onChange={(e) => {
+                      setNombreComercial(e.target.value);
+                      setNombreComercialManuallyEdited(true);
+                    }}
                   />
                 </div>
 
@@ -513,6 +625,7 @@ export function RegistroClientePublico() {
                       placeholder="Ej: 900123456"
                       value={nit}
                       onChange={(e) => setNit(e.target.value)}
+                      error={nit && !/^\d{5,12}$/.test(nit.trim()) ? "El NIT o Cédula debe contener entre 5 y 12 dígitos (solo números)." : undefined}
                     />
                   </div>
                   {tipoPersona === 'JURIDICA' && (
@@ -521,7 +634,8 @@ export function RegistroClientePublico() {
                         label="DV"
                         placeholder="0"
                         value={digitoVerificacion}
-                        onChange={(e) => setDigitoVerificacion(e.target.value)}
+                        readOnly
+                        className="bg-slate-50 dark:bg-navy-900/60 font-semibold select-none cursor-not-allowed"
                         maxLength={1}
                       />
                     </div>
@@ -534,6 +648,7 @@ export function RegistroClientePublico() {
                   placeholder="contacto@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  error={email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "El formato del correo electrónico no es válido." : undefined}
                 />
 
                 <Input
@@ -541,6 +656,7 @@ export function RegistroClientePublico() {
                   placeholder="Ej: 300 123 4567"
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
+                  error={telefono && !/^(3\d{9}|[+]?573\d{9}|\d{7,10})$/.test(telefono.trim()) ? "Debe ser un celular válido de 10 dígitos (ej: 3001234567) o teléfono." : undefined}
                 />
 
                 <Input
@@ -586,6 +702,7 @@ export function RegistroClientePublico() {
                       placeholder="Ej: 1018222333"
                       value={repCedula}
                       onChange={(e) => setRepCedula(e.target.value)}
+                      error={repCedula && !/^\d{5,12}$/.test(repCedula.trim()) ? "La cédula debe contener entre 5 y 12 dígitos (solo números)." : undefined}
                     />
                     <Input
                       label="Correo Electrónico Representante *"
@@ -593,16 +710,106 @@ export function RegistroClientePublico() {
                       placeholder="representante@empresa.com"
                       value={repEmail}
                       onChange={(e) => setRepEmail(e.target.value)}
+                      error={repEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(repEmail) ? "El formato del correo no es válido." : undefined}
                     />
                     <Input
                       label="Teléfono del Representante *"
                       placeholder="Ej: 301 444 5555"
                       value={repTelefono}
                       onChange={(e) => setRepTelefono(e.target.value)}
+                      error={repTelefono && !/^(3\d{9}|[+]?573\d{9}|\d{7,10})$/.test(repTelefono.trim()) ? "Debe ser un celular válido de 10 dígitos (ej: 3001234567) o teléfono." : undefined}
                     />
                   </div>
                 </div>
               )}
+
+              {/* Información Tributaria (DIAN) */}
+              <div className="border-t border-slate-200 dark:border-white/5 pt-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={16} className="text-indigo-500" />
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                    Información Tributaria (DIAN)
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Régimen fiscal *</label>
+                    <select
+                      value={regimenTributario}
+                      onChange={(e) => setRegimenTributario(e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">Seleccionar...</option>
+                      <option value="ORDINARIO">Régimen Ordinario</option>
+                      <option value="SIMPLE">Régimen Simple</option>
+                      <option value="ESPECIAL">Régimen Tributario Especial</option>
+                      <option value="GRAN_CONTRIBUYENTE">Gran Contribuyente</option>
+                      <option value="GRAN_CONTRIBUYENTE_AUTORRETENEDOR">Gran Contribuyente Auto Retenedor</option>
+                    </select>
+                  </div>
+                  <Input
+                    label="Actividad económica (CIIU)"
+                    placeholder="Ej: 4711"
+                    value={actividadEconomica}
+                    onChange={(e) => setActividadEconomica(e.target.value)}
+                  />
+
+                  <div className="md:col-span-2 space-y-3 pt-2">
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      Responsabilidades tributarias DIAN
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border border-slate-200 dark:border-white/5 rounded-xl p-4 bg-slate-50 dark:bg-navy-800/40">
+                      {[
+                        { code: 'O-13', label: 'O-13 — Gran contribuyente' },
+                        { code: 'O-15', label: 'O-15 — Autorretenedor' },
+                        { code: 'O-23', label: 'O-23 — Agente de retención en la fuente' },
+                        { code: 'O-47', label: 'O-47 — Régimen simple de tributación' },
+                        { code: '05', label: '05 — Impuesto sobre la renta' },
+                        { code: '07', label: '07 — Retención en la fuente' },
+                        { code: '14', label: '14 — Informante de exógena' },
+                        { code: '22', label: '22 — Obligado a cumplir deberes formales a nombre de terceros' },
+                        { code: '42', label: '42 — Obligado a llevar contabilidad' },
+                        { code: '48', label: '48 — Responsable de IVA' },
+                        { code: '49', label: '49 — No responsable de IVA' },
+                        { code: 'R-99-PN', label: 'R-99-PN — No aplica — Otros' }
+                      ].map((r) => {
+                        const isChecked = (responsabilidadFiscal ?? '')
+                          .split(',')
+                          .map(s => s.trim())
+                          .includes(r.code);
+                        return (
+                          <label key={r.code} className="flex items-start gap-3 cursor-pointer select-none py-1 group">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                const currentArray = responsabilidadFiscal
+                                  ? responsabilidadFiscal.split(',').map(s => s.trim()).filter(Boolean)
+                                  : [];
+                                let nextArray: string[];
+                                if (currentArray.includes(r.code)) {
+                                  nextArray = currentArray.filter(c => c !== r.code);
+                                } else {
+                                  nextArray = [...currentArray, r.code];
+                                }
+                                const nextString = nextArray.join(',');
+                                setResponsabilidadFiscal(nextString);
+                              }}
+                              className="w-4 h-4 rounded text-indigo-650 dark:text-indigo-400 accent-indigo-650 mt-0.5 border-slate-300 dark:border-white/10"
+                            />
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                              {r.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-tight">
+                      Seleccione las responsabilidades fiscales aplicables según el RUT del tercero.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Carga de Documentos */}
               <div className="border-t border-slate-200 dark:border-white/5 pt-6 space-y-4">
@@ -745,8 +952,146 @@ export function RegistroClientePublico() {
                       <p className="text-[10px]">Cámara de Comercio no requerida para Persona Natural</p>
                     </div>
                   )}
+
+                  {/* Documento 4: Certificación Bancaria */}
+                  <div className="p-4 bg-slate-50 dark:bg-navy-800/40 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl flex flex-col justify-between h-40">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-white mb-1">Certificación Bancaria</h4>
+                      <p className="text-[10px] text-slate-500">Certificado oficial de la cuenta bancaria del tercero (Opcional)</p>
+                    </div>
+
+                    <div className="mt-4">
+                      {fileCertificacionBancaria ? (
+                        <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-xl">
+                          <span className="truncate max-w-[120px]">{fileCertificacionBancaria.name}</span>
+                          <CheckCircle2 size={16} className="shrink-0" />
+                        </div>
+                      ) : uploadingFile['certificacionBancaria'] ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-indigo-500 font-semibold">
+                            <span>Subiendo...</span>
+                            <span>{uploadProgress['certificacionBancaria'] || 0}%</span>
+                          </div>
+                          <div className="h-1 w-full bg-slate-200 dark:bg-navy-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500" style={{ width: `${uploadProgress['certificacionBancaria'] || 0}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-navy-700 border border-slate-200 dark:border-white/5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-600 cursor-pointer font-semibold shadow-sm">
+                          <Upload size={14} />
+                          Seleccionar
+                          <input
+                            type="file"
+                            accept=".pdf,image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload('certificacionBancaria', file);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Documento 5: Contrato */}
+                  <div className="p-4 bg-slate-50 dark:bg-navy-800/40 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl flex flex-col justify-between h-40">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-white mb-1">Contrato</h4>
+                      <p className="text-[10px] text-slate-500">Contrato de adhesión o prestación firmado (Opcional)</p>
+                    </div>
+
+                    <div className="mt-4">
+                      {fileContrato ? (
+                        <div className="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-xl">
+                          <span className="truncate max-w-[120px]">{fileContrato.name}</span>
+                          <CheckCircle2 size={16} className="shrink-0" />
+                        </div>
+                      ) : uploadingFile['contrato'] ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-indigo-500 font-semibold">
+                            <span>Subiendo...</span>
+                            <span>{uploadProgress['contrato'] || 0}%</span>
+                          </div>
+                          <div className="h-1 w-full bg-slate-200 dark:bg-navy-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500" style={{ width: `${uploadProgress['contrato'] || 0}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-navy-700 border border-slate-200 dark:border-white/5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-600 cursor-pointer font-semibold shadow-sm">
+                          <Upload size={14} />
+                          Seleccionar
+                          <input
+                            type="file"
+                            accept=".pdf,image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload('contrato', file);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Documento 6: Otros */}
+                  <div className="p-4 bg-slate-50 dark:bg-navy-800/40 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl flex flex-col justify-between h-40">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-white mb-1">Otros Documentos</h4>
+                      <p className="text-[10px] text-slate-500">Soportes adicionales u otros archivos (Opcional)</p>
+                    </div>
+
+                    <div className="mt-4">
+                      {fileOtros ? (
+                        <div className="flex items-center justify-between text-xs text-emerald-650 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-xl">
+                          <span className="truncate max-w-[120px]">{fileOtros.name}</span>
+                          <CheckCircle2 size={16} className="shrink-0" />
+                        </div>
+                      ) : uploadingFile['otros'] ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-indigo-500 font-semibold">
+                            <span>Subiendo...</span>
+                            <span>{uploadProgress['otros'] || 0}%</span>
+                          </div>
+                          <div className="h-1 w-full bg-slate-200 dark:bg-navy-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500" style={{ width: `${uploadProgress['otros'] || 0}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-navy-700 border border-slate-200 dark:border-white/5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-600 cursor-pointer font-semibold shadow-sm">
+                          <Upload size={14} />
+                          Seleccionar
+                          <input
+                            type="file"
+                            accept=".pdf,image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload('otros', file);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Resumen de errores de validación */}
+              {getStep3MissingDetails().length > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 mt-4 text-xs text-amber-800 dark:text-amber-300">
+                  <p className="font-bold mb-1.5 flex items-center gap-1.5">
+                    <Shield size={14} className="text-amber-500" />
+                    Para habilitar el botón "Siguiente", por favor completa:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 grid grid-cols-1 sm:grid-cols-2">
+                    {getStep3MissingDetails().map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Botones de Navegación */}
               <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-white/5">
