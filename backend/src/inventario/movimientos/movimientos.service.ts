@@ -763,6 +763,7 @@ export class MovimientosService {
 
       // Procesar Lote
       let loteId: number | undefined;
+      const lotesConsumidos: string[] = [];
       if (producto.manejaLotes) {
         if (dto.cantidad >= 0) {
           let lote = await tx.lote.findFirst({
@@ -827,6 +828,8 @@ export class MovimientosService {
             for (const lote of lotes) {
               if (restante <= 0) break;
               const cantLote = Number(lote.cantidad);
+              const cantTomada = Math.min(cantLote, restante);
+              lotesConsumidos.push(`${lote.numero} (${cantTomada} und)`);
               if (cantLote <= restante) {
                 await tx.lote.update({ where: { id: lote.id }, data: { cantidad: 0 } });
                 restante -= cantLote;
@@ -838,7 +841,9 @@ export class MovimientosService {
             }
             if (restante > 0) {
               if (lotes.length > 0) {
+                lotesConsumidos.push(`${lotes[0].numero} (${restante} und extra-neg)`);
                 await tx.lote.update({ where: { id: lotes[0].id }, data: { cantidad: { decrement: restante } } });
+                loteId = lotes[0].id;
               } else {
                 const newLote = await tx.lote.create({
                   data: {
@@ -852,13 +857,18 @@ export class MovimientosService {
                   },
                 });
                 loteId = newLote.id;
+                lotesConsumidos.push(`LOTE-GENERICO-NEG (${restante} und)`);
               }
+            } else if (lotes.length > 0) {
+              loteId = lotes[0].id;
             }
           }
         }
       }
 
-      const loteNotas = dto.loteNumero ? ` [Lote: ${dto.loteNumero}]` : '';
+      const loteNotas = dto.loteNumero 
+        ? ` [Lote: ${dto.loteNumero}]` 
+        : (lotesConsumidos.length > 0 ? ` [Lotes FEFO: ${lotesConsumidos.join(', ')}]` : '');
       const mov = await tx.movimientoInventario.create({
         data: {
           numero,

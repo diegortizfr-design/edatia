@@ -1,14 +1,31 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { IsInt, IsString, IsNotEmpty, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
+import { MovimientosService } from '../movimientos/movimientos.service';
 
-export interface CreateLoteDto {
-  productoId: number;
-  bodegaId: number;
-  numero: string;
-  cantidadInicial: number;
+export class CreateLoteDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsInt()
+  bodegaId!: number;
+
+  @IsString() @IsNotEmpty()
+  numero!: string;
+
+  @IsNumber() @Min(0)
+  cantidadInicial!: number;
+
+  @IsOptional() @IsDateString()
   fechaVencimiento?: string;
+
+  @IsOptional() @IsDateString()
   fechaFabricacion?: string;
+
+  @IsOptional() @IsString()
   proveedor?: string;
+
+  @IsOptional() @IsString()
   notas?: string;
 }
 
@@ -23,7 +40,10 @@ export interface SalidaLoteDto {
 
 @Injectable()
 export class LotesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly movimientosService: MovimientosService,
+  ) {}
 
   async findAll(empresaId: number, filters?: { productoId?: number; bodegaId?: number; soloActivos?: boolean; soloConStock?: boolean }) {
     const where: any = { empresaId };
@@ -56,7 +76,7 @@ export class LotesService {
     return lote;
   }
 
-  async create(dto: CreateLoteDto, empresaId: number) {
+  async create(dto: CreateLoteDto, empresaId: number, usuarioId?: number) {
     const producto = await (this.prisma as any).producto.findFirst({ where: { id: dto.productoId, empresaId } });
     if (!producto) throw new NotFoundException('Producto no encontrado');
     if (!producto.manejaLotes) throw new BadRequestException('Este producto no está configurado para manejar lotes');
@@ -69,24 +89,57 @@ export class LotesService {
     });
     if (existe) throw new ConflictException(`Ya existe el lote "${dto.numero}" para este producto y bodega`);
 
-    return (this.prisma as any).lote.create({
-      data: {
-        empresaId,
+    if (dto.cantidadInicial > 0) {
+      // Registrar entrada formal en el Kardex y actualizar stock
+      await this.movimientosService.procesarEntrada({
         productoId: dto.productoId,
         bodegaId: dto.bodegaId,
-        numero: dto.numero,
-        cantidadInicial: dto.cantidadInicial,
         cantidad: dto.cantidadInicial,
-        fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
-        fechaFabricacion: dto.fechaFabricacion ? new Date(dto.fechaFabricacion) : null,
-        proveedor: dto.proveedor,
-        notas: dto.notas,
-      },
-      include: {
-        producto: { select: { id: true, nombre: true, sku: true } },
-        bodega:   { select: { id: true, nombre: true, codigo: true } },
-      },
-    });
+        costoUnitario: Number(producto.costoPromedio),
+        concepto: 'APERTURA',
+        notas: dto.notas || 'Carga/creación inicial de lote',
+        loteNumero: dto.numero,
+        fechaVencimiento: dto.fechaVencimiento,
+      }, empresaId, usuarioId || 1);
+
+      // Actualizar campos adicionales específicos del lote
+      await (this.prisma as any).lote.updateMany({
+        where: { numero: dto.numero, productoId: dto.productoId, bodegaId: dto.bodegaId, empresaId },
+        data: {
+          fechaFabricacion: dto.fechaFabricacion ? new Date(dto.fechaFabricacion) : null,
+          proveedor: dto.proveedor,
+          notas: dto.notas,
+        }
+      });
+
+      // Obtener el lote creado para retornarlo
+      return (this.prisma as any).lote.findFirst({
+        where: { numero: dto.numero, productoId: dto.productoId, bodegaId: dto.bodegaId, empresaId },
+        include: {
+          producto: { select: { id: true, nombre: true, sku: true } },
+          bodega:   { select: { id: true, nombre: true, codigo: true } },
+        }
+      });
+    } else {
+      return (this.prisma as any).lote.create({
+        data: {
+          empresaId,
+          productoId: dto.productoId,
+          bodegaId: dto.bodegaId,
+          numero: dto.numero,
+          cantidadInicial: 0,
+          cantidad: 0,
+          fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+          fechaFabricacion: dto.fechaFabricacion ? new Date(dto.fechaFabricacion) : null,
+          proveedor: dto.proveedor,
+          notas: dto.notas,
+        },
+        include: {
+          producto: { select: { id: true, nombre: true, sku: true } },
+          bodega:   { select: { id: true, nombre: true, codigo: true } },
+        },
+      });
+    }
   }
 
   /**

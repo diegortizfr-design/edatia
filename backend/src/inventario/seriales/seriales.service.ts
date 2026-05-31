@@ -1,22 +1,39 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { IsInt, IsString, IsNotEmpty, IsArray, IsOptional, IsIn } from 'class-validator';
+import { MovimientosService } from '../movimientos/movimientos.service';
 
-export interface CreateSerialesDto {
-  productoId: number;
-  bodegaId: number;
-  seriales: string[];       // lista de números de serie
+export class CreateSerialesDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsInt()
+  bodegaId!: number;
+
+  @IsArray() @IsString({ each: true }) @IsNotEmpty({ each: true })
+  seriales!: string[];
+
+  @IsOptional() @IsInt()
   loteId?: number;
+
+  @IsOptional() @IsString()
   notas?: string;
 }
 
-export interface ActualizarEstadoDto {
-  estado: 'DISPONIBLE' | 'VENDIDO' | 'DEVUELTO' | 'BAJA';
+export class ActualizarEstadoDto {
+  @IsString() @IsIn(['DISPONIBLE', 'VENDIDO', 'DEVUELTO', 'BAJA', 'EN_TRANSITO'])
+  estado!: string;
+
+  @IsOptional() @IsString()
   notas?: string;
 }
 
 @Injectable()
 export class SerialesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly movimientosService: MovimientosService,
+  ) {}
 
   async findAll(
     empresaId: number,
@@ -64,7 +81,7 @@ export class SerialesService {
   }
 
   /** Ingresa múltiples seriales de una sola vez (entrada de mercancía) */
-  async ingresarSeriales(dto: CreateSerialesDto, empresaId: number) {
+  async ingresarSeriales(dto: CreateSerialesDto, empresaId: number, usuarioId?: number) {
     const producto = await (this.prisma as any).producto.findFirst({ where: { id: dto.productoId, empresaId } });
     if (!producto) throw new NotFoundException('Producto no encontrado');
     if (!producto.manejaSerial) throw new BadRequestException('Este producto no está configurado para manejar seriales');
@@ -82,17 +99,25 @@ export class SerialesService {
       throw new ConflictException(`Seriales ya registrados: ${duplicados}`);
     }
 
-    const data = dto.seriales.map(serial => ({
-      empresaId,
+    let loteNumero: string | undefined;
+    if (dto.loteId) {
+      const lote = await (this.prisma as any).lote.findFirst({ where: { id: dto.loteId, empresaId } });
+      if (lote) {
+        loteNumero = lote.numero;
+      }
+    }
+
+    // Registrar entrada formal en el Kardex y crear los registros de serial
+    await this.movimientosService.procesarEntrada({
       productoId: dto.productoId,
       bodegaId: dto.bodegaId,
-      loteId: dto.loteId ?? null,
-      serial,
-      estado: 'DISPONIBLE',
-      notas: dto.notas,
-    }));
-
-    await (this.prisma as any).numeroSerie.createMany({ data });
+      cantidad: dto.seriales.length,
+      costoUnitario: Number(producto.costoPromedio),
+      concepto: 'OTRO',
+      notas: dto.notas || 'Ingreso manual de seriales',
+      loteNumero,
+      seriales: dto.seriales,
+    }, empresaId, usuarioId || 1);
 
     return {
       ingresados: dto.seriales.length,

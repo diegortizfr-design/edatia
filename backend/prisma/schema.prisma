@@ -637,7 +637,8 @@ model MovimientoInventario {
   movimientoParId  Int?
   notas            String?
   estado           String?  @default("COMPLETADO")
-
+  serialesEntrada  NumeroSerie[] @relation("SerialEntrada")
+  serialesSalida   NumeroSerie[] @relation("SerialSalida")
   fechaMovimiento  DateTime @default(now())
   createdAt        DateTime @default(now())
 
@@ -859,7 +860,9 @@ model NumeroSerie {
   notas       String?
 
   movimientoEntradaId Int?
+  movimientoEntrada   MovimientoInventario? @relation("SerialEntrada", fields: [movimientoEntradaId], references: [id])
   movimientoSalidaId  Int?
+  movimientoSalida    MovimientoInventario? @relation("SerialSalida", fields: [movimientoSalidaId], references: [id])
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -867,6 +870,8 @@ model NumeroSerie {
   @@unique([empresaId, productoId, serial])
   @@index([empresaId, productoId])
   @@index([empresaId, estado])
+  @@index([movimientoEntradaId])
+  @@index([movimientoSalidaId])
 }
 
 model VarianteProducto {

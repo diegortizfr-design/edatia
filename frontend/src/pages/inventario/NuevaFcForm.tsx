@@ -11,6 +11,7 @@ interface LineaItem {
   cantidad: string
   costoUnitario: string
   descuentoPct: string
+  tipoIva: string
 }
 
 function fmt(n: number) {
@@ -72,7 +73,8 @@ export function NuevaFcForm() {
         productoSku: ri.ordenCompraItem?.producto?.sku || '',
         cantidad: String(ri.cantidadRecibida),
         costoUnitario: String(ri.costoUnitario),
-        descuentoPct: '0'
+        descuentoPct: '0',
+        tipoIva: ri.ordenCompraItem?.producto?.tipoIva || 'IVA_19'
       }))
       setItems(mappedItems)
     }
@@ -101,6 +103,7 @@ export function NuevaFcForm() {
       cantidad: '1',
       costoUnitario: String(Number(producto.costoPromedio) || 0),
       descuentoPct: '0',
+      tipoIva: producto.tipoIva || 'IVA_19',
     }])
     setBusqueda('')
   }
@@ -118,9 +121,17 @@ export function NuevaFcForm() {
     const costo = parseFloat(item.costoUnitario) || 0
     const dto = parseFloat(item.descuentoPct) || 0
     const subtotal = cant * costo * (1 - dto / 100)
-    return { ...item, subtotalCalc: subtotal }
+
+    let tasaIva = 0.19
+    if (item.tipoIva === 'EXENTO' || item.tipoIva === 'EXCLUIDO') tasaIva = 0
+    else if (item.tipoIva === 'IVA_5') tasaIva = 0.05
+    const ivaCalc = subtotal * tasaIva
+
+    return { ...item, subtotalCalc: subtotal, ivaCalc }
   })
-  const total = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
+  const totalSubtotal = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
+  const totalIva = lineas.reduce((acc, l) => acc + l.ivaCalc, 0)
+  const totalFactura = totalSubtotal + totalIva
 
   const mutation = useMutation({
     mutationFn: (data: any) => createFacturaCompra(data),
@@ -147,10 +158,10 @@ export function NuevaFcForm() {
       prefijoProveedor: prefijo || undefined,
       consecutivoProveedor: consecutivo,
       fechaEmision: fechaEmision || new Date().toISOString().split('T')[0],
-      subtotal: total,
+      subtotal: totalSubtotal,
       descuento: 0,
-      iva: total * 0.19,
-      total: total * 1.19,
+      iva: totalIva,
+      total: totalFactura,
       xmlAdjunto: xmlNombre || undefined,
       recepcionId: recepcionId || undefined,
       notas: notas || undefined,
@@ -430,17 +441,17 @@ export function NuevaFcForm() {
                 <tfoot>
                   <tr className="border-t-2 border-slate-100">
                     <td colSpan={4} className="pt-4 text-right text-xs font-bold text-slate-500">Subtotal Factura:</td>
-                    <td className="pt-4 text-right text-sm font-extrabold text-slate-800">{fmt(total)}</td>
+                    <td className="pt-4 text-right text-sm font-extrabold text-slate-800">{fmt(totalSubtotal)}</td>
                     <td></td>
                   </tr>
                   <tr>
-                    <td colSpan={4} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (19% IVA est.):</td>
-                    <td className="pt-1 text-right text-sm font-extrabold text-slate-800">{fmt(total * 0.19)}</td>
+                    <td colSpan={4} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (IVA calculado):</td>
+                    <td className="pt-1 text-right text-sm font-extrabold text-slate-800">{fmt(totalIva)}</td>
                     <td></td>
                   </tr>
                   <tr className="border-t border-dashed border-slate-200">
                     <td colSpan={4} className="pt-2 text-right text-xs font-bold text-slate-600">Total Factura Proveedor:</td>
-                    <td className="pt-2 text-right text-base font-black text-indigo-600">{fmt(total * 1.19)}</td>
+                    <td className="pt-2 text-right text-base font-black text-indigo-600">{fmt(totalFactura)}</td>
                     <td></td>
                   </tr>
                 </tfoot>

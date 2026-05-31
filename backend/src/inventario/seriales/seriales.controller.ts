@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards, BadRequestException } from '@nestjs/common';
 import { SerialesService, CreateSerialesDto, ActualizarEstadoDto } from './seriales.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
@@ -31,6 +31,7 @@ export class SerialesController {
 
   @Get('buscar')
   buscar(@Query('serial') serial: string, @GetUser() user: JwtPayload) {
+    if (!serial) throw new BadRequestException('El parámetro serial es requerido');
     return this.svc.buscarPorSerial(serial, user.empresaId!);
   }
 
@@ -41,7 +42,7 @@ export class SerialesController {
 
   @Post('ingresar')
   ingresar(@Body() dto: CreateSerialesDto, @GetUser() user: JwtPayload) {
-    return this.svc.ingresarSeriales(dto, user.empresaId!);
+    return this.svc.ingresarSeriales(dto, user.empresaId!, user.sub);
   }
 
   @Patch(':id/estado')

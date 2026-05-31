@@ -46,7 +46,7 @@ export class LotesController {
 
   @Post()
   create(@Body() dto: CreateLoteDto, @GetUser() user: JwtPayload) {
-    return this.svc.create(dto, user.empresaId!);
+    return this.svc.create(dto, user.empresaId!, user.sub);
   }
 
   @Patch(':id')
