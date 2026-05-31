@@ -3,7 +3,7 @@ import { Globe, Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal, Ma
 
 // ─── Interfaces y Estructuras de Datos ────────────────────────────────────────
 
-interface Pais {
+export interface Pais {
   id: string;
   nombre: string;
   codigo: string; // ej. CO, ES, US (Código ISO Alfa-2)
@@ -11,34 +11,34 @@ interface Pais {
   indicativoTelefonico: string; // ej. 57
 }
 
-interface Departamento {
+export interface Departamento {
   id: string;
   nombre: string;
   paisId: string;
   codigoDian: string; // Código DIVIPOLA de 2 dígitos
 }
 
-interface Ciudad {
+export interface Ciudad {
   id: string;
   nombre: string;
   departamentoId: string;
   codigoDian: string; // Código DIVIPOLA de 5 dígitos
 }
 
-interface Comuna {
+export interface Comuna {
   id: string;
   nombre: string;
   ciudadId: string;
 }
 
-interface Barrio {
+export interface Barrio {
   id: string;
   nombre: string;
   ciudadId: string;
   comunaId?: string; // opcional
 }
 
-interface GeolocationState {
+export interface GeolocationState {
   paises: Pais[];
   departamentos: Departamento[];
   ciudades: Ciudad[];
@@ -46,7 +46,7 @@ interface GeolocationState {
   barrios: Barrio[];
 }
 
-const DEFAULT_GEO_DATA: GeolocationState = {
+export const DEFAULT_GEO_DATA: GeolocationState = {
   paises: [
     { id: 'pais_co', nombre: 'Colombia', codigo: 'CO', codigoDianExogena: '169', indicativoTelefonico: '57' },
     { id: 'pais_es', nombre: 'España', codigo: 'ES', codigoDianExogena: '245', indicativoTelefonico: '34' },

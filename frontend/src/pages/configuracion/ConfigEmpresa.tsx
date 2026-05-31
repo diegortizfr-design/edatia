@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getEmpresaConfig, updateEmpresaConfig } from '../../services/configuracion.service'
 import { getBodegas, updateBodega } from '../../services/inventario.service'
+import { DEFAULT_GEO_DATA, GeolocationState } from './ConfigGeolocalizacion'
 import {
   Building2, FileText, MapPin, Phone, Palette, ShieldCheck,
   Save, CheckCircle2, AlertCircle, ChevronRight, Info, Calculator,
@@ -107,6 +108,42 @@ export function ConfigEmpresa() {
   const [tab, setTab] = useState('informacion')
   const [form, setForm] = useState<any>({})
   const [saved, setSaved] = useState(false)
+
+  const [geoData, setGeoData] = useState<GeolocationState | null>(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('edatia_config_geolocalizacion')
+    if (saved) {
+      try {
+        setGeoData(JSON.parse(saved))
+      } catch (e) {
+        setGeoData(DEFAULT_GEO_DATA)
+      }
+    } else {
+      setGeoData(DEFAULT_GEO_DATA)
+      localStorage.setItem('edatia_config_geolocalizacion', JSON.stringify(DEFAULT_GEO_DATA))
+    }
+  }, [])
+
+  // Derived location selections
+  const selectedPaisObj = geoData?.paises?.find((p: any) => p.codigo === (form.pais ?? 'CO')) || geoData?.paises?.find((p: any) => p.codigo === 'CO');
+  const selectedPaisId = selectedPaisObj?.id || 'pais_co';
+
+  // Filter departments by country ID
+  const filteredDepts = geoData?.departamentos?.filter((d: any) => d.paisId === selectedPaisId) || [];
+
+  // Match the department name in form.departamento to get its ID
+  const selectedDeptObj = filteredDepts.find((d: any) => d.nombre.toLowerCase().trim() === (form.departamento || '').toLowerCase().trim());
+  const selectedDeptId = selectedDeptObj?.id || '';
+
+  // Filter cities by department ID
+  const filteredCities = selectedDeptId
+    ? (geoData?.ciudades?.filter((c: any) => c.departamentoId === selectedDeptId) || [])
+    : [];
+
+  // Match the city name in form.municipio to get its ID
+  const selectedCityObj = filteredCities.find((c: any) => c.nombre.toLowerCase().trim() === (form.municipio || '').toLowerCase().trim());
+  const selectedCityId = selectedCityObj?.id || '';
 
   const { data: empresa, isLoading } = useQuery(['config-empresa'], getEmpresaConfig)
   const { data: bodegas = [], isFetched: isBodegasFetched } = useQuery(['bodegas-config-empresa'], getBodegas)
@@ -431,16 +468,86 @@ export function ConfigEmpresa() {
                     <Input value={form.direccion} onChange={set('direccion')} placeholder="Calle 80 # 45-23" />
                   </Field>
                 </div>
-                <div className="md:col-span-3">
-                  <Field label="Municipio / Ciudad *">
-                    <Input value={form.municipio} onChange={set('municipio')} placeholder="Bogotá" />
-                  </Field>
-                </div>
-                <div className="md:col-span-3">
-                  <Field label="Departamento *">
-                    <Input value={form.departamento} onChange={set('departamento')} placeholder="Cundinamarca" />
-                  </Field>
-                </div>
+
+                {(form.pais ?? 'CO') === 'CO' ? (
+                  <>
+                    <div className="md:col-span-3">
+                      <Field label="Departamento *">
+                        <Select
+                          value={selectedDeptId}
+                          onChange={(val) => {
+                            const deptObj = geoData?.departamentos?.find((d: any) => d.id === val);
+                            if (deptObj) {
+                              setForm((f: any) => ({
+                                ...f,
+                                departamento: deptObj.nombre,
+                                municipio: '',
+                                codigoDane: '',
+                                codigoPostal: ''
+                              }));
+                            } else {
+                              setForm((f: any) => ({
+                                ...f,
+                                departamento: '',
+                                municipio: '',
+                                codigoDane: '',
+                                codigoPostal: ''
+                              }));
+                            }
+                          }}
+                          options={[
+                            { value: '', label: 'Seleccione Departamento...' },
+                            ...filteredDepts.map((d: any) => ({ value: d.id, label: d.nombre }))
+                          ]}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <Field label="Municipio / Ciudad *">
+                        <Select
+                          value={selectedCityId}
+                          onChange={(val) => {
+                            const cityObj = geoData?.ciudades?.find((c: any) => c.id === val);
+                            if (cityObj) {
+                              setForm((f: any) => ({
+                                ...f,
+                                municipio: cityObj.nombre,
+                                codigoDane: cityObj.codigoDian,
+                                codigoPostal: cityObj.codigoDian
+                              }));
+                            } else {
+                              setForm((f: any) => ({
+                                ...f,
+                                municipio: '',
+                                codigoDane: '',
+                                codigoPostal: ''
+                              }));
+                            }
+                          }}
+                          options={[
+                            { value: '', label: 'Seleccione Municipio...' },
+                            ...filteredCities.map((c: any) => ({ value: c.id, label: c.nombre }))
+                          ]}
+                        />
+                      </Field>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="md:col-span-3">
+                      <Field label="Municipio / Ciudad *">
+                        <Input value={form.municipio} onChange={set('municipio')} placeholder="Bogotá" />
+                      </Field>
+                    </div>
+                    <div className="md:col-span-3">
+                      <Field label="Departamento *">
+                        <Input value={form.departamento} onChange={set('departamento')} placeholder="Cundinamarca" />
+                      </Field>
+                    </div>
+                  </>
+                )}
+
                 <div className="md:col-span-4">
                   <Field label="Código DANE (5 dígitos)">
                     <Input value={form.codigoDane} onChange={set('codigoDane')} placeholder="11001" />
@@ -455,7 +562,16 @@ export function ConfigEmpresa() {
                   <Field label="País">
                     <Select
                       value={form.pais ?? 'CO'}
-                      onChange={set('pais')}
+                      onChange={(val) => {
+                        setForm((f: any) => ({
+                          ...f,
+                          pais: val,
+                          departamento: '',
+                          municipio: '',
+                          codigoDane: '',
+                          codigoPostal: ''
+                        }));
+                      }}
                       options={[
                         { value: 'CO', label: 'Colombia' },
                         { value: 'US', label: 'Estados Unidos' },
