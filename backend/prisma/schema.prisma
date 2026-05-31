@@ -510,6 +510,7 @@ model Producto {
   variantes       VarianteProducto[]
   facturaItems    FacturaVentaItem[]
   cotizacionItems CotizacionItem[]
+  pedidoItems     PedidoVentaItem[]
   ventaPosItems   VentaPosItem[]
   facturasCompraItems FacturaCompraItem[]
 
@@ -963,6 +964,7 @@ model ClienteERP {
   updatedAt           DateTime @updatedAt
 
   cotizaciones        Cotizacion[]
+  pedidos             PedidoVenta[]
   facturas            FacturaVenta[]
   notasCredito        NotaCredito[]
   recibos             ReciboCaja[]
@@ -1089,6 +1091,15 @@ model FacturaVenta {
 
   cotizacionId     Int?
   cotizacion       Cotizacion? @relation(fields: [cotizacionId], references: [id])
+  pedidoId         Int?
+  pedido           PedidoVenta? @relation(fields: [pedidoId], references: [id])
+  vendedorNombre   String?
+  vendedorId       Int?
+  atendidoPor      String?
+  canal            String?
+  nivel            String?
+  imprimeDcto      Boolean      @default(true)
+  tipoDocumento    String       @default("FV") // "FV" | "FVE"
 
   // DIAN
   resolucionId     Int?
@@ -1587,4 +1598,63 @@ model HerramientaCartera {
   datosJson       Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model PedidoVenta {
+  id               Int      @id @default(autoincrement())
+  empresaId        Int
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  numero           String
+
+  clienteId        Int
+  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  bodegaId         Int
+
+  fecha            DateTime @default(now())
+  fechaVencimiento DateTime?
+
+  estado           String   @default("BORRADOR")
+  // BORRADOR | APROBADO | FACTURADO | ANULADO
+
+  // Totales
+  subtotal         Decimal  @default(0) @db.Decimal(15,2)
+  descuento        Decimal  @default(0) @db.Decimal(15,2)
+  baseIva19        Decimal  @default(0) @db.Decimal(15,2)
+  iva19            Decimal  @default(0) @db.Decimal(15,2)
+  baseIva5         Decimal  @default(0) @db.Decimal(15,2)
+  iva5             Decimal  @default(0) @db.Decimal(15,2)
+  total            Decimal  @default(0) @db.Decimal(15,2)
+
+  notas            String?
+  condicionesPago  String?
+  usuarioId        Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  items            PedidoVentaItem[]
+  facturas         FacturaVenta[]
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, estado])
+}
+
+model PedidoVentaItem {
+  id               Int         @id @default(autoincrement())
+  pedidoId         Int
+  pedido           PedidoVenta @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  productoId       Int
+  producto         Producto    @relation(fields: [productoId], references: [id])
+
+  descripcion      String
+  unidad           String      @default("UND")
+  cantidad         Decimal     @db.Decimal(15,4)
+  precioUnitario   Decimal     @db.Decimal(15,2)
+  descuentoPct     Decimal     @default(0) @db.Decimal(5,2)
+  descuentoValor   Decimal     @default(0) @db.Decimal(15,2)
+  tipoIva          String      @default("IVA_19")
+  baseIva          Decimal     @default(0) @db.Decimal(15,2)
+  ivaValor         Decimal     @default(0) @db.Decimal(15,2)
+  subtotal         Decimal     @db.Decimal(15,2)
+  total            Decimal     @db.Decimal(15,2)
+  orden            Int         @default(0)
 }

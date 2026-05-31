@@ -36,7 +36,33 @@ export class ClientesService {
       },
     })
     if (!c) throw new NotFoundException('Cliente no encontrado')
-    return c
+
+    // Calcular pago promedio
+    const aplicaciones = await this.prisma.reciboCajaFactura.findMany({
+      where: { factura: { clienteId: id, empresaId } },
+      select: {
+        recibo: { select: { fecha: true } },
+        factura: { select: { fecha: true } },
+      },
+    })
+
+    let promedioDias = 0
+    if (aplicaciones.length > 0) {
+      const diffs = aplicaciones.map(ap => {
+        const fRecibo = new Date(ap.recibo.fecha).getTime()
+        const fFactura = new Date(ap.factura.fecha).getTime()
+        const diffMs = fRecibo - fFactura
+        const diffDays = Math.max(0, diffMs / (1000 * 60 * 60 * 24))
+        return diffDays
+      })
+      const sum = diffs.reduce((acc, d) => acc + d, 0)
+      promedioDias = Math.round(sum / aplicaciones.length)
+    }
+
+    return {
+      ...c,
+      pagoPromedioDias: promedioDias,
+    }
   }
 
   async create(dto: CreateClienteDto, empresaId: number) {

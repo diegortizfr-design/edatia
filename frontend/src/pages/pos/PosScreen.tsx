@@ -48,6 +48,25 @@ export function PosScreen() {
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
 
+  const [docConfigs, setDocConfigs] = useState<any[]>([])
+  const [tipoDocumento, setTipoDocumento] = useState<'POS' | 'DPE'>('POS')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('edatia_config_documentos')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        const filtered = parsed.filter((d: any) => (d.sigla === 'POS' || d.sigla === 'DPE') && d.estado === 'ACTIVO')
+        setDocConfigs(filtered)
+        if (filtered.length > 0) {
+          setTipoDocumento(filtered[0].sigla)
+        }
+      }
+    } catch (e) {
+      console.error("Error loading POS document configs:", e)
+    }
+  }, [])
+
   const sesId = parseInt(sesionId ?? '0')
 
   const { data: sesion } = useQuery(['sesion-pos', sesId], () => getSesion(sesId), {
@@ -64,6 +83,19 @@ export function PosScreen() {
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
     onSuccess: (data) => {
+      try {
+        const saved = localStorage.getItem('edatia_config_documentos')
+        if (saved) {
+          const docs = JSON.parse(saved)
+          const docIdx = docs.findIndex((d: any) => d.sigla === tipoDocumento && d.estado === 'ACTIVO')
+          if (docIdx >= 0) {
+            docs[docIdx].consecutivoSiguiente = Number(docs[docIdx].consecutivoSiguiente ?? 1) + 1
+            localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
+          }
+        }
+      } catch (e) {
+        console.error("Error updating consecutive in config:", e)
+      }
       setVentaOk(data)
       setCart([])
       setPago({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
@@ -172,6 +204,7 @@ export function PosScreen() {
       pagoTransferencia: pago.transferencia,
       pagoNequi: pago.nequi,
       cambio,
+      tipoDocumento,
       items: cart.map(i => ({
         productoId: i.productoId,
         cantidad: i.cantidad,
@@ -448,6 +481,24 @@ export function PosScreen() {
                 <div className="text-slate-400 text-sm">Total a cobrar</div>
                 <div className="text-green-400 font-bold text-3xl">{fmt(totales.total)}</div>
               </div>
+
+              {/* Selector de tipo de comprobante (POS o DPE) */}
+              {docConfigs.length > 0 && (
+                <div className="flex items-center gap-3 bg-slate-700/50 p-2.5 rounded-xl border border-slate-600/50 mb-2">
+                  <span className="text-white text-xs font-semibold uppercase tracking-wider">Tipo Documento:</span>
+                  <select
+                    value={tipoDocumento}
+                    onChange={e => setTipoDocumento(e.target.value as any)}
+                    className="flex-1 bg-slate-800 text-white border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    {docConfigs.map((doc: any) => (
+                      <option key={doc.id} value={doc.sigla}>
+                        {doc.nombre} ({doc.prefijo}) {doc.esElectronico ? '⚡ Electrónico' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Medios de pago */}
               {[

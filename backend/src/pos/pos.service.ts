@@ -288,17 +288,21 @@ export class PosService {
     }
 
     // Generar número de venta
-    const año = new Date().getFullYear()
-    const ultimaVenta = await this.prisma.ventaPos.findFirst({
-      where: { empresaId, numero: { startsWith: `POS-${año}-` } },
-      orderBy: { numero: 'desc' },
-    })
-    let seq = 1
-    if (ultimaVenta) {
-      const parts = ultimaVenta.numero.split('-')
-      seq = parseInt(parts[parts.length - 1]) + 1
+    let numero = (dto as any).numero
+    if (!numero) {
+      const tipo = (dto as any).tipoDocumento || 'POS'
+      const año = new Date().getFullYear()
+      const ultimaVenta = await this.prisma.ventaPos.findFirst({
+        where: { empresaId, numero: { startsWith: `${tipo}-${año}-` } },
+        orderBy: { numero: 'desc' },
+      })
+      let seq = 1
+      if (ultimaVenta) {
+        const parts = ultimaVenta.numero.split('-')
+        seq = parseInt(parts[parts.length - 1]) + 1
+      }
+      numero = `${tipo}-${año}-${String(seq).padStart(5, '0')}`
     }
-    const numero = `POS-${año}-${String(seq).padStart(5, '0')}`
 
     // Calcular totales
     let subtotal = 0, descuentoTotal = 0, baseIva19 = 0, iva19 = 0, baseIva5 = 0, iva5 = 0

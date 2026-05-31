@@ -91,7 +91,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     inventario: location.pathname.startsWith('/inventario'),
-    ventas: location.pathname.startsWith('/ventas'),
+    ventas: location.pathname.startsWith('/ventas') && !location.pathname.startsWith('/ventas/cartera'),
+    cartera: location.pathname.startsWith('/ventas/cartera'),
     contabilidad: location.pathname.startsWith('/contabilidad'),
     digital: location.pathname.startsWith('/digital'),
     config: location.pathname.startsWith('/configuracion') && !location.pathname.startsWith('/configuracion/productos') && !location.pathname.startsWith('/configuracion/terceros'),
@@ -238,13 +239,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {hasModule('ventas') && (
               <>
-                <NavGroup label="Ventas" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
-                  <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Dashboard" isCollapsed={isCollapsed} />
+                <NavGroup label="Facturación" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
                   <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos (Pre-facturas)" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
+                  <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Devoluciones" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
                 </NavGroup>
                 
-                <NavItem to="/pos" icon={<Monitor size={18} />} label="Punto de Venta" isCollapsed={isCollapsed} />
+                <NavGroup label="Cartera" icon={<Coins size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.cartera} onClick={() => toggleGroup('cartera')}>
+                  <NavItem to="/ventas/cartera/cxc" icon={<Receipt size={14}/>} label="Cuentas por Cobrar" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/cartera/por-edades" icon={<BarChart3 size={14}/>} label="Cartera por edades" isCollapsed={isCollapsed} />
+                </NavGroup>
               </>
             )}
             

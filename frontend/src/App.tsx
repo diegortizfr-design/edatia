@@ -37,6 +37,8 @@ import { Clientes } from './pages/ventas/Clientes'
 import { ClienteForm } from './pages/ventas/ClienteForm'
 import { Cotizaciones } from './pages/ventas/Cotizaciones'
 import { CotizacionForm } from './pages/ventas/CotizacionForm'
+import { Pedidos } from './pages/ventas/Pedidos'
+import { PedidoForm } from './pages/ventas/PedidoForm'
 import { Facturas } from './pages/ventas/Facturas'
 import { FacturaForm } from './pages/ventas/FacturaForm'
 import { FacturaDetalle } from './pages/ventas/FacturaDetalle'
@@ -135,12 +137,17 @@ function App() {
         <Route path="/ventas/cotizaciones"       element={<P><Cotizaciones /></P>} />
         <Route path="/ventas/cotizaciones/nueva" element={<P><CotizacionForm /></P>} />
         <Route path="/ventas/cotizaciones/:id"   element={<P><CotizacionForm /></P>} />
+        <Route path="/ventas/pedidos"            element={<P><Pedidos /></P>} />
+        <Route path="/ventas/pedidos/nuevo"      element={<P><PedidoForm /></P>} />
+        <Route path="/ventas/pedidos/:id"        element={<P><PedidoForm /></P>} />
         <Route path="/ventas/facturas"        element={<P><Facturas /></P>} />
         <Route path="/ventas/facturas/nueva" element={<P><FacturaForm /></P>} />
         <Route path="/ventas/facturas/:id"   element={<P><FacturaDetalle /></P>} />
         <Route path="/ventas/notas-credito" element={<P><NotasCredito /></P>} />
         <Route path="/ventas/recibos"       element={<P><ReciboCaja /></P>} />
         <Route path="/ventas/config-dian"   element={<P><ConfigDian /></P>} />
+        <Route path="/ventas/cartera/cxc"   element={<P><div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-lg mx-auto mt-10 text-center"><h1 className="text-xl font-bold text-slate-800">Cuentas por Cobrar</h1><p className="text-slate-550 text-sm mt-2">Módulo en etapa de diseño y desarrollo. Próximamente se integrará aquí el control de facturas vencidas y abonos.</p></div></P>} />
+        <Route path="/ventas/cartera/por-edades" element={<P><div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-lg mx-auto mt-10 text-center"><h1 className="text-xl font-bold text-slate-800">Cartera por Edades</h1><p className="text-slate-555 text-sm mt-2">Módulo en etapa de diseño y desarrollo. Próximamente se integrará aquí el análisis de antigüedad de saldos.</p></div></P>} />
 
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />

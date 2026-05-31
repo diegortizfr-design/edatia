@@ -35,11 +35,15 @@ interface PlantillaDocumento {
 }
 
 const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
-  // Ventas
-  { codigo: 'FV', documento: 'Factura de Venta', area: 'Ventas', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar venta oficial y facturación electrónica' },
+  // Ventas / Facturación
+  { codigo: 'FV', documento: 'Factura de Venta (Remisión)', area: 'Ventas', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar remisiones y ventas internas sin envío a la DIAN' },
+  { codigo: 'FVE', documento: 'Factura de Venta Electrónica', area: 'Ventas', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar venta oficial con envío y validación previa de la DIAN' },
   { codigo: 'NC', documento: 'Nota Crédito', area: 'Ventas', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Corregir o disminuir una factura' },
   { codigo: 'ND', documento: 'Nota Débito', area: 'Ventas', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Aumentar valor de una factura' },
-  { codigo: 'POS', documento: 'Documento POS', area: 'Ventas', obligatorioDian: 'SEGUN_CASO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ventas rápidas al consumidor final' },
+  { codigo: 'POS', documento: 'Documento Equivalente POS', area: 'Ventas', obligatorioDian: 'SEGUN_CASO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ventas rápidas al consumidor final mediante tirilla física' },
+  { codigo: 'DPE', documento: 'Documento Equivalente POS Electrónico', area: 'Ventas', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ticket POS con transmisión electrónica obligatoria a la DIAN' },
+  { codigo: 'DPOS', documento: 'Devolución POS', area: 'Ventas', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Comprobante de devolución para operaciones POS' },
+  { codigo: 'PV', documento: 'Prefactura (Pedido)', area: 'Ventas', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Comprobante previo a la venta para comprometer stock' },
   // Compras
   { codigo: 'DS', documento: 'Documento Soporte', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Compras a no obligados a facturar' },
   { codigo: 'NAS', documento: 'Nota Ajuste Documento Soporte', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Corrección de documento soporte' },
@@ -76,7 +80,6 @@ const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
   { codigo: 'CF', documento: 'Comprobante de Cierre', area: 'Contabilidad', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Cierre contable de período' },
   // Comercial
   { codigo: 'CT', documento: 'Cotización', area: 'Comercial', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Oferta comercial al cliente' },
-  { codigo: 'PV', documento: 'Pedido de Venta', area: 'Comercial', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Confirmación de intención de compra' },
   { codigo: 'CTT', documento: 'Contrato', area: 'Comercial', obligatorioDian: 'NO', operativamenteRecomendado: 'Recomendado', funcionPrincipal: 'Formalizar acuerdos comerciales' },
   // Logística
   { codigo: 'RM', documento: 'Remisión', area: 'Logística', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Soporte de entrega de mercancía' },
@@ -136,9 +139,22 @@ const OPERACION_TO_AREA: Record<string, string> = {
 const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
   {
     id: 'factura_venta',
-    nombre: 'Factura de Venta',
+    nombre: 'Factura de Venta (Remisión)',
     sigla: 'FV',
-    prefijo: 'FE',
+    prefijo: 'FV',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'factura_venta_electronica',
+    nombre: 'Factura de Venta Electrónica',
+    sigla: 'FVE',
+    prefijo: 'FVE',
     consecutivoInicial: 1,
     consecutivoSiguiente: 1,
     tipoOperacion: 'VENTAS',
@@ -149,6 +165,89 @@ const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
     vigenciaMeses: 12,
     rangoDesde: 1,
     rangoHasta: 10000,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'documento_pos',
+    nombre: 'Documento Equivalente POS',
+    sigla: 'POS',
+    prefijo: 'POS',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'TIRILLA_80',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'pos_electronico',
+    nombre: 'Documento Equivalente POS Electrónico',
+    sigla: 'DPE',
+    prefijo: 'DPE',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'TIRILLA_80',
+    esElectronico: true,
+    resolucionDian: 'Resolución DIAN POS Nº 987654321',
+    fechaResolucion: '2026-01-01',
+    vigenciaMeses: 12,
+    rangoDesde: 1,
+    rangoHasta: 50000,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'devolucion_pos',
+    nombre: 'Devolución POS',
+    sigla: 'DPOS',
+    prefijo: 'DPOS',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'TIRILLA_80',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'nota_credito',
+    nombre: 'Nota de Crédito',
+    sigla: 'NC',
+    prefijo: 'NC',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: true,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'nota_debito',
+    nombre: 'Nota de Débito',
+    sigla: 'ND',
+    prefijo: 'ND',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: true,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'prefactura_pedido',
+    nombre: 'Prefactura (Pedido)',
+    sigla: 'PV',
+    prefijo: 'PV',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'VENTAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: false,
     estado: 'ACTIVO',
     sucursalId: 'suc_principal'
   },
@@ -227,19 +326,6 @@ const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
     tipoOperacion: 'TESORERIA',
     plantillaImpresion: 'TIRILLA_80',
     esElectronico: false,
-    estado: 'ACTIVO',
-    sucursalId: 'suc_principal'
-  },
-  {
-    id: 'nota_credito',
-    nombre: 'Nota de Crédito',
-    sigla: 'NC',
-    prefijo: 'NC',
-    consecutivoInicial: 1,
-    consecutivoSiguiente: 1,
-    tipoOperacion: 'VENTAS',
-    plantillaImpresion: 'CARTA',
-    esElectronico: true,
     estado: 'ACTIVO',
     sucursalId: 'suc_principal'
   },
@@ -351,6 +437,33 @@ export function ConfigDocumentos() {
       try {
         let docs = JSON.parse(saved)
         let modified = false
+        // Migración: actualizar documentos preexistentes a sus nuevos nombres y estados correctos
+        docs = docs.map((d: any) => {
+          if (d.id === 'factura_venta' || d.sigla === 'FV') {
+            if (d.nombre !== 'Factura de Venta (Remisión)' || d.esElectronico !== false) {
+              modified = true
+              return {
+                ...d,
+                nombre: 'Factura de Venta (Remisión)',
+                esElectronico: false,
+                prefijo: 'FV'
+              }
+            }
+          }
+          if (d.id === 'documento_pos' || d.sigla === 'POS') {
+            if (d.nombre !== 'Documento Equivalente POS' || d.esElectronico !== false) {
+              modified = true
+              return {
+                ...d,
+                nombre: 'Documento Equivalente POS',
+                esElectronico: false,
+                prefijo: 'POS'
+              }
+            }
+          }
+          return d
+        })
+
         // Migración: añadir documentos por defecto faltantes
         DEFAULT_DOCUMENTS.forEach(defDoc => {
           const exists = docs.some((d: any) => d.id === defDoc.id || d.sigla === defDoc.sigla)

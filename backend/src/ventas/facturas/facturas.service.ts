@@ -10,6 +10,7 @@ const INCLUDE_FULL = {
   cliente: true,
   bodega: { select: { nombre: true, codigo: true } },
   resolucion: true,
+  pedido: true,
   items: {
     include: { producto: { select: { sku: true, nombre: true, costoPromedio: true, unidadMedida: { select: { abreviatura: true } } } } },
     orderBy: { orden: 'asc' as const },
@@ -58,7 +59,7 @@ export class FacturasService {
 
   async create(dto: CreateFacturaDto, empresaId: number, usuarioId: number) {
     const totales = calcularTotales(dto.items)
-    const numero = await this.generarNumero(empresaId)
+    const numero = dto.numero || await this.generarNumero(empresaId, dto.tipoDocumento)
 
     // Obtener costos actuales (CPP) para el asiento contable
     const productosIds = [...new Set(dto.items.map(i => i.productoId))]
@@ -99,6 +100,7 @@ export class FacturasService {
         clienteId: dto.clienteId,
         bodegaId: dto.bodegaId,
         cotizacionId: dto.cotizacionId,
+        pedidoId: dto.pedidoId,
         fecha: new Date(dto.fecha),
         fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
         formaPago: dto.formaPago,
@@ -110,6 +112,13 @@ export class FacturasService {
         usuarioId,
         estado: 'BORRADOR',
         saldo,
+        vendedorNombre: dto.vendedorNombre,
+        vendedorId: dto.vendedorId,
+        atendidoPor: dto.atendidoPor,
+        canal: dto.canal,
+        nivel: dto.nivel,
+        imprimeDcto: dto.imprimeDcto ?? true,
+        tipoDocumento: dto.tipoDocumento ?? 'FV',
         ...totales,
         items: { create: itemsConCosto },
       },
@@ -121,6 +130,14 @@ export class FacturasService {
       await this.prisma.cotizacion.update({
         where: { id: dto.cotizacionId },
         data: { estado: 'FACTURADA' },
+      })
+    }
+
+    // Si viene de pedido, marcarlo como FACTURADO
+    if (dto.pedidoId) {
+      await this.prisma.pedidoVenta.update({
+        where: { id: dto.pedidoId },
+        data: { estado: 'FACTURADO' },
       })
     }
 
@@ -352,13 +369,14 @@ export class FacturasService {
     })
   }
 
-  private async generarNumero(empresaId: number): Promise<string> {
+  private async generarNumero(empresaId: number, tipoDocumento = 'FV'): Promise<string> {
     const last = await this.prisma.facturaVenta.findFirst({
-      where: { empresaId },
+      where: { empresaId, tipoDocumento },
       orderBy: { id: 'desc' },
     })
     const year = new Date().getFullYear()
     const seq = last ? parseInt(last.numero.split('-').pop() ?? '0') + 1 : 1
-    return `FV-${year}-${String(seq).padStart(5, '0')}`
+    const prefix = tipoDocumento === 'FVE' ? 'FVE' : 'FV'
+    return `${prefix}-${year}-${String(seq).padStart(5, '0')}`
   }
 }

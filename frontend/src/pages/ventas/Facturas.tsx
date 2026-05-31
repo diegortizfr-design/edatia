@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Plus, Download, Send, XCircle, FileText } from 'lucide-react'
@@ -43,6 +43,7 @@ export function Facturas() {
   const [estado, setEstado] = useState('')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
+  const [tipoDoc, setTipoDoc] = useState('')
 
   const { data: facturas = [], isLoading } = useQuery({
     queryKey: ['facturas', estado, desde, hasta],
@@ -52,6 +53,13 @@ export function Facturas() {
       hasta: hasta || undefined,
     }),
   })
+
+  const filteredFacturas = useMemo(() => {
+    return (facturas as any[]).filter((f: any) => {
+      if (!tipoDoc) return true
+      return f.tipoDocumento === tipoDoc
+    })
+  }, [facturas, tipoDoc])
 
   const mutEmitir = useMutation({
     mutationFn: (id: number) => emitirFactura(id),
@@ -64,7 +72,7 @@ export function Facturas() {
   })
 
   const exportCSV = () => {
-    const rows = (facturas as any[]).map((f: any) => [
+    const rows = filteredFacturas.map((f: any) => [
       `${f.prefijo ?? ''}${f.numero}`,
       f.cliente?.nombre ?? '',
       f.fecha ?? '',
@@ -88,7 +96,7 @@ export function Facturas() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Facturas de Venta</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{(facturas as any[]).length} factura(s)</p>
+          <p className="text-slate-500 text-sm mt-0.5">{filteredFacturas.length} factura(s)</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={exportCSV}
@@ -104,6 +112,12 @@ export function Facturas() {
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-center">
+        <select value={tipoDoc} onChange={e => setTipoDoc(e.target.value)}
+          className="p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
+          <option value="">Todos los tipos (FV / FVE)</option>
+          <option value="FV">Factura / Remisión (FV)</option>
+          <option value="FVE">Factura Electrónica (FVE)</option>
+        </select>
         <select value={estado} onChange={e => setEstado(e.target.value)}
           className="p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
           <option value="">Todos los estados</option>
@@ -119,13 +133,13 @@ export function Facturas() {
           <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
             className="p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
         </div>
-        {(estado || desde || hasta) && (
-          <button onClick={() => { setEstado(''); setDesde(''); setHasta('') }}
+        {(tipoDoc || estado || desde || hasta) && (
+          <button onClick={() => { setTipoDoc(''); setEstado(''); setDesde(''); setHasta('') }}
             className="text-xs text-slate-500 hover:text-red-600 underline">
             Limpiar filtros
           </button>
         )}
-        <span className="ml-auto text-xs text-slate-400">{(facturas as any[]).length} resultado(s)</span>
+        <span className="ml-auto text-xs text-slate-400">{filteredFacturas.length} resultado(s)</span>
       </div>
 
       {/* Tabla */}
@@ -143,7 +157,7 @@ export function Facturas() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(facturas as any[]).map((f: any) => (
+                {filteredFacturas.map((f: any) => (
                   <tr key={f.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-indigo-700">
                       {f.prefijo}{f.numero}
@@ -205,7 +219,7 @@ export function Facturas() {
                     </td>
                   </tr>
                 ))}
-                {(facturas as any[]).length === 0 && (
+                {filteredFacturas.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-5 py-12 text-center">
                       <FileText size={36} className="mx-auto text-slate-300 mb-2" />

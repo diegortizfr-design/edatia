@@ -13,9 +13,11 @@ export class FacturaItemDto {
 }
 
 export class CreateFacturaDto {
+  @IsString() @IsOptional() numero?: string
   @IsNumber() @Type(() => Number) clienteId!: number
   @IsNumber() @Type(() => Number) bodegaId!: number
   @IsNumber() @IsOptional() @Type(() => Number) cotizacionId?: number
+  @IsNumber() @IsOptional() @Type(() => Number) pedidoId?: number
 
   @IsDateString() fecha!: string
   @IsDateString() @IsOptional() fechaVencimiento?: string
@@ -33,6 +35,15 @@ export class CreateFacturaDto {
   items!: FacturaItemDto[]
 
   @IsString() @IsOptional() notas?: string
+
+  // Campos comerciales extra
+  @IsString() @IsOptional() vendedorNombre?: string
+  @IsNumber() @IsOptional() @Type(() => Number) vendedorId?: number
+  @IsString() @IsOptional() atendidoPor?: string
+  @IsString() @IsOptional() canal?: string
+  @IsString() @IsOptional() nivel?: string
+  @IsBoolean() @IsOptional() imprimeDcto?: boolean
+  @IsIn(['FV', 'FVE']) @IsOptional() tipoDocumento?: string
 
   // Si true, genera CUFE y XML DIAN (requiere resolución activa configurada)
   @IsBoolean() @IsOptional() emitirDian?: boolean

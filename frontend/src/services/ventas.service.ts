@@ -36,6 +36,18 @@ export const updateCotizacion = (id: number, data: any) =>
 export const cambiarEstadoCotizacion = (id: number, estado: string) =>
   api.patch(`/ventas/cotizaciones/${id}/estado`, { estado }).then(r => r.data)
 
+// ── Pedidos / Prefacturas ─────────────────────────────────────────────────────
+export const getPedidos = (params?: { clienteId?: number; estado?: string }) =>
+  api.get('/ventas/pedidos', { params }).then(r => r.data)
+export const getPedido = (id: number) =>
+  api.get(`/ventas/pedidos/${id}`).then(r => r.data)
+export const createPedido = (data: any) =>
+  api.post('/ventas/pedidos', data).then(r => r.data)
+export const updatePedido = (id: number, data: any) =>
+  api.patch(`/ventas/pedidos/${id}`, data).then(r => r.data)
+export const cambiarEstadoPedido = (id: number, estado: string) =>
+  api.patch(`/ventas/pedidos/${id}/estado`, { estado }).then(r => r.data)
+
 // ── Facturas de Venta ─────────────────────────────────────────────────────────
 export const getFacturas = (params?: { clienteId?: number; estado?: string; desde?: string; hasta?: string }) =>
   api.get('/ventas/facturas', { params }).then(r => r.data)
