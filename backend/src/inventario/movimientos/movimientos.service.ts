@@ -66,7 +66,7 @@ export class MovimientosService {
     const cpp = Number(producto.costoPromedio);
     const saldoAnterior = Number(stock.cantidad);
     const nuevoSaldo = saldoAnterior - data.cantidad;
-    const numero = data.numeroMov || (await this.generarNumero('MOV', data.empresaId));
+    const numero = data.numeroMov || (await this.generarNumero('MOV', data.empresaId, tx));
 
     // 1. Actualizar Stock
     await tx.stock.update({
@@ -262,10 +262,11 @@ export class MovimientosService {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  private async generarNumero(prefijo: string, empresaId: number): Promise<string> {
+  private async generarNumero(prefijo: string, empresaId: number, tx?: any): Promise<string> {
     const year = new Date().getFullYear();
+    const db = tx || this.prisma;
     // Contar movimientos de este año para esta empresa
-    const count = await (this.prisma as any).movimientoInventario.count({
+    const count = await (db as any).movimientoInventario.count({
       where: { empresaId, numero: { startsWith: `${prefijo}-${year}-` } },
     });
     const seq = String(count + 1).padStart(5, '0');
@@ -325,9 +326,11 @@ export class MovimientosService {
       (this.prisma as any).movimientoInventario.findMany({
         where,
         include: {
-          producto: { select: { id: true, nombre: true, sku: true } },
+          producto: { select: { id: true, nombre: true, sku: true, manejaLotes: true, manejaSerial: true } },
           bodegaOrigen: { select: { id: true, nombre: true, codigo: true } },
           bodegaDestino: { select: { id: true, nombre: true, codigo: true } },
+          serialesEntrada: { select: { id: true, serial: true } },
+          serialesSalida: { select: { id: true, serial: true } },
         },
         orderBy: { fechaMovimiento: 'desc' },
         take: filters?.limit ?? 50,
@@ -363,8 +366,6 @@ export class MovimientosService {
     const bodega = await (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } });
     if (!bodega) throw new NotFoundException('Bodega no encontrada');
 
-    const numero = await this.generarNumero('MOV', empresaId);
-
     // Validaciones de Lotes y Seriales
     if (producto.manejaLotes && !dto.loteNumero) {
       throw new BadRequestException(`Debe especificar el número de lote para el producto ${producto.nombre}`);
@@ -379,6 +380,7 @@ export class MovimientosService {
     }
 
     return this.prisma.$transaction(async (tx: any) => {
+      const numero = await this.generarNumero('MOV', empresaId, tx);
       const stock = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, tx);
 
       const cantAnterior = parseFloat(stock.cantidad.toString());
@@ -563,7 +565,6 @@ export class MovimientosService {
     const bodega = await (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } });
     if (!bodega) throw new NotFoundException('Bodega no encontrada');
 
-    const numero = await this.generarNumero('MOV', empresaId);
     const cppAnterior = parseFloat(producto.costoPromedio.toString());
     const tipo = dto.cantidad >= 0 ? 'AJUSTE_POSITIVO' : 'AJUSTE_NEGATIVO';
     const cantAbs = Math.abs(dto.cantidad);
@@ -590,6 +591,7 @@ export class MovimientosService {
     }
 
     return this.prisma.$transaction(async (tx: any) => {
+      const numero = await this.generarNumero('MOV', empresaId, tx);
       // BC-02 + BC-03: Si el motivo es DAR_DE_BAJA, procesamos desde la bodega especial de averías/pérdidas
       if (dto.motivo === 'DAR_DE_BAJA') {
         const esPerdida = dto.notas?.toLowerCase().includes('pérdidas') || dto.notas?.toLowerCase().includes('perdidas');
@@ -696,7 +698,7 @@ export class MovimientosService {
           },
         });
 
-        const numeroEntrada = await this.generarNumero('MOV', empresaId);
+        const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
         const cantEspecialAnterior = parseFloat(stockEspecial.cantidad.toString());
         await tx.movimientoInventario.create({
           data: {
@@ -991,9 +993,9 @@ export class MovimientosService {
     }
 
     const cpp = parseFloat(producto.costoPromedio.toString());
-    const numeroSalida = await this.generarNumero('MOV', empresaId);
 
     return this.prisma.$transaction(async (tx: any) => {
+      const numeroSalida = await this.generarNumero('MOV', empresaId, tx);
       // Salida de origen
       await tx.stock.update({
         where: { id: stockOrigen.id },
@@ -1182,7 +1184,7 @@ export class MovimientosService {
       }
 
       // Generar consecutivo para el movimiento de entrada
-      const numeroEntrada = await this.generarNumero('MOV', empresaId);
+      const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
 
       // Crear el movimiento TRASLADO_ENTRADA
       const mov2 = await tx.movimientoInventario.create({
@@ -1255,9 +1257,8 @@ export class MovimientosService {
       throw new BadRequestException(`Stock insuficiente. Disponible: ${disponible}, solicitado: ${dto.cantidad}`);
     }
 
-    const numero = await this.generarNumero('DEV', empresaId);
-
     return this.prisma.$transaction(async (tx: any) => {
+      const numero = await this.generarNumero('DEV', empresaId, tx);
       // BC-05: delegar el procesamiento a registrarSalidaInterna para consistencia de lotes y seriales
       return this.registrarSalidaInterna(tx, {
         empresaId,
@@ -1285,9 +1286,8 @@ export class MovimientosService {
     const bodega = await (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } });
     if (!bodega) throw new NotFoundException('Bodega no encontrada');
 
-    const numero = await this.generarNumero('DEV', empresaId);
-
     return this.prisma.$transaction(async (tx: any) => {
+      const numero = await this.generarNumero('DEV', empresaId, tx);
       const stock = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, tx);
 
       const cantAnterior = parseFloat(stock.cantidad.toString());

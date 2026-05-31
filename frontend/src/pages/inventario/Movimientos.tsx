@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { 
   getOrdenesCompra, 
   getMovimientos, 
@@ -15,12 +15,15 @@ import {
 import { 
   FileText, RotateCcw, AlertTriangle, Trash2, Search, ArrowUpRight, 
   ArrowDownLeft, ArrowLeftRight, Clock, CheckCircle, Plus, BookOpen, 
-  HelpCircle, Sparkles, Layers, Box, CheckSquare 
+  HelpCircle, Sparkles, Layers, Box, CheckSquare, Printer, X 
 } from 'lucide-react'
 
 export function Movimientos() {
   const qc = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const docVerParam = searchParams.get('ver')
   const [activeTab, setActiveTab] = useState<'docs' | 'kardex' | 'bolsas'>('docs')
+  const [documentoVer, setDocumentoVer] = useState<any | null>(null)
   
   // Tab 1 filters
   const [filtroDocTipo, setFiltroDocTipo] = useState<string>('todos')
@@ -63,6 +66,131 @@ export function Movimientos() {
   })
 
   const dbMovements = movementsData?.data || []
+
+  // Resolve items and details for the selected document print view
+  const getDocumentoDetalles = (doc: any) => {
+    if (!doc) return null
+
+    let itemsList: any[] = []
+    let extraData: any = {}
+
+    if (doc.tipo === 'OC') {
+      const ocObj = ocs.find((o: any) => o.numero === doc.id || o.id === doc.dbId)
+      if (ocObj) {
+        itemsList = (ocObj.items || []).map((item: any) => ({
+          sku: item.producto?.sku || 'S/SKU',
+          nombre: item.producto?.nombre || 'Producto',
+          cantidad: Number(item.cantidad),
+          costoUnitario: Number(item.costoUnitario),
+          descuento: (Number(item.cantidad) * Number(item.costoUnitario)) * ((item.descuentoPct || 0) / 100),
+          iva: Number(item.ivaValor || 0),
+          total: Number(item.total),
+        }))
+        extraData = {
+          proveedor: ocObj.proveedor,
+          bodega: ocObj.bodega,
+          fechaEsperada: ocObj.fechaEsperada,
+          subtotal: ocObj.subtotal,
+          descuento: ocObj.descuento,
+          iva: ocObj.iva,
+          total: ocObj.total,
+          notas: ocObj.notas,
+        }
+      }
+    } else if (doc.tipo === 'RP') {
+      const ocObj = ocs.find((o: any) => (o.recepciones || []).some((r: any) => r.numero === doc.id))
+      const rpObj = ocObj?.recepciones?.find((r: any) => r.numero === doc.id)
+      if (rpObj) {
+        itemsList = (rpObj.items || []).map((item: any) => ({
+          sku: item.ordenCompraItem?.producto?.sku || 'S/SKU',
+          nombre: item.ordenCompraItem?.producto?.nombre || 'Producto',
+          cantidad: Number(item.cantidadRecibida),
+          costoUnitario: Number(item.costoUnitario),
+          total: Number(item.cantidadRecibida) * Number(item.costoUnitario),
+        }))
+        extraData = {
+          ocNumero: ocObj.numero,
+          proveedor: ocObj.proveedor,
+          bodega: ocObj.bodega,
+          notas: rpObj.notas,
+          total: itemsList.reduce((acc, i) => acc + i.total, 0)
+        }
+      }
+    } else if (doc.tipo === 'FC') {
+      const fcObj = fcs.find((f: any) => f.numero === doc.id || f.id === doc.dbId)
+      if (fcObj) {
+        itemsList = (fcObj.items || []).map((item: any) => ({
+          sku: item.producto?.sku || 'S/SKU',
+          nombre: item.producto?.nombre || 'Producto',
+          cantidad: Number(item.cantidad),
+          costoUnitario: Number(item.costoUnitario),
+          total: Number(item.subtotal || (item.cantidad * item.costoUnitario)),
+        }))
+        extraData = {
+          proveedor: fcObj.proveedor,
+          fechaEmision: fcObj.fechaEmision,
+          fechaVencimiento: fcObj.fechaVencimiento,
+          subtotal: fcObj.subtotal,
+          descuento: fcObj.descuento,
+          iva: fcObj.iva,
+          total: fcObj.total,
+          xmlAdjunto: fcObj.xmlAdjunto,
+          recepcionId: fcObj.recepcionId,
+          notas: fcObj.notes || fcObj.notas,
+        }
+      }
+    } else if (doc.tipo === 'AINE' || doc.tipo === 'AINS') {
+      const movs = dbMovements.filter((m: any) => m.numero === doc.id)
+      if (movs.length > 0) {
+        itemsList = movs.map((m: any) => {
+          const seriales = m.tipo === 'AJUSTE_POSITIVO' 
+            ? (m.serialesEntrada || []) 
+            : (m.serialesSalida || [])
+          return {
+            sku: m.producto?.sku || 'S/SKU',
+            nombre: m.producto?.nombre || 'Producto',
+            cantidad: Math.abs(Number(m.cantidad)),
+            costoUnitario: Number(m.costoUnitario),
+            total: Math.abs(Number(m.cantidad)) * Number(m.costoUnitario),
+            seriales: seriales.map((s: any) => s.serial).join(', '),
+            lote: m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || m.notas?.match(/\[Lotes FEFO:\s*(.+?)\]/)?.[1] || null
+          }
+        })
+        extraData = {
+          bodega: movs[0].bodegaOrigen || movs[0].bodegaDestino,
+          concepto: movs[0].concepto,
+          notas: movs[0].notas,
+          usuarioId: movs[0].usuarioId,
+          total: itemsList.reduce((acc, i) => acc + i.total, 0)
+        }
+      }
+    } else if (doc.tipo === 'TI') {
+      const movs = dbMovements.filter((m: any) => m.numero === doc.id)
+      if (movs.length > 0) {
+        itemsList = movs.map((m: any) => {
+          const seriales = m.serialesSalida || m.serialesEntrada || []
+          return {
+            sku: m.producto?.sku || 'S/SKU',
+            nombre: m.producto?.nombre || 'Producto',
+            cantidad: Math.abs(Number(m.cantidad)),
+            costoUnitario: Number(m.costoUnitario),
+            total: Math.abs(Number(m.cantidad)) * Number(m.costoUnitario),
+            seriales: seriales.map((s: any) => s.serial).join(', '),
+            lote: m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || null
+          }
+        })
+        extraData = {
+          bodegaOrigen: movs[0].bodegaOrigen,
+          bodegaDestino: movs[0].bodegaDestino,
+          notas: movs[0].notes || movs[0].notas,
+          total: itemsList.reduce((acc, i) => acc + i.total, 0),
+          estado: doc.estado,
+        }
+      }
+    }
+
+    return { itemsList, extraData }
+  }
 
   // Extract real transfers from dbMovements
   const traslados = dbMovements
@@ -250,6 +378,16 @@ export function Movimientos() {
   // Sort and filter documents
   const sortedDocs = allDocs.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
   
+  // Automatically open document from URL query param if present
+  useEffect(() => {
+    if (docVerParam && sortedDocs.length > 0) {
+      const found = sortedDocs.find((d: any) => d.id === docVerParam)
+      if (found) {
+        setDocumentoVer(found)
+      }
+    }
+  }, [docVerParam, sortedDocs])
+  
   const filteredDocs = sortedDocs.filter(d => {
     const matchTipo = filtroDocTipo === 'todos' || 
       (filtroDocTipo === 'OC' && d.tipo === 'OC') ||
@@ -343,6 +481,8 @@ export function Movimientos() {
   const fmtMoneda = (n: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
   }
+
+  const docDetalles = getDocumentoDetalles(documentoVer)
 
   return (
     <div className="space-y-6 relative">
@@ -474,7 +614,14 @@ export function Movimientos() {
 
                       return (
                         <tr key={doc.id + '-' + idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-slate-700">{doc.id}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                            <button
+                              onClick={() => setDocumentoVer(doc)}
+                              className="text-indigo-600 hover:text-indigo-850 hover:underline font-bold text-left"
+                            >
+                              {doc.id}
+                            </button>
+                          </td>
                           <td className="px-6 py-4 font-semibold text-slate-800">{doc.tipoLabel}</td>
                           <td className="px-6 py-4 text-slate-600 font-medium">{doc.origenDestino}</td>
                           <td className="px-6 py-4 text-slate-400 font-medium">
@@ -847,6 +994,287 @@ export function Movimientos() {
           </div>
         </div>
       )}
+
+      {/* Document Print/Voucher Modal */}
+      {documentoVer && docDetalles && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print">
+          <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <div className="flex items-center gap-2">
+                <FileText className="text-indigo-600" size={18} />
+                <h3 className="font-extrabold text-slate-800 text-sm">
+                  Vista de Impresión / Comprobante
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    window.print()
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                >
+                  <Printer size={14} /> Imprimir Documento
+                </button>
+                <button
+                  onClick={() => {
+                    setDocumentoVer(null)
+                    if (searchParams.get('ver')) {
+                      setSearchParams({}, { replace: true })
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                >
+                  <X size={14} /> Cerrar
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Content */}
+            <div className="overflow-y-auto p-8 flex-1 bg-slate-100/30">
+              {/* Voucher Printable Layout */}
+              <div 
+                id="printable-voucher" 
+                className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6 max-w-[210mm] mx-auto text-slate-800"
+                style={{ minHeight: '270mm' }}
+              >
+                {/* Header info */}
+                <div className="flex justify-between items-start border-b border-slate-200 pb-6">
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-black tracking-tight text-slate-900">EDATIA S.A.S.</h2>
+                    <p className="text-[10px] text-slate-500 font-medium">NIT: 901.458.332-1</p>
+                    <p className="text-[10px] text-slate-400">Régimen Común de IVA</p>
+                    <p className="text-[10px] text-slate-400">Calle 100 # 15-22, Of. 504, Bogotá D.C.</p>
+                    <p className="text-[10px] text-slate-400">Tel: +57 (601) 321-4567 | soporte@edatia.com</p>
+                  </div>
+                  
+                  <div className="text-right space-y-2">
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 inline-block">
+                      <span className="block text-[8px] font-black text-indigo-600 uppercase tracking-widest">
+                        Comprobante Interno
+                      </span>
+                      <span className="block text-base font-black font-mono text-slate-900 mt-0.5">
+                        {documentoVer.tipoLabel?.toUpperCase()}
+                      </span>
+                      <span className="block text-sm font-black font-mono text-indigo-600 mt-0.5">
+                        N° {documentoVer.id}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-semibold space-y-0.5">
+                      <p>Fecha Emisión: {new Date(documentoVer.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                      {docDetalles.extraData?.fechaVencimiento && (
+                        <p className="text-red-600">Fecha Vencimiento: {new Date(docDetalles.extraData.fechaVencimiento).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                      )}
+                      <p className="mt-1">
+                        Estado:{' '}
+                        <span className="font-extrabold uppercase text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[8px]">
+                          {documentoVer.estado}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meta Grid */}
+                <div className="grid grid-cols-2 gap-6 bg-slate-50 border border-slate-150 rounded-xl p-4 text-[11px] text-slate-600 leading-relaxed">
+                  <div className="space-y-1">
+                    {docDetalles.extraData?.proveedor ? (
+                      <>
+                        <h4 className="font-black text-slate-950 uppercase tracking-wider text-[9px] mb-1">Datos del Proveedor</h4>
+                        <p><strong className="font-bold text-slate-750">Razón Social:</strong> {docDetalles.extraData.proveedor.nombre}</p>
+                        <p><strong className="font-bold text-slate-750">NIT / Doc:</strong> {docDetalles.extraData.proveedor.nit || docDetalles.extraData.proveedor.numeroDocumento || 'S/N'}</p>
+                        {docDetalles.extraData.proveedor.email && <p><strong className="font-bold text-slate-750">Email:</strong> {docDetalles.extraData.proveedor.email}</p>}
+                        {docDetalles.extraData.proveedor.telefono && <p><strong className="font-bold text-slate-750">Teléfono:</strong> {docDetalles.extraData.proveedor.telefono}</p>}
+                      </>
+                    ) : (
+                      <>
+                        <h4 className="font-black text-slate-950 uppercase tracking-wider text-[9px] mb-1">Origen / Responsable</h4>
+                        {docDetalles.extraData?.bodegaOrigen ? (
+                          <p><strong className="font-bold text-slate-750">Bodega Origen:</strong> {docDetalles.extraData.bodegaOrigen.nombre || docDetalles.extraData.bodegaOrigen}</p>
+                        ) : docDetalles.extraData?.bodega ? (
+                          <p><strong className="font-bold text-slate-750">Bodega:</strong> {docDetalles.extraData.bodega.nombre || docDetalles.extraData.bodega}</p>
+                        ) : (
+                          <p><strong className="font-bold text-slate-750">Tercero:</strong> {documentoVer.origenDestino}</p>
+                        )}
+                        {docDetalles.extraData?.usuarioId && <p><strong className="font-bold text-slate-750">Usuario ID:</strong> {docDetalles.extraData.usuarioId}</p>}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 border-l border-slate-200 pl-6">
+                    <h4 className="font-black text-slate-950 uppercase tracking-wider text-[9px] mb-1">Detalles del Documento</h4>
+                    {docDetalles.extraData?.bodegaDestino && (
+                      <p><strong className="font-bold text-slate-750">Bodega Destino:</strong> {docDetalles.extraData.bodegaDestino.nombre || docDetalles.extraData.bodegaDestino}</p>
+                    )}
+                    {docDetalles.extraData?.bodega && docDetalles.extraData?.proveedor && (
+                      <p><strong className="font-bold text-slate-750">Bodega Destino:</strong> {docDetalles.extraData.bodega.nombre || docDetalles.extraData.bodega}</p>
+                    )}
+                    {docDetalles.extraData?.ocNumero && (
+                      <p><strong className="font-bold text-slate-750">Orden de Compra Ref:</strong> {docDetalles.extraData.ocNumero}</p>
+                    )}
+                    {docDetalles.extraData?.recepcionId && (
+                      <p><strong className="font-bold text-slate-750">Cruce Recepción N°:</strong> {docDetalles.extraData.recepcionId}</p>
+                    )}
+                    {docDetalles.extraData?.concepto && (
+                      <p><strong className="font-bold text-slate-750">Concepto / Motivo:</strong> {docDetalles.extraData.concepto}</p>
+                    )}
+                    {docDetalles.extraData?.xmlAdjunto && (
+                      <p><strong className="font-bold text-slate-750">Soporte XML:</strong> Cargado / Validado (Cruce Contable)</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-left border-collapse text-[10px]">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[9px]">
+                        <th className="px-4 py-3">SKU</th>
+                        <th className="px-4 py-3">Descripción del Producto</th>
+                        <th className="px-4 py-3 text-right">Cant</th>
+                        <th className="px-4 py-3 text-right">Costo Unit.</th>
+                        {docDetalles.extraData?.descuento !== undefined && <th className="px-4 py-3 text-right">Desc</th>}
+                        {docDetalles.extraData?.iva !== undefined && <th className="px-4 py-3 text-right">IVA</th>}
+                        <th className="px-4 py-3 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150">
+                      {docDetalles.itemsList.map((item: any, i: number) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-mono font-bold text-slate-650">{item.sku}</td>
+                          <td className="px-4 py-3 space-y-1">
+                            <span className="font-semibold text-slate-900">{item.nombre}</span>
+                            {item.lote && (
+                              <div className="flex gap-1.5 flex-wrap">
+                                <span className="inline-flex items-center bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                                  Lote: {item.lote}
+                                </span>
+                              </div>
+                            )}
+                            {item.seriales && (
+                              <div className="text-[8px] text-indigo-700 bg-indigo-50 border border-indigo-150 p-1.5 rounded leading-tight font-mono max-w-md">
+                                <strong className="font-bold">Seriales:</strong> {item.seriales}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-extrabold text-slate-900">{item.cantidad}</td>
+                          <td className="px-4 py-3 text-right text-slate-600 font-medium">
+                            {fmtMoneda(item.costoUnitario)}
+                          </td>
+                          {docDetalles.extraData?.descuento !== undefined && (
+                            <td className="px-4 py-3 text-right text-slate-600 font-medium">
+                              {item.descuento ? fmtMoneda(item.descuento) : fmtMoneda(0)}
+                            </td>
+                          )}
+                          {docDetalles.extraData?.iva !== undefined && (
+                            <td className="px-4 py-3 text-right text-slate-600 font-medium">
+                              {item.iva ? fmtMoneda(item.iva) : fmtMoneda(0)}
+                            </td>
+                          )}
+                          <td className="px-4 py-3 text-right font-extrabold text-slate-900">
+                            {fmtMoneda(item.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Voucher Summary */}
+                <div className="flex justify-between items-start gap-8">
+                  <div className="flex-1 space-y-2 bg-slate-50 border border-slate-100 rounded-xl p-4">
+                    <h5 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Observaciones / Notas</h5>
+                    <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+                      {docDetalles.extraData?.notas || docDetalles.extraData?.concepto || 'Sin observaciones registradas para este documento.'}
+                    </p>
+                  </div>
+
+                  <div className="w-64 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-150 text-[10px]">
+                    {docDetalles.extraData?.subtotal !== undefined && (
+                      <div className="flex justify-between px-4 py-2 text-slate-600 font-medium bg-slate-50">
+                        <span>Subtotal Bruto</span>
+                        <span>{fmtMoneda(docDetalles.extraData.subtotal)}</span>
+                      </div>
+                    )}
+                    {docDetalles.extraData?.descuento !== undefined && docDetalles.extraData.descuento > 0 && (
+                      <div className="flex justify-between px-4 py-2 text-slate-600 font-medium bg-slate-50">
+                        <span>Descuentos (−)</span>
+                        <span className="text-red-600 font-semibold">{fmtMoneda(docDetalles.extraData.descuento)}</span>
+                      </div>
+                    )}
+                    {docDetalles.extraData?.iva !== undefined && (
+                      <div className="flex justify-between px-4 py-2 text-slate-600 font-medium bg-slate-50">
+                        <span>Impuestos (IVA)</span>
+                        <span>{fmtMoneda(docDetalles.extraData.iva)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between px-4 py-3 bg-slate-900 text-white font-black text-xs">
+                      <span>VALOR TOTAL</span>
+                      <span>{fmtMoneda(docDetalles.extraData?.total || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-3 gap-8 pt-12 text-[9px] text-slate-500">
+                  <div className="space-y-1.5 text-center">
+                    <div className="border-b border-slate-300 h-10 w-full"></div>
+                    <p className="font-black uppercase tracking-wider text-[8px] text-slate-700">Elaborado por (Auxiliar)</p>
+                    <p className="text-[8px] text-slate-400">Usuario Responsable</p>
+                  </div>
+
+                  <div className="space-y-1.5 text-center">
+                    <div className="border-b border-slate-300 h-10 w-full"></div>
+                    <p className="font-black uppercase tracking-wider text-[8px] text-slate-700">Autorizado por (Auditor)</p>
+                    <p className="text-[8px] text-slate-400">Control & Calidad</p>
+                  </div>
+
+                  <div className="space-y-1.5 text-center">
+                    <div className="border-b border-slate-300 h-10 w-full"></div>
+                    <p className="font-black uppercase tracking-wider text-[8px] text-slate-700">Recibido por (Tercero)</p>
+                    <p className="text-[8px] text-slate-400">Firma, Cédula / Sello</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global CSS Style Tag for printing (hides app layout, shows ONLY the voucher card) */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          
+          #printable-voucher, #printable-voucher * {
+            visibility: visible !important;
+          }
+          
+          #printable-voucher {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0px !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          
+          tr {
+            page-break-inside: avoid !important;
+          }
+          
+          @page {
+            margin: 1.5cm;
+          }
+        }
+      ` }} />
 
     </div>
   )

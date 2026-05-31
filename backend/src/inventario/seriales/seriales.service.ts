@@ -140,7 +140,7 @@ export class SerialesService {
       _count: { id: true },
     });
 
-    const result: Record<string, number> = { DISPONIBLE: 0, VENDIDO: 0, DEVUELTO: 0, BAJA: 0 };
+    const result: Record<string, number> = { DISPONIBLE: 0, VENDIDO: 0, DEVUELTO: 0, BAJA: 0, EN_TRANSITO: 0 };
     resumen.forEach((r: any) => { result[r.estado] = r._count.id; });
     return { total: Object.values(result).reduce((a, b) => a + b, 0), ...result };
   }

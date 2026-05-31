@@ -24,17 +24,19 @@ export class OrdenesCompraService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  private async generarNumeroOC(empresaId: number): Promise<string> {
+  private async generarNumeroOC(empresaId: number, tx?: any): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await (this.prisma as any).ordenCompra.count({
+    const db = tx || this.prisma;
+    const count = await (db as any).ordenCompra.count({
       where: { empresaId, numero: { startsWith: `OC-${year}-` } },
     });
     return `OC-${year}-${String(count + 1).padStart(5, '0')}`;
   }
 
-  private async generarNumeroREC(empresaId: number): Promise<string> {
+  private async generarNumeroREC(empresaId: number, tx?: any): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await (this.prisma as any).recepcionMercancia.count({
+    const db = tx || this.prisma;
+    const count = await (db as any).recepcionMercancia.count({
       where: { empresaId, numero: { startsWith: `REC-${year}-` } },
     });
     return `REC-${year}-${String(count + 1).padStart(5, '0')}`;
@@ -73,6 +75,24 @@ export class OrdenesCompraService {
       include: {
         proveedor: { select: { id: true, nombre: true, nombreComercial: true } },
         bodega: { select: { id: true, nombre: true, codigo: true } },
+        items: {
+          include: {
+            producto: { select: { id: true, nombre: true, sku: true } }
+          }
+        },
+        recepciones: {
+          include: {
+            items: {
+              include: {
+                ordenCompraItem: {
+                  include: {
+                    producto: { select: { id: true, nombre: true, sku: true } }
+                  }
+                }
+              }
+            }
+          }
+        },
         _count: { select: { items: true, recepciones: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -116,34 +136,36 @@ export class OrdenesCompraService {
     });
 
     const totalesOC = this.calcularTotalesOC(itemsCalculados);
-    const numero = await this.generarNumeroOC(empresaId);
 
-    return (this.prisma as any).ordenCompra.create({
-      data: {
-        numero,
-        empresaId,
-        proveedorId: dto.proveedorId,
-        bodegaId: dto.bodegaId,
-        fechaEsperada: dto.fechaEsperada ? new Date(dto.fechaEsperada) : undefined,
-        notas: dto.notas,
-        usuarioId,
-        subtotal: totalesOC.subtotal,
-        descuento: itemsCalculados.reduce((acc, i) => acc + i.descuento, 0),
-        iva: totalesOC.iva,
-        total: totalesOC.total,
-        items: {
-          create: itemsCalculados.map(item => ({
-            productoId: item.productoId,
-            cantidad: item.cantidad,
-            costoUnitario: item.costoUnitario,
-            descuentoPct: item.descuentoPct ?? 0,
-            subtotal: item.subtotal,
-            ivaValor: item.ivaValor,
-            total: item.total,
-          })),
+    return this.prisma.$transaction(async (tx: any) => {
+      const numero = await this.generarNumeroOC(empresaId, tx);
+      return tx.ordenCompra.create({
+        data: {
+          numero,
+          empresaId,
+          proveedorId: dto.proveedorId,
+          bodegaId: dto.bodegaId,
+          fechaEsperada: dto.fechaEsperada ? new Date(dto.fechaEsperada) : undefined,
+          notas: dto.notas,
+          usuarioId,
+          subtotal: totalesOC.subtotal,
+          descuento: itemsCalculados.reduce((acc, i) => acc + i.descuento, 0),
+          iva: totalesOC.iva,
+          total: totalesOC.total,
+          items: {
+            create: itemsCalculados.map(item => ({
+              productoId: item.productoId,
+              cantidad: item.cantidad,
+              costoUnitario: item.costoUnitario,
+              descuentoPct: item.descuentoPct ?? 0,
+              subtotal: item.subtotal,
+              ivaValor: item.ivaValor,
+              total: item.total,
+            })),
+          },
         },
-      },
-      include: OC_INCLUDE,
+        include: OC_INCLUDE,
+      });
     });
   }
 
@@ -268,10 +290,10 @@ export class OrdenesCompraService {
       }
     }
 
-    const numeroRec = await this.generarNumeroREC(empresaId);
     const year = new Date().getFullYear();
 
     return this.prisma.$transaction(async (tx: any) => {
+      const numeroRec = await this.generarNumeroREC(empresaId, tx);
       // 1. Crear la recepción con sus ítems
       const recepcion = await tx.recepcionMercancia.create({
         data: {

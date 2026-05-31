@@ -29,6 +29,7 @@ export class FacturasCompraService {
       where,
       include: {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
+        items: { include: { producto: { select: { nombre: true, sku: true } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -39,15 +40,17 @@ export class FacturasCompraService {
       where: { id, empresaId },
       include: {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
+        items: { include: { producto: { select: { nombre: true, sku: true } } } },
       },
     });
     if (!fc) throw new NotFoundException('Factura de compra no encontrada');
     return fc;
   }
 
-  private async generarConsecutivoInterno(empresaId: number): Promise<string> {
+  private async generarConsecutivoInterno(empresaId: number, tx?: any): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await this.prisma.facturaCompra.count({
+    const db = tx || this.prisma;
+    const count = await db.facturaCompra.count({
       where: { empresaId, numero: { startsWith: `FC-${year}-` } },
     });
     return `FC-${year}-${String(count + 1).padStart(5, '0')}`;
@@ -73,9 +76,8 @@ export class FacturasCompraService {
       );
     }
 
-    const numero = await this.generarConsecutivoInterno(empresaId);
-
     return this.prisma.$transaction(async (tx) => {
+      const numero = await this.generarConsecutivoInterno(empresaId, tx);
       // 1. Persistir la factura de compra
       const fc = await tx.facturaCompra.create({
         data: {

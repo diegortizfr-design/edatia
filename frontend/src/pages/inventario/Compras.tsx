@@ -205,7 +205,9 @@ export function Compras() {
       {/* TAB 2: Facturas de Compra (FC) */}
       {activeTab === 'fc' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {fcs.length === 0 ? (
+          {cargandoFC ? (
+            <div className="text-center py-16 text-slate-400">Cargando facturas de compra...</div>
+          ) : fcs.length === 0 ? (
             <div className="text-center py-16">
               <FileText size={40} className="mx-auto text-slate-300 mb-3" />
               <p className="text-slate-400 text-sm">No hay facturas de compra registradas.</p>
@@ -230,7 +232,14 @@ export function Compras() {
                 <tbody className="divide-y divide-slate-100">
                   {fcs.map(fc => (
                     <tr key={fc.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-700">{fc.numero}</td>
+                      <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                        <Link 
+                          to={`/inventario/movimientos?ver=${fc.numero}`}
+                          className="text-indigo-600 hover:text-indigo-850 hover:underline"
+                        >
+                          {fc.numero}
+                        </Link>
+                      </td>
                       <td className="px-6 py-4 font-semibold text-slate-800">
                         {fc.prefijoProveedor ? `${fc.prefijoProveedor}-` : ''}{fc.consecutivoProveedor}
                       </td>
@@ -293,7 +302,14 @@ export function Compras() {
                 <tbody className="divide-y divide-slate-100">
                   {recepcionesConsolidadas.map((rec: any) => (
                     <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-700">{rec.numero}</td>
+                      <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                        <Link 
+                          to={`/inventario/movimientos?ver=${rec.numero}`}
+                          className="text-indigo-600 hover:text-indigo-850 hover:underline"
+                        >
+                          {rec.numero}
+                        </Link>
+                      </td>
                       <td className="px-6 py-4">
                         <Link to={`/inventario/ordenes-compra/${rec.ocId}`} className="font-mono font-semibold text-indigo-600 hover:underline">
                           {rec.ocNumero}
