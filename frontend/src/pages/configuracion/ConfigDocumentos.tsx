@@ -583,7 +583,11 @@ export function ConfigDocumentos() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.nombre || !form.sigla) {
-      alert('Nombre y Sigla son campos obligatorios.')
+      alert('Descripción y Sigla son campos obligatorios.')
+      return
+    }
+    if (!form.prefijo) {
+      alert('El Prefijo es un campo obligatorio.')
       return
     }
 
@@ -924,7 +928,7 @@ export function ConfigDocumentos() {
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-4">
-                  <Field label="Nombre del Documento *">
+                  <Field label="Descripción *">
                     <Input
                       value={form.nombre}
                       onChange={(v: string) => setForm(f => ({ ...f, nombre: v }))}
@@ -934,20 +938,23 @@ export function ConfigDocumentos() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <Field label="Sigla *">
+                  <Field label="Sigla (No Editable) *">
                     <Input
                       value={form.sigla}
-                      onChange={(v: string) => setForm(f => ({ ...f, sigla: v }))}
-                      placeholder="Ej. FVP"
+                      disabled={true}
+                      placeholder="Ej. FV"
                     />
                   </Field>
                 </div>
 
                 <div className="md:col-span-2">
-                  <Field label="Prefijo">
+                  <Field label="Prefijo *">
                     <Input
                       value={form.prefijo}
-                      onChange={(v: string) => setForm(f => ({ ...f, prefijo: v }))}
+                      onChange={(v: string) => {
+                        const lettersOnly = v.replace(/[^a-zA-Z]/g, '').slice(0, 5).toUpperCase();
+                        setForm(f => ({ ...f, prefijo: lettersOnly }));
+                      }}
                       placeholder="Ej. SETT"
                     />
                   </Field>
@@ -958,8 +965,8 @@ export function ConfigDocumentos() {
                     <Input
                       type="number"
                       min={1}
+                      disabled={true}
                       value={form.consecutivoInicial}
-                      onChange={(v: number) => setForm(f => ({ ...f, consecutivoInicial: v }))}
                       placeholder="1"
                     />
                   </Field>
@@ -977,32 +984,7 @@ export function ConfigDocumentos() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-3">
-                  <Field label="Área / Operación">
-                    <Select
-                      value={form.tipoOperacion || 'VENTAS'}
-                      onChange={(v) => setForm(f => ({ ...f, tipoOperacion: v }))}
-                      options={[
-                        { value: 'VENTAS', label: 'Ventas' },
-                        { value: 'COMPRAS', label: 'Compras' },
-                        { value: 'NOMINA', label: 'Nómina' },
-                        { value: 'TESORERIA', label: 'Tesorería' },
-                        { value: 'INVENTARIO', label: 'Inventario' },
-                        { value: 'CONTABILIDAD', label: 'Contabilidad' },
-                        { value: 'COMERCIAL', label: 'Comercial' },
-                        { value: 'LOGISTICA', label: 'Logística' },
-                        { value: 'SERVICIOS', label: 'Servicios' },
-                        { value: 'CRM', label: 'CRM' },
-                        { value: 'BANCOS', label: 'Bancos' },
-                        { value: 'CARTERA', label: 'Cartera' },
-                        { value: 'PROVEEDORES', label: 'Proveedores' },
-                        { value: 'RRHH', label: 'RRHH' }
-                      ]}
-                    />
-                  </Field>
-                </div>
-
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="Formato de Impresión">
                     <Select
                       value={form.plantillaImpresion || 'CARTA'}
@@ -1016,7 +998,7 @@ export function ConfigDocumentos() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="Sucursal Anclada *">
                     <Select
                       value={form.sucursalId || ''}
@@ -1029,7 +1011,7 @@ export function ConfigDocumentos() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="Estado">
                     <Select
                       value={form.estado || 'ACTIVO'}

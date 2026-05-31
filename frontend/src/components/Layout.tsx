@@ -5,7 +5,7 @@ import {
   BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, 
   Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, 
   Monitor, Building2, Globe, ChevronLeft, ChevronRight, Menu, Percent, Coins, Store, Wallet,
-  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal
+  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal, LayoutTemplate
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -186,6 +186,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
               <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />

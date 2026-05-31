@@ -55,6 +55,7 @@ import { ConfigMonedas } from './pages/configuracion/ConfigMonedas'
 import { ConfigSucursales } from './pages/configuracion/ConfigSucursales'
 import { ConfigCajasBancos } from './pages/configuracion/ConfigCajasBancos'
 import { ConfigContable } from './pages/configuracion/ConfigContable'
+import { ConfigFormatosImpresion } from './pages/configuracion/ConfigFormatosImpresion'
 import { ConfigProductos } from './pages/configuracion/ConfigProductos'
 import { ConfigProductosMaestros } from './pages/configuracion/ConfigProductosMaestros'
 import { ConfigProductoDetalle } from './pages/configuracion/ConfigProductoDetalle'
@@ -153,6 +154,7 @@ function App() {
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />
         <Route path="/configuracion/contable" element={<P><ConfigContable /></P>} />
+        <Route path="/configuracion/formatos-impresion" element={<P><ConfigFormatosImpresion /></P>} />
         <Route path="/configuracion/documentos" element={<P><ConfigDocumentos /></P>} />
         <Route path="/configuracion/impuestos" element={<P><ConfigImpuestos /></P>} />
         <Route path="/configuracion/geolocalizacion" element={<P><ConfigGeolocalizacion /></P>} />
