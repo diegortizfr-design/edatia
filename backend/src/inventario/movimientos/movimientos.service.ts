@@ -227,7 +227,7 @@ export class MovimientosService {
           take: Math.ceil(data.cantidad),
         });
 
-        const serialIds = serialsDisponibles.map(s => s.id);
+        const serialIds = serialsDisponibles.map((s: any) => s.id);
         if (serialIds.length > 0) {
           await tx.numeroSerie.updateMany({
             where: { id: { in: serialIds } },
@@ -928,7 +928,7 @@ export class MovimientosService {
               orderBy: { id: 'asc' },
               take: Math.ceil(cantAbs),
             });
-            const serialIds = serialsDisponibles.map(s => s.id);
+            const serialIds = serialsDisponibles.map((s: any) => s.id);
             if (serialIds.length > 0) {
               await tx.numeroSerie.updateMany({
                 where: { id: { in: serialIds } },
@@ -1072,7 +1072,7 @@ export class MovimientosService {
             orderBy: { id: 'asc' },
             take: Math.ceil(dto.cantidad),
           });
-          const serialIds = serialsDisponibles.map(s => s.id);
+          const serialIds = serialsDisponibles.map((s: any) => s.id);
           if (serialIds.length > 0) {
             await tx.numeroSerie.updateMany({
               where: { id: { in: serialIds } },
