@@ -21,6 +21,7 @@ const TABS = [
   { id: 'inventario',   label: 'Inventario y Compras',  icon: FileCheck2 },
   { id: 'cartera',      label: 'Cartera',               icon: Landmark },
   { id: 'emision',      label: 'Emisión Electrónica',   icon: ShieldCheck },
+  { id: 'codigos_admin', label: 'Códigos de Administrador', icon: Lock },
 ]
 
 const REGIMENES = [
@@ -202,6 +203,7 @@ export function ConfigEmpresa() {
       const savedVentas = JSON.parse(localStorage.getItem('edatia_config_ventas') || '{}')
       const savedCartera = JSON.parse(localStorage.getItem('edatia_config_cartera') || '{}')
       const savedDian = JSON.parse(localStorage.getItem('edatia_config_dian') || '{}')
+      const savedAdminCodes = JSON.parse(localStorage.getItem('edatia_admin_codes') || '{}')
 
       const dbStockNegativoBodegas = bodegas
         .filter((b: any) => b.permiteStockNegativo)
@@ -239,6 +241,9 @@ export function ConfigEmpresa() {
         softwarePinDian: '12345',
         softwareIdDian: '',
         notificarEmisionEmail: true,
+        codeEliminarDocumento: 'EDATIA123',
+        codeModificarConsecutivo: 'ADMIN123',
+        codeAnularTransaccion: 'SUPER99',
         // Sobrescribir con lo guardado
         ...savedContabilidad,
         ...savedCostos,
@@ -246,6 +251,7 @@ export function ConfigEmpresa() {
         ...savedVentas,
         ...savedCartera,
         ...savedDian,
+        ...savedAdminCodes,
       })
       setInitialized(true)
     }
@@ -314,6 +320,13 @@ export function ConfigEmpresa() {
       }
       localStorage.setItem('edatia_config_dian', JSON.stringify(dianConfig))
 
+      const adminCodesConfig = {
+        codeEliminarDocumento: form.codeEliminarDocumento ?? 'EDATIA123',
+        codeModificarConsecutivo: form.codeModificarConsecutivo ?? 'ADMIN123',
+        codeAnularTransaccion: form.codeAnularTransaccion ?? 'SUPER99',
+      }
+      localStorage.setItem('edatia_admin_codes', JSON.stringify(adminCodesConfig))
+
       // 1.5 Guardar relación en la base de datos para cada bodega
       const promises = bodegas.map((b: any) => {
         const permite = (form.stockNegativoBodegas || []).includes(b.id)
@@ -334,7 +347,8 @@ export function ConfigEmpresa() {
         'skuAutogenerado', 'skuLength', 'permitirDuplicadoBarras', 'unidadMedidaDefecto',
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
-        'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas'
+        'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
+        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion'
       ]
       frontendKeys.forEach(k => { delete databasePayload[k] })
 
@@ -1239,6 +1253,64 @@ export function ConfigEmpresa() {
                   <p className="text-xs text-slate-400 leading-tight">
                     Envía de manera inmediata la representación gráfica (PDF) y el XML oficial de la factura al correo de facturación del adquiriente tras ser autorizada.
                   </p>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+        )}
+
+        {/* ─── TAB 10: CÓDIGOS DE ADMINISTRADOR ───────── */}
+        {tab === 'codigos_admin' && (
+          <div className="space-y-6 w-full">
+            <SectionCard title="Códigos de Autorización de Acciones Críticas" icon={Lock}>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 mb-4">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider">Control de Trazabilidad y Seguridad</h4>
+                  <p className="text-[11px] text-amber-700 leading-relaxed mt-1">
+                    Las acciones que comprometen la consistencia y el historial del ERP requieren la confirmación de un código de autorización. Configure aquí las claves que se solicitarán en cada caso.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div className="md:col-span-4">
+                  <Field 
+                    label="Código para Eliminar Documentos" 
+                    hint="Requerido al eliminar tipos de documentos de la configuración."
+                  >
+                    <Input 
+                      value={form.codeEliminarDocumento} 
+                      onChange={set('codeEliminarDocumento')} 
+                      placeholder="EDATIA123" 
+                    />
+                  </Field>
+                </div>
+
+                <div className="md:col-span-4">
+                  <Field 
+                    label="Código para Modificar Consecutivos" 
+                    hint="Requerido al alterar el consecutivo siguiente de un documento."
+                  >
+                    <Input 
+                      value={form.codeModificarConsecutivo} 
+                      onChange={set('codeModificarConsecutivo')} 
+                      placeholder="ADMIN123" 
+                    />
+                  </Field>
+                </div>
+
+                <div className="md:col-span-4">
+                  <Field 
+                    label="Código para Anular Transacciones" 
+                    hint="Requerido para la anulación de facturas, traslados o ajustes."
+                  >
+                    <Input 
+                      value={form.codeAnularTransaccion} 
+                      onChange={set('codeAnularTransaccion')} 
+                      placeholder="SUPER99" 
+                    />
+                  </Field>
                 </div>
               </div>
             </SectionCard>

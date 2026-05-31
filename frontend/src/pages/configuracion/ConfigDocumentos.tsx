@@ -569,14 +569,44 @@ export function ConfigDocumentos() {
   }
 
   const handleDelete = (id: string) => {
-    const isBaseDoc = DEFAULT_DOCUMENTS.some(d => d.id === id)
-    if (isBaseDoc) {
-      alert('Los tipos de documentos base del sistema no pueden ser eliminados, solo inhabilitados cambiándolos a estado INACTIVO.')
-      return
-    }
-    if (window.confirm('¿Está seguro de que desea eliminar este tipo de documento? Esta acción no se puede deshacer.')) {
+    const docToDelete = documents.find(d => d.id === id)
+    if (!docToDelete) return
+
+    const warningMsg = `¿Está seguro de que desea eliminar el tipo de documento "${docToDelete.nombre}" (${docToDelete.sigla})? \n\nEsta acción afectará la trazabilidad del sistema (facturas emitidas, transacciones, etc.).`
+    
+    if (window.confirm(warningMsg)) {
+      // Obtener el código de administrador
+      const savedAdminCodes = JSON.parse(localStorage.getItem('edatia_admin_codes') || '{}')
+      const codeEliminarDocumento = savedAdminCodes.codeEliminarDocumento || 'EDATIA123'
+
+      const entered = window.prompt("Ingrese el código de autorización del administrador para confirmar la eliminación:")
+      if (entered === null) {
+        return // Cancelado
+      }
+
+      if (entered !== codeEliminarDocumento) {
+        alert("Código de autorización incorrecto. No se completó la eliminación del documento.")
+        return
+      }
+
+      // Filtrar y actualizar documentos activos
       const updated = documents.filter(d => d.id !== id)
       saveToLocalStorage(updated)
+
+      // Guardar en la papelera de reciclaje del sistema (edatia_deleted_documents)
+      try {
+        const deletedDocs = JSON.parse(localStorage.getItem('edatia_deleted_documents') || '[]')
+        const deletedRecord = {
+          ...docToDelete,
+          deletedAt: new Date().toISOString(),
+        }
+        deletedDocs.push(deletedRecord)
+        localStorage.setItem('edatia_deleted_documents', JSON.stringify(deletedDocs))
+      } catch (err) {
+        console.error("Error al guardar en documentos eliminados:", err)
+      }
+
+      alert("Tipo de documento eliminado exitosamente y guardado en el histórico de eliminados.")
     }
   }
 
@@ -965,8 +995,16 @@ export function ConfigDocumentos() {
                     <Input
                       type="number"
                       min={1}
-                      disabled={true}
+                      disabled={!!editingId}
                       value={form.consecutivoInicial}
+                      onChange={(v: any) => {
+                        const val = parseInt(v, 10) || 1;
+                        setForm(f => ({
+                          ...f,
+                          consecutivoInicial: val,
+                          consecutivoSiguiente: val
+                        }));
+                      }}
                       placeholder="1"
                     />
                   </Field>
