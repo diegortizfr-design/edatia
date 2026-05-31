@@ -125,6 +125,49 @@ export function ConfigEmpresa() {
     }
   }, [])
 
+  const [dynRegimenes, setDynRegimenes] = useState<{ value: string; label: string }[]>([])
+  const [dynCiius, setDynCiius] = useState<{ value: string; label: string }[]>([])
+  const [dynResponsabilidades, setDynResponsabilidades] = useState<{ code: string; label: string }[]>([])
+
+  useEffect(() => {
+    // 1. Regímenes Fiscales
+    const regLS = localStorage.getItem('edatia_regimenes')
+    if (regLS) {
+      try {
+        const parsed = JSON.parse(regLS)
+        setDynRegimenes(parsed.map((r: any) => ({ value: r.codigoDian, label: `${r.codigoDian} — ${r.nombre}` })))
+      } catch (e) {
+        setDynRegimenes(REGIMENES)
+      }
+    } else {
+      setDynRegimenes(REGIMENES)
+    }
+
+    // 2. CIIU codes
+    const ciiuLS = localStorage.getItem('edatia_ciiu')
+    if (ciiuLS) {
+      try {
+        const parsed = JSON.parse(ciiuLS)
+        setDynCiius(parsed.map((c: any) => ({ value: c.codigo, label: `${c.codigo} — ${c.descripcion}` })))
+      } catch (e) {
+        setDynCiius([])
+      }
+    }
+
+    // 3. Responsabilidades
+    const respLS = localStorage.getItem('edatia_responsabilidades')
+    if (respLS) {
+      try {
+        const parsed = JSON.parse(respLS)
+        setDynResponsabilidades(parsed.map((r: any) => ({ code: r.codigo, label: `${r.codigo} — ${r.nombre}` })))
+      } catch (e) {
+        setDynResponsabilidades(RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label })))
+      }
+    } else {
+      setDynResponsabilidades(RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label })))
+    }
+  }, [])
+
   // Derived location selections
   const selectedPaisObj = geoData?.paises?.find((p: any) => p.codigo === (form.pais ?? 'CO')) || geoData?.paises?.find((p: any) => p.codigo === 'CO');
   const selectedPaisId = selectedPaisObj?.id || 'pais_co';
@@ -702,14 +745,21 @@ export function ConfigEmpresa() {
                     <Select
                       value={form.regimenFiscal ?? '48'}
                       onChange={set('regimenFiscal')}
-                      options={REGIMENES}
+                      options={dynRegimenes.length > 0 ? dynRegimenes : REGIMENES}
                     />
                   </Field>
                 </div>
 
                 <div className="md:col-span-6">
-                  <Field label="Actividad económica (código CIIU)" hint="Ejemplo: 4711 (Comercio al por menor).">
-                    <Input value={form.actividadEconomica} onChange={set('actividadEconomica')} placeholder="4711" />
+                  <Field label="Actividad económica (código CIIU)" hint="Seleccione su actividad económica principal registrada en el RUT.">
+                    <Select
+                      value={form.actividadEconomica ?? ''}
+                      onChange={set('actividadEconomica')}
+                      options={[
+                        { value: '', label: 'Seleccione CIIU...' },
+                        ...dynCiius
+                      ]}
+                    />
                   </Field>
                 </div>
               </div>
@@ -719,7 +769,7 @@ export function ConfigEmpresa() {
                   Responsabilidades tributarias DIAN
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border border-slate-200 rounded-xl p-4 bg-slate-50">
-                  {RESPONSABILIDADES.map(r => (
+                  {(dynResponsabilidades.length > 0 ? dynResponsabilidades : RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label }))).map(r => (
                     <label key={r.code} className="flex items-center gap-3 cursor-pointer select-none">
                       <input
                         type="checkbox"

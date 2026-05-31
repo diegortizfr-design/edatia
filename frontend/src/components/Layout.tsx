@@ -185,6 +185,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
             <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
               <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
