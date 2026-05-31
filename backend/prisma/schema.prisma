@@ -111,6 +111,7 @@ model Empresa {
   // ── Ventas ────────────────────────────────────────
   clientes             ClienteERP[]
   cotizaciones         Cotizacion[]
+  pedidosVenta         PedidoVenta[]
   facturasVenta        FacturaVenta[]
   notasCredito         NotaCredito[]
   recibosCaja          ReciboCaja[]
