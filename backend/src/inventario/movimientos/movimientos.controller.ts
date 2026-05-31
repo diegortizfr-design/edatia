@@ -59,6 +59,11 @@ export class MovimientosController {
     return this.svc.procesarTraslado(dto, user.empresaId!, user.sub);
   }
 
+  @Post(':id/recibir-traslado')
+  recibirTraslado(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
+    return this.svc.recibirTraslado(id, user.empresaId!, user.sub);
+  }
+
   @Post('devolucion-proveedor')
   devolucionProveedor(@Body() dto: DevolucionProveedorDto, @GetUser() user: JwtPayload) {
     return this.svc.procesarDevolucionProveedor(dto, user.empresaId!, user.sub);

@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edatia Developers - Software & Automatización</title>
-    <meta name="description" content="Edatia Developers: Expertos en desarrollo web, tiendas virtuales, automatizaciones con n8n y bots de IA.">
-    
+    <title>Edatia Developers | Desarrollo Premium y Automatización con IA</title>
+    <meta name="description" content="Edatia Developers: Expertos en desarrollo de software web a medida, vibe coding potenciado por Inteligencia Artificial y automatizaciones avanzadas con n8n.">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='50' width='8' height='30' rx='4' fill='%238b5cf6'/%3E%3Crect x='40' y='30' width='8' height='50' rx='4' fill='%238b5cf6'/%3E%3Crect x='60' y='45' width='8' height='35' rx='4' fill='%238b5cf6'/%3E%3Crect x='80' y='20' width='8' height='60' rx='4' fill='%238b5cf6'/%3E%3Ccircle cx='24' cy='45' r='3' fill='%238b5cf6'/%3E%3Ccircle cx='44' cy='25' r='3' fill='%238b5cf6'/%3E%3Ccircle cx='64' cy='40' r='3' fill='%238b5cf6'/%3E%3Ccircle cx='84' cy='15' r='3' fill='%238b5cf6'/%3E%3Cpath d='M24 45L44 25L64 40L84 15' stroke='%238b5cf6' stroke-width='3'/%3E%3C/svg%3E">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <!-- AOS CSS -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
@@ -21,14 +26,15 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
                         mono: ['Fira Code', 'monospace'],
                     },
                     colors: {
                         dev: {
                             purple: '#8b5cf6',
                             indigo: '#6366f1',
-                            dark: '#0f172a',
+                            dark: '#050505',
                             black: '#020617'
                         }
                     }
@@ -41,168 +47,513 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { background-color: #020617; color: #f8fafc; }
+        :root {
+            --bg: #050505;
+            --card-bg: #0e0e12;
+            --accent: #8b5cf6;
+            --accent-indigo: #6366f1;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.05);
+            --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -1px;
+        }
+        
         .code-gradient {
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .service-card {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
+
+        /* Nav dynamic style on scroll */
+        nav.nav-scrolled {
+            background-color: rgba(255, 255, 255, 0.85) !important;
+            border-bottom-color: rgba(15, 23, 42, 0.08) !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
         }
-        .service-card:hover {
-            background: rgba(30, 41, 59, 0.6);
-            border-color: rgba(139, 92, 246, 0.3);
-            transform: translateY(-5px);
+        nav.nav-scrolled a.nav-link {
+            color: #475569 !important;
+        }
+        nav.nav-scrolled a.nav-link:hover {
+            color: #0f172a !important;
+        }
+        nav.nav-scrolled a.logo-link {
+            color: #0f172a !important;
+        }
+        nav.nav-scrolled a.logo-link span.logo-subtext {
+            color: #64748b !important;
+        }
+
+        /* Subtle dot grid watermark pattern */
+        .bg-dot-grid {
+            background-image: radial-gradient(rgba(139, 92, 246, 0.05) 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
         }
     </style>
 </head>
 <body class="antialiased">
 
     <!-- Nav -->
-    <nav class="fixed top-0 w-full z-50 bg-dev-black/80 backdrop-blur-md border-b border-white/5 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <a href="index.html" class="flex items-center gap-2 font-bold text-xl group">
-                <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
-                Edatia <span class="text-dev-purple">Developers</span>
-            </a>
-            <a href="#contacto" class="bg-dev-purple hover:bg-dev-indigo text-white px-6 py-2 rounded-full text-sm font-bold transition-all">Cotizar Proyecto</a>
+    <nav id="main-nav" class="fixed top-0 w-full z-50 bg-[#050505]/85 backdrop-blur-md border-b border-white/5 px-6 py-4 flex justify-between items-center transition-all duration-300">
+        <a href="index.html" class="logo-link flex items-center gap-2 font-bold text-xl group text-white decoration-none transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform text-dev-purple"></i>
+            ED<span class="text-dev-purple">Λ</span>TIA <span class="logo-subtext font-light text-slate-400 text-xs tracking-widest uppercase ml-1 transition-colors">DEVELOPERS</span>
+        </a>
+        <div class="flex items-center gap-5">
+            <a href="#tecnologias" class="nav-link hidden md:inline-block text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors">Tecnologías</a>
+            <a href="#vibe-coding" class="nav-link hidden md:inline-block text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors">Vibe Coding</a>
+            <a href="#automatizacion" class="nav-link hidden md:inline-block text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors">Automatización</a>
+            <a href="#contacto" class="bg-dev-purple hover:bg-dev-indigo hover:scale-105 text-white px-5 py-2.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest transition-all shadow-lg shadow-dev-purple/20">Cotizar Proyecto</a>
         </div>
     </nav>
 
     <!-- Hero -->
-    <section class="pt-40 pb-20 px-6">
-        <div class="max-w-7xl mx-auto text-center" data-aos="fade-up">
-            <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">
-                Codificamos soluciones que <br><span class="code-gradient">escalan tu visión</span>.
+    <header class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+        <div class="absolute inset-0 z-0">
+            <video autoplay muted loop playsinline preload="auto" class="w-full h-full object-cover opacity-70 bg-video">
+                <source src="assets/developer.mp4" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-radial-gradient bg-gradient-to-b from-transparent to-[#050505] bg-[#050505]/25"></div>
+        </div>
+        
+        <div class="relative z-10 max-w-5xl mx-auto px-6 text-center" data-aos="fade-up">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-dev-purple/20 bg-dev-purple/10 text-dev-purple text-xs font-bold uppercase tracking-widest mb-6 animate-pulse">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                Vibe Coding & Automatización con IA
+            </div>
+            
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-black mb-8 leading-[1.08] font-display text-white">
+                Desarrollo de Software a la<br>
+                <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">Velocidad del Pensamiento</span>
             </h1>
-            <p class="text-xl text-slate-400 max-w-3xl mx-auto mb-10">
-                Desde landing pages de alto impacto hasta ecosistemas complejos de automatización con IA y n8n.
+            
+            <p class="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto mb-12 leading-relaxed">
+                Creamos aplicaciones web premium, automatizamos procesos empresariales con n8n y desarrollamos agentes de IA avanzados que multiplican por diez la productividad de tu negocio.
             </p>
-            <div class="flex flex-wrap justify-center gap-4">
-                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Next.js</div>
-                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Node.js</div>
-                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">n8n</div>
-                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">Python</div>
-                <div class="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-xs font-mono text-dev-purple">React</div>
+            
+            <div class="flex flex-wrap justify-center gap-4 sm:gap-6">
+                <a href="#contacto" class="bg-white text-[#050505] hover:bg-dev-purple hover:text-white px-8 py-3.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all hover:scale-105 shadow-xl hover:shadow-dev-purple/20">
+                    Iniciar Proyecto
+                </a>
+                <a href="#tecnologias" class="border border-white/10 hover:border-dev-purple bg-white/5 hover:bg-dev-purple/5 text-white px-8 py-3.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all">
+                    Ver Tecnologías
+                </a>
             </div>
         </div>
-    </section>
+    </header>
+    <!-- Stack Tecnológico -->
+    <section id="tecnologias" class="py-24 px-6 border-t border-slate-200/60 relative bg-white bg-dot-grid overflow-hidden transition-colors duration-300">
+        <!-- Conexiones Sutiles (Decoraciones de Red SVG) -->
+        <div class="absolute left-0 top-10 w-72 h-72 opacity-20 pointer-events-none select-none z-0 hidden lg:block" data-aos="fade-right">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                <!-- Nodos -->
+                <circle cx="30" cy="40" r="3.5" fill="#8b5cf6"/>
+                <circle cx="70" cy="20" r="4.5" fill="#6366f1"/>
+                <circle cx="120" cy="50" r="3.5" fill="#8b5cf6"/>
+                <circle cx="50" cy="90" r="4" fill="#6366f1"/>
+                <circle cx="100" cy="110" r="4.5" fill="#8b5cf6"/>
+                <circle cx="150" cy="80" r="3.5" fill="#6366f1"/>
+                <circle cx="80" cy="160" r="4" fill="#8b5cf6"/>
+                <circle cx="130" cy="150" r="3.5" fill="#6366f1"/>
+                <!-- Enlaces -->
+                <path d="M30 40 L70 20 M70 20 L120 50 M30 40 L50 90 M50 90 L100 110 M120 50 L150 80 M100 110 L150 80 M50 90 L80 160 M100 110 L130 150 M80 160 L130 150 M150 80 L130 150" stroke="#8b5cf6" stroke-width="0.75" stroke-dasharray="3 3"/>
+            </svg>
+        </div>
+        <div class="absolute right-0 bottom-10 w-80 h-80 opacity-20 pointer-events-none select-none z-0 hidden lg:block" data-aos="fade-left">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                <!-- Nodos -->
+                <circle cx="50" cy="50" r="3.5" fill="#6366f1"/>
+                <circle cx="110" cy="30" r="4" fill="#8b5cf6"/>
+                <circle cx="160" cy="60" r="3.5" fill="#6366f1"/>
+                <circle cx="90" cy="90" r="4.5" fill="#8b5cf6"/>
+                <circle cx="140" cy="120" r="3.5" fill="#6366f1"/>
+                <circle cx="60" cy="130" r="4" fill="#8b5cf6"/>
+                <circle cx="110" cy="170" r="3.5" fill="#6366f1"/>
+                <circle cx="170" cy="150" r="4.5" fill="#8b5cf6"/>
+                <!-- Enlaces -->
+                <path d="M50 50 L110 30 M110 30 L160 60 M50 50 L90 90 M90 90 L140 120 M160 60 L140 120 M90 90 L60 130 M60 130 L110 170 M140 120 L170 150 M110 170 L170 150" stroke="#8b5cf6" stroke-width="0.75" stroke-dasharray="3 3"/>
+            </svg>
+        </div>
+        
+        <div class="max-w-7xl mx-auto relative z-10">
+            <div class="text-center mb-10" data-aos="fade-up">
+                <p class="text-dev-purple text-xs font-extrabold uppercase tracking-widest mb-2">Stack Tecnológico</p>
+                <h2 class="text-3xl md:text-5xl font-black text-slate-900 font-display mb-4">Herramientas que lideran el mercado</h2>
+                <p class="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
+                    Filtra por categorías y haz clic en las tecnologías para construir interactiva y visualmente tu propia arquitectura de software.
+                </p>
+            </div>
 
-    <!-- Services Grid -->
-    <section class="py-20 px-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Filtros de Categoría -->
+            <div class="flex flex-wrap justify-center gap-3 mb-12 z-10 relative" data-aos="fade-up">
+                <button onclick="filterTech('all')" class="tech-filter-btn active px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all bg-dev-purple text-white shadow-md shadow-dev-purple/20 cursor-pointer">Todos</button>
+                <button onclick="filterTech('frontend')" class="tech-filter-btn px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">Frontend</button>
+                <button onclick="filterTech('backend')" class="tech-filter-btn px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">Backend</button>
+                <button onclick="filterTech('infra')" class="tech-filter-btn px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer">Automatización / DevOps</button>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                <!-- Web Dev -->
-                <div class="service-card p-8 rounded-3xl" data-aos="fade-up">
-                    <div class="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="monitor"></i>
+                <!-- Grid de Tarjetas (Columna Izquierda) -->
+                <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4" data-aos="fade-up">
+                    <!-- React -->
+                    <div id="tech-card-react" onclick="toggleTechSelection('react')" data-category="frontend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-cyan-500/40 hover:bg-cyan-50/50 hover:shadow-lg hover:shadow-cyan-500/5 cursor-pointer group">
+                        <i class="fa-brands fa-react text-4xl text-cyan-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">React</span>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Desarrollo Web & Apps</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Creamos experiencias digitales rápidas, seguras y optimizadas para SEO. SPAs, PWAs y aplicaciones empresariales a medida.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> React / Next.js</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Diseño UI/UX Premium</li>
-                    </ul>
+                    <!-- Next.js -->
+                    <div id="tech-card-nextjs" onclick="toggleTechSelection('nextjs')" data-category="frontend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-slate-800/40 hover:bg-slate-100/50 hover:shadow-lg hover:shadow-slate-800/5 cursor-pointer group">
+                        <i data-lucide="terminal" class="w-10 h-10 text-slate-800 group-hover:scale-110 transition-transform duration-300 mb-4 animate-pulse"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">Next.js</span>
+                    </div>
+                    <!-- TypeScript -->
+                    <div id="tech-card-typescript" onclick="toggleTechSelection('typescript')" data-category="frontend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-blue-500/40 hover:bg-blue-50/50 hover:shadow-lg hover:shadow-blue-500/5 cursor-pointer group">
+                        <i class="fa-brands fa-js-square text-4xl text-blue-600 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">TypeScript</span>
+                    </div>
+                    <!-- Python -->
+                    <div id="tech-card-python" onclick="toggleTechSelection('python')" data-category="backend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-amber-500/40 hover:bg-amber-50/50 hover:shadow-lg hover:shadow-amber-500/5 cursor-pointer group">
+                        <i class="fa-brands fa-python text-4xl text-amber-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">Python</span>
+                    </div>
+                    <!-- Node.js -->
+                    <div id="tech-card-nodejs" onclick="toggleTechSelection('nodejs')" data-category="backend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-green-500/40 hover:bg-green-50/50 hover:shadow-lg hover:shadow-green-500/5 cursor-pointer group">
+                        <i class="fa-brands fa-node-js text-4xl text-green-600 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">Node.js</span>
+                    </div>
+                    <!-- Go -->
+                    <div id="tech-card-golang" onclick="toggleTechSelection('golang')" data-category="backend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-sky-500/40 hover:bg-sky-50/50 hover:shadow-lg hover:shadow-sky-500/5 cursor-pointer group">
+                        <i class="fa-solid fa-code text-4xl text-sky-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">GoLang</span>
+                    </div>
+                    <!-- React Native -->
+                    <div id="tech-card-reactnative" onclick="toggleTechSelection('reactnative')" data-category="frontend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-indigo-500/40 hover:bg-indigo-50/50 hover:shadow-lg hover:shadow-indigo-500/5 cursor-pointer group">
+                        <i class="fa-solid fa-mobile-screen-button text-4xl text-indigo-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">React Native</span>
+                    </div>
+                    <!-- n8n -->
+                    <div id="tech-card-n8n" onclick="toggleTechSelection('n8n')" data-category="infra" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-rose-500/40 hover:bg-rose-50/50 hover:shadow-lg hover:shadow-rose-500/5 cursor-pointer group">
+                        <i class="fa-solid fa-circle-nodes text-4xl text-rose-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">n8n</span>
+                    </div>
+                    <!-- PostgreSQL -->
+                    <div id="tech-card-postgresql" onclick="toggleTechSelection('postgresql')" data-category="backend" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-blue-600/40 hover:bg-blue-50/50 hover:shadow-lg hover:shadow-blue-600/5 cursor-pointer group">
+                        <i class="fa-solid fa-database text-4xl text-blue-600 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">PostgreSQL</span>
+                    </div>
+                    <!-- Docker -->
+                    <div id="tech-card-docker" onclick="toggleTechSelection('docker')" data-category="infra" class="tech-card relative p-6 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-sky-600/40 hover:bg-sky-50/50 hover:shadow-lg hover:shadow-sky-600/5 cursor-pointer group">
+                        <i class="fa-brands fa-docker text-4xl text-sky-500 group-hover:scale-110 transition-transform duration-300 mb-4"></i>
+                        <span class="text-xs font-bold text-slate-700 tracking-wider group-hover:text-slate-900">Docker</span>
+                    </div>
                 </div>
 
-                <!-- E-commerce -->
-                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="100">
-                    <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="shopping-cart"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Tiendas Virtuales</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Vende sin límites. Configuramos tu e-commerce con pasarelas de pago, gestión de inventario y analítica avanzada.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Shopify / WooCommerce</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> E-commerce Custom</li>
-                    </ul>
-                </div>
+                <!-- Visualizador de Stack (Columna Derecha) -->
+                <div class="lg:col-span-5 lg:sticky lg:top-28">
+                    <div class="bg-[#0b0c10] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-slate-300/40 overflow-hidden text-white">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Visualizador de Stack</span>
+                            </div>
+                            <button onclick="resetStack()" class="text-[10px] text-slate-500 hover:text-white uppercase font-bold tracking-wider transition-colors cursor-pointer bg-transparent border-0">Reiniciar</button>
+                        </div>
 
-                <!-- n8n Automation -->
-                <div class="service-card p-8 rounded-3xl border-dev-purple/20 bg-dev-purple/5" data-aos="fade-up" data-aos-delay="200">
-                    <div class="w-12 h-12 bg-dev-purple/20 text-dev-purple rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="git-branch"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Automatización n8n</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Conectamos tus herramientas favoritas. Ahorra cientos de horas mensuales automatizando flujos de trabajo complejos.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Integración de APIs</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Flujos de datos en tiempo real</li>
-                    </ul>
-                </div>
+                        <!-- Stack Visual Layers -->
+                        <div class="space-y-4 mb-6">
+                            
+                            <!-- Capa 1: Frontend (Browser Mockup) -->
+                            <div id="layer-frontend" class="border border-white/5 bg-white/5 rounded-xl p-4 transition-all duration-300 opacity-40">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                    </div>
+                                    <span id="stack-frontend-badge" class="text-[9px] font-bold text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/30 uppercase tracking-widest hidden">NextJS</span>
+                                    <span class="text-[9px] text-slate-500 font-mono">Frontend / UI</span>
+                                </div>
+                                <div id="layer-frontend-content" class="h-14 flex items-center justify-center text-center text-xs text-slate-500">
+                                    <span>Selecciona React o Next.js para activar la interfaz</span>
+                                </div>
+                            </div>
 
-                <!-- Bots & AI -->
-                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="300">
-                    <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="bot"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Bots & IA</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Implementamos agentes de IA para atención al cliente en WhatsApp, Telegram y Web, integrados con tu base de datos.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> OpenAI / Anthropic Integration</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Chatbots de Venta</li>
-                    </ul>
-                </div>
+                            <!-- Capa 2: Backend (API / Logic Layer) -->
+                            <div id="layer-backend" class="border border-white/5 bg-white/5 rounded-xl p-4 transition-all duration-300 opacity-40">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Capa Lógica</span>
+                                    <span id="stack-backend-badge" class="text-[9px] font-bold text-green-400 bg-green-950/40 px-2 py-0.5 rounded border border-green-800/30 uppercase tracking-widest hidden">Node.js</span>
+                                    <span class="text-[9px] text-slate-500 font-mono">Backend API</span>
+                                </div>
+                                <div id="layer-backend-content" class="h-12 flex items-center justify-center text-center text-xs text-slate-500">
+                                    <span>Selecciona Node.js, GoLang o Python para iniciar la API</span>
+                                </div>
+                            </div>
 
-                <!-- Software a Medida -->
-                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="400">
-                    <div class="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="layers"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Software a Medida</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        ¿Tienes una idea única? Desarrollamos soluciones específicas que el software comercial no puede resolver.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Arquitecturas Escalables</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Consultoría Técnica</li>
-                    </ul>
-                </div>
+                            <!-- Capa 3: Database (Data Store Layer) -->
+                            <div id="layer-database" class="border border-white/5 bg-white/5 rounded-xl p-4 transition-all duration-300 opacity-40">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Capa de Datos</span>
+                                    <span id="stack-db-badge" class="text-[9px] font-bold text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-800/30 uppercase tracking-widest hidden">PostgreSQL</span>
+                                    <span class="text-[9px] text-slate-500 font-mono">Base de Datos</span>
+                                </div>
+                                <div id="layer-database-content" class="h-12 flex items-center justify-center text-center text-xs text-slate-500 font-mono">
+                                    <span>Selecciona PostgreSQL para conectar base de datos</span>
+                                </div>
+                            </div>
 
-                <!-- Mantenimiento -->
-                <div class="service-card p-8 rounded-3xl" data-aos="fade-up" data-aos-delay="500">
-                    <div class="w-12 h-12 bg-slate-500/10 text-slate-400 rounded-xl flex items-center justify-center mb-6">
-                        <i data-lucide="shield-check"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Soporte & DevOps</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                        Nos encargamos de que tu software esté siempre online, seguro y actualizado. Gestión de servidores y despliegues.
-                    </p>
-                    <ul class="text-xs text-slate-500 space-y-2">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Docker / Cloud Hosting</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-dev-purple"></i> Auditorías de Seguridad</li>
-                    </ul>
-                </div>
+                            <!-- Capa 4: DevOps / Containerization -->
+                            <div id="layer-ops" class="border border-white/5 bg-white/5 rounded-xl p-3 transition-all duration-300 opacity-40 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="box" class="w-4 h-4 text-sky-400"></i>
+                                    <span class="text-xs text-slate-400">Infraestructura en contenedores Docker</span>
+                                </div>
+                                <span id="stack-docker-badge" class="text-[9px] font-bold text-sky-400 bg-sky-950/40 px-2 py-0.5 rounded border border-sky-800/30 uppercase tracking-widest hidden">Activo</span>
+                            </div>
 
+                            <!-- Capa 5: Automation / n8n -->
+                            <div id="layer-n8n" class="border border-white/5 bg-white/5 rounded-xl p-3 transition-all duration-300 opacity-40 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="cpu" class="w-4 h-4 text-rose-500"></i>
+                                    <span class="text-xs text-slate-400">Flujos de negocio n8n</span>
+                                </div>
+                                <span id="stack-n8n-badge" class="text-[9px] font-bold text-rose-400 bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/30 uppercase tracking-widest hidden">Conectado</span>
+                            </div>
+
+                        </div>
+
+                        <!-- Dynamic project name and Deploy Button -->
+                        <div class="border-t border-white/5 pt-4 space-y-4">
+                            <div>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Proyecto Generado</p>
+                                <h4 id="project-type-title" class="text-base font-bold text-white mt-1">Selecciona tecnologías para comenzar</h4>
+                                <p id="project-type-desc" class="text-xs text-slate-400 mt-1">El simulador determinará el tipo de arquitectura ideal según tu stack de tecnologías.</p>
+                            </div>
+
+                            <button id="deploy-stack-btn" disabled onclick="simulateDeployment()" class="w-full bg-slate-800/80 cursor-not-allowed text-slate-500 font-bold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-white/5">
+                                <i data-lucide="rocket" class="w-4 h-4"></i>
+                                Desplegar Arquitectura
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </section>
 
-    <!-- CTA -->
-    <section id="contacto" class="py-32 px-6 bg-dev-purple/10">
-        <div class="max-w-4xl mx-auto text-center" data-aos="zoom-in">
-            <h2 class="text-4xl font-bold mb-6">¿Listo para el siguiente nivel?</h2>
-            <p class="text-slate-400 text-lg mb-10">Cuéntanos sobre tu proyecto y te daremos una propuesta técnica en menos de 48 horas.</p>
-            <a href="mailto:developers@edatia.com" class="bg-dev-purple hover:bg-dev-indigo text-white px-12 py-4 rounded-full text-lg font-bold transition-all shadow-xl shadow-dev-purple/20">
-                Contactar a un Experto
-            </a>
+    <!-- Vibe Coding (Potenciado por IA) -->
+    <section id="vibe-coding" class="py-24 px-6 relative overflow-hidden bg-gradient-to-b from-white to-[#f8fafc] transition-colors duration-300">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div class="lg:col-span-6 space-y-6" data-aos="fade-right">
+                <p class="text-dev-purple text-xs font-extrabold uppercase tracking-widest">Revolución en Desarrollo</p>
+                <h2 class="text-3xl md:text-5xl font-black text-slate-900 font-display leading-tight">
+                    Vibe Coding: Desarrollo impulsado por Inteligencia Artificial
+                </h2>
+                <p class="text-slate-600 leading-relaxed text-sm sm:text-base">
+                    No escribimos código línea por línea. Orquestamos agentes inteligentes de IA (como Claude y Gemini) para generar bases de código ultra-rápidas y robustas, permitiendo a nuestros ingenieros Senior enfocarse en la arquitectura, la seguridad y las necesidades críticas del negocio.
+                </p>
+                
+                <div class="space-y-4 pt-4">
+                    <div class="flex gap-4 items-start">
+                        <div class="w-10 h-10 rounded-xl bg-dev-purple/10 text-dev-purple flex items-center justify-center shrink-0">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-slate-900 mb-1">Velocidad 10x</h4>
+                            <p class="text-xs text-slate-500">Entregamos productos listos para producción en una fracción del tiempo que toma el desarrollo tradicional.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-4 items-start">
+                        <div class="w-10 h-10 rounded-xl bg-dev-purple/10 text-dev-purple flex items-center justify-center shrink-0">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-slate-900 mb-1">Cero errores de sintaxis</h4>
+                            <p class="text-xs text-slate-500">Nuestros flujos automatizados prueban y validan el código en tiempo real antes de cada despliegue.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Editor Mockup -->
+            <div class="lg:col-span-6" data-aos="fade-left">
+                <div class="bg-[#0b0c10] border border-white/10 rounded-2xl shadow-xl shadow-slate-200 overflow-hidden">
+                    <!-- Editor Header -->
+                    <div class="bg-[#050608] px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                        <div class="flex gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500 block"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 block"></span>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-500">edatia-ai-agent.ts</span>
+                        <div class="w-12"></div>
+                    </div>
+                    <!-- Editor Content -->
+                    <div class="p-6 font-mono text-[11px] sm:text-xs text-slate-400 overflow-x-auto space-y-2">
+                        <p class="text-slate-600">// Desplegando agente autónomo Edatia</p>
+                        <p><span class="text-indigo-400">import</span> { AI_Agent } <span class="text-indigo-400">from</span> <span class="text-emerald-400">'@edatia/core'</span>;</p>
+                        <p>&nbsp;</p>
+                        <p><span class="text-indigo-400">async function</span> <span class="text-amber-400">deploySoftware</span>() {</p>
+                        <p>&nbsp;&nbsp;<span class="text-indigo-400">const</span> agent = <span class="text-indigo-400">new</span> <span class="text-emerald-400">AI_Agent</span>({</p>
+                        <p>&nbsp;&nbsp;&nbsp;&nbsp;project: <span class="text-emerald-400">'Edatia ERP Extension'</span>,</p>
+                        <p>&nbsp;&nbsp;&nbsp;&nbsp;mode: <span class="text-emerald-400">'vibe-coding'</span>,</p>
+                        <p>&nbsp;&nbsp;&nbsp;&nbsp;goals: [<span class="text-emerald-400">'clean-architecture'</span>, <span class="text-emerald-400">'100-test-coverage'</span>]</p>
+                        <p>&nbsp;&nbsp;});</p>
+                        <p>&nbsp;</p>
+                        <p>&nbsp;&nbsp;<span class="text-slate-500">// Analizando especificaciones del cliente...</span></p>
+                        <p>&nbsp;&nbsp;<span class="text-indigo-400">await</span> agent.analyzeRequirements();</p>
+                        <p>&nbsp;&nbsp;<span class="text-indigo-400">await</span> agent.writeCode();</p>
+                        <p>&nbsp;&nbsp;<span class="text-indigo-400">await</span> agent.runTests();</p>
+                                          <p>&nbsp;&nbsp;<span class="text-indigo-400">return</span> agent.deploy({ target: <span class="text-emerald-400">Cloud.AWS</span> });</p>
+                        <p>}</p>
+                        <p>&nbsp;</p>
+                        <p class="text-emerald-400 animate-pulse">// Output: [Success] Despliegue completado en 12.4s.</p>
+                    </div>
+                </div>
+            </div>
+            
         </div>
     </section>
 
-    <footer class="py-10 px-6 border-t border-white/5 text-center text-slate-600 text-sm">
-        &copy; 2026 Edatia Developers. Una unidad de Edatia Group.
+    <!-- Automatización con n8n -->
+    <section id="automatizacion" class="py-24 px-6 relative bg-white border-t border-slate-200/60 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <!-- Workflow Mockup -->
+            <div class="lg:col-span-6 order-2 lg:order-1" data-aos="fade-right">
+                <div class="relative p-6 sm:p-8 bg-[#f8fafc] border border-slate-200/80 rounded-3xl overflow-hidden flex flex-col gap-6 items-center shadow-lg shadow-slate-100/50">
+                    
+                    <!-- Webhook Trigger -->
+                    <div class="w-full max-w-[220px] p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 relative shadow-sm">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                            <i data-lucide="globe" class="w-4.5 h-4.5"></i>
+                        </div>
+                        <div class="text-[10px]">
+                            <p class="font-bold text-slate-800">Webhook Recibido</p>
+                            <p class="text-slate-500">Nuevo Cliente Registrado</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-8 w-0.5 bg-gradient-to-b from-emerald-500 to-indigo-500"></div>
+                    
+                    <!-- n8n Node: AI Parser -->
+                    <div class="w-full max-w-[220px] p-4 bg-white border border-dev-purple/20 rounded-2xl flex items-center gap-3 relative shadow-md shadow-dev-purple/5">
+                        <div class="w-8 h-8 rounded-lg bg-dev-purple/10 text-dev-purple flex items-center justify-center shrink-0">
+                            <i data-lucide="cpu" class="w-4.5 h-4.5"></i>
+                        </div>
+                        <div class="text-[10px]">
+                            <p class="font-bold text-slate-800">AI Agent Parser</p>
+                            <p class="text-dev-purple font-semibold">Analiza datos de contacto</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-8 w-0.5 bg-gradient-to-b from-indigo-500 to-sky-500"></div>
+                    
+                    <!-- Parallel Nodes -->
+                    <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                        <!-- ERP Sync -->
+                        <div class="flex-1 p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm max-w-[200px] mx-auto sm:mx-0">
+                            <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center shrink-0">
+                                <i data-lucide="database" class="w-4.5 h-4.5"></i>
+                            </div>
+                            <div class="text-[10px]">
+                                <p class="font-bold text-slate-800">Sincronizar ERP</p>
+                                <p class="text-slate-500">Inserta en DB</p>
+                            </div>
+                        </div>
+                        <!-- Whatsapp notification -->
+                        <div class="flex-1 p-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm max-w-[200px] mx-auto sm:mx-0">
+                            <div class="w-8 h-8 rounded-lg bg-green-500/10 text-green-500 flex items-center justify-center shrink-0">
+                                <i class="fa-brands fa-whatsapp text-green-500 text-base"></i>
+                            </div>
+                            <div class="text-[10px]">
+                                <p class="font-bold text-slate-800">Notificar WhatsApp</p>
+                                <p class="text-slate-500">Envío plantilla CRM</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="lg:col-span-6 order-1 lg:order-2 space-y-6" data-aos="fade-left">
+                <p class="text-dev-purple text-xs font-extrabold uppercase tracking-widest">Eficiencia Operativa</p>
+                <h2 class="text-3xl md:text-5xl font-black text-slate-900 font-display leading-tight">
+                    Automatizaciones de Procesos con n8n
+                </h2>
+                <p class="text-slate-600 leading-relaxed text-sm sm:text-base">
+                    Erradicamos las tareas manuales y repetitivas. Conectamos todo tu ecosistema digital mediante flujos de automatización integrados en n8n, permitiendo que tus herramientas se comuniquen entre sí las 24 horas del día.
+                </p>
+                
+                <ul class="text-sm text-slate-600 space-y-3 pt-2">
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-dev-purple shrink-0"></i>
+                        <span>Integración fluida de APIs de terceros (CRM, Facturación, Pasarelas).</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-dev-purple shrink-0"></i>
+                        <span>Bots automáticos que responden y agendan citas vía WhatsApp e IA.</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-dev-purple shrink-0"></i>
+                        <span>Generación automática de reportes en PDF y envío por Email.</span>
+                    </li>
+                </ul>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Contacto & CTA -->
+    <section id="contacto" class="py-28 px-6 bg-gradient-to-b from-[#050505] to-[#010103] relative overflow-hidden text-center">
+        <div class="absolute inset-0 bg-dev-purple/5 opacity-40 z-0"></div>
+        
+        <div class="relative z-10 max-w-4xl mx-auto space-y-12">
+            <div data-aos="zoom-in">
+                <p class="text-dev-purple text-xs font-extrabold uppercase tracking-widest mb-2">Hablemos</p>
+                <h2 class="text-3xl md:text-5xl font-black text-white font-display">Llevemos tu visión al siguiente nivel</h2>
+                <p class="text-slate-400 mt-4 max-w-xl mx-auto text-sm sm:text-base">
+                    Cuéntanos tu proyecto y nuestro equipo diseñará una solución técnica a medida en menos de 48 horas.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-white" data-aos="fade-up">
+                <a href="https://wa.me/573001234567" class="p-6 rounded-2xl bg-[#0e0e12] border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center gap-3">
+                    <i class="fa-brands fa-whatsapp text-3xl text-emerald-400"></i>
+                    <span class="text-xs font-bold text-slate-400 tracking-wider">WhatsApp</span>
+                </a>
+                
+                <a href="mailto:developers@edatia.com" class="p-6 rounded-2xl bg-[#0e0e12] border border-white/5 hover:border-dev-purple/30 hover:bg-dev-purple/5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center gap-3">
+                    <i class="fa-solid fa-envelope text-3xl text-dev-purple"></i>
+                    <span class="text-xs font-bold text-slate-400 tracking-wider">Email</span>
+                </a>
+                
+                <a href="https://instagram.com/edatia.dev" class="p-6 rounded-2xl bg-[#0e0e12] border border-white/5 hover:border-pink-500/30 hover:bg-pink-500/5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center gap-3 col-span-2 md:col-span-1">
+                    <i class="fa-brands fa-instagram text-3xl text-pink-500"></i>
+                    <span class="text-xs font-bold text-slate-400 tracking-wider">Instagram</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 px-6 border-t border-white/5 text-center text-slate-600 text-xs">
+        &copy; 2026 Edatia Developers. Una unidad de Edatia Group. Todos los derechos reservados.
     </footer>
 
     <!-- Scripts -->
@@ -210,6 +561,326 @@
     <script>
         lucide.createIcons();
         AOS.init({ duration: 800, once: true });
+
+        // List of selected technologies for interactive stack builder
+        let selectedTechs = new Set();
+
+        // Technology Metadata
+        const techData = {
+            'react': { name: 'React', type: 'frontend' },
+            'nextjs': { name: 'Next.js', type: 'frontend' },
+            'typescript': { name: 'TypeScript', type: 'frontend' },
+            'reactnative': { name: 'React Native', type: 'frontend' },
+            'python': { name: 'Python', type: 'backend' },
+            'nodejs': { name: 'Node.js', type: 'backend' },
+            'golang': { name: 'GoLang', type: 'backend' },
+            'postgresql': { name: 'PostgreSQL', type: 'database' },
+            'n8n': { name: 'n8n', type: 'automation' },
+            'docker': { name: 'Docker', type: 'ops' }
+        };
+
+        // Filter Function for Technologies Grid
+        window.filterTech = function(category) {
+            // Update filter buttons classes
+            document.querySelectorAll('.tech-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-dev-purple', 'text-white', 'shadow-md', 'shadow-dev-purple/20');
+                btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            });
+
+            // Target active button
+            const activeBtn = event ? event.target : document.querySelector(`[onclick="filterTech('${category}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+                activeBtn.classList.add('bg-dev-purple', 'text-white', 'shadow-md', 'shadow-dev-purple/20');
+            }
+
+            // Filter cards
+            document.querySelectorAll('.tech-card').forEach(card => {
+                const cardCat = card.getAttribute('data-category');
+                if (category === 'all' || cardCat === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        // Toggle Selection of Technologies
+        window.toggleTechSelection = function(techId) {
+            const card = document.getElementById(`tech-card-${techId}`);
+            if (!card) return;
+
+            if (selectedTechs.has(techId)) {
+                selectedTechs.delete(techId);
+                card.classList.remove('border-dev-purple/50', 'bg-dev-purple/5', 'shadow-md');
+                card.querySelector('.select-indicator')?.remove();
+            } else {
+                selectedTechs.add(techId);
+                card.classList.add('border-dev-purple/50', 'bg-dev-purple/5', 'shadow-md');
+                
+                // Add select indicator
+                const indicator = document.createElement('div');
+                indicator.className = 'select-indicator absolute top-2 right-2 w-4 h-4 bg-dev-purple rounded-full flex items-center justify-center text-white text-[8px]';
+                indicator.innerHTML = '<i class="fa-solid fa-check"></i>';
+                card.appendChild(indicator);
+            }
+
+            updateVisualizer();
+        };
+
+        window.resetStack = function() {
+            selectedTechs.clear();
+            document.querySelectorAll('.tech-card').forEach(card => {
+                card.classList.remove('border-dev-purple/50', 'bg-dev-purple/5', 'shadow-md');
+                card.querySelector('.select-indicator')?.remove();
+            });
+            updateVisualizer();
+        };
+
+        function updateVisualizer() {
+            const hasFrontend = Array.from(selectedTechs).some(t => techData[t].type === 'frontend' && t !== 'reactnative');
+            const hasMobile = selectedTechs.has('reactnative');
+            const hasBackend = Array.from(selectedTechs).some(t => techData[t].type === 'backend');
+            const hasDB = selectedTechs.has('postgresql');
+            const hasDocker = selectedTechs.has('docker');
+            const hasN8n = selectedTechs.has('n8n');
+
+            // 1. Frontend layer update
+            const layerFrontend = document.getElementById('layer-frontend');
+            const layerFrontendContent = document.getElementById('layer-frontend-content');
+            const frontendBadge = document.getElementById('stack-frontend-badge');
+            
+            if (hasFrontend || hasMobile) {
+                layerFrontend.classList.remove('opacity-40');
+                layerFrontend.classList.add('border-cyan-500/20', 'bg-cyan-500/5');
+                frontendBadge.classList.remove('hidden');
+                
+                let feName = selectedTechs.has('nextjs') ? 'Next.js' : (selectedTechs.has('react') ? 'React' : (selectedTechs.has('reactnative') ? 'React Native' : 'TypeScript'));
+                frontendBadge.textContent = feName;
+                
+                if (hasMobile) {
+                    layerFrontendContent.innerHTML = `
+                        <div class="flex items-center gap-3 text-left w-full">
+                            <i class="fa-solid fa-mobile-screen-button text-2xl text-cyan-400 animate-bounce"></i>
+                            <div>
+                                <p class="font-bold text-xs text-white">Aplicación Móvil Activa</p>
+                                <p class="text-[10px] text-slate-400">Compilando apk/ipa en tiempo real.</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    layerFrontendContent.innerHTML = `
+                        <div class="w-full space-y-1.5">
+                            <div class="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                                <span>Home Page</span>
+                                <span class="text-emerald-400">Ready</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-2.5 rounded overflow-hidden">
+                                <div class="bg-gradient-to-r from-cyan-400 to-indigo-400 h-full w-[85%]"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                layerFrontend.classList.add('opacity-40');
+                layerFrontend.classList.remove('border-cyan-500/20', 'bg-cyan-500/5');
+                frontendBadge.classList.add('hidden');
+                layerFrontendContent.innerHTML = `<span>Selecciona React o Next.js para activar la interfaz</span>`;
+            }
+
+            // 2. Backend layer update
+            const layerBackend = document.getElementById('layer-backend');
+            const layerBackendContent = document.getElementById('layer-backend-content');
+            const backendBadge = document.getElementById('stack-backend-badge');
+
+            if (hasBackend) {
+                layerBackend.classList.remove('opacity-40');
+                layerBackend.classList.add('border-green-500/20', 'bg-green-500/5');
+                backendBadge.classList.remove('hidden');
+                
+                let beName = selectedTechs.has('golang') ? 'GoLang' : (selectedTechs.has('nodejs') ? 'Node.js' : 'Python');
+                backendBadge.textContent = beName;
+                
+                layerBackendContent.innerHTML = `
+                    <div class="w-full font-mono text-[9px] text-left text-slate-300 space-y-0.5">
+                        <p class="text-emerald-400"><span class="text-slate-500">GET</span> /api/v1/status - 200 OK</p>
+                        <p class="text-slate-400 animate-pulse"><span class="text-slate-500">POST</span> /api/v1/deploy - Running...</p>
+                    </div>
+                `;
+            } else {
+                layerBackend.classList.add('opacity-40');
+                layerBackend.classList.remove('border-green-500/20', 'bg-green-500/5');
+                backendBadge.classList.add('hidden');
+                layerBackendContent.innerHTML = `<span>Selecciona Node.js, GoLang o Python para iniciar la API</span>`;
+            }
+
+            // 3. Database layer update
+            const layerDatabase = document.getElementById('layer-database');
+            const layerDatabaseContent = document.getElementById('layer-database-content');
+            const dbBadge = document.getElementById('stack-db-badge');
+
+            if (hasDB) {
+                layerDatabase.classList.remove('opacity-40');
+                layerDatabase.classList.add('border-blue-500/20', 'bg-blue-500/5');
+                dbBadge.classList.remove('hidden');
+                layerDatabaseContent.innerHTML = `
+                    <div class="flex items-center gap-3 text-left w-full">
+                        <i class="fa-solid fa-database text-xl text-blue-400 animate-pulse"></i>
+                        <div>
+                            <p class="font-bold text-xs text-white">PostgreSQL Online</p>
+                            <p class="text-[10px] text-slate-400">Pool de conexiones establecido.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                layerDatabase.classList.add('opacity-40');
+                layerDatabase.classList.remove('border-blue-500/20', 'bg-blue-500/5');
+                dbBadge.classList.add('hidden');
+                layerDatabaseContent.innerHTML = `<span>Selecciona PostgreSQL para conectar base de datos</span>`;
+            }
+
+            // 4. Docker layer update
+            const layerOps = document.getElementById('layer-ops');
+            const dockerBadge = document.getElementById('stack-docker-badge');
+            if (hasDocker) {
+                layerOps.classList.remove('opacity-40');
+                layerOps.classList.add('border-sky-500/20', 'bg-sky-500/5');
+                dockerBadge.classList.remove('hidden');
+            } else {
+                layerOps.classList.add('opacity-40');
+                layerOps.classList.remove('border-sky-500/20', 'bg-sky-500/5');
+                dockerBadge.classList.add('hidden');
+            }
+
+            // 5. n8n layer update
+            const layerN8n = document.getElementById('layer-n8n');
+            const n8nBadge = document.getElementById('stack-n8n-badge');
+            if (hasN8n) {
+                layerN8n.classList.remove('opacity-40');
+                layerN8n.classList.add('border-rose-500/20', 'bg-rose-500/5');
+                n8nBadge.classList.remove('hidden');
+            } else {
+                layerN8n.classList.add('opacity-40');
+                layerN8n.classList.remove('border-rose-500/20', 'bg-rose-500/5');
+                n8nBadge.classList.add('hidden');
+            }
+
+            // 6. Dynamic Project Types & Button logic
+            const titleEl = document.getElementById('project-type-title');
+            const descEl = document.getElementById('project-type-desc');
+            const deployBtn = document.getElementById('deploy-stack-btn');
+
+            if (selectedTechs.size === 0) {
+                titleEl.textContent = 'Selecciona tecnologías para comenzar';
+                descEl.textContent = 'El simulador determinará el tipo de arquitectura ideal según tu stack de tecnologías.';
+                deployBtn.disabled = true;
+                deployBtn.className = 'w-full bg-slate-800/80 cursor-not-allowed text-slate-500 font-bold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-white/5';
+            } else {
+                deployBtn.disabled = false;
+                deployBtn.className = 'w-full bg-dev-purple hover:bg-dev-indigo hover:scale-[1.02] text-white font-bold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-dev-purple/20 cursor-pointer';
+
+                // Categorize project
+                if (hasMobile && !hasFrontend && !hasBackend) {
+                    titleEl.textContent = 'App Móvil Nativa';
+                    descEl.textContent = 'Una aplicación multiplataforma con UI fluida.';
+                } else if (hasFrontend && hasBackend && hasDB) {
+                    titleEl.textContent = 'Plataforma Web Fullstack';
+                    descEl.textContent = 'Aplicación web premium con base de datos robusta, ideal para plataformas SaaS y ERPs.';
+                } else if (hasFrontend && !hasBackend) {
+                    titleEl.textContent = 'Single Page Application (SPA)';
+                    descEl.textContent = 'Una interfaz ágil y moderna enfocada enteramente en la experiencia de usuario (UX).';
+                } else if (hasBackend && !hasFrontend) {
+                    titleEl.textContent = 'Servicio API REST / Microservicios';
+                    descEl.textContent = 'Arquitectura robusta de backend optimizada para procesamiento pesado de datos.';
+                } else if (hasN8n && selectedTechs.size === 1) {
+                    titleEl.textContent = 'Flujo de Automatización RPA';
+                    descEl.textContent = 'Procesos de sincronización y automatizaciones autónomas de bajo código.';
+                } else {
+                    titleEl.textContent = 'Arquitectura Híbrida Personalizada';
+                    descEl.textContent = 'Una solución técnica flexible diseñada para los requerimientos específicos de tu empresa.';
+                }
+            }
+        }
+
+        // Simulate Deployment Overlay/Terminal
+        window.simulateDeployment = function() {
+            const selectedList = Array.from(selectedTechs).map(t => techData[t].name).join(', ');
+            
+            // Create temporary terminal popup
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6';
+            modal.innerHTML = `
+                <div class="bg-[#050608] border border-white/10 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="bg-[#0b0c10] border-b border-white/5 px-4 py-3 flex items-center justify-between">
+                        <div class="flex gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500 block"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 block"></span>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-500">edatia-deploy-cli</span>
+                        <div class="w-8"></div>
+                    </div>
+                    <div id="terminal-log" class="p-6 font-mono text-xs text-slate-400 min-h-[220px] max-h-[350px] overflow-y-auto space-y-1">
+                        <p class="text-dev-purple">> edatia-cli deploy --stack=[${selectedList}]</p>
+                        <p class="text-slate-500">Iniciando orquestación del proyecto...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const logs = [
+                { text: '✔ Analizando dependencias y requerimientos de arquitectura...', delay: 600 },
+                { text: '✔ Estructurando archivos base del frontend...', delay: 1200 },
+                { text: '✔ Configurando endpoints y middlewares de la API...', delay: 1800 },
+                { text: '✔ Creando esquemas y pools de base de datos...', delay: 2400 },
+                { text: '✔ Empaquetando capas de software en contenedores aislados...', delay: 2900 },
+                { text: '✔ Conectando flujos y webhooks de automatización...', delay: 3500 },
+                { text: '✔ Ejecutando tests unitarios automáticos...', delay: 4100 },
+                { text: '✔ [SUCCESS] ¡Despliegue completado con éxito! 🚀', delay: 4800, class: 'text-emerald-400 font-bold' },
+                { text: '✔ Proyecto en vivo en: <a href="#" onclick="alert(\'Simulación finalizada exitosamente\')" class="text-cyan-400 underline font-bold">https://app.edatia.dev</a>', delay: 5200 }
+            ];
+
+            const logContainer = document.getElementById('terminal-log');
+
+            logs.forEach(log => {
+                setTimeout(() => {
+                    const p = document.createElement('p');
+                    if (log.class) p.className = log.class;
+                    p.innerHTML = log.text;
+                    logContainer.appendChild(p);
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }, log.delay);
+            });
+
+            // Close button after deployment finishes
+            setTimeout(() => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full bg-dev-purple text-white font-bold py-3 mt-4 rounded-xl text-xs uppercase tracking-wider transition-all hover:bg-dev-indigo cursor-pointer';
+                btn.textContent = 'Cerrar Terminal';
+                btn.onclick = () => modal.remove();
+                logContainer.appendChild(btn);
+            }, 5500);
+        };
+
+        // Control de Scroll para Navbar
+        const mainNav = document.getElementById('main-nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 80) {
+                mainNav.classList.add('nav-scrolled');
+            } else {
+                mainNav.classList.remove('nav-scrolled');
+            }
+        });
+
+        // Refuerzo de Autoplay para videos
+        window.addEventListener('load', () => {
+            const videos = document.querySelectorAll('.bg-video');
+            videos.forEach(video => {
+                video.play().catch(error => {
+                    console.log("Autoplay preventivo activado:", error);
+                });
+            });
+        });
     </script>
 </body>
 </html>

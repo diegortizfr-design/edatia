@@ -125,12 +125,21 @@ export function OrdenCompraForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Proveedor *</label>
-              <select value={header.proveedorId} onChange={e => setHeader(h => ({ ...h, proveedorId: e.target.value }))} required className={inputCls}>
-                <option value="">— Seleccionar proveedor —</option>
-                {proveedores.filter(p => p.activo).map(p => (
-                  <option key={p.id} value={p.id}>{p.nombre}{p.nombreComercial && p.nombreComercial !== p.nombre ? ` (${p.nombreComercial})` : ''}</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select value={header.proveedorId} onChange={e => setHeader(h => ({ ...h, proveedorId: e.target.value }))} required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">— Seleccionar proveedor —</option>
+                  {proveedores.filter(p => p.activo).map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}{p.nombreComercial && p.nombreComercial !== p.nombre ? ` (${p.nombreComercial})` : ''}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 whitespace-nowrap"
+                >
+                  Crear Proveedor
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Bodega destino *</label>
@@ -182,6 +191,16 @@ export function OrdenCompraForm() {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={() => navigate('/inventario/productos/nuevo')}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1"
+            >
+              <Plus size={12} /> ¿El producto no existe? Crear Producto nuevo
+            </button>
           </div>
 
           {/* Tabla de ítems */}
@@ -252,10 +271,10 @@ export function OrdenCompraForm() {
 
         <div className="flex items-center justify-end gap-3 pb-6">
           <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
-          <button type="submit" disabled={mutation.isLoading || items.length === 0}
+          <button type="submit" disabled={mutation.isPending || items.length === 0}
             className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
             <Save size={16} />
-            {mutation.isLoading ? 'Creando...' : 'Crear orden de compra'}
+            {mutation.isPending ? 'Creando...' : 'Crear orden de compra'}
           </button>
         </div>
       </form>

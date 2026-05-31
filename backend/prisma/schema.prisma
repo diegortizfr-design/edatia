@@ -103,6 +103,7 @@ model Empresa {
   proveedores          Proveedor[]
   ordenesCompra        OrdenCompra[]
   recepcionesMercancia RecepcionMercancia[]
+  facturasCompra       FacturaCompra[]
   lotes                Lote[]
   seriales             NumeroSerie[]
   variantes            VarianteProducto[]
@@ -510,6 +511,7 @@ model Producto {
   facturaItems    FacturaVentaItem[]
   cotizacionItems CotizacionItem[]
   ventaPosItems   VentaPosItem[]
+  facturasCompraItems FacturaCompraItem[]
 
   // 🌐 Módulo Digital
   publicadoWeb    Boolean  @default(false)
@@ -566,6 +568,7 @@ model Bodega {
   direccion   String?
   esPrincipal Boolean  @default(false)
   activo      Boolean  @default(true)
+  permiteStockNegativo Boolean @default(false)
 
   stock                Stock[]
   movimientosOrigen    MovimientoInventario[] @relation("MovOrigen")
@@ -633,6 +636,7 @@ model MovimientoInventario {
   referenciaTipo   String?
   movimientoParId  Int?
   notas            String?
+  estado           String?  @default("COMPLETADO")
 
   fechaMovimiento  DateTime @default(now())
   createdAt        DateTime @default(now())
@@ -669,11 +673,58 @@ model Proveedor {
   activo          Boolean       @default(true)
   notas           String?
   ordenesCompra   OrdenCompra[]
+  facturasCompra  FacturaCompra[]
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([empresaId])
+}
+
+model FacturaCompra {
+  id                    Int           @id @default(autoincrement())
+  empresaId             Int
+  empresa               Empresa       @relation(fields: [empresaId], references: [id])
+
+  numero                String
+  prefijoProveedor      String?
+  consecutivoProveedor  String
+  proveedorId           Int
+  proveedor             Proveedor     @relation(fields: [proveedorId], references: [id])
+
+  fechaEmision          DateTime
+  fechaVencimiento      DateTime?
+
+  subtotal              Decimal       @db.Decimal(14, 2)
+  descuento             Decimal       @default(0) @db.Decimal(14, 2)
+  iva                   Decimal       @default(0) @db.Decimal(14, 2)
+  total                 Decimal       @db.Decimal(14, 2)
+
+  xmlAdjunto            String?
+  recepcionId           String?       // RP cruzada
+  notas                 String?
+  estado                String        @default("REGISTRADA")
+
+  items                 FacturaCompraItem[]
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@unique([empresaId, proveedorId, consecutivoProveedor])
+  @@index([empresaId])
+}
+
+model FacturaCompraItem {
+  id               Int           @id @default(autoincrement())
+  facturaCompraId  Int
+  facturaCompra    FacturaCompra @relation(fields: [facturaCompraId], references: [id], onDelete: Cascade)
+  productoId       Int
+  producto         Producto      @relation(fields: [productoId], references: [id])
+  cantidad         Decimal       @db.Decimal(12, 3)
+  costoUnitario    Decimal       @db.Decimal(14, 2)
+  subtotal         Decimal       @db.Decimal(14, 2)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 }
 
 model OrdenCompra {

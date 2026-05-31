@@ -28,10 +28,10 @@ export function Alertas() {
           <h1 className="text-2xl font-bold text-slate-800">Alertas de Stock</h1>
           <p className="text-slate-500 text-sm mt-0.5">Productos en o por debajo del punto de reorden</p>
         </div>
-        <Link to="/inventario/movimientos/nuevo"
+        <Link to="/inventario/control-existencias/nuevo-ajuste"
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
           <Package size={16} />
-          Registrar entrada
+          Registrar ajuste
         </Link>
       </div>
 
@@ -136,10 +136,10 @@ function AlertTable({ titulo, nivel, filas }: { titulo: string; nivel: string; f
                 <td className="px-5 py-3 text-right text-slate-600">{fmt(parseFloat(a.producto?.costoPromedio ?? 0))}</td>
                 <td className="px-5 py-3 text-center">
                   <Link
-                    to={`/inventario/movimientos/nuevo?productoId=${a.productoId}&bodegaId=${a.bodegaId}`}
+                    to={`/inventario/control-existencias/nuevo-ajuste?productoId=${a.productoId}&bodegaId=${a.bodegaId}`}
                     className="inline-flex items-center gap-1 text-xs px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
                   >
-                    Registrar entrada <ArrowRight size={11} />
+                    Registrar ajuste <ArrowRight size={11} />
                   </Link>
                 </td>
               </tr>

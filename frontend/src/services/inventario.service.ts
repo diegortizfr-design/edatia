@@ -52,6 +52,8 @@ export interface Movimiento {
   cantidad: number; costoUnitario: number; costoTotal: number
   saldoCantidad: number; saldoCostoTotal: number; saldoCpp: number
   notas?: string; fechaMovimiento: string
+  estado?: string
+  fechaVerificacion?: string
 }
 
 export interface InvKpis {
@@ -266,3 +268,44 @@ export const toggleVariante = (id: number) =>
   api.patch(`/inventario/variantes/${id}/toggle`).then(r => r.data)
 export const ajustarStockVariante = (id: number, data: any) =>
   api.post(`/inventario/variantes/${id}/stock`, data).then(r => r.data)
+
+// ── Facturas de Compra (FC) y Recibir Traslado ──
+export interface FacturaCompra {
+  id: number;
+  numero: string;
+  prefijoProveedor?: string;
+  consecutivoProveedor: string;
+  proveedorId: number;
+  proveedor: { id: number; nombre: string; numeroDocumento?: string };
+  fechaEmision: string;
+  fechaVencimiento?: string;
+  subtotal: number;
+  descuento: number;
+  iva: number;
+  total: number;
+  xmlAdjunto?: string;
+  recepcionId?: string;
+  notas?: string;
+  estado: string;
+  items?: Array<{
+    id: number;
+    productoId: number;
+    producto?: { id: number; nombre: string; sku: string };
+    cantidad: number;
+    costoUnitario: number;
+    subtotal: number;
+  }>;
+  createdAt: string;
+}
+
+export const getFacturasCompra = (params?: { query?: string; proveedorId?: number }) =>
+  api.get<FacturaCompra[]>('/inventario/facturas-compra', { params }).then(r => r.data)
+export const getFacturaCompra = (id: number) =>
+  api.get<FacturaCompra>(`/inventario/facturas-compra/${id}`).then(r => r.data)
+export const createFacturaCompra = (data: any) =>
+  api.post<FacturaCompra>('/inventario/facturas-compra', data).then(r => r.data)
+export const deleteFacturaCompra = (id: number) =>
+  api.delete(`/inventario/facturas-compra/${id}`).then(r => r.data)
+
+export const recibirTraslado = (id: number) =>
+  api.post(`/inventario/movimientos/${id}/recibir-traslado`).then(r => r.data)

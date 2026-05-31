@@ -26,6 +26,9 @@ export function OrdenCompraDetalle() {
 
   const [showRecepcion, setShowRecepcion] = useState(false)
   const [recItems, setRecItems] = useState<Record<number, string>>({})
+  const [recLotes, setRecLotes] = useState<Record<number, string>>({})
+  const [recVencimientos, setRecVencimientos] = useState<Record<number, string>>({})
+  const [recSeriales, setRecSeriales] = useState<Record<number, string>>({})
   const [recNotas, setRecNotas] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -68,12 +71,45 @@ export function OrdenCompraDetalle() {
   function handleRecibir(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    
+    // Check validations for batches and serials
+    for (const item of oc.items) {
+      const cantStr = recItems[item.id]
+      const qty = parseFloat(cantStr)
+      if (qty > 0) {
+        if (item.producto?.manejaLotes && !recLotes[item.id]?.trim()) {
+          return setError(`Debe especificar el número de lote para ${item.producto.nombre}`)
+        }
+        if (item.producto?.manejaSerial) {
+          const serialList = (recSeriales[item.id] || '').split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+          if (!recSeriales[item.id]?.trim()) {
+            return setError(`Debe especificar los seriales para ${item.producto.nombre}`)
+          }
+          if (serialList.length !== Math.ceil(qty)) {
+            return setError(`La cantidad de seriales (${serialList.length}) no coincide con la cantidad a recibir (${Math.ceil(qty)}) para ${item.producto.nombre}`)
+          }
+        }
+      }
+    }
+
     const itemsToSend = Object.entries(recItems)
       .filter(([, v]) => parseFloat(v) > 0)
-      .map(([ocItemId, cantidadRecibida]) => ({
-        ordenCompraItemId: +ocItemId,
-        cantidadRecibida: parseFloat(cantidadRecibida),
-      }))
+      .map(([ocItemId, cantidadRecibida]) => {
+        const idNum = +ocItemId
+        const itemObj = oc.items.find((i: any) => i.id === idNum)
+        const serialsParsed = itemObj?.producto?.manejaSerial 
+          ? (recSeriales[idNum] || '').split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+          : undefined
+
+        return {
+          ordenCompraItemId: idNum,
+          cantidadRecibida: parseFloat(cantidadRecibida),
+          loteNumero: itemObj?.producto?.manejaLotes ? recLotes[idNum] : undefined,
+          fechaVencimiento: itemObj?.producto?.manejaLotes && recVencimientos[idNum] ? recVencimientos[idNum] : undefined,
+          seriales: serialsParsed
+        }
+      })
+
     if (itemsToSend.length === 0) return setError('Ingresa al menos una cantidad a recibir')
     recibir.mutate({ items: itemsToSend, notas: recNotas || undefined })
   }
@@ -108,9 +144,9 @@ export function OrdenCompraDetalle() {
         {/* Acciones */}
         <div className="flex gap-2 shrink-0">
           {puedeAprobar && (
-            <button onClick={() => aprobar.mutate()} disabled={aprobar.isLoading}
+            <button onClick={() => aprobar.mutate()} disabled={aprobar.isPending}
               className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              <CheckCircle size={15} /> {aprobar.isLoading ? 'Aprobando...' : 'Aprobar'}
+              <CheckCircle size={15} /> {aprobar.isPending ? 'Aprobando...' : 'Aprobar'}
             </button>
           )}
           {puedeRecibir && (
@@ -120,7 +156,7 @@ export function OrdenCompraDetalle() {
             </button>
           )}
           {puedeAnular && (
-            <button onClick={() => { if (confirm('¿Seguro que deseas anular esta OC?')) anular.mutate() }} disabled={anular.isLoading}
+            <button onClick={() => { if (confirm('¿Seguro que deseas anular esta OC?')) anular.mutate() }} disabled={anular.isPending}
               className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50">
               <XCircle size={15} /> Anular
             </button>
@@ -142,20 +178,67 @@ export function OrdenCompraDetalle() {
                 const pendiente = parseFloat(String(item.cantidad)) - parseFloat(String(item.cantidadRecibida))
                 if (pendiente <= 0.001) return null
                 return (
-                  <div key={item.id} className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-amber-200">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{item.producto?.nombre}</p>
-                      <p className="text-xs text-slate-400">{item.producto?.sku} · Pendiente: <span className="font-semibold text-amber-700">{pendiente.toFixed(3)}</span> {item.producto?.unidadMedida?.abreviatura ?? 'und'}</p>
+                  <div key={item.id} className="space-y-3 bg-white rounded-lg p-4 border border-amber-200">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">{item.producto?.nombre}</p>
+                        <p className="text-xs text-slate-400">{item.producto?.sku} · Pendiente: <span className="font-semibold text-amber-700">{pendiente.toFixed(3)}</span> {item.producto?.unidadMedida?.abreviatura ?? 'und'}</p>
+                      </div>
+                      <div className="w-32 shrink-0">
+                        <input
+                          type="number" min="0" max={pendiente} step="0.001"
+                          value={recItems[item.id] ?? ''}
+                          onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          placeholder={String(pendiente.toFixed(3))}
+                          className="w-full text-right px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                      </div>
                     </div>
-                    <div className="w-32 shrink-0">
-                      <input
-                        type="number" min="0" max={pendiente} step="0.001"
-                        value={recItems[item.id] ?? ''}
-                        onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
-                        placeholder={String(pendiente.toFixed(3))}
-                        className="w-full text-right px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      />
-                    </div>
+
+                    {/* Lotes inputs if product manejaLotes */}
+                    {item.producto?.manejaLotes && parseFloat(recItems[item.id] || '0') > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Número de Lote *</label>
+                          <input
+                            value={recLotes[item.id] ?? ''}
+                            onChange={e => setRecLotes(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            placeholder="Lote..."
+                            required
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha de Vencimiento</label>
+                          <input
+                            type="date"
+                            value={recVencimientos[item.id] ?? ''}
+                            onChange={e => setRecVencimientos(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Seriales textarea if product manejaSerial */}
+                    {item.producto?.manejaSerial && parseFloat(recItems[item.id] || '0') > 0 && (
+                      <div className="border-t border-slate-100 pt-3">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                          Números de Serie *
+                        </label>
+                        <textarea
+                          value={recSeriales[item.id] ?? ''}
+                          onChange={e => setRecSeriales(prev => ({ ...prev, [item.id]: e.target.value }))}
+                          placeholder="Ingrese un serial por línea o separados por comas..."
+                          rows={2}
+                          required
+                          className="w-full px-2.5 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 outline-none resize-none"
+                        />
+                        <span className="text-[9px] text-slate-400 block mt-0.5">
+                          Ingrese exactamente {Math.ceil(parseFloat(recItems[item.id] || '0'))} seriales.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -168,9 +251,9 @@ export function OrdenCompraDetalle() {
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowRecepcion(false)} className="px-3 py-2 text-slate-600 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
-              <button type="submit" disabled={recibir.isLoading}
+              <button type="submit" disabled={recibir.isPending}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                <Package size={15} /> {recibir.isLoading ? 'Registrando...' : 'Confirmar recepción'}
+                <Package size={15} /> {recibir.isPending ? 'Registrando...' : 'Confirmar recepción'}
               </button>
             </div>
           </form>

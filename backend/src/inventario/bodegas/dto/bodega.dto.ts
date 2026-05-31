@@ -17,6 +17,9 @@ export class CreateBodegaDto {
 
   @IsOptional() @IsBoolean()
   esPrincipal?: boolean;
+
+  @IsOptional() @IsBoolean()
+  permiteStockNegativo?: boolean;
 }
 
 export class UpdateBodegaDto {
@@ -37,4 +40,7 @@ export class UpdateBodegaDto {
 
   @IsOptional() @IsBoolean()
   activo?: boolean;
+
+  @IsOptional() @IsBoolean()
+  permiteStockNegativo?: boolean;
 }

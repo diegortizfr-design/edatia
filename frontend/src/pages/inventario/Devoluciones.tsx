@@ -16,8 +16,10 @@ export function Devoluciones() {
   const mutProveedor = useMutation({
     mutationFn: postDevolucionProveedor,
     onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
+      qc.invalidateQueries({ queryKey: ['productos-existencias'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
-      qc.invalidateQueries({ queryKey: ['movimientos'] })
+      qc.invalidateQueries({ queryKey: ['inv-kpis'] })
       setSuccess(`Devolución a proveedor registrada — ${data.numero}`)
     },
   })
@@ -25,8 +27,10 @@ export function Devoluciones() {
   const mutCliente = useMutation({
     mutationFn: postDevolucionCliente,
     onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
+      qc.invalidateQueries({ queryKey: ['productos-existencias'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
-      qc.invalidateQueries({ queryKey: ['movimientos'] })
+      qc.invalidateQueries({ queryKey: ['inv-kpis'] })
       setSuccess(`Devolución de cliente registrada — ${data.numero}`)
     },
   })
@@ -100,14 +104,14 @@ export function Devoluciones() {
           ? <DevolucionProveedorForm
               productos={productos as any[]}
               bodegas={bodegas as any[]}
-              onSubmit={(d: any) => mutProveedor.mutate(d)}
+              onSubmit={(d: any, resetCb: () => void) => mutProveedor.mutate(d, { onSuccess: () => resetCb() })}
               isLoading={isPending}
               error={error}
             />
           : <DevolucionClienteForm
               productos={productos as any[]}
               bodegas={bodegas as any[]}
-              onSubmit={(d: any) => mutCliente.mutate(d)}
+              onSubmit={(d: any, resetCb: () => void) => mutCliente.mutate(d, { onSuccess: () => resetCb() })}
               isLoading={isPending}
               error={error}
             />
@@ -129,8 +133,9 @@ function DevolucionProveedorForm({ productos, bodegas, onSubmit, isLoading, erro
       cantidad: +form.cantidad,
       motivo: form.motivo || undefined,
       referencia: form.referencia || undefined,
+    }, () => {
+      setForm({ productoId: '', bodegaId: '', cantidad: '', motivo: '', referencia: '' })
     })
-    setForm({ productoId: '', bodegaId: '', cantidad: '', motivo: '', referencia: '' })
   }
 
   return (
@@ -204,8 +209,9 @@ function DevolucionClienteForm({ productos, bodegas, onSubmit, isLoading, error 
       costoUnitario: form.costoUnitario ? +form.costoUnitario : undefined,
       motivo: form.motivo || undefined,
       referencia: form.referencia || undefined,
+    }, () => {
+      setForm({ productoId: '', bodegaId: '', cantidad: '', costoUnitario: '', motivo: '', referencia: '' })
     })
-    setForm({ productoId: '', bodegaId: '', cantidad: '', costoUnitario: '', motivo: '', referencia: '' })
   }
 
   return (

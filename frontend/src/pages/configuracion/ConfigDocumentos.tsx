@@ -43,7 +43,7 @@ const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
   // Compras
   { codigo: 'DS', documento: 'Documento Soporte', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Compras a no obligados a facturar' },
   { codigo: 'NAS', documento: 'Nota Ajuste Documento Soporte', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Corrección de documento soporte' },
-  { codigo: 'FP', documento: 'Factura Proveedor', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar cuenta por pagar' },
+  { codigo: 'FC', documento: 'Factura de Compra', area: 'Compras', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar factura comercial de proveedor (3-Way Match)' },
   { codigo: 'SOL', documento: 'Solicitud de Compra', area: 'Compras', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Solicitar adquisición interna' },
   { codigo: 'OC', documento: 'Orden de Compra', area: 'Compras', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Autorizar compra a proveedor' },
   { codigo: 'DCP', documento: 'Devolución Compra', area: 'Compras', obligatorioDian: 'NO', operativamenteRecomendado: 'Recomendado', funcionPrincipal: 'Retorno de mercancía al proveedor' },
@@ -59,7 +59,7 @@ const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
   // Inventario
   { codigo: 'EI', documento: 'Entrada Inventario', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ingreso de mercancía' },
   { codigo: 'SI', documento: 'Salida Inventario', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Egreso de mercancía' },
-  { codigo: 'TR', documento: 'Traslado Bodega', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Movimiento entre bodegas' },
+  { codigo: 'TI', documento: 'Traslado de Inventario', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Movimiento entre bodegas con verificación en destino' },
   { codigo: 'AI', documento: 'Ajuste Inventario', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Correcciones de stock' },
   { codigo: 'IF', documento: 'Inventario Físico', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Conteo físico' },
   { codigo: 'KR', documento: 'Kardex', area: 'Inventario', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Trazabilidad de movimientos' },
@@ -67,7 +67,7 @@ const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
   { codigo: 'DEV', documento: 'Devolución Venta', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Retorno de mercancía cliente' },
   { codigo: 'VNC', documento: 'Vencimientos', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Recomendado', funcionPrincipal: 'Control de lotes y expiración' },
   { codigo: 'LOT', documento: 'Control de Lotes', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Recomendado', funcionPrincipal: 'Trazabilidad por lote' },
-  { codigo: 'RMV', documento: 'Recepción de Mercancía', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Confirmar recepción física' },
+  { codigo: 'RP', documento: 'Recepción de Producto', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Confirmar recepción física de mercancía (3-Way Match)' },
   // Contabilidad
   { codigo: 'CC', documento: 'Comprobante Contable', area: 'Contabilidad', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Soporte contable general' },
   { codigo: 'AJ', documento: 'Comprobante de Ajuste', area: 'Contabilidad', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ajustes contables y cierres' },
@@ -154,9 +154,9 @@ const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
   },
   {
     id: 'traslados',
-    nombre: 'Traslados de Inventario',
-    sigla: 'TR',
-    prefijo: 'TRA',
+    nombre: 'Traslado de Inventario',
+    sigla: 'TI',
+    prefijo: 'TI',
     consecutivoInicial: 1,
     consecutivoSiguiente: 1,
     tipoOperacion: 'INVENTARIO',
@@ -173,6 +173,45 @@ const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
     consecutivoInicial: 1,
     consecutivoSiguiente: 1,
     tipoOperacion: 'COMPRAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'factura_compra',
+    nombre: 'Factura de Compra',
+    sigla: 'FC',
+    prefijo: 'FC',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'COMPRAS',
+    plantillaImpresion: 'CARTA',
+    esElectronico: true,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'recepcion_producto',
+    nombre: 'Recepción de Producto',
+    sigla: 'RP',
+    prefijo: 'RP',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'INVENTARIO',
+    plantillaImpresion: 'CARTA',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
+    id: 'ajuste_inventario',
+    nombre: 'Ajuste de Inventario',
+    sigla: 'AI',
+    prefijo: 'AI',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'INVENTARIO',
     plantillaImpresion: 'CARTA',
     esElectronico: false,
     estado: 'ACTIVO',
@@ -305,12 +344,35 @@ export function ConfigDocumentos() {
     }
   }, [])
 
-  // Cargar documentos desde localStorage en el inicio
+  // Cargar documentos desde localStorage en el inicio con auto-migración
   useEffect(() => {
     const saved = localStorage.getItem('edatia_config_documentos')
     if (saved) {
       try {
-        setDocuments(JSON.parse(saved))
+        let docs = JSON.parse(saved)
+        let modified = false
+        // Migración: añadir documentos por defecto faltantes
+        DEFAULT_DOCUMENTS.forEach(defDoc => {
+          const exists = docs.some((d: any) => d.id === defDoc.id || d.sigla === defDoc.sigla)
+          if (!exists) {
+            docs.push(defDoc)
+            modified = true
+          }
+        })
+        
+        // Sincronizar traslados con sigla TI
+        const trasladosIdx = docs.findIndex((d: any) => d.id === 'traslados')
+        if (trasladosIdx >= 0 && docs[trasladosIdx].sigla === 'TR') {
+          docs[trasladosIdx].sigla = 'TI'
+          docs[trasladosIdx].prefijo = 'TI'
+          docs[trasladosIdx].nombre = 'Traslado de Inventario'
+          modified = true
+        }
+
+        if (modified) {
+          localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
+        }
+        setDocuments(docs)
       } catch (e) {
         setDocuments(DEFAULT_DOCUMENTS)
       }

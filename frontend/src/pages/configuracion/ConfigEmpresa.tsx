@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getEmpresaConfig, updateEmpresaConfig } from '../../services/configuracion.service'
+import { getBodegas, updateBodega } from '../../services/inventario.service'
 import {
   Building2, FileText, MapPin, Phone, Palette, ShieldCheck,
   Save, CheckCircle2, AlertCircle, ChevronRight, Info, Calculator,
@@ -108,9 +109,12 @@ export function ConfigEmpresa() {
   const [saved, setSaved] = useState(false)
 
   const { data: empresa, isLoading } = useQuery(['config-empresa'], getEmpresaConfig)
+  const { data: bodegas = [], isFetched: isBodegasFetched } = useQuery(['bodegas-config-empresa'], getBodegas)
+
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    if (empresa) {
+    if (empresa && isBodegasFetched && !initialized) {
       // Cargar configuraciones del localStorage
       const savedContabilidad = JSON.parse(localStorage.getItem('edatia_config_contabilidad') || '{}')
       const savedCostos = JSON.parse(localStorage.getItem('edatia_config_costos') || '{}')
@@ -119,8 +123,13 @@ export function ConfigEmpresa() {
       const savedCartera = JSON.parse(localStorage.getItem('edatia_config_cartera') || '{}')
       const savedDian = JSON.parse(localStorage.getItem('edatia_config_dian') || '{}')
 
+      const dbStockNegativoBodegas = bodegas
+        .filter((b: any) => b.permiteStockNegativo)
+        .map((b: any) => b.id)
+
       setForm({
         ...empresa,
+        stockNegativoBodegas: dbStockNegativoBodegas,
         fechaMatriculaMercantil: empresa.fechaMatriculaMercantil
           ? empresa.fechaMatriculaMercantil.split('T')[0]
           : '',
@@ -158,8 +167,9 @@ export function ConfigEmpresa() {
         ...savedCartera,
         ...savedDian,
       })
+      setInitialized(true)
     }
-  }, [empresa])
+  }, [empresa, bodegas, isBodegasFetched, initialized])
 
   const set = (key: string) => (val: any) => setForm((f: any) => ({ ...f, [key]: val }))
   const setCheck = (key: string) => (val: boolean) => setForm((f: any) => ({ ...f, [key]: val }))
@@ -224,6 +234,18 @@ export function ConfigEmpresa() {
       }
       localStorage.setItem('edatia_config_dian', JSON.stringify(dianConfig))
 
+      // 1.5 Guardar relación en la base de datos para cada bodega
+      const promises = bodegas.map((b: any) => {
+        const permite = (form.stockNegativoBodegas || []).includes(b.id)
+        if (b.permiteStockNegativo !== permite) {
+          return updateBodega(b.id, { permiteStockNegativo: permite })
+        }
+        return Promise.resolve()
+      })
+      await Promise.all(promises)
+
+      localStorage.setItem('edatia_config_stock_negativo_bodegas', JSON.stringify(form.stockNegativoBodegas || []))
+
       // 2. Extraer y filtrar campos que no están en la Base de Datos para evitar errores de Prisma
       const databasePayload = { ...form }
       const frontendKeys = [
@@ -232,7 +254,7 @@ export function ConfigEmpresa() {
         'skuAutogenerado', 'skuLength', 'permitirDuplicadoBarras', 'unidadMedidaDefecto',
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
-        'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail'
+        'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas'
       ]
       frontendKeys.forEach(k => { delete databasePayload[k] })
 
@@ -241,6 +263,7 @@ export function ConfigEmpresa() {
     },
     onSuccess: () => {
       qc.invalidateQueries(['config-empresa'])
+      qc.invalidateQueries(['bodegas-config-empresa'])
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
@@ -847,6 +870,67 @@ export function ConfigEmpresa() {
                   </Field>
                 </div>
               </div>
+
+              {form.permiteStockNegativo && (
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Bodegas con stock negativo autorizado
+                      </span>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Selecciona una o más bodegas en las cuales se permitirá facturar sin existencias físicas.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f: any) => ({ ...f, stockNegativoBodegas: bodegas.map((b: any) => b.id) }))}
+                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                      >
+                        Seleccionar todas
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f: any) => ({ ...f, stockNegativoBodegas: [] }))}
+                        className="text-[10px] font-bold text-slate-500 hover:text-slate-700"
+                      >
+                        Limpiar todas
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    {bodegas.length === 0 ? (
+                      <p className="text-xs text-slate-400 col-span-3">Cargando bodegas...</p>
+                    ) : (
+                      bodegas.map((b: any) => {
+                        const list = form.stockNegativoBodegas ?? []
+                        const isChecked = list.includes(b.id)
+                        return (
+                          <label key={b.id} className="flex items-center gap-3 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                const next = isChecked
+                                  ? list.filter((id: number) => id !== b.id)
+                                  : [...list, b.id]
+                                setForm((f: any) => ({ ...f, stockNegativoBodegas: next }))
+                              }}
+                              className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+                            />
+                            <div>
+                              <p className="text-xs font-bold text-slate-700">{b.nombre}</p>
+                              <p className="text-[10px] text-slate-400">{b.codigo}</p>
+                            </div>
+                          </label>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </SectionCard>
 
             <SectionCard title="Alertas de Reabastecimiento" icon={BellRing}>

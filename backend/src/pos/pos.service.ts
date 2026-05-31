@@ -280,7 +280,8 @@ export class PosService {
       if (disponible < item.cantidad) {
         const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
         const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
-        if (!empresa?.permiteStockNegativo) {
+        const permiteNegativo = (empresa?.permiteStockNegativo ?? false) && (sesion.caja.bodega?.permiteStockNegativo ?? false)
+        if (!permiteNegativo) {
           throw new BadRequestException(`Stock insuficiente para "${prod?.nombre ?? item.productoId}". Disponible: ${disponible}`)
         }
       }

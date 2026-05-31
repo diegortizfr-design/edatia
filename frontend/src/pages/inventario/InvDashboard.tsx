@@ -92,10 +92,10 @@ export function InvDashboard() {
             <RefreshCw size={14} className={mutAbc.isPending ? 'animate-spin' : ''} />
             {mutAbc.isPending ? 'Calculando...' : 'Recalcular ABC'}
           </button>
-          <Link to="/inventario/movimientos/nuevo"
+          <Link to="/inventario/control-existencias/nuevo-ajuste"
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
             <Activity size={16} />
-            Nuevo movimiento
+            Nuevo ajuste
           </Link>
         </div>
       </div>

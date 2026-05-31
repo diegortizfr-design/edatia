@@ -10,7 +10,6 @@ import { Productos } from './pages/inventario/Productos'
 import { ProductoForm } from './pages/inventario/ProductoForm'
 import { Bodegas } from './pages/inventario/Bodegas'
 import { Movimientos } from './pages/inventario/Movimientos'
-import { NuevoMovimiento } from './pages/inventario/NuevoMovimiento'
 import { Maestros } from './pages/inventario/Maestros'
 import { Proveedores } from './pages/inventario/Proveedores'
 import { ProveedorForm } from './pages/inventario/ProveedorForm'
@@ -23,6 +22,10 @@ import { Lotes } from './pages/inventario/Lotes'
 import { Seriales } from './pages/inventario/Seriales'
 import { Variantes } from './pages/inventario/Variantes'
 import { Devoluciones } from './pages/inventario/Devoluciones'
+import { Compras } from './pages/inventario/Compras'
+import { NuevaFcForm } from './pages/inventario/NuevaFcForm'
+import { ControlExistencias } from './pages/inventario/ControlExistencias'
+import { NuevoAjusteForm } from './pages/inventario/NuevoAjusteForm'
 // ── Digital ──
 import { DigitalDashboard } from './pages/digital/DigitalDashboard'
 import { CatalogoDigital } from './pages/digital/CatalogoDigital'
@@ -98,14 +101,17 @@ function App() {
         <Route path="/" element={<P><Dashboard /></P>} />
 
         {/* ── Inventario ── */}
-        <Route path="/inventario" element={<Navigate to="/inventario/dashboard" replace />} />
+        <Route path="/inventario" element={<Navigate to="/inventario/control-existencias" replace />} />
         <Route path="/inventario/dashboard"            element={<P><InvDashboard /></P>} />
         <Route path="/inventario/productos"            element={<P><Productos /></P>} />
         <Route path="/inventario/productos/nuevo"      element={<P><ProductoForm /></P>} />
         <Route path="/inventario/productos/:id"        element={<P><ProductoForm /></P>} />
+        <Route path="/inventario/compras"              element={<P><Compras /></P>} />
+        <Route path="/inventario/compras/nueva-fc"     element={<P><NuevaFcForm /></P>} />
+        <Route path="/inventario/control-existencias"  element={<P><ControlExistencias /></P>} />
+        <Route path="/inventario/control-existencias/nuevo-ajuste" element={<P><NuevoAjusteForm /></P>} />
         <Route path="/inventario/bodegas"              element={<P><Bodegas /></P>} />
         <Route path="/inventario/movimientos"          element={<P><Movimientos /></P>} />
-        <Route path="/inventario/movimientos/nuevo"    element={<P><NuevoMovimiento /></P>} />
         <Route path="/inventario/maestros"             element={<P><Maestros /></P>} />
         <Route path="/inventario/proveedores"              element={<P><Proveedores /></P>} />
         <Route path="/inventario/proveedores/nuevo"        element={<P><ProveedorForm /></P>} />

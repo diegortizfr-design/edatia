@@ -58,6 +58,15 @@ export class RecibirItemDto {
 
   @IsOptional() @IsNumber({ maxDecimalPlaces: 4 }) @Min(0)
   costoUnitario?: number;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsDateString()
+  fechaVencimiento?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 }
 
 export class RecibirOrdenCompraDto {

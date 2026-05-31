@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsNumber, IsIn, Min } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsNumber, IsIn, Min, IsArray, IsDateString } from 'class-validator';
 
 const CONCEPTOS_MANUALES = ['AJUSTE_FISICO', 'MERMA', 'OTRO', 'APERTURA', 'PRODUCCION'];
 
@@ -20,6 +20,15 @@ export class EntradaManualDto {
 
   @IsOptional() @IsString()
   notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsDateString()
+  fechaVencimiento?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 }
 
 export class SalidaManualDto {
@@ -37,6 +46,12 @@ export class SalidaManualDto {
 
   @IsOptional() @IsString()
   notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 }
 
 export class AjusteDto {
@@ -52,6 +67,21 @@ export class AjusteDto {
 
   @IsOptional() @IsString()
   notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsDateString()
+  fechaVencimiento?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
+
+  @IsOptional() @IsString()
+  motivo?: string;
+
+  @IsOptional() @IsNumber()
+  costoUnitario?: number;
 }
 
 export class TrasladoDto {
@@ -69,6 +99,12 @@ export class TrasladoDto {
 
   @IsOptional() @IsString()
   notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 }
 
 export class DevolucionProveedorDto {
@@ -86,6 +122,12 @@ export class DevolucionProveedorDto {
 
   @IsOptional() @IsString()
   notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 }
 
 export class DevolucionClienteDto {
@@ -98,8 +140,9 @@ export class DevolucionClienteDto {
   @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
   cantidad!: number;
 
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 4 }) @Min(0)
-  costoUnitario!: number;
+  costoUnitario?: number;
 
   @IsOptional() @IsString()
   referenciaId?: string;   // número de factura o documento de venta

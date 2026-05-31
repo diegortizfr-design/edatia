@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { ContabilidadModule } from '../contabilidad/contabilidad.module';
 
 import { CategoriasController } from './categorias/categorias.controller';
 import { CategoriasService } from './categorias/categorias.service';
@@ -29,9 +30,11 @@ import { SerialesController } from './seriales/seriales.controller';
 import { SerialesService } from './seriales/seriales.service';
 import { VariantesController } from './variantes/variantes.controller';
 import { VariantesService } from './variantes/variantes.service';
+import { FacturasCompraController } from './facturas-compra/facturas-compra.controller';
+import { FacturasCompraService } from './facturas-compra/facturas-compra.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ContabilidadModule],
   controllers: [
     CategoriasController,
     MarcasController,
@@ -47,6 +50,7 @@ import { VariantesService } from './variantes/variantes.service';
     LotesController,
     SerialesController,
     VariantesController,
+    FacturasCompraController,
   ],
   providers: [
     CategoriasService,
@@ -63,6 +67,7 @@ import { VariantesService } from './variantes/variantes.service';
     LotesService,
     SerialesService,
     VariantesService,
+    FacturasCompraService,
   ],
   exports: [MovimientosService, ProductosService, StockService],
 })

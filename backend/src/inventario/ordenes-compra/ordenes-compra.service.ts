@@ -304,6 +304,19 @@ export class OrdenesCompraService {
         const producto = await tx.producto.findUnique({ where: { id: productoId } });
         if (!producto) throw new NotFoundException(`Producto ${productoId} no encontrado`);
 
+        // Validaciones de Lotes y Seriales
+        if (producto.manejaLotes && !ri.loteNumero) {
+          throw new BadRequestException(`Debe especificar el número de lote para el producto ${producto.nombre}`);
+        }
+        if (producto.manejaSerial) {
+          if (!ri.seriales || ri.seriales.length === 0) {
+            throw new BadRequestException(`Debe especificar los números de serie para el producto ${producto.nombre}`);
+          }
+          if (ri.seriales.length !== Math.ceil(ri.cantidadRecibida)) {
+            throw new BadRequestException(`La cantidad de seriales (${ri.seriales.length}) no coincide con la cantidad recibida (${ri.cantidadRecibida}) para el producto ${producto.nombre}`);
+          }
+        }
+
         // Obtener o crear stock
         let stock = await tx.stock.findUnique({
           where: { productoId_bodegaId: { productoId, bodegaId } },
@@ -336,14 +349,54 @@ export class OrdenesCompraService {
           data: { costoPromedio: nuevoCPP },
         });
 
+        // Procesar Lote si maneja lotes
+        let loteId: number | undefined;
+        if (producto.manejaLotes && ri.loteNumero) {
+          let lote = await tx.lote.findFirst({
+            where: {
+              empresaId,
+              productoId,
+              bodegaId,
+              numero: ri.loteNumero,
+            },
+          });
+          if (lote) {
+            lote = await tx.lote.update({
+              where: { id: lote.id },
+              data: {
+                cantidad: { increment: cantNueva },
+                cantidadInicial: { increment: cantNueva },
+                fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : lote.fechaVencimiento,
+              },
+            });
+          } else {
+            lote = await tx.lote.create({
+              data: {
+                empresaId,
+                productoId,
+                bodegaId,
+                numero: ri.loteNumero,
+                cantidadInicial: cantNueva,
+                cantidad: cantNueva,
+                fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : null,
+                activo: true,
+              },
+            });
+          }
+          loteId = lote.id;
+        }
+
         // Generar número de movimiento
         const movCount = await tx.movimientoInventario.count({
           where: { empresaId, numero: { startsWith: `MOV-${year}-` } },
         });
         const numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
 
+        // Notas para registrar el lote si existe
+        const loteNotas = ri.loteNumero ? ` [Lote: ${ri.loteNumero}]` : '';
+
         // Crear movimiento en el kardex
-        await tx.movimientoInventario.create({
+        const mov = await tx.movimientoInventario.create({
           data: {
             numero: numMov,
             empresaId,
@@ -360,9 +413,45 @@ export class OrdenesCompraService {
             usuarioId,
             referenciaId: String(id),
             referenciaTipo: 'OrdenCompra',
-            notas: `Recepción ${numeroRec} · OC ${oc.numero}`,
+            notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}`,
           },
         });
+
+        // Procesar Seriales si maneja seriales
+        if (producto.manejaSerial && ri.seriales && ri.seriales.length > 0) {
+          for (const s of ri.seriales) {
+            const existeSerial = await tx.numeroSerie.findFirst({
+              where: {
+                empresaId,
+                productoId,
+                serial: s,
+              },
+            });
+            if (existeSerial) {
+              await tx.numeroSerie.update({
+                where: { id: existeSerial.id },
+                data: {
+                  estado: 'DISPONIBLE',
+                  bodegaId,
+                  loteId: loteId ?? null,
+                  movimientoEntradaId: mov.id,
+                },
+              });
+            } else {
+              await tx.numeroSerie.create({
+                data: {
+                  empresaId,
+                  productoId,
+                  bodegaId,
+                  loteId: loteId ?? null,
+                  serial: s,
+                  estado: 'DISPONIBLE',
+                  movimientoEntradaId: mov.id,
+                },
+              });
+            }
+          }
+        }
 
         // Actualizar cantidadRecibida del ítem de la OC
         await tx.ordenCompraItem.update({

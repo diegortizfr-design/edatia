@@ -227,10 +227,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             
             {hasModule('inventario') && (
               <NavGroup label="Inventario" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.inventario} onClick={() => toggleGroup('inventario')}>
-                <NavItem to="/inventario/dashboard" icon={<Activity size={14}/>} label="Análisis" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Bodegas" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/proveedores" icon={<Truck size={14}/>} label="Proveedores" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/compras" icon={<ShoppingCart size={14}/>} label="Compras" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/control-existencias" icon={<Package size={14}/>} label="Control de Existencia" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Gestión de Bodegas" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/radian" icon={<ClipboardCheck size={14}/>} label="RADIAN" isCollapsed={isCollapsed} />
               </NavGroup>
             )}
 
