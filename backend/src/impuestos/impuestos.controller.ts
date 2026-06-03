@@ -22,7 +22,7 @@ export class ImpuestosController {
 
   @Get()
   findAll(@GetUser() user: JwtPayload) {
-    return this.impuestosService.findAll(user.empresaId);
+    return this.impuestosService.findAll(user.empresaId!);
   }
 
   @Post()
@@ -30,7 +30,7 @@ export class ImpuestosController {
     @GetUser() user: JwtPayload,
     @Body() dto: CreateImpuestoDto,
   ) {
-    return this.impuestosService.create(user.empresaId, dto);
+    return this.impuestosService.create(user.empresaId!, dto);
   }
 
   @Patch(':id')
@@ -39,7 +39,7 @@ export class ImpuestosController {
     @GetUser() user: JwtPayload,
     @Body() dto: UpdateImpuestoDto,
   ) {
-    return this.impuestosService.update(id, user.empresaId, dto);
+    return this.impuestosService.update(id, user.empresaId!, dto);
   }
 
   @Delete(':id')
@@ -47,7 +47,7 @@ export class ImpuestosController {
     @Param('id', ParseIntPipe) id: number,
     @GetUser() user: JwtPayload,
   ) {
-    return this.impuestosService.remove(id, user.empresaId);
+    return this.impuestosService.remove(id, user.empresaId!);
   }
 }
 
