@@ -144,7 +144,7 @@ export function ConfigSucursales() {
       pais: 'CO',
       departamento: firstDept,
       municipio: firstCity,
-      codigoPostal: '',
+      codigoPostal: firstCityObj?.codigoDian || '',
       direccion: '',
       estado: 'ACTIVO',
     })
@@ -421,7 +421,7 @@ export function ConfigSucursales() {
                 </div>
 
                 {/* Geografía cascada */}
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="País *">
                     <SelectField
                       value={form.pais || 'CO'}
@@ -436,11 +436,13 @@ export function ConfigSucursales() {
                           ? geoData.ciudades.filter((c: any) => c.departamentoId === firstDeptId)
                           : []
                         const firstCity = matchingCities[0]?.nombre || ''
+                        const firstCityObj = matchingCities[0]
                         setForm((f: any) => ({
                           ...f,
                           pais: v,
                           departamento: firstDept,
                           municipio: firstCity,
+                          codigoPostal: firstCityObj?.codigoDian || '',
                         }))
                       }}
                       options={paisesList}
@@ -448,7 +450,7 @@ export function ConfigSucursales() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="Departamento">
                     {depts.length > 0 ? (
                       <SelectField
@@ -462,10 +464,12 @@ export function ConfigSucursales() {
                             ? geoData.ciudades.filter((c: any) => c.departamentoId === deptObj.id)
                             : []
                           const firstCity = matchingCities[0]?.nombre || ''
+                          const firstCityObj = matchingCities[0]
                           setForm((f: any) => ({
                             ...f,
                             departamento: v,
                             municipio: firstCity,
+                            codigoPostal: firstCityObj?.codigoDian || '',
                           }))
                         }}
                         options={depts}
@@ -480,12 +484,25 @@ export function ConfigSucursales() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                   <Field label="Ciudad / Municipio">
                     {cities.length > 0 ? (
                       <SelectField
                         value={form.municipio || ''}
-                        onChange={(v) => setForm((f: any) => ({ ...f, municipio: v }))}
+                        onChange={(v) => {
+                          const country = geoData.paises.find((p: any) => p.codigo === (form.pais || 'CO'))
+                          const deptObj = country
+                            ? geoData.departamentos.find((d: any) => d.nombre === form.departamento && d.paisId === country.id)
+                            : null
+                          const cityObj = deptObj
+                            ? geoData.ciudades.find((c: any) => c.nombre === v && c.departamentoId === deptObj.id)
+                            : null
+                          setForm((f: any) => ({
+                            ...f,
+                            municipio: v,
+                            codigoPostal: cityObj?.codigoDian || f.codigoPostal || '',
+                          }))
+                        }}
                         options={cities}
                       />
                     ) : (
@@ -495,16 +512,6 @@ export function ConfigSucursales() {
                         placeholder="Ej. Bogotá"
                       />
                     )}
-                  </Field>
-                </div>
-
-                <div className="md:col-span-3">
-                  <Field label="Código Postal">
-                    <Input
-                      value={form.codigoPostal}
-                      onChange={(v: string) => setForm((f: any) => ({ ...f, codigoPostal: v }))}
-                      placeholder="Ej. 050001"
-                    />
                   </Field>
                 </div>
 
