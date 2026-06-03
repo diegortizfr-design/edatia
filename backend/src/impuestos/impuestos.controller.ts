@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ImpuestosService } from './impuestos.service';
 import { CreateImpuestoDto } from './dto/create-impuesto.dto';
@@ -34,7 +35,7 @@ export class ImpuestosController {
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @GetUser() user: JwtPayload,
     @Body() dto: UpdateImpuestoDto,
   ) {
@@ -43,9 +44,10 @@ export class ImpuestosController {
 
   @Delete(':id')
   remove(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @GetUser() user: JwtPayload,
   ) {
     return this.impuestosService.remove(id, user.empresaId);
   }
 }
+

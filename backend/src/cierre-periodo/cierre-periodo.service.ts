@@ -14,8 +14,8 @@ export class CierrePeriodoService {
   /**
    * Returns all period-closing records for the empresa, ordered newest first.
    */
-  async findAll(empresaId: string) {
-    return this.prisma.cierrePeriodo.findMany({
+  async findAll(empresaId: number) {
+    return this.prisma.periodoCierreERP.findMany({
       where: { empresaId },
       orderBy: { createdAt: 'desc' },
     });
@@ -25,8 +25,8 @@ export class CierrePeriodoService {
    * Returns the latest open (ABIERTO) period for the empresa.
    * Throws NotFoundException if no open period exists.
    */
-  async findActivo(empresaId: string) {
-    const periodo = await this.prisma.cierrePeriodo.findFirst({
+  async findActivo(empresaId: number) {
+    const periodo = await this.prisma.periodoCierreERP.findFirst({
       where: {
         empresaId,
         estado: 'ABIERTO',
@@ -47,9 +47,9 @@ export class CierrePeriodoService {
    * Creates / opens a new period.
    * Prevents duplicate open periods of the same tipo+periodo combination.
    */
-  async create(empresaId: string, dto: CreateCierreDto, usuarioId: string) {
+  async create(empresaId: number, dto: CreateCierreDto, usuarioId: number) {
     // Check there is no already-open record with the same tipo + periodo
-    const existing = await this.prisma.cierrePeriodo.findFirst({
+    const existing = await this.prisma.periodoCierreERP.findFirst({
       where: {
         empresaId,
         tipo: dto.tipo,
@@ -64,14 +64,13 @@ export class CierrePeriodoService {
       );
     }
 
-    return this.prisma.cierrePeriodo.create({
+    return this.prisma.periodoCierreERP.create({
       data: {
         empresaId,
         tipo: dto.tipo,
         periodo: dto.periodo,
         observaciones: dto.observaciones ?? null,
         estado: 'ABIERTO',
-        usuarioAperturaId: usuarioId,
       },
     });
   }
@@ -81,13 +80,13 @@ export class CierrePeriodoService {
    * optionally recording closing observaciones.
    */
   async cerrar(
-    id: string,
-    empresaId: string,
-    usuarioId: string,
+    id: number,
+    empresaId: number,
+    usuarioId: number,
     observaciones?: string,
   ) {
     // Verify the record belongs to this empresa
-    const periodo = await this.prisma.cierrePeriodo.findFirst({
+    const periodo = await this.prisma.periodoCierreERP.findFirst({
       where: { id, empresaId },
     });
 
@@ -103,14 +102,15 @@ export class CierrePeriodoService {
       );
     }
 
-    return this.prisma.cierrePeriodo.update({
+    return this.prisma.periodoCierreERP.update({
       where: { id },
       data: {
         estado: 'CERRADO',
         fechaCierre: new Date(),
-        usuarioCierreId: usuarioId,
+        cerradoPor: usuarioId,
         ...(observaciones !== undefined && { observaciones }),
       },
     });
   }
 }
+

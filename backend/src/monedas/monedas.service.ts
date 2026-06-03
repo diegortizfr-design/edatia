@@ -11,14 +11,14 @@ import { UpdateMonedaDto } from './dto/update-moneda.dto';
 export class MonedasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(empresaId: string) {
+  async findAll(empresaId: number) {
     return this.prisma.moneda.findMany({
       where: { empresaId },
       orderBy: [{ esPrincipal: 'desc' }, { nombre: 'asc' }],
     });
   }
 
-  async create(empresaId: string, dto: CreateMonedaDto) {
+  async create(empresaId: number, dto: CreateMonedaDto) {
     // Check for duplicate codigo within the same empresa
     const existing = await this.prisma.moneda.findFirst({
       where: { empresaId, codigo: dto.codigo },
@@ -51,7 +51,7 @@ export class MonedasService {
     });
   }
 
-  async update(id: string, empresaId: string, dto: UpdateMonedaDto) {
+  async update(id: number, empresaId: number, dto: UpdateMonedaDto) {
     await this.findOneOrFail(id, empresaId);
 
     // Check for duplicate codigo if it's being changed
@@ -83,7 +83,7 @@ export class MonedasService {
     });
   }
 
-  async remove(id: string, empresaId: string) {
+  async remove(id: number, empresaId: number) {
     const moneda = await this.findOneOrFail(id, empresaId);
 
     if (moneda.esPrincipal) {
@@ -98,7 +98,7 @@ export class MonedasService {
 
   // ─── helpers ───────────────────────────────────────────────────────────────
 
-  private async findOneOrFail(id: string, empresaId: string) {
+  private async findOneOrFail(id: number, empresaId: number) {
     const moneda = await this.prisma.moneda.findFirst({
       where: { id, empresaId },
     });
@@ -110,3 +110,4 @@ export class MonedasService {
     return moneda;
   }
 }
+

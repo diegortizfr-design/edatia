@@ -7,14 +7,14 @@ import { UpdateImpuestoDto } from './dto/update-impuesto.dto';
 export class ImpuestosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(empresaId: string) {
+  async findAll(empresaId: number) {
     return this.prisma.impuesto.findMany({
       where: { empresaId },
       orderBy: [{ tipo: 'asc' }, { nombre: 'asc' }],
     });
   }
 
-  async create(empresaId: string, dto: CreateImpuestoDto) {
+  async create(empresaId: number, dto: CreateImpuestoDto) {
     // If this impuesto is being set as default, clear the flag from all others first
     if (dto.esDefecto) {
       await this.prisma.impuesto.updateMany({
@@ -35,7 +35,7 @@ export class ImpuestosService {
         tarifa: dto.tarifa,
         cuentaDebito: dto.cuentaDebito ?? null,
         cuentaCredito: dto.cuentaCredito ?? null,
-        aplica: dto.aplica ?? null,
+        aplica: dto.aplica ?? undefined,
         activo: dto.activo ?? true,
         esDefecto: dto.esDefecto ?? false,
         notas: dto.notas ?? null,
@@ -47,7 +47,7 @@ export class ImpuestosService {
         tarifa: dto.tarifa,
         cuentaDebito: dto.cuentaDebito ?? null,
         cuentaCredito: dto.cuentaCredito ?? null,
-        aplica: dto.aplica ?? null,
+        aplica: dto.aplica ?? undefined,
         activo: dto.activo ?? true,
         esDefecto: dto.esDefecto ?? false,
         notas: dto.notas ?? null,
@@ -55,7 +55,7 @@ export class ImpuestosService {
     });
   }
 
-  async update(id: string, empresaId: string, dto: UpdateImpuestoDto) {
+  async update(id: number, empresaId: number, dto: UpdateImpuestoDto) {
     await this.findOneOrFail(id, empresaId);
 
     // If this impuesto is being set as default, clear the flag from all others first
@@ -82,7 +82,7 @@ export class ImpuestosService {
     });
   }
 
-  async remove(id: string, empresaId: string) {
+  async remove(id: number, empresaId: number) {
     await this.findOneOrFail(id, empresaId);
 
     return this.prisma.impuesto.delete({
@@ -90,7 +90,7 @@ export class ImpuestosService {
     });
   }
 
-  private async findOneOrFail(id: string, empresaId: string) {
+  private async findOneOrFail(id: number, empresaId: number) {
     const impuesto = await this.prisma.impuesto.findFirst({
       where: { id, empresaId },
     });
@@ -102,3 +102,4 @@ export class ImpuestosService {
     return impuesto;
   }
 }
+

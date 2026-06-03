@@ -7,6 +7,7 @@ import {
   Body,
   Req,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CierrePeriodoService } from './cierre-periodo.service';
@@ -24,7 +25,7 @@ export class CierrePeriodoController {
    */
   @Get()
   findAll(@Req() req: any) {
-    const empresaId: string = req.user.empresaId;
+    const empresaId: number = req.user.empresaId;
     return this.cierrePeriodoService.findAll(empresaId);
   }
 
@@ -34,7 +35,7 @@ export class CierrePeriodoController {
    */
   @Get('activo')
   findActivo(@Req() req: any) {
-    const empresaId: string = req.user.empresaId;
+    const empresaId: number = req.user.empresaId;
     return this.cierrePeriodoService.findActivo(empresaId);
   }
 
@@ -44,8 +45,8 @@ export class CierrePeriodoController {
    */
   @Post()
   create(@Req() req: any, @Body() dto: CreateCierreDto) {
-    const empresaId: string = req.user.empresaId;
-    const usuarioId: string = req.user.sub ?? req.user.id;
+    const empresaId: number = req.user.empresaId;
+    const usuarioId: number = req.user.sub ?? req.user.id;
     return this.cierrePeriodoService.create(empresaId, dto, usuarioId);
   }
 
@@ -56,11 +57,11 @@ export class CierrePeriodoController {
   @Patch(':id/cerrar')
   cerrar(
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: CerrarPeriodoDto,
   ) {
-    const empresaId: string = req.user.empresaId;
-    const usuarioId: string = req.user.sub ?? req.user.id;
+    const empresaId: number = req.user.empresaId;
+    const usuarioId: number = req.user.sub ?? req.user.id;
     return this.cierrePeriodoService.cerrar(
       id,
       empresaId,
@@ -69,3 +70,4 @@ export class CierrePeriodoController {
     );
   }
 }
+

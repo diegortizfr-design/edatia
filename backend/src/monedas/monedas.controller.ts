@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetUser } from '../common/decorators/get-user.decorator';
@@ -20,13 +21,13 @@ export class MonedasController {
   constructor(private readonly monedasService: MonedasService) {}
 
   @Get()
-  findAll(@GetUser('empresaId') empresaId: string) {
+  findAll(@GetUser('empresaId') empresaId: number) {
     return this.monedasService.findAll(empresaId);
   }
 
   @Post()
   create(
-    @GetUser('empresaId') empresaId: string,
+    @GetUser('empresaId') empresaId: number,
     @Body() dto: CreateMonedaDto,
   ) {
     return this.monedasService.create(empresaId, dto);
@@ -34,15 +35,19 @@ export class MonedasController {
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
-    @GetUser('empresaId') empresaId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('empresaId') empresaId: number,
     @Body() dto: UpdateMonedaDto,
   ) {
     return this.monedasService.update(id, empresaId, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @GetUser('empresaId') empresaId: string) {
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('empresaId') empresaId: number,
+  ) {
     return this.monedasService.remove(id, empresaId);
   }
 }
+
