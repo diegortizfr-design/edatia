@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast, { Toaster } from 'react-hot-toast'
 import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig } from '../../services/configuracion.service'
