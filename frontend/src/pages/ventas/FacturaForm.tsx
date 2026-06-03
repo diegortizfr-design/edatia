@@ -6,6 +6,8 @@ import {
   getClientes, getCliente, createFactura, getPedido, getPedidos, getFacturas
 } from '../../services/ventas.service'
 import { getProductos, getBodegas, getStock } from '../../services/inventario.service'
+import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
+import { getVendedores } from '../../services/erp.service'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', {
@@ -82,24 +84,8 @@ export function FacturaForm() {
 
   // Tabs layout: 'detalles' | 'formas_pago' | 'pedidos'
   const [activeTab, setActiveTab] = useState<'detalles' | 'formas_pago' | 'pedidos'>('detalles')
-
-  // Document setup (Prefix & Client)
   const [tipoDocumento, setTipoDocumento] = useState<'FV' | 'FVE' | ''>('')
   const [selectedDocId, setSelectedDocId] = useState<string>('')
-  const [docConfigs, setDocConfigs] = useState<any[]>([])
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('edatia_config_documentos')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        const filtered = parsed.filter((d: any) => (d.sigla === 'FV' || d.sigla === 'FVE') && d.estado === 'ACTIVO')
-        setDocConfigs(filtered)
-      }
-    } catch (e) {
-      console.error("Error loading document configs:", e)
-    }
-  }, [])
 
   const [clienteId, setClienteId] = useState('')
   const [clienteQ, setClienteQ] = useState('')
@@ -137,28 +123,21 @@ export function FacturaForm() {
   const [productoQ, setProductoQ] = useState<Record<string, string>>({})
   const [quickSearchQ, setQuickSearchQ] = useState('')
 
-  // Vendedores list from localStorage
-  const [vendedores, setVendedores] = useState<any[]>([])
-
-  // Load Sellers
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('edatia_vendedores')
-      if (raw) {
-        setVendedores(JSON.parse(raw))
-      } else {
-        setVendedores([
-          { id: 1, nombre: 'Diego Ortiz' },
-          { id: 2, nombre: 'Vendedor Principal' },
-          { id: 3, nombre: 'Vendedor Canal Web' },
-        ])
-      }
-    } catch (e) {
-      setVendedores([{ id: 1, nombre: 'Diego Ortiz' }])
-    }
-  }, [])
-
   // Queries
+  const { data: allDocs = [] } = useQuery({
+    queryKey: ['documentos-config'],
+    queryFn: getDocumentosConfig,
+  })
+
+  const docConfigs = useMemo(() => {
+    return allDocs.filter((d: any) => (d.sigla === 'FV' || d.sigla === 'FVE') && d.activo)
+  }, [allDocs])
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: getVendedores,
+  })
+
   const { data: clientesAll = [] } = useQuery({ queryKey: ['clientes'], queryFn: () => getClientes() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
   const { data: productosAll = [] } = useQuery({ queryKey: ['productos'], queryFn: () => getProductos({ activo: true }) })
@@ -190,22 +169,23 @@ export function FacturaForm() {
     queryFn: () => getFacturas(),
   })
 
+  const mutIncrementConsecutive = useMutation({
+    mutationFn: (id: number) => incrementarConsecutivo(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
+    }
+  })
+
   // Mutations
   const mutCreate = useMutation({
     mutationFn: createFactura,
-    onSuccess: () => {
-      try {
-        const saved = localStorage.getItem('edatia_config_documentos')
-        if (saved) {
-          const docs = JSON.parse(saved)
-          const docIdx = docs.findIndex((d: any) => d.id === selectedDocId || (d.sigla === tipoDocumento && d.estado === 'ACTIVO'))
-          if (docIdx >= 0) {
-            docs[docIdx].consecutivoSiguiente = Number(docs[docIdx].consecutivoSiguiente ?? 1) + 1
-            localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
-          }
+    onSuccess: async () => {
+      if (selectedDocId) {
+        try {
+          await mutIncrementConsecutive.mutateAsync(Number(selectedDocId))
+        } catch (e) {
+          console.error("Error updating consecutive on server:", e)
         }
-      } catch (e) {
-        console.error("Error updating consecutive in config:", e)
       }
       qc.invalidateQueries({ queryKey: ['facturas'] })
       qc.invalidateQueries({ queryKey: ['pedidos'] })
@@ -243,7 +223,7 @@ export function FacturaForm() {
   // Calculate invoice numbers / Draft sequence
   const computedConsecutive = useMemo(() => {
     if (!tipoDocumento) return 'BORRADOR'
-    const doc = docConfigs.find((d: any) => d.id === selectedDocId) || docConfigs.find((d: any) => d.sigla === tipoDocumento)
+    const doc = docConfigs.find((d: any) => String(d.id) === String(selectedDocId)) || docConfigs.find((d: any) => d.sigla === tipoDocumento)
     const basePrefix = doc?.prefijo || tipoDocumento
     const startSeq = doc?.consecutivoSiguiente || 1
     
@@ -519,7 +499,7 @@ export function FacturaForm() {
                   onChange={e => {
                     const docId = e.target.value
                     setSelectedDocId(docId)
-                    const doc = docConfigs.find((d: any) => d.id === docId)
+                    const doc = docConfigs.find((d: any) => String(d.id) === String(docId))
                     if (doc) {
                       setTipoDocumento(doc.sigla)
                     } else {

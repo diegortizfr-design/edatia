@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
 import { Globe, Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal, MapPin, RefreshCw } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast, { Toaster } from 'react-hot-toast'
+import {
+  getGeolocationState, resetGeolocationToDefaults,
+  createPais, updatePais, deletePais,
+  createDepartamento, updateDepartamento, deleteDepartamento,
+  createCiudad, updateCiudad, deleteCiudad,
+  createComuna, updateComuna, deleteComuna,
+  createBarrio, updateBarrio, deleteBarrio
+} from '../../services/configuracion.service'
 
 // ─── Interfaces y Estructuras de Datos ────────────────────────────────────────
 
 export interface Pais {
-  id: string;
+  id: number;
   nombre: string;
   codigo: string; // ej. CO, ES, US (Código ISO Alfa-2)
   codigoDianExogena: string; // ej. 169 (Código exógena de la DIAN)
@@ -12,30 +22,30 @@ export interface Pais {
 }
 
 export interface Departamento {
-  id: string;
+  id: number;
   nombre: string;
-  paisId: string;
-  codigoDian: string; // Código DIVIPOLA de 2 dígitos
+  paisId: number;
+  codigo: string; // Código DIVIPOLA de 2 dígitos
 }
 
 export interface Ciudad {
-  id: string;
+  id: number;
   nombre: string;
-  departamentoId: string;
+  departamentoId: number;
   codigoDian: string; // Código DIVIPOLA de 5 dígitos
 }
 
 export interface Comuna {
-  id: string;
+  id: number;
   nombre: string;
-  ciudadId: string;
+  ciudadId: number;
 }
 
 export interface Barrio {
-  id: string;
+  id: number;
   nombre: string;
-  ciudadId: string;
-  comunaId?: string; // opcional
+  ciudadId: number;
+  comunaId?: number; // opcional
 }
 
 export interface GeolocationState {
@@ -48,109 +58,109 @@ export interface GeolocationState {
 
 export const DEFAULT_GEO_DATA: GeolocationState = {
   paises: [
-    { id: 'pais_co', nombre: 'Colombia', codigo: 'CO', codigoDianExogena: '169', indicativoTelefonico: '57' },
-    { id: 'pais_es', nombre: 'España', codigo: 'ES', codigoDianExogena: '245', indicativoTelefonico: '34' },
-    { id: 'pais_us', nombre: 'Estados Unidos', codigo: 'US', codigoDianExogena: '249', indicativoTelefonico: '1' }
+    { id: 1, nombre: 'Colombia', codigo: 'CO', codigoDianExogena: '169', indicativoTelefonico: '57' },
+    { id: 2, nombre: 'España', codigo: 'ES', codigoDianExogena: '245', indicativoTelefonico: '34' },
+    { id: 3, nombre: 'Estados Unidos', codigo: 'US', codigoDianExogena: '249', indicativoTelefonico: '1' }
   ],
   departamentos: [
-    { id: 'dept_ant', nombre: 'Antioquia', paisId: 'pais_co', codigoDian: '05' },
-    { id: 'dept_atl', nombre: 'Atlántico', paisId: 'pais_co', codigoDian: '08' },
-    { id: 'dept_bog', nombre: 'Bogotá D.C.', paisId: 'pais_co', codigoDian: '11' },
-    { id: 'dept_bol', nombre: 'Bolívar', paisId: 'pais_co', codigoDian: '13' },
-    { id: 'dept_boy', nombre: 'Boyacá', paisId: 'pais_co', codigoDian: '15' },
-    { id: 'dept_cal', nombre: 'Caldas', paisId: 'pais_co', codigoDian: '17' },
-    { id: 'dept_caq', nombre: 'Caquetá', paisId: 'pais_co', codigoDian: '18' },
-    { id: 'dept_cau', nombre: 'Cauca', paisId: 'pais_co', codigoDian: '19' },
-    { id: 'dept_ces', nombre: 'Cesar', paisId: 'pais_co', codigoDian: '20' },
-    { id: 'dept_cor', nombre: 'Córdoba', paisId: 'pais_co', codigoDian: '23' },
-    { id: 'dept_cun', nombre: 'Cundinamarca', paisId: 'pais_co', codigoDian: '25' },
-    { id: 'dept_cho', nombre: 'Chocó', paisId: 'pais_co', codigoDian: '27' },
-    { id: 'dept_hui', nombre: 'Huila', paisId: 'pais_co', codigoDian: '41' },
-    { id: 'dept_lag', nombre: 'La Guajira', paisId: 'pais_co', codigoDian: '44' },
-    { id: 'dept_mag', nombre: 'Magdalena', paisId: 'pais_co', codigoDian: '47' },
-    { id: 'dept_met', nombre: 'Meta', paisId: 'pais_co', codigoDian: '50' },
-    { id: 'dept_nar', nombre: 'Nariño', paisId: 'pais_co', codigoDian: '52' },
-    { id: 'dept_nsa', nombre: 'Norte de Santander', paisId: 'pais_co', codigoDian: '54' },
-    { id: 'dept_qui', nombre: 'Quindío', paisId: 'pais_co', codigoDian: '63' },
-    { id: 'dept_ris', nombre: 'Risaralda', paisId: 'pais_co', codigoDian: '66' },
-    { id: 'dept_san', nombre: 'Santander', paisId: 'pais_co', codigoDian: '68' },
-    { id: 'dept_suc', nombre: 'Sucre', paisId: 'pais_co', codigoDian: '70' },
-    { id: 'dept_tol', nombre: 'Tolima', paisId: 'pais_co', codigoDian: '73' },
-    { id: 'dept_val', nombre: 'Valle del Cauca', paisId: 'pais_co', codigoDian: '76' },
-    { id: 'dept_ara', nombre: 'Arauca', paisId: 'pais_co', codigoDian: '81' },
-    { id: 'dept_cas', nombre: 'Casanare', paisId: 'pais_co', codigoDian: '85' },
-    { id: 'dept_put', nombre: 'Putumayo', paisId: 'pais_co', codigoDian: '86' },
-    { id: 'dept_sap', nombre: 'San Andrés y Providencia', paisId: 'pais_co', codigoDian: '88' },
-    { id: 'dept_ama', nombre: 'Amazonas', paisId: 'pais_co', codigoDian: '91' },
-    { id: 'dept_gua', nombre: 'Guainía', paisId: 'pais_co', codigoDian: '94' },
-    { id: 'dept_guv', nombre: 'Guaviare', paisId: 'pais_co', codigoDian: '95' },
-    { id: 'dept_vau', nombre: 'Vaupés', paisId: 'pais_co', codigoDian: '97' },
-    { id: 'dept_vic', nombre: 'Vichada', paisId: 'pais_co', codigoDian: '99' },
-    { id: 'dept_mad', nombre: 'Madrid', paisId: 'pais_es', codigoDian: 'MAD' },
-    { id: 'dept_flo', nombre: 'Florida', paisId: 'pais_us', codigoDian: 'FL' }
+    { id: 1, nombre: 'Antioquia', paisId: 1, codigo: '05' },
+    { id: 2, nombre: 'Atlántico', paisId: 1, codigo: '08' },
+    { id: 3, nombre: 'Bogotá D.C.', paisId: 1, codigo: '11' },
+    { id: 4, nombre: 'Bolívar', paisId: 1, codigo: '13' },
+    { id: 5, nombre: 'Boyacá', paisId: 1, codigo: '15' },
+    { id: 6, nombre: 'Caldas', paisId: 1, codigo: '17' },
+    { id: 7, nombre: 'Caquetá', paisId: 1, codigo: '18' },
+    { id: 8, nombre: 'Cauca', paisId: 1, codigo: '19' },
+    { id: 9, nombre: 'Cesar', paisId: 1, codigo: '20' },
+    { id: 10, nombre: 'Córdoba', paisId: 1, codigo: '23' },
+    { id: 11, nombre: 'Cundinamarca', paisId: 1, codigo: '25' },
+    { id: 12, nombre: 'Chocó', paisId: 1, codigo: '27' },
+    { id: 13, nombre: 'Huila', paisId: 1, codigo: '41' },
+    { id: 14, nombre: 'La Guajira', paisId: 1, codigo: '44' },
+    { id: 15, nombre: 'Magdalena', paisId: 1, codigo: '47' },
+    { id: 16, nombre: 'Meta', paisId: 1, codigo: '50' },
+    { id: 17, nombre: 'Nariño', paisId: 1, codigo: '52' },
+    { id: 18, nombre: 'Norte de Santander', paisId: 1, codigo: '54' },
+    { id: 19, nombre: 'Quindío', paisId: 1, codigo: '63' },
+    { id: 20, nombre: 'Risaralda', paisId: 1, codigo: '66' },
+    { id: 21, nombre: 'Santander', paisId: 1, codigo: '68' },
+    { id: 22, nombre: 'Sucre', paisId: 1, codigo: '70' },
+    { id: 23, nombre: 'Tolima', paisId: 1, codigo: '73' },
+    { id: 24, nombre: 'Valle del Cauca', paisId: 1, codigo: '76' },
+    { id: 25, nombre: 'Arauca', paisId: 1, codigo: '81' },
+    { id: 26, nombre: 'Casanare', paisId: 1, codigo: '85' },
+    { id: 27, nombre: 'Putumayo', paisId: 1, codigo: '86' },
+    { id: 28, nombre: 'San Andrés y Providencia', paisId: 1, codigo: '88' },
+    { id: 29, nombre: 'Amazonas', paisId: 1, codigo: '91' },
+    { id: 30, nombre: 'Guainía', paisId: 1, codigo: '94' },
+    { id: 31, nombre: 'Guaviare', paisId: 1, codigo: '95' },
+    { id: 32, nombre: 'Vaupés', paisId: 1, codigo: '97' },
+    { id: 33, nombre: 'Vichada', paisId: 1, codigo: '99' },
+    { id: 34, nombre: 'Madrid', paisId: 2, codigo: 'MAD' },
+    { id: 35, nombre: 'Florida', paisId: 3, codigo: 'FL' }
   ],
   ciudades: [
-    { id: 'city_med', nombre: 'Medellín', departamentoId: 'dept_ant', codigoDian: '05001' },
-    { id: 'city_env', nombre: 'Envigado', departamentoId: 'dept_ant', codigoDian: '05266' },
-    { id: 'city_sab', nombre: 'Sabaneta', departamentoId: 'dept_ant', codigoDian: '05631' },
-    { id: 'city_ita', nombre: 'Itagüí', departamentoId: 'dept_ant', codigoDian: '05360' },
-    { id: 'city_rio', nombre: 'Rionegro', departamentoId: 'dept_ant', codigoDian: '05615' },
-    { id: 'city_bel', nombre: 'Bello', departamentoId: 'dept_ant', codigoDian: '05088' },
-    { id: 'city_bar', nombre: 'Barranquilla', departamentoId: 'dept_atl', codigoDian: '08001' },
-    { id: 'city_sol', nombre: 'Soledad', departamentoId: 'dept_atl', codigoDian: '08758' },
-    { id: 'city_bog', nombre: 'Bogotá D.C.', departamentoId: 'dept_bog', codigoDian: '11001' },
-    { id: 'city_car', nombre: 'Cartagena de Indias', departamentoId: 'dept_bol', codigoDian: '13001' },
-    { id: 'city_tun', nombre: 'Tunja', departamentoId: 'dept_boy', codigoDian: '15001' },
-    { id: 'city_man', nombre: 'Manizales', departamentoId: 'dept_cal', codigoDian: '17001' },
-    { id: 'city_flo_c', nombre: 'Florencia', departamentoId: 'dept_caq', codigoDian: '18001' },
-    { id: 'city_pop', nombre: 'Popayán', departamentoId: 'dept_cau', codigoDian: '19001' },
-    { id: 'city_val_m', nombre: 'Valledupar', departamentoId: 'dept_ces', codigoDian: '20001' },
-    { id: 'city_mon', nombre: 'Montería', departamentoId: 'dept_cor', codigoDian: '23001' },
-    { id: 'city_agd', nombre: 'Agua de Dios', departamentoId: 'dept_cun', codigoDian: '25001' },
-    { id: 'city_soa', nombre: 'Soacha', departamentoId: 'dept_cun', codigoDian: '25754' },
-    { id: 'city_chi', nombre: 'Chía', departamentoId: 'dept_cun', codigoDian: '25175' },
-    { id: 'city_zip', nombre: 'Zipaquirá', departamentoId: 'dept_cun', codigoDian: '25899' },
-    { id: 'city_fac', nombre: 'Facatativá', departamentoId: 'dept_cun', codigoDian: '25269' },
-    { id: 'city_qui_c', nombre: 'Quibdó', departamentoId: 'dept_cho', codigoDian: '27001' },
-    { id: 'city_nei', nombre: 'Neiva', departamentoId: 'dept_hui', codigoDian: '41001' },
-    { id: 'city_rio_h', nombre: 'Riohacha', departamentoId: 'dept_lag', codigoDian: '44001' },
-    { id: 'city_sam', nombre: 'Santa Marta', departamentoId: 'dept_mag', codigoDian: '47001' },
-    { id: 'city_vil', nombre: 'Villavicencio', departamentoId: 'dept_met', codigoDian: '50001' },
-    { id: 'city_pas', nombre: 'Pasto', departamentoId: 'dept_nar', codigoDian: '52001' },
-    { id: 'city_cuc', nombre: 'Cúcuta', departamentoId: 'dept_nsa', codigoDian: '54001' },
-    { id: 'city_arm', nombre: 'Armenia', departamentoId: 'dept_qui', codigoDian: '63001' },
-    { id: 'city_per', nombre: 'Pereira', departamentoId: 'dept_ris', codigoDian: '66001' },
-    { id: 'city_buc', nombre: 'Bucaramanga', departamentoId: 'dept_san', codigoDian: '68001' },
-    { id: 'city_flo_s', nombre: 'Floridablanca', departamentoId: 'dept_san', codigoDian: '68276' },
-    { id: 'city_bbc', nombre: 'Barrancabermeja', departamentoId: 'dept_san', codigoDian: '68081' },
-    { id: 'city_sin', nombre: 'Sincelejo', departamentoId: 'dept_suc', codigoDian: '70001' },
-    { id: 'city_iba', nombre: 'Ibagué', departamentoId: 'dept_tol', codigoDian: '73001' },
-    { id: 'city_cal', nombre: 'Cali', departamentoId: 'dept_val', codigoDian: '76001' },
-    { id: 'city_pal', nombre: 'Palmira', departamentoId: 'dept_val', codigoDian: '76520' },
-    { id: 'city_bue', nombre: 'Buenaventura', departamentoId: 'dept_val', codigoDian: '76109' },
-    { id: 'city_ara_c', nombre: 'Arauca', departamentoId: 'dept_ara', codigoDian: '81001' },
-    { id: 'city_yop', nombre: 'Yopal', departamentoId: 'dept_cas', codigoDian: '85001' },
-    { id: 'city_moc', nombre: 'Mocoa', departamentoId: 'dept_put', codigoDian: '86001' },
-    { id: 'city_san_c', nombre: 'San Andrés', departamentoId: 'dept_sap', codigoDian: '88001' },
-    { id: 'city_let', nombre: 'Leticia', departamentoId: 'dept_ama', codigoDian: '91001' },
-    { id: 'city_ini', nombre: 'Inírida', departamentoId: 'dept_gua', codigoDian: '94001' },
-    { id: 'city_sjg', nombre: 'San José del Guaviare', departamentoId: 'dept_guv', codigoDian: '95001' },
-    { id: 'city_mit', nombre: 'Mitú', departamentoId: 'dept_vau', codigoDian: '97001' },
-    { id: 'city_pau', nombre: 'Puerto Carreño', departamentoId: 'dept_vic', codigoDian: '99001' },
-    { id: 'city_mad', nombre: 'Madrid', departamentoId: 'dept_mad', codigoDian: '28079' },
-    { id: 'city_mia', nombre: 'Miami', departamentoId: 'dept_flo', codigoDian: '12086' }
+    { id: 1, nombre: 'Medellín', departamentoId: 1, codigoDian: '05001' },
+    { id: 2, nombre: 'Envigado', departamentoId: 1, codigoDian: '05266' },
+    { id: 3, nombre: 'Sabaneta', departamentoId: 1, codigoDian: '05631' },
+    { id: 4, nombre: 'Itagüí', departamentoId: 1, codigoDian: '05360' },
+    { id: 5, nombre: 'Rionegro', departamentoId: 1, codigoDian: '05615' },
+    { id: 6, nombre: 'Bello', departamentoId: 1, codigoDian: '05088' },
+    { id: 7, nombre: 'Barranquilla', departamentoId: 2, codigoDian: '08001' },
+    { id: 8, nombre: 'Soledad', departamentoId: 2, codigoDian: '08758' },
+    { id: 9, nombre: 'Bogotá D.C.', departamentoId: 3, codigoDian: '11001' },
+    { id: 10, nombre: 'Cartagena de Indias', departamentoId: 4, codigoDian: '13001' },
+    { id: 11, nombre: 'Tunja', departamentoId: 5, codigoDian: '15001' },
+    { id: 12, nombre: 'Manizales', departamentoId: 6, codigoDian: '17001' },
+    { id: 13, nombre: 'Florencia', departamentoId: 7, codigoDian: '18001' },
+    { id: 14, nombre: 'Popayán', departamentoId: 8, codigoDian: '19001' },
+    { id: 15, nombre: 'Valledupar', departamentoId: 9, codigoDian: '20001' },
+    { id: 16, nombre: 'Montería', departamentoId: 10, codigoDian: '23001' },
+    { id: 17, nombre: 'Agua de Dios', departamentoId: 11, codigoDian: '25001' },
+    { id: 18, nombre: 'Soacha', departamentoId: 11, codigoDian: '25754' },
+    { id: 19, nombre: 'Chía', departamentoId: 11, codigoDian: '25175' },
+    { id: 20, nombre: 'Zipaquirá', departamentoId: 11, codigoDian: '25899' },
+    { id: 21, nombre: 'Facatativá', departamentoId: 11, codigoDian: '25269' },
+    { id: 22, nombre: 'Quibdó', departamentoId: 12, codigoDian: '27001' },
+    { id: 23, nombre: 'Neiva', departamentoId: 13, codigoDian: '41001' },
+    { id: 24, nombre: 'Riohacha', departamentoId: 14, codigoDian: '44001' },
+    { id: 25, nombre: 'Santa Marta', departamentoId: 15, codigoDian: '47001' },
+    { id: 26, nombre: 'Villavicencio', departamentoId: 16, codigoDian: '50001' },
+    { id: 27, nombre: 'Pasto', departamentoId: 17, codigoDian: '52001' },
+    { id: 28, nombre: 'Cúcuta', departamentoId: 18, codigoDian: '54001' },
+    { id: 29, nombre: 'Armenia', departamentoId: 19, codigoDian: '63001' },
+    { id: 30, nombre: 'Pereira', departamentoId: 20, codigoDian: '66001' },
+    { id: 31, nombre: 'Bucaramanga', departamentoId: 21, codigoDian: '68001' },
+    { id: 32, nombre: 'Floridablanca', departamentoId: 21, codigoDian: '68276' },
+    { id: 33, nombre: 'Barrancabermeja', departamentoId: 21, codigoDian: '68081' },
+    { id: 34, nombre: 'Sincelejo', departamentoId: 22, codigoDian: '70001' },
+    { id: 35, nombre: 'Ibagué', departamentoId: 23, codigoDian: '73001' },
+    { id: 36, nombre: 'Cali', departamentoId: 24, codigoDian: '76001' },
+    { id: 37, nombre: 'Palmira', departamentoId: 24, codigoDian: '76520' },
+    { id: 38, nombre: 'Buenaventura', departamentoId: 24, codigoDian: '76109' },
+    { id: 39, nombre: 'Arauca', departamentoId: 25, codigoDian: '81001' },
+    { id: 40, nombre: 'Yopal', departamentoId: 26, codigoDian: '85001' },
+    { id: 41, nombre: 'Mocoa', departamentoId: 27, codigoDian: '86001' },
+    { id: 42, nombre: 'San Andrés', departamentoId: 28, codigoDian: '88001' },
+    { id: 43, nombre: 'Leticia', departamentoId: 29, codigoDian: '91001' },
+    { id: 44, nombre: 'Inírida', departamentoId: 30, codigoDian: '94001' },
+    { id: 45, nombre: 'San José del Guaviare', departamentoId: 31, codigoDian: '95001' },
+    { id: 46, nombre: 'Mitú', departamentoId: 32, codigoDian: '97001' },
+    { id: 47, nombre: 'Puerto Carreño', departamentoId: 33, codigoDian: '99001' },
+    { id: 48, nombre: 'Madrid', departamentoId: 34, codigoDian: '28079' },
+    { id: 49, nombre: 'Miami', departamentoId: 35, codigoDian: '12086' }
   ],
   comunas: [
-    { id: 'com_pob', nombre: 'Comuna 14 - El Poblado', ciudadId: 'city_med' },
-    { id: 'com_lau', nombre: 'Comuna 11 - Laureles', ciudadId: 'city_med' },
-    { id: 'com_bel', nombre: 'Comuna 16 - Belén', ciudadId: 'city_med' }
+    { id: 1, nombre: 'Comuna 14 - El Poblado', ciudadId: 1 },
+    { id: 2, nombre: 'Comuna 11 - Laureles', ciudadId: 1 },
+    { id: 3, nombre: 'Comuna 16 - Belén', ciudadId: 1 }
   ],
   barrios: [
-    { id: 'bar_pob', nombre: 'El Poblado', ciudadId: 'city_med', comunaId: 'com_pob' },
-    { id: 'bar_pro', nombre: 'Provenza', ciudadId: 'city_med', comunaId: 'com_pob' },
-    { id: 'bar_man', nombre: 'Manila', ciudadId: 'city_med', comunaId: 'com_pob' },
-    { id: 'bar_lau', nombre: 'Laureles', ciudadId: 'city_med', comunaId: 'com_pob' },
-    { id: 'bar_bel', nombre: 'Belén', ciudadId: 'city_med', comunaId: 'com_bel' }
+    { id: 1, nombre: 'El Poblado', ciudadId: 1, comunaId: 1 },
+    { id: 2, nombre: 'Provenza', ciudadId: 1, comunaId: 1 },
+    { id: 3, nombre: 'Manila', ciudadId: 1, comunaId: 1 },
+    { id: 4, nombre: 'Laureles', ciudadId: 1, comunaId: 2 },
+    { id: 5, nombre: 'Belén', ciudadId: 1, comunaId: 3 }
   ]
 };
 
@@ -196,62 +206,119 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: any
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigGeolocalizacion() {
-  const [data, setData] = useState<GeolocationState>({ paises: [], departamentos: [], ciudades: [], comunas: [], barrios: [] })
+  const qc = useQueryClient()
   const [activeLevel, setActiveLevel] = useState<GeoLevel>('PAISES')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
-  const [savedAlert, setSavedAlert] = useState(false)
+
+  // ── Query ──
+  const { data = { paises: [], departamentos: [], ciudades: [], comunas: [], barrios: [] }, isLoading } = useQuery<GeolocationState>({
+    queryKey: ['geolocation-state'],
+    queryFn: getGeolocationState,
+  })
 
   // Estados de Formulario de Creación/Edición
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [formPais, setFormPais] = useState<Partial<Pais>>({})
   const [formDept, setFormDept] = useState<Partial<Departamento>>({})
   const [formCity, setFormCity] = useState<Partial<Ciudad>>({})
   const [formComuna, setFormComuna] = useState<Partial<Comuna>>({})
   const [formBarrio, setFormBarrio] = useState<Partial<Barrio>>({})
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_geolocalizacion')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        // Migración y saneamiento para clientes con datos antiguos
-        const sanitizedPaises = (parsed.paises || []).map((p: any) => ({
-          ...p,
-          codigoDianExogena: p.codigoDianExogena || (p.codigo === 'CO' ? '169' : p.codigo === 'ES' ? '245' : p.codigo === 'US' ? '249' : ''),
-          indicativoTelefonico: p.indicativoTelefonico || (p.codigo === 'CO' ? '57' : p.codigo === 'ES' ? '34' : p.codigo === 'US' ? '1' : '')
-        }))
-        const sanitizedDeptos = (parsed.departamentos || []).map((d: any) => ({
-          ...d,
-          codigoDian: d.codigoDian || ''
-        }))
-        const sanitizedCiudades = (parsed.ciudades || []).map((c: any) => ({
-          ...c,
-          codigoDian: c.codigoDian || ''
-        }))
+  // ── Mutations ──
+  const mutReset = useMutation({
+    mutationFn: resetGeolocationToDefaults,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['geolocation-state'] })
+      toast.success('Geolocalización restablecida a la plantilla oficial')
+    },
+    onError: () => toast.error('Error al restablecer geolocalización')
+  })
 
-        setData({
-          paises: sanitizedPaises,
-          departamentos: sanitizedDeptos,
-          ciudades: sanitizedCiudades,
-          comunas: parsed.comunas || [],
-          barrios: parsed.barrios || []
-        })
-      } catch (e) {
-        setData(DEFAULT_GEO_DATA)
-      }
-    } else {
-      setData(DEFAULT_GEO_DATA)
-      localStorage.setItem('edatia_config_geolocalizacion', JSON.stringify(DEFAULT_GEO_DATA))
-    }
-  }, [])
+  // Paises
+  const mutCreatePais = useMutation({
+    mutationFn: createPais,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('País creado'); setViewMode('list') },
+    onError: () => toast.error('Error al crear país')
+  })
+  const mutUpdatePais = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updatePais(id, dto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('País actualizado'); setViewMode('list') },
+    onError: () => toast.error('Error al actualizar país')
+  })
+  const mutDeletePais = useMutation({
+    mutationFn: deletePais,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('País eliminado') },
+    onError: () => toast.error('Error al eliminar país')
+  })
 
-  const saveToLocalStorage = (newState: GeolocationState) => {
-    setData(newState)
-    localStorage.setItem('edatia_config_geolocalizacion', JSON.stringify(newState))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 3000)
-  }
+  // Departamentos
+  const mutCreateDept = useMutation({
+    mutationFn: createDepartamento,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Departamento creado'); setViewMode('list') },
+    onError: () => toast.error('Error al crear departamento')
+  })
+  const mutUpdateDept = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updateDepartamento(id, dto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Departamento actualizado'); setViewMode('list') },
+    onError: () => toast.error('Error al actualizar departamento')
+  })
+  const mutDeleteDept = useMutation({
+    mutationFn: deleteDepartamento,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Departamento eliminado') },
+    onError: () => toast.error('Error al eliminar departamento')
+  })
+
+  // Ciudades
+  const mutCreateCity = useMutation({
+    mutationFn: createCiudad,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Ciudad creada'); setViewMode('list') },
+    onError: () => toast.error('Error al crear ciudad')
+  })
+  const mutUpdateCity = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updateCiudad(id, dto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Ciudad actualizada'); setViewMode('list') },
+    onError: () => toast.error('Error al actualizar ciudad')
+  })
+  const mutDeleteCity = useMutation({
+    mutationFn: deleteCiudad,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Ciudad eliminada') },
+    onError: () => toast.error('Error al eliminar ciudad')
+  })
+
+  // Comunas
+  const mutCreateComuna = useMutation({
+    mutationFn: createComuna,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Comuna creada'); setViewMode('list') },
+    onError: () => toast.error('Error al crear comuna')
+  })
+  const mutUpdateComuna = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updateComuna(id, dto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Comuna actualizada'); setViewMode('list') },
+    onError: () => toast.error('Error al actualizar comuna')
+  })
+  const mutDeleteComuna = useMutation({
+    mutationFn: deleteComuna,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Comuna eliminada') },
+    onError: () => toast.error('Error al eliminar comuna')
+  })
+
+  // Barrios
+  const mutCreateBarrio = useMutation({
+    mutationFn: createBarrio,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Barrio creado'); setViewMode('list') },
+    onError: () => toast.error('Error al crear barrio')
+  })
+  const mutUpdateBarrio = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updateBarrio(id, dto),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Barrio actualizado'); setViewMode('list') },
+    onError: () => toast.error('Error al actualizar barrio')
+  })
+  const mutDeleteBarrio = useMutation({
+    mutationFn: deleteBarrio,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['geolocation-state'] }); toast.success('Barrio eliminado') },
+    onError: () => toast.error('Error al eliminar barrio')
+  })
 
   // Resetear filtros al cambiar de pestaña
   useEffect(() => {
@@ -261,7 +328,7 @@ export function ConfigGeolocalizacion() {
 
   const handleResetTemplate = () => {
     if (window.confirm('¿Está seguro de restablecer los datos a la plantilla oficial de Colombia (32 departamentos y capitales)? Se perderán los registros modificados actualmente.')) {
-      saveToLocalStorage(DEFAULT_GEO_DATA)
+      mutReset.mutate()
     }
   }
 
@@ -269,13 +336,13 @@ export function ConfigGeolocalizacion() {
   const handleOpenNew = () => {
     setEditingId(null)
     if (activeLevel === 'PAISES') setFormPais({ nombre: '', codigo: '', codigoDianExogena: '', indicativoTelefonico: '' })
-    if (activeLevel === 'DEPARTAMENTOS') setFormDept({ nombre: '', paisId: data.paises[0]?.id || '', codigoDian: '' })
-    if (activeLevel === 'CIUDADES') setFormCity({ nombre: '', departamentoId: data.departamentos[0]?.id || '', codigoDian: '' })
-    if (activeLevel === 'COMUNAS') setFormComuna({ nombre: '', ciudadId: data.ciudades[0]?.id || '' })
+    if (activeLevel === 'DEPARTAMENTOS') setFormDept({ nombre: '', paisId: data.paises[0]?.id || 0, codigo: '' })
+    if (activeLevel === 'CIUDADES') setFormCity({ nombre: '', departamentoId: data.departamentos[0]?.id || 0, codigoDian: '' })
+    if (activeLevel === 'COMUNAS') setFormComuna({ nombre: '', ciudadId: data.ciudades[0]?.id || 0 })
     if (activeLevel === 'BARRIOS') {
-      const firstCityId = data.ciudades[0]?.id || ''
+      const firstCityId = data.ciudades[0]?.id || 0
       const relatedComunas = data.comunas.filter(c => c.ciudadId === firstCityId)
-      setFormBarrio({ nombre: '', ciudadId: firstCityId, comunaId: relatedComunas[0]?.id || '' })
+      setFormBarrio({ nombre: '', ciudadId: firstCityId, comunaId: relatedComunas[0]?.id || undefined })
     }
     setViewMode('form')
   }
@@ -283,97 +350,97 @@ export function ConfigGeolocalizacion() {
   const handleOpenEdit = (item: any) => {
     setEditingId(item.id)
     if (activeLevel === 'PAISES') setFormPais({ codigoDianExogena: '', indicativoTelefonico: '', ...item })
-    if (activeLevel === 'DEPARTAMENTOS') setFormDept({ codigoDian: '', ...item })
-    if (activeLevel === 'CIUDADES') setFormCity({ codigoDian: '', ...item })
+    if (activeLevel === 'DEPARTAMENTOS') setFormDept({ ...item })
+    if (activeLevel === 'CIUDADES') setFormCity({ ...item })
     if (activeLevel === 'COMUNAS') setFormComuna({ ...item })
     if (activeLevel === 'BARRIOS') setFormBarrio({ ...item })
     setViewMode('form')
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (window.confirm('¿Está seguro de eliminar este registro?')) {
-      const newState = { ...data }
       if (activeLevel === 'PAISES') {
-        // Validación de llaves foráneas en cascada local
         const hasChild = data.departamentos.some(d => d.paisId === id)
         if (hasChild) return alert('No se puede eliminar porque contiene departamentos asociados.')
-        newState.paises = data.paises.filter(p => p.id !== id)
+        mutDeletePais.mutate(id)
       }
       if (activeLevel === 'DEPARTAMENTOS') {
         const hasChild = data.ciudades.some(c => c.departamentoId === id)
         if (hasChild) return alert('No se puede eliminar porque contiene ciudades asociadas.')
-        newState.departamentos = data.departamentos.filter(d => d.id !== id)
+        mutDeleteDept.mutate(id)
       }
       if (activeLevel === 'CIUDADES') {
         const hasChild = data.comunas.some(c => c.ciudadId === id) || data.barrios.some(b => b.ciudadId === id)
         if (hasChild) return alert('No se puede eliminar porque contiene comunas o barrios asociados.')
-        newState.ciudades = data.ciudades.filter(c => c.id !== id)
+        mutDeleteCity.mutate(id)
       }
       if (activeLevel === 'COMUNAS') {
         const hasChild = data.barrios.some(b => b.comunaId === id)
         if (hasChild) return alert('No se puede eliminar porque contiene barrios asociados.')
-        newState.comunas = data.comunas.filter(c => c.id !== id)
+        mutDeleteComuna.mutate(id)
       }
       if (activeLevel === 'BARRIOS') {
-        newState.barrios = data.barrios.filter(b => b.id !== id)
+        mutDeleteBarrio.mutate(id)
       }
-      saveToLocalStorage(newState)
     }
   }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    const newState = { ...data }
-
     if (activeLevel === 'PAISES') {
       if (!formPais.nombre || !formPais.codigo || !formPais.codigoDianExogena || !formPais.indicativoTelefonico) {
         return alert('Nombre, Código ISO, Código DIAN e Indicativo son obligatorios.')
       }
       if (editingId) {
-        newState.paises = data.paises.map(p => p.id === editingId ? { ...p, ...formPais } as Pais : p)
+        mutUpdatePais.mutate({ id: editingId, dto: formPais })
       } else {
-        newState.paises = [...data.paises, { id: `pais_${Date.now()}`, ...formPais } as Pais]
+        mutCreatePais.mutate(formPais)
       }
     }
     if (activeLevel === 'DEPARTAMENTOS') {
-      if (!formDept.nombre || !formDept.paisId || !formDept.codigoDian) {
-        return alert('Nombre, País y Código DIAN/DIVIPOLA son obligatorios.')
+      if (!formDept.nombre || !formDept.paisId || !formDept.codigo) {
+        return alert('Nombre, País y Código son obligatorios.')
       }
+      const payload = { nombre: formDept.nombre, codigo: formDept.codigo, paisId: Number(formDept.paisId) }
       if (editingId) {
-        newState.departamentos = data.departamentos.map(d => d.id === editingId ? { ...d, ...formDept } as Departamento : d)
+        mutUpdateDept.mutate({ id: editingId, dto: payload })
       } else {
-        newState.departamentos = [...data.departamentos, { id: `dept_${Date.now()}`, ...formDept } as Departamento]
+        mutCreateDept.mutate(payload)
       }
     }
     if (activeLevel === 'CIUDADES') {
       if (!formCity.nombre || !formCity.departamentoId || !formCity.codigoDian) {
         return alert('Nombre, Departamento y Código DIAN/DIVIPOLA son obligatorios.')
       }
+      const payload = { nombre: formCity.nombre, codigoDian: formCity.codigoDian, departamentoId: Number(formCity.departamentoId) }
       if (editingId) {
-        newState.ciudades = data.ciudades.map(c => c.id === editingId ? { ...c, ...formCity } as Ciudad : c)
+        mutUpdateCity.mutate({ id: editingId, dto: payload })
       } else {
-        newState.ciudades = [...data.ciudades, { id: `city_${Date.now()}`, ...formCity } as Ciudad]
+        mutCreateCity.mutate(payload)
       }
     }
     if (activeLevel === 'COMUNAS') {
       if (!formComuna.nombre || !formComuna.ciudadId) return alert('Nombre y Ciudad son obligatorios.')
+      const payload = { nombre: formComuna.nombre, ciudadId: Number(formComuna.ciudadId) }
       if (editingId) {
-        newState.comunas = data.comunas.map(c => c.id === editingId ? { ...c, ...formComuna } as Comuna : c)
+        mutUpdateComuna.mutate({ id: editingId, dto: payload })
       } else {
-        newState.comunas = [...data.comunas, { id: `com_${Date.now()}`, ...formComuna } as Comuna]
+        mutCreateComuna.mutate(payload)
       }
     }
     if (activeLevel === 'BARRIOS') {
       if (!formBarrio.nombre || !formBarrio.ciudadId) return alert('Nombre y Ciudad son obligatorios.')
+      const payload = {
+        nombre: formBarrio.nombre,
+        ciudadId: Number(formBarrio.ciudadId),
+        comunaId: formBarrio.comunaId ? Number(formBarrio.comunaId) : undefined
+      }
       if (editingId) {
-        newState.barrios = data.barrios.map(b => b.id === editingId ? { ...b, ...formBarrio } as Barrio : b)
+        mutUpdateBarrio.mutate({ id: editingId, dto: payload })
       } else {
-        newState.barrios = [...data.barrios, { id: `bar_${Date.now()}`, ...formBarrio } as Barrio]
+        mutCreateBarrio.mutate(payload)
       }
     }
-
-    saveToLocalStorage(newState)
-    setViewMode('list')
   }
 
   // Filtrado de Datos
@@ -390,7 +457,7 @@ export function ConfigGeolocalizacion() {
     if (activeLevel === 'DEPARTAMENTOS') {
       return data.departamentos.filter(d => {
         const country = data.paises.find(p => p.id === d.paisId)?.nombre || ''
-        return d.nombre.toLowerCase().includes(s) || country.toLowerCase().includes(s) || (d.codigoDian || '').toLowerCase().includes(s)
+        return d.nombre.toLowerCase().includes(s) || country.toLowerCase().includes(s) || (d.codigo || '').toLowerCase().includes(s)
       })
     }
     if (activeLevel === 'CIUDADES') {
@@ -416,9 +483,11 @@ export function ConfigGeolocalizacion() {
   }
 
   const filteredItems = getFilteredItems()
+  const isMutating = mutReset.isPending || mutCreatePais.isPending || mutUpdatePais.isPending || mutCreateDept.isPending || mutUpdateDept.isPending || mutCreateCity.isPending || mutUpdateCity.isPending || mutCreateComuna.isPending || mutUpdateComuna.isPending || mutCreateBarrio.isPending || mutUpdateBarrio.isPending
 
   return (
     <div className="w-full space-y-6">
+      <Toaster position="top-right" />
       {viewMode === 'list' ? (
         <>
           {/* Header */}
@@ -436,20 +505,16 @@ export function ConfigGeolocalizacion() {
                 Configuración de Geolocalización
               </h1>
               <p className="text-slate-500 text-xs mt-0.5">
-                Administra la estructura geográfica del sistema para clientes, proveedores y envíos logísticos.
+                Administra la estructura geográfica del sistema para clientes, proveedores y envíos logísticos en la Base de Datos.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              {savedAlert && (
-                <div className="flex items-center gap-1.5 text-green-600 text-sm font-semibold animate-bounce">
-                  <CheckCircle2 size={16} /> Configuración actualizada
-                </div>
-              )}
               <button
                 onClick={handleResetTemplate}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold active:scale-[0.98] transition-all"
-                title="Restablecer a la plantilla oficial con todos los departamentos y capitales"
+                disabled={isMutating}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 rounded-xl text-sm font-bold active:scale-[0.98] transition-all"
+                title="Restablecer a la plantilla oficial con todos los departamentos y capitales en BD"
               >
                 <RefreshCw size={14} className="text-slate-500 animate-spin-hover" />
                 Cargar Plantilla
@@ -498,121 +563,125 @@ export function ConfigGeolocalizacion() {
 
           {/* List Table */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden w-full">
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/75 border-b border-slate-100">
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre</th>
-                    {activeLevel === 'PAISES' && (
-                      <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código ISO</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIAN</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Indicativo Tel.</th>
-                      </>
-                    )}
-                    {activeLevel === 'DEPARTAMENTOS' && (
-                      <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIVIPOLA</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">País</th>
-                      </>
-                    )}
-                    {activeLevel === 'CIUDADES' && (
-                      <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIVIPOLA</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Departamento</th>
-                      </>
-                    )}
-                    {activeLevel === 'COMUNAS' && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ciudad</th>}
-                    {activeLevel === 'BARRIOS' && (
-                      <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ciudad</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Comuna / Localidad</th>
-                      </>
-                    )}
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map((item: any) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-bold text-slate-800">
-                          {item.nombre}
-                        </td>
-
-                        {activeLevel === 'PAISES' && (
-                          <>
-                            <td className="p-4 font-mono font-bold text-slate-600">{item.codigo}</td>
-                            <td className="p-4 font-mono text-slate-600">{item.codigoDianExogena || '-'}</td>
-                            <td className="p-4 font-mono text-slate-600">+{item.indicativoTelefonico || ''}</td>
-                          </>
-                        )}
-
-                        {activeLevel === 'DEPARTAMENTOS' && (
-                          <>
-                            <td className="p-4 font-mono text-slate-600">{item.codigoDian || '-'}</td>
-                            <td className="p-4 text-slate-600">
-                              {data.paises.find(p => p.id === item.paisId)?.nombre || 'Desconocido'}
-                            </td>
-                          </>
-                        )}
-
-                        {activeLevel === 'CIUDADES' && (
-                          <>
-                            <td className="p-4 font-mono text-slate-600">{item.codigoDian || '-'}</td>
-                            <td className="p-4 text-slate-600">
-                              {data.departamentos.find(d => d.id === item.departamentoId)?.nombre || 'Desconocido'}
-                            </td>
-                          </>
-                        )}
-
-                        {activeLevel === 'COMUNAS' && (
-                          <td className="p-4 text-slate-600">
-                            {data.ciudades.find(c => c.id === item.ciudadId)?.nombre || 'Desconocido'}
+            {isLoading ? (
+              <div className="p-8 text-center text-slate-400 text-sm">Cargando datos del servidor...</div>
+            ) : (
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/75 border-b border-slate-100">
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre</th>
+                      {activeLevel === 'PAISES' && (
+                        <>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código ISO</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIAN</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Indicativo Tel.</th>
+                        </>
+                      )}
+                      {activeLevel === 'DEPARTAMENTOS' && (
+                        <>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIVIPOLA</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">País</th>
+                        </>
+                      )}
+                      {activeLevel === 'CIUDADES' && (
+                        <>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código DIVIPOLA</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Departamento</th>
+                        </>
+                      )}
+                      {activeLevel === 'COMUNAS' && <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ciudad</th>}
+                      {activeLevel === 'BARRIOS' && (
+                        <>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ciudad</th>
+                          <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Comuna / Localidad</th>
+                        </>
+                      )}
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map((item: any) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-bold text-slate-800">
+                            {item.nombre}
                           </td>
-                        )}
 
-                        {activeLevel === 'BARRIOS' && (
-                          <>
+                          {activeLevel === 'PAISES' && (
+                            <>
+                              <td className="p-4 font-mono font-bold text-slate-600">{item.codigo}</td>
+                              <td className="p-4 font-mono text-slate-600">{item.codigoDianExogena || '-'}</td>
+                              <td className="p-4 font-mono text-slate-600">+{item.indicativoTelefonico || ''}</td>
+                            </>
+                          )}
+
+                          {activeLevel === 'DEPARTAMENTOS' && (
+                            <>
+                              <td className="p-4 font-mono text-slate-600">{item.codigo || '-'}</td>
+                              <td className="p-4 text-slate-600">
+                                {data.paises.find(p => p.id === item.paisId)?.nombre || 'Desconocido'}
+                              </td>
+                            </>
+                          )}
+
+                          {activeLevel === 'CIUDADES' && (
+                            <>
+                              <td className="p-4 font-mono text-slate-600">{item.codigoDian || '-'}</td>
+                              <td className="p-4 text-slate-600">
+                                {data.departamentos.find(d => d.id === item.departamentoId)?.nombre || 'Desconocido'}
+                              </td>
+                            </>
+                          )}
+
+                          {activeLevel === 'COMUNAS' && (
                             <td className="p-4 text-slate-600">
                               {data.ciudades.find(c => c.id === item.ciudadId)?.nombre || 'Desconocido'}
                             </td>
-                            <td className="p-4 text-slate-500">
-                              {data.comunas.find(co => co.id === item.comunaId)?.nombre || <span className="text-slate-300 italic">No aplica</span>}
-                            </td>
-                          </>
-                        )}
+                          )}
 
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                              title="Editar"
-                            >
-                              <Edit3 size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                              title="Eliminar"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+                          {activeLevel === 'BARRIOS' && (
+                            <>
+                              <td className="p-4 text-slate-600">
+                                {data.ciudades.find(c => c.id === item.ciudadId)?.nombre || 'Desconocido'}
+                              </td>
+                              <td className="p-4 text-slate-500">
+                                {data.comunas.find(co => co.id === item.comunaId)?.nombre || <span className="text-slate-300 italic">No aplica</span>}
+                              </td>
+                            </>
+                          )}
+
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleOpenEdit(item)}
+                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                title="Editar"
+                              >
+                                <Edit3 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                title="Eliminar"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400">
+                          No se encontraron registros en este nivel.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400">
-                        No se encontraron registros en este nivel.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -700,10 +769,10 @@ export function ConfigGeolocalizacion() {
                       </Field>
                     </div>
                     <div className="md:col-span-4">
-                      <Field label="Código DIAN/DIVIPOLA (2 dígitos) *">
+                      <Field label="Código DIVIPOLA *">
                         <Input
-                          value={formDept.codigoDian}
-                          onChange={(v: string) => setFormDept(f => ({ ...f, codigoDian: v }))}
+                          value={formDept.codigo}
+                          onChange={(v: string) => setFormDept(f => ({ ...f, codigo: v }))}
                           placeholder="Ej. 05"
                         />
                       </Field>
@@ -711,9 +780,9 @@ export function ConfigGeolocalizacion() {
                     <div className="md:col-span-4">
                       <Field label="País Asociado *">
                         <Select
-                          value={formDept.paisId || ''}
-                          onChange={(v) => setFormDept(f => ({ ...f, paisId: v }))}
-                          options={data.paises.map(p => ({ value: p.id, label: p.nombre }))}
+                          value={String(formDept.paisId || '')}
+                          onChange={(v) => setFormDept(f => ({ ...f, paisId: Number(v) }))}
+                          options={data.paises.map(p => ({ value: String(p.id), label: p.nombre }))}
                         />
                       </Field>
                     </div>
@@ -744,11 +813,11 @@ export function ConfigGeolocalizacion() {
                     <div className="md:col-span-4">
                       <Field label="Departamento Asociado *">
                         <Select
-                          value={formCity.departamentoId || ''}
-                          onChange={(v) => setFormCity(f => ({ ...f, departamentoId: v }))}
+                          value={String(formCity.departamentoId || '')}
+                          onChange={(v) => setFormCity(f => ({ ...f, departamentoId: Number(v) }))}
                           options={data.departamentos.map(d => {
                             const cName = data.paises.find(p => p.id === d.paisId)?.nombre || ''
-                            return { value: d.id, label: `${d.nombre} (${cName})` }
+                            return { value: String(d.id), label: `${d.nombre} (${cName})` }
                           })}
                         />
                       </Field>
@@ -771,11 +840,11 @@ export function ConfigGeolocalizacion() {
                     <div className="md:col-span-6">
                       <Field label="Ciudad Asociada *">
                         <Select
-                          value={formComuna.ciudadId || ''}
-                          onChange={(v) => setFormComuna(f => ({ ...f, ciudadId: v }))}
+                          value={String(formComuna.ciudadId || '')}
+                          onChange={(v) => setFormComuna(f => ({ ...f, ciudadId: Number(v) }))}
                           options={data.ciudades.map(c => {
                             const dName = data.departamentos.find(d => d.id === c.departamentoId)?.nombre || ''
-                            return { value: c.id, label: `${c.nombre} (${dName})` }
+                            return { value: String(c.id), label: `${c.nombre} (${dName})` }
                           })}
                         />
                       </Field>
@@ -798,25 +867,25 @@ export function ConfigGeolocalizacion() {
                     <div className="md:col-span-4">
                       <Field label="Ciudad Asociada *">
                         <Select
-                          value={formBarrio.ciudadId || ''}
+                          value={String(formBarrio.ciudadId || '')}
                           onChange={(v) => {
-                            const relatedComunas = data.comunas.filter(c => c.ciudadId === v)
-                            setFormBarrio(f => ({ ...f, ciudadId: v, comunaId: relatedComunas[0]?.id || '' }))
+                            const relatedComunas = data.comunas.filter(c => c.ciudadId === Number(v))
+                            setFormBarrio(f => ({ ...f, ciudadId: Number(v), comunaId: relatedComunas[0]?.id ? Number(relatedComunas[0].id) : undefined }))
                           }}
-                          options={data.ciudades.map(c => ({ value: c.id, label: c.nombre }))}
+                          options={data.ciudades.map(c => ({ value: String(c.id), label: c.nombre }))}
                         />
                       </Field>
                     </div>
                     <div className="md:col-span-4">
                       <Field label="Comuna / Localidad (Opcional)">
                         <Select
-                          value={formBarrio.comunaId || ''}
-                          onChange={(v) => setFormBarrio(f => ({ ...f, comunaId: v }))}
+                          value={String(formBarrio.comunaId || '')}
+                          onChange={(v) => setFormBarrio(f => ({ ...f, comunaId: v ? Number(v) : undefined }))}
                           options={[
                             { value: '', label: '-- No aplica / Ninguna --' },
                             ...data.comunas
                               .filter(c => c.ciudadId === formBarrio.ciudadId)
-                              .map(c => ({ value: c.id, label: c.nombre }))
+                              .map(c => ({ value: String(c.id), label: c.nombre }))
                           ]}
                         />
                       </Field>
@@ -836,9 +905,10 @@ export function ConfigGeolocalizacion() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 active:scale-[0.98] transition-all"
+                  disabled={isMutating}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 active:scale-[0.98] transition-all"
                 >
-                  Guardar Registro
+                  {isMutating ? 'Guardando...' : 'Guardar Registro'}
                 </button>
               </div>
             </form>

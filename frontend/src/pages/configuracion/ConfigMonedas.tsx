@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getMonedas, createMoneda, updateMoneda, deleteMoneda } from '../../services/erp.service'
+import toast from 'react-hot-toast'
 import { Coins, Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal, Info } from 'lucide-react'
 
-// ─── Tipos y Monedas Predeterminadas ──────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface MonedaConfig {
   id: string;
@@ -12,36 +15,6 @@ interface MonedaConfig {
   esPrincipal: boolean; // solo una moneda puede ser la base del sistema
   estado: 'ACTIVO' | 'INACTIVO';
 }
-
-const DEFAULT_MONEDAS: MonedaConfig[] = [
-  {
-    id: 'cop',
-    nombre: 'Peso Colombiano',
-    codigoIso: 'COP',
-    simbolo: '$',
-    tasaCambio: 1,
-    esPrincipal: true,
-    estado: 'ACTIVO'
-  },
-  {
-    id: 'usd',
-    nombre: 'Dólar Estadounidense',
-    codigoIso: 'USD',
-    simbolo: 'US$',
-    tasaCambio: 4000,
-    esPrincipal: false,
-    estado: 'ACTIVO'
-  },
-  {
-    id: 'eur',
-    nombre: 'Euro',
-    codigoIso: 'EUR',
-    simbolo: '€',
-    tasaCambio: 4300,
-    esPrincipal: false,
-    estado: 'ACTIVO'
-  }
-];
 
 // ─── Componentes Helper Estilizados ──────────────────────────────────────────
 
@@ -99,7 +72,13 @@ function Toggle({ checked, onChange, label, disabled = false }: { checked: boole
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigMonedas() {
-  const [monedas, setMonedas] = useState<MonedaConfig[]>([])
+  const queryClient = useQueryClient()
+
+  const { data: monedas = [], isLoading, isError } = useQuery({
+    queryKey: ['monedas'],
+    queryFn: getMonedas,
+  })
+
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [savedAlert, setSavedAlert] = useState(false)
@@ -108,26 +87,42 @@ export function ConfigMonedas() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<Partial<MonedaConfig>>({})
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_monedas')
-    if (saved) {
-      try {
-        setMonedas(JSON.parse(saved))
-      } catch (e) {
-        setMonedas(DEFAULT_MONEDAS)
-      }
-    } else {
-      setMonedas(DEFAULT_MONEDAS)
-      localStorage.setItem('edatia_config_monedas', JSON.stringify(DEFAULT_MONEDAS))
-    }
-  }, [])
-
-  const saveToLocalStorage = (items: MonedaConfig[]) => {
-    setMonedas(items)
-    localStorage.setItem('edatia_config_monedas', JSON.stringify(items))
+  const showSavedAlert = () => {
     setSavedAlert(true)
     setTimeout(() => setSavedAlert(false), 3000)
   }
+
+  const createMutation = useMutation({
+    mutationFn: (dto: any) => createMoneda(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monedas'] })
+      toast.success('Moneda creada correctamente')
+      showSavedAlert()
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al crear la moneda'),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: any }) => updateMoneda(id as any, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monedas'] })
+      toast.success('Moneda actualizada correctamente')
+      showSavedAlert()
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al actualizar la moneda'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteMoneda(id as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monedas'] })
+      toast.success('Moneda eliminada correctamente')
+      showSavedAlert()
+    },
+    onError: () => toast.error('Error al eliminar la moneda'),
+  })
 
   const handleOpenNew = () => {
     setEditingId(null)
@@ -149,19 +144,13 @@ export function ConfigMonedas() {
   }
 
   const handleDelete = (id: string) => {
-    const coin = monedas.find(m => m.id === id)
+    const coin = monedas.find((m: MonedaConfig) => m.id === id)
     if (coin?.esPrincipal) {
       alert('La moneda principal del sistema no puede ser eliminada. Por favor, designe otra moneda como principal antes.')
       return
     }
-    const isBase = DEFAULT_MONEDAS.some(m => m.id === id)
-    if (isBase) {
-      alert('Las monedas base del sistema no pueden ser eliminadas, solo inhabilitadas cambiándolas a estado INACTIVO.')
-      return
-    }
     if (window.confirm('¿Está seguro de que desea eliminar esta moneda? Esta acción no se puede deshacer.')) {
-      const updated = monedas.filter(m => m.id !== id)
-      saveToLocalStorage(updated)
+      deleteMutation.mutate(id)
     }
   }
 
@@ -172,54 +161,30 @@ export function ConfigMonedas() {
       return
     }
 
-    let updated: MonedaConfig[]
     const isPrincipal = !!form.esPrincipal
 
+    const dto = {
+      nombre: form.nombre,
+      codigoIso: form.codigoIso!.toUpperCase(),
+      simbolo: form.simbolo,
+      tasaCambio: Number(form.tasaCambio),
+      esPrincipal: isPrincipal,
+      estado: form.estado || 'ACTIVO',
+    }
+
     if (editingId) {
-      updated = monedas.map(m => {
-        if (m.id === editingId) {
-          return { ...m, ...form, esPrincipal: isPrincipal } as MonedaConfig
-        }
-        // Si el editado pasa a ser principal, los demás dejan de serlo
-        return isPrincipal ? { ...m, esPrincipal: false } : m
-      })
+      updateMutation.mutate({ id: editingId, dto })
     } else {
-      const newId = `coin_${Date.now()}`
-      const newCoin: MonedaConfig = {
-        ...form,
-        id: newId,
-        nombre: form.nombre!,
-        codigoIso: form.codigoIso!.toUpperCase(),
-        simbolo: form.simbolo!,
-        tasaCambio: Number(form.tasaCambio),
-        esPrincipal: isPrincipal,
-        estado: form.estado || 'ACTIVO'
-      } as MonedaConfig
-
-      if (isPrincipal) {
-        updated = monedas.map(m => ({ ...m, esPrincipal: false }))
-        updated = [...updated, newCoin]
-      } else {
-        updated = [...monedas, newCoin]
-      }
+      createMutation.mutate(dto)
     }
-
-    // Asegurarse de que al menos una moneda quede como principal
-    const hasPrincipal = updated.some(m => m.esPrincipal)
-    if (!hasPrincipal && updated.length > 0) {
-      updated[0].esPrincipal = true
-    }
-
-    saveToLocalStorage(updated)
-    setViewMode('list')
   }
 
-  const filtered = monedas.filter(m =>
+  const filtered = monedas.filter((m: MonedaConfig) =>
     m.nombre.toLowerCase().includes(search.toLowerCase()) ||
     m.codigoIso.toLowerCase().includes(search.toLowerCase())
   )
 
-  const baseCurrency = monedas.find(m => m.esPrincipal)
+  const baseCurrency = monedas.find((m: MonedaConfig) => m.esPrincipal)
 
   return (
     <div className="w-full space-y-6">
@@ -295,8 +260,20 @@ export function ConfigMonedas() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {filtered.length > 0 ? (
-                    filtered.map(mon => (
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                        Cargando...
+                      </td>
+                    </tr>
+                  ) : isError ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-rose-500">
+                        Error al cargar las monedas.
+                      </td>
+                    </tr>
+                  ) : filtered.length > 0 ? (
+                    filtered.map((mon: MonedaConfig) => (
                       <tr key={mon.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-4 font-mono font-bold text-indigo-600">
                           {mon.codigoIso}

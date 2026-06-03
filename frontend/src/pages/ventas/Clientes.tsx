@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Search, Users, Pencil } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Tercero, DEFAULT_TERCEROS } from '../configuracion/ConfigTerceros'
+import { useQuery } from '@tanstack/react-query'
+import { getClientes } from '../../services/ventas.service'
 
 const REGIMEN_CONFIG: Record<string, { label: string; color: string }> = {
   '48': { label: 'Resp. IVA', color: 'bg-green-100 text-green-700' },
@@ -21,26 +22,17 @@ function RegimenBadge({ regimen }: { regimen?: string }) {
 export function Clientes() {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
-  const [clientes, setClientes] = useState<Tercero[]>([])
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_terceros')
-    let list: Tercero[] = []
-    if (saved) {
-      try { list = JSON.parse(saved) } catch (e) {}
-    } else {
-      list = DEFAULT_TERCEROS
-      localStorage.setItem('edatia_terceros', JSON.stringify(DEFAULT_TERCEROS))
-    }
-    // Filtrar solo los que tienen marcado el rol 'cliente'
-    setClientes(list.filter(t => t.cliente))
-  }, [])
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => getClientes(),
+  })
 
-  const filtrados = clientes.filter(c => {
+  const filtrados = (clientes as any[]).filter(c => {
     if (!q) return true
     return (
-      c.nombre.toLowerCase().includes(q.toLowerCase()) ||
-      c.numeroDocumento.includes(q) ||
+      c.nombre?.toLowerCase().includes(q.toLowerCase()) ||
+      c.numeroDocumento?.includes(q) ||
       (c.nombreComercial || '').toLowerCase().includes(q.toLowerCase())
     )
   })
@@ -51,7 +43,9 @@ export function Clientes() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Clientes</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{filtrados.length} clientes registrados</p>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {isLoading ? 'Cargando...' : `${filtrados.length} clientes registrados`}
+          </p>
         </div>
         <button
           onClick={() => navigate('/configuracion/terceros/nuevo?role=cliente')}
@@ -75,62 +69,69 @@ export function Clientes() {
 
       {/* Tabla */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                {['Nombre', 'Documento', 'Ciudad / Municipio', 'Régimen', 'Email', 'Acciones'].map(h => (
-                  <th key={h} className="px-6 py-4 text-left font-semibold">{h}</th>
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
+            <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" />
+            Cargando clientes de la base de datos...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
+                  {['Nombre', 'Documento', 'Ciudad / Municipio', 'Régimen', 'Email', 'Acciones'].map(h => (
+                    <th key={h} className="px-6 py-4 text-left font-semibold">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filtrados.map((c: any) => (
+                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-slate-800">{c.nombre}</p>
+                      {c.nombreComercial && c.nombreComercial !== c.nombre && (
+                        <p className="text-[10px] text-slate-400 uppercase font-bold">{c.nombreComercial}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 text-xs font-mono">
+                      {c.tipoDocumento} {c.numeroDocumento}
+                      {c.digitoVerificacion ? `-${c.digitoVerificacion}` : ''}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 text-xs">
+                      {c.municipio || '—'}
+                    </td>
+                    <td className="px-6 py-4"><RegimenBadge regimen={c.regimenFiscal} /></td>
+                    <td className="px-6 py-4 text-slate-500 text-xs">{c.email || '—'}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/configuracion/terceros/cli_${c.id}?role=cliente`)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Ver y Editar en Configuración">
+                          <Pencil size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtrados.map((c: Tercero) => (
-                <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-slate-800">{c.nombre}</p>
-                    {c.nombreComercial && c.nombreComercial !== c.nombre && (
-                      <p className="text-[10px] text-slate-400 uppercase font-bold">{c.nombreComercial}</p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 text-xs font-mono">
-                    {c.tipoDocumento} {c.numeroDocumento}
-                    {c.digitoVerificacion ? `-${c.digitoVerificacion}` : ''}
-                  </td>
-                  <td className="px-6 py-4 text-slate-500 text-xs">
-                    {c.ciudad ? c.ciudad.split(' - ')[1] : '—'}
-                  </td>
-                  <td className="px-6 py-4"><RegimenBadge regimen={c.regimenFiscal} /></td>
-                  <td className="px-6 py-4 text-slate-500 text-xs">{c.email || '—'}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => navigate(`/configuracion/terceros/${c.id}?role=cliente`)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        title="Ver y Editar en Configuración">
-                        <Pencil size={16} />
+                {filtrados.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <Users size={48} className="mx-auto text-slate-200 mb-3" />
+                      <p className="text-slate-400 font-medium">No hay clientes registrados aún.</p>
+                      <button 
+                        onClick={() => navigate('/configuracion/terceros/nuevo?role=cliente')}
+                        className="mt-4 text-indigo-600 text-sm font-bold hover:underline"
+                      >
+                        Crear el primer cliente
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtrados.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
-                    <Users size={48} className="mx-auto text-slate-200 mb-3" />
-                    <p className="text-slate-400 font-medium">No hay clientes registrados aún.</p>
-                    <button 
-                      onClick={() => navigate('/configuracion/terceros/nuevo?role=cliente')}
-                      className="mt-4 text-indigo-600 text-sm font-bold hover:underline"
-                    >
-                      Crear el primer cliente
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

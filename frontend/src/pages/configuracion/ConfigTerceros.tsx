@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Search, Users, Eye, Pencil, Trash2, SlidersHorizontal, Check, X, Building2, User } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast, { Toaster } from 'react-hot-toast'
+import { getClientesERP, getProveedores, deleteClienteERP, deleteProveedor } from '../../services/erp.service'
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -270,10 +273,154 @@ export const DEFAULT_TERCEROS: Tercero[] = [
 export function ConfigTerceros() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  
-  // Repositorio en localStorage
-  const [terceros, setTerceros] = useState<Tercero[]>([])
-  
+  const qc = useQueryClient()
+
+  // Queries
+  const { data: clientes = [], isLoading: loadingClientes } = useQuery({
+    queryKey: ['clientes-erp'],
+    queryFn: getClientesERP,
+  })
+
+  const { data: proveedores = [], isLoading: loadingProveedores } = useQuery({
+    queryKey: ['proveedores-erp'],
+    queryFn: getProveedores,
+  })
+
+  // Mutations
+  const mutDeleteCliente = useMutation({
+    mutationFn: (id: number) => deleteClienteERP(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clientes-erp'] })
+      toast.success('Cliente eliminado')
+    },
+    onError: () => toast.error('Error al eliminar cliente')
+  })
+
+  const mutDeleteProveedor = useMutation({
+    mutationFn: (id: number) => deleteProveedor(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
+      toast.success('Proveedor eliminado')
+    },
+    onError: () => toast.error('Error al eliminar proveedor')
+  })
+
+  // Merge logic in memory
+  const terceros = useMemo(() => {
+    const mergedMap = new Map<string, Tercero>()
+
+    clientes.forEach((cli: any) => {
+      const key = cli.numeroDocumento || `cli_${cli.id}`
+      mergedMap.set(key, {
+        id: `cli_${cli.id}`,
+        tipoPersona: cli.tipoPersona || 'JURIDICA',
+        tipoDocumento: cli.tipoDocumento || 'NIT',
+        numeroDocumento: cli.numeroDocumento,
+        digitoVerificacion: cli.digitoVerificacion || '',
+        codigo: cli.numeroDocumento || '',
+        fechaCreacion: cli.createdAt ? new Date(cli.createdAt).toLocaleDateString() : '',
+        nombre: cli.nombre,
+        nombreComercial: cli.nombreComercial || cli.nombre,
+        activo: cli.activo !== false,
+        cliente: true,
+        proveedor: false,
+        empleado: false,
+        prospecto: false,
+        vendedor: cli.vendedorId ? String(cli.vendedorId) : '',
+        email: cli.email || '',
+        emailNovedades: '',
+        telefono: cli.telefono || '',
+        telefono2: '',
+        telefono3: '',
+        celular: cli.celular || '',
+        pais: cli.pais || 'COLOMBIA',
+        departamento: cli.departamento || '',
+        ciudad: cli.municipio || '',
+        direccionFiscal: cli.direccion || '',
+        direccionDespachos: cli.direccion || '',
+        cumpleanosDia: 0,
+        cumpleanosMes: 0,
+        cartera: 'CL - CLIENTES',
+        formaPago: '01 - EFECTIVO',
+        nivelPrecio: 'Precio Estándar',
+        clasificacion: 'Ninguna',
+        cupoCredito: cli.cupoCredito ? true : false,
+        cupoCreditoValor: cli.cupoCredito ? Number(cli.cupoCredito) : 0,
+        paginaWeb: '',
+        paginaWeb2: '',
+        paginaWeb3: '',
+        tokenPosgold: '',
+        observacion: cli.notas || '',
+        sucursales: [],
+        regimenFiscal: cli.regimenFiscal || '49',
+        responsabilidades: cli.responsabilidades || [],
+        actividadEconomica: cli.actividadEconomica || '',
+      })
+    })
+
+    proveedores.forEach((prov: any) => {
+      const key = prov.numeroDocumento || `prov_${prov.id}`
+      const existing = mergedMap.get(key)
+      if (existing) {
+        existing.id = `dual_${existing.id.replace('cli_', '')}_${prov.id}`
+        existing.proveedor = true
+        if (!existing.email) existing.email = prov.email || ''
+        if (!existing.telefono) existing.telefono = prov.telefono || ''
+        if (!existing.direccionFiscal) existing.direccionFiscal = prov.direccion || ''
+        if (!existing.ciudad) existing.ciudad = prov.ciudad || ''
+        if (!existing.nombreComercial) existing.nombreComercial = prov.nombreComercial || ''
+      } else {
+        mergedMap.set(key, {
+          id: `prov_${prov.id}`,
+          tipoPersona: 'JURIDICA',
+          tipoDocumento: prov.tipoDocumento || 'NIT',
+          numeroDocumento: prov.numeroDocumento || '',
+          digitoVerificacion: '',
+          codigo: prov.numeroDocumento || '',
+          fechaCreacion: prov.createdAt ? new Date(prov.createdAt).toLocaleDateString() : '',
+          nombre: prov.nombre,
+          nombreComercial: prov.nombreComercial || prov.nombre,
+          activo: prov.activo !== false,
+          cliente: false,
+          proveedor: true,
+          empleado: false,
+          prospecto: false,
+          vendedor: '',
+          email: prov.email || '',
+          emailNovedades: '',
+          telefono: prov.telefono || '',
+          telefono2: '',
+          telefono3: '',
+          celular: '',
+          pais: prov.pais || 'COLOMBIA',
+          departamento: '',
+          ciudad: prov.ciudad || '',
+          direccionFiscal: prov.direccion || '',
+          direccionDespachos: prov.direccion || '',
+          cumpleanosDia: 0,
+          cumpleanosMes: 0,
+          cartera: 'PR - PROVEEDORES',
+          formaPago: prov.condicionesPago || '01 - EFECTIVO',
+          nivelPrecio: 'Precio Estándar',
+          clasificacion: 'Ninguna',
+          cupoCredito: false,
+          cupoCreditoValor: 0,
+          paginaWeb: '',
+          paginaWeb2: '',
+          paginaWeb3: '',
+          tokenPosgold: '',
+          observacion: prov.notes || prov.notas || '',
+          sucursales: [],
+          regimenFiscal: '49',
+          responsabilidades: [],
+          actividadEconomica: '',
+        })
+      }
+    })
+
+    return Array.from(mergedMap.values())
+  }, [clientes, proveedores])
+
   // Estados de Filtros
   const [filterNit, setFilterNit] = useState('')
   const [filterCodigo, setFilterCodigo] = useState('')
@@ -286,22 +433,6 @@ export function ConfigTerceros() {
   const [filterEmpleado, setFilterEmpleado] = useState('TODOS')
   const [filterProveedor, setFilterProveedor] = useState('TODOS')
   const [filterPrecio, setFilterPrecio] = useState('TODOS')
-
-  // Cargar datos del local storage o sembrar por defecto
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_terceros')
-    if (saved) {
-      try {
-        setTerceros(JSON.parse(saved))
-      } catch (e) {
-        setTerceros(DEFAULT_TERCEROS)
-        localStorage.setItem('edatia_terceros', JSON.stringify(DEFAULT_TERCEROS))
-      }
-    } else {
-      setTerceros(DEFAULT_TERCEROS)
-      localStorage.setItem('edatia_terceros', JSON.stringify(DEFAULT_TERCEROS))
-    }
-  }, [])
 
   // Filtrado de la lista
   const filtered = terceros.filter(t => {
@@ -333,9 +464,19 @@ export function ConfigTerceros() {
   // Eliminar tercero
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`¿Está seguro de eliminar a ${name} de los terceros?`)) {
-      const updated = terceros.filter(t => t.id !== id)
-      setTerceros(updated)
-      localStorage.setItem('edatia_terceros', JSON.stringify(updated))
+      if (id.startsWith('cli_')) {
+        const dbId = parseInt(id.replace('cli_', ''), 10)
+        mutDeleteCliente.mutate(dbId)
+      } else if (id.startsWith('prov_')) {
+        const dbId = parseInt(id.replace('prov_', ''), 10)
+        mutDeleteProveedor.mutate(dbId)
+      } else if (id.startsWith('dual_')) {
+        const parts = id.split('_')
+        const cliId = parseInt(parts[1], 10)
+        const provId = parseInt(parts[2], 10)
+        mutDeleteCliente.mutate(cliId)
+        mutDeleteProveedor.mutate(provId)
+      }
     }
   }
 
@@ -594,7 +735,14 @@ export function ConfigTerceros() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 text-slate-700 font-sans">
-              {filtered.length > 0 ? (
+              {loadingClientes || loadingProveedores ? (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center text-slate-400 text-sm">
+                    <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-2" />
+                    Cargando terceros...
+                  </td>
+                </tr>
+              ) : filtered.length > 0 ? (
                 filtered.map(t => (
                   <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-4">
@@ -651,7 +799,7 @@ export function ConfigTerceros() {
                     <td className="p-4 text-slate-550 max-w-[150px] truncate">{t.direccionFiscal || '—'}</td>
                     <td className="p-4 font-mono text-slate-550">{t.telefono || '—'}</td>
                     <td className="p-4 font-mono text-slate-550">{t.celular || '—'}</td>
-                    <td className="p-4 text-slate-600 font-medium">{t.ciudad ? t.ciudad.split(' - ')[1] : '—'}</td>
+                    <td className="p-4 text-slate-600 font-medium">{t.ciudad ? (t.ciudad.includes(' - ') ? t.ciudad.split(' - ')[1] : t.ciudad) : '—'}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
                         t.activo

@@ -6,6 +6,7 @@ import {
   getClientes, getPedido, getPedidos, createPedido, updatePedido, cambiarEstadoPedido
 } from '../../services/ventas.service'
 import { getProductos, getBodegas } from '../../services/inventario.service'
+import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', {
@@ -75,18 +76,10 @@ export function PedidoForm() {
   const [notas, setNotas] = useState('')
   const [condicionesPago, setCondicionesPago] = useState('')
 
-  const [docConfigs, setDocConfigs] = useState<any[]>([])
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('edatia_config_documentos')
-      if (saved) {
-        setDocConfigs(JSON.parse(saved))
-      }
-    } catch (e) {
-      console.error("Error loading documents configuration:", e)
-    }
-  }, [])
+  const { data: docConfigs = [] } = useQuery({
+    queryKey: ['documentos-config'],
+    queryFn: getDocumentosConfig,
+  })
 
   const { data: listPedidos = [] } = useQuery({
     queryKey: ['list-pedidos'],
@@ -95,7 +88,7 @@ export function PedidoForm() {
 
   // Calculate next consecutive
   const computedConsecutive = useMemo(() => {
-    const doc = docConfigs.find((d: any) => d.sigla === 'PV' && d.estado === 'ACTIVO')
+    const doc = docConfigs.find((d: any) => d.sigla === 'PV' && d.activo)
     const basePrefix = doc?.prefijo || 'PV'
     const startSeq = doc?.consecutivoSiguiente || 1
     
@@ -151,6 +144,13 @@ export function PedidoForm() {
   const clienteSeleccionado = (clientesAll as any[]).find((c: any) => String(c.id) === clienteId)
   const totals = useMemo(() => calcTotals(lines), [lines])
 
+  const mutIncrementConsecutive = useMutation({
+    mutationFn: (id: number) => incrementarConsecutivo(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
+    }
+  })
+
   const mutSave = useMutation({
     mutationFn: (data: any) => {
       if (isEdit) {
@@ -159,20 +159,15 @@ export function PedidoForm() {
         return createPedido(data)
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       if (!isEdit) {
-        try {
-          const saved = localStorage.getItem('edatia_config_documentos')
-          if (saved) {
-            const docs = JSON.parse(saved)
-            const docIdx = docs.findIndex((d: any) => d.sigla === 'PV' && d.estado === 'ACTIVO')
-            if (docIdx >= 0) {
-              docs[docIdx].consecutivoSiguiente = Number(docs[docIdx].consecutivoSiguiente ?? 1) + 1
-              localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
-            }
+        const doc = docConfigs.find((d: any) => d.sigla === 'PV' && d.activo)
+        if (doc) {
+          try {
+            await mutIncrementConsecutive.mutateAsync(doc.id)
+          } catch (e) {
+            console.error("Error updating consecutive on server:", e)
           }
-        } catch (e) {
-          console.error("Error updating consecutive in config:", e)
         }
       }
       qc.invalidateQueries({ queryKey: ['pedidos'] })

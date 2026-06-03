@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { getImpuestos, createImpuesto, updateImpuesto, deleteImpuesto } from '../../services/erp.service'
 import { 
   Percent, Plus, Search, Trash2, Edit3, CheckCircle2, 
   SlidersHorizontal, CheckSquare, Square, FileText, ArrowRightLeft,
@@ -178,7 +181,6 @@ function PremiumCheckboxCard({ checked, onChange, label, description }: { checke
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigImpuestos() {
-  const [impuestos, setImpuestos] = useState<ImpuestoConfig[]>([])
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('TODOS')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
@@ -188,26 +190,42 @@ export function ConfigImpuestos() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<Partial<ImpuestoConfig>>({})
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_impuestos')
-    if (saved) {
-      try {
-        setImpuestos(JSON.parse(saved))
-      } catch (e) {
-        setImpuestos(DEFAULT_IMPUESTOS)
-      }
-    } else {
-      setImpuestos(DEFAULT_IMPUESTOS)
-      localStorage.setItem('edatia_config_impuestos', JSON.stringify(DEFAULT_IMPUESTOS))
-    }
-  }, [])
+  const queryClient = useQueryClient()
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['impuestos'],
+    queryFn: getImpuestos,
+  })
 
-  const saveToLocalStorage = (items: ImpuestoConfig[]) => {
-    setImpuestos(items)
-    localStorage.setItem('edatia_config_impuestos', JSON.stringify(items))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 3000)
-  }
+  const createMutation = useMutation({
+    mutationFn: (dto: Partial<ImpuestoConfig>) => createImpuesto(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['impuestos'] })
+      toast.success('Impuesto creado')
+      setSavedAlert(true)
+      setTimeout(() => setSavedAlert(false), 3000)
+    },
+    onError: () => toast.error('Error al guardar'),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: Partial<ImpuestoConfig> }) => updateImpuesto(id, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['impuestos'] })
+      toast.success('Impuesto actualizado')
+      setSavedAlert(true)
+      setTimeout(() => setSavedAlert(false), 3000)
+    },
+    onError: () => toast.error('Error al guardar'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteImpuesto(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['impuestos'] })
+      toast.success('Impuesto eliminado')
+    },
+    onError: () => toast.error('Error al eliminar'),
+  })
 
   const handleOpenNew = () => {
     setEditingId(null)
@@ -243,8 +261,7 @@ export function ConfigImpuestos() {
       return
     }
     if (window.confirm('¿Está seguro de que desea eliminar este impuesto? Esta acción no se puede deshacer.')) {
-      const updated = impuestos.filter(i => i.id !== id)
-      saveToLocalStorage(updated)
+      deleteMutation.mutate(id)
     }
   }
 
@@ -255,14 +272,13 @@ export function ConfigImpuestos() {
       return
     }
 
-    let updated: ImpuestoConfig[]
     if (editingId) {
-      updated = impuestos.map(i => (i.id === editingId ? { ...i, ...form } as ImpuestoConfig : i))
+      updateMutation.mutate({ id: editingId, dto: { ...form } as Partial<ImpuestoConfig> }, {
+        onSuccess: () => setViewMode('list'),
+      })
     } else {
-      const newId = `imp_${Date.now()}`
-      const newImp: ImpuestoConfig = {
+      const newImp: Partial<ImpuestoConfig> = {
         ...form,
-        id: newId,
         codigo: form.codigo!,
         nombre: form.nombre!,
         sigla: form.sigla!.toUpperCase(),
@@ -277,15 +293,16 @@ export function ConfigImpuestos() {
         cuentaDevolucionVenta: form.cuentaDevolucionVenta || '',
         cuentaCompra: form.cuentaCompra || '',
         cuentaDevolucionCompra: form.cuentaDevolucionCompra || ''
-      } as ImpuestoConfig
-      updated = [...impuestos, newImp]
+      }
+      createMutation.mutate(newImp, {
+        onSuccess: () => setViewMode('list'),
+      })
     }
-
-    saveToLocalStorage(updated)
-    setViewMode('list')
   }
 
-  const filtered = impuestos.filter(i => {
+  if (isLoading) return <div className="p-8 text-center text-slate-400">Cargando impuestos...</div>
+
+  const filtered = items.filter((i: ImpuestoConfig) => {
     const matchesSearch =
       i.nombre.toLowerCase().includes(search.toLowerCase()) ||
       i.sigla.toLowerCase().includes(search.toLowerCase()) ||

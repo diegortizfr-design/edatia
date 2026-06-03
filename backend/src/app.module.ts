@@ -18,6 +18,20 @@ import { ConfiguracionModule } from './configuracion/configuracion.module';
 import { HerramientasModule } from './herramientas/herramientas.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DigitalModule } from './digital/digital.module';
+import { SucursalesModule } from './sucursales/sucursales.module';
+import { DocumentosConfigModule } from './documentos-config/documentos-config.module';
+import { GeolocalizacionModule } from './geolocalizacion/geolocalizacion.module';
+
+// ── Módulos migrados desde localStorage ──────────────────────────────────────
+import { ImpuestosModule } from './impuestos/impuestos.module';
+import { MonedasModule } from './monedas/monedas.module';
+import { CajasBancosModule } from './cajas-bancos/cajas-bancos.module';
+import { RolesModule } from './roles/roles.module';
+import { VendedoresModule } from './vendedores/vendedores.module';
+import { GruposProductoModule } from './grupos-producto/grupos-producto.module';
+import { AuditoriaErpModule } from './auditoria-erp/auditoria-erp.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
+import { CierrePeriodoModule } from './cierre-periodo/cierre-periodo.module';
 
 @Module({
   imports: [
@@ -44,6 +58,20 @@ import { DigitalModule } from './digital/digital.module';
     HerramientasModule,
     DashboardModule,
     DigitalModule,
+    SucursalesModule,
+    DocumentosConfigModule,
+    GeolocalizacionModule,
+
+    // ── Módulos migrados desde localStorage ──────────────────────────────────
+    ImpuestosModule,
+    MonedasModule,
+    CajasBancosModule,
+    RolesModule,
+    VendedoresModule,
+    GruposProductoModule,
+    AuditoriaErpModule,
+    NotificacionesModule,
+    CierrePeriodoModule,
   ],
   controllers: [AppController],
   providers: [

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   getSesion, buscarProductosPos, crearVentaPos, anularVentaPos,
 } from '../../services/pos.service'
+import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
@@ -48,24 +49,19 @@ export function PosScreen() {
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
 
-  const [docConfigs, setDocConfigs] = useState<any[]>([])
+  const { data: allDocs = [] } = useQuery(['documentos-config'], getDocumentosConfig)
+
+  const docConfigs = useMemo(() => {
+    return allDocs.filter((d: any) => (d.sigla === 'POS' || d.sigla === 'DPE') && d.activo)
+  }, [allDocs])
+
   const [tipoDocumento, setTipoDocumento] = useState<'POS' | 'DPE'>('POS')
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('edatia_config_documentos')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        const filtered = parsed.filter((d: any) => (d.sigla === 'POS' || d.sigla === 'DPE') && d.estado === 'ACTIVO')
-        setDocConfigs(filtered)
-        if (filtered.length > 0) {
-          setTipoDocumento(filtered[0].sigla)
-        }
-      }
-    } catch (e) {
-      console.error("Error loading POS document configs:", e)
+    if (docConfigs.length > 0) {
+      setTipoDocumento(docConfigs[0].sigla)
     }
-  }, [])
+  }, [docConfigs])
 
   const sesId = parseInt(sesionId ?? '0')
 
@@ -80,21 +76,20 @@ export function PosScreen() {
     { enabled: !!sesion?.caja?.bodegaId && q.length > 0, keepPreviousData: true }
   )
 
+  const mutIncrementConsecutive = useMutation({
+    mutationFn: (id: number) => incrementarConsecutivo(id)
+  })
+
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
-    onSuccess: (data) => {
-      try {
-        const saved = localStorage.getItem('edatia_config_documentos')
-        if (saved) {
-          const docs = JSON.parse(saved)
-          const docIdx = docs.findIndex((d: any) => d.sigla === tipoDocumento && d.estado === 'ACTIVO')
-          if (docIdx >= 0) {
-            docs[docIdx].consecutivoSiguiente = Number(docs[docIdx].consecutivoSiguiente ?? 1) + 1
-            localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
-          }
+    onSuccess: async (data) => {
+      const doc = docConfigs.find((d: any) => d.sigla === tipoDocumento && d.activo)
+      if (doc) {
+        try {
+          await mutIncrementConsecutive.mutateAsync(doc.id)
+        } catch (e) {
+          console.error("Error updating consecutive on server:", e)
         }
-      } catch (e) {
-        console.error("Error updating consecutive in config:", e)
       }
       setVentaOk(data)
       setCart([])

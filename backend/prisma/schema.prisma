@@ -129,6 +129,204 @@ model Empresa {
 
   // ── Manager ───────────────────────────────────────
   clienteManager       ClienteManager?
+
+  // ── Configuración ERP ─────────────────────────────
+  sucursales           Sucursal[]
+  documentosConfig     DocumentoConfig[]
+  configuracionERP     ConfiguracionERP?
+  formatosImpresion    FormatoImpresion[]
+  regimenesFiscales    RegimenFiscal[]
+  codigosCIIU          CodigoCIIU[]
+  responsabilidadesFiscales ResponsabilidadFiscal[]
+
+  // ── Módulos migrados desde localStorage ──────────
+  impuestos            Impuesto[]
+  monedas              Moneda[]
+  cajasBancos          CajaBanco[]
+  roles                Rol[]
+  vendedores           Vendedor[]
+  gruposProducto       GrupoProducto[]
+  periodosCierre       PeriodoCierreERP[]
+  auditLogsERP         AuditLogERP[]
+  notificaciones       Notificacion[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO CONFIGURACIÓN ERP — Datos reales en BD (antes estaban en localStorage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Sucursal {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo        String
+  nombre        String
+  correo        String?
+  direccion     String
+  pais          String   @default("CO")
+  departamento  String?
+  municipio     String?
+  codigoDane    String?
+  codigoPostal  String?
+  estado        String   @default("ACTIVO")  // ACTIVO | INACTIVO
+
+  // Soft delete con auditoría
+  deletedAt     DateTime?
+  deletedBy     Int?       // userId que autorizó la eliminación
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model DocumentoConfig {
+  id                    Int      @id @default(autoincrement())
+  empresaId             Int
+  empresa               Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre                String
+  sigla                 String
+  prefijo               String
+  tipoOperacion         String   // VENTAS | COMPRAS | INVENTARIO | TESORERIA | NOMINA | CONTABILIDAD | etc.
+  plantillaImpresion    String   @default("CARTA")  // CARTA | TIRILLA_80 | TIRILLA_58
+  esElectronico         Boolean  @default(false)
+  estado                String   @default("ACTIVO")  // ACTIVO | INACTIVO
+
+  consecutivoInicial    Int      @default(1)
+  consecutivoSiguiente  Int      @default(1)
+
+  // Campos DIAN para documentos electrónicos
+  resolucionDian        String?
+  fechaResolucion       DateTime?
+  vigenciaMeses         Int?
+  rangoDesde            Int?
+  rangoHasta            Int?
+
+  // Soft delete con auditoría
+  deletedAt             DateTime?
+  deletedBy             Int?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([empresaId, sigla])
+  @@index([empresaId])
+}
+
+model ConfiguracionERP {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int      @unique
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+
+  // ── Contabilidad ──────────────────────────────────
+  cuentaVentas          String?  @default("413505")
+  cuentaIva             String?  @default("240805")
+  cuentaRete            String?  @default("135515")
+  cuentaCaja            String?  @default("110505")
+
+  // ── Costos ────────────────────────────────────────
+  metodoCosteo          String?  @default("PROMEDIO")
+  margenUtilidadBase    String?  @default("30")
+  bloquearBajoCosto     Boolean  @default(false)
+  incluirFletes         Boolean  @default(false)
+
+  // ── Productos ─────────────────────────────────────
+  skuAutogenerado          Boolean  @default(true)
+  skuLength                String?  @default("8")
+  permitirDuplicadoBarras  Boolean  @default(false)
+  unidadMedidaDefecto      String?  @default("UND")
+
+  // ── Ventas ────────────────────────────────────────
+  consecutivoPrefijo           String?  @default("SETT")
+  permitirCotizacionesVencidas Boolean  @default(false)
+  terminosDefecto              String?  @default("Gracias por su compra.")
+  plantillaImpresion           String?  @default("TIRILLA_80")
+
+  // ── Cartera ───────────────────────────────────────
+  limiteCreditoDefecto  String?  @default("1000000")
+  plazoPagoDefecto      String?  @default("30")
+  tasaInteresMora       String?  @default("1.5")
+  bloquearClientesMora  Boolean  @default(false)
+
+  // ── Emisión Electrónica ───────────────────────────
+  entornoDian           String?  @default("PRUEBAS")
+  softwarePinDian       String?
+  softwareIdDian        String?
+  notificarEmisionEmail Boolean  @default(true)
+
+  // ── Códigos de Administrador ──────────────────────
+  // Nota: En producción se deberían hashear con bcrypt
+  codeEliminarDocumento    String?  @default("EDATIA123")
+  codeEliminarSucursal     String?  @default("SUCURSAL123")
+  codeModificarConsecutivo String?  @default("ADMIN123")
+  codeAnularTransaccion    String?  @default("SUPER99")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model FormatoImpresion {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+
+  tipo          String   // CARTA | POS_80 | POS_58
+  margenSup     Int      @default(10)
+  margenInf     Int      @default(10)
+  margenIzq     Int      @default(10)
+  margenDer     Int      @default(10)
+  colorAcento   String?  @default("#4F46E5")
+  mostrarLogo   Boolean  @default(true)
+  mostrarFirma  Boolean  @default(false)
+  encabezado    String?
+  piePagina     String?
+
+  updatedAt     DateTime @updatedAt
+
+  @@unique([empresaId, tipo])
+  @@index([empresaId])
+}
+
+model RegimenFiscal {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  codigo      String
+  nombre      String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model CodigoCIIU {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  codigo      String
+  descripcion String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model ResponsabilidadFiscal {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  codigo      String
+  descripcion String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
 }
 
 // ─── Edatia Manager ───────────────────────────────────────────────────────────
@@ -1588,6 +1786,398 @@ model AuditLog {
   @@index([createdAt])
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MÓDULOS MIGRADOS DESDE LOCALSTORAGE — Persistidos en PostgreSQL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Reemplaza: edatia_config_impuestos
+model Impuesto {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre        String
+  tipo          String   // IVA | RETEFUENTE | RETEIVA | RETEICA | OTRO
+  tarifa        Decimal  @db.Decimal(8, 4)
+  cuentaDebito  String?
+  cuentaCredito String?
+  aplica        String   @default("VENTA")  // VENTA | COMPRA | AMBOS
+  activo        Boolean  @default(true)
+  esDefecto     Boolean  @default(false)
+  notas         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, tipo])
+  @@index([empresaId, activo])
+}
+
+// Reemplaza: edatia_config_monedas
+model Moneda {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo      String
+  nombre      String
+  simbolo     String
+  tasaCambio  Decimal  @default(1) @db.Decimal(16, 6)
+  esPrincipal Boolean  @default(false)
+  activo      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_config_cajas_bancos
+model CajaBanco {
+  id           Int      @id @default(autoincrement())
+  empresaId    Int
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre       String
+  tipo         String   // CAJA | BANCO
+  banco        String?
+  numeroCuenta String?
+  tipoCuenta   String?  // CORRIENTE | AHORRO
+  cuentaPUC    String?
+  sucursalId   Int?
+  saldoInicial Decimal  @default(0) @db.Decimal(15, 2)
+  activo       Boolean  @default(true)
+  notas        String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, tipo])
+}
+
+// Reemplaza: edatia_seguridad_roles
+model Rol {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  descripcion String?
+  permisos    String[]
+  esAdmin     Boolean  @default(false)
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_maestros_grupos
+model GrupoProducto {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_vendedores
+model Vendedor {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  email       String?
+  telefono    String?
+  documento   String?
+  comisionPct Decimal  @default(0) @db.Decimal(5, 2)
+  activo      Boolean  @default(true)
+  notas       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, activo])
+}
+
+// Reemplaza: edatia_seguridad_cierre
+model PeriodoCierreERP {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+
+  tipo          String   // DIARIO | MENSUAL | ANUAL
+  periodo       String   // "2026-05" | "2026"
+  estado        String   @default("ABIERTO")  // ABIERTO | EN_PROCESO | CERRADO
+  fechaCierre   DateTime?
+  cerradoPor    Int?
+  observaciones String?
+
+  createdAt     DateTime @default(now())
+
+  @@unique([empresaId, tipo, periodo])
+  @@index([empresaId, estado])
+}
+
+// Reemplaza: edatia_seguridad_auditoria
+model AuditLogERP {
+  id             Int      @id @default(autoincrement())
+  empresaId      Int
+  empresa        Empresa  @relation(fields: [empresaId], references: [id])
+
+  accion         String
+  modulo         String
+  entidad        String?
+  entidadId      String?
+  descripcion    String?
+  valorAntes     Json?
+  valorDespues   Json?
+  usuarioId      Int?
+  usuarioNombre  String?
+  ip             String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([empresaId, accion])
+  @@index([empresaId, modulo])
+  @@index([empresaId, createdAt])
+}
+
+// Reemplaza: edatia_seguridad_notificaciones
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  tipo        String   // ALERTA | INFO | ADVERTENCIA | ERROR
+  titulo      String
+  mensaje     String
+  modulo      String?
+  leida       Boolean  @default(false)
+  usuarioId   Int?
+  accionUrl   String?
+
+  createdAt   DateTime @default(now())
+  leidaAt     DateTime?
+
+  @@index([empresaId, leida])
+  @@index([empresaId, usuarioId])
+  @@index([empresaId, createdAt])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// MÓDULOS MIGRADOS DESDE LOCALSTORAGE — Ahora persistidos en PostgreSQL
+// ───────────────────────────────────────────────────────────────────────────────
+
+// Reemplaza: edatia_config_impuestos
+model Impuesto {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String   // Ej: "IVA 19%", "ReteFuente 3.5%"
+  tipo        String   // IVA | RETEFUENTE | RETEIVA | RETEICA | OTRO
+  tarifa      Decimal  @db.Decimal(8, 4)  // Porcentaje: 19.0000, 3.5000
+  cuentaDebito  String?  // Código PUC débito
+  cuentaCredito String?  // Código PUC crédito
+  aplica      String   @default("VENTA")  // VENTA | COMPRA | AMBOS
+  activo      Boolean  @default(true)
+  esDefecto   Boolean  @default(false)
+  notas       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, tipo])
+  @@index([empresaId, activo])
+}
+
+// Reemplaza: edatia_config_monedas
+model Moneda {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo      String   // ISO 4217: COP, USD, EUR, MXN
+  nombre      String   // "Peso Colombiano"
+  simbolo     String   // "$", "US$", "€"
+  tasaCambio  Decimal  @default(1) @db.Decimal(16, 6)  // vs moneda principal
+  esPrincipal Boolean  @default(false)  // Solo una por empresa
+  activo      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_config_cajas_bancos
+model CajaBanco {
+  id              Int      @id @default(autoincrement())
+  empresaId       Int
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre          String
+  tipo            String   // CAJA | BANCO
+  // Datos bancarios (solo tipo BANCO)
+  banco           String?
+  numeroCuenta    String?
+  tipoCuenta      String?  // CORRIENTE | AHORRO
+  // Cuenta contable PUC vinculada
+  cuentaPUC       String?
+  // Sucursal vinculada
+  sucursalId      Int?
+  saldoInicial    Decimal  @default(0) @db.Decimal(15, 2)
+  activo          Boolean  @default(true)
+  notas           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, tipo])
+}
+
+// Reemplaza: edatia_seguridad_roles
+model Rol {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  descripcion String?
+  // Permisos como array de strings: ["ventas.crear", "inventario.ver", "config.admin"]
+  permisos    String[]
+  esAdmin     Boolean  @default(false)
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_maestros_grupos
+model GrupoProducto {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+// Reemplaza: edatia_vendedores
+model Vendedor {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  nombre      String
+  email       String?
+  telefono    String?
+  documento   String?  // Número de cédula
+  // Comisión base en %
+  comisionPct Decimal  @default(0) @db.Decimal(5, 2)
+  activo      Boolean  @default(true)
+  notas       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId, activo])
+}
+
+// Reemplaza: edatia_seguridad_cierre
+model PeriodoCierreERP {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  tipo        String   // DIARIO | MENSUAL | ANUAL
+  periodo     String   // Ej: "2026-05", "2026"
+  estado      String   @default("ABIERTO")  // ABIERTO | EN_PROCESO | CERRADO
+  fechaCierre DateTime?
+  cerradoPor  Int?     // userId
+  observaciones String?
+
+  createdAt   DateTime @default(now())
+
+  @@unique([empresaId, tipo, periodo])
+  @@index([empresaId, estado])
+}
+
+// Reemplaza: edatia_seguridad_auditoria
+model AuditLogERP {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  accion      String   // LOGIN | CREAR | EDITAR | ELIMINAR | ANULAR | IMPRIMIR | etc.
+  modulo      String   // VENTAS | INVENTARIO | CONFIGURACION | SEGURIDAD | etc.
+  entidad     String?  // Nombre de la entidad afectada
+  entidadId   String?  // ID de la entidad
+  descripcion String?
+  valorAntes  Json?    // Snapshot antes del cambio
+  valorDespues Json?   // Snapshot después del cambio
+
+  usuarioId   Int?
+  usuarioNombre String?
+  ip          String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([empresaId, accion])
+  @@index([empresaId, modulo])
+  @@index([empresaId, createdAt])
+  @@index([empresaId, usuarioId])
+}
+
+// Reemplaza: edatia_seguridad_notificaciones
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+
+  tipo        String   // ALERTA | INFO | ADVERTENCIA | ERROR
+  titulo      String
+  mensaje     String
+  modulo      String?  // Módulo que originó la notificación
+  leida       Boolean  @default(false)
+  usuarioId   Int?     // null = para todos
+  accionUrl   String?  // URL a la que redirige al hacer clic
+
+  createdAt   DateTime @default(now())
+  leidaAt     DateTime?
+
+  @@index([empresaId, leida])
+  @@index([empresaId, usuarioId])
+  @@index([empresaId, createdAt])
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HERRAMIENTAS GRATUITAS (Lead Magnets)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1659,3 +2249,59 @@ model PedidoVentaItem {
   total            Decimal     @db.Decimal(15,2)
   orden            Int         @default(0)
 }
+
+// ── Geolocalización y División Política ──────────────────────────────────────
+
+model Pais {
+  id                   Int            @id @default(autoincrement())
+  codigo               String         @unique
+  nombre               String
+  codigoDianExogena    String?
+  indicativoTelefonico String?
+  departamentos        Departamento[]
+}
+
+model Departamento {
+  id       Int      @id @default(autoincrement())
+  paisId   Int
+  pais     Pais     @relation(fields: [paisId], references: [id], onDelete: Cascade)
+  codigo   String
+  nombre   String
+  ciudades Ciudad[]
+
+  @@unique([paisId, codigo])
+}
+
+model Ciudad {
+  id             Int          @id @default(autoincrement())
+  departamentoId Int
+  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Cascade)
+  nombre         String
+  codigoDian     String?      // Código DIVIPOLA de 5 dígitos (ej. 05001)
+  comunas        Comuna[]
+  barrios        Barrio[]
+
+  @@unique([departamentoId, nombre])
+}
+
+model Comuna {
+  id       Int      @id @default(autoincrement())
+  ciudadId Int
+  ciudad   Ciudad   @relation(fields: [ciudadId], references: [id], onDelete: Cascade)
+  nombre   String
+  barrios  Barrio[]
+
+  @@unique([ciudadId, nombre])
+}
+
+model Barrio {
+  id       Int     @id @default(autoincrement())
+  ciudadId Int
+  ciudad   Ciudad  @relation(fields: [ciudadId], references: [id], onDelete: Cascade)
+  comunaId Int?
+  comuna   Comuna? @relation(fields: [comunaId], references: [id], onDelete: SetNull)
+  nombre   String
+
+  @@unique([ciudadId, comunaId, nombre])
+}
+

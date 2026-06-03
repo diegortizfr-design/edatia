@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getEmpresaConfig, updateEmpresaConfig } from '../../services/configuracion.service'
+import { getEmpresaConfig, updateEmpresaConfig, getConfigERP, updateConfigERP, getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState } from '../../services/configuracion.service'
 import { getBodegas, updateBodega } from '../../services/inventario.service'
-import { DEFAULT_GEO_DATA, GeolocationState } from './ConfigGeolocalizacion'
 import {
   Building2, FileText, MapPin, Phone, Palette, ShieldCheck,
   Save, CheckCircle2, AlertCircle, ChevronRight, Info, Calculator,
@@ -110,75 +109,35 @@ export function ConfigEmpresa() {
   const [form, setForm] = useState<any>({})
   const [saved, setSaved] = useState(false)
 
-  const [geoData, setGeoData] = useState<GeolocationState | null>(null)
+  // Geodata from API
+  const { data: geoData = { paises: [], departamentos: [], ciudades: [], comunas: [], barrios: [] } } = useQuery({
+    queryKey: ['geolocation-state'],
+    queryFn: getGeolocationState
+  })
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_geolocalizacion')
-    if (saved) {
-      try {
-        setGeoData(JSON.parse(saved))
-      } catch (e) {
-        setGeoData(DEFAULT_GEO_DATA)
-      }
-    } else {
-      setGeoData(DEFAULT_GEO_DATA)
-      localStorage.setItem('edatia_config_geolocalizacion', JSON.stringify(DEFAULT_GEO_DATA))
-    }
-  }, [])
+  // Catálogos contables desde la API (reemplazan edatia_regimenes, edatia_ciiu, edatia_responsabilidades)
+  const { data: regimenesDB = [] } = useQuery({ queryKey: ['regimenes-fiscales'], queryFn: getRegimenesFiscales })
+  const { data: ciiuDB = [] } = useQuery({ queryKey: ['codigos-ciiu'], queryFn: getCodigosCIIU })
+  const { data: responsabilidadesDB = [] } = useQuery({ queryKey: ['responsabilidades-fiscales'], queryFn: getResponsabilidadesFiscales })
 
-  const [dynRegimenes, setDynRegimenes] = useState<{ value: string; label: string }[]>([])
-  const [dynCiius, setDynCiius] = useState<{ value: string; label: string }[]>([])
-  const [dynResponsabilidades, setDynResponsabilidades] = useState<{ code: string; label: string }[]>([])
-
-  useEffect(() => {
-    // 1. Regímenes Fiscales
-    const regLS = localStorage.getItem('edatia_regimenes')
-    if (regLS) {
-      try {
-        const parsed = JSON.parse(regLS)
-        setDynRegimenes(parsed.map((r: any) => ({ value: r.codigoDian, label: `${r.codigoDian} — ${r.nombre}` })))
-      } catch (e) {
-        setDynRegimenes(REGIMENES)
-      }
-    } else {
-      setDynRegimenes(REGIMENES)
-    }
-
-    // 2. CIIU codes
-    const ciiuLS = localStorage.getItem('edatia_ciiu')
-    if (ciiuLS) {
-      try {
-        const parsed = JSON.parse(ciiuLS)
-        setDynCiius(parsed.map((c: any) => ({ value: c.codigo, label: `${c.codigo} — ${c.descripcion}` })))
-      } catch (e) {
-        setDynCiius([])
-      }
-    }
-
-    // 3. Responsabilidades
-    const respLS = localStorage.getItem('edatia_responsabilidades')
-    if (respLS) {
-      try {
-        const parsed = JSON.parse(respLS)
-        setDynResponsabilidades(parsed.map((r: any) => ({ code: r.codigo, label: `${r.codigo} — ${r.nombre}` })))
-      } catch (e) {
-        setDynResponsabilidades(RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label })))
-      }
-    } else {
-      setDynResponsabilidades(RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label })))
-    }
-  }, [])
+  const dynRegimenes = (regimenesDB as any[]).length > 0
+    ? (regimenesDB as any[]).map((r: any) => ({ value: r.codigo, label: `${r.codigo} — ${r.nombre}` }))
+    : REGIMENES
+  const dynCiius = (ciiuDB as any[]).map((c: any) => ({ value: c.codigo, label: `${c.codigo} — ${c.descripcion}` }))
+  const dynResponsabilidades = (responsabilidadesDB as any[]).length > 0
+    ? (responsabilidadesDB as any[]).map((r: any) => ({ code: r.codigo, label: `${r.codigo} — ${r.descripcion}` }))
+    : RESPONSABILIDADES.map(r => ({ code: r.code, label: r.label }))
 
   // Derived location selections
   const selectedPaisObj = geoData?.paises?.find((p: any) => p.codigo === (form.pais ?? 'CO')) || geoData?.paises?.find((p: any) => p.codigo === 'CO');
-  const selectedPaisId = selectedPaisObj?.id || 'pais_co';
+  const selectedPaisId = selectedPaisObj?.id || 1;
 
   // Filter departments by country ID
   const filteredDepts = geoData?.departamentos?.filter((d: any) => d.paisId === selectedPaisId) || [];
 
   // Match the department name in form.departamento to get its ID
   const selectedDeptObj = filteredDepts.find((d: any) => d.nombre.toLowerCase().trim() === (form.departamento || '').toLowerCase().trim());
-  const selectedDeptId = selectedDeptObj?.id || '';
+  const selectedDeptId = selectedDeptObj?.id || 0;
 
   // Filter cities by department ID
   const filteredCities = selectedDeptId
@@ -189,25 +148,20 @@ export function ConfigEmpresa() {
   const selectedCityObj = filteredCities.find((c: any) => c.nombre.toLowerCase().trim() === (form.municipio || '').toLowerCase().trim());
   const selectedCityId = selectedCityObj?.id || '';
 
-  const { data: empresa, isLoading } = useQuery(['config-empresa'], getEmpresaConfig)
-  const { data: bodegas = [], isFetched: isBodegasFetched } = useQuery(['bodegas-config-empresa'], getBodegas)
+  const { data: empresa, isLoading } = useQuery({ queryKey: ['config-empresa'], queryFn: getEmpresaConfig })
+  const { data: bodegas = [], isFetched: isBodegasFetched } = useQuery({ queryKey: ['bodegas-config-empresa'], queryFn: getBodegas })
+  const { data: configERP } = useQuery({ queryKey: ['config-erp'], queryFn: getConfigERP })
 
   const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
     if (empresa && isBodegasFetched && !initialized) {
-      // Cargar configuraciones del localStorage
-      const savedContabilidad = JSON.parse(localStorage.getItem('edatia_config_contabilidad') || '{}')
-      const savedCostos = JSON.parse(localStorage.getItem('edatia_config_costos') || '{}')
-      const savedProductos = JSON.parse(localStorage.getItem('edatia_config_productos') || '{}')
-      const savedVentas = JSON.parse(localStorage.getItem('edatia_config_ventas') || '{}')
-      const savedCartera = JSON.parse(localStorage.getItem('edatia_config_cartera') || '{}')
-      const savedDian = JSON.parse(localStorage.getItem('edatia_config_dian') || '{}')
-      const savedAdminCodes = JSON.parse(localStorage.getItem('edatia_admin_codes') || '{}')
-
-      const dbStockNegativoBodegas = bodegas
+      const dbStockNegativoBodegas = (bodegas as any[])
         .filter((b: any) => b.permiteStockNegativo)
         .map((b: any) => b.id)
+
+      // Config ERP viene de la BD (ya no de localStorage)
+      const erp: any = configERP || {}
 
       setForm({
         ...empresa,
@@ -215,47 +169,40 @@ export function ConfigEmpresa() {
         fechaMatriculaMercantil: empresa.fechaMatriculaMercantil
           ? empresa.fechaMatriculaMercantil.split('T')[0]
           : '',
-        // Valores por defecto
-        cuentaVentas: '413505',
-        cuentaIva: '240805',
-        cuentaRete: '135515',
-        cuentaCaja: '110505',
-        metodoCosteo: 'PROMEDIO',
-        margenUtilidadBase: '30',
-        bloquearBajoCosto: false,
-        incluirFletes: false,
-        skuAutogenerado: true,
-        skuLength: '8',
-        permitirDuplicadoBarras: false,
-        unidadMedidaDefecto: 'UND',
-        consecutivoPrefijo: 'SETT',
+        // Config operativa desde la BD (con fallback a defaults)
+        cuentaVentas: erp.cuentaVentas ?? '413505',
+        cuentaIva: erp.cuentaIva ?? '240805',
+        cuentaRete: erp.cuentaRete ?? '135515',
+        cuentaCaja: erp.cuentaCaja ?? '110505',
+        metodoCosteo: erp.metodoCosteo ?? 'PROMEDIO',
+        margenUtilidadBase: erp.margenUtilidadBase ?? '30',
+        bloquearBajoCosto: erp.bloquearBajoCosto ?? false,
+        incluirFletes: erp.incluirFletes ?? false,
+        skuAutogenerado: erp.skuAutogenerado ?? true,
+        skuLength: erp.skuLength ?? '8',
+        permitirDuplicadoBarras: erp.permitirDuplicadoBarras ?? false,
+        unidadMedidaDefecto: erp.unidadMedidaDefecto ?? 'UND',
+        consecutivoPrefijo: erp.consecutivoPrefijo ?? 'SETT',
         consecutivoInicial: '1',
-        permitirCotizacionesVencidas: false,
-        terminosDefecto: 'Gracias por su compra.',
-        plantillaImpresion: 'TIRILLA_80',
-        limiteCreditoDefecto: '1000000',
-        plazoPagoDefecto: '30',
-        tasaInteresMora: '1.5',
-        bloquearClientesMora: false,
-        entornoDian: 'PRUEBAS',
-        softwarePinDian: '12345',
-        softwareIdDian: '',
-        notificarEmisionEmail: true,
-        codeEliminarDocumento: 'EDATIA123',
-        codeModificarConsecutivo: 'ADMIN123',
-        codeAnularTransaccion: 'SUPER99',
-        // Sobrescribir con lo guardado
-        ...savedContabilidad,
-        ...savedCostos,
-        ...savedProductos,
-        ...savedVentas,
-        ...savedCartera,
-        ...savedDian,
-        ...savedAdminCodes,
+        permitirCotizacionesVencidas: erp.permitirCotizacionesVencidas ?? false,
+        terminosDefecto: erp.terminosDefecto ?? 'Gracias por su compra.',
+        plantillaImpresion: erp.plantillaImpresion ?? 'TIRILLA_80',
+        limiteCreditoDefecto: erp.limiteCreditoDefecto ?? '1000000',
+        plazoPagoDefecto: erp.plazoPagoDefecto ?? '30',
+        tasaInteresMora: erp.tasaInteresMora ?? '1.5',
+        bloquearClientesMora: erp.bloquearClientesMora ?? false,
+        entornoDian: erp.entornoDian ?? 'PRUEBAS',
+        softwarePinDian: erp.softwarePinDian ?? '',
+        softwareIdDian: erp.softwareIdDian ?? '',
+        notificarEmisionEmail: erp.notificarEmisionEmail ?? true,
+        codeEliminarDocumento: erp.codeEliminarDocumento ?? 'EDATIA123',
+        codeModificarConsecutivo: erp.codeModificarConsecutivo ?? 'ADMIN123',
+        codeAnularTransaccion: erp.codeAnularTransaccion ?? 'SUPER99',
+        codeEliminarSucursal: erp.codeEliminarSucursal ?? 'SUCURSAL123',
       })
       setInitialized(true)
     }
-  }, [empresa, bodegas, isBodegasFetched, initialized])
+  }, [empresa, bodegas, isBodegasFetched, initialized, configERP])
 
   const set = (key: string) => (val: any) => setForm((f: any) => ({ ...f, [key]: val }))
   const setCheck = (key: string) => (val: boolean) => setForm((f: any) => ({ ...f, [key]: val }))
@@ -270,76 +217,50 @@ export function ConfigEmpresa() {
 
   const mutSave = useMutation({
     mutationFn: async () => {
-      // 1. Guardar configuraciones adicionales en localStorage
-      const contabilidadConfig = {
+      // 1. Guardar Config ERP en la BD (ya no en localStorage)
+      const erpPayload = {
         cuentaVentas: form.cuentaVentas,
         cuentaIva: form.cuentaIva,
         cuentaRete: form.cuentaRete,
         cuentaCaja: form.cuentaCaja,
-      }
-      localStorage.setItem('edatia_config_contabilidad', JSON.stringify(contabilidadConfig))
-
-      const costosConfig = {
         metodoCosteo: form.metodoCosteo,
         margenUtilidadBase: form.margenUtilidadBase,
         bloquearBajoCosto: form.bloquearBajoCosto,
         incluirFletes: form.incluirFletes,
-      }
-      localStorage.setItem('edatia_config_costos', JSON.stringify(costosConfig))
-
-      const productosConfig = {
         skuAutogenerado: form.skuAutogenerado,
         skuLength: form.skuLength,
         permitirDuplicadoBarras: form.permitirDuplicadoBarras,
         unidadMedidaDefecto: form.unidadMedidaDefecto,
-      }
-      localStorage.setItem('edatia_config_productos', JSON.stringify(productosConfig))
-
-      const ventasConfig = {
         consecutivoPrefijo: form.consecutivoPrefijo,
-        consecutivoInicial: form.consecutivoInicial,
         permitirCotizacionesVencidas: form.permitirCotizacionesVencidas,
         terminosDefecto: form.terminosDefecto,
         plantillaImpresion: form.plantillaImpresion,
-      }
-      localStorage.setItem('edatia_config_ventas', JSON.stringify(ventasConfig))
-
-      const carteraConfig = {
         limiteCreditoDefecto: form.limiteCreditoDefecto,
         plazoPagoDefecto: form.plazoPagoDefecto,
         tasaInteresMora: form.tasaInteresMora,
         bloquearClientesMora: form.bloquearClientesMora,
-      }
-      localStorage.setItem('edatia_config_cartera', JSON.stringify(carteraConfig))
-
-      const dianConfig = {
         entornoDian: form.entornoDian,
         softwarePinDian: form.softwarePinDian,
         softwareIdDian: form.softwareIdDian,
         notificarEmisionEmail: form.notificarEmisionEmail,
-      }
-      localStorage.setItem('edatia_config_dian', JSON.stringify(dianConfig))
-
-      const adminCodesConfig = {
         codeEliminarDocumento: form.codeEliminarDocumento ?? 'EDATIA123',
         codeModificarConsecutivo: form.codeModificarConsecutivo ?? 'ADMIN123',
         codeAnularTransaccion: form.codeAnularTransaccion ?? 'SUPER99',
+        codeEliminarSucursal: form.codeEliminarSucursal ?? 'SUCURSAL123',
       }
-      localStorage.setItem('edatia_admin_codes', JSON.stringify(adminCodesConfig))
+      await updateConfigERP(erpPayload)
 
-      // 1.5 Guardar relación en la base de datos para cada bodega
-      const promises = bodegas.map((b: any) => {
+      // 2. Actualizar permiteStockNegativo en bodegas (sigue en la BD)
+      const bodegaPromises = (bodegas as any[]).map((b: any) => {
         const permite = (form.stockNegativoBodegas || []).includes(b.id)
         if (b.permiteStockNegativo !== permite) {
           return updateBodega(b.id, { permiteStockNegativo: permite })
         }
         return Promise.resolve()
       })
-      await Promise.all(promises)
+      await Promise.all(bodegaPromises)
 
-      localStorage.setItem('edatia_config_stock_negativo_bodegas', JSON.stringify(form.stockNegativoBodegas || []))
-
-      // 2. Extraer y filtrar campos que no están en la Base de Datos para evitar errores de Prisma
+      // 3. Guardar datos legales de la empresa en el modelo Empresa de Prisma
       const databasePayload = { ...form }
       const frontendKeys = [
         'cuentaVentas', 'cuentaIva', 'cuentaRete', 'cuentaCaja',
@@ -348,16 +269,15 @@ export function ConfigEmpresa() {
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
         'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
-        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion'
+        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal'
       ]
-      frontendKeys.forEach(k => { delete databasePayload[k] })
-
-      // 3. Guardar cambios en el backend
+      frontendKeys.forEach((k: string) => { delete databasePayload[k] })
       return updateEmpresaConfig(databasePayload)
     },
     onSuccess: () => {
-      qc.invalidateQueries(['config-empresa'])
-      qc.invalidateQueries(['bodegas-config-empresa'])
+      qc.invalidateQueries({ queryKey: ['config-empresa'] })
+      qc.invalidateQueries({ queryKey: ['config-erp'] })
+      qc.invalidateQueries({ queryKey: ['bodegas-config-empresa'] })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
@@ -531,9 +451,9 @@ export function ConfigEmpresa() {
                     <div className="md:col-span-3">
                       <Field label="Departamento *">
                         <Select
-                          value={selectedDeptId}
+                          value={String(selectedDeptId || '')}
                           onChange={(val) => {
-                            const deptObj = geoData?.departamentos?.find((d: any) => d.id === val);
+                            const deptObj = geoData?.departamentos?.find((d: any) => String(d.id) === val);
                             if (deptObj) {
                               setForm((f: any) => ({
                                 ...f,
@@ -554,7 +474,7 @@ export function ConfigEmpresa() {
                           }}
                           options={[
                             { value: '', label: 'Seleccione Departamento...' },
-                            ...filteredDepts.map((d: any) => ({ value: d.id, label: d.nombre }))
+                            ...filteredDepts.map((d: any) => ({ value: String(d.id), label: d.nombre }))
                           ]}
                         />
                       </Field>
@@ -563,9 +483,9 @@ export function ConfigEmpresa() {
                     <div className="md:col-span-3">
                       <Field label="Municipio / Ciudad *">
                         <Select
-                          value={selectedCityId}
+                          value={String(selectedCityId || '')}
                           onChange={(val) => {
-                            const cityObj = geoData?.ciudades?.find((c: any) => c.id === val);
+                            const cityObj = geoData?.ciudades?.find((c: any) => String(c.id) === val);
                             if (cityObj) {
                               setForm((f: any) => ({
                                 ...f,
@@ -584,7 +504,7 @@ export function ConfigEmpresa() {
                           }}
                           options={[
                             { value: '', label: 'Seleccione Municipio...' },
-                            ...filteredCities.map((c: any) => ({ value: c.id, label: c.nombre }))
+                            ...filteredCities.map((c: any) => ({ value: String(c.id), label: c.nombre }))
                           ]}
                         />
                       </Field>
@@ -1274,7 +1194,7 @@ export function ConfigEmpresa() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div className="md:col-span-4">
+                <div className="md:col-span-3">
                   <Field 
                     label="Código para Eliminar Documentos" 
                     hint="Requerido al eliminar tipos de documentos de la configuración."
@@ -1287,7 +1207,20 @@ export function ConfigEmpresa() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-4">
+                <div className="md:col-span-3">
+                  <Field 
+                    label="Código para Eliminar Sucursales" 
+                    hint="Requerido al eliminar sucursales de la configuración."
+                  >
+                    <Input 
+                      value={form.codeEliminarSucursal} 
+                      onChange={set('codeEliminarSucursal')} 
+                      placeholder="SUCURSAL123" 
+                    />
+                  </Field>
+                </div>
+
+                <div className="md:col-span-3">
                   <Field 
                     label="Código para Modificar Consecutivos" 
                     hint="Requerido al alterar el consecutivo siguiente de un documento."
@@ -1300,7 +1233,7 @@ export function ConfigEmpresa() {
                   </Field>
                 </div>
 
-                <div className="md:col-span-4">
+                <div className="md:col-span-3">
                   <Field 
                     label="Código para Anular Transacciones" 
                     hint="Requerido para la anulación de facturas, traslados o ajustes."

@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal,
   Tag, BookOpen, ShoppingCart, TrendingUp, Settings, Percent, X
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { getCuentasAuxiliares } from '../../services/contabilidad.service'
+import {
+  getCategorias, createCategoria, updateCategoria, deleteCategoria,
+  getMarcas, createMarca, updateMarca, deleteMarca,
+  getUnidadesMedida, createUnidadMedida, updateUnidadMedida, deleteUnidadMedida,
+  getGruposProducto, createGrupoProducto, updateGrupoProducto, deleteGrupoProducto,
+  getImpuestos,
+} from '../../services/erp.service'
 
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
@@ -301,11 +310,10 @@ function SectionHeader({ color, label, icon }: { color: string; label: string; i
 export function ConfigProductosMaestros() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (searchParams.get('tab') as TabType) || 'categorias'
+  const queryClient = useQueryClient()
 
-  const [items, setItems] = useState<MasterItem[]>([])
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
-  const [savedAlert, setSavedAlert] = useState(false)
 
   // Formulario general
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -317,49 +325,140 @@ export function ConfigProductosMaestros() {
   // Formulario contable extendido (solo para Grupos)
   const [formContable, setFormContable] = useState<GrupoContable>(DEFAULT_CONTABLE)
 
-  // Para el selector de subgrupos
-  const [gruposList, setGruposList] = useState<MasterItem[]>([])
-
-  // Impuestos del sistema para el selector
-  const [systemTaxes, setSystemTaxes] = useState<any[]>([])
-
   const currentTabConfig = TAB_CONFIGS[activeTab] || TAB_CONFIGS.categorias
 
-  // Cargar datos
+  // Reset view when switching tabs
   useEffect(() => {
-    const saved = localStorage.getItem(currentTabConfig.storageKey)
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved))
-      } catch (e) {
-        setItems(currentTabConfig.defaultData)
-      }
-    } else {
-      setItems(currentTabConfig.defaultData)
-      localStorage.setItem(currentTabConfig.storageKey, JSON.stringify(currentTabConfig.defaultData))
-    }
     setViewMode('list')
     setSearch('')
   }, [activeTab])
 
-  // Cargar grupos si estamos en subgrupos
-  useEffect(() => {
-    if (activeTab === 'subgrupos') {
-      const savedGrupos = localStorage.getItem('edatia_maestros_grupos')
-      if (savedGrupos) {
-        try { setGruposList(JSON.parse(savedGrupos)) }
-        catch (e) { setGruposList(TAB_CONFIGS.grupos.defaultData) }
-      } else {
-        setGruposList(TAB_CONFIGS.grupos.defaultData)
-      }
-    }
-    // Cargar impuestos para el selector
-    const savedTaxes = localStorage.getItem('edatia_config_impuestos')
-    if (savedTaxes) {
-      try { setSystemTaxes(JSON.parse(savedTaxes)) }
-      catch (e) { setSystemTaxes([]) }
-    }
-  }, [activeTab, viewMode])
+  // ── API Queries per tab ─────────────────────────────────────────────────────
+  const { data: categoriasData = [], isLoading: loadingCategorias } = useQuery({
+    queryKey: ['categorias'],
+    queryFn: getCategorias,
+  })
+  const { data: marcasData = [], isLoading: loadingMarcas } = useQuery({
+    queryKey: ['marcas'],
+    queryFn: getMarcas,
+  })
+  const { data: unidadesData = [], isLoading: loadingUnidades } = useQuery({
+    queryKey: ['unidades_medida'],
+    queryFn: getUnidadesMedida,
+  })
+  const { data: gruposData = [], isLoading: loadingGrupos } = useQuery({
+    queryKey: ['grupos_producto'],
+    queryFn: getGruposProducto,
+  })
+  const { data: impuestosData = [] } = useQuery({
+    queryKey: ['impuestos'],
+    queryFn: getImpuestos,
+  })
+
+  // Derive active tab items and loading state
+  const TAB_QUERY_MAP: Record<string, { items: any[]; isLoading: boolean }> = {
+    categorias: { items: categoriasData, isLoading: loadingCategorias },
+    marcas:     { items: marcasData,     isLoading: loadingMarcas },
+    unidades:   { items: unidadesData,   isLoading: loadingUnidades },
+    grupos:     { items: gruposData,     isLoading: loadingGrupos },
+  }
+
+  const apiTabState = TAB_QUERY_MAP[activeTab]
+  // For API-backed tabs use query data; for local-only tabs (subgrupos, colores, etc.) use empty array
+  const items: MasterItem[] = apiTabState
+    ? apiTabState.items.map((x: any) => ({
+        id: String(x.id),
+        nombre: x.nombre,
+        activo: x.activo ?? true,
+        extra: x.abreviatura || x.extra || undefined,
+        contable: x.contable || undefined,
+      }))
+    : currentTabConfig.defaultData
+
+  const isLoadingItems = apiTabState?.isLoading ?? false
+
+  // gruposList for the subgrupos tab selector
+  const gruposList: MasterItem[] = gruposData.map((x: any) => ({
+    id: String(x.id),
+    nombre: x.nombre,
+    activo: x.activo ?? true,
+  }))
+
+  // systemTaxes for the grupos form
+  const systemTaxes: any[] = impuestosData
+
+  // ── Mutations ───────────────────────────────────────────────────────────────
+  const QUERY_KEY_MAP: Record<string, string[]> = {
+    categorias: ['categorias'],
+    marcas:     ['marcas'],
+    unidades:   ['unidades_medida'],
+    grupos:     ['grupos_producto'],
+  }
+
+  const CREATE_FN_MAP: Record<string, (dto: any) => Promise<any>> = {
+    categorias: createCategoria,
+    marcas:     createMarca,
+    unidades:   createUnidadMedida,
+    grupos:     createGrupoProducto,
+  }
+
+  const UPDATE_FN_MAP: Record<string, (id: number, dto: any) => Promise<any>> = {
+    categorias: updateCategoria,
+    marcas:     updateMarca,
+    unidades:   updateUnidadMedida,
+    grupos:     updateGrupoProducto,
+  }
+
+  const DELETE_FN_MAP: Record<string, (id: number) => Promise<any>> = {
+    categorias: deleteCategoria,
+    marcas:     deleteMarca,
+    unidades:   deleteUnidadMedida,
+    grupos:     deleteGrupoProducto,
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (dto: any) => {
+      const fn = CREATE_FN_MAP[activeTab]
+      if (!fn) return Promise.reject(new Error('Tab sin API'))
+      return fn(dto)
+    },
+    onSuccess: () => {
+      const key = QUERY_KEY_MAP[activeTab]
+      if (key) queryClient.invalidateQueries({ queryKey: key })
+      toast.success('Registro creado exitosamente')
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al crear el registro'),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => {
+      const fn = UPDATE_FN_MAP[activeTab]
+      if (!fn) return Promise.reject(new Error('Tab sin API'))
+      return fn(id, dto)
+    },
+    onSuccess: () => {
+      const key = QUERY_KEY_MAP[activeTab]
+      if (key) queryClient.invalidateQueries({ queryKey: key })
+      toast.success('Registro actualizado exitosamente')
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al actualizar el registro'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => {
+      const fn = DELETE_FN_MAP[activeTab]
+      if (!fn) return Promise.reject(new Error('Tab sin API'))
+      return fn(id)
+    },
+    onSuccess: () => {
+      const key = QUERY_KEY_MAP[activeTab]
+      if (key) queryClient.invalidateQueries({ queryKey: key })
+      toast.success('Registro eliminado')
+    },
+    onError: () => toast.error('Error al eliminar el registro'),
+  })
 
   const updContable = (field: keyof GrupoContable, value: any) =>
     setFormContable(prev => ({ ...prev, [field]: value }))
@@ -368,13 +467,6 @@ export function ConfigProductosMaestros() {
     const list = formContable.impuestosCompra || []
     const updated = list.includes(taxId) ? list.filter(x => x !== taxId) : [...list, taxId]
     updContable('impuestosCompra', updated)
-  }
-
-  const saveItems = (newItems: MasterItem[]) => {
-    setItems(newItems)
-    localStorage.setItem(currentTabConfig.storageKey, JSON.stringify(newItems))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 2000)
   }
 
   const handleOpenNew = () => {
@@ -399,8 +491,9 @@ export function ConfigProductosMaestros() {
 
   const handleDelete = (id: string) => {
     if (window.confirm('¿Está seguro de eliminar este registro maestro?')) {
-      const filtered = items.filter(x => x.id !== id)
-      saveItems(filtered)
+      if (QUERY_KEY_MAP[activeTab]) {
+        deleteMutation.mutate(Number(id))
+      }
     }
   }
 
@@ -408,36 +501,26 @@ export function ConfigProductosMaestros() {
     e.preventDefault()
     if (!formNombre) return alert('El nombre es obligatorio.')
 
-    let newItems = [...items]
-    if (editingId) {
-      newItems = items.map(x => x.id === editingId ? {
-        ...x,
-        nombre: formNombre,
-        activo: formActivo,
-        extra: formExtra || undefined,
-        parentId: formParentId || undefined,
-        contable: activeTab === 'grupos' ? formContable : undefined
-      } : x)
-    } else {
-      const newItem: MasterItem = {
-        id: `${activeTab.slice(0, 3)}_${Date.now()}`,
-        nombre: formNombre,
-        activo: formActivo,
-        extra: formExtra || undefined,
-        parentId: formParentId || undefined,
-        contable: activeTab === 'grupos' ? formContable : undefined
-      }
-      newItems = [...items, newItem]
+    const dto: any = {
+      nombre: formNombre,
+      activo: formActivo,
+      ...(formExtra ? { abreviatura: formExtra } : {}),
+      ...(activeTab === 'grupos' ? { contable: formContable } : {}),
     }
 
-    saveItems(newItems)
-    setViewMode('list')
+    if (editingId) {
+      updateMutation.mutate({ id: Number(editingId), dto })
+    } else {
+      createMutation.mutate(dto)
+    }
   }
 
   const filteredItems = items.filter(x =>
     x.nombre.toLowerCase().includes(search.toLowerCase()) ||
     (x.extra || '').toLowerCase().includes(search.toLowerCase())
   )
+
+  const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
   return (
     <div className="w-full space-y-6">
@@ -484,9 +567,9 @@ export function ConfigProductosMaestros() {
             </div>
 
             <div className="flex items-center gap-3">
-              {savedAlert && (
-                <div className="flex items-center gap-1.5 text-green-600 text-sm font-semibold animate-bounce">
-                  <CheckCircle2 size={16} /> Guardado exitoso
+              {isMutating && (
+                <div className="flex items-center gap-1.5 text-indigo-600 text-sm font-semibold">
+                  <CheckCircle2 size={16} /> Guardando...
                 </div>
               )}
               <button
@@ -512,6 +595,9 @@ export function ConfigProductosMaestros() {
           </div>
 
           {/* Table list */}
+          {isLoadingItems ? (
+            <div className="py-10 text-center text-slate-400 text-sm">Cargando...</div>
+          ) : (
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden w-full max-w-4xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -597,6 +683,7 @@ export function ConfigProductosMaestros() {
               </table>
             </div>
           </div>
+          )}
         </>
       ) : (
         <>

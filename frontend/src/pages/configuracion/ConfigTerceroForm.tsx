@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail, FileText, Plus, Trash2, Shield, Globe, ShoppingCart, RefreshCw, Upload, File } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { Tercero, DEFAULT_TERCEROS, Sucursal } from './ConfigTerceros'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Tercero, Sucursal } from './ConfigTerceros'
+import { getCliente, createCliente, updateCliente } from '../../services/ventas.service'
+import { getProveedor, createProveedor, updateProveedor } from '../../services/inventario.service'
 
 const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
 const TIPO_PERSONA_OPTIONS = ['NATURAL', 'JURIDICA']
@@ -105,12 +108,212 @@ function Field({ label, children, required = false }: { label: string; children:
 
 const inputCls = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium"
 
+const mapClienteToTercero = (cli: any): Tercero => ({
+  id: `cli_${cli.id}`,
+  tipoPersona: cli.tipoPersona || 'JURIDICA',
+  tipoDocumento: cli.tipoDocumento || 'NIT',
+  numeroDocumento: cli.numeroDocumento || '',
+  digitoVerificacion: cli.digitoVerificacion || '',
+  codigo: cli.numeroDocumento || '',
+  fechaCreacion: cli.createdAt ? new Date(cli.createdAt).toLocaleDateString() : '',
+  nombre: cli.nombre || '',
+  nombreComercial: cli.nombreComercial || cli.nombre || '',
+  activo: cli.activo !== false,
+  cliente: true,
+  proveedor: false,
+  empleado: false,
+  prospecto: false,
+  vendedor: cli.vendedorId ? String(cli.vendedorId) : '99 - VENDEDOR VARIOS',
+  email: cli.email || '',
+  emailNovedades: '',
+  telefono: cli.telefono || '',
+  telefono2: '',
+  telefono3: '',
+  celular: cli.celular || '',
+  pais: cli.pais || 'COLOMBIA',
+  departamento: cli.departamento || '',
+  ciudad: cli.municipio || '',
+  direccionFiscal: cli.direccion || '',
+  direccionDespachos: cli.direccion || '',
+  cumpleanosDia: 0,
+  cumpleanosMes: 0,
+  cartera: 'CL - CLIENTES',
+  formaPago: '01 - EFECTIVO',
+  nivelPrecio: 'Precio Estándar',
+  clasificacion: 'Ninguna',
+  cupoCredito: cli.cupoCredito ? true : false,
+  cupoCreditoValor: cli.cupoCredito ? Number(cli.cupoCredito) : 0,
+  paginaWeb: '',
+  paginaWeb2: '',
+  paginaWeb3: '',
+  tokenPosgold: '',
+  observacion: cli.notas || '',
+  sucursales: [],
+  regimenFiscal: cli.regimenFiscal || '49',
+  responsabilidades: cli.responsabilidades || [],
+  actividadEconomica: cli.actividadEconomica || '',
+})
+
+const mapProveedorToTercero = (prov: any): Tercero => ({
+  id: `prov_${prov.id}`,
+  tipoPersona: 'JURIDICA',
+  tipoDocumento: prov.tipoDocumento || 'NIT',
+  numeroDocumento: prov.numeroDocumento || '',
+  digitoVerificacion: '',
+  codigo: prov.numeroDocumento || '',
+  fechaCreacion: prov.createdAt ? new Date(prov.createdAt).toLocaleDateString() : '',
+  nombre: prov.nombre || '',
+  nombreComercial: prov.nombreComercial || prov.nombre || '',
+  activo: prov.activo !== false,
+  cliente: false,
+  proveedor: true,
+  empleado: false,
+  prospecto: false,
+  vendedor: '',
+  email: prov.email || '',
+  emailNovedades: '',
+  telefono: prov.telefono || '',
+  telefono2: '',
+  telefono3: '',
+  celular: '',
+  pais: prov.pais || 'COLOMBIA',
+  departamento: '',
+  ciudad: prov.ciudad || '',
+  direccionFiscal: prov.direccion || '',
+  direccionDespachos: prov.direccion || '',
+  cumpleanosDia: 0,
+  cumpleanosMes: 0,
+  cartera: 'PR - PROVEEDORES',
+  formaPago: prov.condicionesPago || '01 - EFECTIVO',
+  nivelPrecio: 'Precio Estándar',
+  clasificacion: 'Ninguna',
+  cupoCredito: false,
+  cupoCreditoValor: 0,
+  paginaWeb: '',
+  paginaWeb2: '',
+  paginaWeb3: '',
+  tokenPosgold: '',
+  observacion: prov.notas || '',
+  sucursales: [],
+  regimenFiscal: '49',
+  responsabilidades: [],
+  actividadEconomica: '',
+})
+
+const mapDualToTercero = (cli: any, prov: any): Tercero => {
+  const cMapped = mapClienteToTercero(cli)
+  const pMapped = mapProveedorToTercero(prov)
+  return {
+    ...cMapped,
+    id: `dual_${cli.id}_${prov.id}`,
+    proveedor: true,
+    email: cMapped.email || pMapped.email,
+    telefono: cMapped.telefono || pMapped.telefono,
+    direccionFiscal: cMapped.direccionFiscal || pMapped.direccionFiscal,
+    ciudad: cMapped.ciudad || pMapped.ciudad,
+    nombreComercial: cMapped.nombreComercial || pMapped.nombreComercial,
+  }
+}
+
+const compileClientePayload = (f: Tercero) => ({
+  tipoPersona: f.tipoPersona,
+  tipoDocumento: f.tipoDocumento,
+  numeroDocumento: f.numeroDocumento,
+  digitoVerificacion: f.digitoVerificacion || null,
+  nombre: f.nombre,
+  nombreComercial: f.nombreComercial || null,
+  regimenFiscal: f.regimenFiscal || '49',
+  responsabilidades: f.responsabilidades || [],
+  actividadEconomica: f.actividadEconomica || null,
+  email: f.email || null,
+  telefono: f.telefono || null,
+  celular: f.celular || null,
+  pais: f.pais || 'CO',
+  departamento: f.departamento || null,
+  municipio: f.ciudad || null,
+  direccion: f.direccionFiscal || null,
+  plazoCredito: f.formaPago.includes('30') ? 30 : 0,
+  cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
+  activo: f.activo,
+  notas: f.observacion || null,
+})
+
+const compileProveedorPayload = (f: Tercero) => ({
+  tipoDocumento: f.tipoDocumento,
+  numeroDocumento: f.numeroDocumento,
+  nombre: f.nombre,
+  nombreComercial: f.nombreComercial || null,
+  email: f.email || null,
+  telefono: f.telefono || null,
+  direccion: f.direccionFiscal || null,
+  ciudad: f.ciudad || null,
+  pais: f.pais || 'Colombia',
+  condicionesPago: f.formaPago || 'CONTADO',
+  activo: f.activo,
+  notas: f.observacion || null,
+  moneda: 'COP',
+})
+
 export function ConfigTerceroForm() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const isEdit = !!id
   const navigate = useNavigate()
-  
+  const qc = useQueryClient()
+
+  // Parse composite ID
+  let isCli = false
+  let isProv = false
+  let cliId: number | null = null
+  let provId: number | null = null
+
+  if (id) {
+    if (id.startsWith('cli_')) {
+      isCli = true
+      cliId = parseInt(id.replace('cli_', ''), 10)
+    } else if (id.startsWith('prov_')) {
+      isProv = true
+      provId = parseInt(id.replace('prov_', ''), 10)
+    } else if (id.startsWith('dual_')) {
+      isCli = true
+      isProv = true
+      const parts = id.split('_')
+      cliId = parseInt(parts[1], 10)
+      provId = parseInt(parts[2], 10)
+    }
+  }
+
+  // Queries
+  const { data: clienteData } = useQuery({
+    queryKey: ['cliente-detail', cliId],
+    queryFn: () => getCliente(cliId!),
+    enabled: !!cliId,
+  })
+
+  const { data: proveedorData } = useQuery({
+    queryKey: ['proveedor-detail', provId],
+    queryFn: () => getProveedor(provId!),
+    enabled: !!provId,
+  })
+
+  // Mutations
+  const mutCreateCliente = useMutation({
+    mutationFn: createCliente,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clientes-erp'] })
+  })
+  const mutUpdateCliente = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateCliente(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clientes-erp'] })
+  })
+  const mutCreateProveedor = useMutation({
+    mutationFn: createProveedor,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
+  })
+  const mutUpdateProveedor = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateProveedor(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
+  })
+
   // Tabs: principal, sucursales, adjuntos, tributaria, web, transacciones
   const [activeTab, setActiveTab] = useState<'datos' | 'sucursales' | 'adjuntos' | 'tributaria' | 'usuario' | 'transacciones'>('datos')
   
@@ -133,22 +336,13 @@ export function ConfigTerceroForm() {
 
   // Cargar datos
   useEffect(() => {
-    let list: Tercero[] = []
-    const saved = localStorage.getItem('edatia_terceros')
-    if (saved) {
-      try { list = JSON.parse(saved) } catch (e) {}
-    } else {
-      list = DEFAULT_TERCEROS
-    }
-
     if (isEdit) {
-      const match = list.find(x => x.id === id)
-      if (match) {
-        setForm(match)
-        setSucursales(match.sucursales || [])
-      } else {
-        toast.error('Tercero no encontrado')
-        navigate('/configuracion/terceros')
+      if (cliId && provId && clienteData && proveedorData) {
+        setForm(mapDualToTercero(clienteData, proveedorData))
+      } else if (cliId && clienteData && !provId) {
+        setForm(mapClienteToTercero(clienteData))
+      } else if (provId && proveedorData && !cliId) {
+        setForm(mapProveedorToTercero(proveedorData))
       }
     } else {
       // Si se crea nuevo y se especificó un rol por query param
@@ -156,49 +350,66 @@ export function ConfigTerceroForm() {
       setForm({
         ...DEFAULT_TERCERO,
         fechaCreacion: new Date().toLocaleDateString('es-CO'),
-        cliente: roleParam === 'cliente' || DEFAULT_TERCERO.cliente,
-        proveedor: roleParam === 'proveedor' || DEFAULT_TERCERO.proveedor,
+        cliente: roleParam === 'cliente' || roleParam === null,
+        proveedor: roleParam === 'proveedor',
       })
     }
-  }, [id, isEdit, searchParams])
+  }, [id, isEdit, searchParams, clienteData, proveedorData, cliId, provId])
 
   // Guardar datos
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.nombre) return toast.error('El nombre completo/razón social es obligatorio.')
     if (!form.numeroDocumento) return toast.error('El número de documento es obligatorio.')
 
-    let list: Tercero[] = []
-    const saved = localStorage.getItem('edatia_terceros')
-    if (saved) {
-      try { list = JSON.parse(saved) } catch (e) {}
-    }
+    try {
+      const isClientChecked = !!form.cliente
+      const isProvChecked = !!form.proveedor
 
-    const payload: Tercero = {
-      ...form,
-      sucursales
-    }
+      if (!isClientChecked && !isProvChecked) {
+        return toast.error('Debe seleccionar al menos un rol (Cliente o Proveedor).')
+      }
 
-    if (isEdit) {
-      list = list.map(x => x.id === id ? payload : x)
-      toast.success('Tercero actualizado exitosamente')
-    } else {
-      payload.id = `ter_${payload.numeroDocumento}`
-      payload.codigo = payload.numeroDocumento
-      list.push(payload)
-      toast.success('Tercero creado exitosamente')
-    }
+      if (isEdit) {
+        const promises: Promise<any>[] = []
+        if (isClientChecked) {
+          if (cliId) {
+            promises.push(mutUpdateCliente.mutateAsync({ id: cliId, data: compileClientePayload(form) }))
+          } else {
+            promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form)))
+          }
+        }
+        if (isProvChecked) {
+          if (provId) {
+            promises.push(mutUpdateProveedor.mutateAsync({ id: provId, data: compileProveedorPayload(form) }))
+          } else {
+            promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form)))
+          }
+        }
+        await Promise.all(promises)
+        toast.success('Tercero actualizado exitosamente')
+      } else {
+        const promises: Promise<any>[] = []
+        if (isClientChecked) {
+          promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form)))
+        }
+        if (isProvChecked) {
+          promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form)))
+        }
+        await Promise.all(promises)
+        toast.success('Tercero creado exitosamente')
+      }
 
-    localStorage.setItem('edatia_terceros', JSON.stringify(list))
-
-    // Redirección inteligente dependiendo del rol del query o del tercero
-    const roleParam = searchParams.get('role')
-    if (roleParam === 'cliente') {
-      navigate('/ventas/clientes')
-    } else if (roleParam === 'proveedor') {
-      navigate('/inventario/proveedores')
-    } else {
-      navigate('/configuracion/terceros')
+      const roleParam = searchParams.get('role')
+      if (roleParam === 'cliente') {
+        navigate('/ventas/clientes')
+      } else if (roleParam === 'proveedor') {
+        navigate('/inventario/proveedores')
+      } else {
+        navigate('/configuracion/terceros')
+      }
+    } catch (err) {
+      toast.error('Error al guardar tercero')
     }
   }
 

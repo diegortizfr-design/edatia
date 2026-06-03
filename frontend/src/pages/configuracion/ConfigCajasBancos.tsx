@@ -1,8 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { 
   Wallet, Landmark, Plus, Search, Trash2, Edit3, CheckCircle2, 
   XCircle, SlidersHorizontal, Lock, CheckSquare, Square
 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getCajasBancos, createCajaBanco, updateCajaBanco, deleteCajaBanco } from '../../services/erp.service'
+import { getSucursales } from '../../services/configuracion.service'
+import toast from 'react-hot-toast'
 
 // ─── Interfaces y Estructuras de Datos ────────────────────────────────────────
 
@@ -165,58 +169,45 @@ function PremiumCheckboxCard({ checked, onChange, label, description }: { checke
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigCajasBancos() {
-  const [items, setItems] = useState<CajaBancoConfig[]>([])
-  const [sucursales, setSucursales] = useState<SucursalSummary[]>([])
+  const queryClient = useQueryClient()
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['cajas-bancos'], queryFn: getCajasBancos })
+  const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales })
+
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
-  const [savedAlert, setSavedAlert] = useState(false)
 
   // Estado del Formulario
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<Partial<CajaBancoConfig>>({})
 
-  // Cargar Sucursales y Cajas/Bancos al inicio
-  useEffect(() => {
-    // 1. Cargar Sucursales
-    const savedSucs = localStorage.getItem('edatia_config_sucursales')
-    let parsedSucs: SucursalSummary[] = []
-    if (savedSucs) {
-      try {
-        parsedSucs = JSON.parse(savedSucs)
-      } catch (e) {
-        parsedSucs = [
-          { id: 'suc_principal', codigo: 'B1', nombre: 'Sucursal Principal Poblado' },
-          { id: 'suc_centro', codigo: 'B2', nombre: 'Sucursal Laureles' }
-        ]
-      }
-    } else {
-      parsedSucs = [
-        { id: 'suc_principal', codigo: 'B1', nombre: 'Sucursal Principal Poblado' },
-        { id: 'suc_centro', codigo: 'B2', nombre: 'Sucursal Laureles' }
-      ]
-    }
-    setSucursales(parsedSucs)
+  const createMutation = useMutation({
+    mutationFn: (dto: Partial<CajaBancoConfig>) => createCajaBanco(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cajas-bancos'] })
+      toast.success('Caja/Banco creado exitosamente.')
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al crear la caja/banco.')
+  })
 
-    // 2. Cargar Cajas/Bancos
-    const savedItems = localStorage.getItem('edatia_config_cajas_bancos')
-    if (savedItems) {
-      try {
-        setItems(JSON.parse(savedItems))
-      } catch (e) {
-        setItems(DEFAULT_CAJAS_BANCOS)
-      }
-    } else {
-      setItems(DEFAULT_CAJAS_BANCOS)
-      localStorage.setItem('edatia_config_cajas_bancos', JSON.stringify(DEFAULT_CAJAS_BANCOS))
-    }
-  }, [])
+  const updateMutation = useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: Partial<CajaBancoConfig> }) => updateCajaBanco(id as any, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cajas-bancos'] })
+      toast.success('Caja/Banco actualizado exitosamente.')
+      setViewMode('list')
+    },
+    onError: () => toast.error('Error al actualizar la caja/banco.')
+  })
 
-  const saveToLocalStorage = (newItems: CajaBancoConfig[]) => {
-    setItems(newItems)
-    localStorage.setItem('edatia_config_cajas_bancos', JSON.stringify(newItems))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 3000)
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteCajaBanco(id as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cajas-bancos'] })
+      toast.success('Caja/Banco eliminado.')
+    },
+    onError: () => toast.error('Error al eliminar la caja/banco.')
+  })
 
   // Eventos del Formulario
   const handleOpenNew = () => {
@@ -244,14 +235,8 @@ export function ConfigCajasBancos() {
   }
 
   const handleDelete = (id: string) => {
-    const isBase = DEFAULT_CAJAS_BANCOS.some(i => i.id === id)
-    if (isBase) {
-      alert('Los registros base del sistema no pueden ser eliminados, solo configurados como inactivos.')
-      return
-    }
     if (window.confirm('¿Está seguro de que desea eliminar esta caja/banco? Esta acción no se puede deshacer.')) {
-      const updated = items.filter(i => i.id !== id)
-      saveToLocalStorage(updated)
+      deleteMutation.mutate(id)
     }
   }
 
@@ -262,16 +247,13 @@ export function ConfigCajasBancos() {
       return
     }
 
-    let updated: CajaBancoConfig[]
     if (editingId) {
       // Editar existente
-      updated = items.map(i => (i.id === editingId ? { ...i, ...form } as CajaBancoConfig : i))
+      updateMutation.mutate({ id: editingId, dto: { ...form } })
     } else {
       // Crear nuevo
-      const newId = `cajaban_${Date.now()}`
-      const newItem: CajaBancoConfig = {
+      const newItem: Partial<CajaBancoConfig> = {
         ...form,
-        id: newId,
         codigo: form.codigo!.toUpperCase(),
         descripcion: form.descripcion!.toUpperCase(),
         sucursalId: form.sucursalId!,
@@ -283,12 +265,9 @@ export function ConfigCajasBancos() {
         aplicaPagos: form.aplicaPagos !== false,
         aplicaControl: !!form.aplicaControl,
         restringida: !!form.restringida
-      } as CajaBancoConfig
-      updated = [...items, newItem]
+      }
+      createMutation.mutate(newItem)
     }
-
-    saveToLocalStorage(updated)
-    setViewMode('list')
   }
 
   // Filtrar
@@ -299,6 +278,14 @@ export function ConfigCajasBancos() {
       i.cuentaContable.toLowerCase().includes(search.toLowerCase())
     )
   }, [items, search])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
+        Cargando...
+      </div>
+    )
+  }
 
   return (
     <div className="w-full space-y-6">
@@ -332,13 +319,7 @@ export function ConfigCajasBancos() {
             </button>
           </div>
 
-          {/* Alert de Guardado */}
-          {savedAlert && (
-            <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-xs font-semibold animate-fade-in">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              Cambios guardados localmente de manera exitosa.
-            </div>
-          )}
+
 
           {/* Search bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-2.5">

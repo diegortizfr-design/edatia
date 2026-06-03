@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast, { Toaster } from 'react-hot-toast'
+import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig } from '../../services/configuracion.service'
 import {
   FileText, Plus, ShieldCheck, CheckCircle2, Trash2, Edit3, Search,
   Receipt, Building2, SlidersHorizontal
@@ -399,108 +402,56 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigDocumentos() {
-  const [documents, setDocuments] = useState<DocumentoConfig[]>([])
+  const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('TODOS')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
-  const [savedAlert, setSavedAlert] = useState(false)
-  const [sucursales, setSucursales] = useState<{ id: string; codigo: string; nombre: string }[]>([])
 
   // Estado del Formulario
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<Partial<DocumentoConfig>>({})
 
-  // Cargar sucursales para el anclaje
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_sucursales')
-    if (saved) {
-      try {
-        setSucursales(JSON.parse(saved))
-      } catch (e) {
-        setSucursales([
-          { id: 'suc_principal', codigo: 'B1', nombre: 'Sucursal Principal Poblado' },
-          { id: 'suc_centro', codigo: 'B2', nombre: 'Sucursal Laureles' }
-        ])
+  // ── Queries ──
+  const { data: documents = [], isLoading } = useQuery({
+    queryKey: ['documentos-config'],
+    queryFn: getDocumentosConfig,
+  })
+
+  // ── Mutations ──
+  const mutCreate = useMutation({
+    mutationFn: (dto: any) => createDocumentoConfig(dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
+      toast.success('Tipo de documento creado correctamente')
+      setViewMode('list')
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Error al crear documento'),
+  })
+
+  const mutUpdate = useMutation({
+    mutationFn: ({ id, dto }: { id: number; dto: any }) => updateDocumentoConfig(id, dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
+      toast.success('Documento actualizado correctamente')
+      setViewMode('list')
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Error al actualizar documento'),
+  })
+
+  const mutDelete = useMutation({
+    mutationFn: ({ id, code }: { id: number; code: string }) => deleteDocumentoConfig(id, code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
+      toast.success('Documento eliminado y guardado en histórico')
+    },
+    onError: (e: any) => {
+      if (e?.response?.status === 403) {
+        toast.error('Código de autorización incorrecto')
+      } else {
+        toast.error(e?.response?.data?.message || 'Error al eliminar documento')
       }
-    } else {
-      setSucursales([
-        { id: 'suc_principal', codigo: 'B1', nombre: 'Sucursal Principal Poblado' },
-        { id: 'suc_centro', codigo: 'B2', nombre: 'Sucursal Laureles' }
-      ])
-    }
-  }, [])
-
-  // Cargar documentos desde localStorage en el inicio con auto-migración
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_config_documentos')
-    if (saved) {
-      try {
-        let docs = JSON.parse(saved)
-        let modified = false
-        // Migración: actualizar documentos preexistentes a sus nuevos nombres y estados correctos
-        docs = docs.map((d: any) => {
-          if (d.id === 'factura_venta' || d.sigla === 'FV') {
-            if (d.nombre !== 'Factura de Venta (Remisión)' || d.esElectronico !== false) {
-              modified = true
-              return {
-                ...d,
-                nombre: 'Factura de Venta (Remisión)',
-                esElectronico: false,
-                prefijo: 'FV'
-              }
-            }
-          }
-          if (d.id === 'documento_pos' || d.sigla === 'POS') {
-            if (d.nombre !== 'Documento Equivalente POS' || d.esElectronico !== false) {
-              modified = true
-              return {
-                ...d,
-                nombre: 'Documento Equivalente POS',
-                esElectronico: false,
-                prefijo: 'POS'
-              }
-            }
-          }
-          return d
-        })
-
-        // Migración: añadir documentos por defecto faltantes
-        DEFAULT_DOCUMENTS.forEach(defDoc => {
-          const exists = docs.some((d: any) => d.id === defDoc.id || d.sigla === defDoc.sigla)
-          if (!exists) {
-            docs.push(defDoc)
-            modified = true
-          }
-        })
-        
-        // Sincronizar traslados con sigla TI
-        const trasladosIdx = docs.findIndex((d: any) => d.id === 'traslados')
-        if (trasladosIdx >= 0 && docs[trasladosIdx].sigla === 'TR') {
-          docs[trasladosIdx].sigla = 'TI'
-          docs[trasladosIdx].prefijo = 'TI'
-          docs[trasladosIdx].nombre = 'Traslado de Inventario'
-          modified = true
-        }
-
-        if (modified) {
-          localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
-        }
-        setDocuments(docs)
-      } catch (e) {
-        setDocuments(DEFAULT_DOCUMENTS)
-      }
-    } else {
-      setDocuments(DEFAULT_DOCUMENTS)
-      localStorage.setItem('edatia_config_documentos', JSON.stringify(DEFAULT_DOCUMENTS))
-    }
-  }, [])
-
-  const saveToLocalStorage = (docs: DocumentoConfig[]) => {
-    setDocuments(docs)
-    localStorage.setItem('edatia_config_documentos', JSON.stringify(docs))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 3000)
-  }
+    },
+  })
 
   // Obtener las áreas únicas presentes en los documentos registrados actualmente
   const activeTabs = useMemo(() => [
@@ -533,17 +484,13 @@ export function ConfigDocumentos() {
       vigenciaMeses: 12,
       rangoDesde: 1,
       rangoHasta: 99999,
-      sucursalId: sucursales[0]?.id || 'suc_principal'
     })
     setViewMode('form')
   }
 
-  const handleOpenEdit = (doc: DocumentoConfig) => {
+  const handleOpenEdit = (doc: any) => {
     setEditingId(doc.id)
-    setForm({
-      ...doc,
-      sucursalId: doc.sucursalId || sucursales[0]?.id || 'suc_principal'
-    })
+    setForm({ ...doc })
     setViewMode('form')
   }
 
@@ -568,56 +515,28 @@ export function ConfigDocumentos() {
     }))
   }
 
-  const handleDelete = (id: string) => {
-    const docToDelete = documents.find(d => d.id === id)
-    if (!docToDelete) return
+  const handleDelete = (doc: any) => {
+    const warningMsg = `¿Está seguro de que desea eliminar el tipo de documento "${doc.nombre}" (${doc.sigla})?\n\nEsta acción requiere un código de autorización y afectará la trazabilidad del sistema.`
+    if (!window.confirm(warningMsg)) return
 
-    const warningMsg = `¿Está seguro de que desea eliminar el tipo de documento "${docToDelete.nombre}" (${docToDelete.sigla})? \n\nEsta acción afectará la trazabilidad del sistema (facturas emitidas, transacciones, etc.).`
-    
-    if (window.confirm(warningMsg)) {
-      // Obtener el código de administrador
-      const savedAdminCodes = JSON.parse(localStorage.getItem('edatia_admin_codes') || '{}')
-      const codeEliminarDocumento = savedAdminCodes.codeEliminarDocumento || 'EDATIA123'
-
-      const entered = window.prompt("Ingrese el código de autorización del administrador para confirmar la eliminación:")
-      if (entered === null) {
-        return // Cancelado
-      }
-
-      if (entered !== codeEliminarDocumento) {
-        alert("Código de autorización incorrecto. No se completó la eliminación del documento.")
-        return
-      }
-
-      // Filtrar y actualizar documentos activos
-      const updated = documents.filter(d => d.id !== id)
-      saveToLocalStorage(updated)
-
-      // Guardar en la papelera de reciclaje del sistema (edatia_deleted_documents)
-      try {
-        const deletedDocs = JSON.parse(localStorage.getItem('edatia_deleted_documents') || '[]')
-        const deletedRecord = {
-          ...docToDelete,
-          deletedAt: new Date().toISOString(),
-        }
-        deletedDocs.push(deletedRecord)
-        localStorage.setItem('edatia_deleted_documents', JSON.stringify(deletedDocs))
-      } catch (err) {
-        console.error("Error al guardar en documentos eliminados:", err)
-      }
-
-      alert("Tipo de documento eliminado exitosamente y guardado en el histórico de eliminados.")
+    const entered = window.prompt('Ingrese el código de autorización del administrador para confirmar la eliminación:')
+    if (entered === null) return
+    if (!entered.trim()) {
+      toast.error('Debe ingresar el código de autorización')
+      return
     }
+
+    mutDelete.mutate({ id: doc.id, code: entered.trim() })
   }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.nombre || !form.sigla) {
-      alert('Descripción y Sigla son campos obligatorios.')
+      toast.error('Descripción y Sigla son campos obligatorios.')
       return
     }
     if (!form.prefijo) {
-      alert('El Prefijo es un campo obligatorio.')
+      toast.error('El Prefijo es un campo obligatorio.')
       return
     }
 
@@ -628,32 +547,28 @@ export function ConfigDocumentos() {
     const isDianHidden = currentTemplate?.obligatorioDian === 'NO'
     const esElectronicoEnforced = isDianForced ? true : (isDianHidden ? false : !!form.esElectronico)
 
-    let updated: DocumentoConfig[]
-    if (editingId) {
-      // Editar
-      updated = documents.map(d => (d.id === editingId ? { ...d, ...form, esElectronico: esElectronicoEnforced } as DocumentoConfig : d))
-    } else {
-      // Crear nuevo
-      const newId = `doc_${Date.now()}`
-      const newDoc: DocumentoConfig = {
-        ...form,
-        id: newId,
-        nombre: form.nombre!,
-        sigla: form.sigla!.toUpperCase(),
-        prefijo: (form.prefijo || '').toUpperCase(),
-        consecutivoInicial: form.consecutivoInicial || 1,
-        consecutivoSiguiente: form.consecutivoSiguiente || 1,
-        tipoOperacion: form.tipoOperacion || 'VENTAS',
-        plantillaImpresion: form.plantillaImpresion || 'CARTA',
-        esElectronico: esElectronicoEnforced,
-        estado: form.estado || 'ACTIVO',
-        sucursalId: form.sucursalId || sucursales[0]?.id || 'suc_principal'
-      } as DocumentoConfig
-      updated = [...documents, newDoc]
+    const dto: any = {
+      nombre: form.nombre,
+      sigla: form.sigla!.toUpperCase(),
+      prefijo: (form.prefijo || '').toUpperCase(),
+      consecutivoInicial: form.consecutivoInicial || 1,
+      consecutivoSiguiente: form.consecutivoSiguiente,
+      tipoOperacion: form.tipoOperacion || 'VENTAS',
+      plantillaImpresion: form.plantillaImpresion || 'CARTA',
+      esElectronico: esElectronicoEnforced,
+      estado: form.estado || 'ACTIVO',
+      resolucionDian: form.resolucionDian || undefined,
+      fechaResolucion: form.fechaResolucion || undefined,
+      vigenciaMeses: form.vigenciaMeses,
+      rangoDesde: form.rangoDesde,
+      rangoHasta: form.rangoHasta,
     }
 
-    saveToLocalStorage(updated)
-    setViewMode('list')
+    if (editingId) {
+      mutUpdate.mutate({ id: editingId as number, dto })
+    } else {
+      mutCreate.mutate(dto)
+    }
   }
 
   // Filtrado y Búsqueda
@@ -679,6 +594,7 @@ export function ConfigDocumentos() {
 
   return (
     <div className="w-full space-y-6">
+      <Toaster position="top-right" />
       {viewMode === 'list' ? (
         <>
           {/* Header */}
@@ -701,11 +617,6 @@ export function ConfigDocumentos() {
             </div>
 
             <div className="flex items-center gap-3">
-              {savedAlert && (
-                <div className="flex items-center gap-1.5 text-green-600 text-sm font-semibold animate-bounce">
-                  <CheckCircle2 size={16} /> Configuración actualizada
-                </div>
-              )}
               <button
                 onClick={handleOpenNew}
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all"
@@ -756,6 +667,12 @@ export function ConfigDocumentos() {
 
           {/* Main Table Card (Full Width) */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden w-full">
+            {isLoading ? (
+              <div className="p-8 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" />
+                Cargando documentos del servidor...
+              </div>
+            ) : (
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -874,7 +791,7 @@ export function ConfigDocumentos() {
                               <Edit3 size={15} />
                             </button>
                             <button
-                              onClick={() => handleDelete(doc.id)}
+                              onClick={() => handleDelete(doc)}
                               className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                               title="Eliminar documento"
                             >
@@ -894,6 +811,7 @@ export function ConfigDocumentos() {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         </>
       ) : (

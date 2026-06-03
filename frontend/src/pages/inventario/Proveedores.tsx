@@ -1,31 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Truck, ChevronRight, Phone, Mail } from 'lucide-react'
-import { Tercero, DEFAULT_TERCEROS } from '../configuracion/ConfigTerceros'
+import { useQuery } from '@tanstack/react-query'
+import { getProveedores } from '../../services/inventario.service'
 
 export function Proveedores() {
   const navigate = useNavigate()
   const [q, setQ] = useState('')
-  const [proveedores, setProveedores] = useState<Tercero[]>([])
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_terceros')
-    let list: Tercero[] = []
-    if (saved) {
-      try { list = JSON.parse(saved) } catch (e) {}
-    } else {
-      list = DEFAULT_TERCEROS
-      localStorage.setItem('edatia_terceros', JSON.stringify(DEFAULT_TERCEROS))
-    }
-    // Filtrar solo los que tienen el rol 'proveedor'
-    setProveedores(list.filter(t => t.proveedor))
-  }, [])
+  const { data: proveedores = [], isLoading } = useQuery({
+    queryKey: ['proveedores'],
+    queryFn: () => getProveedores(),
+  })
 
-  const filtrados = proveedores.filter(p => {
+  const filtrados = (proveedores as any[]).filter(p => {
     if (!q) return true
     return (
-      p.nombre.toLowerCase().includes(q.toLowerCase()) ||
-      p.numeroDocumento.includes(q) ||
+      p.nombre?.toLowerCase().includes(q.toLowerCase()) ||
+      p.numeroDocumento?.includes(q) ||
       (p.nombreComercial || '').toLowerCase().includes(q.toLowerCase())
     )
   })
@@ -35,7 +27,9 @@ export function Proveedores() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Proveedores</h1>
-          <p className="text-slate-500 text-sm">{filtrados.length} proveedores registrados</p>
+          <p className="text-slate-500 text-sm">
+            {isLoading ? 'Cargando...' : `${filtrados.length} proveedores registrados`}
+          </p>
         </div>
         <button
           onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
@@ -60,96 +54,102 @@ export function Proveedores() {
 
       {/* Lista */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Proveedor</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Condiciones</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">OC</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtrados.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                        <Truck size={14} className="text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800">{p.nombre}</p>
-                        {p.nombreComercial && p.nombreComercial !== p.nombre && (
-                          <p className="text-xs text-slate-400">{p.nombreComercial}</p>
-                        )}
-                        {p.numeroDocumento && (
-                          <p className="text-xs text-slate-400 font-mono">{p.tipoDocumento} {p.numeroDocumento}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="space-y-0.5">
-                      {p.email && (
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                          <Mail size={11} /> {p.email}
-                        </div>
-                      )}
-                      {p.telefono && (
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                          <Phone size={11} /> {p.telefono}
-                        </div>
-                      )}
-                      {!p.email && !p.telefono && <span className="text-xs text-slate-300">—</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <div className="space-y-0.5">
-                      <p className="text-xs text-slate-500">Pago: {p.formaPago || 'Efectivo'}</p>
-                      {p.nivelPrecio && (
-                        <p className="text-xs text-slate-500">Tarifa: {p.nivelPrecio}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {/* Cantidad de OC simulada */}
-                    <span className="text-sm font-semibold text-slate-700">2</span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {p.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => navigate(`/configuracion/terceros/${p.id}?role=proveedor`)}
-                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium"
-                    >
-                      Editar <ChevronRight size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filtrados.length === 0 && (
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
+            <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" />
+            Cargando proveedores de la base de datos...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center">
-                    <Truck size={40} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-400">No hay proveedores registrados aún.</p>
-                    <button 
-                      onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
-                      className="mt-4 text-indigo-600 text-sm font-bold hover:underline"
-                    >
-                      Crear el primer proveedor
-                    </button>
-                  </td>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Proveedor</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Contacto</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Condiciones</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">OC</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtrados.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                          <Truck size={14} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{p.nombre}</p>
+                          {p.nombreComercial && p.nombreComercial !== p.nombre && (
+                            <p className="text-xs text-slate-400">{p.nombreComercial}</p>
+                          )}
+                          {p.numeroDocumento && (
+                            <p className="text-xs text-slate-400 font-mono">{p.tipoDocumento} {p.numeroDocumento}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="space-y-0.5">
+                        {p.email && (
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <Mail size={11} /> {p.email}
+                          </div>
+                        )}
+                        {p.telefono && (
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <Phone size={11} /> {p.telefono}
+                          </div>
+                        )}
+                        {!p.email && !p.telefono && <span className="text-xs text-slate-300">—</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-slate-500">Pago: {p.condicionesPago || 'CONTADO'}</p>
+                        {p.descuentoBase !== undefined && (
+                          <p className="text-xs text-slate-500">Descuento: {Number(p.descuentoBase)}%</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-sm font-semibold text-slate-700">0</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {p.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => navigate(`/configuracion/terceros/prov_${p.id}?role=proveedor`)}
+                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                      >
+                        Editar <ChevronRight size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filtrados.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-16 text-center">
+                      <Truck size={40} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-400">No hay proveedores registrados aún.</p>
+                      <button 
+                        onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
+                        className="mt-4 text-indigo-600 text-sm font-bold hover:underline"
+                      >
+                        Crear el primer proveedor
+                      </button>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )
