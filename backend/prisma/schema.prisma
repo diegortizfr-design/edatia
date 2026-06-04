@@ -198,6 +198,9 @@ model DocumentoConfig {
   consecutivoInicial    Int      @default(1)
   consecutivoSiguiente  Int      @default(1)
 
+  // Sucursal vinculada (opcional)
+  sucursalId            Int?
+
   // Campos DIAN para documentos electrónicos
   resolucionDian        String?
   fechaResolucion       DateTime?

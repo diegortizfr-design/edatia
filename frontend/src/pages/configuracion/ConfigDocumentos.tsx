@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast, { Toaster } from 'react-hot-toast'
-import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig } from '../../services/configuracion.service'
+import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig, getSucursales } from '../../services/configuracion.service'
 import {
   FileText, Plus, ShieldCheck, CheckCircle2, Trash2, Edit3, Search,
   Receipt, Building2, SlidersHorizontal
@@ -417,6 +417,11 @@ export function ConfigDocumentos() {
     queryFn: getDocumentosConfig,
   })
 
+  const { data: sucursales = [] } = useQuery({
+    queryKey: ['sucursales'],
+    queryFn: getSucursales,
+  })
+
   // ── Mutations ──
   const mutCreate = useMutation({
     mutationFn: (dto: any) => createDocumentoConfig(dto),
@@ -484,13 +489,17 @@ export function ConfigDocumentos() {
       vigenciaMeses: 12,
       rangoDesde: 1,
       rangoHasta: 99999,
+      sucursalId: sucursales[0]?.id ? String(sucursales[0].id) : undefined,
     })
     setViewMode('form')
   }
 
   const handleOpenEdit = (doc: any) => {
     setEditingId(doc.id)
-    setForm({ ...doc })
+    setForm({
+      ...doc,
+      sucursalId: doc.sucursalId ? String(doc.sucursalId) : undefined,
+    })
     setViewMode('form')
   }
 
@@ -562,6 +571,7 @@ export function ConfigDocumentos() {
       vigenciaMeses: form.vigenciaMeses,
       rangoDesde: form.rangoDesde,
       rangoHasta: form.rangoHasta,
+      sucursalId: form.sucursalId ? parseInt(String(form.sucursalId), 10) : undefined,
     }
 
     if (editingId) {
@@ -698,7 +708,7 @@ export function ConfigDocumentos() {
                             <span className="text-slate-300">|</span>
                             <span className="text-indigo-600 font-medium">
                               Sucursal: {(() => {
-                                const b = sucursales.find(s => s.id === doc.sucursalId)
+                                const b = sucursales.find(s => String(s.id) === String(doc.sucursalId))
                                 return b ? `[${b.codigo}] ${b.nombre}` : 'Principal'
                               })()}
                             </span>
@@ -957,10 +967,10 @@ export function ConfigDocumentos() {
                 <div className="md:col-span-4">
                   <Field label="Sucursal Anclada *">
                     <Select
-                      value={form.sucursalId || ''}
+                      value={form.sucursalId ? String(form.sucursalId) : ''}
                       onChange={(v) => setForm(f => ({ ...f, sucursalId: v }))}
                       options={sucursales.map(s => ({
-                        value: s.id,
+                        value: String(s.id),
                         label: `[${s.codigo}] ${s.nombre}`
                       }))}
                     />
