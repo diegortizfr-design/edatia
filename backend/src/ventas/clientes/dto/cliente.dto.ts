@@ -70,6 +70,9 @@ export class CreateClienteDto {
 
   @IsString() @IsOptional()
   notas?: string
+
+  @IsArray() @IsOptional()
+  sucursales?: any[]
 }
 
 export class UpdateClienteDto extends CreateClienteDto {}

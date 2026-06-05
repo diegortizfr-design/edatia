@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail, FileText, Plus, Trash2, Shield, Globe, ShoppingCart, RefreshCw, Upload, File } from 'lucide-react'
+import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail, FileText, Plus, Trash2, Shield, Globe, ShoppingCart, RefreshCw, Upload, File, Pencil, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getCliente, createCliente, updateCliente } from '../../services/ventas.service'
 import { getProveedor, createProveedor, updateProveedor } from '../../services/inventario.service'
+import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales } from '../../services/configuracion.service'
 
 const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
 const TIPO_PERSONA_OPTIONS = ['NATURAL', 'JURIDICA']
@@ -34,7 +35,7 @@ const DEFAULT_TERCERO: Tercero = {
   tipoDocumento: 'NIT',
   numeroDocumento: '',
   digitoVerificacion: '',
-  codigo: '',
+  codigo: '01',
   fechaCreacion: '',
   nombre: '',
   nombreComercial: '',
@@ -60,7 +61,6 @@ const DEFAULT_TERCERO: Tercero = {
   cartera: 'CL - CLIENTES',
   formaPago: '01 - EFECTIVO',
   nivelPrecio: 'Precio Estándar',
-  clasificacion: 'Ninguna',
   cupoCredito: false,
   cupoCreditoValor: 0,
   paginaWeb: '',
@@ -147,8 +147,8 @@ const mapClienteToTercero = (cli: any): Tercero => ({
   paginaWeb2: '',
   paginaWeb3: '',
   tokenPosgold: '',
-  observacion: cli.notas || '',
-  sucursales: [],
+  observacion: cli.notes || '',
+  sucursales: cli.sucursales || [],
   regimenFiscal: cli.regimenFiscal || '49',
   responsabilidades: cli.responsabilidades || [],
   actividadEconomica: cli.actividadEconomica || '',
@@ -193,8 +193,8 @@ const mapProveedorToTercero = (prov: any): Tercero => ({
   paginaWeb2: '',
   paginaWeb3: '',
   tokenPosgold: '',
-  observacion: prov.notas || '',
-  sucursales: [],
+  observacion: prov.notes || prov.notas || '',
+  sucursales: prov.sucursales || [],
   regimenFiscal: '49',
   responsabilidades: [],
   actividadEconomica: '',
@@ -212,47 +212,80 @@ const mapDualToTercero = (cli: any, prov: any): Tercero => {
     direccionFiscal: cMapped.direccionFiscal || pMapped.direccionFiscal,
     ciudad: cMapped.ciudad || pMapped.ciudad,
     nombreComercial: cMapped.nombreComercial || pMapped.nombreComercial,
+    sucursales: cli.sucursales || prov.sucursales || [],
   }
 }
 
-const compileClientePayload = (f: Tercero) => ({
-  tipoPersona: f.tipoPersona,
-  tipoDocumento: f.tipoDocumento,
-  numeroDocumento: f.numeroDocumento,
-  digitoVerificacion: f.digitoVerificacion || null,
-  nombre: f.nombre,
-  nombreComercial: f.nombreComercial || null,
-  regimenFiscal: f.regimenFiscal || '49',
-  responsabilidades: f.responsabilidades || [],
-  actividadEconomica: f.actividadEconomica || null,
-  email: f.email || null,
-  telefono: f.telefono || null,
-  celular: f.celular || null,
-  pais: f.pais || 'CO',
-  departamento: f.departamento || null,
-  municipio: f.ciudad || null,
-  direccion: f.direccionFiscal || null,
-  plazoCredito: f.formaPago.includes('30') ? 30 : 0,
-  cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
-  activo: f.activo,
-  notas: f.observacion || null,
-})
+const compileClientePayload = (f: Tercero, currentSucs: Sucursal[]) => {
+  const sucs = (currentSucs && currentSucs.length > 0)
+    ? currentSucs
+    : [{
+        id: 'suc_01',
+        codigo: f.codigo || '01',
+        descripcion: 'Sucursal Principal',
+        direccion: f.direccionFiscal || '',
+        telefono: f.telefono || f.celular || '',
+        ciudad: f.ciudad || '',
+        departamento: f.departamento || '',
+        contacto: f.nombre || '',
+        cargo: 'Contacto Principal'
+      }];
+  return {
+    tipoPersona: f.tipoPersona,
+    tipoDocumento: f.tipoDocumento,
+    numeroDocumento: f.numeroDocumento,
+    digitoVerificacion: f.digitoVerificacion || null,
+    nombre: f.nombre,
+    nombreComercial: f.nombreComercial || null,
+    regimenFiscal: f.regimenFiscal || '49',
+    responsabilidades: f.responsabilidades || [],
+    actividadEconomica: f.actividadEconomica || null,
+    email: f.email || null,
+    telefono: f.telefono || null,
+    celular: f.celular || null,
+    pais: f.pais || 'CO',
+    departamento: f.departamento || null,
+    municipio: f.ciudad || null,
+    direccion: f.direccionFiscal || null,
+    plazoCredito: f.formaPago.includes('30') ? 30 : 0,
+    cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
+    activo: f.activo,
+    notas: f.observacion || null,
+    sucursales: sucs,
+  }
+}
 
-const compileProveedorPayload = (f: Tercero) => ({
-  tipoDocumento: f.tipoDocumento,
-  numeroDocumento: f.numeroDocumento,
-  nombre: f.nombre,
-  nombreComercial: f.nombreComercial || null,
-  email: f.email || null,
-  telefono: f.telefono || null,
-  direccion: f.direccionFiscal || null,
-  ciudad: f.ciudad || null,
-  pais: f.pais || 'Colombia',
-  condicionesPago: f.formaPago || 'CONTADO',
-  activo: f.activo,
-  notas: f.observacion || null,
-  moneda: 'COP',
-})
+const compileProveedorPayload = (f: Tercero, currentSucs: Sucursal[]) => {
+  const sucs = (currentSucs && currentSucs.length > 0)
+    ? currentSucs
+    : [{
+        id: 'suc_01',
+        codigo: f.codigo || '01',
+        descripcion: 'Sucursal Principal',
+        direccion: f.direccionFiscal || '',
+        telefono: f.telefono || f.celular || '',
+        ciudad: f.ciudad || '',
+        departamento: f.departamento || '',
+        contacto: f.nombre || '',
+        cargo: 'Contacto Principal'
+      }];
+  return {
+    tipoDocumento: f.tipoDocumento,
+    numeroDocumento: f.numeroDocumento,
+    nombre: f.nombre,
+    nombreComercial: f.nombreComercial || null,
+    email: f.email || null,
+    telefono: f.telefono || null,
+    direccion: f.direccionFiscal || null,
+    ciudad: f.ciudad || null,
+    pais: f.pais || 'Colombia',
+    condicionesPago: f.formaPago || 'CONTADO',
+    activo: f.activo,
+    notas: f.observacion || null,
+    moneda: 'COP',
+    sucursales: sucs,
+  }
+}
 
 export function ConfigTerceroForm() {
   const { id } = useParams<{ id: string }>()
@@ -294,6 +327,21 @@ export function ConfigTerceroForm() {
     queryKey: ['proveedor-detail', provId],
     queryFn: () => getProveedor(provId!),
     enabled: !!provId,
+  })
+
+  const { data: regimenes = [] } = useQuery({
+    queryKey: ['regimenes-fiscales'],
+    queryFn: getRegimenesFiscales,
+  })
+
+  const { data: ciius = [] } = useQuery({
+    queryKey: ['codigos-ciiu'],
+    queryFn: getCodigosCIIU,
+  })
+
+  const { data: responsabilidades = [] } = useQuery({
+    queryKey: ['responsabilidades-fiscales'],
+    queryFn: getResponsabilidadesFiscales,
   })
 
   // Mutations
@@ -339,20 +387,25 @@ export function ConfigTerceroForm() {
     if (isEdit) {
       if (cliId && provId && clienteData && proveedorData) {
         setForm(mapDualToTercero(clienteData, proveedorData))
+        setSucursales(clienteData.sucursales || proveedorData.sucursales || [])
       } else if (cliId && clienteData && !provId) {
         setForm(mapClienteToTercero(clienteData))
+        setSucursales(clienteData.sucursales || [])
       } else if (provId && proveedorData && !cliId) {
         setForm(mapProveedorToTercero(proveedorData))
+        setSucursales(proveedorData.sucursales || [])
       }
     } else {
       // Si se crea nuevo y se especificó un rol por query param
       const roleParam = searchParams.get('role')
       setForm({
         ...DEFAULT_TERCERO,
+        codigo: '01',
         fechaCreacion: new Date().toLocaleDateString('es-CO'),
         cliente: roleParam === 'cliente' || roleParam === null,
         proveedor: roleParam === 'proveedor',
       })
+      setSucursales([])
     }
   }, [id, isEdit, searchParams, clienteData, proveedorData, cliId, provId])
 
@@ -370,20 +423,22 @@ export function ConfigTerceroForm() {
         return toast.error('Debe seleccionar al menos un rol (Cliente o Proveedor).')
       }
 
+      let redirectId = ''
+
       if (isEdit) {
         const promises: Promise<any>[] = []
         if (isClientChecked) {
           if (cliId) {
-            promises.push(mutUpdateCliente.mutateAsync({ id: cliId, data: compileClientePayload(form) }))
+            promises.push(mutUpdateCliente.mutateAsync({ id: cliId, data: compileClientePayload(form, sucursales) }))
           } else {
-            promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form)))
+            promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form, sucursales)))
           }
         }
         if (isProvChecked) {
           if (provId) {
-            promises.push(mutUpdateProveedor.mutateAsync({ id: provId, data: compileProveedorPayload(form) }))
+            promises.push(mutUpdateProveedor.mutateAsync({ id: provId, data: compileProveedorPayload(form, sucursales) }))
           } else {
-            promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form)))
+            promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form, sucursales)))
           }
         }
         await Promise.all(promises)
@@ -391,22 +446,48 @@ export function ConfigTerceroForm() {
       } else {
         const promises: Promise<any>[] = []
         if (isClientChecked) {
-          promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form)))
+          promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form, sucursales)))
         }
         if (isProvChecked) {
-          promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form)))
+          promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form, sucursales)))
         }
-        await Promise.all(promises)
+        
+        const results = await Promise.all(promises)
+        let createdCliId: number | null = null
+        let createdProvId: number | null = null
+        let idx = 0
+        if (isClientChecked) {
+          createdCliId = results[idx]?.id
+          idx++
+        }
+        if (isProvChecked) {
+          createdProvId = results[idx]?.id
+          idx++
+        }
+
+        if (createdCliId && createdProvId) {
+          redirectId = `dual_${createdCliId}_${createdProvId}`
+        } else if (createdCliId) {
+          redirectId = `cli_${createdCliId}`
+        } else if (createdProvId) {
+          redirectId = `prov_${createdProvId}`
+        }
         toast.success('Tercero creado exitosamente')
       }
 
-      const roleParam = searchParams.get('role')
-      if (roleParam === 'cliente') {
-        navigate('/ventas/clientes')
-      } else if (roleParam === 'proveedor') {
-        navigate('/inventario/proveedores')
+      if (!isEdit && redirectId) {
+        const roleParam = searchParams.get('role')
+        const roleQS = roleParam ? `?role=${roleParam}` : ''
+        navigate(`/configuracion/terceros/${redirectId}${roleQS}`)
       } else {
-        navigate('/configuracion/terceros')
+        const roleParam = searchParams.get('role')
+        if (roleParam === 'cliente') {
+          navigate('/ventas/clientes')
+        } else if (roleParam === 'proveedor') {
+          navigate('/inventario/proveedores')
+        } else {
+          navigate('/configuracion/terceros')
+        }
       }
     } catch (err) {
       toast.error('Error al guardar tercero')
@@ -554,9 +635,10 @@ export function ConfigTerceroForm() {
           { id: 'tributaria', label: 'Tributaria', icon: <CreditCard size={14} /> },
           { id: 'usuario', label: 'Usuario Web', icon: <Shield size={14} /> },
           { id: 'transacciones', label: 'Historial', icon: <ShoppingCart size={14} /> }
-        ].map(t => (
+        ].filter(t => isEdit || t.id === 'datos').map(t => (
           <button
             key={t.id}
+            type="button"
             onClick={() => setActiveTab(t.id as any)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === t.id
@@ -804,13 +886,6 @@ export function ConfigTerceroForm() {
                     <option value="Precio Mayorista">Precio Mayorista</option>
                   </select>
                 </Field>
-                <Field label="Clasificación">
-                  <select value={form.clasificacion || ''} onChange={set('clasificacion')} className={inputCls}>
-                    <option value="Ninguna">Ninguna</option>
-                    <option value="Cliente VIP">Cliente VIP</option>
-                    <option value="Distribuidor Oro">Distribuidor Oro</option>
-                  </select>
-                </Field>
                 
                 {/* Cupo Credito */}
                 <div className="sm:col-span-2 flex gap-4 items-end">
@@ -986,61 +1061,79 @@ export function ConfigTerceroForm() {
           </div>
         )}
 
-        {activeTab === 'tributaria' && (
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 space-y-6">
-            <div>
-              <h2 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
-                <CreditCard size={14} className="text-indigo-650" />
-                Información Tributaria y Responsabilidades DIAN
-              </h2>
-              <p className="text-[10px] text-slate-400 mt-0.5">Define las responsabilidades fiscales que se utilizarán para la emisión de facturación electrónica.</p>
-            </div>
+        {activeTab === 'tributaria' && (() => {
+          const listRegimenes = (regimenes && regimenes.length > 0)
+            ? regimenes.map((r: any) => ({ value: r.codigo, label: r.nombre }))
+            : REGIMEN_OPTIONS
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label="Régimen Fiscal (DIAN)" required>
-                <select value={form.regimenFiscal || '49'} onChange={set('regimenFiscal')} className={inputCls}>
-                  {REGIMEN_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </Field>
+          const defaultCiius = [
+            { codigo: '4773', descripcion: 'Comercio al por menor de artículos de joyería' },
+            { codigo: '3210', descripcion: 'Fabricación de artículos de joyería y afines' },
+            { codigo: '9609', descripcion: 'Otras actividades de servicios personales' },
+            { codigo: '7410', descripcion: 'Actividades especializadas de diseño' }
+          ]
+          const listCiius = (ciius && ciius.length > 0) ? ciius : defaultCiius
 
-              <Field label="Actividad Económica Principal (CIIU)">
-                <input
-                  type="text"
-                  value={form.actividadEconomica || ''}
-                  onChange={set('actividadEconomica')}
-                  className={`${inputCls} font-mono`}
-                  placeholder="Ej. 4773 o 3210 (Código numérico de 4 dígitos)"
-                  maxLength={4}
-                />
-              </Field>
+          const listResponsabilidades = (responsabilidades && responsabilidades.length > 0)
+            ? responsabilidades.map((r: any) => ({ value: r.codigo, label: r.descripcion }))
+            : RESPONSABILIDADES_DIAN
 
-              <div className="md:col-span-2 space-y-2">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Responsabilidades del RUT</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {RESPONSABILIDADES_DIAN.map(r => {
-                    const isChecked = (form.responsabilidades || []).includes(r.value)
-                    return (
-                      <label key={r.value} className={`flex items-center gap-3 p-3 border rounded-2xl cursor-pointer hover:bg-slate-50 transition-all ${
-                        isChecked ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50/50 border-slate-200/60'
-                      }`}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleResponsabilidad(r.value)}
-                          className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                        />
-                        <div className="leading-tight">
-                          <p className="text-xs font-bold text-slate-700">{r.label}</p>
-                          <p className="text-[9px] text-indigo-600 font-bold font-mono">{r.value}</p>
-                        </div>
-                      </label>
-                    )
-                  })}
+          return (
+            <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 space-y-6">
+              <div>
+                <h2 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <CreditCard size={14} className="text-indigo-650" />
+                  Información Tributaria y Responsabilidades DIAN
+                </h2>
+                <p className="text-[10px] text-slate-400 mt-0.5">Define las responsabilidades fiscales que se utilizarán para la emisión de facturación electrónica.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Régimen Fiscal (DIAN)" required>
+                  <select value={form.regimenFiscal || '49'} onChange={set('regimenFiscal')} className={inputCls}>
+                    {listRegimenes.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </Field>
+
+                <Field label="Actividad Económica Principal (CIIU)">
+                  <select value={form.actividadEconomica || ''} onChange={set('actividadEconomica')} className={inputCls}>
+                    <option value="">-- Seleccionar CIIU --</option>
+                    {listCiius.map((c: any) => (
+                      <option key={c.codigo} value={c.codigo}>
+                        [{c.codigo}] {c.descripcion}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Responsabilidades del RUT</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {listResponsabilidades.map((r: any) => {
+                      const isChecked = (form.responsabilidades || []).includes(r.value)
+                      return (
+                        <label key={r.value} className={`flex items-center gap-3 p-3 border rounded-2xl cursor-pointer hover:bg-slate-50 transition-all ${
+                          isChecked ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50/50 border-slate-200/60'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleResponsabilidad(r.value)}
+                            className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          />
+                          <div className="leading-tight">
+                            <p className="text-xs font-bold text-slate-700">{r.label}</p>
+                            <p className="text-[9px] text-indigo-600 font-bold font-mono">{r.value}</p>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {activeTab === 'usuario' && (
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 space-y-4">

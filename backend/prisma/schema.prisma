@@ -876,6 +876,7 @@ model Proveedor {
 
   activo          Boolean       @default(true)
   notas           String?
+  sucursales      Json?
   ordenesCompra   OrdenCompra[]
   facturasCompra  FacturaCompra[]
 
@@ -1162,6 +1163,7 @@ model ClienteERP {
 
   activo              Boolean  @default(true)
   notas               String?
+  sucursales          Json?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

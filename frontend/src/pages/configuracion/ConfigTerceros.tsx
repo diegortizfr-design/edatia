@@ -343,7 +343,6 @@ export function ConfigTerceros() {
         cartera: 'CL - CLIENTES',
         formaPago: '01 - EFECTIVO',
         nivelPrecio: 'Precio Estándar',
-        clasificacion: 'Ninguna',
         cupoCredito: cli.cupoCredito ? true : false,
         cupoCreditoValor: cli.cupoCredito ? Number(cli.cupoCredito) : 0,
         paginaWeb: '',
@@ -351,7 +350,7 @@ export function ConfigTerceros() {
         paginaWeb3: '',
         tokenPosgold: '',
         observacion: cli.notas || '',
-        sucursales: [],
+        sucursales: cli.sucursales || [],
         regimenFiscal: cli.regimenFiscal || '49',
         responsabilidades: cli.responsabilidades || [],
         actividadEconomica: cli.actividadEconomica || '',
@@ -369,6 +368,9 @@ export function ConfigTerceros() {
         if (!existing.direccionFiscal) existing.direccionFiscal = prov.direccion || ''
         if (!existing.ciudad) existing.ciudad = prov.ciudad || ''
         if (!existing.nombreComercial) existing.nombreComercial = prov.nombreComercial || ''
+        if (prov.sucursales && prov.sucursales.length > 0) {
+          existing.sucursales = prov.sucursales
+        }
       } else {
         mergedMap.set(key, {
           id: `prov_${prov.id}`,
@@ -402,7 +404,6 @@ export function ConfigTerceros() {
           cartera: 'PR - PROVEEDORES',
           formaPago: prov.condicionesPago || '01 - EFECTIVO',
           nivelPrecio: 'Precio Estándar',
-          clasificacion: 'Ninguna',
           cupoCredito: false,
           cupoCreditoValor: 0,
           paginaWeb: '',
@@ -410,7 +411,7 @@ export function ConfigTerceros() {
           paginaWeb3: '',
           tokenPosgold: '',
           observacion: prov.notes || prov.notas || '',
-          sucursales: [],
+          sucursales: prov.sucursales || [],
           regimenFiscal: '49',
           responsabilidades: [],
           actividadEconomica: '',
