@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getMonedas, createMoneda, updateMoneda, deleteMoneda } from '../../services/erp.service'
+import { getApiError } from '../../services/api'
 import toast from 'react-hot-toast'
 import { Coins, Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal, Info } from 'lucide-react'
 
@@ -76,7 +77,18 @@ export function ConfigMonedas() {
 
   const { data: monedas = [], isLoading, isError } = useQuery({
     queryKey: ['monedas'],
-    queryFn: getMonedas,
+    queryFn: async () => {
+      const data = await getMonedas()
+      return data.map((m: any) => ({
+        id: String(m.id),
+        nombre: m.nombre,
+        codigoIso: m.codigo,
+        simbolo: m.simbolo,
+        tasaCambio: Number(m.tasaCambio),
+        esPrincipal: m.esPrincipal,
+        estado: m.activo ? 'ACTIVO' : 'INACTIVO',
+      }))
+    },
   })
 
   const [search, setSearch] = useState('')
@@ -100,7 +112,7 @@ export function ConfigMonedas() {
       showSavedAlert()
       setViewMode('list')
     },
-    onError: () => toast.error('Error al crear la moneda'),
+    onError: (e: any) => toast.error(getApiError(e, 'Error al crear la moneda')),
   })
 
   const updateMutation = useMutation({
@@ -111,7 +123,7 @@ export function ConfigMonedas() {
       showSavedAlert()
       setViewMode('list')
     },
-    onError: () => toast.error('Error al actualizar la moneda'),
+    onError: (e: any) => toast.error(getApiError(e, 'Error al actualizar la moneda')),
   })
 
   const deleteMutation = useMutation({
@@ -121,7 +133,7 @@ export function ConfigMonedas() {
       toast.success('Moneda eliminada correctamente')
       showSavedAlert()
     },
-    onError: () => toast.error('Error al eliminar la moneda'),
+    onError: (e: any) => toast.error(getApiError(e, 'Error al eliminar la moneda')),
   })
 
   const handleOpenNew = () => {
@@ -165,11 +177,11 @@ export function ConfigMonedas() {
 
     const dto = {
       nombre: form.nombre,
-      codigoIso: form.codigoIso!.toUpperCase(),
+      codigo: form.codigoIso!.toUpperCase(),
       simbolo: form.simbolo,
       tasaCambio: Number(form.tasaCambio),
       esPrincipal: isPrincipal,
-      estado: form.estado || 'ACTIVO',
+      activo: form.estado === 'ACTIVO',
     }
 
     if (editingId) {
