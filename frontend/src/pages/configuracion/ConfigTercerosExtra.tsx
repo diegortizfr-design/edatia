@@ -6,6 +6,10 @@ import {
   CheckCircle2, AlertTriangle, X, ChevronRight, Calculator, PlusCircle
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getVendedores, createVendedor, updateVendedor, deleteVendedor } from '../../services/erp.service'
+import { getColaboradores } from '../../services/configuracion.service'
+import { getApiError } from '../../services/api'
 
 // ── Types ──
 interface Vendedor {
@@ -94,8 +98,59 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
   const [isMerging, setIsMerging] = useState(false)
   const [mergeProgress, setMergeProgress] = useState(0)
 
+  const qc = useQueryClient()
+
   // ── Data lists state ──
-  const [vendedores, setVendedores] = useState<Vendedor[]>([])
+  const { data: dbVendedores = [] } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: getVendedores,
+    enabled: section === 'vendedores',
+  })
+
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ['colaboradores'],
+    queryFn: getColaboradores,
+    enabled: section === 'vendedores',
+  })
+
+  const mutCreateVendedor = useMutation({
+    mutationFn: createVendedor,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendedores'] })
+      toast.success('Vendedor creado')
+      setShowModal(false)
+    },
+    onError: (e) => toast.error(getApiError(e, 'Error al crear vendedor')),
+  })
+
+  const mutUpdateVendedor = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateVendedor(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendedores'] })
+      toast.success('Vendedor actualizado')
+      setShowModal(false)
+    },
+    onError: (e) => toast.error(getApiError(e, 'Error al actualizar vendedor')),
+  })
+
+  const mutDeleteVendedor = useMutation({
+    mutationFn: deleteVendedor,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['vendedores'] })
+      toast.success('Vendedor eliminado')
+    },
+    onError: (e) => toast.error(getApiError(e, 'Error al eliminar vendedor')),
+  })
+
+  const vendedores = dbVendedores.map((v: any) => ({
+    id: v.id,
+    codigo: v.documento || `V${String(v.id).padStart(3, '0')}`,
+    nombre: v.nombre,
+    telefono: v.telefono || '',
+    comision: v.comisionPct ? Number(v.comisionPct) : 0,
+    activo: v.activo !== false,
+  }))
+
   const [ciiuses, setCiiuses] = useState<CIIU[]>([])
   const [clasificaciones, setClasificaciones] = useState<Clasificacion[]>([])
   const [identificaciones, setIdentificaciones] = useState<Identificacion[]>([])
@@ -105,13 +160,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
 
   // ── Load & Seed Database ──
   useEffect(() => {
-    // Vendedores
-    const vSeed: Vendedor[] = [
-      { id: 1, codigo: 'V001', nombre: 'JUAN CARLOS PEREZ', telefono: '3124567890', comision: 5, activo: true },
-      { id: 2, codigo: 'V002', nombre: 'MARIA HELENA GOMEZ', telefono: '3157891234', comision: 8, activo: true },
-      { id: 3, codigo: 'V003', nombre: 'ANDRES MAURICIO ARIAS', telefono: '3209876543', comision: 6, activo: false }
-    ]
-    setVendedores(getLS('edatia_vendedores', vSeed))
+    // Vendedores (Eliminado localStorage local, consumido del backend)
 
     // CIIU
     const cSeed: CIIU[] = [
@@ -220,16 +269,20 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
 
   const handleSave = () => {
     if (section === 'vendedores') {
-      if (!formVendedor.codigo || !formVendedor.nombre) return toast.error('Código y nombre obligatorios')
-      let updated
-      if (editingId) {
-        updated = vendedores.map(v => v.id === editingId ? { ...formVendedor, id: editingId } : v)
-        toast.success('Vendedor actualizado')
-      } else {
-        updated = [...vendedores, { ...formVendedor, id: Date.now() }]
-        toast.success('Vendedor creado')
+      if (!formVendedor.nombre) return toast.error('El nombre es obligatorio')
+      const payload = {
+        nombre: formVendedor.nombre,
+        telefono: formVendedor.telefono || null,
+        documento: formVendedor.codigo || null,
+        comisionPct: formVendedor.comision,
+        activo: formVendedor.activo,
       }
-      syncData('edatia_vendedores', updated, setVendedores)
+      if (editingId) {
+        mutUpdateVendedor.mutate({ id: editingId, data: payload })
+      } else {
+        mutCreateVendedor.mutate(payload)
+      }
+      return
     }
 
     if (section === 'ciiu') {
@@ -317,9 +370,8 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
     if (!window.confirm('¿Está seguro de eliminar este registro auxiliar?')) return
 
     if (section === 'vendedores') {
-      const updated = vendedores.filter(v => v.id !== id)
-      syncData('edatia_vendedores', updated, setVendedores)
-      toast.success('Vendedor eliminado')
+      mutDeleteVendedor.mutate(id)
+      return
     }
     if (section === 'ciiu') {
       const updated = ciiuses.filter(c => c.id !== id)
@@ -875,27 +927,27 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Seleccionar Colaborador *</label>
                     <select
-                      value={tercerosList.find((t: any) => t.empleado && t.nombre === formVendedor.nombre)?.id || ''}
+                      value={colaboradores.find((c: any) => c.nombre === formVendedor.nombre)?.id || ''}
                       onChange={e => {
-                        const selectedEmp = tercerosList.find((t: any) => t.id.toString() === e.target.value.toString())
+                        const selectedEmp = colaboradores.find((c: any) => c.id.toString() === e.target.value.toString())
                         if (selectedEmp) {
                           setFormVendedor(p => ({
                             ...p,
                             nombre: selectedEmp.nombre,
-                            telefono: selectedEmp.celular || selectedEmp.telefono || ''
+                            telefono: selectedEmp.telefonoCorporativo || ''
                           }))
                         }
                       }}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-bold cursor-pointer"
                     >
                       <option value="">-- Seleccionar Colaborador --</option>
-                      {tercerosList.filter((t: any) => t.empleado).map((t: any) => (
-                        <option key={t.id} value={t.id}>{t.nombre}</option>
+                      {colaboradores.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
                       ))}
                     </select>
-                    {tercerosList.filter((t: any) => t.empleado).length === 0 && (
+                    {colaboradores.length === 0 && (
                       <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
-                        <AlertTriangle size={10} /> No hay terceros con rol 'Empleado'. Regístralos en la pantalla de Terceros.
+                        <AlertTriangle size={10} /> No hay colaboradores registrados. Regístralos en la sección de Seguridad.
                       </p>
                     )}
                   </div>

@@ -179,3 +179,7 @@ export const updateBarrio = (id: number, dto: any) =>
 export const deleteBarrio = (id: number) =>
   api.delete(`/configuracion/geolocalizacion/barrios/${id}`).then(r => r.data)
 
+// Colaboradores
+export const getColaboradores = () =>
+  api.get('/colaboradores').then(r => r.data)
+
