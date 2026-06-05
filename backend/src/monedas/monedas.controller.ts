@@ -10,7 +10,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { GetUser } from '../common/decorators/get-user.decorator';
+import { GetUser, JwtPayload } from '../common/decorators/get-user.decorator';
 import { CreateMonedaDto } from './dto/create-moneda.dto';
 import { UpdateMonedaDto } from './dto/update-moneda.dto';
 import { MonedasService } from './monedas.service';
@@ -21,33 +21,33 @@ export class MonedasController {
   constructor(private readonly monedasService: MonedasService) {}
 
   @Get()
-  findAll(@GetUser('empresaId') empresaId: number) {
-    return this.monedasService.findAll(empresaId);
+  findAll(@GetUser() u: JwtPayload) {
+    return this.monedasService.findAll(u.empresaId!);
   }
 
   @Post()
   create(
-    @GetUser('empresaId') empresaId: number,
+    @GetUser() u: JwtPayload,
     @Body() dto: CreateMonedaDto,
   ) {
-    return this.monedasService.create(empresaId, dto);
+    return this.monedasService.create(u.empresaId!, dto);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @GetUser('empresaId') empresaId: number,
+    @GetUser() u: JwtPayload,
     @Body() dto: UpdateMonedaDto,
   ) {
-    return this.monedasService.update(id, empresaId, dto);
+    return this.monedasService.update(id, u.empresaId!, dto);
   }
 
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
-    @GetUser('empresaId') empresaId: number,
+    @GetUser() u: JwtPayload,
   ) {
-    return this.monedasService.remove(id, empresaId);
+    return this.monedasService.remove(id, u.empresaId!);
   }
 }
 
