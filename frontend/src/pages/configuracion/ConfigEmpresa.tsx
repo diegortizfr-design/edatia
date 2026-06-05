@@ -716,15 +716,6 @@ export function ConfigEmpresa() {
                   ))}
                 </div>
               </div>
-
-              <div className="pt-4 border-t border-slate-100">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Calidades Especiales</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Toggle checked={form.granContribuyente ?? false} onChange={setCheck('granContribuyente')} label="Gran contribuyente" />
-                  <Toggle checked={form.autoretenedor ?? false} onChange={setCheck('autoretenedor')} label="Autorretenedor en renta" />
-                  <Toggle checked={form.agenteRetencion ?? false} onChange={setCheck('agenteRetencion')} label="Agente de retención en la fuente" />
-                </div>
-              </div>
             </SectionCard>
 
             <SectionCard title="Cuentas Contables por Defecto" icon={Calculator}>

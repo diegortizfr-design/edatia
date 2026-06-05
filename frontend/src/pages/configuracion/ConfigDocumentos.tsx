@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast, { Toaster } from 'react-hot-toast'
 import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig, getSucursales } from '../../services/configuracion.service'
+import { getApiError } from '../../services/api'
 import {
   FileText, Plus, ShieldCheck, CheckCircle2, Trash2, Edit3, Search,
   Receipt, Building2, SlidersHorizontal
@@ -430,7 +431,7 @@ export function ConfigDocumentos() {
       toast.success('Tipo de documento creado correctamente')
       setViewMode('list')
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message || 'Error al crear documento'),
+    onError: (e: any) => toast.error(getApiError(e, 'Error al crear documento')),
   })
 
   const mutUpdate = useMutation({
@@ -440,7 +441,7 @@ export function ConfigDocumentos() {
       toast.success('Documento actualizado correctamente')
       setViewMode('list')
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message || 'Error al actualizar documento'),
+    onError: (e: any) => toast.error(getApiError(e, 'Error al actualizar documento')),
   })
 
   const mutDelete = useMutation({
@@ -453,7 +454,7 @@ export function ConfigDocumentos() {
       if (e?.response?.status === 403) {
         toast.error('Código de autorización incorrecto')
       } else {
-        toast.error(e?.response?.data?.message || 'Error al eliminar documento')
+        toast.error(getApiError(e, 'Error al eliminar documento'))
       }
     },
   })
