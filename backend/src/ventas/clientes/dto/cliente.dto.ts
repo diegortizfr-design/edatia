@@ -65,6 +65,9 @@ export class CreateClienteDto {
   @IsNumber() @IsOptional() @Type(() => Number)
   descuentoBase?: number
 
+  @IsNumber() @IsOptional() @Type(() => Number)
+  vendedorId?: number
+
   @IsBoolean() @IsOptional()
   activo?: boolean
 

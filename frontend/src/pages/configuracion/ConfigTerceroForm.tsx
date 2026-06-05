@@ -7,6 +7,8 @@ import { Tercero, Sucursal } from './ConfigTerceros'
 import { getCliente, createCliente, updateCliente } from '../../services/ventas.service'
 import { getProveedor, createProveedor, updateProveedor } from '../../services/inventario.service'
 import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales } from '../../services/configuracion.service'
+import { getVendedores } from '../../services/erp.service'
+import { getApiError } from '../../services/api'
 
 const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
 const TIPO_PERSONA_OPTIONS = ['NATURAL', 'JURIDICA']
@@ -44,7 +46,7 @@ const DEFAULT_TERCERO: Tercero = {
   proveedor: false,
   empleado: false,
   prospecto: false,
-  vendedor: '99 - VENDEDOR VARIOS',
+  vendedor: '',
   email: '',
   emailNovedades: '',
   telefono: '',
@@ -123,7 +125,7 @@ const mapClienteToTercero = (cli: any): Tercero => ({
   proveedor: false,
   empleado: false,
   prospecto: false,
-  vendedor: cli.vendedorId ? String(cli.vendedorId) : '99 - VENDEDOR VARIOS',
+  vendedor: cli.vendedorId ? String(cli.vendedorId) : '',
   email: cli.email || '',
   emailNovedades: '',
   telefono: cli.telefono || '',
@@ -249,6 +251,7 @@ const compileClientePayload = (f: Tercero, currentSucs: Sucursal[]) => {
     direccion: f.direccionFiscal || null,
     plazoCredito: f.formaPago.includes('30') ? 30 : 0,
     cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
+    vendedorId: f.vendedor ? parseInt(f.vendedor, 10) : null,
     activo: f.activo,
     notas: f.observacion || null,
     sucursales: sucs,
@@ -342,6 +345,11 @@ export function ConfigTerceroForm() {
   const { data: responsabilidades = [] } = useQuery({
     queryKey: ['responsabilidades-fiscales'],
     queryFn: getResponsabilidadesFiscales,
+  })
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: getVendedores,
   })
 
   // Mutations
@@ -490,7 +498,7 @@ export function ConfigTerceroForm() {
         }
       }
     } catch (err) {
-      toast.error('Error al guardar tercero')
+      toast.error(getApiError(err, 'Error al guardar tercero'))
     }
   }
 
@@ -627,7 +635,7 @@ export function ConfigTerceroForm() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1 bg-slate-150 p-1 rounded-2xl w-full max-w-4xl shadow-sm border border-slate-200/40">
+      <div className="flex flex-wrap gap-1 bg-slate-150 p-1 rounded-2xl w-full shadow-sm border border-slate-200/40">
         {[
           { id: 'datos', label: 'Datos Principales', icon: <User size={14} /> },
           { id: 'sucursales', label: 'Sucursales', icon: <MapPin size={14} /> },
@@ -653,7 +661,7 @@ export function ConfigTerceroForm() {
       </div>
 
       {/* Formulario */}
-      <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
+      <form onSubmit={handleSave} className="space-y-6 w-full">
         {/* TABS RENDERS */}
         {activeTab === 'datos' && (
           <div className="space-y-6">
@@ -790,8 +798,9 @@ export function ConfigTerceroForm() {
                 <Field label="Vendedor Asignado">
                   <select value={form.vendedor || ''} onChange={set('vendedor')} className={inputCls}>
                     <option value="">-- Ninguno --</option>
-                    <option value="99 - VENDEDOR VARIOS">99 - VENDEDOR VARIOS</option>
-                    <option value="01 - DISTRIBUIDOR REGIONAL">01 - DISTRIBUIDOR REGIONAL</option>
+                    {vendedores.map((v: any) => (
+                      <option key={v.id} value={String(v.id)}>{v.nombre}</option>
+                    ))}
                   </select>
                 </Field>
 
