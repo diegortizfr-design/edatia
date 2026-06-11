@@ -465,18 +465,35 @@ export function ConfigTerceros() {
   // Eliminar tercero
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`¿Está seguro de eliminar a ${name} de los terceros?`)) {
-      if (id.startsWith('cli_')) {
-        const dbId = parseInt(id.replace('cli_', ''), 10)
-        mutDeleteCliente.mutate(dbId)
-      } else if (id.startsWith('prov_')) {
-        const dbId = parseInt(id.replace('prov_', ''), 10)
-        mutDeleteProveedor.mutate(dbId)
-      } else if (id.startsWith('dual_')) {
-        const parts = id.split('_')
-        const cliId = parseInt(parts[1], 10)
-        const provId = parseInt(parts[2], 10)
-        mutDeleteCliente.mutate(cliId)
-        mutDeleteProveedor.mutate(provId)
+      console.log('Intentando eliminar tercero. ID recibido:', id);
+      const numbers = id.match(/\d+/g);
+      
+      if (!numbers || numbers.length === 0) {
+        toast.error('ID de tercero no válido (no numérico)');
+        console.error('Error al intentar eliminar. ID no contiene números:', id);
+        return;
+      }
+
+      if (id.includes('dual') || numbers.length >= 2) {
+        const cliId = parseInt(numbers[0], 10);
+        const provId = parseInt(numbers[1], 10);
+        console.log(`Eliminando registro dual - Cliente ID: ${cliId}, Proveedor ID: ${provId}`);
+        
+        if (!isNaN(cliId)) mutDeleteCliente.mutate(cliId);
+        if (!isNaN(provId)) mutDeleteProveedor.mutate(provId);
+      } else if (id.includes('cli') || id.startsWith('cli_')) {
+        const dbId = parseInt(numbers[0], 10);
+        console.log(`Eliminando Cliente ID: ${dbId}`);
+        if (!isNaN(dbId)) mutDeleteCliente.mutate(dbId);
+      } else if (id.includes('prov') || id.startsWith('prov_')) {
+        const dbId = parseInt(numbers[0], 10);
+        console.log(`Eliminando Proveedor ID: ${dbId}`);
+        if (!isNaN(dbId)) mutDeleteProveedor.mutate(dbId);
+      } else {
+        // Fallback por si acaso el formato es diferente pero tiene un número
+        const dbId = parseInt(numbers[0], 10);
+        console.log(`Eliminando por fallback ID: ${dbId}`);
+        if (!isNaN(dbId)) mutDeleteCliente.mutate(dbId);
       }
     }
   }
