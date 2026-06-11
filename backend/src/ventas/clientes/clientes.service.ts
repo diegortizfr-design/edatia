@@ -91,6 +91,13 @@ export class ClientesService {
     })
   }
 
+  async remove(id: number, empresaId: number) {
+    await this.findOne(id, empresaId)
+    return this.prisma.clienteERP.delete({
+      where: { id },
+    })
+  }
+
   // Resumen de cartera por cliente
   async saldos(empresaId: number) {
     const facturas = await this.prisma.facturaVenta.groupBy({

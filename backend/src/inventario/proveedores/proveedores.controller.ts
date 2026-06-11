@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ProveedoresService } from './proveedores.service';
 import { CreateProveedorDto, UpdateProveedorDto } from './dto/proveedor.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -27,5 +27,10 @@ export class ProveedoresController {
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProveedorDto, @GetUser() user: JwtPayload) {
     return this.svc.update(id, dto, user.empresaId!);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
+    return this.svc.remove(id, user.empresaId!);
   }
 }

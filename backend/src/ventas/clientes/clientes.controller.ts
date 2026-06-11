@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { ClientesService } from './clientes.service'
 import { CreateClienteDto, UpdateClienteDto } from './dto/cliente.dto'
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard'
@@ -37,5 +37,10 @@ export class ClientesController {
   @Patch(':id/toggle')
   toggle(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
     return this.svc.toggle(id, u.empresaId!)
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
+    return this.svc.remove(id, u.empresaId!)
   }
 }

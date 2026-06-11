@@ -45,4 +45,9 @@ export class ProveedoresService {
     await this.findOne(id, empresaId);
     return (this.prisma as any).proveedor.update({ where: { id }, data: dto });
   }
+
+  async remove(id: number, empresaId: number) {
+    await this.findOne(id, empresaId);
+    return (this.prisma as any).proveedor.delete({ where: { id } });
+  }
 }
