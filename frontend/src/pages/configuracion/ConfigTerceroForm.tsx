@@ -4,10 +4,8 @@ import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
-import { getCliente, createCliente, updateCliente } from '../../services/ventas.service'
-import { getProveedor, createProveedor, updateProveedor } from '../../services/inventario.service'
+import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
 import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales } from '../../services/configuracion.service'
-import { getVendedores } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 
 const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
@@ -110,128 +108,54 @@ function Field({ label, children, required = false }: { label: string; children:
 
 const inputCls = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium"
 
-const mapClienteToTercero = (cli: any): Tercero => ({
-  id: `cli_${cli.id}`,
-  tipoPersona: cli.tipoPersona || 'JURIDICA',
-  tipoDocumento: cli.tipoDocumento || 'NIT',
-  numeroDocumento: cli.numeroDocumento || '',
-  digitoVerificacion: cli.digitoVerificacion || '',
-  codigo: cli.numeroDocumento || '',
-  fechaCreacion: cli.createdAt ? new Date(cli.createdAt).toLocaleDateString() : '',
-  nombre: cli.nombre || '',
-  nombreComercial: cli.nombreComercial || cli.nombre || '',
-  activo: cli.activo !== false,
-  cliente: true,
-  proveedor: false,
-  empleado: false,
+const mapDbTerceroToForm = (t: any): Tercero => ({
+  id: String(t.id),
+  tipoPersona: t.tipoPersona || 'JURIDICA',
+  tipoDocumento: t.tipoDocumento || 'NIT',
+  numeroDocumento: t.numeroDocumento || '',
+  digitoVerificacion: t.digitoVerificacion || '',
+  codigo: t.numeroDocumento || '',
+  fechaCreacion: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '',
+  nombre: t.nombre || '',
+  nombreComercial: t.nombreComercial || t.nombre || '',
+  activo: t.activo !== false,
+  cliente: !!t.esCliente,
+  proveedor: !!t.esProveedor,
+  empleado: !!t.esColaborador || !!t.esVendedor,
   prospecto: false,
-  vendedor: cli.vendedorId ? String(cli.vendedorId) : '',
-  email: cli.email || '',
+  vendedor: t.vendedorAsignadoId ? String(t.vendedorAsignadoId) : '',
+  email: t.email || '',
   emailNovedades: '',
-  telefono: cli.telefono || '',
+  telefono: t.telefono || '',
   telefono2: '',
   telefono3: '',
-  celular: cli.celular || '',
-  pais: cli.pais || 'COLOMBIA',
-  departamento: cli.departamento || '',
-  ciudad: cli.municipio || '',
-  direccionFiscal: cli.direccion || '',
-  direccionDespachos: cli.direccion || '',
+  celular: t.celular || '',
+  pais: t.pais || 'COLOMBIA',
+  departamento: t.departamento || '',
+  ciudad: t.municipio || '',
+  direccionFiscal: t.direccion || '',
+  direccionDespachos: t.direccion || '',
   cumpleanosDia: 0,
   cumpleanosMes: 0,
-  cartera: 'CL - CLIENTES',
-  formaPago: '01 - EFECTIVO',
+  cartera: t.esCliente ? 'CL - CLIENTES' : 'PR - PROVEEDORES',
+  formaPago: t.condicionesPago || '01 - EFECTIVO',
   nivelPrecio: 'Precio Estándar',
   clasificacion: 'Ninguna',
-  cupoCredito: cli.cupoCredito ? true : false,
-  cupoCreditoValor: cli.cupoCredito ? Number(cli.cupoCredito) : 0,
+  cupoCredito: !!t.cupoCredito,
+  cupoCreditoValor: t.cupoCredito ? Number(t.cupoCredito) : 0,
   paginaWeb: '',
   paginaWeb2: '',
   paginaWeb3: '',
   tokenPosgold: '',
-  observacion: cli.notes || '',
-  sucursales: cli.sucursales || [],
-  regimenFiscal: cli.regimenFiscal || '49',
-  responsabilidades: cli.responsabilidades || [],
-  actividadEconomica: cli.actividadEconomica || '',
+  observacion: t.notas || '',
+  sucursales: t.sucursales || [],
+  regimenFiscal: t.regimenFiscal || '49',
+  responsabilidades: t.responsabilidades || [],
+  actividadEconomica: t.actividadEconomica || '',
+  crearUsuarioWeb: false,
 })
 
-const mapProveedorToTercero = (prov: any): Tercero => ({
-  id: `prov_${prov.id}`,
-  tipoPersona: 'JURIDICA',
-  tipoDocumento: prov.tipoDocumento || 'NIT',
-  numeroDocumento: prov.numeroDocumento || '',
-  digitoVerificacion: '',
-  codigo: prov.numeroDocumento || '',
-  fechaCreacion: prov.createdAt ? new Date(prov.createdAt).toLocaleDateString() : '',
-  nombre: prov.nombre || '',
-  nombreComercial: prov.nombreComercial || prov.nombre || '',
-  activo: prov.activo !== false,
-  cliente: false,
-  proveedor: true,
-  empleado: false,
-  prospecto: false,
-  vendedor: '',
-  email: prov.email || '',
-  emailNovedades: '',
-  telefono: prov.telefono || '',
-  telefono2: '',
-  telefono3: '',
-  celular: '',
-  pais: prov.pais || 'COLOMBIA',
-  departamento: '',
-  ciudad: prov.ciudad || '',
-  direccionFiscal: prov.direccion || '',
-  direccionDespachos: prov.direccion || '',
-  cumpleanosDia: 0,
-  cumpleanosMes: 0,
-  cartera: 'PR - PROVEEDORES',
-  formaPago: prov.condicionesPago || '01 - EFECTIVO',
-  nivelPrecio: 'Precio Estándar',
-  clasificacion: 'Ninguna',
-  cupoCredito: false,
-  cupoCreditoValor: 0,
-  paginaWeb: '',
-  paginaWeb2: '',
-  paginaWeb3: '',
-  tokenPosgold: '',
-  observacion: prov.notes || prov.notas || '',
-  sucursales: prov.sucursales || [],
-  regimenFiscal: '49',
-  responsabilidades: [],
-  actividadEconomica: '',
-})
-
-const mapDualToTercero = (cli: any, prov: any): Tercero => {
-  const cMapped = mapClienteToTercero(cli)
-  const pMapped = mapProveedorToTercero(prov)
-  return {
-    ...cMapped,
-    id: `dual_${cli.id}_${prov.id}`,
-    proveedor: true,
-    email: cMapped.email || pMapped.email,
-    telefono: cMapped.telefono || pMapped.telefono,
-    direccionFiscal: cMapped.direccionFiscal || pMapped.direccionFiscal,
-    ciudad: cMapped.ciudad || pMapped.ciudad,
-    nombreComercial: cMapped.nombreComercial || pMapped.nombreComercial,
-    sucursales: cli.sucursales || prov.sucursales || [],
-  }
-}
-
-const compileClientePayload = (f: Tercero, currentSucs: Sucursal[]) => {
-  const sucs = (currentSucs && currentSucs.length > 0)
-    ? currentSucs
-    : [{
-        id: 'suc_01',
-        codigo: f.codigo || '01',
-        descripcion: 'Sucursal Principal',
-        direccion: f.direccionFiscal || '',
-        telefono: f.telefono || f.celular || '',
-        ciudad: f.ciudad || '',
-        departamento: f.departamento || '',
-        contacto: f.nombre || '',
-        cargo: 'Contacto Principal'
-      }];
+const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
   return {
     tipoPersona: f.tipoPersona,
     tipoDocumento: f.tipoDocumento,
@@ -239,9 +163,6 @@ const compileClientePayload = (f: Tercero, currentSucs: Sucursal[]) => {
     digitoVerificacion: f.digitoVerificacion || null,
     nombre: f.nombre,
     nombreComercial: f.nombreComercial || null,
-    regimenFiscal: f.regimenFiscal || '49',
-    responsabilidades: f.responsabilidades || [],
-    actividadEconomica: f.actividadEconomica || null,
     email: f.email || null,
     telefono: f.telefono || null,
     celular: f.celular || null,
@@ -249,44 +170,37 @@ const compileClientePayload = (f: Tercero, currentSucs: Sucursal[]) => {
     departamento: f.departamento || null,
     municipio: f.ciudad || null,
     direccion: f.direccionFiscal || null,
+    
+    esCliente: !!f.cliente,
+    esProveedor: !!f.proveedor,
+    esColaborador: !!f.empleado,
+    esVendedor: !!f.empleado,
+
     plazoCredito: f.formaPago.includes('30') ? 30 : 0,
     cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
-    vendedorId: f.vendedor ? parseInt(f.vendedor, 10) : null,
-    activo: f.activo,
-    notas: f.observacion || null,
-    sucursales: sucs,
-  }
-}
+    vendedorAsignadoId: f.vendedor ? parseInt(f.vendedor, 10) : null,
+    
+    contactoNombre: f.nombre || null,
+    condicionesPago: f.formaPago || '01 - EFECTIVO',
+    monedaProveedor: 'COP',
 
-const compileProveedorPayload = (f: Tercero, currentSucs: Sucursal[]) => {
-  const sucs = (currentSucs && currentSucs.length > 0)
-    ? currentSucs
-    : [{
-        id: 'suc_01',
-        codigo: f.codigo || '01',
-        descripcion: 'Sucursal Principal',
-        direccion: f.direccionFiscal || '',
-        telefono: f.telefono || f.celular || '',
-        ciudad: f.ciudad || '',
-        departamento: f.departamento || '',
-        contacto: f.nombre || '',
-        cargo: 'Contacto Principal'
-      }];
-  return {
-    tipoDocumento: f.tipoDocumento,
-    numeroDocumento: f.numeroDocumento,
-    nombre: f.nombre,
-    nombreComercial: f.nombreComercial || null,
-    email: f.email || null,
-    telefono: f.telefono || null,
-    direccion: f.direccionFiscal || null,
-    ciudad: f.ciudad || null,
-    pais: f.pais || 'Colombia',
-    condicionesPago: f.formaPago || 'CONTADO',
     activo: f.activo,
     notas: f.observacion || null,
-    moneda: 'COP',
-    sucursales: sucs,
+    
+    regimenFiscal: f.regimenFiscal || '49',
+    responsabilidades: f.responsabilidades || [],
+    actividadEconomica: f.actividadEconomica || null,
+    
+    sucursales: currentSucs.map(s => ({
+      codigo: s.codigo,
+      descripcion: s.descripcion,
+      direccion: s.direccion,
+      telefono: s.telefono,
+      ciudad: s.ciudad,
+      departamento: s.departamento,
+      contacto: s.contacto,
+      cargo: s.cargo
+    }))
   }
 }
 
@@ -297,39 +211,13 @@ export function ConfigTerceroForm() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
-  // Parse composite ID
-  let isCli = false
-  let isProv = false
-  let cliId: number | null = null
-  let provId: number | null = null
-
-  if (id) {
-    if (id.startsWith('cli_')) {
-      isCli = true
-      cliId = parseInt(id.replace('cli_', ''), 10)
-    } else if (id.startsWith('prov_')) {
-      isProv = true
-      provId = parseInt(id.replace('prov_', ''), 10)
-    } else if (id.startsWith('dual_')) {
-      isCli = true
-      isProv = true
-      const parts = id.split('_')
-      cliId = parseInt(parts[1], 10)
-      provId = parseInt(parts[2], 10)
-    }
-  }
+  const terceroId = id ? parseInt(id, 10) : null
 
   // Queries
-  const { data: clienteData } = useQuery({
-    queryKey: ['cliente-detail', cliId],
-    queryFn: () => getCliente(cliId!),
-    enabled: !!cliId,
-  })
-
-  const { data: proveedorData } = useQuery({
-    queryKey: ['proveedor-detail', provId],
-    queryFn: () => getProveedor(provId!),
-    enabled: !!provId,
+  const { data: terceroData, isLoading: loadingTercero } = useQuery({
+    queryKey: ['tercero-detail', terceroId],
+    queryFn: () => getTercero(terceroId!),
+    enabled: !!terceroId,
   })
 
   const { data: regimenes = [] } = useQuery({
@@ -353,21 +241,13 @@ export function ConfigTerceroForm() {
   })
 
   // Mutations
-  const mutCreateCliente = useMutation({
-    mutationFn: createCliente,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clientes-erp'] })
+  const mutCreateTercero = useMutation({
+    mutationFn: createTercero,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['terceros-erp'] })
   })
-  const mutUpdateCliente = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => updateCliente(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clientes-erp'] })
-  })
-  const mutCreateProveedor = useMutation({
-    mutationFn: createProveedor,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
-  })
-  const mutUpdateProveedor = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => updateProveedor(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
+  const mutUpdateTercero = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => updateTercero(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['terceros-erp'] })
   })
 
   // Tabs: principal, sucursales, adjuntos, tributaria, web, transacciones
@@ -392,19 +272,10 @@ export function ConfigTerceroForm() {
 
   // Cargar datos
   useEffect(() => {
-    if (isEdit) {
-      if (cliId && provId && clienteData && proveedorData) {
-        setForm(mapDualToTercero(clienteData, proveedorData))
-        setSucursales(clienteData.sucursales || proveedorData.sucursales || [])
-      } else if (cliId && clienteData && !provId) {
-        setForm(mapClienteToTercero(clienteData))
-        setSucursales(clienteData.sucursales || [])
-      } else if (provId && proveedorData && !cliId) {
-        setForm(mapProveedorToTercero(proveedorData))
-        setSucursales(proveedorData.sucursales || [])
-      }
-    } else {
-      // Si se crea nuevo y se especificó un rol por query param
+    if (isEdit && terceroData) {
+      setForm(mapDbTerceroToForm(terceroData))
+      setSucursales(terceroData.sucursales || [])
+    } else if (!isEdit) {
       const roleParam = searchParams.get('role')
       setForm({
         ...DEFAULT_TERCERO,
@@ -412,10 +283,11 @@ export function ConfigTerceroForm() {
         fechaCreacion: new Date().toLocaleDateString('es-CO'),
         cliente: roleParam === 'cliente' || roleParam === null,
         proveedor: roleParam === 'proveedor',
+        empleado: roleParam === 'empleado',
       })
       setSucursales([])
     }
-  }, [id, isEdit, searchParams, clienteData, proveedorData, cliId, provId])
+  }, [id, isEdit, searchParams, terceroData])
 
   // Guardar datos
   const handleSave = async (e: React.FormEvent) => {
@@ -426,76 +298,29 @@ export function ConfigTerceroForm() {
     try {
       const isClientChecked = !!form.cliente
       const isProvChecked = !!form.proveedor
+      const isEmpChecked = !!form.empleado
 
-      if (!isClientChecked && !isProvChecked) {
-        return toast.error('Debe seleccionar al menos un rol (Cliente o Proveedor).')
+      if (!isClientChecked && !isProvChecked && !isEmpChecked) {
+        return toast.error('Debe seleccionar al menos un rol (Cliente, Proveedor o Empleado).')
       }
 
-      let redirectId = ''
+      const payload = compileTerceroPayload(form, sucursales)
 
-      if (isEdit) {
-        const promises: Promise<any>[] = []
-        if (isClientChecked) {
-          if (cliId) {
-            promises.push(mutUpdateCliente.mutateAsync({ id: cliId, data: compileClientePayload(form, sucursales) }))
-          } else {
-            promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form, sucursales)))
-          }
-        }
-        if (isProvChecked) {
-          if (provId) {
-            promises.push(mutUpdateProveedor.mutateAsync({ id: provId, data: compileProveedorPayload(form, sucursales) }))
-          } else {
-            promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form, sucursales)))
-          }
-        }
-        await Promise.all(promises)
+      if (isEdit && terceroId) {
+        await mutUpdateTercero.mutateAsync({ id: terceroId, data: payload })
         toast.success('Tercero actualizado exitosamente')
       } else {
-        const promises: Promise<any>[] = []
-        if (isClientChecked) {
-          promises.push(mutCreateCliente.mutateAsync(compileClientePayload(form, sucursales)))
-        }
-        if (isProvChecked) {
-          promises.push(mutCreateProveedor.mutateAsync(compileProveedorPayload(form, sucursales)))
-        }
-        
-        const results = await Promise.all(promises)
-        let createdCliId: number | null = null
-        let createdProvId: number | null = null
-        let idx = 0
-        if (isClientChecked) {
-          createdCliId = results[idx]?.id
-          idx++
-        }
-        if (isProvChecked) {
-          createdProvId = results[idx]?.id
-          idx++
-        }
-
-        if (createdCliId && createdProvId) {
-          redirectId = `dual_${createdCliId}_${createdProvId}`
-        } else if (createdCliId) {
-          redirectId = `cli_${createdCliId}`
-        } else if (createdProvId) {
-          redirectId = `prov_${createdProvId}`
-        }
+        await mutCreateTercero.mutateAsync(payload)
         toast.success('Tercero creado exitosamente')
       }
 
-      if (!isEdit && redirectId) {
-        const roleParam = searchParams.get('role')
-        const roleQS = roleParam ? `?role=${roleParam}` : ''
-        navigate(`/configuracion/terceros/${redirectId}${roleQS}`)
+      const roleParam = searchParams.get('role')
+      if (roleParam === 'cliente') {
+        navigate('/ventas/clientes')
+      } else if (roleParam === 'proveedor') {
+        navigate('/inventario/proveedores')
       } else {
-        const roleParam = searchParams.get('role')
-        if (roleParam === 'cliente') {
-          navigate('/ventas/clientes')
-        } else if (roleParam === 'proveedor') {
-          navigate('/inventario/proveedores')
-        } else {
-          navigate('/configuracion/terceros')
-        }
+        navigate('/configuracion/terceros')
       }
     } catch (err) {
       toast.error(getApiError(err, 'Error al guardar tercero'))

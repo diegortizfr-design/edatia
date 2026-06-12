@@ -7,9 +7,10 @@ export class ClientesService {
   constructor(private prisma: PrismaService) {}
 
   findAll(empresaId: number, q?: string) {
-    return this.prisma.clienteERP.findMany({
+    return this.prisma.tercero.findMany({
       where: {
         empresaId,
+        esCliente: true,
         activo: true,
         ...(q ? {
           OR: [
@@ -19,16 +20,20 @@ export class ClientesService {
           ],
         } : {}),
       },
+      include: {
+        sucursales: true,
+        _count: { select: { facturasVenta: true, cotizaciones: true } }
+      },
       orderBy: { nombre: 'asc' },
-      include: { _count: { select: { facturas: true, cotizaciones: true } } },
     })
   }
 
   async findOne(id: number, empresaId: number) {
-    const c = await this.prisma.clienteERP.findFirst({
-      where: { id, empresaId },
+    const c = await this.prisma.tercero.findFirst({
+      where: { id, empresaId, esCliente: true },
       include: {
-        facturas: {
+        sucursales: true,
+        facturasVenta: {
           orderBy: { createdAt: 'desc' },
           take: 10,
           select: { id: true, numero: true, fecha: true, total: true, saldo: true, estado: true },
@@ -66,39 +71,152 @@ export class ClientesService {
   }
 
   async create(dto: CreateClienteDto, empresaId: number) {
-    const exists = await this.prisma.clienteERP.findUnique({
-      where: { empresaId_tipoDocumento_numeroDocumento: {
-        empresaId, tipoDocumento: dto.tipoDocumento, numeroDocumento: dto.numeroDocumento,
-      }},
+    // Buscar si ya existe un Tercero con ese documento
+    let tercero = await this.prisma.tercero.findUnique({
+      where: {
+        empresaId_tipoDocumento_numeroDocumento: {
+          empresaId,
+          tipoDocumento: dto.tipoDocumento || 'NIT',
+          numeroDocumento: dto.numeroDocumento,
+        }
+      }
     })
-    if (exists) throw new ConflictException('Ya existe un cliente con ese documento')
 
-    return this.prisma.clienteERP.create({
-      data: { ...dto, empresaId },
+    if (tercero) {
+      if (tercero.esCliente) {
+        throw new ConflictException('Ya existe un cliente con ese documento')
+      }
+      
+      // Si existe pero no era cliente, lo actualizamos para que sea cliente y le añadimos los campos de cliente
+      const { sucursales, ...rest } = dto
+      return this.prisma.$transaction(async (tx) => {
+        // Eliminar sucursales viejas y recrear
+        await tx.sucursalTercero.deleteMany({ where: { terceroId: tercero!.id, empresaId } })
+        
+        return tx.tercero.update({
+          where: { id: tercero!.id },
+          data: {
+            ...rest,
+            esCliente: true,
+            sucursales: sucursales && sucursales.length > 0 ? {
+              create: sucursales.map((s: any) => ({
+                empresaId,
+                codigo: s.codigo,
+                descripcion: s.descripcion,
+                direccion: s.direccion || '',
+                telefono: s.telefono || '',
+                ciudad: s.ciudad || '',
+                departamento: s.departamento || '',
+                contacto: s.contacto || '',
+                cargo: s.cargo || '',
+              }))
+            } : undefined
+          },
+          include: { sucursales: true }
+        })
+      })
+    }
+
+    const { sucursales, ...rest } = dto
+    return this.prisma.tercero.create({
+      data: {
+        ...rest,
+        empresaId,
+        esCliente: true,
+        sucursales: sucursales && sucursales.length > 0 ? {
+          create: sucursales.map((s: any) => ({
+            empresaId,
+            codigo: s.codigo,
+            descripcion: s.descripcion,
+            direccion: s.direccion || '',
+            telefono: s.telefono || '',
+            ciudad: s.ciudad || '',
+            departamento: s.departamento || '',
+            contacto: s.contacto || '',
+            cargo: s.cargo || '',
+          }))
+        } : undefined
+      },
+      include: { sucursales: true }
     })
   }
 
   async update(id: number, dto: UpdateClienteDto, empresaId: number) {
     await this.findOne(id, empresaId)
-    return this.prisma.clienteERP.update({ where: { id }, data: dto })
+    const { sucursales, ...rest } = dto
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.sucursalTercero.deleteMany({
+        where: { terceroId: id, empresaId }
+      })
+
+      return tx.tercero.update({
+        where: { id },
+        data: {
+          ...rest,
+          sucursales: sucursales && sucursales.length > 0 ? {
+            create: sucursales.map((s: any) => ({
+              empresaId,
+              codigo: s.codigo,
+              descripcion: s.descripcion,
+              direccion: s.direccion || '',
+              telefono: s.telefono || '',
+              ciudad: s.ciudad || '',
+              departamento: s.departamento || '',
+              contacto: s.contacto || '',
+              cargo: s.cargo || '',
+            }))
+          } : undefined
+        },
+        include: { sucursales: true }
+      })
+    })
   }
 
   async toggle(id: number, empresaId: number) {
     const c = await this.findOne(id, empresaId)
-    return this.prisma.clienteERP.update({
+    return this.prisma.tercero.update({
       where: { id },
       data: { activo: !c.activo },
     })
   }
 
   async remove(id: number, empresaId: number) {
-    await this.findOne(id, empresaId)
-    return this.prisma.clienteERP.delete({
+    const c = await this.findOne(id, empresaId)
+    
+    // Verificación inteligente de transacciones
+    const count = await this.prisma.tercero.findFirst({
+      where: { id, empresaId },
+      select: {
+        _count: {
+          select: {
+            cotizaciones: true,
+            pedidos: true,
+            facturasVenta: true,
+            notasCredito: true,
+            recibos: true,
+            ventasPos: true,
+          }
+        }
+      }
+    })
+
+    const hasTransactions = count ? Object.values(count._count).some(v => v > 0) : false
+
+    if (hasTransactions) {
+      await this.prisma.tercero.update({
+        where: { id },
+        data: { activo: false }
+      })
+      return { message: 'El cliente tiene historial y ha sido desactivado automáticamente.', softDeleted: true }
+    }
+
+    await this.prisma.tercero.delete({
       where: { id },
     })
+    return { message: 'Cliente eliminado exitosamente.', softDeleted: false }
   }
 
-  // Resumen de cartera por cliente
   async saldos(empresaId: number) {
     const facturas = await this.prisma.facturaVenta.groupBy({
       by: ['clienteId'],
@@ -106,8 +224,8 @@ export class ClientesService {
       _sum: { saldo: true, total: true },
     })
     const clienteIds = facturas.map(f => f.clienteId)
-    const clientes = await this.prisma.clienteERP.findMany({
-      where: { id: { in: clienteIds } },
+    const clientes = await this.prisma.tercero.findMany({
+      where: { id: { in: clienteIds }, esCliente: true },
       select: { id: true, nombre: true, numeroDocumento: true },
     })
     return facturas.map(f => ({

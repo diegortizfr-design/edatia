@@ -27,6 +27,9 @@ import { VentasDashboardService } from './dashboard/ventas-dashboard.service'
 import { PedidosController } from './pedidos/pedidos.controller'
 import { PedidosService } from './pedidos/pedidos.service'
 
+import { TercerosController } from './terceros/terceros.controller'
+import { TercerosService } from './terceros/terceros.service'
+
 import { InventarioModule } from '../inventario/inventario.module'
 
 @Module({
@@ -40,6 +43,7 @@ import { InventarioModule } from '../inventario/inventario.module'
     RecibosController,
     VentasDashboardController,
     PedidosController,
+    TercerosController,
   ],
   providers: [
     ClientesService,
@@ -52,7 +56,8 @@ import { InventarioModule } from '../inventario/inventario.module'
     RecibosService,
     VentasDashboardService,
     PedidosService,
+    TercerosService,
   ],
-  exports: [ClientesService, FacturasService, PedidosService],
+  exports: [ClientesService, FacturasService, PedidosService, TercerosService],
 })
 export class VentasModule {}

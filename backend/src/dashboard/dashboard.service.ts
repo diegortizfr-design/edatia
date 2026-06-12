@@ -26,7 +26,7 @@ export class DashboardService {
         _sum: { total: true },
       }),
       // Clientes totales
-      this.prisma.clienteERP.count({ where: { empresaId, activo: true } }),
+      this.prisma.tercero.count({ where: { empresaId, esCliente: true, activo: true } }),
       // Sesiones POS abiertas
       this.prisma.sesionCaja.count({ where: { empresaId, estado: 'ABIERTA' } }),
     ]);

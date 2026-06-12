@@ -55,10 +55,9 @@ export class FacturasCompraService {
     });
     return `FC-${year}-${String(count + 1).padStart(5, '0')}`;
   }
-
   async create(dto: CreateFacturaCompraDto, empresaId: number, usuarioId: number) {
-    const proveedor = await this.prisma.proveedor.findFirst({
-      where: { id: dto.proveedorId, empresaId },
+    const proveedor = await this.prisma.tercero.findFirst({
+      where: { id: dto.proveedorId, empresaId, esProveedor: true },
     });
     if (!proveedor) throw new NotFoundException('Proveedor no encontrado');
 

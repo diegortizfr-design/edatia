@@ -97,6 +97,13 @@ export const createProveedor = (dto: any) => api.post('/inventario/proveedores',
 export const updateProveedor = (id: number, dto: any) => api.patch(`/inventario/proveedores/${id}`, dto).then(r => r.data)
 export const deleteProveedor = (id: number) => api.delete(`/inventario/proveedores/${id}`).then(r => r.data)
 
+// ─── Terceros Unificados ──────────────────────────────────────────────────────
+export const getTerceros = () => api.get('/terceros').then(r => r.data)
+export const getTercero = (id: number) => api.get(`/terceros/${id}`).then(r => r.data)
+export const createTercero = (dto: any) => api.post('/terceros', dto).then(r => r.data)
+export const updateTercero = (id: number, dto: any) => api.patch(`/terceros/${id}`, dto).then(r => r.data)
+export const deleteTercero = (id: number) => api.delete(`/terceros/${id}`).then(r => r.data)
+
 // ─── Formatos de Impresión (ya existen en BD) ────────────────────────────────
 export const getFormatosImpresion = () => api.get('/configuracion/formatos').then(r => r.data)
 export const updateFormatoImpresion = (tipo: string, dto: any) =>

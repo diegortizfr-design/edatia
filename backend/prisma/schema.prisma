@@ -100,7 +100,8 @@ model Empresa {
   bodegas              Bodega[]
   stock                Stock[]
   movimientosInventario MovimientoInventario[]
-  proveedores          Proveedor[]
+  terceros             Tercero[]
+  sucursalesTerceros   SucursalTercero[]
   ordenesCompra        OrdenCompra[]
   recepcionesMercancia RecepcionMercancia[]
   facturasCompra       FacturaCompra[]
@@ -109,7 +110,6 @@ model Empresa {
   variantes            VarianteProducto[]
 
   // ── Ventas ────────────────────────────────────────
-  clientes             ClienteERP[]
   cotizaciones         Cotizacion[]
   pedidosVenta         PedidoVenta[]
   facturasVenta        FacturaVenta[]
@@ -144,7 +144,6 @@ model Empresa {
   monedas              Moneda[]
   cajasBancos          CajaBanco[]
   roles                Rol[]
-  vendedores           Vendedor[]
   gruposProducto       GrupoProducto[]
   periodosCierre       PeriodoCierreERP[]
   auditLogsERP         AuditLogERP[]
@@ -851,40 +850,7 @@ model MovimientoInventario {
   @@index([empresaId, fechaMovimiento])
   @@index([referenciaId, referenciaTipo])
 }
-
-model Proveedor {
-  id              Int           @id @default(autoincrement())
-  empresaId       Int
-  empresa         Empresa       @relation(fields: [empresaId], references: [id])
-
-  tipoDocumento   String?
-  numeroDocumento String?
-  nombre          String
-  nombreComercial String?
-
-  email           String?
-  telefono        String?
-  contactoNombre  String?
-  direccion       String?
-  ciudad          String?
-  pais            String        @default("Colombia")
-
-  plazoEntregaDias Int?
-  condicionesPago  String?
-  descuentoBase    Decimal?     @db.Decimal(5, 2)
-  moneda           String       @default("COP")
-
-  activo          Boolean       @default(true)
-  notas           String?
-  sucursales      Json?
-  ordenesCompra   OrdenCompra[]
-  facturasCompra  FacturaCompra[]
-
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@index([empresaId])
-}
+// El modelo Proveedor ha sido unificado en Tercero
 
 model FacturaCompra {
   id                    Int           @id @default(autoincrement())
@@ -895,7 +861,7 @@ model FacturaCompra {
   prefijoProveedor      String?
   consecutivoProveedor  String
   proveedorId           Int
-  proveedor             Proveedor     @relation(fields: [proveedorId], references: [id])
+  proveedor             Tercero       @relation(fields: [proveedorId], references: [id])
 
   fechaEmision          DateTime
   fechaVencimiento      DateTime?
@@ -939,7 +905,7 @@ model OrdenCompra {
 
   numero      String   @unique
   proveedorId Int
-  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
+  proveedor   Tercero   @relation(fields: [proveedorId], references: [id])
   bodegaId    Int
   bodega      Bodega   @relation(fields: [bodegaId], references: [id])
 
@@ -1124,59 +1090,108 @@ model StockVariante {
 // MÓDULO VENTAS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-model ClienteERP {
-  id                  Int      @id @default(autoincrement())
+model Tercero {
+  id                  Int               @id @default(autoincrement())
   empresaId           Int
-  empresa             Empresa  @relation(fields: [empresaId], references: [id])
+  empresa             Empresa           @relation(fields: [empresaId], references: [id])
 
   // Identificación
-  tipoPersona         String   @default("JURIDICA")    // NATURAL | JURIDICA
-  tipoDocumento       String   @default("NIT")         // NIT | CC | CE | PASAPORTE | PEP
+  tipoPersona         String            @default("JURIDICA") // NATURAL | JURIDICA
+  tipoDocumento       String            @default("NIT")      // NIT | CC | CE | PASAPORTE | PEP
   numeroDocumento     String
   digitoVerificacion  String?
   nombre              String
   nombreComercial     String?
 
-  // Tributario DIAN
-  regimenFiscal       String   @default("49")   // 48=Responsable IVA, 49=No responsable
-  responsabilidades   String[]                  // O-13, O-15, O-23, O-47
-  actividadEconomica  String?                   // CIIU
-
-  // Contacto
+  // Contacto y Ubicación
   email               String?
   telefono            String?
   celular             String?
-
-  // Dirección (para UBL 2.1)
-  pais                String   @default("CO")
+  pais                String            @default("CO")
   departamento        String?
-  municipio           String?
+  municipio           String?           // Ciudad
   codigoDane          String?
   codigoPostal        String?
-  direccion           String?
+  direccion           String?           // Dirección fiscal / principal
 
-  // Comercial
-  plazoCredito        Int      @default(0)
-  cupoCredito         Decimal? @db.Decimal(15,2)
-  descuentoBase       Decimal  @default(0) @db.Decimal(5,2)
-  vendedorId          Int?
+  // Roles Simultáneos (Banderas booleanas)
+  esCliente           Boolean           @default(false)
+  esProveedor         Boolean           @default(false)
+  esColaborador       Boolean           @default(false) // Empleado interno
+  esVendedor          Boolean           @default(false) // Actúa como vendedor comercial
 
-  activo              Boolean  @default(true)
+  // Campos de Cliente
+  plazoCredito        Int               @default(0)
+  cupoCredito         Decimal?          @db.Decimal(15,2)
+  descuentoCliente    Decimal           @default(0) @db.Decimal(5,2)
+  vendedorAsignadoId  Int?              // Vendedor asignado
+  vendedorAsignado    Tercero?          @relation("ClientesDelVendedor", fields: [vendedorAsignadoId], references: [id])
+  clientesAsignados   Tercero[]         @relation("ClientesDelVendedor")
+
+  // Campos de Proveedor
+  contactoNombre      String?
+  plazoEntregaDias    Int?
+  condicionesPago     String?
+  descuentoProveedor  Decimal?          @db.Decimal(5, 2)
+  monedaProveedor     String            @default("COP")
+
+  // Campos de Vendedor / Comisión
+  comisionPct         Decimal           @default(0) @db.Decimal(5, 2)
+
+  activo              Boolean           @default(true)
   notas               String?
-  sucursales          Json?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
 
+  // Sucursales físicas relacionales
+  sucursales          SucursalTercero[]
+
+  // Relaciones transaccionales de Cliente
   cotizaciones        Cotizacion[]
   pedidos             PedidoVenta[]
-  facturas            FacturaVenta[]
+  facturasVenta       FacturaVenta[]
   notasCredito        NotaCredito[]
   recibos             ReciboCaja[]
   ventasPos           VentaPos[]
 
+  // Relaciones transaccionales de Proveedor
+  ordenesCompra       OrdenCompra[]
+  facturasCompra      FacturaCompra[]
+
+  // Tributario DIAN
+  regimenFiscal       String            @default("49")   // 48=IVA, 49=No responsable
+  responsabilidades   String[]                           // O-13, O-15, etc.
+  actividadEconomica  String?                            // CIIU
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
   @@unique([empresaId, tipoDocumento, numeroDocumento])
   @@index([empresaId])
   @@index([empresaId, activo])
+}
+
+model SucursalTercero {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa  @relation(fields: [empresaId], references: [id])
+  
+  terceroId     Int
+  tercero       Tercero  @relation(fields: [terceroId], references: [id], onDelete: Cascade)
+
+  codigo        String   // Ej: "01", "02"
+  descripcion   String
+  direccion     String?
+  telefono      String?
+  ciudad        String?
+  departamento  String?
+  contacto      String?
+  cargo         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([empresaId, terceroId, codigo])
+  @@index([empresaId])
+  @@index([terceroId])
 }
 
 model ConfiguracionDIAN {
@@ -1229,7 +1244,7 @@ model Cotizacion {
   numero           String
 
   clienteId        Int
-  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  cliente          Tercero    @relation(fields: [clienteId], references: [id])
   bodegaId         Int
 
   fecha            DateTime @default(now())
@@ -1289,7 +1304,7 @@ model FacturaVenta {
 
   numero           String   // prefijoDIAN + numeroDIAN
   clienteId        Int
-  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  cliente          Tercero    @relation(fields: [clienteId], references: [id])
   bodegaId         Int
   bodega           Bodega   @relation(fields: [bodegaId], references: [id])
 
@@ -1395,7 +1410,7 @@ model NotaCredito {
   facturaId        Int
   factura          FacturaVenta @relation(fields: [facturaId], references: [id])
   clienteId        Int
-  cliente          ClienteERP   @relation(fields: [clienteId], references: [id])
+  cliente          Tercero      @relation(fields: [clienteId], references: [id])
   resolucionId     Int?
   resolucion       ResolucionDIAN? @relation(fields: [resolucionId], references: [id])
 
@@ -1443,7 +1458,7 @@ model ReciboCaja {
   empresa          Empresa    @relation(fields: [empresaId], references: [id])
   numero           String
   clienteId        Int
-  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  cliente          Tercero    @relation(fields: [clienteId], references: [id])
 
   fecha            DateTime   @default(now())
   concepto         String
@@ -1649,7 +1664,7 @@ model VentaPos {
 
   // Cliente (null = Consumidor Final)
   clienteId        Int?
-  cliente          ClienteERP? @relation(fields: [clienteId], references: [id])
+  cliente          Tercero?    @relation(fields: [clienteId], references: [id])
   clienteNombre    String      @default("Consumidor Final")
   clienteDoc       String?
 
@@ -1902,27 +1917,7 @@ model GrupoProducto {
   @@index([empresaId])
 }
 
-// Reemplaza: edatia_vendedores
-model Vendedor {
-  id          Int      @id @default(autoincrement())
-  empresaId   Int
-  empresa     Empresa  @relation(fields: [empresaId], references: [id])
-
-  nombre      String
-  email       String?
-  telefono    String?
-  documento   String?  // Número de cédula
-  // Comisión base en %
-  comisionPct Decimal  @default(0) @db.Decimal(5, 2)
-  activo      Boolean  @default(true)
-  notas       String?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([empresaId, nombre])
-  @@index([empresaId, activo])
-}
+// El modelo Vendedor ha sido unificado en Tercero
 
 // Reemplaza: edatia_seguridad_cierre
 model PeriodoCierreERP {
@@ -2012,7 +2007,7 @@ model PedidoVenta {
   numero           String
 
   clienteId        Int
-  cliente          ClienteERP @relation(fields: [clienteId], references: [id])
+  cliente          Tercero    @relation(fields: [clienteId], references: [id])
   bodegaId         Int
 
   fecha            DateTime @default(now())

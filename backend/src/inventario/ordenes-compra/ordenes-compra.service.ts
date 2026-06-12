@@ -113,7 +113,7 @@ export class OrdenesCompraService {
 
     // Verificar proveedor y bodega pertenecen a la empresa
     const [proveedor, bodega] = await Promise.all([
-      (this.prisma as any).proveedor.findFirst({ where: { id: dto.proveedorId, empresaId } }),
+      this.prisma.tercero.findFirst({ where: { id: dto.proveedorId, empresaId, esProveedor: true } }),
       (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaId, empresaId } }),
     ]);
     if (!proveedor) throw new NotFoundException('Proveedor no encontrado');

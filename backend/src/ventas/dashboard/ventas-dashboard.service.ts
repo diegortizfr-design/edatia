@@ -20,7 +20,7 @@ export class VentasDashboardService {
       porEstado,
     ] = await Promise.all([
       // Clientes activos
-      this.prisma.clienteERP.count({ where: { empresaId, activo: true } }),
+      this.prisma.tercero.count({ where: { empresaId, esCliente: true, activo: true } }),
 
       // Ventas del mes
       this.prisma.facturaVenta.aggregate({
@@ -72,8 +72,8 @@ export class VentasDashboardService {
 
     // Enriquecer top clientes
     const clienteIds = topClientes.map(t => t.clienteId)
-    const clientes = await this.prisma.clienteERP.findMany({
-      where: { id: { in: clienteIds } },
+    const clientes = await this.prisma.tercero.findMany({
+      where: { id: { in: clienteIds }, esCliente: true },
       select: { id: true, nombre: true, numeroDocumento: true },
     })
 

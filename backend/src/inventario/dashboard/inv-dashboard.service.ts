@@ -23,7 +23,7 @@ export class InvDashboardService {
     ] = await Promise.all([
       (this.prisma as any).producto.count({ where: { empresaId, activo: true } }),
       (this.prisma as any).bodega.count({ where: { empresaId, activo: true } }),
-      (this.prisma as any).proveedor.count({ where: { empresaId, activo: true } }),
+      this.prisma.tercero.count({ where: { empresaId, esProveedor: true, activo: true } }),
       (this.prisma as any).movimientoInventario.count({
         where: { empresaId, fechaMovimiento: { gte: inicioMes } },
       }),

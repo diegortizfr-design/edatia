@@ -2,8 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Search, Users, Eye, Pencil, Trash2, SlidersHorizontal, Check, X, Building2, User } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import toast, { Toaster } from 'react-hot-toast'
-import { getClientesERP, getProveedores, deleteClienteERP, deleteProveedor } from '../../services/erp.service'
+import { getTerceros, deleteTercero } from '../../services/erp.service'
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -21,6 +20,8 @@ export interface Sucursal {
 
 export interface Tercero {
   id: string
+  clientIds?: number[]
+  providerIds?: number[]
   tipoPersona: 'NATURAL' | 'JURIDICA'
   tipoDocumento: 'NIT' | 'CC' | 'CE' | 'PASAPORTE' | 'PEP'
   numeroDocumento: string
@@ -253,174 +254,74 @@ export const DEFAULT_TERCEROS: Tercero[] = [
     cumpleanosDia: 14,
     cumpleanosMes: 9,
     cartera: '',
-    formaPago: '01 - EFECTIVO',
-    nivelPrecio: '',
-    clasificacion: '',
-    cupoCredito: false,
-    cupoCreditoValor: 0,
-    paginaWeb: '',
-    paginaWeb2: '',
-    paginaWeb3: '',
-    tokenPosgold: '',
-    observacion: 'Diseñadora de Joyas Senior en planta Medellín.',
-    regimenFiscal: '49',
-    responsabilidades: ['R-99-PN'],
-    actividadEconomica: '7410',
-    sucursales: []
-  }
-]
-
 export function ConfigTerceros() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const qc = useQueryClient()
 
   // Queries
-  const { data: clientes = [], isLoading: loadingClientes } = useQuery({
-    queryKey: ['clientes-erp'],
-    queryFn: getClientesERP,
-  })
-
-  const { data: proveedores = [], isLoading: loadingProveedores } = useQuery({
-    queryKey: ['proveedores-erp'],
-    queryFn: getProveedores,
+  const { data: dbTerceros = [], isLoading } = useQuery({
+    queryKey: ['terceros-erp'],
+    queryFn: getTerceros,
   })
 
   // Mutations
-  const mutDeleteCliente = useMutation({
-    mutationFn: (id: number) => deleteClienteERP(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clientes-erp'] })
-      toast.success('Cliente eliminado')
+  const mutDeleteTercero = useMutation({
+    mutationFn: (id: number) => deleteTercero(id),
+    onSuccess: (res: any) => {
+      qc.invalidateQueries({ queryKey: ['terceros-erp'] })
+      toast.success(res?.message || 'Tercero eliminado')
     },
-    onError: () => toast.error('Error al eliminar cliente')
+    onError: () => toast.error('Error al eliminar tercero')
   })
 
-  const mutDeleteProveedor = useMutation({
-    mutationFn: (id: number) => deleteProveedor(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['proveedores-erp'] })
-      toast.success('Proveedor eliminado')
-    },
-    onError: () => toast.error('Error al eliminar proveedor')
-  })
-
-  // Merge logic in memory
+  // Mapear los datos de la BD al formato del Frontend
   const terceros = useMemo(() => {
-    const mergedMap = new Map<string, Tercero>()
-
-    clientes.forEach((cli: any) => {
-      const key = cli.numeroDocumento || `cli_${cli.id}`
-      mergedMap.set(key, {
-        id: `cli_${cli.id}`,
-        tipoPersona: cli.tipoPersona || 'JURIDICA',
-        tipoDocumento: cli.tipoDocumento || 'NIT',
-        numeroDocumento: cli.numeroDocumento,
-        digitoVerificacion: cli.digitoVerificacion || '',
-        codigo: cli.numeroDocumento || '',
-        fechaCreacion: cli.createdAt ? new Date(cli.createdAt).toLocaleDateString() : '',
-        nombre: cli.nombre,
-        nombreComercial: cli.nombreComercial || cli.nombre,
-        activo: cli.activo !== false,
-        cliente: true,
-        proveedor: false,
-        empleado: false,
-        prospecto: false,
-        vendedor: cli.vendedorId ? String(cli.vendedorId) : '',
-        email: cli.email || '',
-        emailNovedades: '',
-        telefono: cli.telefono || '',
-        telefono2: '',
-        telefono3: '',
-        celular: cli.celular || '',
-        pais: cli.pais || 'COLOMBIA',
-        departamento: cli.departamento || '',
-        ciudad: cli.municipio || '',
-        direccionFiscal: cli.direccion || '',
-        direccionDespachos: cli.direccion || '',
-        cumpleanosDia: 0,
-        cumpleanosMes: 0,
-        cartera: 'CL - CLIENTES',
-        formaPago: '01 - EFECTIVO',
-        nivelPrecio: 'Precio Estándar',
-        cupoCredito: cli.cupoCredito ? true : false,
-        cupoCreditoValor: cli.cupoCredito ? Number(cli.cupoCredito) : 0,
-        paginaWeb: '',
-        paginaWeb2: '',
-        paginaWeb3: '',
-        tokenPosgold: '',
-        observacion: cli.notas || '',
-        sucursales: cli.sucursales || [],
-        regimenFiscal: cli.regimenFiscal || '49',
-        responsabilidades: cli.responsabilidades || [],
-        actividadEconomica: cli.actividadEconomica || '',
-      })
-    })
-
-    proveedores.forEach((prov: any) => {
-      const key = prov.numeroDocumento || `prov_${prov.id}`
-      const existing = mergedMap.get(key)
-      if (existing) {
-        existing.id = `dual_${existing.id.replace('cli_', '')}_${prov.id}`
-        existing.proveedor = true
-        if (!existing.email) existing.email = prov.email || ''
-        if (!existing.telefono) existing.telefono = prov.telefono || ''
-        if (!existing.direccionFiscal) existing.direccionFiscal = prov.direccion || ''
-        if (!existing.ciudad) existing.ciudad = prov.ciudad || ''
-        if (!existing.nombreComercial) existing.nombreComercial = prov.nombreComercial || ''
-        if (prov.sucursales && prov.sucursales.length > 0) {
-          existing.sucursales = prov.sucursales
-        }
-      } else {
-        mergedMap.set(key, {
-          id: `prov_${prov.id}`,
-          tipoPersona: 'JURIDICA',
-          tipoDocumento: prov.tipoDocumento || 'NIT',
-          numeroDocumento: prov.numeroDocumento || '',
-          digitoVerificacion: '',
-          codigo: prov.numeroDocumento || '',
-          fechaCreacion: prov.createdAt ? new Date(prov.createdAt).toLocaleDateString() : '',
-          nombre: prov.nombre,
-          nombreComercial: prov.nombreComercial || prov.nombre,
-          activo: prov.activo !== false,
-          cliente: false,
-          proveedor: true,
-          empleado: false,
-          prospecto: false,
-          vendedor: '',
-          email: prov.email || '',
-          emailNovedades: '',
-          telefono: prov.telefono || '',
-          telefono2: '',
-          telefono3: '',
-          celular: '',
-          pais: prov.pais || 'COLOMBIA',
-          departamento: '',
-          ciudad: prov.ciudad || '',
-          direccionFiscal: prov.direccion || '',
-          direccionDespachos: prov.direccion || '',
-          cumpleanosDia: 0,
-          cumpleanosMes: 0,
-          cartera: 'PR - PROVEEDORES',
-          formaPago: prov.condicionesPago || '01 - EFECTIVO',
-          nivelPrecio: 'Precio Estándar',
-          cupoCredito: false,
-          cupoCreditoValor: 0,
-          paginaWeb: '',
-          paginaWeb2: '',
-          paginaWeb3: '',
-          tokenPosgold: '',
-          observacion: prov.notes || prov.notas || '',
-          sucursales: prov.sucursales || [],
-          regimenFiscal: '49',
-          responsabilidades: [],
-          actividadEconomica: '',
-        })
-      }
-    })
-
-    return Array.from(mergedMap.values())
-  }, [clientes, proveedores])
+    return dbTerceros.map((t: any) => ({
+      id: String(t.id),
+      tipoPersona: t.tipoPersona || 'JURIDICA',
+      tipoDocumento: t.tipoDocumento || 'NIT',
+      numeroDocumento: t.numeroDocumento || '',
+      digitoVerificacion: t.digitoVerificacion || '',
+      codigo: t.numeroDocumento || '',
+      fechaCreacion: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '',
+      nombre: t.nombre || '',
+      nombreComercial: t.nombreComercial || t.nombre || '',
+      activo: t.activo !== false,
+      cliente: !!t.esCliente,
+      proveedor: !!t.esProveedor,
+      empleado: !!t.esColaborador || !!t.esVendedor,
+      prospecto: false,
+      vendedor: t.vendedorAsignadoId ? String(t.vendedorAsignadoId) : '',
+      email: t.email || '',
+      emailNovedades: '',
+      telefono: t.telefono || '',
+      telefono2: '',
+      telefono3: '',
+      celular: t.celular || '',
+      pais: t.pais || 'COLOMBIA',
+      departamento: t.departamento || '',
+      ciudad: t.municipio || '',
+      direccionFiscal: t.direccion || '',
+      direccionDespachos: t.direccion || '',
+      cumpleanosDia: 0,
+      cumpleanosMes: 0,
+      cartera: t.esCliente ? 'CL - CLIENTES' : 'PR - PROVEEDORES',
+      formaPago: t.condicionesPago || '01 - EFECTIVO',
+      nivelPrecio: 'Precio Estándar',
+      cupoCredito: !!t.cupoCredito,
+      cupoCreditoValor: t.cupoCredito ? Number(t.cupoCredito) : 0,
+      paginaWeb: '',
+      paginaWeb2: '',
+      paginaWeb3: '',
+      tokenPosgold: '',
+      observacion: t.notas || '',
+      sucursales: t.sucursales || [],
+      regimenFiscal: t.regimenFiscal || '49',
+      responsabilidades: t.responsabilidades || [],
+      actividadEconomica: t.actividadEconomica || '',
+    }))
+  }, [dbTerceros])
 
   // Estados de Filtros
   const [filterNit, setFilterNit] = useState('')
@@ -429,7 +330,7 @@ export function ConfigTerceros() {
   const [filterRazonSocial, setFilterRazonSocial] = useState('')
   const [filterCartera, setFilterCartera] = useState('')
   const [filterFormaPago, setFilterFormaPago] = useState('')
-  const [filterActivo, setFilterActivo] = useState('SI') // Default SI like Posgold
+  const [filterActivo, setFilterActivo] = useState('SI')
   const [filterCliente, setFilterCliente] = useState('TODOS')
   const [filterEmpleado, setFilterEmpleado] = useState('TODOS')
   const [filterProveedor, setFilterProveedor] = useState('TODOS')
@@ -465,36 +366,8 @@ export function ConfigTerceros() {
   // Eliminar tercero
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`¿Está seguro de eliminar a ${name} de los terceros?`)) {
-      console.log('Intentando eliminar tercero. ID recibido:', id);
-      const numbers = id.match(/\d+/g);
-      
-      if (!numbers || numbers.length === 0) {
-        toast.error('ID de tercero no válido (no numérico)');
-        console.error('Error al intentar eliminar. ID no contiene números:', id);
-        return;
-      }
-
-      if (id.includes('dual') || numbers.length >= 2) {
-        const cliId = parseInt(numbers[0], 10);
-        const provId = parseInt(numbers[1], 10);
-        console.log(`Eliminando registro dual - Cliente ID: ${cliId}, Proveedor ID: ${provId}`);
-        
-        if (!isNaN(cliId)) mutDeleteCliente.mutate(cliId);
-        if (!isNaN(provId)) mutDeleteProveedor.mutate(provId);
-      } else if (id.includes('cli') || id.startsWith('cli_')) {
-        const dbId = parseInt(numbers[0], 10);
-        console.log(`Eliminando Cliente ID: ${dbId}`);
-        if (!isNaN(dbId)) mutDeleteCliente.mutate(dbId);
-      } else if (id.includes('prov') || id.startsWith('prov_')) {
-        const dbId = parseInt(numbers[0], 10);
-        console.log(`Eliminando Proveedor ID: ${dbId}`);
-        if (!isNaN(dbId)) mutDeleteProveedor.mutate(dbId);
-      } else {
-        // Fallback por si acaso el formato es diferente pero tiene un número
-        const dbId = parseInt(numbers[0], 10);
-        console.log(`Eliminando por fallback ID: ${dbId}`);
-        if (!isNaN(dbId)) mutDeleteCliente.mutate(dbId);
-      }
+      console.log('Intentando eliminar tercero ID:', id)
+      mutDeleteTercero.mutate(Number(id))
     }
   }
 
@@ -518,7 +391,7 @@ export function ConfigTerceros() {
             Gestión de Terceros
           </h1>
           <p className="text-slate-500 text-xs mt-0.5">
-            Administra la base unificada de Clientes, Proveedores, Empleados y Prospectos del sistema.
+            Administra la base unificada de Clientes, Proveedores, Empleados y Vendedores del sistema.
           </p>
         </div>
 
@@ -565,7 +438,7 @@ export function ConfigTerceros() {
             <Users size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Empleados</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Empleados / Vend.</p>
             <p className="text-xl font-extrabold text-slate-800">{totalEmpleados}</p>
           </div>
         </div>
@@ -753,7 +626,7 @@ export function ConfigTerceros() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-150 text-slate-700 font-sans">
-              {loadingClientes || loadingProveedores ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-slate-400 text-sm">
                     <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-2" />
