@@ -254,6 +254,20 @@ export const DEFAULT_TERCEROS: Tercero[] = [
     cumpleanosDia: 14,
     cumpleanosMes: 9,
     cartera: '',
+    formaPago: '01 - EFECTIVO',
+    nivelPrecio: 'Precio Estándar',
+    clasificacion: 'Ninguna',
+    cupoCredito: false,
+    cupoCreditoValor: 0,
+    paginaWeb: '',
+    paginaWeb2: '',
+    paginaWeb3: '',
+    tokenPosgold: '',
+    observacion: '',
+    sucursales: []
+  }
+]
+
 export function ConfigTerceros() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
