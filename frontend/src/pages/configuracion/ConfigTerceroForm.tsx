@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
-import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales } from '../../services/configuracion.service'
+import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
 
 const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
@@ -15,12 +15,6 @@ const REGIMEN_OPTIONS = [
   { value: '49', label: 'No responsable de IVA (Regimen Simplificado)' }
 ]
 
-const DEPARTAMENTO_CIUDADES: Record<string, string[]> = {
-  '76 - VALLE': ['76001 - CALI', '76109 - BUENAVENTURA', '76520 - PALMIRA'],
-  '11 - BOGOTA D.C.': ['11001 - BOGOTA'],
-  '05 - ANTIOQUIA': ['05001 - MEDELLIN', '05088 - BELLO', '05266 - ENVIGADO'],
-  '08 - ATLANTICO': ['08001 - BARRANQUILLA', '08758 - SOLEDAD']
-}
 
 const RESPONSABILIDADES_DIAN = [
   { value: 'O-13', label: 'Gran Contribuyente' },
@@ -240,6 +234,11 @@ export function ConfigTerceroForm() {
     queryFn: getVendedores,
   })
 
+  const { data: geoData } = useQuery({
+    queryKey: ['geolocation-state'],
+    queryFn: getGeolocationState,
+  })
+
   // Mutations
   const mutCreateTercero = useMutation({
     mutationFn: createTercero,
@@ -269,6 +268,41 @@ export function ConfigTerceroForm() {
     { id: 'adj_2', nombre: 'Camara_Comercio.pdf', tamaño: '412 KB', fecha: '14/05/2026' }
   ])
   const [uploadingName, setUploadingName] = useState('')
+
+  // Geolocalización computada
+  const paisesList = geoData?.paises || []
+  
+  const selectedPaisObj = paisesList.find(
+    p => p.nombre.toUpperCase() === (form.pais || 'COLOMBIA').toUpperCase() ||
+         p.codigo.toUpperCase() === (form.pais || 'CO').toUpperCase()
+  )
+
+  const deptsList = selectedPaisObj
+    ? (geoData?.departamentos || []).filter(d => d.paisId === selectedPaisObj.id)
+    : []
+
+  const selectedDeptObj = deptsList.find(
+    d => d.nombre.toUpperCase() === (form.departamento || '').toUpperCase()
+  )
+
+  const citiesList = selectedDeptObj
+    ? (geoData?.ciudades || []).filter(c => c.departamentoId === selectedDeptObj.id)
+    : []
+
+  // Para sucursales del tercero
+  const selectedPaisForSucursal = selectedPaisObj || paisesList.find(p => p.codigo === 'CO')
+  
+  const deptsListForSucursal = selectedPaisForSucursal
+    ? (geoData?.departamentos || []).filter(d => d.paisId === selectedPaisForSucursal.id)
+    : []
+
+  const selectedDeptObjForSucursal = deptsListForSucursal.find(
+    d => d.nombre.toUpperCase() === (sucForm.departamento || '').toUpperCase()
+  )
+
+  const citiesListForSucursal = selectedDeptObjForSucursal
+    ? (geoData?.ciudades || []).filter(c => c.departamentoId === selectedDeptObjForSucursal.id)
+    : []
 
   // Cargar datos
   useEffect(() => {
@@ -339,6 +373,13 @@ export function ConfigTerceroForm() {
       }
       if (k === 'tipoDocumento') {
         next.digitoVerificacion = e.target.value === 'NIT' ? calcularDV(prev.numeroDocumento) : ''
+      }
+      if (k === 'pais') {
+        next.departamento = ''
+        next.ciudad = ''
+      }
+      if (k === 'departamento') {
+        next.ciudad = ''
       }
       return next
     })
@@ -649,25 +690,26 @@ export function ConfigTerceroForm() {
                 </Field>
 
                 <Field label="País">
-                  <select value={form.pais} onChange={set('pais')} className={inputCls}>
-                    <option value="COLOMBIA">COLOMBIA</option>
-                    <option value="ESTADOS UNIDOS">ESTADOS UNIDOS</option>
-                    <option value="ESPAÑA">ESPAÑA</option>
+                  <select value={form.pais || ''} onChange={set('pais')} className={inputCls}>
+                    <option value="">-- Seleccionar País --</option>
+                    {paisesList.map(p => (
+                      <option key={p.id} value={p.nombre.toUpperCase()}>{p.nombre.toUpperCase()}</option>
+                    ))}
                   </select>
                 </Field>
                 <Field label="Departamento">
-                  <select value={form.departamento || ''} onChange={set('departamento')} className={inputCls}>
+                  <select value={form.departamento || ''} onChange={set('departamento')} className={inputCls} disabled={!form.pais}>
                     <option value="">-- Seleccionar --</option>
-                    {Object.keys(DEPARTAMENTO_CIUDADES).map(d => (
-                      <option key={d} value={d}>{d}</option>
+                    {deptsList.map(d => (
+                      <option key={d.id} value={d.nombre}>{d.nombre}</option>
                     ))}
                   </select>
                 </Field>
                 <Field label="Ciudad / Municipio">
-                  <select value={form.ciudad || ''} onChange={set('ciudad')} className={inputCls}>
+                  <select value={form.ciudad || ''} onChange={set('ciudad')} className={inputCls} disabled={!form.departamento}>
                     <option value="">-- Seleccionar --</option>
-                    {(DEPARTAMENTO_CIUDADES[form.departamento || ''] || []).map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {citiesList.map(c => (
+                      <option key={c.id} value={c.nombre}>{c.nombre}</option>
                     ))}
                   </select>
                 </Field>
@@ -1175,22 +1217,29 @@ export function ConfigTerceroForm() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Departamento">
-                  <input
-                    type="text"
-                    value={sucForm.departamento}
-                    onChange={e => setSucForm(prev => ({ ...prev, departamento: e.target.value }))}
-                    placeholder="Ej. Cundinamarca"
+                  <select
+                    value={sucForm.departamento || ''}
+                    onChange={e => setSucForm(prev => ({ ...prev, departamento: e.target.value, ciudad: '' }))}
                     className={inputCls}
-                  />
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {deptsListForSucursal.map(d => (
+                      <option key={d.id} value={d.nombre}>{d.nombre}</option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="Ciudad">
-                  <input
-                    type="text"
-                    value={sucForm.ciudad}
+                  <select
+                    value={sucForm.ciudad || ''}
                     onChange={e => setSucForm(prev => ({ ...prev, ciudad: e.target.value }))}
-                    placeholder="Ej. Bogotá"
                     className={inputCls}
-                  />
+                    disabled={!sucForm.departamento}
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {citiesListForSucursal.map(c => (
+                      <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                    ))}
+                  </select>
                 </Field>
               </div>
 
