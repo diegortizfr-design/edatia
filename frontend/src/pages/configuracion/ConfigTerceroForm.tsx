@@ -1093,26 +1093,25 @@ export function ConfigTerceroForm() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-600">
-                    {isEdit && form.cliente ? (
-                      <>
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-indigo-650">FV-2488</td>
-                          <td className="p-3">14/05/2026</td>
-                          <td className="p-3 font-bold text-slate-700">$ 4.250.000</td>
-                          <td className="p-3 font-bold text-slate-700">$ 0</td>
-                          <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-green-50 text-green-700 border border-green-150 uppercase">Pagada</span></td>
+                    {isEdit && terceroData?.facturasVenta && terceroData.facturasVenta.length > 0 ? (
+                      terceroData.facturasVenta.map((fv: any) => (
+                        <tr key={fv.id} className="hover:bg-slate-50/50">
+                          <td className="p-3 font-mono font-bold text-indigo-600">{fv.numero}</td>
+                          <td className="p-3">{fv.fecha ? new Date(fv.fecha).toLocaleDateString('es-CO') : '-'}</td>
+                          <td className="p-3 font-bold text-slate-700">$ {Number(fv.total || 0).toLocaleString('es-CO')}</td>
+                          <td className="p-3 font-bold text-slate-700">$ {Number(fv.saldo || 0).toLocaleString('es-CO')}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                              fv.estado === 'PAGADA' ? 'bg-green-50 text-green-700 border border-green-150' : 'bg-amber-50 text-amber-700 border border-amber-150'
+                            }`}>
+                              {fv.estado}
+                            </span>
+                          </td>
                         </tr>
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-indigo-650">FV-2503</td>
-                          <td className="p-3">22/05/2026</td>
-                          <td className="p-3 font-bold text-slate-700">$ 1.820.000</td>
-                          <td className="p-3 font-bold text-rose-600">$ 1.820.000</td>
-                          <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-50 text-amber-700 border border-amber-150 uppercase">Vencida</span></td>
-                        </tr>
-                      </>
+                      ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-slate-400 italic">No hay registros para este tercero.</td>
+                        <td colSpan={5} className="p-6 text-center text-slate-400 italic">No hay registros de ventas para este tercero.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1136,31 +1135,28 @@ export function ConfigTerceroForm() {
                       <th className="p-3">Órden de Compra</th>
                       <th className="p-3">Fecha</th>
                       <th className="p-3">Monto Total</th>
-                      <th className="p-3">Items Recibidos</th>
                       <th className="p-3">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-600">
-                    {isEdit && form.proveedor ? (
-                      <>
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-indigo-650">OC-891</td>
-                          <td className="p-3">12/04/2026</td>
-                          <td className="p-3 font-bold text-slate-700">$ 14.500.000</td>
-                          <td className="p-3">12 / 12</td>
-                          <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-green-50 text-green-700 border border-green-150 uppercase">Recibido</span></td>
+                    {isEdit && terceroData?.ordenesCompra && terceroData.ordenesCompra.length > 0 ? (
+                      terceroData.ordenesCompra.map((oc: any) => (
+                        <tr key={oc.id} className="hover:bg-slate-50/50">
+                          <td className="p-3 font-mono font-bold text-indigo-600">{oc.numero}</td>
+                          <td className="p-3">{oc.fechaEmision ? new Date(oc.fechaEmision).toLocaleDateString('es-CO') : '-'}</td>
+                          <td className="p-3 font-bold text-slate-700">$ {Number(oc.total || 0).toLocaleString('es-CO')}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                              oc.estado === 'RECIBIDO' ? 'bg-green-50 text-green-700 border border-green-150' : 'bg-indigo-50 text-indigo-700 border border-indigo-150'
+                            }`}>
+                              {oc.estado}
+                            </span>
+                          </td>
                         </tr>
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-indigo-650">OC-914</td>
-                          <td className="p-3">20/05/2026</td>
-                          <td className="p-3 font-bold text-slate-700">$ 8.450.000</td>
-                          <td className="p-3">0 / 8</td>
-                          <td className="p-3"><span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-150 uppercase">En camino</span></td>
-                        </tr>
-                      </>
+                      ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="p-6 text-center text-slate-400 italic">No hay registros para este tercero.</td>
+                        <td colSpan={4} className="p-6 text-center text-slate-400 italic">No hay registros de compras para este tercero.</td>
                       </tr>
                     )}
                   </tbody>

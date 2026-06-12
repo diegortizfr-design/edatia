@@ -7,8 +7,7 @@ import {
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getVendedores, createVendedor, updateVendedor, deleteVendedor } from '../../services/erp.service'
-import { getColaboradores } from '../../services/configuracion.service'
+import { getVendedores, createVendedor, updateVendedor, deleteVendedor, getTerceros } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 
 // ── Types ──
@@ -107,11 +106,13 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
     enabled: section === 'vendedores',
   })
 
-  const { data: colaboradores = [] } = useQuery({
-    queryKey: ['colaboradores'],
-    queryFn: getColaboradores,
+  const { data: terceros = [] } = useQuery({
+    queryKey: ['terceros-erp'],
+    queryFn: getTerceros,
     enabled: section === 'vendedores',
   })
+
+  const colaboradores = terceros.filter((t: any) => t.esColaborador && t.activo)
 
   const mutCreateVendedor = useMutation({
     mutationFn: createVendedor,
@@ -934,7 +935,8 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
                           setFormVendedor(p => ({
                             ...p,
                             nombre: selectedEmp.nombre,
-                            telefono: selectedEmp.telefonoCorporativo || ''
+                            codigo: selectedEmp.numeroDocumento || '',
+                            telefono: selectedEmp.celular || selectedEmp.telefono || ''
                           }))
                         }
                       }}
@@ -947,7 +949,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
                     </select>
                     {colaboradores.length === 0 && (
                       <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
-                        <AlertTriangle size={10} /> No hay colaboradores registrados. Regístralos en la sección de Seguridad.
+                        <AlertTriangle size={10} /> No hay colaboradores registrados. Regístralos en la sección de Terceros con el rol Empleado.
                       </p>
                     )}
                   </div>
