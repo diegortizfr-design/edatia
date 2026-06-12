@@ -119,4 +119,29 @@ export class ConfiguracionController {
   deleteResponsabilidad(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
     return this.svc.deleteResponsabilidad(id, u.empresaId!)
   }
+
+  // ── Tipos de Identificación ──────────────────────────────────
+  @Get('identificaciones')
+  getTiposIdentificacion(@GetUser() u: JwtPayload) {
+    return this.svc.getTiposIdentificacion(u.empresaId!)
+  }
+
+  @Post('identificaciones')
+  createTipoIdentificacion(@GetUser() u: JwtPayload, @Body() dto: any) {
+    return this.svc.createTipoIdentificacion(u.empresaId!, dto)
+  }
+
+  @Patch('identificaciones/:id')
+  updateTipoIdentificacion(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() u: JwtPayload,
+    @Body() dto: any,
+  ) {
+    return this.svc.updateTipoIdentificacion(id, u.empresaId!, dto)
+  }
+
+  @Delete('identificaciones/:id')
+  deleteTipoIdentificacion(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
+    return this.svc.deleteTipoIdentificacion(id, u.empresaId!)
+  }
 }

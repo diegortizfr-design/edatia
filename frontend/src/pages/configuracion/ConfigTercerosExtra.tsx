@@ -575,11 +575,22 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               <RotateCcw size={16} className="text-indigo-600 animate-spin-slow" /> Fusionar Fichas de Terceros
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center gap-3">
+              <div className="p-2 bg-amber-100/80 rounded-xl text-amber-600 animate-pulse">
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-amber-100 text-amber-700 mb-1 border border-amber-200">Módulo en Desarrollo</span>
+                <p className="text-xs text-slate-500 font-bold">Eso no es prioritario en este momento.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60 pointer-events-none">
               {/* Origen */}
               <div className="p-5 bg-rose-50/20 border border-rose-100 rounded-2xl space-y-4">
                 <label className="block text-xs font-bold text-rose-800 uppercase tracking-wide">Tercero Origen (Se Elimina)</label>
                 <select
+                  disabled
                   value={origenId}
                   onChange={e => setOrigenId(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-500 transition-all cursor-pointer font-bold text-slate-700"
@@ -596,6 +607,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               <div className="p-5 bg-emerald-50/20 border border-emerald-100 rounded-2xl space-y-4">
                 <label className="block text-xs font-bold text-emerald-800 uppercase tracking-wide">Tercero Destino (Se Conserva)</label>
                 <select
+                  disabled
                   value={destinoId}
                   onChange={e => setDestinoId(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 transition-all cursor-pointer font-bold text-slate-700"
@@ -623,11 +635,10 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
             )}
 
             <button
-              onClick={handleUnificar}
-              disabled={isMerging}
-              className={`w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 ${isMerging ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled
+              className="w-full py-3 bg-slate-100 border border-slate-200 text-slate-400 rounded-2xl text-xs font-bold cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
             >
-              <RotateCcw size={14} /> Ejecutar Fusión de Terceros
+              <Lock size={14} /> Módulo en Desarrollo
             </button>
           </div>
 

@@ -119,6 +119,19 @@ export const updateResponsabilidadFiscal = (id: number, dto: any) =>
 export const deleteResponsabilidadFiscal = (id: number) =>
   api.delete(`/configuracion/responsabilidades/${id}`).then(r => r.data)
 
+// Tipos de Identificación
+export const getTiposIdentificacion = () =>
+  api.get('/configuracion/identificaciones').then(r => r.data)
+
+export const createTipoIdentificacion = (dto: { codigoDian: string; nombreCorto: string; descripcion: string; activo?: boolean }) =>
+  api.post('/configuracion/identificaciones', dto).then(r => r.data)
+
+export const updateTipoIdentificacion = (id: number, dto: any) =>
+  api.patch(`/configuracion/identificaciones/${id}`, dto).then(r => r.data)
+
+export const deleteTipoIdentificacion = (id: number) =>
+  api.delete(`/configuracion/identificaciones/${id}`).then(r => r.data)
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GEOLOCALIZACIÓN
 // ─────────────────────────────────────────────────────────────────────────────

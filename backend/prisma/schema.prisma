@@ -138,6 +138,7 @@ model Empresa {
   regimenesFiscales    RegimenFiscal[]
   codigosCIIU          CodigoCIIU[]
   responsabilidadesFiscales ResponsabilidadFiscal[]
+  tiposIdentificacion  TipoIdentificacion[]
 
   // ── Módulos migrados desde localStorage ──────────
   impuestos            Impuesto[]
@@ -328,6 +329,20 @@ model ResponsabilidadFiscal {
   createdAt   DateTime @default(now())
 
   @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model TipoIdentificacion {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  codigoDian  String
+  nombreCorto String
+  descripcion String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([empresaId, codigoDian])
   @@index([empresaId])
 }
 

@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import {
   Plus, Trash2, Edit3, Search, FileText, Shield,
-  Layers, ChevronRight, Calculator
+  Layers, ChevronRight, Calculator, ClipboardList
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getRegimenesFiscales, createRegimenFiscal, updateRegimenFiscal, deleteRegimenFiscal,
   getCodigosCIIU, createCodigoCIIU, updateCodigoCIIU, deleteCodigoCIIU,
-  getResponsabilidadesFiscales, createResponsabilidadFiscal, updateResponsabilidadFiscal, deleteResponsabilidadFiscal
+  getResponsabilidadesFiscales, createResponsabilidadFiscal, updateResponsabilidadFiscal, deleteResponsabilidadFiscal,
+  getTiposIdentificacion, createTipoIdentificacion, updateTipoIdentificacion, deleteTipoIdentificacion
 } from '../../services/configuracion.service'
 
-type TabType = 'regimenes' | 'ciiu' | 'responsabilidades'
+type TabType = 'regimenes' | 'ciiu' | 'responsabilidades' | 'identificaciones'
 
 export function ConfigContable() {
   const qc = useQueryClient()
@@ -23,6 +24,7 @@ export function ConfigContable() {
   const [formRegimen, setFormRegimen] = useState({ codigo: '', nombre: '', descripcion: '' })
   const [formCiiu, setFormCiiu] = useState({ codigo: '', descripcion: '', categoria: 'Servicios' })
   const [formResponsabilidad, setFormResponsabilidad] = useState({ codigo: '', descripcion: '' })
+  const [formIdentificacion, setFormIdentificacion] = useState({ codigoDian: '', nombreCorto: '', descripcion: '', activo: true })
 
   // ── Queries ──
   const { data: regimenes = [], isLoading: loadingReg } = useQuery({
@@ -38,6 +40,11 @@ export function ConfigContable() {
   const { data: responsabilidades = [], isLoading: loadingResp } = useQuery({
     queryKey: ['responsabilidades-fiscales'],
     queryFn: getResponsabilidadesFiscales,
+  })
+
+  const { data: identificaciones = [], isLoading: loadingId } = useQuery({
+    queryKey: ['tipos-identificacion'],
+    queryFn: getTiposIdentificacion,
   })
 
   // ── Mutations ──
@@ -95,14 +102,36 @@ export function ConfigContable() {
     onError: () => toast.error('Error al eliminar'),
   })
 
-  const isLoading = loadingReg || loadingCiiu || loadingResp
-  const isSaving = mutRegimen.isPending || mutCiiu.isPending || mutResponsabilidad.isPending
+  const mutIdentificacion = useMutation({
+    mutationFn: (d: any) => editingId
+      ? updateTipoIdentificacion(editingId, d)
+      : createTipoIdentificacion(d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tipos-identificacion'] })
+      toast.success(editingId ? 'Tipo de identificación actualizado' : 'Tipo de identificación creado')
+      setShowModal(false)
+    },
+    onError: () => toast.error('Error al guardar tipo de identificación'),
+  })
+
+  const mutDeleteIdentificacion = useMutation({
+    mutationFn: (id: number) => deleteTipoIdentificacion(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tipos-identificacion'] })
+      toast.success('Tipo de identificación eliminado')
+    },
+    onError: () => toast.error('Error al eliminar'),
+  })
+
+  const isLoading = loadingReg || loadingCiiu || loadingResp || loadingId
+  const isSaving = mutRegimen.isPending || mutCiiu.isPending || mutResponsabilidad.isPending || mutIdentificacion.isPending
 
   const openNew = () => {
     setEditingId(null)
     setFormRegimen({ codigo: '', nombre: '', descripcion: '' })
     setFormCiiu({ codigo: '', descripcion: '', categoria: 'Servicios' })
     setFormResponsabilidad({ codigo: '', descripcion: '' })
+    setFormIdentificacion({ codigoDian: '', nombreCorto: '', descripcion: '', activo: true })
     setShowModal(true)
   }
 
@@ -111,6 +140,7 @@ export function ConfigContable() {
     if (activeTab === 'regimenes') setFormRegimen({ codigo: item.codigo, nombre: item.nombre, descripcion: item.descripcion || '' })
     if (activeTab === 'ciiu') setFormCiiu({ codigo: item.codigo, descripcion: item.descripcion, categoria: item.categoria || 'Servicios' })
     if (activeTab === 'responsabilidades') setFormResponsabilidad({ codigo: item.codigo, descripcion: item.descripcion })
+    if (activeTab === 'identificaciones') setFormIdentificacion({ codigoDian: item.codigoDian, nombreCorto: item.nombreCorto, descripcion: item.descripcion || '', activo: item.activo !== false })
     setShowModal(true)
   }
 
@@ -128,6 +158,10 @@ export function ConfigContable() {
       if (!formResponsabilidad.codigo || !formResponsabilidad.descripcion) return toast.error('Código y descripción son obligatorios')
       mutResponsabilidad.mutate({ codigo: formResponsabilidad.codigo, descripcion: formResponsabilidad.descripcion })
     }
+    if (activeTab === 'identificaciones') {
+      if (!formIdentificacion.codigoDian || !formIdentificacion.nombreCorto) return toast.error('Código DIAN y Nombre Corto son obligatorios')
+      mutIdentificacion.mutate(formIdentificacion)
+    }
   }
 
   const handleDelete = (id: number) => {
@@ -135,6 +169,7 @@ export function ConfigContable() {
     if (activeTab === 'regimenes') mutDeleteReg.mutate(id)
     if (activeTab === 'ciiu') mutDeleteCiiu.mutate(id)
     if (activeTab === 'responsabilidades') mutDeleteResp.mutate(id)
+    if (activeTab === 'identificaciones') mutDeleteIdentificacion.mutate(id)
   }
 
   return (
@@ -173,7 +208,8 @@ export function ConfigContable() {
           {[
             { id: 'regimenes', label: 'Regímenes Fiscales', icon: Shield },
             { id: 'ciiu', label: 'Actividades Económicas CIIU', icon: FileText },
-            { id: 'responsabilidades', label: 'Responsabilidades DIAN', icon: Layers }
+            { id: 'responsabilidades', label: 'Responsabilidades DIAN', icon: Layers },
+            { id: 'identificaciones', label: 'Tipos de Identificación', icon: ClipboardList }
           ].map(tab => {
             const isActive = activeTab === tab.id
             const Icon = tab.icon
@@ -267,9 +303,26 @@ export function ConfigContable() {
                     </tr>
                   ))
                 }
+                {activeTab === 'identificaciones' && identificaciones
+                  .filter((i: any) => i.nombreCorto?.toLowerCase().includes(searchTerm.toLowerCase()) || i.codigoDian?.includes(searchTerm))
+                  .map((item: any) => (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 font-mono font-extrabold text-slate-700">{item.codigoDian}</td>
+                      <td className="p-4 font-bold text-slate-800">{item.nombreCorto}</td>
+                      <td className="p-4 text-slate-500 text-xs">{item.descripcion || '-'}</td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openEdit(item)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 size={14} /></button>
+                          <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                }
                 {((activeTab === 'regimenes' && regimenes.length === 0) ||
                   (activeTab === 'ciiu' && ciiuses.length === 0) ||
-                  (activeTab === 'responsabilidades' && responsabilidades.length === 0)) && (
+                  (activeTab === 'responsabilidades' && responsabilidades.length === 0) ||
+                  (activeTab === 'identificaciones' && identificaciones.length === 0)) && (
                   <tr>
                     <td colSpan={4} className="p-8 text-center text-slate-400">No se encontraron registros en este catálogo.</td>
                   </tr>
@@ -327,6 +380,26 @@ export function ConfigContable() {
                     <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Nombre de la Responsabilidad *</label>
                     <input type="text" value={formResponsabilidad.descripcion} onChange={e => setFormResponsabilidad(f => ({ ...f, descripcion: e.target.value }))} placeholder="Ej. Gran contribuyente" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" required />
                   </div>
+                </>
+              )}
+              {activeTab === 'identificaciones' && (
+                <>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Código DIAN *</label>
+                    <input type="text" value={formIdentificacion.codigoDian} onChange={e => setFormIdentificacion(f => ({ ...f, codigoDian: e.target.value }))} placeholder="Ej. 13, 31" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" required />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Nombre Corto *</label>
+                    <input type="text" value={formIdentificacion.nombreCorto} onChange={e => setFormIdentificacion(f => ({ ...f, nombreCorto: e.target.value }))} placeholder="Ej. CC, NIT" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" required />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Descripción *</label>
+                    <input type="text" value={formIdentificacion.descripcion} onChange={e => setFormIdentificacion(f => ({ ...f, descripcion: e.target.value }))} placeholder="Ej. Cédula de Ciudadanía" className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" required />
+                  </div>
+                  <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 w-full cursor-pointer hover:bg-slate-100/50 transition-all h-[38px] mt-2">
+                    <input type="checkbox" checked={formIdentificacion.activo} onChange={e => setFormIdentificacion(f => ({ ...f, activo: e.target.checked }))} className="rounded text-indigo-600 h-4 w-4" />
+                    <span className="text-xs font-bold text-slate-700">Activo para Facturación</span>
+                  </label>
                 </>
               )}
               <div className="flex gap-3 pt-3 border-t border-slate-100 justify-end">

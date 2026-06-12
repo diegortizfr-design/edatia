@@ -5,10 +5,8 @@ import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
-import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState } from '../../services/configuracion.service'
+import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState, getTiposIdentificacion } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
-
-const TIPO_DOCUMENTO_OPTIONS = ['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP']
 const TIPO_PERSONA_OPTIONS = ['NATURAL', 'JURIDICA']
 const REGIMEN_OPTIONS = [
   { value: '48', label: 'Responsable de IVA (Regimen Común)' },
@@ -205,6 +203,19 @@ export function ConfigTerceroForm() {
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const { data: dbTipoIdentificaciones = [] } = useQuery({
+    queryKey: ['tipos-identificacion'],
+    queryFn: getTiposIdentificacion,
+  })
+
+  const tipoIdentificaciones = dbTipoIdentificaciones.length > 0 ? dbTipoIdentificaciones : [
+    { id: 1, codigoDian: '31', nombreCorto: 'NIT', descripcion: 'Número de Identificación Tributaria', activo: true },
+    { id: 2, codigoDian: '13', nombreCorto: 'CC', descripcion: 'Cédula de Ciudadanía', activo: true },
+    { id: 3, codigoDian: '22', nombreCorto: 'CE', descripcion: 'Cédula de Extranjería', activo: true },
+    { id: 4, codigoDian: '41', nombreCorto: 'PASAPORTE', descripcion: 'Pasaporte', activo: true },
+    { id: 5, codigoDian: '47', nombreCorto: 'PEP', descripcion: 'Permiso Especial de Permanencia', activo: true },
+  ]
 
   const terceroId = id ? parseInt(id, 10) : null
 
@@ -563,7 +574,9 @@ export function ConfigTerceroForm() {
                 <div className="md:col-span-3">
                   <Field label="Tipo Identificación" required>
                     <select value={form.tipoDocumento} onChange={set('tipoDocumento')} className={inputCls}>
-                      {TIPO_DOCUMENTO_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      {tipoIdentificaciones.filter((i: any) => i.activo).map((i: any) => (
+                        <option key={i.nombreCorto} value={i.nombreCorto}>{i.nombreCorto}</option>
+                      ))}
                     </select>
                   </Field>
                 </div>

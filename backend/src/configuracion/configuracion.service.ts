@@ -193,4 +193,28 @@ export class ConfiguracionService {
     await (this.prisma as any).responsabilidadFiscal.findFirstOrThrow({ where: { id, empresaId } })
     return (this.prisma as any).responsabilidadFiscal.delete({ where: { id } })
   }
+
+  // Tipos de Identificación
+  async getTiposIdentificacion(empresaId: number) {
+    return (this.prisma as any).tipoIdentificacion.findMany({
+      where: { empresaId },
+      orderBy: { codigoDian: 'asc' },
+    })
+  }
+
+  async createTipoIdentificacion(empresaId: number, dto: { codigoDian: string; nombreCorto: string; descripcion: string; activo?: boolean }) {
+    return (this.prisma as any).tipoIdentificacion.create({
+      data: { empresaId, ...dto },
+    })
+  }
+
+  async updateTipoIdentificacion(id: number, empresaId: number, dto: any) {
+    await (this.prisma as any).tipoIdentificacion.findFirstOrThrow({ where: { id, empresaId } })
+    return (this.prisma as any).tipoIdentificacion.update({ where: { id }, data: dto })
+  }
+
+  async deleteTipoIdentificacion(id: number, empresaId: number) {
+    await (this.prisma as any).tipoIdentificacion.findFirstOrThrow({ where: { id, empresaId } })
+    return (this.prisma as any).tipoIdentificacion.delete({ where: { id } })
+  }
 }

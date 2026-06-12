@@ -200,10 +200,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
               <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Codigos CIIU" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/clasificaciones" icon={<Layers size={14}/>} label="Clasificacion de tercero" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Tipo de Identificación" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/tipos-regimen" icon={<Shield size={14}/>} label="Tipo de Regimen" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Regimen Tributario" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/reportes-pagos" icon={<Receipt size={14}/>} label="Reportes Pagos" isCollapsed={isCollapsed} />
