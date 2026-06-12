@@ -22,11 +22,11 @@ export class DocumentosConfigService {
   }
 
   async create(dto: CreateDocumentoConfigDto, empresaId: number) {
-    // Verificar sigla única activa
+    // Verificar prefijo único activo
     const exists = await (this.prisma as any).documentoConfig.findFirst({
-      where: { empresaId, sigla: dto.sigla, deletedAt: null },
+      where: { empresaId, prefijo: dto.prefijo, deletedAt: null },
     })
-    if (exists) throw new ConflictException(`Ya existe un documento con sigla "${dto.sigla}"`)
+    if (exists) throw new ConflictException(`Ya existe un documento con prefijo "${dto.prefijo}"`)
 
     const data: any = { ...dto, empresaId }
 
@@ -45,6 +45,19 @@ export class DocumentosConfigService {
 
   async update(id: number, dto: UpdateDocumentoConfigDto, empresaId: number) {
     await this.findOne(id, empresaId)
+
+    // Verificar prefijo único activo si se está actualizando
+    if (dto.prefijo) {
+      const exists = await (this.prisma as any).documentoConfig.findFirst({
+        where: {
+          empresaId,
+          prefijo: dto.prefijo,
+          id: { not: id },
+          deletedAt: null,
+        },
+      })
+      if (exists) throw new ConflictException(`Ya existe un documento con prefijo "${dto.prefijo}"`)
+    }
 
     const data: any = { ...dto }
     if (dto.fechaResolucion) {

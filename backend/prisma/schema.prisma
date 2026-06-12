@@ -214,7 +214,7 @@ model DocumentoConfig {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  @@unique([empresaId, sigla])
+  @@unique([empresaId, prefijo])
   @@index([empresaId])
 }
 
