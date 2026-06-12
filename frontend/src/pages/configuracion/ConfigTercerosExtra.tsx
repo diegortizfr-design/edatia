@@ -830,69 +830,85 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
         </div>
       )}
 
-      {/* ── SECCIÓN: REPORTES / REPORTES PAGOS ── */}
-      {(section === 'reportes' || section === 'reportes-pagos') && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(section === 'reportes' ? [
-            { key: 'cartera', title: 'Saldos de Cartera por Cliente', desc: 'Filtro detallado de cuentas por cobrar, estados de vencimiento y límites de cupos.', color: 'from-blue-500 to-indigo-600' },
-            { key: 'vendedor', title: 'Desempeño y Ventas por Vendedor', desc: 'Análisis mensual de ventas facturadas y liquidación de comisiones.', color: 'from-purple-500 to-pink-600' },
-            { key: 'contactos', title: 'Directorio de Terceros Homologados', desc: 'Consolidado general de correos de facturación electrónica y georreferenciación.', color: 'from-emerald-500 to-teal-600' }
-          ] : [
-            { key: 'retenciones', title: 'Auditoría de Retenciones de Impuesto', desc: 'Informe de retenciones aplicadas en la fuente, ICA e IVA del periodo fiscal.', color: 'from-amber-500 to-orange-600' }
-          ]).map(r => (
-            <div key={r.key} className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between hover:border-indigo-200 transition-all hover:shadow-md">
-              <div className="space-y-3">
-                <div className={`h-12 w-12 rounded-2xl bg-gradient-to-tr ${r.color} text-white flex items-center justify-center font-bold shadow-md`}>
-                  <BarChart3 size={20} />
-                </div>
-                <h4 className="text-sm font-extrabold text-slate-800">{r.title}</h4>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{r.desc}</p>
-              </div>
-              <button
-                onClick={() => setSelectedReport(r.key)}
-                className="mt-6 w-full py-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-slate-600 hover:text-indigo-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-              >
-                Generar Reporte <ChevronRight size={14} />
-              </button>
+      {/* ── SECCIÓN: REPORTES ── */}
+      {section === 'reportes' && (
+        <div className="space-y-6">
+          <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center gap-3">
+            <div className="p-2 bg-amber-100/80 rounded-xl text-amber-600 animate-pulse">
+              <AlertTriangle size={18} />
             </div>
-          ))}
+            <div>
+              <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-amber-100 text-amber-700 mb-1 border border-amber-200">Módulo en Desarrollo</span>
+              <p className="text-xs text-slate-500 font-bold">Eso no es prioritario en este momento.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60 pointer-events-none">
+            {[
+              { key: 'cartera', title: 'Saldos de Cartera por Cliente', desc: 'Filtro detallado de cuentas por cobrar, estados de vencimiento y límites de cupos.', color: 'from-blue-500 to-indigo-600' },
+              { key: 'vendedor', title: 'Desempeño y Ventas por Vendedor', desc: 'Análisis mensual de ventas facturadas y liquidación de comisiones.', color: 'from-purple-500 to-pink-600' },
+              { key: 'contactos', title: 'Directorio de Terceros Homologados', desc: 'Consolidado general de correos de facturación electrónica y georreferenciación.', color: 'from-emerald-500 to-teal-600' }
+            ].map(r => (
+              <div key={r.key} className="bg-white border border-slate-200/80 rounded-3xl p-6 flex flex-col justify-between hover:border-indigo-200 transition-all hover:shadow-md">
+                <div className="space-y-3">
+                  <div className={`h-12 w-12 rounded-2xl bg-gradient-to-tr ${r.color} text-white flex items-center justify-center font-bold shadow-md`}>
+                    <BarChart3 size={20} />
+                  </div>
+                  <h4 className="text-sm font-extrabold text-slate-800">{r.title}</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{r.desc}</p>
+                </div>
+                <button
+                  disabled
+                  className="mt-6 w-full py-2 bg-slate-50 border border-slate-200 text-slate-400 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-not-allowed"
+                >
+                  Generar Reporte <ChevronRight size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ── SECCIÓN: TAGS (ETIQUETAS) ── */}
       {section === 'tags' && (
-        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-6">
-          <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-3">
-            <Tag size={14} className="text-indigo-600" /> Directorio de Etiquetas Comerciales
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tags.map(t => {
-              const bgColors: Record<string, string> = {
-                indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-                rose: 'bg-rose-50 text-rose-700 border-rose-100',
-                emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                amber: 'bg-amber-50 text-amber-700 border-amber-100',
-                purple: 'bg-purple-50 text-purple-700 border-purple-100',
-                sky: 'bg-sky-50 text-sky-700 border-sky-100',
-                teal: 'bg-teal-50 text-teal-700 border-teal-100',
-                slate: 'bg-slate-50 text-slate-700 border-slate-100',
-              }
-              const cls = bgColors[t.color] || bgColors.indigo
-              return (
-                <div key={t.id} className={`flex items-start justify-between p-4 rounded-2xl border-2 hover:border-indigo-200 transition-colors bg-white`}>
-                  <div className="space-y-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border ${cls}`}>
-                      {t.nombre}
-                    </span>
-                    <p className="text-[10px] text-slate-400 font-medium">{t.descripcion || 'Sin descripción'}</p>
+        <div className="space-y-6">
+          <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center gap-3">
+            <div className="p-2 bg-amber-100/80 rounded-xl text-amber-600 animate-pulse">
+              <AlertTriangle size={18} />
+            </div>
+            <div>
+              <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-amber-100 text-amber-700 mb-1 border border-amber-200">Módulo en Desarrollo</span>
+              <p className="text-xs text-slate-500 font-bold">Eso no es prioritario en este momento.</p>
+            </div>
+          </div>
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm space-y-6 opacity-60 pointer-events-none">
+            <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-3">
+              <Tag size={14} className="text-indigo-600" /> Directorio de Etiquetas Comerciales
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tags.map(t => {
+                const bgColors: Record<string, string> = {
+                  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+                  rose: 'bg-rose-50 text-rose-700 border-rose-100',
+                  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                  amber: 'bg-amber-50 text-amber-700 border-amber-100',
+                  purple: 'bg-purple-50 text-purple-700 border-purple-100',
+                  sky: 'bg-sky-50 text-sky-700 border-sky-100',
+                  teal: 'bg-teal-50 text-teal-700 border-teal-100',
+                  slate: 'bg-slate-50 text-slate-700 border-slate-100',
+                }
+                const cls = bgColors[t.color] || bgColors.indigo
+                return (
+                  <div key={t.id} className={`flex items-start justify-between p-4 rounded-2xl border-2 bg-white`}>
+                    <div className="space-y-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border ${cls}`}>
+                        {t.nombre}
+                      </span>
+                      <p className="text-[10px] text-slate-400 font-medium">{t.descripcion || 'Sin descripción'}</p>
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0 ml-3">
-                    <button onClick={() => openEdit(t)} className="p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"><Edit3 size={12} /></button>
-                    <button onClick={() => handleDelete(t.id)} className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors"><Trash2 size={12} /></button>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       )}

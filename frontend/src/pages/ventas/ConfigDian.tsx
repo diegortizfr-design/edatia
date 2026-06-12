@@ -89,195 +89,207 @@ export function ConfigDian() {
         </div>
       </div>
 
-      {/* ── Sección 1: Datos de software ── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-          <Settings size={16} className="text-indigo-500" />
-          <h2 className="font-semibold text-slate-800">Datos de software</h2>
+      <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl flex items-center gap-3">
+        <div className="p-2 bg-amber-100/80 rounded-xl text-amber-600 animate-pulse">
+          <AlertTriangle size={18} />
         </div>
-        <form onSubmit={handleSubmitConfig} className="p-6 space-y-5">
-          {/* Banner producción */}
-          {ambienteActivo === 'PRODUCCION' && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-red-800">Ambiente de PRODUCCION activo</p>
-                <p className="text-xs text-red-600 mt-0.5">
-                  Las facturas emitidas en este modo son legalmente vinculantes ante la DIAN.
-                  Asegúrese de que toda la configuración sea correcta antes de facturar.
-                </p>
+        <div>
+          <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-amber-100 text-amber-700 mb-1 border border-amber-200">Módulo en Desarrollo</span>
+          <p className="text-xs text-slate-500 font-bold">Eso no es prioritario en este momento.</p>
+        </div>
+      </div>
+
+      <div className="space-y-6 opacity-60 pointer-events-none">
+        {/* ── Sección 1: Datos de software ── */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+            <Settings size={16} className="text-indigo-500" />
+            <h2 className="font-semibold text-slate-800">Datos de software</h2>
+          </div>
+          <form onSubmit={handleSubmitConfig} className="p-6 space-y-5">
+            {/* Banner producción */}
+            {ambienteActivo === 'PRODUCCION' && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-red-800">Ambiente de PRODUCCION activo</p>
+                  <p className="text-xs text-red-600 mt-0.5">
+                    Las facturas emitidas en este modo son legalmente vinculantes ante la DIAN.
+                    Asegúrese de que toda la configuración sea correcta antes de facturar.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Ambiente */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-2">Ambiente *</label>
+              <div className="flex gap-4">
+                {['PRUEBAS', 'PRODUCCION'].map(amb => (
+                  <label key={amb}
+                    className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border cursor-pointer transition-all ${
+                      ambienteActivo === amb
+                        ? amb === 'PRODUCCION' ? 'border-red-400 bg-red-50' : 'border-indigo-400 bg-indigo-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}>
+                    <input type="radio" name="ambiente" value={amb}
+                      checked={ambienteActivo === amb}
+                      onChange={() => setAmbiente(amb)}
+                      className="accent-indigo-600" />
+                    <span className={`text-sm font-medium ${
+                      ambienteActivo === amb
+                        ? amb === 'PRODUCCION' ? 'text-red-700' : 'text-indigo-700'
+                        : 'text-slate-600'
+                    }`}>{amb}</span>
+                  </label>
+                ))}
               </div>
             </div>
-          )}
 
-          {/* Ambiente */}
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-2">Ambiente *</label>
-            <div className="flex gap-4">
-              {['PRUEBAS', 'PRODUCCION'].map(amb => (
-                <label key={amb}
-                  className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border cursor-pointer transition-all ${
-                    ambienteActivo === amb
-                      ? amb === 'PRODUCCION' ? 'border-red-400 bg-red-50' : 'border-indigo-400 bg-indigo-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}>
-                  <input type="radio" name="ambiente" value={amb}
-                    checked={ambienteActivo === amb}
-                    onChange={() => setAmbiente(amb)}
-                    className="accent-indigo-600" />
-                  <span className={`text-sm font-medium ${
-                    ambienteActivo === amb
-                      ? amb === 'PRODUCCION' ? 'text-red-700' : 'text-indigo-700'
-                      : 'text-slate-600'
-                  }`}>{amb}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Software ID</label>
-              <input value={softwareId} onChange={e => setSoftwareId(e.target.value)}
-                placeholder="UUID del software registrado en DIAN"
-                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 font-mono" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Software PIN</label>
-              <input type="password" value={softwarePin} onChange={e => setSoftwarePin(e.target.value)}
-                placeholder="PIN de seguridad"
-                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Proveedor tecnológico</label>
-            <select value={proveedorTec} onChange={e => setProveedorTec(e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white max-w-xs">
-              {PROVEEDOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
-          {proveedorTec !== 'DIRECTO' ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">API Key del proveedor</label>
-                <input type="password" value={proveedorApiKey} onChange={e => setProveedorApiKey(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
+                <label className="block text-xs font-medium text-slate-600 mb-1">Software ID</label>
+                <input value={softwareId} onChange={e => setSoftwareId(e.target.value)}
+                  placeholder="UUID del software registrado en DIAN"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 font-mono" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">URL del proveedor</label>
-                <input type="url" value={proveedorUrl} onChange={e => setProveedorUrl(e.target.value)}
-                  placeholder="https://..."
+                <label className="block text-xs font-medium text-slate-600 mb-1">Software PIN</label>
+                <input type="password" value={softwarePin} onChange={e => setSoftwarePin(e.target.value)}
+                  placeholder="PIN de seguridad"
                   className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
               </div>
             </div>
-          ) : null}
 
-          <div className="flex items-center gap-3">
-            <Toggle checked={activo} onChange={() => setActivo(v => !v)} />
-            <span className="text-sm text-slate-700 font-medium">
-              Facturación electrónica {activo ? 'activa' : 'inactiva'}
-            </span>
-            {activo ? (
-              <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                <CheckCircle size={11} /> Activo
-              </span>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Proveedor tecnológico</label>
+              <select value={proveedorTec} onChange={e => setProveedorTec(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white max-w-xs">
+                {PROVEEDOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            {proveedorTec !== 'DIRECTO' ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">API Key del proveedor</label>
+                  <input type="password" value={proveedorApiKey} onChange={e => setProveedorApiKey(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">URL del proveedor</label>
+                  <input type="url" value={proveedorUrl} onChange={e => setProveedorUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
+                </div>
+              </div>
             ) : null}
-          </div>
 
-          {mutUpsert.isError && (
-            <p className="text-red-600 text-sm">
-              {(mutUpsert.error as any)?.response?.data?.message ?? 'Error al guardar configuración'}
-            </p>
-          )}
-          {mutUpsert.isSuccess && (
-            <p className="text-green-600 text-sm flex items-center gap-1">
-              <CheckCircle size={14} /> Configuración guardada correctamente
-            </p>
-          )}
+            <div className="flex items-center gap-3">
+              <Toggle checked={activo} onChange={() => setActivo(v => !v)} />
+              <span className="text-sm text-slate-700 font-medium">
+                Facturación electrónica {activo ? 'activa' : 'inactiva'}
+              </span>
+              {activo ? (
+                <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                  <CheckCircle size={11} /> Activo
+                </span>
+              ) : null}
+            </div>
 
-          <div className="flex justify-end pt-2">
-            <button type="submit" disabled={mutUpsert.isPending}
-              className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-              {mutUpsert.isPending ? 'Guardando...' : 'Guardar configuración'}
+            {mutUpsert.isError && (
+              <p className="text-red-600 text-sm">
+                {(mutUpsert.error as any)?.response?.data?.message ?? 'Error al guardar configuración'}
+              </p>
+            )}
+            {mutUpsert.isSuccess && (
+              <p className="text-green-600 text-sm flex items-center gap-1">
+                <CheckCircle size={14} /> Configuración guardada correctamente
+              </p>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button type="submit" disabled={mutUpsert.isPending}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                {mutUpsert.isPending ? 'Guardando...' : 'Guardar configuración'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* ── Sección 2: Resoluciones ── */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield size={16} className="text-indigo-500" />
+              <h2 className="font-semibold text-slate-800">Resoluciones autorizadas</h2>
+            </div>
+            <button onClick={() => setShowResolucionModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">
+              <Plus size={13} /> Agregar resolución
             </button>
           </div>
-        </form>
-      </div>
-
-      {/* ── Sección 2: Resoluciones ── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield size={16} className="text-indigo-500" />
-            <h2 className="font-semibold text-slate-800">Resoluciones autorizadas</h2>
-          </div>
-          <button onClick={() => setShowResolucionModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">
-            <Plus size={13} /> Agregar resolución
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                {['Tipo doc.', 'Prefijo', 'Rango', 'Actual', 'Nº Resolución', 'F. Resolución', 'Vigencia', 'Estado'].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left font-semibold">{h}</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
+                  {['Tipo doc.', 'Prefijo', 'Rango', 'Actual', 'Nº Resolución', 'F. Resolución', 'Vigencia', 'Estado'].map(h => (
+                    <th key={h} className="px-4 py-2.5 text-left font-semibold">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {resoluciones.map((r: any) => (
+                  <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 text-xs text-slate-600 font-medium">{r.tipoDocumento}</td>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-indigo-700">{r.prefijo || '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 text-xs font-mono">
+                      {r.rangoInicial} – {r.rangoFinal}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700 font-semibold text-xs font-mono">
+                      {r.numeroCurrent ?? r.rangoInicial}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 text-xs font-mono">{r.numeroResolucion}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                      {r.fechaResolucion ? new Date(r.fechaResolucion).toLocaleDateString('es-CO') : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                      {r.fechaVigencia ? new Date(r.fechaVigencia).toLocaleDateString('es-CO') : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => mutToggleRes.mutate(r.id)}
+                        disabled={mutToggleRes.isPending}
+                        className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
+                          r.activo ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}>
+                        {r.activo ? 'Activa' : 'Inactiva'}
+                      </button>
+                    </td>
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {resoluciones.map((r: any) => (
-                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-xs text-slate-600 font-medium">{r.tipoDocumento}</td>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-indigo-700">{r.prefijo || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs font-mono">
-                    {r.rangoInicial} – {r.rangoFinal}
-                  </td>
-                  <td className="px-4 py-3 text-slate-700 font-semibold text-xs font-mono">
-                    {r.numeroCurrent ?? r.rangoInicial}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 text-xs font-mono">{r.numeroResolucion}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
-                    {r.fechaResolucion ? new Date(r.fechaResolucion).toLocaleDateString('es-CO') : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
-                    {r.fechaVigencia ? new Date(r.fechaVigencia).toLocaleDateString('es-CO') : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => mutToggleRes.mutate(r.id)}
-                      disabled={mutToggleRes.isPending}
-                      className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors cursor-pointer disabled:opacity-50 ${
-                        r.activo ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                      }`}>
-                      {r.activo ? 'Activa' : 'Inactiva'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {resoluciones.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-slate-400 text-sm">
-                    No hay resoluciones configuradas
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                {resoluciones.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-5 py-10 text-center text-slate-400 text-sm">
+                      No hay resoluciones configuradas
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {showResolucionModal && (
-        <ResolucionModal
-          onClose={() => setShowResolucionModal(false)}
-          onSuccess={() => {
-            qc.invalidateQueries({ queryKey: ['config-dian'] })
-            setShowResolucionModal(false)
-          }}
-        />
-      )}
+        {showResolucionModal && (
+          <ResolucionModal
+            onClose={() => setShowResolucionModal(false)}
+            onSuccess={() => {
+              qc.invalidateQueries({ queryKey: ['config-dian'] })
+              setShowResolucionModal(false)
+            }}
+          />
+        )}
+      </div>
     </div>
   )
 }

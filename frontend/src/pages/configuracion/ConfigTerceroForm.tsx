@@ -574,8 +574,10 @@ export function ConfigTerceroForm() {
                 <div className="md:col-span-3">
                   <Field label="Tipo Identificación" required>
                     <select value={form.tipoDocumento} onChange={set('tipoDocumento')} className={inputCls}>
-                      {tipoIdentificaciones.filter((i: any) => i.activo).map((i: any) => (
-                        <option key={i.nombreCorto} value={i.nombreCorto}>{i.nombreCorto}</option>
+                      {tipoIdentificaciones.filter((i: any) => i.activo || i.nombreCorto === form.tipoDocumento).map((i: any) => (
+                        <option key={i.nombreCorto} value={i.nombreCorto}>
+                          {i.nombreCorto} ({i.descripcion})
+                        </option>
                       ))}
                     </select>
                   </Field>

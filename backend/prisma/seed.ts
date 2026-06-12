@@ -115,6 +115,37 @@ async function main() {
   });
   console.log(`✅ Empresa Demo registrada (NIT: ${empresaDemo.nit})`);
 
+  // 4b. Crear tipos de identificación por defecto para cada empresa
+  const tiposIdDef = [
+    { codigoDian: '31', nombreCorto: 'NIT', descripcion: 'Número de Identificación Tributaria' },
+    { codigoDian: '13', nombreCorto: 'CC', descripcion: 'Cédula de Ciudadanía' },
+    { codigoDian: '22', nombreCorto: 'CE', descripcion: 'Cédula de Extranjería' },
+    { codigoDian: '41', nombreCorto: 'PASAPORTE', descripcion: 'Pasaporte' },
+    { codigoDian: '47', nombreCorto: 'PEP', descripcion: 'Permiso Especial de Permanencia' },
+  ];
+
+  for (const empresa of [empresaDiego, empresaDemo]) {
+    for (const t of tiposIdDef) {
+      await (prisma as any).tipoIdentificacion.upsert({
+        where: {
+          empresaId_codigoDian: {
+            empresaId: empresa.id,
+            codigoDian: t.codigoDian,
+          },
+        },
+        update: {},
+        create: {
+          empresaId: empresa.id,
+          codigoDian: t.codigoDian,
+          nombreCorto: t.nombreCorto,
+          descripcion: t.descripcion,
+          activo: true,
+        },
+      });
+    }
+  }
+  console.log('✅ Tipos de identificación iniciales registrados para cada empresa');
+
   // 5. Vincular empresas a ClienteManager con Plan Premium
   await (prisma as any).clienteManager.upsert({
     where: { nit: '1143875756-0' },
