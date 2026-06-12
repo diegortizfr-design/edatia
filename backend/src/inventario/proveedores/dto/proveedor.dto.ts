@@ -1,11 +1,11 @@
 import { IsString, IsOptional, IsInt, IsNumber, IsIn, MinLength, MaxLength, Min, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateProveedorDto {
-  @IsOptional() @IsIn(['NIT','CC','CE','PASAPORTE','PEP'])
-  tipoDocumento?: string;
+  @IsIn(['NIT','CC','CE','PASAPORTE','PEP'])
+  tipoDocumento: string = 'NIT';
 
-  @IsOptional() @IsString()
-  numeroDocumento?: string;
+  @IsString() @MinLength(3)
+  numeroDocumento!: string;
 
   @IsString() @MinLength(2) @MaxLength(200)
   nombre!: string;

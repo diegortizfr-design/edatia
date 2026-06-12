@@ -6,6 +6,15 @@ import { CreateProveedorDto, UpdateProveedorDto } from './dto/proveedor.dto';
 export class ProveedoresService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private mapToLegacy(p: any) {
+    if (!p) return p;
+    return {
+      ...p,
+      descuentoBase: p.descuentoProveedor ? Number(p.descuentoProveedor) : 0,
+      moneda: p.monedaProveedor || 'COP',
+    };
+  }
+
   async findAll(empresaId: number, q?: string) {
     const where: any = { empresaId, esProveedor: true, activo: true };
     if (q) {
@@ -15,7 +24,7 @@ export class ProveedoresService {
         { numeroDocumento: { contains: q } },
       ];
     }
-    return this.prisma.tercero.findMany({
+    const list = await this.prisma.tercero.findMany({
       where,
       include: {
         sucursales: true,
@@ -23,6 +32,7 @@ export class ProveedoresService {
       },
       orderBy: { nombre: 'asc' },
     });
+    return list.map(p => this.mapToLegacy(p));
   }
 
   async findOne(id: number, empresaId: number) {
@@ -38,7 +48,7 @@ export class ProveedoresService {
       },
     });
     if (!p) throw new NotFoundException('Proveedor no encontrado');
-    return p;
+    return this.mapToLegacy(p);
   }
 
   async create(dto: CreateProveedorDto, empresaId: number) {
@@ -48,10 +58,12 @@ export class ProveedoresService {
         empresaId_tipoDocumento_numeroDocumento: {
           empresaId,
           tipoDocumento: dto.tipoDocumento || 'NIT',
-          numeroDocumento: dto.numeroDocumento || '',
+          numeroDocumento: dto.numeroDocumento,
         }
       }
     });
+
+    const { sucursales, moneda, descuentoBase, ...rest } = dto;
 
     if (tercero) {
       if (tercero.esProveedor) {
@@ -59,15 +71,16 @@ export class ProveedoresService {
       }
       
       // Si existe pero no era proveedor, lo actualizamos para que sea proveedor
-      const { sucursales, ...rest } = dto;
       return this.prisma.$transaction(async (tx) => {
         await tx.sucursalTercero.deleteMany({ where: { terceroId: tercero!.id, empresaId } });
         
-        return tx.tercero.update({
+        const updated = await tx.tercero.update({
           where: { id: tercero!.id },
           data: {
             ...rest,
             esProveedor: true,
+            monedaProveedor: moneda || 'COP',
+            descuentoProveedor: descuentoBase,
             sucursales: sucursales && sucursales.length > 0 ? {
               create: sucursales.map((s: any) => ({
                 empresaId,
@@ -84,15 +97,17 @@ export class ProveedoresService {
           },
           include: { sucursales: true }
         });
+        return this.mapToLegacy(updated);
       });
     }
 
-    const { sucursales, ...rest } = dto;
-    return this.prisma.tercero.create({
+    const created = await this.prisma.tercero.create({
       data: {
         ...rest,
         empresaId,
         esProveedor: true,
+        monedaProveedor: moneda || 'COP',
+        descuentoProveedor: descuentoBase,
         sucursales: sucursales && sucursales.length > 0 ? {
           create: sucursales.map((s: any) => ({
             empresaId,
@@ -109,21 +124,24 @@ export class ProveedoresService {
       },
       include: { sucursales: true }
     });
+    return this.mapToLegacy(created);
   }
 
   async update(id: number, dto: UpdateProveedorDto, empresaId: number) {
     await this.findOne(id, empresaId);
-    const { sucursales, ...rest } = dto;
+    const { sucursales, moneda, descuentoBase, ...rest } = dto;
 
     return this.prisma.$transaction(async (tx) => {
       await tx.sucursalTercero.deleteMany({
         where: { terceroId: id, empresaId }
       });
 
-      return tx.tercero.update({
+      const updated = await tx.tercero.update({
         where: { id },
         data: {
           ...rest,
+          monedaProveedor: moneda,
+          descuentoProveedor: descuentoBase,
           sucursales: sucursales && sucursales.length > 0 ? {
             create: sucursales.map((s: any) => ({
               empresaId,
@@ -140,6 +158,7 @@ export class ProveedoresService {
         },
         include: { sucursales: true }
       });
+      return this.mapToLegacy(updated);
     });
   }
 
