@@ -1183,6 +1183,7 @@ model SucursalTercero {
   telefono      String?
   ciudad        String?
   departamento  String?
+  pais          String?  @default("COLOMBIA")
   contacto      String?
   cargo         String?
 

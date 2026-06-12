@@ -192,6 +192,7 @@ const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
       telefono: s.telefono,
       ciudad: s.ciudad,
       departamento: s.departamento,
+      pais: s.pais || 'COLOMBIA',
       contacto: s.contacto,
       cargo: s.cargo
     }))
@@ -259,7 +260,7 @@ export function ConfigTerceroForm() {
   const [showSucModal, setShowSucModal] = useState(false)
   const [editingSucId, setEditingSucId] = useState<string | null>(null)
   const [sucForm, setSucForm] = useState<Omit<Sucursal, 'id'>>({
-    codigo: '', descripcion: '', direccion: '', telefono: '', ciudad: '', departamento: '', contacto: '', cargo: ''
+    codigo: '', descripcion: '', direccion: '', telefono: '', ciudad: '', departamento: '', pais: 'COLOMBIA', contacto: '', cargo: ''
   })
 
   // Estado para Adjuntos simulados
@@ -290,7 +291,10 @@ export function ConfigTerceroForm() {
     : []
 
   // Para sucursales del tercero
-  const selectedPaisForSucursal = selectedPaisObj || paisesList.find(p => p.codigo === 'CO')
+  const selectedPaisForSucursal = paisesList.find(
+    p => p.nombre.toUpperCase() === (sucForm.pais || 'COLOMBIA').toUpperCase() ||
+         p.codigo.toUpperCase() === (sucForm.pais || 'CO').toUpperCase()
+  ) || selectedPaisObj || paisesList.find(p => p.codigo === 'CO')
   
   const deptsListForSucursal = selectedPaisForSucursal
     ? (geoData?.departamentos || []).filter(d => d.paisId === selectedPaisForSucursal.id)
@@ -400,11 +404,22 @@ export function ConfigTerceroForm() {
   const handleOpenSucModal = (suc?: Sucursal) => {
     if (suc) {
       setEditingSucId(suc.id)
-      setSucForm({ ...suc })
+      setSucForm({
+        ...suc,
+        pais: suc.pais || 'COLOMBIA'
+      })
     } else {
       setEditingSucId(null)
       setSucForm({
-        codigo: '', descripcion: '', direccion: '', telefono: '', ciudad: '', departamento: '', contacto: '', cargo: ''
+        codigo: '',
+        descripcion: '',
+        direccion: '',
+        telefono: '',
+        ciudad: '',
+        departamento: '',
+        pais: 'COLOMBIA',
+        contacto: '',
+        cargo: ''
       })
     }
     setShowSucModal(true)
@@ -1215,12 +1230,25 @@ export function ConfigTerceroForm() {
                 </Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <Field label="País">
+                  <select
+                    value={sucForm.pais || ''}
+                    onChange={e => setSucForm(prev => ({ ...prev, pais: e.target.value, departamento: '', ciudad: '' }))}
+                    className={inputCls}
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {paisesList.map(p => (
+                      <option key={p.id} value={p.nombre.toUpperCase()}>{p.nombre.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </Field>
                 <Field label="Departamento">
                   <select
                     value={sucForm.departamento || ''}
                     onChange={e => setSucForm(prev => ({ ...prev, departamento: e.target.value, ciudad: '' }))}
                     className={inputCls}
+                    disabled={!sucForm.pais}
                   >
                     <option value="">-- Seleccionar --</option>
                     {deptsListForSucursal.map(d => (
@@ -1294,7 +1322,7 @@ export function ConfigTerceroForm() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all"
                 >
                   {editingSucId ? 'Actualizar' : 'Agregar Sucursal'}
                 </button>

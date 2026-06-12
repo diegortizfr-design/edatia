@@ -81,6 +81,7 @@ export class TercerosService {
             telefono: s.telefono || '',
             ciudad: s.ciudad || '',
             departamento: s.departamento || '',
+            pais: s.pais || 'COLOMBIA',
             contacto: s.contacto || '',
             cargo: s.cargo || '',
           }))
@@ -115,6 +116,7 @@ export class TercerosService {
               telefono: s.telefono || '',
               ciudad: s.ciudad || '',
               departamento: s.departamento || '',
+              pais: s.pais || 'COLOMBIA',
               contacto: s.contacto || '',
               cargo: s.cargo || '',
             }))

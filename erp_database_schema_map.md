@@ -57,7 +57,7 @@ Tablas consolidadas que albergan la información de contacto, facturación, trib
   * `vendedorAsignadoId` ➔ `Tercero.id` (Relación reflexiva opcional para asignar un vendedor comercial a un cliente).
 
 ### `SucursalTercero`
-* **Descripción:** Direcciones de despacho, contactos principales o sucursales físicas creadas para un tercero.
+* **Descripción:** Direcciones de despacho, contactos principales o sucursales físicas creadas para un tercero. Incluye campos de dirección: departamento, ciudad y país (`pais`).
 * **Llaves Foráneas (FK):**
   * `terceroId` ➔ `Tercero.id`
   * `empresaId` ➔ `Empresa.id`

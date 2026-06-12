@@ -14,6 +14,7 @@ export interface Sucursal {
   telefono: string
   ciudad: string
   departamento: string
+  pais?: string
   contacto: string
   cargo: string
 }
