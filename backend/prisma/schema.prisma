@@ -146,6 +146,13 @@ model Empresa {
   cajasBancos          CajaBanco[]
   roles                Rol[]
   gruposProducto       GrupoProducto[]
+  subgruposProducto    SubgrupoProducto[]
+  coloresProducto      ColorProducto[]
+  tallasProducto       TallaProducto[]
+  clasificacionesContables ClasificacionContable[]
+  tagsProducto         TagProducto[]
+  conversionesUnidad   ConversionUnidad[]
+  listasPrecio         ListaPrecio[]
   periodosCierre       PeriodoCierreERP[]
   auditLogsERP         AuditLogERP[]
   notificaciones       Notificacion[]
@@ -1163,6 +1170,8 @@ model VarianteProducto {
   activo         Boolean  @default(true)
 
   stock          StockVariante[]
+  codigosBarras  CodigoBarras[]
+  precios        PrecioProducto[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
