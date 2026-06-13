@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { 
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
-  Scale, Tag, AlertTriangle, FileText, Eye, Barcode
+  Scale, Tag, AlertTriangle, FileText, Eye
 } from 'lucide-react'
 import { getProductos, createProducto, updateProducto, deleteProducto } from '../../services/inventario.service'
 import {
@@ -28,6 +28,29 @@ interface MasterItem {
   activo: boolean;
   extra?: string;
   parentId?: string;
+}
+
+function Barcode({ size = 24, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3 5v14" />
+      <path d="M8 5v14" />
+      <path d="M12 5v14" />
+      <path d="M17 5v14" />
+      <path d="M21 5v14" />
+    </svg>
+  )
 }
 
 function generateRandomEAN13(): string {
