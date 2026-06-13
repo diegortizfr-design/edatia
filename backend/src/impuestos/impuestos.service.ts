@@ -39,6 +39,7 @@ export class ImpuestosService {
         activo: dto.activo ?? true,
         esDefecto: dto.esDefecto ?? false,
         notas: dto.notas ?? null,
+        codigo: dto.codigo ?? null,
       },
       create: {
         empresaId,
@@ -51,6 +52,7 @@ export class ImpuestosService {
         activo: dto.activo ?? true,
         esDefecto: dto.esDefecto ?? false,
         notas: dto.notas ?? null,
+        codigo: dto.codigo ?? null,
       },
     });
   }
@@ -78,6 +80,7 @@ export class ImpuestosService {
         ...(dto.activo !== undefined && { activo: dto.activo }),
         ...(dto.esDefecto !== undefined && { esDefecto: dto.esDefecto }),
         ...(dto.notas !== undefined && { notas: dto.notas }),
+        ...(dto.codigo !== undefined && { codigo: dto.codigo }),
       },
     });
   }

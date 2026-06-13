@@ -526,12 +526,20 @@ export function ConfigImpuestos() {
                 </div>
 
                 <div className="md:col-span-4">
-                  <Field label="Impuesto Cod (Fact. Electrónica) *">
-                    <Select
-                      value={form.dianCod || '01'}
-                      onChange={(v) => setForm(f => ({ ...f, dianCod: v }))}
-                      options={DIAN_TAX_CODES}
+                  <Field label="Impuesto Cod (Fact. Electrónica) *" hint="Ej: 01, 02, 005, etc.">
+                    <input
+                      type="text"
+                      list="dian-tax-codes"
+                      value={form.dianCod || ''}
+                      onChange={e => setForm(f => ({ ...f, dianCod: e.target.value }))}
+                      placeholder="Ej. 01 o 005"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                     />
+                    <datalist id="dian-tax-codes">
+                      {DIAN_TAX_CODES.map(code => (
+                        <option key={code.value} value={code.value}>{code.label}</option>
+                      ))}
+                    </datalist>
                   </Field>
                 </div>
 

@@ -33,4 +33,8 @@ export class CreateImpuestoDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @IsOptional()
+  @IsString()
+  codigo?: string;
 }

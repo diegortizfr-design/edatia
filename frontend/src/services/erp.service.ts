@@ -4,10 +4,63 @@
 import api from './api'
 
 // ─── Impuestos ────────────────────────────────────────────────────────────────
-export const getImpuestos = () => api.get('/impuestos').then(r => r.data)
-export const createImpuesto = (dto: any) => api.post('/impuestos', dto).then(r => r.data)
-export const updateImpuesto = (id: number, dto: any) => api.patch(`/impuestos/${id}`, dto).then(r => r.data)
-export const deleteImpuesto = (id: number) => api.delete(`/impuestos/${id}`).then(r => r.data)
+export const getImpuestos = () => api.get('/impuestos').then(r => {
+  return r.data.map((imp: any) => ({
+    id: String(imp.id),
+    codigo: imp.codigo || String(imp.id),
+    nombre: imp.nombre,
+    sigla: imp.nombre.substring(0, 8).toUpperCase().replace(/\s+/g, ''),
+    tipo: imp.tipo,
+    dianCod: imp.codigo || '',
+    tipoCalculo: 'PORCENTAJE',
+    tarifa: Number(imp.tarifa),
+    retencionCompra: imp.aplica === 'COMPRA',
+    estado: imp.activo ? 'ACTIVO' : 'INACTIVO',
+    descripcion: imp.notas || '',
+    cuentaVenta: imp.cuentaDebito || '',
+    cuentaDevolucionVenta: imp.cuentaDebito || '',
+    cuentaCompra: imp.cuentaCredito || '',
+    cuentaDevolucionCompra: imp.cuentaCredito || ''
+  }))
+})
+
+export const createImpuesto = (dto: any) => {
+  const backendDto = {
+    nombre: dto.nombre,
+    tipo: dto.tipo,
+    tarifa: Number(dto.tarifa),
+    cuentaDebito: dto.cuentaVenta || null,
+    cuentaCredito: dto.cuentaCompra || null,
+    aplica: dto.retencionCompra ? 'COMPRA' : 'VENTA',
+    activo: dto.estado === 'ACTIVO',
+    esDefecto: !!dto.esDefecto,
+    notas: dto.descripcion || null,
+    codigo: dto.dianCod || null,
+  }
+  return api.post('/impuestos', backendDto).then(r => r.data)
+}
+
+export const updateImpuesto = (id: string | number, dto: any) => {
+  const backendDto: any = {}
+  if (dto.nombre !== undefined) backendDto.nombre = dto.nombre
+  if (dto.tipo !== undefined) backendDto.tipo = dto.tipo
+  if (dto.tarifa !== undefined) backendDto.tarifa = Number(dto.tarifa)
+  if (dto.cuentaVenta !== undefined) backendDto.cuentaDebito = dto.cuentaVenta || null
+  if (dto.cuentaCompra !== undefined) backendDto.cuentaCredito = dto.cuentaCompra || null
+  if (dto.retencionCompra !== undefined) backendDto.aplica = dto.retencionCompra ? 'COMPRA' : 'VENTA'
+  if (dto.estado !== undefined) backendDto.activo = dto.estado === 'ACTIVO'
+  if (dto.esDefecto !== undefined) backendDto.esDefecto = !!dto.esDefecto
+  if (dto.descripcion !== undefined) backendDto.notas = dto.descripcion || null
+  if (dto.dianCod !== undefined) backendDto.codigo = dto.dianCod || null
+
+  const numericId = typeof id === 'string' && !isNaN(Number(id)) ? Number(id) : id;
+  return api.patch(`/impuestos/${numericId}`, backendDto).then(r => r.data)
+}
+
+export const deleteImpuesto = (id: string | number) => {
+  const numericId = typeof id === 'string' && !isNaN(Number(id)) ? Number(id) : id;
+  return api.delete(`/impuestos/${numericId}`).then(r => r.data)
+}
 
 // ─── Monedas ──────────────────────────────────────────────────────────────────
 export const getMonedas = () => api.get('/monedas').then(r => r.data)
