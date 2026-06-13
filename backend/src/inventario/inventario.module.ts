@@ -33,6 +33,18 @@ import { VariantesService } from './variantes/variantes.service';
 import { FacturasCompraController } from './facturas-compra/facturas-compra.controller';
 import { FacturasCompraService } from './facturas-compra/facturas-compra.service';
 
+// ── Nuevos Maestros ─────────────────────────────────
+import { SubgruposProductoController } from './subgrupos-producto/subgrupos-producto.controller';
+import { SubgruposProductoService } from './subgrupos-producto/subgrupos-producto.service';
+import { ColoresProductoController } from './colores-producto/colores-producto.controller';
+import { ColoresProductoService } from './colores-producto/colores-producto.service';
+import { TallasProductoController } from './tallas-producto/tallas-producto.controller';
+import { TallasProductoService } from './tallas-producto/tallas-producto.service';
+import { ClasificacionesContablesController } from './clasificaciones-contables/clasificaciones-contables.controller';
+import { ClasificacionesContablesService } from './clasificaciones-contables/clasificaciones-contables.service';
+import { TagsProductoController } from './tags-producto/tags-producto.controller';
+import { TagsProductoService } from './tags-producto/tags-producto.service';
+
 @Module({
   imports: [AuthModule, ContabilidadModule],
   controllers: [
@@ -51,6 +63,11 @@ import { FacturasCompraService } from './facturas-compra/facturas-compra.service
     SerialesController,
     VariantesController,
     FacturasCompraController,
+    SubgruposProductoController,
+    ColoresProductoController,
+    TallasProductoController,
+    ClasificacionesContablesController,
+    TagsProductoController,
   ],
   providers: [
     CategoriasService,
@@ -68,7 +85,21 @@ import { FacturasCompraService } from './facturas-compra/facturas-compra.service
     SerialesService,
     VariantesService,
     FacturasCompraService,
+    SubgruposProductoService,
+    ColoresProductoService,
+    TallasProductoService,
+    ClasificacionesContablesService,
+    TagsProductoService,
   ],
-  exports: [MovimientosService, ProductosService, StockService],
+  exports: [
+    MovimientosService, 
+    ProductosService, 
+    StockService,
+    SubgruposProductoService,
+    ColoresProductoService,
+    TallasProductoService,
+    ClasificacionesContablesService,
+    TagsProductoService,
+  ],
 })
 export class InventarioModule {}

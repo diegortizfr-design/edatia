@@ -13,6 +13,11 @@ import {
   getUnidadesMedida, createUnidadMedida, updateUnidadMedida, deleteUnidadMedida,
   getGruposProducto, createGrupoProducto, updateGrupoProducto, deleteGrupoProducto,
   getImpuestos,
+  getSubgruposProducto, createSubgrupoProducto, updateSubgrupoProducto, deleteSubgrupoProducto,
+  getColoresProducto, createColorProducto, updateColorProducto, deleteColorProducto,
+  getTallasProducto, createTallaProducto, updateTallaProducto, deleteTallaProducto,
+  getClasificacionesContables, createClasificacionContable, updateClasificacionContable, deleteClasificacionContable,
+  getTagsProducto, createTagProducto, updateTagProducto, deleteTagProducto,
 } from '../../services/erp.service'
 
 
@@ -350,6 +355,26 @@ export function ConfigProductosMaestros() {
     queryKey: ['grupos_producto'],
     queryFn: getGruposProducto,
   })
+  const { data: subgruposData = [], isLoading: loadingSubgrupos } = useQuery({
+    queryKey: ['subgrupos_producto'],
+    queryFn: getSubgruposProducto,
+  })
+  const { data: coloresData = [], isLoading: loadingColores } = useQuery({
+    queryKey: ['colores_producto'],
+    queryFn: getColoresProducto,
+  })
+  const { data: tallasData = [], isLoading: loadingTallas } = useQuery({
+    queryKey: ['tallas_producto'],
+    queryFn: getTallasProducto,
+  })
+  const { data: clasificacionesData = [], isLoading: loadingClasificaciones } = useQuery({
+    queryKey: ['clasificaciones_contables'],
+    queryFn: getClasificacionesContables,
+  })
+  const { data: tagsData = [], isLoading: loadingTags } = useQuery({
+    queryKey: ['tags_producto'],
+    queryFn: getTagsProducto,
+  })
   const { data: impuestosData = [] } = useQuery({
     queryKey: ['impuestos'],
     queryFn: getImpuestos,
@@ -361,19 +386,24 @@ export function ConfigProductosMaestros() {
     marcas:     { items: marcasData,     isLoading: loadingMarcas },
     unidades:   { items: unidadesData,   isLoading: loadingUnidades },
     grupos:     { items: gruposData,     isLoading: loadingGrupos },
+    subgrupos:  { items: subgruposData,  isLoading: loadingSubgrupos },
+    colores:    { items: coloresData,    isLoading: loadingColores },
+    tallas:     { items: tallasData,     isLoading: loadingTallas },
+    clasificacion: { items: clasificacionesData, isLoading: loadingClasificaciones },
+    tags:       { items: tagsData,       isLoading: loadingTags },
   }
 
   const apiTabState = TAB_QUERY_MAP[activeTab]
-  // For API-backed tabs use query data; for local-only tabs (subgrupos, colores, etc.) use empty array
   const items: MasterItem[] = apiTabState
     ? apiTabState.items.map((x: any) => ({
         id: String(x.id),
         nombre: x.nombre,
         activo: x.activo ?? true,
-        extra: x.abreviatura || x.extra || undefined,
+        extra: x.abreviatura || x.extra || x.pucCuenta || undefined,
+        parentId: x.grupoId ? String(x.grupoId) : undefined,
         contable: x.contable || undefined,
       }))
-    : currentTabConfig.defaultData
+    : []
 
   const isLoadingItems = apiTabState?.isLoading ?? false
 
@@ -393,6 +423,11 @@ export function ConfigProductosMaestros() {
     marcas:     ['marcas'],
     unidades:   ['unidades_medida'],
     grupos:     ['grupos_producto'],
+    subgrupos:  ['subgrupos_producto'],
+    colores:    ['colores_producto'],
+    tallas:     ['tallas_producto'],
+    clasificacion: ['clasificaciones_contables'],
+    tags:       ['tags_producto'],
   }
 
   const CREATE_FN_MAP: Record<string, (dto: any) => Promise<any>> = {
@@ -400,6 +435,11 @@ export function ConfigProductosMaestros() {
     marcas:     createMarca,
     unidades:   createUnidadMedida,
     grupos:     createGrupoProducto,
+    subgrupos:  createSubgrupoProducto,
+    colores:    createColorProducto,
+    tallas:     createTallaProducto,
+    clasificacion: createClasificacionContable,
+    tags:       createTagProducto,
   }
 
   const UPDATE_FN_MAP: Record<string, (id: number, dto: any) => Promise<any>> = {
@@ -407,6 +447,11 @@ export function ConfigProductosMaestros() {
     marcas:     updateMarca,
     unidades:   updateUnidadMedida,
     grupos:     updateGrupoProducto,
+    subgrupos:  updateSubgrupoProducto,
+    colores:    updateColorProducto,
+    tallas:     updateTallaProducto,
+    clasificacion: updateClasificacionContable,
+    tags:       updateTagProducto,
   }
 
   const DELETE_FN_MAP: Record<string, (id: number) => Promise<any>> = {
@@ -414,6 +459,11 @@ export function ConfigProductosMaestros() {
     marcas:     deleteMarca,
     unidades:   deleteUnidadMedida,
     grupos:     deleteGrupoProducto,
+    subgrupos:  deleteSubgrupoProducto,
+    colores:    deleteColorProducto,
+    tallas:     deleteTallaProducto,
+    clasificacion: deleteClasificacionContable,
+    tags:       deleteTagProducto,
   }
 
   const createMutation = useMutation({
@@ -504,7 +554,9 @@ export function ConfigProductosMaestros() {
     const dto: any = {
       nombre: formNombre,
       activo: formActivo,
-      ...(formExtra ? { abreviatura: formExtra } : {}),
+      ...(activeTab === 'unidades' && formExtra ? { abreviatura: formExtra } : {}),
+      ...(activeTab === 'clasificacion' && formExtra ? { pucCuenta: formExtra } : {}),
+      ...(activeTab === 'subgrupos' && formParentId ? { grupoId: Number(formParentId) } : {}),
       ...(activeTab === 'grupos' ? { contable: formContable } : {}),
     }
 

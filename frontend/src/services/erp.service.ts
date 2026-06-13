@@ -108,3 +108,29 @@ export const deleteTercero = (id: number) => api.delete(`/terceros/${id}`).then(
 export const getFormatosImpresion = () => api.get('/configuracion/formatos').then(r => r.data)
 export const updateFormatoImpresion = (tipo: string, dto: any) =>
   api.patch(`/configuracion/formatos/${tipo}`, dto).then(r => r.data)
+
+// ─── Nuevos Maestros de Productos (reestructuración) ────────────────────────
+export const getSubgruposProducto = () => api.get('/subgrupos-producto').then(r => r.data)
+export const createSubgrupoProducto = (dto: any) => api.post('/subgrupos-producto', dto).then(r => r.data)
+export const updateSubgrupoProducto = (id: number, dto: any) => api.patch(`/subgrupos-producto/${id}`, dto).then(r => r.data)
+export const deleteSubgrupoProducto = (id: number) => api.delete(`/subgrupos-producto/${id}`).then(r => r.data)
+
+export const getColoresProducto = () => api.get('/colores-producto').then(r => r.data)
+export const createColorProducto = (dto: any) => api.post('/colores-producto', dto).then(r => r.data)
+export const updateColorProducto = (id: number, dto: any) => api.patch(`/colores-producto/${id}`, dto).then(r => r.data)
+export const deleteColorProducto = (id: number) => api.delete(`/colores-producto/${id}`).then(r => r.data)
+
+export const getTallasProducto = () => api.get('/tallas-producto').then(r => r.data)
+export const createTallaProducto = (dto: any) => api.post('/tallas-producto', dto).then(r => r.data)
+export const updateTallaProducto = (id: number, dto: any) => api.patch(`/tallas-producto/${id}`, dto).then(r => r.data)
+export const deleteTallaProducto = (id: number) => api.delete(`/tallas-producto/${id}`).then(r => r.data)
+
+export const getClasificacionesContables = () => api.get('/clasificaciones-contables').then(r => r.data)
+export const createClasificacionContable = (dto: any) => api.post('/clasificaciones-contables', dto).then(r => r.data)
+export const updateClasificacionContable = (id: number, dto: any) => api.patch(`/clasificaciones-contables/${id}`, dto).then(r => r.data)
+export const deleteClasificacionContable = (id: number) => api.delete(`/clasificaciones-contables/${id}`).then(r => r.data)
+
+export const getTagsProducto = () => api.get('/tags-producto').then(r => r.data)
+export const createTagProducto = (dto: any) => api.post('/tags-producto', dto).then(r => r.data)
+export const updateTagProducto = (id: number, dto: any) => api.patch(`/tags-producto/${id}`, dto).then(r => r.data)
+export const deleteTagProducto = (id: number) => api.delete(`/tags-producto/${id}`).then(r => r.data)

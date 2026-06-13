@@ -6,6 +6,17 @@ const PRODUCTO_INCLUDE = {
   categoria: { select: { id: true, nombre: true } },
   marca: { select: { id: true, nombre: true } },
   unidadMedida: { select: { id: true, nombre: true, abreviatura: true } },
+  grupo: { select: { id: true, nombre: true } },
+  subgrupo: { select: { id: true, nombre: true } },
+  color: { select: { id: true, nombre: true } },
+  talla: { select: { id: true, nombre: true } },
+  clasificacion: { select: { id: true, nombre: true, pucCuenta: true } },
+  proveedoresRel: {
+    include: {
+      proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } }
+    }
+  },
+  codigosBarrasRel: true,
   stock: {
     include: { bodega: { select: { id: true, nombre: true, codigo: true } } },
   },
@@ -70,7 +81,47 @@ export class ProductosService {
       where: { empresaId_sku: { empresaId, sku: dto.sku } },
     });
     if (exists) throw new ConflictException(`Ya existe un producto con SKU "${dto.sku}"`);
-    return (this.prisma as any).producto.create({ data: { ...dto, empresaId }, include: PRODUCTO_INCLUDE });
+    
+    const { proveedores, codigos, ...productData } = dto as any;
+    
+    const p = await (this.prisma as any).producto.create({
+      data: {
+        ...productData,
+        empresaId,
+      },
+      include: PRODUCTO_INCLUDE,
+    });
+    
+    // Sync suppliers if any
+    if (proveedores && Array.isArray(proveedores)) {
+      await (this.prisma as any).productoProveedor.createMany({
+        data: proveedores.map((prov: any) => ({
+          productoId: p.id,
+          proveedorId: Number(prov.id || prov.proveedorId),
+          codigoProveedor: prov.codigoProveedor || null,
+          precioCompra: Number(prov.precioCompra || prov.precioAcordado) || 0,
+          tiempoEntregaDias: Number(prov.tiempoEntregaDias || prov.plazoEntrega) || 0,
+          prioridad: prov.esPrincipal ? 1 : 2,
+          empresaId,
+        }))
+      });
+    }
+    
+    // Sync barcodes if any
+    if (codigos && Array.isArray(codigos)) {
+      await (this.prisma as any).codigoBarras.createMany({
+        data: codigos.map((c: any) => ({
+          productoId: p.id,
+          codigo: c.codigo,
+          tipo: c.tipo || 'EAN13',
+          descripcion: c.descripcion || null,
+          esPrincipal: !!c.esPrincipal,
+          empresaId,
+        }))
+      });
+    }
+    
+    return this.findOne(p.id, empresaId);
   }
 
   async update(id: number, dto: UpdateProductoDto, empresaId: number) {
@@ -81,7 +132,47 @@ export class ProductosService {
       });
       if (conflict) throw new ConflictException(`Ya existe un producto con SKU "${dto.sku}"`);
     }
-    return (this.prisma as any).producto.update({ where: { id }, data: dto, include: PRODUCTO_INCLUDE });
+    
+    const { proveedores, codigos, ...productData } = dto as any;
+    
+    const p = await (this.prisma as any).producto.update({
+      where: { id },
+      data: productData,
+      include: PRODUCTO_INCLUDE,
+    });
+    
+    // Sync suppliers if any
+    if (proveedores && Array.isArray(proveedores)) {
+      await (this.prisma as any).productoProveedor.deleteMany({ where: { productoId: id } });
+      await (this.prisma as any).productoProveedor.createMany({
+        data: proveedores.map((prov: any) => ({
+          productoId: id,
+          proveedorId: Number(prov.id || prov.proveedorId),
+          codigoProveedor: prov.codigoProveedor || null,
+          precioCompra: Number(prov.precioCompra || prov.precioAcordado) || 0,
+          tiempoEntregaDias: Number(prov.tiempoEntregaDias || prov.plazoEntrega) || 0,
+          prioridad: prov.esPrincipal ? 1 : 2,
+          empresaId,
+        }))
+      });
+    }
+    
+    // Sync barcodes if any
+    if (codigos && Array.isArray(codigos)) {
+      await (this.prisma as any).codigoBarras.deleteMany({ where: { productoId: id } });
+      await (this.prisma as any).codigoBarras.createMany({
+        data: codigos.map((c: any) => ({
+          productoId: id,
+          codigo: c.codigo,
+          tipo: c.tipo || 'EAN13',
+          descripcion: c.descripcion || null,
+          esPrincipal: !!c.esPrincipal,
+          empresaId,
+        }))
+      });
+    }
+    
+    return this.findOne(id, empresaId);
   }
 
   /**

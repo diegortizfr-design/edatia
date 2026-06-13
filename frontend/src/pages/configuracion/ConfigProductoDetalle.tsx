@@ -10,7 +10,7 @@ import {
   BarChart3, Clock
 } from 'lucide-react'
 import {
-  getProducto, getStockProducto, getOrdenesCompra, getProveedores
+  getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
 } from '../../services/inventario.service'
 
 const Barcode = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
@@ -37,16 +37,7 @@ function fmtCOP(val: number) {
   return `$${(val || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-function getLS(key: string, fallback: any = null) {
-  try {
-    const v = localStorage.getItem(key)
-    return v ? JSON.parse(v) : fallback
-  } catch { return fallback }
-}
-
-function setLS(key: string, value: any) {
-  localStorage.setItem(key, JSON.stringify(value))
-}
+// Local storage helpers removed. Using direct database bindings.
 
 // ── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -63,28 +54,32 @@ const TABS = [
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 /* ---- TAB: Web / Digital ---- */
-function TabWeb({ sku }: { sku: string }) {
-  const KEY = `edatia_prod_web_${sku}`
-  const [data, setData] = useState(() => getLS(KEY, {
-    publicarTienda: false,
-    esDigital: false,
-    nombreWeb: '',
-    slugUrl: '',
-    descripcionLarga: '',
-    imagenes: [] as string[],
-    etiquetaSeo: '',
-    metaDescripcion: '',
-    ordenMostrar: 0,
-    destacado: false,
-    urlDescarga: '',
-  }))
+function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [data, setData] = useState({
+    publicadoWeb: producto.publicadoWeb || false,
+    esDigital: producto.esDigital || false,
+    nombreWeb: producto.nombreWeb || '',
+    slug: producto.slug || '',
+    descripcionWeb: producto.descripcionWeb || '',
+    imagenes: Array.isArray(producto.imagenes) ? producto.imagenes : [],
+    etiquetaSeo: producto.etiquetaSeo || '',
+    metaDescripcion: producto.metaDescripcion || '',
+    ordenMostrar: producto.ordenMostrar || 0,
+    esDestacado: producto.esDestacado || false,
+    urlDescarga: producto.urlDescarga || '',
+  })
   const [saved, setSaved] = useState(false)
   const [newImagen, setNewImagen] = useState('')
 
-  const save = () => {
-    setLS(KEY, data)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  const save = async () => {
+    try {
+      await updateProducto(producto.id, data)
+      setSaved(true)
+      refetch()
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      alert('Error al guardar configuración web')
+    }
   }
 
   const autoSlug = (nombre: string) =>
@@ -113,9 +108,9 @@ function TabWeb({ sku }: { sku: string }) {
       {/* Switches principales */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { key: 'publicarTienda', label: 'Publicar en Tienda Virtual', desc: 'El producto aparecerá en la vitrina web del cliente', color: 'indigo' },
+          { key: 'publicadoWeb', label: 'Publicar en Tienda Virtual', desc: 'El producto aparecerá en la vitrina web del cliente', color: 'indigo' },
           { key: 'esDigital', label: 'Producto Digital', desc: 'Entrega electrónica (software, descarga, servicio)', color: 'purple' },
-          { key: 'destacado', label: 'Destacado / Featured', desc: 'Aparece en secciones destacadas de la tienda', color: 'amber' },
+          { key: 'esDestacado', label: 'Destacado / Featured', desc: 'Aparece en secciones destacadas de la tienda', color: 'amber' },
         ].map(item => (
           <label key={item.key} className={`flex flex-col gap-2 p-4 rounded-2xl border-2 cursor-pointer transition-all ${(data as any)[item.key] ? 'border-indigo-300 bg-indigo-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
             <div className="flex items-center justify-between">
@@ -142,9 +137,9 @@ function TabWeb({ sku }: { sku: string }) {
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">URL Amigable (Slug)</label>
             <div className="flex gap-2">
-              <input type="text" value={data.slugUrl} onChange={e => setData(p => ({ ...p, slugUrl: e.target.value }))}
+              <input type="text" value={data.slug} onChange={e => setData(p => ({ ...p, slug: e.target.value }))}
                 placeholder="mi-producto-nombre" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
-              <button type="button" onClick={() => setData(p => ({ ...p, slugUrl: autoSlug(p.nombreWeb || '') }))}
+              <button type="button" onClick={() => setData(p => ({ ...p, slug: autoSlug(p.nombreWeb || '') }))}
                 className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all" title="Generar desde nombre web">
                 <RefreshCw size={12} />
               </button>
@@ -164,13 +159,13 @@ function TabWeb({ sku }: { sku: string }) {
         <div>
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Meta Descripción (SEO)</label>
           <input type="text" value={data.metaDescripcion} onChange={e => setData(p => ({ ...p, metaDescripcion: e.target.value }))}
-            placeholder="Descripción breve para buscadores (160 caracteres)" maxLength={160}
+             placeholder="Descripción breve para buscadores (160 caracteres)" maxLength={160}
             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
           <span className="text-[10px] text-slate-400">{(data.metaDescripcion || '').length}/160 caracteres</span>
         </div>
         <div>
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descripción Larga / Detalle del Producto</label>
-          <textarea value={data.descripcionLarga} onChange={e => setData(p => ({ ...p, descripcionLarga: e.target.value }))}
+          <textarea value={data.descripcionWeb} onChange={e => setData(p => ({ ...p, descripcionWeb: e.target.value }))}
             rows={5} placeholder="Descripción completa del producto visible al cliente en la tienda..."
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
         </div>
@@ -210,13 +205,20 @@ function TabWeb({ sku }: { sku: string }) {
 }
 
 /* ---- TAB: Documentos ---- */
-function TabDocumentos({ sku }: { sku: string }) {
-  const KEY = `edatia_prod_docs_${sku}`
-  const [docs, setDocs] = useState<any[]>(() => getLS(KEY, []))
+function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [docs, setDocs] = useState<any[]>(() => Array.isArray(producto.documentos) ? producto.documentos : [])
   const [form, setForm] = useState({ nombre: '', tipo: 'PDF', url: '', descripcion: '' })
   const [adding, setAdding] = useState(false)
 
-  const save = (updated: any[]) => { setDocs(updated); setLS(KEY, updated) }
+  const save = async (updated: any[]) => {
+    try {
+      setDocs(updated)
+      await updateProducto(producto.id, { documentos: updated })
+      refetch()
+    } catch (err) {
+      alert('Error al guardar documentos')
+    }
+  }
 
   const addDoc = () => {
     if (!form.nombre || !form.url) return
@@ -417,9 +419,20 @@ function TabCompras({ productoId, sku }: { productoId: number; sku: string }) {
 }
 
 /* ---- TAB: Proveedores ---- */
-function TabProveedores({ sku }: { sku: string }) {
-  const KEY = `edatia_prod_proveedores_${sku}`
-  const [vinculados, setVinculados] = useState<any[]>(() => getLS(KEY, []))
+function TabProveedores({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [vinculados, setVinculados] = useState<any[]>(() => {
+    return (producto.proveedoresRel || []).map((rel: any) => ({
+      id: rel.proveedor?.id || rel.proveedorId,
+      nombre: rel.proveedor?.nombre || '',
+      nombreComercial: rel.proveedor?.nombreComercial || '',
+      email: rel.proveedor?.email || '',
+      telefono: rel.proveedor?.telefono || '',
+      esPrincipal: rel.prioridad === 1 || rel.esPrincipal || false,
+      precioAcordado: Number(rel.precioCompra || 0),
+      plazoEntrega: Number(rel.tiempoEntregaDias || 0),
+      notas: rel.notas || ''
+    }))
+  })
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -431,25 +444,50 @@ function TabProveedores({ sku }: { sku: string }) {
     (p.nombre.toLowerCase().includes(search.toLowerCase()) || (p.numeroDocumento || '').includes(search))
   )
 
+  const save = async (listToSave: any[] = vinculados) => {
+    try {
+      await updateProducto(producto.id, { proveedores: listToSave })
+      setSaved(true)
+      refetch()
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      alert('Error al guardar proveedores')
+    }
+  }
+
   const vincular = (prov: any) => {
-    const updated = [...vinculados, { id: prov.id, nombre: prov.nombre, nombreComercial: prov.nombreComercial, email: prov.email, telefono: prov.telefono, esPrincipal: vinculados.length === 0, precioAcordado: 0, plazoEntrega: prov.plazoEntregaDias || 0, notas: '' }]
-    setVinculados(updated); setLS(KEY, updated); setShowSearch(false); setSearch('')
+    const updated = [...vinculados, {
+      id: prov.id,
+      nombre: prov.nombre,
+      nombreComercial: prov.nombreComercial,
+      email: prov.email,
+      telefono: prov.telefono,
+      esPrincipal: vinculados.length === 0,
+      precioAcordado: 0,
+      plazoEntrega: prov.plazoEntregaDias || 0,
+      notas: ''
+    }]
+    setVinculados(updated)
+    save(updated)
+    setShowSearch(false)
+    setSearch('')
   }
 
   const marcarPrincipal = (id: number) => {
     const updated = vinculados.map(v => ({ ...v, esPrincipal: v.id === id }))
-    setVinculados(updated); setLS(KEY, updated)
-    setSaved(true); setTimeout(() => setSaved(false), 2000)
+    setVinculados(updated)
+    save(updated)
   }
 
   const desvincular = (id: number) => {
     const updated = vinculados.filter(v => v.id !== id)
-    setVinculados(updated); setLS(KEY, updated)
+    setVinculados(updated)
+    save(updated)
   }
 
   const updateVinculado = (id: number, field: string, value: any) => {
     const updated = vinculados.map(v => v.id === id ? { ...v, [field]: value } : v)
-    setVinculados(updated); setLS(KEY, updated)
+    setVinculados(updated)
   }
 
   return (
@@ -459,9 +497,14 @@ function TabProveedores({ sku }: { sku: string }) {
           <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Building2 size={18} className="text-indigo-600" /> Proveedores del Producto</h3>
           <p className="text-xs text-slate-400 mt-0.5">Vincula los proveedores habituales y marca el principal.</p>
         </div>
-        <button onClick={() => setShowSearch(!showSearch)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
-          <Plus size={14} /> Vincular Proveedor
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowSearch(!showSearch)} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+            <Plus size={14} /> Vincular Proveedor
+          </button>
+          <button onClick={() => save()} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+            <Save size={14} /> {saved ? '¡Guardado!' : 'Guardar'}
+          </button>
+        </div>
       </div>
 
       {/* Buscador */}
@@ -549,23 +592,32 @@ function TabProveedores({ sku }: { sku: string }) {
 }
 
 /* ---- TAB: Stock ---- */
-function TabStock({ productoId, sku, producto }: { productoId: number; sku: string; producto: any }) {
-  const KEY = `edatia_prod_stock_config_${sku}`
-  const [config, setConfig] = useState(() => getLS(KEY, { stockMinimo: 0, stockMaximo: 0, puntoReorden: 0 }))
+function TabStock({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [config, setConfig] = useState({
+    stockMinimo: Number(producto.stockMinimo || 0),
+    stockMaximo: Number(producto.stockMaximo || 0),
+    puntoReorden: Number(producto.puntoReorden || 0),
+  })
   const [saved, setSaved] = useState(false)
 
   const { data: stock = [], isLoading } = useQuery({
-    queryKey: ['stock_producto', productoId],
-    queryFn: () => getStockProducto(productoId),
+    queryKey: ['stock_producto', producto.id],
+    queryFn: () => getStockProducto(producto.id),
   })
 
   const totalDisponible = stock.reduce((a: number, s: any) => a + (s.cantidad - s.cantidadReservada), 0)
   const totalCantidad = stock.reduce((a: number, s: any) => a + s.cantidad, 0)
   const totalReservado = stock.reduce((a: number, s: any) => a + s.cantidadReservada, 0)
 
-  const save = () => {
-    setLS(KEY, config)
-    setSaved(true); setTimeout(() => setSaved(false), 2000)
+  const save = async () => {
+    try {
+      await updateProducto(producto.id, config)
+      setSaved(true)
+      refetch()
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      alert('Error al guardar niveles de stock')
+    }
   }
 
   return (
@@ -663,11 +715,11 @@ function TabStock({ productoId, sku, producto }: { productoId: number; sku: stri
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { key: 'stockMinimo', label: 'Stock Mínimo', desc: 'Nivel mínimo antes de alerta', color: 'rose' },
-            { key: 'stockMaximo', label: 'Stock Máximo', desc: 'Capacidad máxima de almacenaje', color: 'blue' },
+            { key: 'stockMaximo', label: 'Stock Mínimo/Máximo', desc: 'Capacidad máxima de almacenaje', color: 'blue' },
             { key: 'puntoReorden', label: 'Punto de Reorden', desc: 'Nivel para generar OC automáticamente', color: 'amber' },
           ].map(f => (
             <div key={f.key} className="p-4 bg-slate-50/75 border border-slate-200/60 rounded-2xl space-y-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase">{f.label}</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase">{f.label === 'Stock Mínimo/Máximo' ? (f.key === 'stockMaximo' ? 'Stock Máximo' : 'Stock Mínimo') : f.label}</label>
               <input type="number" min="0" value={(config as any)[f.key]} onChange={e => setConfig((p: any) => ({ ...p, [f.key]: Number(e.target.value) }))}
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
               <p className="text-[10px] text-slate-400">{f.desc}</p>
@@ -680,28 +732,38 @@ function TabStock({ productoId, sku, producto }: { productoId: number; sku: stri
 }
 
 /* ---- TAB: Costeo ---- */
-function TabCosteo({ sku, producto }: { sku: string; producto: any }) {
-  const KEY = `edatia_prod_costeo_${sku}`
-  const extData = getLS(`edatia_prod_ext_${sku}`, {})
-  const [data, setData] = useState(() => getLS(KEY, {
-    metodoCosteo: 'CPP',
-    costoMO: 0,
-    costoGIF: 0,
-    costoTransporte: 0,
-    costoEmbalaje: 0,
-    costoOtros: 0,
-    margenObjetivo: 30,
-    monedaCompra: 'COP',
-    tasaCambio: 1,
-    notas: '',
-  }))
+function TabCosteo({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [data, setData] = useState(() => {
+    const costeo = producto.costeo || {}
+    return {
+      metodoCosteo: costeo.metodoCosteo || 'CPP',
+      costoMO: Number(costeo.costoMO || 0),
+      costoGIF: Number(costeo.costoGIF || 0),
+      costoTransporte: Number(costeo.costoTransporte || 0),
+      costoEmbalaje: Number(costeo.costoEmbalaje || 0),
+      costoOtros: Number(costeo.costoOtros || 0),
+      margenObjetivo: Number(costeo.margenObjetivo || 30),
+      monedaCompra: costeo.monedaCompra || 'COP',
+      tasaCambio: Number(costeo.tasaCambio || 1),
+      notas: costeo.notas || '',
+    }
+  })
   const [saved, setSaved] = useState(false)
 
-  const save = () => { setLS(KEY, data); setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  const save = async () => {
+    try {
+      await updateProducto(producto.id, { costeo: data })
+      setSaved(true)
+      refetch()
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      alert('Error al guardar configuración de costeo')
+    }
+  }
 
-  const costoBase = Number(extData.costo || producto?.costoPromedio || 0)
-  const costoUltimo = Number(extData.costoUltimo || 0)
-  const precio1 = Number(extData.precios?.[0] || producto?.precioBase || 0)
+  const costoBase = Number(producto.costo || producto.costoPromedio || 0)
+  const costoUltimo = Number(producto.costoUltimo || 0)
+  const precio1 = Number(producto.precios?.[0] || producto.precioBase || 0)
 
   const costoTotal = costoBase + Number(data.costoMO) + Number(data.costoGIF) + Number(data.costoTransporte) + Number(data.costoEmbalaje) + Number(data.costoOtros)
   const margenReal = precio1 > 0 ? ((precio1 - costoTotal) / precio1) * 100 : 0
@@ -826,9 +888,9 @@ function TabCosteo({ sku, producto }: { sku: string; producto: any }) {
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3">
             <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Referencia de Costos (Ficha Técnica)</h4>
             {[
-              { label: 'Costo Unitario Base', value: fmtCOP(Number(extData.costo || 0)) },
-              { label: 'Costo Promedio (CPP)', value: fmtCOP(Number(extData.costoPromedio || producto?.costoPromedio || 0)) },
-              { label: 'Costo Última Compra', value: fmtCOP(costoUltimo) },
+              { label: 'Costo Unitario Base', value: fmtCOP(Number(producto.costo || 0)) },
+              { label: 'Costo Promedio (CPP)', value: fmtCOP(Number(producto.costoPromedio || 0)) },
+              { label: 'Costo Última Compra', value: fmtCOP(Number(producto.costoUltimo || 0)) },
               { label: 'Precio Base (P1)', value: fmtCOP(precio1) },
             ].map(r => (
               <div key={r.label} className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
@@ -851,28 +913,53 @@ function TabCosteo({ sku, producto }: { sku: string; producto: any }) {
 }
 
 /* ---- TAB: Códigos de Barra ---- */
-function TabCodigosBarra({ sku }: { sku: string }) {
-  const KEY = `edatia_prod_codigos_${sku}`
-  const [codigos, setCodigos] = useState<any[]>(() => getLS(KEY, []))
+function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const [codigos, setCodigos] = useState<any[]>(() => {
+    return (producto.codigosBarrasRel || []).map((c: any) => ({
+      id: c.id,
+      codigo: c.codigo,
+      tipo: c.tipo,
+      descripcion: c.descripcion || '',
+      esPrincipal: c.esPrincipal || false,
+    }))
+  })
   const [form, setForm] = useState({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false })
   const [adding, setAdding] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const save = (updated: any[]) => { setCodigos(updated); setLS(KEY, updated); setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  const save = async (updated: any[]) => {
+    try {
+      setCodigos(updated)
+      await updateProducto(producto.id, { codigos: updated })
+      setSaved(true)
+      refetch()
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      alert('Error al guardar códigos de barra')
+    }
+  }
 
   const addCodigo = () => {
     if (!form.codigo.trim()) return
-    const updated = [...codigos, { ...form, id: Date.now(), codigo: form.codigo.trim() }]
+    const newId = Date.now()
+    const updated = [...codigos, { ...form, id: newId, codigo: form.codigo.trim() }]
     if (form.esPrincipal) {
-      updated.forEach(c => { if (c.id !== updated[updated.length - 1].id) c.esPrincipal = false })
+      updated.forEach(c => { if (c.id !== newId) c.esPrincipal = false })
     }
     save(updated)
     setForm({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false })
     setAdding(false)
   }
 
-  const marcarPrincipal = (id: number) => save(codigos.map(c => ({ ...c, esPrincipal: c.id === id })))
-  const eliminar = (id: number) => save(codigos.filter(c => c.id !== id))
+  const marcarPrincipal = (id: number) => {
+    const updated = codigos.map(c => ({ ...c, esPrincipal: c.id === id }))
+    save(updated)
+  }
+
+  const eliminar = (id: number) => {
+    const updated = codigos.filter(c => c.id !== id)
+    save(updated)
+  }
 
   const TIPO_OPTIONS = ['EAN-13', 'EAN-8', 'UPC-A', 'UPC-E', 'Code 128', 'Code 39', 'QR Code', 'Data Matrix', 'ITF-14', 'Interno']
 
@@ -996,7 +1083,7 @@ export function ConfigProductoDetalle() {
   const productoId = parseInt(id || '0', 10)
   const [activeTab, setActiveTab] = useState('web')
 
-  const { data: producto, isLoading, isError } = useQuery({
+  const { data: producto, isLoading, isError, refetch } = useQuery({
     queryKey: ['producto_detalle', productoId],
     queryFn: () => getProducto(productoId),
     enabled: !!productoId,
@@ -1027,10 +1114,8 @@ export function ConfigProductoDetalle() {
     )
   }
 
-  const extData = getLS(`edatia_prod_ext_${producto.sku}`, {})
-  const precio1 = Number(extData.precios?.[0] || producto.precioBase || 0)
-  const categorias = JSON.parse(localStorage.getItem('edatia_maestros_categorias') || '[]')
-  const catName = categorias.find((c: any) => c.id === extData.categoriaId)?.nombre || '—'
+  const precio1 = Number(producto.precios?.[0] || producto.precioBase || 0)
+  const catName = producto.categoria?.nombre || '—'
 
   const ActiveIcon = TABS.find(t => t.id === activeTab)?.icon || Package
 
@@ -1057,7 +1142,7 @@ export function ConfigProductoDetalle() {
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${producto.activo ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
                   {producto.activo ? 'Activo' : 'Inactivo'}
                 </span>
-                {extData.tipoProducto && <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-lg uppercase">{extData.tipoProducto}</span>}
+                {producto.tipoProducto && <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-lg uppercase">{producto.tipoProducto}</span>}
               </div>
               <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">{producto.nombre}</h1>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -1106,13 +1191,13 @@ export function ConfigProductoDetalle() {
 
         {/* Tab content */}
         <div className="p-6">
-          {activeTab === 'web'         && <TabWeb sku={producto.sku} />}
-          {activeTab === 'documentos'  && <TabDocumentos sku={producto.sku} />}
+          {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} />}
+          {activeTab === 'documentos'  && <TabDocumentos producto={producto} refetch={refetch} />}
           {activeTab === 'compras'     && <TabCompras productoId={productoId} sku={producto.sku} />}
-          {activeTab === 'proveedores' && <TabProveedores sku={producto.sku} />}
-          {activeTab === 'stock'       && <TabStock productoId={productoId} sku={producto.sku} producto={producto} />}
-          {activeTab === 'costeo'      && <TabCosteo sku={producto.sku} producto={producto} />}
-          {activeTab === 'codigos'     && <TabCodigosBarra sku={producto.sku} />}
+          {activeTab === 'proveedores' && <TabProveedores producto={producto} refetch={refetch} />}
+          {activeTab === 'stock'       && <TabStock producto={producto} refetch={refetch} />}
+          {activeTab === 'costeo'      && <TabCosteo producto={producto} refetch={refetch} />}
+          {activeTab === 'codigos'     && <TabCodigosBarra producto={producto} refetch={refetch} />}
         </div>
       </div>
     </div>

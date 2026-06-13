@@ -7,6 +7,18 @@ import {
   Scale, Tag, AlertTriangle, FileText, Eye
 } from 'lucide-react'
 import { getProductos, createProducto, updateProducto, deleteProducto } from '../../services/inventario.service'
+import {
+  getCategorias,
+  getMarcas,
+  getUnidadesMedida,
+  getGruposProducto,
+  getSubgruposProducto,
+  getColoresProducto,
+  getTallasProducto,
+  getClasificacionesContables,
+  getTagsProducto,
+  getImpuestos
+} from '../../services/erp.service'
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -144,42 +156,29 @@ export function ConfigProductos() {
   // Form State
   const [formData, setFormData] = useState(DEFAULT_FORM)
 
-  // Load masters from localStorage
-  const [categorias, setCategorias] = useState<MasterItem[]>([])
-  const [marcas, setMarcas] = useState<MasterItem[]>([])
-  const [unidades, setUnidades] = useState<MasterItem[]>([])
-  const [grupos, setGrupos] = useState<MasterItem[]>([])
-  const [subgrupos, setSubgrupos] = useState<MasterItem[]>([])
-  const [colores, setColores] = useState<MasterItem[]>([])
-  const [tallas, setTallas] = useState<MasterItem[]>([])
-  const [clasificaciones, setClasificaciones] = useState<MasterItem[]>([])
-  const [tags, setTags] = useState<MasterItem[]>([])
-  const [systemTaxes, setSystemTaxes] = useState<any[]>([])
+  // Load masters via React Query
+  const { data: catData = [] } = useQuery({ queryKey: ['categorias'], queryFn: getCategorias })
+  const { data: marcaData = [] } = useQuery({ queryKey: ['marcas'], queryFn: getMarcas })
+  const { data: undData = [] } = useQuery({ queryKey: ['unidades_medida'], queryFn: getUnidadesMedida })
+  const { data: grpData = [] } = useQuery({ queryKey: ['grupos_producto'], queryFn: getGruposProducto })
+  const { data: subgrpData = [] } = useQuery({ queryKey: ['subgrupos_producto'], queryFn: getSubgruposProducto })
+  const { data: colData = [] } = useQuery({ queryKey: ['colores_producto'], queryFn: getColoresProducto })
+  const { data: talData = [] } = useQuery({ queryKey: ['tallas_producto'], queryFn: getTallasProducto })
+  const { data: clasifData = [] } = useQuery({ queryKey: ['clasificaciones_contables'], queryFn: getClasificacionesContables })
+  const { data: tagData = [] } = useQuery({ queryKey: ['tags_producto'], queryFn: getTagsProducto })
+  const { data: taxData = [] } = useQuery({ queryKey: ['impuestos'], queryFn: getImpuestos })
 
-  useEffect(() => {
-    setCategorias(getLocalMaster('edatia_maestros_categorias'))
-    setMarcas(getLocalMaster('edatia_maestros_marcas'))
-    setUnidades(getLocalMaster('edatia_maestros_unidades'))
-    setGrupos(getLocalMaster('edatia_maestros_grupos'))
-    setSubgrupos(getLocalMaster('edatia_maestros_subgrupos'))
-    setColores(getLocalMaster('edatia_maestros_colores'))
-    setTallas(getLocalMaster('edatia_maestros_tallas'))
-    setClasificaciones(getLocalMaster('edatia_maestros_clasificacion'))
-    setTags(getLocalMaster('edatia_maestros_tags'))
-
-    // Load active system taxes from Configuración > Impuestos
-    const savedTaxes = localStorage.getItem('edatia_config_impuestos')
-    if (savedTaxes) {
-      try {
-        setSystemTaxes(JSON.parse(savedTaxes))
-      } catch (e) {
-        setSystemTaxes(DEFAULT_SYSTEM_IMPUESTOS)
-      }
-    } else {
-      setSystemTaxes(DEFAULT_SYSTEM_IMPUESTOS)
-      localStorage.setItem('edatia_config_impuestos', JSON.stringify(DEFAULT_SYSTEM_IMPUESTOS))
-    }
-  }, [viewMode])
+  // Map to MasterItem arrays
+  const categorias: MasterItem[] = catData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const marcas: MasterItem[] = marcaData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const unidades: MasterItem[] = undData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true, extra: x.abreviatura }))
+  const grupos: MasterItem[] = grpData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const subgrupos: MasterItem[] = subgrpData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true, parentId: String(x.grupoId) }))
+  const colores: MasterItem[] = colData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const tallas: MasterItem[] = talData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const clasificaciones: MasterItem[] = clasifData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true, extra: x.pucCuenta }))
+  const tags: MasterItem[] = tagData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const systemTaxes: any[] = taxData.length > 0 ? taxData : DEFAULT_SYSTEM_IMPUESTOS
 
   const getAppliedTaxRate = (pForm: any) => {
     if (!pForm) return 0
@@ -189,9 +188,10 @@ export function ConfigProductos() {
     let rate = 0
     if (!pForm.appliedTaxIds) return 0
     pForm.appliedTaxIds.forEach((taxId: string) => {
-      const tax = systemTaxes.find(t => t.id === taxId)
-      if (tax && tax.estado === 'ACTIVO') {
-        rate += Number(tax.tarifa) || 0
+      // Find either by ID (from defaults) or by code / id string
+      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
+      if (tax && tax.activo !== false) {
+        rate += Number(tax.tarifa || tax.porcentaje) || 0
       }
     })
     return rate
@@ -203,22 +203,23 @@ export function ConfigProductos() {
     queryFn: () => getProductos({ activo: undefined }), // get all
   })
 
-  // Merge database products with localStorage metadata
-  const products = dbProducts.map(p => {
-    const ext = localStorage.getItem(`edatia_prod_ext_${p.sku}`)
-    let extData: any = {}
-    if (ext) {
-      try {
-        extData = JSON.parse(ext)
-      } catch (e) {
-        // ignore
-      }
-    }
+  // Merge database products
+  const products = dbProducts.map((p: any) => {
     return {
       ...p,
       extData: {
         ...DEFAULT_FORM,
-        ...extData,
+        ...p,
+        categoriaId: p.categoriaId ? String(p.categoriaId) : '',
+        grupoId: p.grupoId ? String(p.grupoId) : '',
+        subgrupoId: p.subgrupoId ? String(p.subgrupoId) : '',
+        unidadMedidaId: p.unidadMedidaId ? String(p.unidadMedidaId) : '',
+        colorId: p.colorId ? String(p.colorId) : '',
+        marcaId: p.marcaId ? String(p.marcaId) : '',
+        clasificacionId: p.clasificacionId ? String(p.clasificacionId) : '',
+        precios: Array.isArray(p.precios) ? p.precios : DEFAULT_FORM.precios,
+        selectedTags: Array.isArray(p.selectedTags) ? p.selectedTags : DEFAULT_FORM.selectedTags,
+        appliedTaxIds: Array.isArray(p.appliedTaxIds) ? p.appliedTaxIds : DEFAULT_FORM.appliedTaxIds,
       }
     }
   })
@@ -288,7 +289,6 @@ export function ConfigProductos() {
     if (window.confirm(`¿Está seguro de eliminar físicamente el producto "${p.nombre}" (SKU: ${p.sku})? Esto borrará el registro de la base de datos.`)) {
       try {
         await deleteProducto(p.id)
-        localStorage.removeItem(`edatia_prod_ext_${p.sku}`)
         qc.invalidateQueries({ queryKey: ['config_productos'] })
         showNotification('Producto eliminado correctamente de la base de datos.')
       } catch (err: any) {
@@ -309,13 +309,30 @@ export function ConfigProductos() {
 
     const price1 = Number(formData.precios[0]) || 0
 
-    // Core payload for database API
-    const corePayload = {
-      sku: formData.sku,
-      nombre: formData.nombre,
-      referencia: formData.referencia || undefined,
+    // Full payload for database API
+    const payload = {
+      ...formData,
+      categoriaId: formData.categoriaId ? Number(formData.categoriaId) : null,
+      grupoId: formData.grupoId ? Number(formData.grupoId) : null,
+      subgrupoId: formData.subgrupoId ? Number(formData.subgrupoId) : null,
+      unidadMedidaId: formData.unidadMedidaId ? Number(formData.unidadMedidaId) : null,
+      colorId: formData.colorId ? Number(formData.colorId) : null,
+      marcaId: formData.marcaId ? Number(formData.marcaId) : null,
+      clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
-      tipoIva: 'GRAVADO_19',
+      costo: Number(formData.costo) || 0,
+      costoPromedio: Number(formData.costoPromedio) || 0,
+      costoUltimo: Number(formData.costoUltimo) || 0,
+      costoI: Number(formData.costoI) || 0,
+      pesoUnidad: Number(formData.pesoUnidad) || 0,
+      pacaCantidad: Number(formData.pacaCantidad) || 0,
+      multiploVenta: Number(formData.multiploVenta) || 1,
+      pacaAlto: Number(formData.pacaAlto) || 0,
+      pacaAncho: Number(formData.pacaAncho) || 0,
+      pacaProfundidad: Number(formData.pacaProfundidad) || 0,
+      cubicaje: Number(formData.cubicaje) || 0,
+      comisionValor: Number(formData.comisionValor) || 0,
+      comisionPct: Number(formData.comisionPct) || 0,
       manejaBodega: true,
       manejaLotes: formData.esLote,
       manejaSerial: formData.aplicaSerial,
@@ -325,21 +342,10 @@ export function ConfigProductos() {
     try {
       let savedProduct: any
       if (editingId) {
-        // Update product via patch API
-        savedProduct = await updateProducto(editingId, corePayload)
-        
-        // If SKU changed, clean up previous localStorage metadata key
-        const oldProduct = products.find(x => x.id === editingId)
-        if (oldProduct && oldProduct.sku !== formData.sku) {
-          localStorage.removeItem(`edatia_prod_ext_${oldProduct.sku}`)
-        }
+        savedProduct = await updateProducto(editingId, payload)
       } else {
-        // Create product via post API
-        savedProduct = await createProducto(corePayload)
+        savedProduct = await createProducto(payload)
       }
-
-      // Save extended metadata in localStorage mapped by sku
-      localStorage.setItem(`edatia_prod_ext_${formData.sku}`, JSON.stringify(formData))
 
       qc.invalidateQueries({ queryKey: ['config_productos'] })
       showNotification(`Producto ${editingId ? 'actualizado' : 'creado'} exitosamente en el ERP.`)
@@ -378,7 +384,7 @@ export function ConfigProductos() {
       )}
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-2xl text-xs font-semibold flex items-start gap-2 max-w-4xl shadow-sm">
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-2xl text-xs font-semibold flex items-start gap-2 w-full shadow-sm">
           <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-rose-950 mb-0.5">Error en la operación</p>
@@ -686,7 +692,7 @@ export function ConfigProductos() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSave} className="space-y-6 max-w-6xl">
+          <form onSubmit={handleSave} className="space-y-6 w-full">
             
             {/* SECTION 1: INFORMACION GENERAL */}
             <div className="bg-white border border-slate-200/85 rounded-2xl shadow-sm p-6 space-y-4">

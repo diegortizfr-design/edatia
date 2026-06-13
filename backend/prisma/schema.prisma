@@ -678,6 +678,9 @@ model UnidadMedida {
   productos   Producto[]
   createdAt   DateTime   @default(now())
 
+  conversionesOrigen  ConversionUnidad[] @relation("Origen")
+  conversionesDestino ConversionUnidad[] @relation("Destino")
+
   @@unique([empresaId, abreviatura])
 }
 
@@ -737,6 +740,90 @@ model Producto {
   descripcionWeb  String?  @db.Text
   esDestacado     Boolean  @default(false)
   metadataWeb     Json?    // Para SEO, tags extra, etc.
+
+  // ── Identificación Extendida ──────────────────────
+  codigoAlterno         String?
+  referenciaFabricante  String?
+  descripcionAlterna    String?
+
+  // ── Comisiones y Ubicaciones ──────────────────────
+  comisionValor         Decimal? @default(0) @db.Decimal(14, 2)
+  comisionPct           Decimal? @default(0) @db.Decimal(5, 2)
+  ubicacion1            String?
+  ubicacion2            String?
+
+  // ── Cubicaje & Presentación ───────────────────────
+  presentacion          String?
+  pesoUnidad            Decimal? @default(0) @db.Decimal(12, 3)
+  paca                  String?
+  pacaCantidad          Decimal? @default(0) @db.Decimal(12, 3)
+  dimensiones           String?
+  multiploVenta         Decimal? @default(1) @db.Decimal(12, 3)
+  pacaAlto              Decimal? @default(0) @db.Decimal(12, 3)
+  pacaAncho             Decimal? @default(0) @db.Decimal(12, 3)
+  pacaProfundidad       Decimal? @default(0) @db.Decimal(12, 3)
+  cubicaje              Decimal? @default(0) @db.Decimal(12, 6)
+
+  // ── Banderas de Comportamiento ────────────────────
+  esRegalo              Boolean @default(false)
+  esKit                 Boolean @default(false)
+  esImportado           Boolean @default(false)
+  esDescargable         Boolean @default(false)
+  bolsaP                Boolean @default(false)
+  esFacturable          Boolean @default(true)
+  esAjustable           Boolean @default(true)
+  receta                Boolean @default(false)
+  noAutoAddPos          Boolean @default(false)
+
+  // ── Relaciones a Maestros Faltantes ───────────────
+  grupoId               Int?
+  grupo                 GrupoProducto? @relation(fields: [grupoId], references: [id])
+  subgrupoId            Int?
+  subgrupo              SubgrupoProducto? @relation(fields: [subgrupoId], references: [id])
+  colorId               Int?
+  color                 ColorProducto? @relation(fields: [colorId], references: [id])
+  tallaId               Int?
+  talla                 TallaProducto? @relation(fields: [tallaId], references: [id])
+  clasificacionId       Int?
+  clasificacion         ClasificacionContable? @relation(fields: [clasificacionId], references: [id])
+
+  productoGrupo         String?
+  centroCosto           String?
+  tipoProducto          String? @default("Inventario")
+  aplicaTalla           String? @default("No")
+  aplicaColor           String? @default("No")
+  selectedTags          String[]
+
+  // ── Costeo y Precios ──────────────────────────────
+  costo                 Decimal? @default(0) @db.Decimal(14, 4)
+  costoUltimo           Decimal? @default(0) @db.Decimal(14, 4)
+  costoI                Decimal? @default(0) @db.Decimal(14, 4)
+  promocionActiva       Boolean @default(false)
+  promocionDescuentoPct Decimal? @default(0) @db.Decimal(5, 2)
+  promocionDescuentoValor Decimal? @default(0) @db.Decimal(14, 2)
+  promocionFechaLimite   String?
+  precios               Json? // Array de 11 precios
+  observacion            String?
+  liquidarIva            Boolean @default(true)
+  productoExentoIva      Boolean @default(false)
+  appliedTaxIds          String[]
+  costeo                 Json? // Detalle de costeo estructurado
+
+  // ── Documentos y Adjuntos ─────────────────────────
+  documentos            Json? // { nombre, url, tipo }[]
+
+  // ── DIAN UNSPSC ───────────────────────────────────
+  unspscCodigo          String?
+  unspsc                UNSPSC? @relation(fields: [unspscCodigo], references: [codigo])
+
+  // ── Relaciones Relacionales Nuevas ────────────────
+  impuestosRel          ProductoImpuesto[]
+  recetaPadre           ComponenteReceta[]   @relation("ComponentesPadre")
+  recetaHijo            ComponenteReceta[]   @relation("ComponentesHijo")
+  proveedoresRel        ProductoProveedor[]
+  auditorias            AuditoriaProducto[]
+  codigosBarrasRel      CodigoBarras[]
+  precioProductoRel     PrecioProducto[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1178,6 +1265,8 @@ model Tercero {
 
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
+
+  proveedoresRel      ProductoProveedor[]
 
   @@unique([empresaId, tipoDocumento, numeroDocumento])
   @@index([empresaId])
@@ -1843,6 +1932,13 @@ model Impuesto {
   esDefecto   Boolean  @default(false)
   notas       String?
 
+  codigo           String?             // Ej. 01 para IVA
+  vigenciaDesde    DateTime?
+  vigenciaHasta    DateTime?
+  tarifaFija       Decimal?           @db.Decimal(14, 2) // Para bolsa/saludable
+
+  productos        ProductoImpuesto[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -1925,6 +2021,9 @@ model GrupoProducto {
   nombre      String
   descripcion String?
   activo      Boolean  @default(true)
+
+  subgrupos   SubgrupoProducto[]
+  productos   Producto[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -2129,4 +2228,198 @@ model Barrio {
 
   @@unique([ciudadId, comunaId, nombre])
 }
+
+// ─── NUEVOS MAESTROS Y RELACIONES DE PRODUCTO ────────────────────────────────
+
+model SubgrupoProducto {
+  id          Int            @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa        @relation(fields: [empresaId], references: [id])
+  grupoId     Int
+  grupo       GrupoProducto  @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  nombre      String
+  activo      Boolean        @default(true)
+  productos   Producto[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([empresaId, grupoId, nombre])
+  @@index([empresaId])
+}
+
+model ColorProducto {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  nombre      String
+  activo      Boolean    @default(true)
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model TallaProducto {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  nombre      String
+  activo      Boolean    @default(true)
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model ClasificacionContable {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  nombre      String
+  pucCuenta   String
+  activo      Boolean    @default(true)
+  productos   Producto[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model TagProducto {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  nombre      String
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+}
+
+model ProductoImpuesto {
+  id            Int      @id @default(autoincrement())
+  productoId    Int
+  producto      Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  impuestoId    Int
+  impuesto      Impuesto @relation(fields: [impuestoId], references: [id])
+  baseGravable  Decimal  @default(100) @db.Decimal(5, 2)
+
+  @@unique([productoId, impuestoId])
+}
+
+model UNSPSC {
+  codigo    String     @id // Ej: 43211500
+  nombre    String
+  nivel     Int        // Clase, Familia, Segmento, etc.
+  productos Producto[]
+}
+
+model ConversionUnidad {
+  id              Int          @id @default(autoincrement())
+  empresaId       Int
+  empresa         Empresa      @relation(fields: [empresaId], references: [id])
+  unidadOrigenId  Int
+  unidadOrigen    UnidadMedida @relation("Origen", fields: [unidadOrigenId], references: [id])
+  unidadDestinoId Int
+  unidadDestino   UnidadMedida @relation("Destino", fields: [unidadDestinoId], references: [id])
+  factor          Decimal      @db.Decimal(14, 6)
+
+  @@unique([empresaId, unidadOrigenId, unidadDestinoId])
+}
+
+model CodigoBarras {
+  id            Int               @id @default(autoincrement())
+  empresaId     Int
+  productoId    Int
+  producto      Producto          @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  varianteId    Int?
+  variante      VarianteProducto? @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  codigo        String
+  tipo          String            @default("EAN13")
+  descripcion   String?
+  esPrincipal   Boolean           @default(false)
+
+  @@unique([empresaId, codigo])
+  @@index([productoId])
+}
+
+model ListaPrecio {
+  id            Int              @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa          @relation(fields: [empresaId], references: [id])
+  nombre        String           // Ej: Mayorista, POS, E-commerce
+  moneda        String           @default("COP")
+  vigenciaDesde DateTime?
+  vigenciaHasta DateTime?
+  activo        Boolean          @default(true)
+  precios       PrecioProducto[]
+
+  @@unique([empresaId, nombre])
+}
+
+model PrecioProducto {
+  id            Int               @id @default(autoincrement())
+  empresaId     Int
+  productoId    Int
+  producto      Producto          @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  varianteId    Int?
+  variante      VarianteProducto? @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  listaPrecioId Int
+  listaPrecio   ListaPrecio       @relation(fields: [listaPrecioId], references: [id])
+  precio        Decimal           @db.Decimal(14, 2)
+
+  @@unique([productoId, varianteId, listaPrecioId])
+}
+
+model ComponenteReceta {
+  id              Int               @id @default(autoincrement())
+  empresaId       Int
+  productoPadreId Int               // El Kit o Combo
+  productoPadre   Producto          @relation("ComponentesPadre", fields: [productoPadreId], references: [id], onDelete: Cascade)
+  productoHijoId  Int               // El ingrediente o componente
+  productoHijo    Producto          @relation("ComponentesHijo", fields: [productoHijoId], references: [id])
+  varianteHijoId  Int?
+  cantidad        Decimal           @db.Decimal(12, 3)
+
+  @@unique([productoPadreId, productoHijoId, varianteHijoId])
+}
+
+model ProductoProveedor {
+  id                Int      @id @default(autoincrement())
+  empresaId         Int
+  productoId        Int
+  producto          Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  proveedorId       Int      // Tercero (con esProveedor: true)
+  proveedor         Tercero  @relation(fields: [proveedorId], references: [id])
+  codigoProveedor   String?  // SKU del proveedor
+  precioCompra      Decimal  @db.Decimal(14, 2)
+  tiempoEntregaDias Int?
+  prioridad         Int      @default(1) // 1: Primario, 2: Secundario
+
+  @@unique([productoId, proveedorId])
+}
+
+model AuditoriaProducto {
+  id              Int      @id @default(autoincrement())
+  empresaId       Int
+  productoId      Int
+  producto        Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  usuarioId       Int
+  usuarioNombre   String
+  campoModificado String
+  valorAnterior   String?  @db.Text
+  valorNuevo      String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([productoId])
+  @@index([empresaId, createdAt])
+}
+
 

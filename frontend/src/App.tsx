@@ -96,6 +96,13 @@ function PosWrap({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>
 }
 
+import { useParams } from 'react-router-dom'
+
+function RedirectToProductDetail() {
+  const { id } = useParams()
+  return <Navigate to={`/configuracion/productos/${id}/detalle`} replace />
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -107,9 +114,9 @@ function App() {
         {/* ── Inventario ── */}
         <Route path="/inventario" element={<Navigate to="/inventario/control-existencias" replace />} />
         <Route path="/inventario/dashboard"            element={<P><InvDashboard /></P>} />
-        <Route path="/inventario/productos"            element={<P><Productos /></P>} />
-        <Route path="/inventario/productos/nuevo"      element={<P><ProductoForm /></P>} />
-        <Route path="/inventario/productos/:id"        element={<P><ProductoForm /></P>} />
+        <Route path="/inventario/productos"            element={<Navigate to="/configuracion/productos" replace />} />
+        <Route path="/inventario/productos/nuevo"      element={<Navigate to="/configuracion/productos" replace />} />
+        <Route path="/inventario/productos/:id"        element={<RedirectToProductDetail />} />
         <Route path="/inventario/compras"              element={<P><Compras /></P>} />
         <Route path="/inventario/compras/nueva-fc"     element={<P><NuevaFcForm /></P>} />
         <Route path="/inventario/control-existencias"  element={<P><ControlExistencias /></P>} />
