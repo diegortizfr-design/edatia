@@ -75,6 +75,18 @@ function generateRandomEAN13(): string {
   return code + checkDigit.toString()
 }
 
+function formatCOP(val: number | string | null | undefined): string {
+  if (val === null || val === undefined || val === '') return ''
+  const numeric = String(val).replace(/\D/g, '')
+  if (!numeric) return ''
+  return numeric.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+function parseCOP(val: string): number {
+  const clean = val.replace(/\./g, '')
+  return Number(clean) || 0
+}
+
 function getErrorMessage(err: any, fallback: string): string {
   const msg = err?.response?.data?.message
   if (Array.isArray(msg)) {
@@ -244,6 +256,9 @@ export function ConfigProductos() {
   const [showBarcodeModal, setShowBarcodeModal] = useState(false)
   const [barcodeInput, setBarcodeInput] = useState('')
 
+  // Cost taxes state
+  const [costTaxIds, setCostTaxIds] = useState<string[]>(['iva_19'])
+
   // Filters State
   const [filterSku, setFilterSku] = useState('')
   const [filterReferencia, setFilterReferencia] = useState('')
@@ -358,6 +373,23 @@ export function ConfigProductos() {
     }))
   }, [formData.pacaAlto, formData.pacaAncho, formData.pacaProfundidad])
 
+  // Auto-calculate Costo IVA Integrado based on Costo Unitario Base and selected cost taxes
+  useEffect(() => {
+    const baseCost = Number(formData.costo) || 0
+    let rate = 0
+    costTaxIds.forEach((taxId) => {
+      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
+      if (tax && tax.activo !== false) {
+        rate += Number(tax.tarifa || tax.porcentaje) || 0
+      }
+    })
+    const integratedCost = baseCost * (1 + rate / 100)
+    setFormData(prev => ({
+      ...prev,
+      costoI: Math.round(integratedCost)
+    }))
+  }, [formData.costo, costTaxIds, systemTaxes])
+
   const showNotification = (msg: string) => {
     setSuccessMsg(msg)
     setTimeout(() => setSuccessMsg(null), 3000)
@@ -369,6 +401,7 @@ export function ConfigProductos() {
       ...DEFAULT_FORM,
       precios: Array(11).fill(0)
     })
+    setCostTaxIds(['iva_19'])
     setError(null)
     setBarcodeInput('')
     setShowBarcodeModal(true)
@@ -394,6 +427,7 @@ export function ConfigProductos() {
       referencia: p.referencia || '',
       activo: p.activo,
     })
+    setCostTaxIds(p.extData?.appliedTaxIds || ['iva_19'])
     setError(null)
     setViewMode('form')
   }
@@ -422,9 +456,13 @@ export function ConfigProductos() {
 
     const price1 = Number(formData.precios[0]) || 0
 
-    // Full payload for database API
-    const payload = {
-      ...formData,
+    // Full payload for database API (whitelisted to match backend CreateProductoDto and UpdateProductoDto)
+    const payload: any = {
+      sku: formData.sku,
+      nombre: formData.nombre,
+      referencia: formData.referencia || null,
+      descripcion: formData.descripcionAlterna || null,
+      descripcionAlterna: formData.descripcionAlterna || null,
       categoriaId: formData.categoriaId ? Number(formData.categoriaId) : null,
       grupoId: formData.grupoId ? Number(formData.grupoId) : null,
       subgrupoId: formData.subgrupoId ? Number(formData.subgrupoId) : null,
@@ -434,7 +472,6 @@ export function ConfigProductos() {
       clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
       costo: Number(formData.costo) || 0,
-      costoPromedio: Number(formData.costoPromedio) || 0,
       costoUltimo: Number(formData.costoUltimo) || 0,
       costoI: Number(formData.costoI) || 0,
       pesoUnidad: Number(formData.pesoUnidad) || 0,
@@ -446,10 +483,34 @@ export function ConfigProductos() {
       cubicaje: Number(formData.cubicaje) || 0,
       comisionValor: Number(formData.comisionValor) || 0,
       comisionPct: Number(formData.comisionPct) || 0,
+      ubicacion1: formData.ubicacion1 || null,
+      ubicacion2: formData.ubicacion2 || null,
+      presentacion: formData.presentacion || null,
+      esRegalo: !!formData.esRegalo,
+      esKit: !!formData.esKit,
+      esImportado: !!formData.esImportado,
+      esDescargable: !!formData.esDescargable,
+      bolsaP: !!formData.bolsaP,
+      esFacturable: !!formData.esFacturable,
+      esAjustable: !!formData.esAjustable,
+      receta: !!formData.receta,
+      noAutoAddPos: !!formData.noAutoAddPos,
       manejaBodega: true,
-      manejaLotes: formData.esLote,
-      manejaSerial: formData.aplicaSerial,
-      activo: formData.activo,
+      manejaLotes: !!formData.esLote,
+      manejaSerial: !!formData.aplicaSerial,
+      tipoProducto: formData.tipoProducto || 'Inventario',
+      aplicaTalla: formData.aplicaTalla || 'No',
+      aplicaColor: formData.aplicaColor || 'No',
+      selectedTags: formData.selectedTags || [],
+      precios: formData.precios || Array(11).fill(0),
+      observacion: formData.observacion || null,
+      liquidarIva: !!formData.liquidarIva,
+      productoExentoIva: !!formData.productoExentoIva,
+      appliedTaxIds: formData.appliedTaxIds || [],
+    }
+
+    if (editingId) {
+      payload.activo = !!formData.activo
     }
 
     try {
@@ -876,12 +937,11 @@ export function ConfigProductos() {
                 <div className="md:col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Comisión Fija ($)</label>
                   <input
-                    type="number"
-                    min="0"
-                    value={formData.comisionValor || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, comisionValor: Number(e.target.value) }))}
+                    type="text"
+                    value={formatCOP(formData.comisionValor)}
+                    onChange={e => setFormData(prev => ({ ...prev, comisionValor: parseCOP(e.target.value) }))}
                     placeholder="0"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1263,45 +1323,79 @@ export function ConfigProductos() {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Costo Unitario Base</label>
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.costo || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, costo: Number(e.target.value) }))}
+                      type="text"
+                      value={formatCOP(formData.costo)}
+                      onChange={e => setFormData(prev => ({ ...prev, costo: parseCOP(e.target.value) }))}
                       placeholder="0"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Costo IVA Integrado</label>
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.costoI || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, costoI: Number(e.target.value) }))}
+                      type="text"
+                      value={formatCOP(formData.costoI)}
+                      onChange={e => setFormData(prev => ({ ...prev, costoI: parseCOP(e.target.value) }))}
                       placeholder="0"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
+
+                  <div className="col-span-2 space-y-1">
+                    <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Impuestos Aplicados al Costo</label>
+                    <div className="flex flex-wrap gap-1.5 mt-0.5">
+                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').map(tax => {
+                        const isChecked = costTaxIds.includes(tax.id)
+                        return (
+                          <button
+                            key={tax.id}
+                            type="button"
+                            onClick={() => {
+                              const updated = isChecked
+                                ? costTaxIds.filter(id => id !== tax.id)
+                                : [...costTaxIds, tax.id]
+                              setCostTaxIds(updated)
+                            }}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
+                              isChecked
+                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/60'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="rounded text-indigo-600 focus:ring-indigo-500 h-3 w-3 pointer-events-none"
+                            />
+                            {tax.sigla || tax.nombre} ({tax.tarifa || tax.porcentaje}%)
+                          </button>
+                        )
+                      })}
+                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').length === 0 && (
+                        <span className="text-[10px] text-slate-400 italic">No hay impuestos configurados.</span>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Costo Promedio (CPP)</label>
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.costoPromedio || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, costoPromedio: Number(e.target.value) }))}
+                      type="text"
+                      value={formatCOP(formData.costoPromedio)}
+                      onChange={e => setFormData(prev => ({ ...prev, costoPromedio: parseCOP(e.target.value) }))}
                       placeholder="0"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Costo Última Compra</label>
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.costoUltimo || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, costoUltimo: Number(e.target.value) }))}
+                      type="text"
+                      value={formatCOP(formData.costoUltimo)}
+                      onChange={e => setFormData(prev => ({ ...prev, costoUltimo: parseCOP(e.target.value) }))}
                       placeholder="0"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
                 </div>
@@ -1497,10 +1591,9 @@ export function ConfigProductos() {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
                         <input
-                          type="number"
-                          min="0"
-                          value={precio || ''}
-                          onChange={e => handlePriceChange(idx, Number(e.target.value))}
+                          type="text"
+                          value={formatCOP(precio)}
+                          onChange={e => handlePriceChange(idx, parseCOP(e.target.value))}
                           placeholder="0"
                           className="w-full pl-6 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
                         />
