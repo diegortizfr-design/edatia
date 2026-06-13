@@ -75,6 +75,20 @@ function generateRandomEAN13(): string {
   return code + checkDigit.toString()
 }
 
+function getErrorMessage(err: any, fallback: string): string {
+  const msg = err?.response?.data?.message
+  if (Array.isArray(msg)) {
+    return msg.join(', ')
+  }
+  if (typeof msg === 'object' && msg !== null) {
+    return JSON.stringify(msg)
+  }
+  if (typeof msg === 'string') {
+    return msg
+  }
+  return fallback
+}
+
 function BarcodeSVG({ value }: { value: string }) {
   if (!value) return null
   return (
@@ -391,7 +405,7 @@ export function ConfigProductos() {
         qc.invalidateQueries({ queryKey: ['config_productos'] })
         showNotification('Producto eliminado correctamente de la base de datos.')
       } catch (err: any) {
-        setError(err.response?.data?.message ?? 'No se pudo eliminar el producto. Podría tener movimientos contables o transacciones asociadas.')
+        setError(getErrorMessage(err, 'No se pudo eliminar el producto. Podría tener movimientos contables o transacciones asociadas.'))
         setTimeout(() => setError(null), 5000)
       }
     }
@@ -450,7 +464,7 @@ export function ConfigProductos() {
       showNotification(`Producto ${editingId ? 'actualizado' : 'creado'} exitosamente en el ERP.`)
       navigate(`/configuracion/productos/${savedProduct.id}/detalle`)
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Ocurrió un error al guardar el producto.')
+      setError(getErrorMessage(err, 'Ocurrió un error al guardar el producto.'))
     }
   }
 
