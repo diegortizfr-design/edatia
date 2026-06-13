@@ -613,15 +613,34 @@ export class PosService {
       terceroNombre: venta.clienteNombre,
     })
 
-    // Crédito a Ingresos (Base)
-    lineas.push({
-      cuentaId: cIngresos,
-      descripcion: desc,
-      debito: 0,
-      credito: Number(venta.subtotal) - Number(venta.descuento),
-      terceroNit: venta.clienteDoc,
-      terceroNombre: venta.clienteNombre,
-    })
+    // Crédito a Ingresos (Base) por producto (Grupo contable)
+    for (const item of venta.items) {
+      const product = await tx.producto.findUnique({
+        where: { id: item.productoId },
+        include: { grupo: true }
+      })
+
+      let cIngresoItem = cIngresos
+      const customIngresoCode = (product?.grupo?.contable as any)?.ingresoEnVentas
+      if (customIngresoCode) {
+        const customAcc = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: customIngresoCode }
+        })
+        if (customAcc) cIngresoItem = customAcc.id
+      }
+
+      const itemMonto = Number(item.subtotal) - Number(item.descuento || 0)
+      if (itemMonto > 0 && cIngresoItem) {
+        lineas.push({
+          cuentaId: cIngresoItem,
+          descripcion: `${desc} - ${item.descripcion}`,
+          debito: 0,
+          credito: itemMonto,
+          terceroNit: venta.clienteDoc,
+          terceroNombre: venta.clienteNombre,
+        })
+      }
+    }
 
     // Crédito a IVA
     if (Number(venta.iva19) > 0 && cIva19) {
@@ -651,20 +670,35 @@ export class PosService {
       if (cTotal > 0) {
         const product = await tx.producto.findUnique({
           where: { id: item.productoId },
-          include: { clasificacion: true }
+          include: { clasificacion: true, grupo: true }
         })
 
         let cInvId = cInventario
-        if (product?.clasificacion?.pucCuenta) {
+        const customInvCode = (product?.grupo?.contable as any)?.inventarioVenta
+        if (customInvCode) {
+          const customInv = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: customInvCode }
+          })
+          if (customInv) cInvId = customInv.id
+        } else if (product?.clasificacion?.pucCuenta) {
           const customInv = await tx.cuentaPUC.findFirst({
             where: { empresaId, codigo: product.clasificacion.pucCuenta }
           })
           if (customInv) cInvId = customInv.id
         }
 
-        if (cCostoVta && cInvId) {
+        let cCostoVtaId = cCostoVta
+        const customCostoCode = (product?.grupo?.contable as any)?.costoEnVentas
+        if (customCostoCode) {
+          const customCosto = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: customCostoCode }
+          })
+          if (customCosto) cCostoVtaId = customCosto.id
+        }
+
+        if (cCostoVtaId && cInvId) {
           lineas.push({
-            cuentaId: cCostoVta,
+            cuentaId: cCostoVtaId,
             descripcion: `Costo ${item.descripcion} - POS ${venta.numero}`,
             debito: cTotal,
             credito: 0,

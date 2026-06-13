@@ -1345,7 +1345,7 @@ export function ConfigProductoDetalle() {
             <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
               Catálogo
             </button>
-            <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all">
+            <button onClick={() => navigate(`/configuracion/productos?edit=${producto.id}`)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all">
               <Edit3 size={13} /> Editar Ficha Técnica
             </button>
           </div>

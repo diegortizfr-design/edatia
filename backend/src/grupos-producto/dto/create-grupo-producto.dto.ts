@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsObject,
   MaxLength,
 } from 'class-validator';
 
@@ -20,4 +21,8 @@ export class CreateGrupoProductoDto {
   @IsBoolean()
   @IsOptional()
   activo?: boolean;
+
+  @IsObject()
+  @IsOptional()
+  contable?: any;
 }

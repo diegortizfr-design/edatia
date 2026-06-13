@@ -321,13 +321,67 @@ export class FacturasService {
     push(cReteIva,   `ReteIVA Fact ${factura.numero}`,     reteiva,    0)
     push(cReteIca,   `ReteICA Fact ${factura.numero}`,     reteica,    0)
     // Créditos
-    push(cIngresos,  `Venta Fact ${factura.numero}`,       0, base)
+    // Crédito a Ingresos por producto (Grupo contable)
+    for (const item of factura.items) {
+      const product = await this.prisma.producto.findUnique({
+        where: { id: item.productoId },
+        include: { grupo: true }
+      })
+
+      let cIngresoItem = cIngresos
+      const customIngresoCode = (product?.grupo?.contable as any)?.ingresoEnVentas
+      if (customIngresoCode) {
+        const customAcc = await this.prisma.cuentaPUC.findFirst({
+          where: { empresaId, codigo: customIngresoCode }
+        })
+        if (customAcc) cIngresoItem = customAcc.id
+      }
+
+      const itemMonto = Number(item.subtotal) - Number(item.descuentoValor || 0)
+      if (itemMonto > 0 && cIngresoItem) {
+        push(cIngresoItem, `Venta Fact ${factura.numero} - ${item.descripcion}`, 0, itemMonto)
+      }
+    }
+
     push(cIva19,     `IVA 19% Fact ${factura.numero}`,     0, iva19)
     push(cIva5,      `IVA 5% Fact ${factura.numero}`,      0, iva5)
 
-    // Asiento de costo de ventas
-    push(cCostoVta,   `Costo Venta Fact ${factura.numero}`, costoTotal, 0)
-    push(cInventario, `Salida inventario Fact ${factura.numero}`, 0,    costoTotal)
+    // Asiento de costo de ventas por producto (Grupo contable / Clasificación)
+    for (const item of factura.items) {
+      const cTotal = Number(item.costoTotal || 0)
+      if (cTotal > 0) {
+        const product = await this.prisma.producto.findUnique({
+          where: { id: item.productoId },
+          include: { clasificacion: true, grupo: true }
+        })
+
+        let cInvId = cInventario
+        const customInvCode = (product?.grupo?.contable as any)?.inventarioVenta
+        if (customInvCode) {
+          const customInv = await this.prisma.cuentaPUC.findFirst({
+            where: { empresaId, codigo: customInvCode }
+          })
+          if (customInv) cInvId = customInv.id
+        } else if (product?.clasificacion?.pucCuenta) {
+          const customInv = await this.prisma.cuentaPUC.findFirst({
+            where: { empresaId, codigo: product.clasificacion.pucCuenta }
+          })
+          if (customInv) cInvId = customInv.id
+        }
+
+        let cCostoVtaId = cCostoVta
+        const customCostoCode = (product?.grupo?.contable as any)?.costoEnVentas
+        if (customCostoCode) {
+          const customCosto = await this.prisma.cuentaPUC.findFirst({
+            where: { empresaId, codigo: customCostoCode }
+          })
+          if (customCosto) cCostoVtaId = customCosto.id
+        }
+
+        push(cCostoVtaId, `Costo Venta Fact ${factura.numero} - ${item.descripcion}`, cTotal, 0)
+        push(cInvId, `Salida inventario Fact ${factura.numero} - ${item.descripcion}`, 0, cTotal)
+      }
+    }
 
     if (lineas.length < 2) return // No hay PUC sembrado, omitir silenciosamente
 

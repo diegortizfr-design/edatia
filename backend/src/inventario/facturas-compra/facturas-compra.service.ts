@@ -107,14 +107,16 @@ export class FacturasCompraService {
       });
 
       // 2. Causación Contable Automatizada (PUC 1435 vs 2205)
-      // Resolver cuenta de inventario desde la clasificación contable de los productos de la factura
+      // Resolver cuenta de inventario desde la clasificación contable o el grupo de los productos de la factura
       let cuentaInventarioCodigo = null;
       if (dto.items && dto.items.length > 0) {
         const primerItem = await tx.producto.findUnique({
           where: { id: dto.items[0].productoId },
-          include: { clasificacion: true }
+          include: { clasificacion: true, grupo: true }
         });
-        if (primerItem?.clasificacion?.pucCuenta) {
+        if (primerItem?.grupo?.contable && (primerItem.grupo.contable as any).compras) {
+          cuentaInventarioCodigo = (primerItem.grupo.contable as any).compras;
+        } else if (primerItem?.clasificacion?.pucCuenta) {
           cuentaInventarioCodigo = primerItem.clasificacion.pucCuenta;
         }
       }

@@ -2030,6 +2030,7 @@ model GrupoProducto {
   nombre      String
   descripcion String?
   activo      Boolean  @default(true)
+  contable    Json?
 
   subgrupos   SubgrupoProducto[]
   productos   Producto[]

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
@@ -247,6 +247,8 @@ function getLocalMaster(key: string): MasterItem[] {
 export function ConfigProductos() {
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const editParam = searchParams.get('edit')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -340,6 +342,20 @@ export function ConfigProductos() {
       }
     }
   })
+
+  // Pre-load edit if editParam is present
+  useEffect(() => {
+    if (editParam && products.length > 0) {
+      const prodId = Number(editParam)
+      const p = products.find((x: any) => x.id === prodId)
+      if (p) {
+        handleOpenEdit(p)
+        // Clear parameter from URL
+        searchParams.delete('edit')
+        setSearchParams(searchParams, { replace: true })
+      }
+    }
+  }, [editParam, products])
 
   // Filter products locally
   const filteredProducts = products.filter(p => {
