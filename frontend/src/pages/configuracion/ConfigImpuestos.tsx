@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { getImpuestos, createImpuesto, updateImpuesto, deleteImpuesto } from '../../services/erp.service'
+import { getCuentasPUC } from '../../services/contabilidad.service'
 import { 
   Percent, Plus, Search, Trash2, Edit3, CheckCircle2, 
   SlidersHorizontal, CheckSquare, Square, FileText, ArrowRightLeft,
@@ -181,6 +183,7 @@ function PremiumCheckboxCard({ checked, onChange, label, description }: { checke
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 export function ConfigImpuestos() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('TODOS')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
@@ -195,6 +198,22 @@ export function ConfigImpuestos() {
     queryKey: ['impuestos'],
     queryFn: getImpuestos,
   })
+
+  const { data: pucData = [] } = useQuery({
+    queryKey: ['puc_cuentas'],
+    queryFn: getCuentasPUC
+  })
+
+  const activePucCuentas = Array.isArray(pucData) ? pucData.filter((c: any) => c.nivel >= 3 && c.activo) : []
+  const pucOptions = activePucCuentas.length > 0
+    ? [
+        { value: '', label: '-- Seleccione Cuenta PUC --' },
+        ...activePucCuentas.map((c: any) => ({
+          value: c.codigo,
+          label: `${c.codigo} - ${c.nombre}`
+        }))
+      ]
+    : PUC_ACCOUNTS;
 
   const createMutation = useMutation({
     mutationFn: (dto: Partial<ImpuestoConfig>) => createImpuesto(dto),
@@ -349,6 +368,27 @@ export function ConfigImpuestos() {
               </button>
             </div>
           </div>
+
+          {pucData.length === 0 && (
+            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <HelpCircle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+                <div className="space-y-0.5">
+                  <h4 className="text-sm font-bold text-amber-800">Catálogo PUC sin inicializar</h4>
+                  <p className="text-xs text-amber-600 leading-normal">
+                    Tu Plan Único de Cuentas (PUC) está vacío. Para vincular los impuestos a tus asientos contables reales, debes sembrar las cuentas en el módulo contable.
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => navigate('/contabilidad/puc')}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-md shadow-amber-100 hover:shadow-lg active:scale-[0.98] transition-all"
+              >
+                Sembrar PUC Ahora
+              </button>
+            </div>
+          )}
 
           {/* Filters & Search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-0.5">
@@ -621,7 +661,7 @@ export function ConfigImpuestos() {
                         <Select
                           value={form.cuentaVenta || ''}
                           onChange={(v) => setForm(f => ({ ...f, cuentaVenta: v }))}
-                          options={PUC_ACCOUNTS}
+                          options={pucOptions}
                         />
                       </Field>
                     </div>
@@ -638,7 +678,7 @@ export function ConfigImpuestos() {
                         <Select
                           value={form.cuentaDevolucionVenta || ''}
                           onChange={(v) => setForm(f => ({ ...f, cuentaDevolucionVenta: v }))}
-                          options={PUC_ACCOUNTS}
+                          options={pucOptions}
                         />
                       </Field>
                     </div>
@@ -655,7 +695,7 @@ export function ConfigImpuestos() {
                         <Select
                           value={form.cuentaCompra || ''}
                           onChange={(v) => setForm(f => ({ ...f, cuentaCompra: v }))}
-                          options={PUC_ACCOUNTS}
+                          options={pucOptions}
                         />
                       </Field>
                     </div>
@@ -672,7 +712,7 @@ export function ConfigImpuestos() {
                         <Select
                           value={form.cuentaDevolucionCompra || ''}
                           onChange={(v) => setForm(f => ({ ...f, cuentaDevolucionCompra: v }))}
-                          options={PUC_ACCOUNTS}
+                          options={pucOptions}
                         />
                       </Field>
                     </div>
