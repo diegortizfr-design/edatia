@@ -188,6 +188,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/archivo" icon={<Archive size={14}/>} label="Archivo" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />

@@ -205,6 +205,12 @@ export class CreateProductoDto {
   @IsOptional() @IsArray() @IsString({ each: true })
   appliedTaxIds?: string[];
 
+  @IsOptional() @IsArray()
+  codigos?: any[];
+
+  @IsOptional() @IsArray()
+  proveedores?: any[];
+
   @IsOptional()
   documentos?: any;
 
@@ -436,6 +442,12 @@ export class UpdateProductoDto {
 
   @IsOptional() @IsArray() @IsString({ each: true })
   appliedTaxIds?: string[];
+
+  @IsOptional() @IsArray()
+  codigos?: any[];
+
+  @IsOptional() @IsArray()
+  proveedores?: any[];
 
   @IsOptional()
   documentos?: any;

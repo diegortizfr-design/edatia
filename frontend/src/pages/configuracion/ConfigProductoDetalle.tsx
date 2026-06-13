@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import api from '../../services/api'
+import toast from 'react-hot-toast'
 import {
   ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart,
   Building2, Layers, DollarSign, CheckCircle2,
@@ -205,10 +207,22 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
 }
 
 /* ---- TAB: Documentos ---- */
+// Helper to format bytes
+function formatBytes(bytes: number, decimals = 2) {
+  if (!bytes || bytes === 0) return '0 Bytes'
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+/* ---- TAB: Documentos ---- */
 function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [docs, setDocs] = useState<any[]>(() => Array.isArray(producto.documentos) ? producto.documentos : [])
-  const [form, setForm] = useState({ nombre: '', tipo: 'PDF', url: '', descripcion: '' })
+  const [form, setForm] = useState<any>({ nombre: '', tipo: 'PDF', url: '', descripcion: '', size: 0 })
   const [adding, setAdding] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const save = async (updated: any[]) => {
     try {
@@ -223,8 +237,36 @@ function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => vo
   const addDoc = () => {
     if (!form.nombre || !form.url) return
     save([...docs, { ...form, id: Date.now() }])
-    setForm({ nombre: '', tipo: 'PDF', url: '', descripcion: '' })
+    setForm({ nombre: '', tipo: 'PDF', url: '', descripcion: '', size: 0 })
     setAdding(false)
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/configuracion/archivo/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const { url, nombre, size, tipo } = response.data
+      setForm((p: any) => ({
+        ...p,
+        nombre: p.nombre || nombre,
+        url,
+        tipo,
+        size,
+      }))
+      toast.success('Archivo cargado exitosamente ✓')
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Error al subir el archivo'
+      toast.error(msg)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const TIPO_ICONS: Record<string, string> = { PDF: '📄', Excel: '📊', Word: '📝', Imagen: '🖼️', Video: '🎬', Otro: '📎' }
@@ -248,24 +290,41 @@ function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => vo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Nombre del Documento *</label>
-              <input type="text" value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))}
+              <input type="text" value={form.nombre} onChange={e => setForm((p: any) => ({ ...p, nombre: e.target.value }))}
                 placeholder="Ej. Ficha Técnica v2" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Tipo</label>
-              <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))}
+              <select value={form.tipo} onChange={e => setForm((p: any) => ({ ...p, tipo: e.target.value }))}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer">
                 {['PDF', 'Excel', 'Word', 'Imagen', 'Video', 'Otro'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
+            
             <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">URL / Ruta del Archivo *</label>
-              <input type="text" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Cargar Archivo Local</label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all cursor-pointer select-none">
+                  <Upload size={14} />
+                  {uploading ? 'Subiendo...' : 'Seleccionar Archivo'}
+                  <input type="file" onChange={handleFileUpload} disabled={uploading} className="hidden" />
+                </label>
+                {form.url && (
+                  <span className="text-[10px] font-mono text-emerald-600 truncate max-w-xs">
+                    ✓ Cargado: {form.nombre} ({formatBytes(form.size || 0)})
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">O pega la URL / Ruta del Archivo *</label>
+              <input type="text" value={form.url} onChange={e => setForm((p: any) => ({ ...p, url: e.target.value }))}
                 placeholder="https://drive.google.com/... o ruta interna" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descripción (Opcional)</label>
-              <input type="text" value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
+              <input type="text" value={form.descripcion} onChange={e => setForm((p: any) => ({ ...p, descripcion: e.target.value }))}
                 placeholder="Breve descripción del contenido" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
             </div>
           </div>
@@ -286,6 +345,7 @@ function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => vo
                 <div>
                   <p className="text-sm font-bold text-slate-800">{doc.nombre}</p>
                   {doc.descripcion && <p className="text-[10px] text-slate-400">{doc.descripcion}</p>}
+                  {doc.size > 0 && <p className="text-[9px] font-bold text-slate-400">Tamaño: {formatBytes(doc.size)}</p>}
                   <p className="text-[10px] font-mono text-slate-400 truncate max-w-sm">{doc.url}</p>
                 </div>
               </div>
@@ -1088,6 +1148,133 @@ export function ConfigProductoDetalle() {
     queryFn: () => getProducto(productoId),
     enabled: !!productoId,
   })
+
+  const isPrintMode = window.location.search.includes('print=true')
+
+  useEffect(() => {
+    if (isPrintMode && producto) {
+      const timer = setTimeout(() => {
+        window.print()
+      }, 1200)
+      return () => clearTimeout(timer)
+    }
+  }, [isPrintMode, producto])
+
+  if (isPrintMode && producto) {
+    const fmtCOP = (val: number) => `$${Number(val).toLocaleString('es-CO')}`
+    return (
+      <div className="bg-white p-8 max-w-4xl mx-auto space-y-8 font-sans text-slate-800 printable-ficha">
+        <style>{`
+          @media print {
+            body {
+              background-color: white !important;
+              color: black !important;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+        `}</style>
+        
+        {/* Ficha técnica layout */}
+        <div className="flex justify-between items-start border-b-2 border-slate-200 pb-6">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900">{producto.nombre}</h1>
+            <p className="text-sm text-slate-500 font-mono mt-1">SKU: {producto.sku}</p>
+            {producto.referencia && <p className="text-xs text-slate-400 font-mono">Ref: {producto.referencia}</p>}
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="bg-indigo-600 text-white font-extrabold px-3 py-1 rounded text-xs uppercase">
+              Ficha Técnica ERP
+            </div>
+            {producto.sku && (
+              <div className="mt-4">
+                <div className="flex flex-col items-center">
+                  <div className="font-mono text-[9px] tracking-wider text-slate-500 mb-1">CÓDIGO DE BARRAS</div>
+                  <div className="bg-slate-50 p-2 border border-slate-200 rounded">
+                    <svg className="w-40 h-8" viewBox="0 0 100 40" preserveAspectRatio="none">
+                      <g fill="black">
+                        <rect x="0" y="0" width="2" height="35" /><rect x="3" y="0" width="1" height="35" />
+                        <rect x="6" y="0" width="2" height="32" /><rect x="10" y="0" width="3" height="32" />
+                        <rect x="15" y="0" width="1" height="32" /><rect x="18" y="0" width="2" height="32" />
+                        <rect x="22" y="0" width="4" height="32" /><rect x="28" y="0" width="1" height="32" />
+                        <rect x="31" y="0" width="2" height="32" /><rect x="35" y="0" width="1" height="35" />
+                        <rect x="37" y="0" width="1" height="35" /><rect x="40" y="0" width="3" height="32" />
+                        <rect x="45" y="0" width="1" height="32" /><rect x="48" y="0" width="2" height="32" />
+                        <rect x="52" y="0" width="4" height="32" /><rect x="58" y="0" width="1" height="32" />
+                        <rect x="61" y="0" width="2" height="32" /><rect x="65" y="0" width="3" height="32" />
+                        <rect x="70" y="0" width="1" height="32" /><rect x="73" y="0" width="2" height="32" />
+                        <rect x="77" y="0" width="4" height="32" /><rect x="83" y="0" width="1" height="32" />
+                        <rect x="86" y="0" width="2" height="32" /><rect x="90" y="0" width="3" height="32" />
+                        <rect x="95" y="0" width="2" height="35" /><rect x="98" y="0" width="1" height="35" />
+                      </g>
+                    </svg>
+                    <div className="font-mono text-[9px] font-bold text-center mt-1">{producto.sku}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Informacion General & Precios */}
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <h2 className="text-sm font-extrabold text-indigo-700 uppercase tracking-widest border-b border-slate-100 pb-2">Información de Producto</h2>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <span className="font-bold text-slate-500">Categoría:</span>
+              <span>{producto.categoria?.nombre || '—'}</span>
+              <span className="font-bold text-slate-500">Marca:</span>
+              <span>{producto.marca?.nombre || '—'}</span>
+              <span className="font-bold text-slate-500">Unidad de Medida:</span>
+              <span>{producto.unidadMedida?.nombre || '—'}</span>
+              <span className="font-bold text-slate-500">Ubicación Bodega 1:</span>
+              <span>{producto.ubicacion1 || '—'}</span>
+              <span className="font-bold text-slate-500">Ubicación Bodega 2:</span>
+              <span>{producto.ubicacion2 || '—'}</span>
+              <span className="font-bold text-slate-500">Presentación:</span>
+              <span>{producto.presentacion || '—'}</span>
+              <span className="font-bold text-slate-500">Peso Unidad:</span>
+              <span>{producto.pesoUnidad ? `${producto.pesoUnidad} kg` : '—'}</span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-sm font-extrabold text-indigo-700 uppercase tracking-widest border-b border-slate-100 pb-2">Estructura de Precios</h2>
+            <div className="space-y-1.5 text-xs">
+              {Array.isArray(producto.precios) && producto.precios.slice(0, 4).map((p: any, idx: number) => (
+                <div key={idx} className="flex justify-between border-b border-slate-100 pb-1">
+                  <span className="font-bold text-slate-500">Precio {idx + 1}:</span>
+                  <span className="font-mono font-bold">{fmtCOP(Number(p || 0))}</span>
+                </div>
+              ))}
+              <div className="flex justify-between border-b border-slate-100 pb-1">
+                <span className="font-bold text-slate-500">Costo Unitario Base:</span>
+                <span className="font-mono font-bold">{fmtCOP(Number(producto.costo || 0))}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-100 pb-1">
+                <span className="font-bold text-slate-500">Costo IVA Integrado:</span>
+                <span className="font-mono font-bold">{fmtCOP(Number(producto.costoI || 0))}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Descripción */}
+        <div className="space-y-2">
+          <h2 className="text-sm font-extrabold text-indigo-700 uppercase tracking-widest border-b border-slate-100 pb-2">Descripción del Producto</h2>
+          <p className="text-xs leading-relaxed text-slate-600">
+            {producto.descripcion || producto.descripcionAlterna || 'Sin descripción detallada registrada.'}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-12 text-center text-[10px] text-slate-400 border-t border-slate-200">
+          Edatia ERP SaaS • Hoja de especificaciones oficial generada el {new Date().toLocaleDateString('es-CO')}
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (

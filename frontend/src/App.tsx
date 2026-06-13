@@ -62,6 +62,7 @@ import { ConfigProductoDetalle } from './pages/configuracion/ConfigProductoDetal
 import { ConfigTerceros } from './pages/configuracion/ConfigTerceros'
 import { ConfigTerceroForm } from './pages/configuracion/ConfigTerceroForm'
 import { ConfigTercerosExtra } from './pages/configuracion/ConfigTercerosExtra'
+import { ConfigArchivo } from './pages/configuracion/ConfigArchivo'
 
 
 
@@ -160,6 +161,7 @@ function App() {
 
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />
+        <Route path="/configuracion/archivo" element={<P><ConfigArchivo /></P>} />
         <Route path="/configuracion/contable" element={<P><ConfigContable /></P>} />
         <Route path="/configuracion/formatos-impresion" element={<P><ConfigFormatosImpresion /></P>} />
         <Route path="/configuracion/documentos" element={<P><ConfigDocumentos /></P>} />

@@ -509,6 +509,17 @@ export function ConfigProductos() {
       appliedTaxIds: formData.appliedTaxIds || [],
     }
 
+    if (!editingId && formData.sku) {
+      payload.codigos = [
+        {
+          codigo: formData.sku,
+          tipo: 'EAN13',
+          descripcion: 'Código principal de creación',
+          esPrincipal: true
+        }
+      ]
+    }
+
     if (editingId) {
       payload.activo = !!formData.activo
     }
@@ -519,6 +530,21 @@ export function ConfigProductos() {
         savedProduct = await updateProducto(editingId, payload)
       } else {
         savedProduct = await createProducto(payload)
+        
+        // Autogenerate Ficha Técnica PDF document link
+        const pdfDoc = {
+          id: Date.now(),
+          nombre: `Ficha Técnica - ${savedProduct.nombre}`,
+          tipo: 'PDF',
+          url: `/configuracion/productos/${savedProduct.id}/detalle?print=true`,
+          descripcion: 'Ficha técnica oficial de especificaciones autogenerada por el sistema.',
+          size: 150 * 1024 // 150 KB estimated size
+        }
+        
+        // Save PDF link to product's documentos array
+        await updateProducto(savedProduct.id, {
+          documentos: [pdfDoc]
+        })
       }
 
       qc.invalidateQueries({ queryKey: ['config_productos'] })
