@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsIn, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsIn, MinLength, MaxLength, IsInt } from 'class-validator';
 
 const TIPOS_BODEGA = ['ALMACEN', 'PUNTO_VENTA', 'TRANSITO', 'DEVOLUCION', 'VIRTUAL'];
 
@@ -12,8 +12,8 @@ export class CreateBodegaDto {
   @IsOptional() @IsIn(TIPOS_BODEGA)
   tipo?: string;
 
-  @IsOptional() @IsString()
-  direccion?: string;
+  @IsOptional() @IsInt()
+  sucursalId?: number;
 
   @IsOptional() @IsBoolean()
   esPrincipal?: boolean;
@@ -32,8 +32,8 @@ export class UpdateBodegaDto {
   @IsOptional() @IsIn(TIPOS_BODEGA)
   tipo?: string;
 
-  @IsOptional() @IsString()
-  direccion?: string;
+  @IsOptional() @IsInt()
+  sucursalId?: number;
 
   @IsOptional() @IsBoolean()
   esPrincipal?: boolean;

@@ -11,6 +11,7 @@ export class BodegasService {
       where: { empresaId },
       include: {
         _count: { select: { stock: true } },
+        sucursal: { select: { id: true, nombre: true } },
       },
       orderBy: [{ esPrincipal: 'desc' }, { nombre: 'asc' }],
     });
@@ -19,7 +20,10 @@ export class BodegasService {
   async findOne(id: number, empresaId: number) {
     const b = await (this.prisma as any).bodega.findFirst({
       where: { id, empresaId },
-      include: { _count: { select: { stock: true } } },
+      include: {
+        _count: { select: { stock: true } },
+        sucursal: { select: { id: true, nombre: true } },
+      },
     });
     if (!b) throw new NotFoundException('Bodega no encontrada');
     return b;

@@ -178,6 +178,8 @@ model Sucursal {
   codigoPostal  String?
   estado        String   @default("ACTIVO")  // ACTIVO | INACTIVO
 
+  bodegas       Bodega[]
+
   // Soft delete con auditoría
   deletedAt     DateTime?
   deletedBy     Int?       // userId que autorizó la eliminación
@@ -876,10 +878,12 @@ model Bodega {
   codigo      String
   nombre      String
   tipo        String   @default("ALMACEN")
-  direccion   String?
   esPrincipal Boolean  @default(false)
   activo      Boolean  @default(true)
   permiteStockNegativo Boolean @default(false)
+
+  sucursalId  Int?
+  sucursal    Sucursal? @relation(fields: [sucursalId], references: [id])
 
   stock                Stock[]
   movimientosOrigen    MovimientoInventario[] @relation("MovOrigen")
