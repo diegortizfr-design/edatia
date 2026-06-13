@@ -14,6 +14,9 @@ export class CreateUnidadMedidaDto {
 
   @IsOptional() @IsNumber({ maxDecimalPlaces: 6 }) @Min(0.000001)
   factorBase?: number;
+
+  @IsOptional() @IsBoolean()
+  activo?: boolean;
 }
 
 export class UpdateUnidadMedidaDto {

@@ -12,6 +12,9 @@ export class CreateCategoriaDto {
 
   @IsOptional() @IsInt()
   parentId?: number;
+
+  @IsOptional() @IsBoolean()
+  activo?: boolean;
 }
 
 export class UpdateCategoriaDto {

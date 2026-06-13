@@ -614,7 +614,7 @@ export function ConfigProductosMaestros() {
           </div>
 
           {/* Tabs list */}
-          <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-2xl w-full max-w-5xl">
+          <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-2xl w-full">
             {(Object.keys(TAB_CONFIGS) as TabType[]).map(tKey => {
               const config = TAB_CONFIGS[tKey]
               const isActive = activeTab === tKey
@@ -650,7 +650,7 @@ export function ConfigProductosMaestros() {
           {isLoadingItems ? (
             <div className="py-10 text-center text-slate-400 text-sm">Cargando...</div>
           ) : (
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden w-full max-w-4xl">
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden w-full">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -764,7 +764,7 @@ export function ConfigProductosMaestros() {
           </div>
 
           {/* Form Card */}
-          <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
+          <form onSubmit={handleSave} className="space-y-6 w-full">
             {/* Información básica */}
             <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 space-y-4">
               <h2 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest border-b border-slate-100 pb-3">

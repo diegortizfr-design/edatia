@@ -3,6 +3,9 @@ import { IsString, IsOptional, IsBoolean, MinLength, MaxLength } from 'class-val
 export class CreateMarcaDto {
   @IsString() @MinLength(1) @MaxLength(100)
   nombre!: string;
+
+  @IsOptional() @IsBoolean()
+  activo?: boolean;
 }
 
 export class UpdateMarcaDto {
