@@ -571,10 +571,31 @@ export class PosService {
 
     const cCaja = sesion?.caja?.cuentaPUCId || byCode.get('1105')
     const cIngresos = byCode.get('4135')
-    const cIva19 = byCode.get('240801')
-    const cIva5 = byCode.get('240802')
     const cCostoVta = byCode.get('6135')
     const cInventario = byCode.get('1435')
+
+    // Resolver cuentas de IVA dinámicas desde los impuestos creados por el contador
+    const impuestosIVA = await tx.impuesto.findMany({
+      where: { empresaId, tipo: 'IVA', activo: true }
+    })
+    const tax19 = impuestosIVA.find((t: any) => Math.round(Number(t.tarifa)) === 19)
+    const tax5 = impuestosIVA.find((t: any) => Math.round(Number(t.tarifa)) === 5)
+
+    let cIva19 = byCode.get('240801')
+    let cIva5 = byCode.get('240802')
+
+    if (tax19?.cuentaDebito) {
+      const customIva19 = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: tax19.cuentaDebito }
+      })
+      if (customIva19) cIva19 = customIva19.id
+    }
+    if (tax5?.cuentaDebito) {
+      const customIva5 = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: tax5.cuentaDebito }
+      })
+      if (customIva5) cIva5 = customIva5.id
+    }
 
     if (!cCaja || !cIngresos) return // Sin configuración contable base, omitir
 
@@ -604,17 +625,62 @@ export class PosService {
 
     // Crédito a IVA
     if (Number(venta.iva19) > 0 && cIva19) {
-      lineas.push({ cuentaId: cIva19, descripcion: `${desc} - IVA 19%`, debito: 0, credito: Number(venta.iva19) })
+      lineas.push({ 
+        cuentaId: cIva19, 
+        descripcion: `${desc} - IVA 19%`, 
+        debito: 0, 
+        credito: Number(venta.iva19),
+        terceroNit: venta.clienteDoc,
+        terceroNombre: venta.clienteNombre,
+      })
     }
     if (Number(venta.iva5) > 0 && cIva5) {
-      lineas.push({ cuentaId: cIva5, descripcion: `${desc} - IVA 5%`, debito: 0, credito: Number(venta.iva5) })
+      lineas.push({ 
+        cuentaId: cIva5, 
+        descripcion: `${desc} - IVA 5%`, 
+        debito: 0, 
+        credito: Number(venta.iva5),
+        terceroNit: venta.clienteDoc,
+        terceroNombre: venta.clienteNombre,
+      })
     }
 
-    // Costo de Ventas (si hay costo registrado)
-    const costoTotal = venta.items.reduce((acc: number, item: any) => acc + Number(item.costoTotal || 0), 0)
-    if (costoTotal > 0 && cCostoVta && cInventario) {
-      lineas.push({ cuentaId: cCostoVta, descripcion: `Costo ${desc}`, debito: costoTotal, credito: 0 })
-      lineas.push({ cuentaId: cInventario, descripcion: `Salida Inv ${desc}`, debito: 0, credito: costoTotal })
+    // Costo de Ventas e Inventario por producto de forma dinámica
+    for (const item of venta.items) {
+      const cTotal = Number(item.costoTotal || 0)
+      if (cTotal > 0) {
+        const product = await tx.producto.findUnique({
+          where: { id: item.productoId },
+          include: { clasificacion: true }
+        })
+
+        let cInvId = cInventario
+        if (product?.clasificacion?.pucCuenta) {
+          const customInv = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: product.clasificacion.pucCuenta }
+          })
+          if (customInv) cInvId = customInv.id
+        }
+
+        if (cCostoVta && cInvId) {
+          lineas.push({
+            cuentaId: cCostoVta,
+            descripcion: `Costo ${item.descripcion} - POS ${venta.numero}`,
+            debito: cTotal,
+            credito: 0,
+            terceroNit: venta.clienteDoc,
+            terceroNombre: venta.clienteNombre,
+          })
+          lineas.push({
+            cuentaId: cInvId,
+            descripcion: `Salida Inv ${item.descripcion} - POS ${venta.numero}`,
+            debito: 0,
+            credito: cTotal,
+            terceroNit: venta.clienteDoc,
+            terceroNombre: venta.clienteNombre,
+          })
+        }
+      }
     }
 
     // 4. Validar partida doble (margen de error 0.01)

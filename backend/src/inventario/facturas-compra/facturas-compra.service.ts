@@ -107,14 +107,34 @@ export class FacturasCompraService {
       });
 
       // 2. Causación Contable Automatizada (PUC 1435 vs 2205)
-      // Resolver cuentas del PUC
-      let cuentaInventario = await tx.cuentaPUC.findFirst({
-        where: { empresaId, codigo: { in: ['143505', '1435'] } },
-      });
+      // Resolver cuenta de inventario desde la clasificación contable de los productos de la factura
+      let cuentaInventarioCodigo = null;
+      if (dto.items && dto.items.length > 0) {
+        const primerItem = await tx.producto.findUnique({
+          where: { id: dto.items[0].productoId },
+          include: { clasificacion: true }
+        });
+        if (primerItem?.clasificacion?.pucCuenta) {
+          cuentaInventarioCodigo = primerItem.clasificacion.pucCuenta;
+        }
+      }
+
+      let cuentaInventario = null;
+      if (cuentaInventarioCodigo) {
+        cuentaInventario = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: cuentaInventarioCodigo }
+        });
+      }
+
       if (!cuentaInventario) {
         cuentaInventario = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: { startsWith: '1435' } },
+          where: { empresaId, codigo: { in: ['143505', '1435'] } },
         });
+        if (!cuentaInventario) {
+          cuentaInventario = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: { startsWith: '1435' } },
+          });
+        }
       }
 
       let cuentaProveedores = await tx.cuentaPUC.findFirst({
@@ -150,14 +170,41 @@ export class FacturasCompraService {
 
       // IVA descontable (240810) Débito (si aplica)
       if (ivaVal > 0) {
-        let cuentaIva = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: { in: ['240810', '2408'] } },
-        });
-        if (!cuentaIva) {
+        let cuentaIvaCodigo = null;
+
+        // Intentar buscar la cuenta de compras (cuentaCredito) del impuesto de IVA asociado a los productos de la factura
+        if (dto.items && dto.items.length > 0) {
+          const productIds = dto.items.map(it => it.productoId);
+          const prodImpuesto = await tx.productoImpuesto.findFirst({
+            where: {
+              productoId: { in: productIds },
+              impuesto: { tipo: 'IVA', cuentaCredito: { not: null } }
+            },
+            include: { impuesto: true }
+          });
+          if (prodImpuesto?.impuesto?.cuentaCredito) {
+            cuentaIvaCodigo = prodImpuesto.impuesto.cuentaCredito;
+          }
+        }
+
+        let cuentaIva = null;
+        if (cuentaIvaCodigo) {
           cuentaIva = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: { startsWith: '2408' } },
+            where: { empresaId, codigo: cuentaIvaCodigo }
           });
         }
+
+        if (!cuentaIva) {
+          cuentaIva = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: { in: ['240810', '2408'] } },
+          });
+          if (!cuentaIva) {
+            cuentaIva = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { startsWith: '2408' } },
+            });
+          }
+        }
+
         if (cuentaIva) {
           lineas.push({
             cuentaId: cuentaIva.id,

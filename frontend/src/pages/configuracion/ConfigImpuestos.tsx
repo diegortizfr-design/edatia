@@ -286,32 +286,41 @@ export function ConfigImpuestos() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.codigo || !form.nombre || !form.sigla || form.tarifa === undefined) {
-      alert('Código, Nombre, Sigla y Tarifa son campos obligatorios.')
+
+    const siglaValue = form.sigla || form.nombre?.substring(0, 8).toUpperCase().replace(/\s+/g, '') || 'IMP'
+
+    if (!form.dianCod || !form.nombre || !siglaValue || form.tarifa === undefined) {
+      alert('Código DIAN, Nombre y Tarifa son campos obligatorios.')
       return
     }
 
+    const finalForm = {
+      ...form,
+      codigo: form.dianCod,
+      sigla: siglaValue.toUpperCase()
+    }
+
     if (editingId) {
-      updateMutation.mutate({ id: editingId, dto: { ...form } as Partial<ImpuestoConfig> }, {
+      updateMutation.mutate({ id: editingId, dto: finalForm as Partial<ImpuestoConfig> }, {
         onSuccess: () => setViewMode('list'),
       })
     } else {
       const newImp: Partial<ImpuestoConfig> = {
-        ...form,
-        codigo: form.codigo!,
-        nombre: form.nombre!,
-        sigla: form.sigla!.toUpperCase(),
-        tipo: form.tipo || 'IVA',
-        dianCod: form.dianCod || '01',
-        tipoCalculo: form.tipoCalculo || 'PORCENTAJE',
-        tarifa: Number(form.tarifa),
-        retencionCompra: !!form.retencionCompra,
-        estado: form.estado || 'ACTIVO',
-        descripcion: form.descripcion || '',
-        cuentaVenta: form.cuentaVenta || '',
-        cuentaDevolucionVenta: form.cuentaDevolucionVenta || '',
-        cuentaCompra: form.cuentaCompra || '',
-        cuentaDevolucionCompra: form.cuentaDevolucionCompra || ''
+        ...finalForm,
+        codigo: finalForm.codigo!,
+        nombre: finalForm.nombre!,
+        sigla: finalForm.sigla!,
+        tipo: finalForm.tipo || 'IVA',
+        dianCod: finalForm.dianCod || '01',
+        tipoCalculo: finalForm.tipoCalculo || 'PORCENTAJE',
+        tarifa: Number(finalForm.tarifa),
+        retencionCompra: !!finalForm.retencionCompra,
+        estado: finalForm.estado || 'ACTIVO',
+        descripcion: finalForm.descripcion || '',
+        cuentaVenta: finalForm.cuentaVenta || '',
+        cuentaDevolucionVenta: finalForm.cuentaDevolucionVenta || '',
+        cuentaCompra: finalForm.cuentaCompra || '',
+        cuentaDevolucionCompra: finalForm.cuentaDevolucionCompra || ''
       }
       createMutation.mutate(newImp, {
         onSuccess: () => setViewMode('list'),
@@ -428,7 +437,7 @@ export function ConfigImpuestos() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/75 border-b border-slate-100">
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cód / Impuesto</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Impuesto</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">DIAN Fact. Electrónica</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tarifa / Porcentaje</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cuentas Contables Mapeadas</th>
@@ -449,7 +458,7 @@ export function ConfigImpuestos() {
                           <td className="p-4">
                             <div className="font-bold text-slate-800">{imp.nombre}</div>
                             <div className="text-[10px] font-mono text-indigo-600 uppercase mt-0.5">
-                              ID: {imp.codigo} | SIGLA: {imp.sigla}
+                              SIGLA: {imp.sigla}
                             </div>
                           </td>
 
@@ -545,17 +554,7 @@ export function ConfigImpuestos() {
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 w-full">
             <form onSubmit={handleSave} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-2">
-                  <Field label="Código *">
-                    <Input
-                      value={form.codigo}
-                      onChange={(v: string) => setForm(f => ({ ...f, codigo: v }))}
-                      placeholder="Ej. 0 o 1"
-                    />
-                  </Field>
-                </div>
-
-                <div className="md:col-span-6">
+                 <div className="md:col-span-8">
                   <Field label="Descripción / Nombre *">
                     <Input
                       value={form.nombre}
