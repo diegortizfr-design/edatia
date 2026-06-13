@@ -450,8 +450,16 @@ export function ConfigImpuestos() {
                     filtered.map(imp => {
                       const dianLabel = DIAN_TAX_CODES.find(d => d.value === imp.dianCod)?.label || imp.dianCod || 'No especificado'
                       
-                      const cVentaLabel = PUC_ACCOUNTS.find(p => p.value === imp.cuentaVenta)?.label || 'No configurada'
-                      const cCompraLabel = PUC_ACCOUNTS.find(p => p.value === imp.cuentaCompra)?.label || 'No configurada'
+                      const findAccountLabel = (val: string) => {
+                        if (!val) return 'No configurada'
+                        const dbAcc = pucData.find((p: any) => p.codigo === val)
+                        if (dbAcc) return `${dbAcc.codigo} - ${dbAcc.nombre}`
+                        const mockAcc = PUC_ACCOUNTS.find(p => p.value === val)
+                        return mockAcc ? mockAcc.label : val
+                      }
+                      
+                      const cVentaLabel = findAccountLabel(imp.cuentaVenta)
+                      const cCompraLabel = findAccountLabel(imp.cuentaCompra)
 
                       return (
                         <tr key={imp.id} className="hover:bg-slate-50/50 transition-colors">

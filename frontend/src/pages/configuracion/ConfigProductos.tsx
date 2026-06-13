@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { 
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
-  Scale, Tag, AlertTriangle, FileText, Eye
+  Scale, Tag, AlertTriangle, FileText, Eye, Barcode
 } from 'lucide-react'
 import { getProductos, createProducto, updateProducto, deleteProducto } from '../../services/inventario.service'
 import {
@@ -28,6 +28,67 @@ interface MasterItem {
   activo: boolean;
   extra?: string;
   parentId?: string;
+}
+
+function generateRandomEAN13(): string {
+  let code = "770"
+  for (let i = 0; i < 9; i++) {
+    code += Math.floor(Math.random() * 10).toString()
+  }
+
+  let sum = 0
+  for (let i = 0; i < 12; i++) {
+    const digit = parseInt(code[i], 10)
+    if (i % 2 === 0) {
+      sum += digit * 1
+    } else {
+      sum += digit * 3
+    }
+  }
+
+  const remainder = sum % 10
+  const checkDigit = remainder === 0 ? 0 : 10 - remainder
+
+  return code + checkDigit.toString()
+}
+
+function BarcodeSVG({ value }: { value: string }) {
+  if (!value) return null
+  return (
+    <div className="flex flex-col items-center p-3 bg-slate-50 border border-slate-200/60 rounded-xl w-full max-w-[220px]">
+      <svg className="w-full h-10" viewBox="0 0 100 40" preserveAspectRatio="none">
+        <g fill="currentColor" className="text-slate-800">
+          <rect x="0" y="0" width="2" height="35" />
+          <rect x="3" y="0" width="1" height="35" />
+          <rect x="6" y="0" width="2" height="32" />
+          <rect x="10" y="0" width="3" height="32" />
+          <rect x="15" y="0" width="1" height="32" />
+          <rect x="18" y="0" width="2" height="32" />
+          <rect x="22" y="0" width="4" height="32" />
+          <rect x="28" y="0" width="1" height="32" />
+          <rect x="31" y="0" width="2" height="32" />
+          <rect x="35" y="0" width="1" height="35" />
+          <rect x="37" y="0" width="1" height="35" />
+          <rect x="40" y="0" width="3" height="32" />
+          <rect x="45" y="0" width="1" height="32" />
+          <rect x="48" y="0" width="2" height="32" />
+          <rect x="52" y="0" width="4" height="32" />
+          <rect x="58" y="0" width="1" height="32" />
+          <rect x="61" y="0" width="2" height="32" />
+          <rect x="65" y="0" width="3" height="32" />
+          <rect x="70" y="0" width="1" height="32" />
+          <rect x="73" y="0" width="2" height="32" />
+          <rect x="77" y="0" width="4" height="32" />
+          <rect x="83" y="0" width="1" height="32" />
+          <rect x="86" y="0" width="2" height="32" />
+          <rect x="90" y="0" width="3" height="32" />
+          <rect x="95" y="0" width="2" height="35" />
+          <rect x="98" y="0" width="1" height="35" />
+        </g>
+      </svg>
+      <span className="font-mono text-[10px] font-bold text-slate-500 tracking-[0.2em] mt-1">{value}</span>
+    </div>
+  )
 }
 
 const DEFAULT_FORM = {
@@ -141,6 +202,10 @@ export function ConfigProductos() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Barcode scanner modal states
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false)
+  const [barcodeInput, setBarcodeInput] = useState('')
 
   // Filters State
   const [filterSku, setFilterSku] = useState('')
@@ -268,6 +333,17 @@ export function ConfigProductos() {
       precios: Array(11).fill(0)
     })
     setError(null)
+    setBarcodeInput('')
+    setShowBarcodeModal(true)
+  }
+
+  const handleBarcodeSubmit = (codeToUse: string) => {
+    const finalCode = codeToUse.trim()
+    setFormData(prev => ({
+      ...prev,
+      sku: finalCode
+    }))
+    setShowBarcodeModal(false)
     setViewMode('form')
   }
 
@@ -711,6 +787,11 @@ export function ConfigProductos() {
                     placeholder="Ej. REF-ORO-A1"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
                   />
+                  {formData.sku && (
+                    <div className="mt-2.5">
+                      <BarcodeSVG value={formData.sku} />
+                    </div>
+                  )}
                 </div>
                 <div className="md:col-span-3">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Ref. Fábrica / Catálogo</label>
@@ -1434,6 +1515,79 @@ export function ConfigProductos() {
             </div>
           </form>
         </>
+      )}
+
+      {showBarcodeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                <Barcode size={24} />
+              </div>
+              <h2 className="text-lg font-extrabold text-slate-800">Ingresa código de barras</h2>
+              <p className="text-slate-500 text-xs px-4">
+                Escribe el código manualmente o lee el código de barras con tu lector.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleBarcodeSubmit(barcodeInput)
+              }}
+              className="space-y-4"
+            >
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    placeholder="Ej. 7701234567890"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = generateRandomEAN13()
+                    setBarcodeInput(code)
+                  }}
+                  className="px-4 py-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
+                >
+                  Crear aleatorio
+                </button>
+              </div>
+
+              <div className="text-center bg-slate-50 py-3 rounded-xl border border-dashed border-slate-200">
+                <span className="text-[11px] text-slate-500 font-semibold block">
+                  ⚡ O lee el código de barras con tu lector
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBarcodeModal(false)
+                    setViewMode('list')
+                  }}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold active:scale-[0.98] transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!barcodeInput.trim()}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continuar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
