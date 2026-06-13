@@ -2,6 +2,19 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCategoriaDto, UpdateCategoriaDto } from './dto/categoria.dto';
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
 @Injectable()
 export class CategoriasService {
   constructor(private readonly prisma: PrismaService) {}
@@ -31,22 +44,25 @@ export class CategoriasService {
   }
 
   async create(dto: CreateCategoriaDto, empresaId: number) {
+    const slug = dto.slug || slugify(dto.nombre);
     const exists = await (this.prisma as any).categoria.findUnique({
-      where: { empresaId_slug: { empresaId, slug: dto.slug } },
+      where: { empresaId_slug: { empresaId, slug } },
     });
-    if (exists) throw new ConflictException(`Ya existe una categoría con el slug "${dto.slug}"`);
+    if (exists) throw new ConflictException(`Ya existe una categoría con el slug "${slug}"`);
     return (this.prisma as any).categoria.create({
-      data: { ...dto, empresaId },
+      data: { ...dto, slug, empresaId },
     });
   }
 
   async update(id: number, dto: UpdateCategoriaDto, empresaId: number) {
     await this.findOne(id, empresaId);
-    if (dto.slug) {
+    const slug = dto.slug || (dto.nombre ? slugify(dto.nombre) : undefined);
+    if (slug) {
       const conflict = await (this.prisma as any).categoria.findFirst({
-        where: { empresaId, slug: dto.slug, NOT: { id } },
+        where: { empresaId, slug, NOT: { id } },
       });
-      if (conflict) throw new ConflictException(`Ya existe una categoría con el slug "${dto.slug}"`);
+      if (conflict) throw new ConflictException(`Ya existe una categoría con el slug "${slug}"`);
+      dto.slug = slug;
     }
     return (this.prisma as any).categoria.update({ where: { id }, data: dto });
   }

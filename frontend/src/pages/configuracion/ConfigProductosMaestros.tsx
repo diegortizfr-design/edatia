@@ -576,27 +576,6 @@ export function ConfigProductosMaestros() {
 
   return (
     <div className="w-full space-y-6">
-      {/* Tabs list */}
-      <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-2xl w-full max-w-5xl">
-        {(Object.keys(TAB_CONFIGS) as TabType[]).map(tKey => {
-          const config = TAB_CONFIGS[tKey]
-          const isActive = activeTab === tKey
-          return (
-            <button
-              key={tKey}
-              onClick={() => setSearchParams({ tab: tKey })}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                isActive
-                  ? 'bg-white text-indigo-600 shadow-md shadow-slate-200/50'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {config.label}
-            </button>
-          )
-        })}
-      </div>
-
       {viewMode === 'list' ? (
         <>
           {/* Header */}
@@ -632,6 +611,27 @@ export function ConfigProductosMaestros() {
                 Agregar {currentTabConfig.label.slice(0, -1)}
               </button>
             </div>
+          </div>
+
+          {/* Tabs list */}
+          <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-2xl w-full max-w-5xl">
+            {(Object.keys(TAB_CONFIGS) as TabType[]).map(tKey => {
+              const config = TAB_CONFIGS[tKey]
+              const isActive = activeTab === tKey
+              return (
+                <button
+                  key={tKey}
+                  onClick={() => setSearchParams({ tab: tKey })}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                    isActive
+                      ? 'bg-white text-indigo-600 shadow-md shadow-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {config.label}
+                </button>
+              )
+            })}
           </div>
 
           {/* Search bar */}
