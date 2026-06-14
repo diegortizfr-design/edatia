@@ -35,10 +35,10 @@ export class BodegasService {
     });
     if (exists) throw new ConflictException(`Ya existe una bodega con código "${dto.codigo}"`);
 
-    // Si se marca como principal, desmarcar las otras
-    if (dto.esPrincipal) {
+    // Si se marca como principal, desmarcar las otras de la misma sucursal
+    if (dto.esPrincipal && dto.sucursalId) {
       await (this.prisma as any).bodega.updateMany({
-        where: { empresaId, esPrincipal: true },
+        where: { empresaId, sucursalId: dto.sucursalId, esPrincipal: true },
         data: { esPrincipal: false },
       });
     }
@@ -57,10 +57,19 @@ export class BodegasService {
     }
 
     if (dto.esPrincipal) {
-      await (this.prisma as any).bodega.updateMany({
-        where: { empresaId, esPrincipal: true, NOT: { id } },
-        data: { esPrincipal: false },
-      });
+      // Obtener sucursalId de la bodega si no viene en el DTO
+      let sId = dto.sucursalId;
+      if (sId === undefined) {
+        const current = await this.findOne(id, empresaId);
+        sId = current.sucursalId;
+      }
+
+      if (sId) {
+        await (this.prisma as any).bodega.updateMany({
+          where: { empresaId, sucursalId: sId, esPrincipal: true, NOT: { id } },
+          data: { esPrincipal: false },
+        });
+      }
     }
 
     return (this.prisma as any).bodega.update({ where: { id }, data: dto });
