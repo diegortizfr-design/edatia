@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getProductos, getBodegas, getOrdenesCompra } from '../../services/inventario.service'
 import { 
   Search, Package, Warehouse, AlertTriangle, ArrowRight, 
-  Layers, Hash, SlidersHorizontal, Plus, ShieldAlert, BadgeInfo 
+  Layers, Hash, SlidersHorizontal, Plus, ShieldAlert, BadgeInfo, ArrowRightLeft
 } from 'lucide-react'
 
 export function ControlExistencias() {
@@ -85,6 +85,12 @@ export function ControlExistencias() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/inventario/control-existencias/nuevo-traslado"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-sm active:scale-95 animate-fade-in"
+          >
+            <ArrowRightLeft size={14} /> Registrar Traslado (TI)
+          </Link>
           <Link
             to="/inventario/control-existencias/nuevo-ajuste"
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95"

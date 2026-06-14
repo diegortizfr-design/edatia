@@ -501,8 +501,14 @@ export function Movimientos() {
 
         <div className="flex gap-2">
           <Link
-            to="/inventario/control-existencias/nuevo-ajuste"
+            to="/inventario/control-existencias/nuevo-traslado"
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-sm active:scale-95"
+          >
+            <ArrowLeftRight size={14} /> Registrar Traslado (TI)
+          </Link>
+          <Link
+            to="/inventario/control-existencias/nuevo-ajuste"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
           >
             <Plus size={14} /> Registrar Ajuste (AI)
           </Link>

@@ -26,6 +26,7 @@ import { Compras } from './pages/inventario/Compras'
 import { NuevaFcForm } from './pages/inventario/NuevaFcForm'
 import { ControlExistencias } from './pages/inventario/ControlExistencias'
 import { NuevoAjusteForm } from './pages/inventario/NuevoAjusteForm'
+import { NuevoTrasladoForm } from './pages/inventario/NuevoTrasladoForm'
 // ── Digital ──
 import { DigitalDashboard } from './pages/digital/DigitalDashboard'
 import { CatalogoDigital } from './pages/digital/CatalogoDigital'
@@ -122,6 +123,7 @@ function App() {
         <Route path="/inventario/compras/nueva-fc"     element={<P><NuevaFcForm /></P>} />
         <Route path="/inventario/control-existencias"  element={<P><ControlExistencias /></P>} />
         <Route path="/inventario/control-existencias/nuevo-ajuste" element={<P><NuevoAjusteForm /></P>} />
+        <Route path="/inventario/control-existencias/nuevo-traslado" element={<P><NuevoTrasladoForm /></P>} />
         <Route path="/inventario/bodegas"              element={<P><Bodegas /></P>} />
         <Route path="/inventario/movimientos"          element={<P><Movimientos /></P>} />
         <Route path="/inventario/maestros"             element={<P><Maestros /></P>} />

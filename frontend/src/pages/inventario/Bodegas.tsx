@@ -4,10 +4,10 @@ import { getBodegas, createBodega, updateBodega } from '../../services/inventari
 import { getSucursales } from '../../services/configuracion.service'
 import { Plus, Warehouse, Star, Edit2, X, Check, MapPin, AlertCircle } from 'lucide-react'
 
-const TIPOS = ['ALMACEN', 'PUNTO_VENTA', 'TRANSITO', 'DEVOLUCION', 'VIRTUAL']
+const TIPOS = ['ALMACEN', 'PUNTO_VENTA', 'DEVOLUCION', 'VIRTUAL']
 const TIPO_LABEL: Record<string, string> = {
   ALMACEN: 'Almacén', PUNTO_VENTA: 'Punto de Venta',
-  TRANSITO: 'Tránsito', DEVOLUCION: 'Devolución', VIRTUAL: 'Virtual',
+  DEVOLUCION: 'Devolución', VIRTUAL: 'Virtual',
 }
 
 export function Bodegas() {

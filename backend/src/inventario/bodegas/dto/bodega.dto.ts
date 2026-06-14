@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsBoolean, IsIn, MinLength, MaxLength, IsInt } from 'class-validator';
 
-const TIPOS_BODEGA = ['ALMACEN', 'PUNTO_VENTA', 'TRANSITO', 'DEVOLUCION', 'VIRTUAL'];
+const TIPOS_BODEGA = ['ALMACEN', 'PUNTO_VENTA', 'DEVOLUCION', 'VIRTUAL'];
 
 export class CreateBodegaDto {
   @IsString() @MinLength(1) @MaxLength(20)
