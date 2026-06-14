@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getBodegas, buscarProductos, postAjuste, getProducto } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
+import { getApiError } from '../../services/api'
 import { ArrowLeft, Save, Plus, Search, HelpCircle, Archive } from 'lucide-react'
 
 export interface AjusteInventario {
@@ -97,7 +98,7 @@ export function NuevoAjusteForm() {
       navigate('/inventario/control-existencias')
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.message || 'Error al registrar el ajuste de inventario')
+      setError(getApiError(err, 'Error al registrar el ajuste de inventario'))
     }
   })
 

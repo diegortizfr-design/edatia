@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getBodegas, buscarProductos, postTraslado, getProducto } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
+import { getApiError } from '../../services/api'
 import { ArrowLeft, Save, Search, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -81,7 +82,7 @@ export function NuevoTrasladoForm() {
       navigate('/inventario/movimientos')
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.message || 'Error al registrar el traslado de inventario')
+      setError(getApiError(err, 'Error al registrar el traslado de inventario'))
     }
   })
 
