@@ -591,7 +591,25 @@ export class MovimientosService {
     }
 
     return this.prisma.$transaction(async (tx: any) => {
-      const numero = await this.generarNumero('MOV', empresaId, tx);
+      let numero = '';
+      let documentoConfigId: number | null = null;
+      if (dto.documentoId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoId, empresaId },
+        });
+        if (!docConfig) {
+          throw new BadRequestException('El documento de configuración no existe o no pertenece a esta empresa');
+        }
+        numero = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        documentoConfigId = docConfig.id;
+
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numero = await this.generarNumero('MOV', empresaId, tx);
+      }
       // BC-02 + BC-03: Si el motivo es DAR_DE_BAJA, procesamos desde la bodega especial de averías/pérdidas
       if (dto.motivo === 'DAR_DE_BAJA') {
         const esPerdida = dto.notas?.toLowerCase().includes('pérdidas') || dto.notas?.toLowerCase().includes('perdidas');
@@ -695,6 +713,7 @@ export class MovimientosService {
             saldoCpp: cppAnterior,
             usuarioId,
             notas: `${notasAjuste} (Salida Bodega de Origen)`,
+            documentoConfigId,
           },
         });
 
@@ -889,6 +908,7 @@ export class MovimientosService {
           usuarioId,
           notas: dto.notas ? `${dto.notas}${loteNotas}` : `Ajuste físico${loteNotas}`,
           referenciaTipo: 'Manual',
+          documentoConfigId,
         },
       });
 
@@ -995,7 +1015,25 @@ export class MovimientosService {
     const cpp = parseFloat(producto.costoPromedio.toString());
 
     return this.prisma.$transaction(async (tx: any) => {
-      const numeroSalida = await this.generarNumero('MOV', empresaId, tx);
+      let numeroSalida = '';
+      let documentoConfigId: number | null = null;
+      if (dto.documentoId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoId, empresaId },
+        });
+        if (!docConfig) {
+          throw new BadRequestException('El documento de configuración no existe o no pertenece a esta empresa');
+        }
+        numeroSalida = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        documentoConfigId = docConfig.id;
+
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numeroSalida = await this.generarNumero('MOV', empresaId, tx);
+      }
       // Salida de origen
       await tx.stock.update({
         where: { id: stockOrigen.id },
@@ -1064,6 +1102,7 @@ export class MovimientosService {
           notas: finalNotas,
           estado: 'EN_TRANSITO',
           referenciaTipo: 'Manual',
+          documentoConfigId,
         },
       });
 

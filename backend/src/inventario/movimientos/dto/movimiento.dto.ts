@@ -82,6 +82,9 @@ export class AjusteDto {
 
   @IsOptional() @IsNumber()
   costoUnitario?: number;
+
+  @IsOptional() @IsInt()
+  documentoId?: number;
 }
 
 export class TrasladoDto {
@@ -105,6 +108,9 @@ export class TrasladoDto {
 
   @IsOptional() @IsArray() @IsString({ each: true })
   seriales?: string[];
+
+  @IsOptional() @IsInt()
+  documentoId?: number;
 }
 
 export class DevolucionProveedorDto {

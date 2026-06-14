@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getBodegas, buscarProductos, postTraslado, getProducto } from '../../services/inventario.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Save, Search, ArrowRightLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -17,6 +18,7 @@ export function NuevoTrasladoForm() {
   // Form states
   const [bodegaOrigenId, setBodegaOrigenId] = useState('')
   const [bodegaDestinoId, setBodegaDestinoId] = useState('')
+  const [documentoId, setDocumentoId] = useState('')
   const [cantidad, setCantidad] = useState('')
   const [observacion, setObservacion] = useState('')
   const [loteNumero, setLoteNumero] = useState('')
@@ -28,6 +30,11 @@ export function NuevoTrasladoForm() {
 
   // Queries
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas-traslados'], queryFn: getBodegas })
+
+  const { data: documentosConfig = [] } = useQuery({
+    queryKey: ['documentos-config-traslados'],
+    queryFn: getDocumentosConfig,
+  })
 
   const { data: queryProducto } = useQuery({
     queryKey: ['producto-traslado-pre', paramProductoId],
@@ -51,6 +58,16 @@ export function NuevoTrasladoForm() {
     queryKey: ['buscar-prod-traslado', busqueda],
     queryFn: () => buscarProductos(busqueda),
     enabled: busqueda.length >= 2,
+  })
+
+  const bodegaOrigenObj = bodegas.find((b: any) => String(b.id) === String(bodegaOrigenId))
+
+  const filteredDocs = documentosConfig.filter((d: any) => {
+    if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+    if (d.sucursalId && bodegaOrigenObj) {
+      return Number(d.sucursalId) === Number(bodegaOrigenObj.sucursalId)
+    }
+    return !d.sucursalId
   })
 
   const mutation = useMutation({
@@ -82,6 +99,7 @@ export function NuevoTrasladoForm() {
     if (bodegaOrigenId === bodegaDestinoId) {
       return setError('La bodega de origen y destino deben ser diferentes')
     }
+    if (!documentoId) return setError('Seleccione un documento/prefijo')
     if (!productoSeleccionado) return setError('Seleccione un producto')
     if (!cantidad || parseFloat(cantidad) <= 0) return setError('Ingrese una cantidad válida mayor a 0')
 
@@ -105,6 +123,7 @@ export function NuevoTrasladoForm() {
       notas: observacion.trim(),
       loteNumero: loteNumero || undefined,
       seriales: parsedSeriales,
+      documentoId: Number(documentoId),
     })
   }
 
@@ -146,7 +165,10 @@ export function NuevoTrasladoForm() {
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Bodega Origen *</label>
               <select
                 value={bodegaOrigenId}
-                onChange={e => setBodegaOrigenId(e.target.value)}
+                onChange={e => {
+                  setBodegaOrigenId(e.target.value)
+                  setDocumentoId('')
+                }}
                 required
                 className={inputCls}
               >
@@ -175,6 +197,26 @@ export function NuevoTrasladoForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Documento Config */}
+            <div className="md:col-span-2">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento (Prefijo) *</label>
+              <select
+                value={documentoId}
+                onChange={e => setDocumentoId(e.target.value)}
+                required
+                disabled={!bodegaOrigenId}
+                className={inputCls}
+              >
+                <option value="">— Seleccionar documento —</option>
+                {filteredDocs.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo}) — Folio: {d.consecutivoSiguiente}
+                  </option>
+                ))}
+              </select>
+              {!bodegaOrigenId && <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la bodega de origen para filtrar los prefijos habilitados.</p>}
             </div>
 
             {/* Producto */}

@@ -224,6 +224,8 @@ model DocumentoConfig {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
+  movimientosInventario MovimientoInventario[]
+
   @@unique([empresaId, prefijo])
   @@index([empresaId])
 }
@@ -956,6 +958,9 @@ model MovimientoInventario {
   serialesSalida   NumeroSerie[] @relation("SerialSalida")
   fechaMovimiento  DateTime @default(now())
   createdAt        DateTime @default(now())
+
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
   @@index([empresaId, productoId])
   @@index([empresaId, productoId, fechaMovimiento])

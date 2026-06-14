@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getBodegas, buscarProductos, postAjuste, getProducto } from '../../services/inventario.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Save, Plus, Search, HelpCircle, Archive } from 'lucide-react'
 
 export interface AjusteInventario {
@@ -38,6 +39,7 @@ export function NuevoAjusteForm() {
   const [loteNumero, setLoteNumero] = useState('')
   const [fechaVencimiento, setFechaVencimiento] = useState('')
   const [seriales, setSeriales] = useState('')
+  const [documentoId, setDocumentoId] = useState('')
 
   // Product search states
   const [busqueda, setBusqueda] = useState('')
@@ -46,10 +48,25 @@ export function NuevoAjusteForm() {
   // Queries
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas-ajustes'], queryFn: getBodegas })
 
+  const { data: documentosConfig = [] } = useQuery({
+    queryKey: ['documentos-config-ajustes'],
+    queryFn: getDocumentosConfig,
+  })
+
   const { data: queryProducto } = useQuery({
     queryKey: ['producto-ajuste-pre', paramProductoId],
     queryFn: () => getProducto(Number(paramProductoId)),
     enabled: !!paramProductoId,
+  })
+
+  const bodegaSeleccionadaObj = bodegas.find((b: any) => String(b.id) === String(bodegaId))
+
+  const filteredDocs = documentosConfig.filter((d: any) => {
+    if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+    if (d.sucursalId && bodegaSeleccionadaObj) {
+      return Number(d.sucursalId) === Number(bodegaSeleccionadaObj.sucursalId)
+    }
+    return !d.sucursalId
   })
 
   useEffect(() => {
@@ -94,6 +111,7 @@ export function NuevoAjusteForm() {
     setError(null)
 
     if (!bodegaId) return setError('Seleccione una bodega')
+    if (!documentoId) return setError('Seleccione un documento/prefijo')
     if (!productoSeleccionado) return setError('Seleccione un producto')
     if (!cantidad || parseFloat(cantidad) <= 0) return setError('Ingrese una cantidad válida mayor a 0')
     if (tipo === 'AINS' && !motivo) return setError('Seleccione un motivo para la nota de salida (AINS)')
@@ -135,11 +153,13 @@ export function NuevoAjusteForm() {
       productoId: productoSeleccionado.id,
       bodegaId: Number(bodegaId),
       cantidad: tipo === 'AINE' ? parseFloat(cantidad) : -parseFloat(cantidad),
+      notes: observacion.trim(), // backend maps notes/notas
       notas: observacion.trim(),
       loteNumero: loteNumero || undefined,
       fechaVencimiento: fechaVencimiento || undefined,
       seriales: parsedSeriales,
-      motivo: tipo === 'AINS' ? motivo : undefined
+      motivo: tipo === 'AINS' ? motivo : undefined,
+      documentoId: Number(documentoId),
     })
   }
 
@@ -178,7 +198,10 @@ export function NuevoAjusteForm() {
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Bodega del Ajuste *</label>
               <select
                 value={bodegaId}
-                onChange={e => setBodegaId(e.target.value)}
+                onChange={e => {
+                  setBodegaId(e.target.value)
+                  setDocumentoId('')
+                }}
                 required
                 className={inputCls}
               >
@@ -189,6 +212,26 @@ export function NuevoAjusteForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Documento Config */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento (Prefijo) *</label>
+              <select
+                value={documentoId}
+                onChange={e => setDocumentoId(e.target.value)}
+                required
+                disabled={!bodegaId}
+                className={inputCls}
+              >
+                <option value="">— Seleccionar documento —</option>
+                {filteredDocs.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo}) — Folio: {d.consecutivoSiguiente}
+                  </option>
+                ))}
+              </select>
+              {!bodegaId && <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la bodega para filtrar los prefijos habilitados.</p>}
             </div>
 
             {/* Tipo de Ajuste */}
