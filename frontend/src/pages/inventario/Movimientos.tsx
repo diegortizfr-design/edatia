@@ -367,6 +367,9 @@ export function Movimientos() {
 
   // Add TIs (Traslados)
   traslados.forEach(ti => {
+    const mEntrada = dbMovements.find((x: any) => x.movimientoParId === ti.dbId || (x.id === ti.movimientoParId && x.tipo === 'TRASLADO_ENTRADA'))
+    const rpNumero = mEntrada?.numero || null
+
     allDocs.push({
       id: ti.id,
       dbId: ti.dbId,
@@ -378,9 +381,42 @@ export function Movimientos() {
       estado: ti.estado,
       documentosRelacionados: {
         autorizado: ti.autorizadoPor,
-        verif: ti.estado === 'RECIBIDO' ? 'Recibido y Verificado' : 'Pendiente Verificación'
+        verif: ti.estado === 'RECIBIDO' ? 'Recibido y Verificado' : 'Pendiente Verificación',
+        rpRef: rpNumero
       }
     })
+  })
+
+  // Map and add TRASLADO_ENTRADA movements as RPs for inter-branch transfers
+  const recepcionesTraslado = dbMovements
+    .filter((m: any) => m.tipo === 'TRASLADO_ENTRADA')
+    .map((m: any) => {
+      const bodegaDestino = bodegas.find((b: any) => String(b.id) === String(m.bodegaDestinoId))
+      const bodegaOrigen = bodegas.find((b: any) => String(b.id) === String(m.bodegaOrigenId))
+      
+      const mPar = dbMovements.find((x: any) => x.id === m.movimientoParId || (x.movimientoParId === m.id && x.tipo === 'TRASLADO_SALIDA'))
+      const trasladoNumero = mPar?.numero || 'S/Ref'
+
+      return {
+        id: m.numero || `RP-${m.id}`,
+        dbId: m.id,
+        tipo: 'RP',
+        tipoLabel: 'Recepción de Traslado (RP)',
+        origenDestino: `Bodega: ${bodegaDestino?.nombre || 'Destino'}`,
+        total: null,
+        fecha: m.fechaMovimiento,
+        estado: m.estado || 'RECIBIDO',
+        documentosRelacionados: {
+          oc: null,
+          fc: null,
+          trasladoRef: trasladoNumero,
+          bodegaOrigenNombre: bodegaOrigen?.nombre || 'Origen'
+        }
+      }
+    })
+
+  recepcionesTraslado.forEach(rp => {
+    allDocs.push(rp)
   })
 
   // Sort and filter documents
@@ -667,8 +703,18 @@ export function Movimientos() {
                             )}
                             {doc.tipo === 'RP' && (
                               <p className="text-[10px]">
-                                {`Orden Origen: ${doc.documentosRelacionados.oc}`}
-                                {doc.documentosRelacionados.fc && ` · Cruzado en Factura: ${doc.documentosRelacionados.fc}`}
+                                {doc.documentosRelacionados.oc ? (
+                                  <>
+                                    Orden Origen: {doc.documentosRelacionados.oc}
+                                    {doc.documentosRelacionados.fc && ` · Cruzado en Factura: ${doc.documentosRelacionados.fc}`}
+                                  </>
+                                ) : doc.documentosRelacionados.trasladoRef ? (
+                                  <>
+                                    Cruce Traslado: <span className="font-semibold text-indigo-650">{doc.documentosRelacionados.trasladoRef}</span> (Origen: {doc.documentosRelacionados.bodegaOrigenNombre})
+                                  </>
+                                ) : (
+                                  'Recepción Directa'
+                                )}
                               </p>
                             )}
                             {(doc.tipo === 'AINE' || doc.tipo === 'AINS') && (
@@ -678,7 +724,13 @@ export function Movimientos() {
                             )}
                             {doc.tipo === 'TI' && (
                               <p className="text-[10px]">
-                                {`Resp: ${doc.documentosRelacionados.autorizado} · ${doc.documentosRelacionados.verif}`}
+                                {doc.documentosRelacionados.rpRef ? (
+                                  <>
+                                    Cruce RP: <span className="font-semibold text-green-650">{doc.documentosRelacionados.rpRef}</span>
+                                  </>
+                                ) : (
+                                  `Resp: ${doc.documentosRelacionados.autorizado} · ${doc.documentosRelacionados.verif}`
+                                )}
                               </p>
                             )}
                           </td>

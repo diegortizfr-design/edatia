@@ -54,6 +54,9 @@ export function Traslados() {
       const serialesStr = (m.serialesSalida || m.serialesEntrada || []).map((s: any) => s.serial).join(', ')
       const lote = m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || null
 
+      const mEntrada = dbMovements.find((x: any) => x.movimientoParId === m.id || (x.id === m.movimientoParId && x.tipo === 'TRASLADO_ENTRADA'))
+      const rpRef = mEntrada?.numero || null
+
       return {
         id: m.numero || `TI-${m.id}`,
         dbId: m.id,
@@ -77,7 +80,8 @@ export function Traslados() {
         lote,
         seriales: serialesStr,
         usuarioId: m.usuarioId,
-        movimientoParId: m.movimientoParId
+        movimientoParId: m.movimientoParId,
+        rpRef
       }
     })
 
@@ -516,7 +520,7 @@ export function Traslados() {
                   <div className="border-l border-slate-200 pl-6">
                     <h4 className="font-black text-slate-950 uppercase tracking-wider text-[9px] mb-1">Destino</h4>
                     <p><strong className="font-bold text-slate-750">Bodega:</strong> {selectedTraslado.bodegaDestinoNombre}</p>
-                    {selectedTraslado.movimientoParId && <p><strong className="font-bold text-slate-750">Cruce de Recepción:</strong> {selectedTraslado.movimientoParId}</p>}
+                    {selectedTraslado.rpRef && <p><strong className="font-bold text-slate-750">Cruce de Recepción:</strong> {selectedTraslado.rpRef}</p>}
                   </div>
                 </div>
 
