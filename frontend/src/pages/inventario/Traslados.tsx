@@ -48,8 +48,8 @@ export function Traslados() {
   const traslados = dbMovements
     .filter((m: any) => m.tipo === 'TRASLADO_SALIDA')
     .map((m: any) => {
-      const bodegaOrigen = bodegas.find((b: any) => b.id === m.bodegaOrigenId)
-      const bodegaDestino = bodegas.find((b: any) => b.id === m.bodegaDestinoId)
+      const bodegaOrigen = bodegas.find((b: any) => String(b.id) === String(m.bodegaOrigenId))
+      const bodegaDestino = bodegas.find((b: any) => String(b.id) === String(m.bodegaDestinoId))
       
       const serialesStr = (m.serialesSalida || m.serialesEntrada || []).map((s: any) => s.serial).join(', ')
       const lote = m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || null
