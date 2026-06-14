@@ -5,7 +5,7 @@ import {
   BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, 
   Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, 
   Monitor, Building2, Globe, ChevronLeft, ChevronRight, Menu, Percent, Coins, Store, Wallet,
-  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal, LayoutTemplate
+  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal, LayoutTemplate, ArrowLeftRight
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -229,6 +229,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NavItem to="/inventario/proveedores" icon={<Truck size={14}/>} label="Proveedores" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/compras" icon={<ShoppingCart size={14}/>} label="Compras" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/control-existencias" icon={<Package size={14}/>} label="Control de Existencia" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/traslados" icon={<ArrowLeftRight size={14}/>} label="Traslados de Inventario" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Gestión de Bodegas" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/radian" icon={<ClipboardCheck size={14}/>} label="RADIAN" isCollapsed={isCollapsed} />

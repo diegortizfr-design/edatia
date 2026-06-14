@@ -23,9 +23,8 @@ export function Movimientos() {
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const docVerParam = searchParams.get('ver')
-  const [activeTab, setActiveTab] = useState<'docs' | 'traslados-pendientes' | 'kardex' | 'bolsas'>('docs')
+  const [activeTab, setActiveTab] = useState<'docs' | 'kardex' | 'bolsas'>('docs')
   const [documentoVer, setDocumentoVer] = useState<any | null>(null)
-  const [recibirRpDocId, setRecibirRpDocId] = useState('')
   
   // Tab 1 filters
   const [filtroDocTipo, setFiltroDocTipo] = useState<string>('todos')
@@ -493,16 +492,7 @@ export function Movimientos() {
 
   const docDetalles = getDocumentoDetalles(documentoVer)
 
-  // Filter RPs for the destination warehouse's sucursal (inter-branch transfers)
-  const destSucursalId = docDetalles?.extraData?.bodegaDestino?.sucursalId
-  const rpDocs = documentosConfig.filter((d: any) => {
-    if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
-    if (d.sigla !== 'RP') return false
-    if (d.sucursalId && destSucursalId) {
-      return Number(d.sucursalId) === Number(destSucursalId)
-    }
-    return !d.sucursalId
-  })
+
 
   return (
     <div className="space-y-6 relative">
@@ -693,78 +683,16 @@ export function Movimientos() {
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            {doc.tipo === 'TI' && doc.estado === 'EN_TRANSITO' && (
-                              <button
-                                onClick={() => setDocumentoVer(doc)}
-                                className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded text-[10px] transition-colors"
-                              >
-                                Gestionar Recepción
-                              </button>
-                            )}
+                            <button
+                              onClick={() => setDocumentoVer(doc)}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-650 font-semibold rounded text-[10px] transition-all"
+                            >
+                              Ver Comprobante
+                            </button>
                           </td>
                         </tr>
                       )
                     })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB: Traslados Pendientes */}
-      {activeTab === 'traslados-pendientes' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {sortedDocs.filter(d => d.tipo === 'TI' && d.estado === 'EN_TRANSITO').length === 0 ? (
-              <div className="text-center py-16 text-slate-400 text-sm font-semibold">
-                No hay traslados de inventario pendientes de recepción en este momento.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
-                      <th className="text-left px-6 py-4">Documento</th>
-                      <th className="text-left px-6 py-4">Origen / Destino</th>
-                      <th className="text-left px-6 py-4">Fecha de Envío</th>
-                      <th className="text-center px-6 py-4">Estado</th>
-                      <th className="text-right px-6 py-4">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {sortedDocs
-                      .filter(d => d.tipo === 'TI' && d.estado === 'EN_TRANSITO')
-                      .map((doc, idx) => (
-                        <tr key={doc.id + '-pending-' + idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                            <button
-                              onClick={() => setDocumentoVer(doc)}
-                              className="text-indigo-600 hover:text-indigo-850 hover:underline font-bold text-left"
-                            >
-                              {doc.id}
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 text-slate-600 font-medium">{doc.origenDestino}</td>
-                          <td className="px-6 py-4 text-slate-400 font-medium">
-                            {new Date(doc.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="inline-flex font-bold px-2 py-0.5 rounded text-[9px] bg-amber-50 text-amber-700 border border-amber-100">
-                              {doc.estado}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => setDocumentoVer(doc)}
-                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] transition-all shadow-sm"
-                            >
-                              Gestionar Recepción (RP)
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
                   </tbody>
                 </table>
               </div>
@@ -1095,40 +1023,7 @@ export function Movimientos() {
                 </h3>
               </div>
               <div className="flex items-center gap-2">
-                {documentoVer.tipo === 'TI' && documentoVer.estado === 'EN_TRANSITO' && (
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl p-1 bg-white">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-2">Doc. Recepción (RP):</span>
-                    <select
-                      value={recibirRpDocId}
-                      onChange={(e) => setRecibirRpDocId(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold px-2 py-1.5 outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value="">— Seleccionar RP —</option>
-                      {rpDocs.map((d: any) => (
-                        <option key={d.id} value={d.id}>
-                          {d.nombre} ({d.prefijo}) — Folio: {d.consecutivoSiguiente}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => {
-                        if (!recibirRpDocId) {
-                          alert('Por favor seleccione una configuración de documento de recepción (RP) para cruzar.');
-                          return;
-                        }
-                        if (window.confirm(`¿Confirmar la recepción física de los productos del traslado ${documentoVer.id}? Esto ingresará el stock en la bodega de destino.`)) {
-                          handleVerifyTraslado(documentoVer.dbId, Number(recibirRpDocId))
-                          setDocumentoVer(null)
-                          setRecibirRpDocId('')
-                        }
-                      }}
-                      disabled={recibirTrasladoMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 animate-pulse-subtle"
-                    >
-                      {recibirTrasladoMutation.isPending ? 'Procesando...' : 'Confirmar Recepción'}
-                    </button>
-                  </div>
-                )}
+
                 <button
                   onClick={() => {
                     window.print()
