@@ -62,6 +62,8 @@ export function NuevoTrasladoForm() {
   })
 
   const bodegaOrigenObj = bodegas.find((b: any) => String(b.id) === String(bodegaOrigenId))
+  const bodegaDestinoObj = bodegas.find((b: any) => String(b.id) === String(bodegaDestinoId))
+  const sameSucursal = !!(bodegaOrigenObj && bodegaDestinoObj && bodegaOrigenObj.sucursalId === bodegaDestinoObj.sucursalId);
 
   const filteredDocs = documentosConfig.filter((d: any) => {
     if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
@@ -79,7 +81,11 @@ export function NuevoTrasladoForm() {
       qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
       qc.invalidateQueries({ queryKey: ['inv-kpis'] })
-      toast.success('Traslado en tránsito registrado correctamente')
+      toast.success(
+        sameSucursal 
+          ? 'Traslado interno completado y verificado inmediatamente' 
+          : 'Traslado en tránsito registrado correctamente'
+      )
       navigate('/inventario/movimientos')
     },
     onError: (err: any) => {
@@ -101,7 +107,7 @@ export function NuevoTrasladoForm() {
     if (bodegaOrigenId === bodegaDestinoId) {
       return setError('La bodega de origen y destino deben ser diferentes')
     }
-    if (!documentoId) return setError('Seleccione un documento/prefijo')
+    if (!sameSucursal && !documentoId) return setError('Seleccione un documento/prefijo')
     if (!productoSeleccionado) return setError('Seleccione un producto')
     if (!cantidad || parseFloat(cantidad) <= 0) return setError('Ingrese una cantidad válida mayor a 0')
 
@@ -125,7 +131,7 @@ export function NuevoTrasladoForm() {
       notas: observacion.trim(),
       loteNumero: loteNumero || undefined,
       seriales: parsedSeriales,
-      documentoId: Number(documentoId),
+      documentoId: sameSucursal ? undefined : Number(documentoId),
     })
   }
 
@@ -202,24 +208,33 @@ export function NuevoTrasladoForm() {
             </div>
 
             {/* Documento Config */}
-            <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento (Prefijo) *</label>
-              <select
-                value={documentoId}
-                onChange={e => setDocumentoId(e.target.value)}
-                required
-                disabled={!bodegaOrigenId}
-                className={inputCls}
-              >
-                <option value="">— Seleccionar documento —</option>
-                {filteredDocs.map((d: any) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nombre} ({d.prefijo}) — Folio: {d.consecutivoSiguiente}
-                  </option>
-                ))}
-              </select>
-              {!bodegaOrigenId && <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la bodega de origen para filtrar los prefijos habilitados.</p>}
-            </div>
+            {!sameSucursal ? (
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento (Prefijo) *</label>
+                <select
+                  value={documentoId}
+                  onChange={e => setDocumentoId(e.target.value)}
+                  required
+                  disabled={!bodegaOrigenId}
+                  className={inputCls}
+                >
+                  <option value="">— Seleccionar documento —</option>
+                  {filteredDocs.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nombre} ({d.prefijo}) — Folio: {d.consecutivoSiguiente}
+                    </option>
+                  ))}
+                </select>
+                {!bodegaOrigenId && <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la bodega de origen para filtrar los prefijos habilitados.</p>}
+              </div>
+            ) : (
+              <div className="md:col-span-2 bg-indigo-50/50 border border-indigo-100 rounded-xl p-3.5 text-xs text-indigo-800 font-medium">
+                <p className="font-bold flex items-center gap-1.5 mb-1">
+                  <span>ℹ️</span> Traslado Interno Detectado
+                </p>
+                <p>Las bodegas de origen y destino pertenecen al mismo establecimiento/sucursal. El traslado no requiere documento y afectará el inventario de forma inmediata sin pasar por estado de tránsito.</p>
+              </div>
+            )}
 
             {/* Producto */}
             <div className="md:col-span-2">

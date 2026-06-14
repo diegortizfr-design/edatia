@@ -994,6 +994,12 @@ export class MovimientosService {
     if (!bodegaOrigen) throw new NotFoundException('Bodega origen no encontrada');
     if (!bodegaDestino) throw new NotFoundException('Bodega destino no encontrada');
 
+    const sameSucursal = bodegaOrigen.sucursalId === bodegaDestino.sucursalId;
+
+    if (!sameSucursal && !dto.documentoId) {
+      throw new BadRequestException('El documento de traslado es obligatorio para traslados entre diferentes sucursales.');
+    }
+
     // Verificar stock en origen (BC-08: descontar cantidad reservada)
     const stockOrigen = await (this.prisma as any).stock.findUnique({
       where: { productoId_bodegaId: { productoId: dto.productoId, bodegaId: dto.bodegaOrigenId } },
@@ -1017,7 +1023,7 @@ export class MovimientosService {
     return this.prisma.$transaction(async (tx: any) => {
       let numeroSalida = '';
       let documentoConfigId: number | null = null;
-      if (dto.documentoId) {
+      if (!sameSucursal && dto.documentoId) {
         const docConfig = await tx.documentoConfig.findFirst({
           where: { id: dto.documentoId, empresaId },
         });
@@ -1032,8 +1038,10 @@ export class MovimientosService {
           data: { consecutivoSiguiente: { increment: 1 } },
         });
       } else {
-        numeroSalida = await this.generarNumero('MOV', empresaId, tx);
+        const prefijo = sameSucursal ? 'TRI' : 'TR';
+        numeroSalida = await this.generarNumero(prefijo, empresaId, tx);
       }
+
       // Salida de origen
       await tx.stock.update({
         where: { id: stockOrigen.id },
@@ -1042,7 +1050,7 @@ export class MovimientosService {
 
       const saldoOrigen = cantOrigen - dto.cantidad;
 
-      // Procesar Lote
+      // Procesar Lote en origen
       let loteId: number | undefined;
       if (producto.manejaLotes) {
         if (dto.loteNumero) {
@@ -1100,48 +1108,166 @@ export class MovimientosService {
           saldoCpp: cpp,
           usuarioId,
           notas: finalNotas,
-          estado: 'EN_TRANSITO',
+          estado: sameSucursal ? 'RECIBIDO' : 'EN_TRANSITO',
           referenciaTipo: 'Manual',
           documentoConfigId,
         },
       });
 
-      // Procesar seriales: cambiarlos a EN_TRANSITO
-      if (producto.manejaSerial) {
-        if (dto.seriales && dto.seriales.length > 0) {
-          await tx.numeroSerie.updateMany({
-            where: { empresaId, productoId: dto.productoId, serial: { in: dto.seriales } },
-            data: {
-              estado: 'EN_TRANSITO',
-              bodegaId: null,
-              movimientoSalidaId: mov1.id,
-            },
+      if (sameSucursal) {
+        // --- Mismo Establecimiento: Recepción Inmediata Directa ---
+        const stockDestino = await this.getOrCreateStock(dto.productoId, dto.bodegaDestinoId, empresaId, tx);
+        const cantDestinoAnterior = parseFloat(stockDestino.cantidad.toString());
+        const saldoDestino = cantDestinoAnterior + dto.cantidad;
+
+        // Entrada en destino
+        await tx.stock.update({
+          where: { id: stockDestino.id },
+          data: { cantidad: { increment: dto.cantidad } },
+        });
+
+        // Procesar Lote en destino
+        let loteDestinoId: number | undefined;
+        if (producto.manejaLotes && dto.loteNumero) {
+          let loteD = await tx.lote.findFirst({
+            where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaDestinoId, numero: dto.loteNumero },
           });
-        } else {
-          const serialsDisponibles = await tx.numeroSerie.findMany({
-            where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
-            orderBy: { id: 'asc' },
-            take: Math.ceil(dto.cantidad),
-          });
-          const serialIds = serialsDisponibles.map((s: any) => s.id);
-          if (serialIds.length > 0) {
+          if (loteD) {
+            loteD = await tx.lote.update({
+              where: { id: loteD.id },
+              data: {
+                cantidad: { increment: dto.cantidad },
+                cantidadInicial: { increment: dto.cantidad },
+              },
+            });
+          } else {
+            const loteOrigen = await tx.lote.findFirst({
+              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, numero: dto.loteNumero },
+            });
+            loteD = await tx.lote.create({
+              data: {
+                empresaId,
+                productoId: dto.productoId,
+                bodegaId: dto.bodegaDestinoId,
+                numero: dto.loteNumero,
+                cantidadInicial: dto.cantidad,
+                cantidad: dto.cantidad,
+                fechaVencimiento: loteOrigen?.fechaVencimiento ?? null,
+                activo: true,
+              },
+            });
+          }
+          loteDestinoId = loteD.id;
+        }
+
+        // Generar consecutivo para el movimiento de entrada
+        const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+
+        // Crear el movimiento TRASLADO_ENTRADA
+        const mov2 = await tx.movimientoInventario.create({
+          data: {
+            numero: numeroEntrada,
+            empresaId,
+            tipo: 'TRASLADO_ENTRADA',
+            concepto: 'TRASLADO',
+            productoId: dto.productoId,
+            bodegaOrigenId: dto.bodegaOrigenId,
+            bodegaDestinoId: dto.bodegaDestinoId,
+            cantidad: dto.cantidad,
+            costoUnitario: cpp,
+            costoTotal: dto.cantidad * cpp,
+            saldoCantidad: saldoDestino,
+            saldoCostoTotal: saldoDestino * cpp,
+            saldoCpp: cpp,
+            usuarioId,
+            notas: finalNotas,
+            estado: 'RECIBIDO',
+            movimientoParId: mov1.id,
+            referenciaTipo: 'Manual',
+          },
+        });
+
+        // Enlazar mov1 con mov2
+        await tx.movimientoInventario.update({
+          where: { id: mov1.id },
+          data: { movimientoParId: mov2.id },
+        });
+
+        // Procesar seriales en destino: ponerlos como DISPONIBLE en la bodega destino
+        if (producto.manejaSerial) {
+          if (dto.seriales && dto.seriales.length > 0) {
             await tx.numeroSerie.updateMany({
-              where: { id: { in: serialIds } },
+              where: { empresaId, productoId: dto.productoId, serial: { in: dto.seriales } },
+              data: {
+                estado: 'DISPONIBLE',
+                bodegaId: dto.bodegaDestinoId,
+                loteId: loteDestinoId ?? null,
+                movimientoSalidaId: mov1.id,
+                movimientoEntradaId: mov2.id,
+              },
+            });
+          } else {
+            const serialsDisponibles = await tx.numeroSerie.findMany({
+              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
+              orderBy: { id: 'asc' },
+              take: Math.ceil(dto.cantidad),
+            });
+            const serialIds = serialsDisponibles.map((s: any) => s.id);
+            if (serialIds.length > 0) {
+              await tx.numeroSerie.updateMany({
+                where: { id: { in: serialIds } },
+                data: {
+                  estado: 'DISPONIBLE',
+                  bodegaId: dto.bodegaDestinoId,
+                  loteId: loteDestinoId ?? null,
+                  movimientoSalidaId: mov1.id,
+                  movimientoEntradaId: mov2.id,
+                },
+              });
+            }
+          }
+        }
+
+        return { traslado: mov1, movimientos: [mov1, mov2] };
+      } else {
+        // --- Diferente Establecimiento: Flujo en Tránsito ---
+        // Procesar seriales: cambiarlos a EN_TRANSITO
+        if (producto.manejaSerial) {
+          if (dto.seriales && dto.seriales.length > 0) {
+            await tx.numeroSerie.updateMany({
+              where: { empresaId, productoId: dto.productoId, serial: { in: dto.seriales } },
               data: {
                 estado: 'EN_TRANSITO',
                 bodegaId: null,
                 movimientoSalidaId: mov1.id,
               },
             });
+          } else {
+            const serialsDisponibles = await tx.numeroSerie.findMany({
+              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
+              orderBy: { id: 'asc' },
+              take: Math.ceil(dto.cantidad),
+            });
+            const serialIds = serialsDisponibles.map((s: any) => s.id);
+            if (serialIds.length > 0) {
+              await tx.numeroSerie.updateMany({
+                where: { id: { in: serialIds } },
+                data: {
+                  estado: 'EN_TRANSITO',
+                  bodegaId: null,
+                  movimientoSalidaId: mov1.id,
+                },
+              });
+            }
           }
         }
-      }
 
-      return { traslado: mov1, movimientos: [mov1] };
+        return { traslado: mov1, movimientos: [mov1] };
+      }
     });
   }
 
-  async recibirTraslado(id: number, empresaId: number, usuarioId: number) {
+  async recibirTraslado(id: number, empresaId: number, usuarioId: number, documentoId?: number) {
     const mov1 = await (this.prisma as any).movimientoInventario.findFirst({
       where: { id, empresaId, tipo: 'TRASLADO_SALIDA' },
     });
@@ -1153,6 +1279,16 @@ export class MovimientosService {
       throw new BadRequestException(
         'Este traslado no tiene bodega destino definida y no puede ser recibido. Contacte al administrador.'
       );
+    }
+
+    const [bodegaOrigen, bodegaDestino] = await Promise.all([
+      (this.prisma as any).bodega.findFirst({ where: { id: mov1.bodegaOrigenId, empresaId } }),
+      (this.prisma as any).bodega.findFirst({ where: { id: mov1.bodegaDestinoId, empresaId } }),
+    ]);
+    const sameSucursal = bodegaOrigen?.sucursalId === bodegaDestino?.sucursalId;
+
+    if (!sameSucursal && !documentoId) {
+      throw new BadRequestException('El documento de recepción (RP) es obligatorio para recibir traslados entre sucursales.');
     }
 
     const producto = await this.getProducto(mov1.productoId, empresaId);
@@ -1223,7 +1359,25 @@ export class MovimientosService {
       }
 
       // Generar consecutivo para el movimiento de entrada
-      const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+      let numeroEntrada = '';
+      let documentoConfigId: number | null = null;
+      if (!sameSucursal && documentoId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: documentoId, empresaId },
+        });
+        if (!docConfig) {
+          throw new BadRequestException('El documento de configuración de recepción no existe');
+        }
+        numeroEntrada = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        documentoConfigId = docConfig.id;
+
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+      }
 
       // Crear el movimiento TRASLADO_ENTRADA
       const mov2 = await tx.movimientoInventario.create({
@@ -1246,6 +1400,7 @@ export class MovimientosService {
           estado: 'RECIBIDO',
           movimientoParId: mov1.id,
           referenciaTipo: 'Manual',
+          documentoConfigId,
         },
       });
 

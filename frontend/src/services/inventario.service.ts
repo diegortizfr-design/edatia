@@ -307,5 +307,5 @@ export const createFacturaCompra = (data: any) =>
 export const deleteFacturaCompra = (id: number) =>
   api.delete(`/inventario/facturas-compra/${id}`).then(r => r.data)
 
-export const recibirTraslado = (id: number) =>
-  api.post(`/inventario/movimientos/${id}/recibir-traslado`).then(r => r.data)
+export const recibirTraslado = (id: number, documentoId?: number) =>
+  api.post(`/inventario/movimientos/${id}/recibir-traslado`, { documentoId }).then(r => r.data)

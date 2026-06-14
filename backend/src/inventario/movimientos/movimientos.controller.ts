@@ -60,8 +60,12 @@ export class MovimientosController {
   }
 
   @Post(':id/recibir-traslado')
-  recibirTraslado(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
-    return this.svc.recibirTraslado(id, user.empresaId!, user.sub);
+  recibirTraslado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { documentoId?: number },
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.recibirTraslado(id, user.empresaId!, user.sub, body.documentoId);
   }
 
   @Post('devolucion-proveedor')
