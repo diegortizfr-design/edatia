@@ -64,6 +64,7 @@ export function NuevoAjusteForm() {
 
   const filteredDocs = documentosConfig.filter((d: any) => {
     if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+    if (d.sigla !== 'AI') return false
     if (d.sucursalId && bodegaSeleccionadaObj) {
       return Number(d.sucursalId) === Number(bodegaSeleccionadaObj.sucursalId)
     }

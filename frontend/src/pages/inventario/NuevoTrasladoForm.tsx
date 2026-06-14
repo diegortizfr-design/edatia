@@ -65,6 +65,7 @@ export function NuevoTrasladoForm() {
 
   const filteredDocs = documentosConfig.filter((d: any) => {
     if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+    if (d.sigla !== 'TI') return false
     if (d.sucursalId && bodegaOrigenObj) {
       return Number(d.sucursalId) === Number(bodegaOrigenObj.sucursalId)
     }
