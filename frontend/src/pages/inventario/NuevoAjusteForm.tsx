@@ -154,7 +154,6 @@ export function NuevoAjusteForm() {
       productoId: productoSeleccionado.id,
       bodegaId: Number(bodegaId),
       cantidad: tipo === 'AINE' ? parseFloat(cantidad) : -parseFloat(cantidad),
-      notes: observacion.trim(), // backend maps notes/notas
       notas: observacion.trim(),
       loteNumero: loteNumero || undefined,
       fechaVencimiento: fechaVencimiento || undefined,
