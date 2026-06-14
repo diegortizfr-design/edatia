@@ -29,7 +29,16 @@ export function Bodegas() {
       setForm({ codigo: '', nombre: '', tipo: 'ALMACEN', sucursalId: '', esPrincipal: false })
       setError(null)
     },
-    onError: (err: any) => setError(err.response?.data?.message ?? 'Error al guardar'),
+    onError: (err: any) => {
+      const msg = err.response?.data?.message
+      if (typeof msg === 'string') {
+        setError(msg)
+      } else if (Array.isArray(msg)) {
+        setError(msg.join(', '))
+      } else {
+        setError('Error al guardar la bodega. Por favor verifica que las migraciones de base de datos hayan sido aplicadas en el servidor.')
+      }
+    },
   })
 
   function openEdit(b: any) {
@@ -95,7 +104,7 @@ export function Bodegas() {
 
       {/* Form Card */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 max-w-3xl animate-in fade-in slide-in-from-top-4 duration-200">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 w-full animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-bold text-slate-800 text-base">{editing ? 'Editar Bodega' : 'Crear Nueva Bodega'}</h2>
             <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors">
@@ -110,7 +119,7 @@ export function Bodegas() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Código *</label>
               <input 
@@ -155,7 +164,7 @@ export function Bodegas() {
                 ))}
               </select>
             </div>
-            <div className="sm:col-span-2 pt-2">
+            <div className="sm:col-span-2 lg:col-span-4 pt-2">
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input 
                   type="checkbox" 
@@ -166,7 +175,7 @@ export function Bodegas() {
                 <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-800 transition-colors">Marcar como bodega principal de despacho</span>
               </label>
             </div>
-            <div className="sm:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
+            <div className="sm:col-span-2 lg:col-span-4 flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
               <button 
                 type="button" 
                 onClick={() => setShowForm(false)} 
@@ -176,11 +185,11 @@ export function Bodegas() {
               </button>
               <button 
                 type="submit" 
-                disabled={mutation.isPending} 
+                disabled={mutation.isLoading} 
                 className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all shadow-sm shadow-indigo-600/10"
               >
                 <Check size={14} />
-                {mutation.isPending ? 'Guardando...' : 'Guardar Bodega'}
+                {mutation.isLoading ? 'Guardando...' : 'Guardar Bodega'}
               </button>
             </div>
           </form>
