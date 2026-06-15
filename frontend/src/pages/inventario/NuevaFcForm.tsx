@@ -299,12 +299,13 @@ export function NuevaFcForm() {
                 <select 
                   value={ordenCompraId} 
                   onChange={e => handleSelectOC(e.target.value)} 
-                  className={inputCls}
+                  className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+                  disabled={!!queryOcId}
                 >
                   <option value="">— Ninguna (Compra directa sin OC) —</option>
                   {ocs.filter((o: any) => ['APROBADA', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(o.estado)).map((o: any) => (
                     <option key={o.id} value={o.id}>
-                      {o.numero} ({o.proveedor?.nombre})
+                       {o.numero} ({o.proveedor?.nombre})
                     </option>
                   ))}
                 </select>
@@ -315,7 +316,8 @@ export function NuevaFcForm() {
                 <select 
                   value={recepcionId} 
                   onChange={e => handleSelectRP(e.target.value)} 
-                  className={inputCls}
+                  className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+                  disabled={!!queryOcId}
                 >
                   <option value="">— Ninguna (Crear compra directa sin RP) —</option>
                   {recepcionesDisponibles.map(r => (
@@ -359,7 +361,8 @@ export function NuevaFcForm() {
                   value={proveedorId} 
                   onChange={e => setProveedorId(e.target.value)} 
                   required 
-                  className={inputCls}
+                  className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+                  disabled={!!queryOcId}
                 >
                   <option value="">— Seleccionar proveedor —</option>
                   {proveedores.filter(p => p.activo).map(p => (
@@ -368,13 +371,15 @@ export function NuevaFcForm() {
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 whitespace-nowrap"
-                >
-                  Crear Proveedor
-                </button>
+                {!queryOcId && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/configuracion/terceros/nuevo?role=proveedor')}
+                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 whitespace-nowrap"
+                  >
+                    Crear Proveedor
+                  </button>
+                )}
               </div>
             </div>
 
