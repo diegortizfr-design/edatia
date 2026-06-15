@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { OrdenesCompraService } from './ordenes-compra.service';
-import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto } from './dto/orden-compra.dto';
+import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto, AprobarOrdenCompraDto, RechazarOrdenCompraDto } from './dto/orden-compra.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
 
@@ -37,8 +37,21 @@ export class OrdenesCompraController {
   }
 
   @Post(':id/aprobar')
-  aprobar(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
-    return this.svc.aprobar(id, user.empresaId!);
+  aprobar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AprobarOrdenCompraDto,
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.aprobar(id, dto, user.empresaId!, user.sub);
+  }
+
+  @Post(':id/rechazar')
+  rechazar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RechazarOrdenCompraDto,
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.rechazar(id, dto, user.empresaId!, user.sub);
   }
 
   @Post(':id/anular')

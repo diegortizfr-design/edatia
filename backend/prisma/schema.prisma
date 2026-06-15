@@ -30,6 +30,9 @@ model User {
   loginBloqueadoHasta        DateTime? // null = no bloqueado
   refreshTokenHash           String?   @db.VarChar(128)
   refreshTokenExpiry         DateTime?
+
+  ordenesAprobadas          OrdenCompra[] @relation("OCAprobadoPor")
+  ordenesRechazadas         OrdenCompra[] @relation("OCRechazadoPor")
 }
 
 model Profile {
@@ -225,6 +228,7 @@ model DocumentoConfig {
   updatedAt             DateTime @updatedAt
 
   movimientosInventario MovimientoInventario[]
+  ordenesCompra         OrdenCompra[]
 
   @@unique([empresaId, prefijo])
   @@index([empresaId])
@@ -994,6 +998,9 @@ model FacturaCompra {
   notas                 String?
   estado                String        @default("REGISTRADA")
 
+  ordenCompraId         Int?
+  ordenCompra           OrdenCompra?  @relation(fields: [ordenCompraId], references: [id])
+
   items                 FacturaCompraItem[]
 
   createdAt             DateTime      @default(now())
@@ -1021,6 +1028,9 @@ model OrdenCompra {
   empresaId   Int
   empresa     Empresa  @relation(fields: [empresaId], references: [id])
 
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+
   numero      String   @unique
   proveedorId Int
   proveedor   Tercero   @relation(fields: [proveedorId], references: [id])
@@ -1041,8 +1051,20 @@ model OrdenCompra {
   usuarioId   Int?
   notas       String?
 
+  // Auditoría del flujo de aprobación/rechazo vinculada a User
+  aprobadoPorId         Int?
+  aprobadoPor           User?            @relation("OCAprobadoPor", fields: [aprobadoPorId], references: [id])
+  fechaAprobacion       DateTime?
+  notasAprobacion       String?
+
+  rechazadoPorId        Int?
+  rechazadoPor          User?            @relation("OCRechazadoPor", fields: [rechazadoPorId], references: [id])
+  fechaRechazo          DateTime?
+  notasRechazo          String?
+
   items       OrdenCompraItem[]
   recepciones RecepcionMercancia[]
+  facturas    FacturaCompra[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1083,6 +1105,8 @@ model RecepcionMercancia {
   fecha         DateTime    @default(now())
   usuarioId     Int?
   notas         String?
+
+  inventarioAfectado Boolean      @default(false)
 
   items         RecepcionItem[]
 

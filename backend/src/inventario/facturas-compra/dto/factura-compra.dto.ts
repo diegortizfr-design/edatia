@@ -46,6 +46,9 @@ export class CreateFacturaCompraDto {
   @IsOptional() @IsString()
   xmlAdjunto?: string;
 
+  @IsOptional() @IsInt()
+  ordenCompraId?: number;
+
   @IsOptional() @IsString()
   recepcionId?: string;
 

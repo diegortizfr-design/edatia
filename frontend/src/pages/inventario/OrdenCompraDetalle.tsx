@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  getOrdenCompra, aprobarOrdenCompra, anularOrdenCompra, recibirOrdenCompra,
+  getOrdenCompra, aprobarOrdenCompra, rechazarOrdenCompra, anularOrdenCompra, recibirOrdenCompra,
 } from '../../services/inventario.service'
-import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText } from 'lucide-react'
 
 const ESTADOS: Record<string, { label: string; color: string }> = {
   BORRADOR:         { label: 'Borrador',    color: 'bg-slate-100 text-slate-600' },
-  APROBADA:         { label: 'Aprobada',    color: 'bg-blue-100 text-blue-700' },
+  APROBADA:         { label: 'Aprobada',    color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  RECHAZADA:        { label: 'Rechazada',   color: 'bg-rose-100 text-rose-700 border-rose-200' },
   ENVIADA:          { label: 'Enviada',     color: 'bg-indigo-100 text-indigo-700' },
   RECIBIDA_PARCIAL: { label: 'Parcial',     color: 'bg-amber-100 text-amber-700' },
   RECIBIDA:         { label: 'Recibida',    color: 'bg-green-100 text-green-700' },
@@ -34,15 +35,38 @@ export function OrdenCompraDetalle() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [showRecepciones, setShowRecepciones] = useState(false)
 
+  // Modals state
+  const [showAprobarModal, setShowAprobarModal] = useState(false)
+  const [showRechazarModal, setShowRechazarModal] = useState(false)
+  const [notasAprobacion, setNotasAprobacion] = useState('')
+  const [notasRechazo, setNotasRechazo] = useState('')
+  const [showPrintPreview, setShowPrintPreview] = useState(false)
+
   const { data: oc, isLoading } = useQuery({
     queryKey: ['orden-compra', id],
     queryFn: () => getOrdenCompra(Number(id)),
   })
 
   const aprobar = useMutation({
-    mutationFn: () => aprobarOrdenCompra(Number(id)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orden-compra', id] }); qc.invalidateQueries({ queryKey: ['ordenes-compra'] }) },
+    mutationFn: (data: { notasAprobacion?: string }) => aprobarOrdenCompra(Number(id), data),
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['orden-compra', id] }); 
+      qc.invalidateQueries({ queryKey: ['ordenes-compra'] });
+      setShowAprobarModal(false);
+      setNotasAprobacion('');
+    },
     onError: (err: any) => setError(err.response?.data?.message ?? 'Error al aprobar'),
+  })
+
+  const rechazar = useMutation({
+    mutationFn: (data: { notasRechazo?: string }) => rechazarOrdenCompra(Number(id), data),
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['orden-compra', id] }); 
+      qc.invalidateQueries({ queryKey: ['ordenes-compra'] });
+      setShowRechazarModal(false);
+      setNotasRechazo('');
+    },
+    onError: (err: any) => setError(err.response?.data?.message ?? 'Error al rechazar'),
   })
 
   const anular = useMutation({
@@ -123,7 +147,8 @@ export function OrdenCompraDetalle() {
   const puedeRecibir = ['APROBADA', 'RECIBIDA_PARCIAL'].includes(oc.estado)
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
+    <>
+      <div className="max-w-5xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -142,22 +167,34 @@ export function OrdenCompraDetalle() {
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 animate-fade-in">
           {puedeAprobar && (
-            <button onClick={() => aprobar.mutate()} disabled={aprobar.isPending}
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              <CheckCircle size={15} /> {aprobar.isPending ? 'Aprobando...' : 'Aprobar'}
+            <>
+              <button onClick={() => setShowAprobarModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95">
+                <CheckCircle size={15} /> Aprobar
+              </button>
+              <button onClick={() => setShowRechazarModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded-xl text-sm font-bold transition-all active:scale-95">
+                <XCircle size={15} /> Rechazar
+              </button>
+            </>
+          )}
+          {['APROBADA', 'ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(oc.estado) && (
+            <button onClick={() => setShowPrintPreview(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-bold transition-all active:scale-95">
+              <Printer size={15} /> Formato Gráfico
             </button>
           )}
           {puedeRecibir && (
             <button onClick={() => setShowRecepcion(!showRecepcion)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 active:scale-95">
               <Package size={15} /> Recibir mercancía
             </button>
           )}
           {puedeAnular && (
             <button onClick={() => { if (confirm('¿Seguro que deseas anular esta OC?')) anular.mutate() }} disabled={anular.isPending}
-              className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50">
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-slate-700 transition-all disabled:opacity-50">
               <XCircle size={15} /> Anular
             </button>
           )}
@@ -350,6 +387,50 @@ export function OrdenCompraDetalle() {
               )}
             </div>
           </div>
+
+          {/* Auditoría Aprobación/Rechazo */}
+          {(oc.aprobadoPor || oc.rechazadoPor) && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 animate-fade-in">
+              <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <CheckCircle size={14} className={oc.estado === 'RECHAZADA' ? 'text-rose-600' : 'text-indigo-600'} />
+                Auditoría de Estado
+              </h3>
+              <div className="space-y-2 text-xs">
+                {oc.aprobadoPor && (
+                  <div className="space-y-1">
+                    <p className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Aprobación</p>
+                    <p className="text-slate-700">
+                      <strong>Por:</strong> {oc.aprobadoPor.nombre || oc.aprobadoPor.usuario}
+                    </p>
+                    <p className="text-slate-500">
+                      <strong>Fecha:</strong> {new Date(oc.fechaAprobacion).toLocaleDateString('es-CO')} {new Date(oc.fechaAprobacion).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {oc.notasAprobacion && (
+                      <p className="text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 mt-1 italic">
+                        "{oc.notasAprobacion}"
+                      </p>
+                    )}
+                  </div>
+                )}
+                {oc.rechazadoPor && (
+                  <div className="space-y-1">
+                    <p className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Rechazo</p>
+                    <p className="text-slate-700">
+                      <strong>Por:</strong> {oc.rechazadoPor.nombre || oc.rechazadoPor.usuario}
+                    </p>
+                    <p className="text-slate-500">
+                      <strong>Fecha:</strong> {new Date(oc.fechaRechazo).toLocaleDateString('es-CO')} {new Date(oc.fechaRechazo).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {oc.notasRechazo && (
+                      <p className="text-slate-600 bg-rose-50/50 p-2 rounded-lg border border-rose-100 mt-1 italic">
+                        "{oc.notasRechazo}"
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -387,5 +468,255 @@ export function OrdenCompraDetalle() {
         </div>
       )}
     </div>
+
+      {/* Modal de Aprobación */}
+      {showAprobarModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-scale-in">
+            <div>
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <CheckCircle className="text-indigo-600" size={18} />
+                Aprobar Orden de Compra
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">La orden se marcará como APROBADA y quedará disponible para recibir mercancía y facturar.</p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Observación / Notas de Aprobación</label>
+                <textarea
+                  value={notasAprobacion}
+                  onChange={e => setNotasAprobacion(e.target.value)}
+                  placeholder="Escribe comentarios u observaciones sobre la aprobación..."
+                  className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none outline-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => { setShowAprobarModal(false); setNotasAprobacion('') }}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => aprobar.mutate({ notasAprobacion })}
+                disabled={aprobar.isPending}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+              >
+                {aprobar.isPending ? 'Aprobando...' : 'Confirmar Aprobación'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Rechazo */}
+      {showRechazarModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-scale-in">
+            <div>
+              <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
+                <XCircle size={18} />
+                Rechazar Orden de Compra
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">La orden se marcará como RECHAZADA. Deberás justificar el motivo del rechazo.</p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Justificación / Notas de Rechazo *</label>
+                <textarea
+                  value={notasRechazo}
+                  onChange={e => setNotasRechazo(e.target.value)}
+                  placeholder="Por favor, escribe detalladamente el motivo del rechazo..."
+                  className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none outline-none"
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => { setShowRechazarModal(false); setNotasRechazo('') }}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!notasRechazo.trim()) return alert('Debes justificar el rechazo')
+                  rechazar.mutate({ notasRechazo })
+                }}
+                disabled={rechazar.isPending}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+              >
+                {rechazar.isPending ? 'Rechazando...' : 'Confirmar Rechazo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vista de Impresión / Formato Gráfico (Voucher) */}
+      {showPrintPreview && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col justify-start items-center overflow-y-auto z-50 p-4 md:p-8 select-text">
+          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-4">
+            
+            {/* Modal Actions Bar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0 print:hidden">
+              <div className="flex items-center gap-2">
+                <FileText className="text-indigo-600" size={18} />
+                <h3 className="font-extrabold text-slate-800 text-sm">
+                  Formato Gráfico de Orden de Compra (OC)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                >
+                  <Printer size={14} /> Imprimir / PDF
+                </button>
+                <button
+                  onClick={() => setShowPrintPreview(false)}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Area */}
+            <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
+              
+              {/* Header Grid */}
+              <div className="flex justify-between items-start border-b border-slate-200 pb-6">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-indigo-700">EDATIA S.A.S</h2>
+                  <p className="text-xs text-slate-500">NIT: 900.123.456-7 · Régimen Común</p>
+                  <p className="text-xs text-slate-400">Teléfono: (601) 555-0199 · info@edatia.com</p>
+                </div>
+                <div className="text-right space-y-1">
+                  <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-xs font-bold inline-block border border-indigo-150">
+                    ORDEN DE COMPRA
+                  </div>
+                  <h1 className="text-xl font-bold font-mono text-slate-800 mt-1">{oc.numero}</h1>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Documento Oficial</p>
+                </div>
+              </div>
+
+              {/* Informative Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-b border-slate-100 pb-6">
+                <div>
+                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">PROVEEDOR</h4>
+                  <div className="space-y-1 text-slate-600">
+                    <p className="font-bold text-slate-800 text-sm">{oc.proveedor?.nombre}</p>
+                    {oc.proveedor?.nombreComercial && <p className="italic text-xs">({oc.proveedor.nombreComercial})</p>}
+                    <p>Nit: {oc.proveedor?.numeroDocumento || 'N/A'}</p>
+                    <p>Correo: {oc.proveedor?.email || 'N/A'}</p>
+                    <p>Teléfono: {oc.proveedor?.telefono || 'N/A'}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">DETALLE DE ENTREGA</h4>
+                  <div className="space-y-1 text-slate-600">
+                    <p><strong>Bodega Destino:</strong> {oc.bodega?.nombre} ({oc.bodega?.codigo})</p>
+                    <p><strong>Fecha Emisión:</strong> {new Date(oc.fechaEmision).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    {oc.fechaEsperada && (
+                      <p><strong>Fecha Esperada:</strong> {new Date(oc.fechaEsperada).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    )}
+                    <p><strong>Estado OC:</strong> <span className="font-bold uppercase text-indigo-600">{oc.estado}</span></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Detalle de Productos Solicitados</h4>
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-y border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+                      <th className="py-2.5 px-2 text-left">SKU</th>
+                      <th className="py-2.5 px-2 text-left">Descripción del Producto</th>
+                      <th className="py-2.5 px-2 text-right">Cant.</th>
+                      <th className="py-2.5 px-2 text-right">Costo Unitario</th>
+                      <th className="py-2.5 px-2 text-right">Dcto. %</th>
+                      <th className="py-2.5 px-2 text-right">IVA %</th>
+                      <th className="py-2.5 px-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {oc.items.map((item: any) => {
+                      const cant = parseFloat(String(item.cantidad))
+                      const costo = parseFloat(String(item.costoUnitario))
+                      const dcto = parseFloat(String(item.descuentoPct || 0))
+                      const tasaIva = item.producto?.tipoIva === 'GRAVADO_19' ? 19 : item.producto?.tipoIva === 'GRAVADO_5' ? 5 : 0
+                      return (
+                        <tr key={item.id} className="text-slate-700">
+                          <td className="py-3 px-2 font-mono text-slate-500">{item.producto?.sku}</td>
+                          <td className="py-3 px-2 font-semibold text-slate-800">{item.producto?.nombre}</td>
+                          <td className="py-3 px-2 text-right">{cant.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right">{fmt(costo)}</td>
+                          <td className="py-3 px-2 text-right">{dcto > 0 ? `${dcto.toFixed(1)}%` : '0%'}</td>
+                          <td className="py-3 px-2 text-right">{tasaIva}%</td>
+                          <td className="py-3 px-2 text-right font-semibold text-slate-900">{fmt(Number(item.total))}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Totals Block */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-200">
+                <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl space-y-1">
+                  <h5 className="font-bold text-slate-400 uppercase tracking-widest text-[9px] mb-1">Notas / Observaciones</h5>
+                  <p className="italic">{oc.notas || 'Sin observaciones adicionales en esta orden de compra.'}</p>
+                </div>
+                <div className="space-y-1.5 text-xs text-slate-600 ml-auto w-full max-w-xs">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{fmt(Number(oc.subtotal))}</span>
+                  </div>
+                  {Number(oc.descuento) > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Descuento:</span>
+                      <span>-{fmt(Number(oc.descuento))}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>IVA liquidado:</span>
+                    <span>{fmt(Number(oc.iva))}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-slate-900 text-sm border-t border-slate-200 pt-2">
+                    <span>Total Orden:</span>
+                    <span>{fmt(Number(oc.total))}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signatures / Audit Log */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-16 border-t border-slate-100 text-center text-xs text-slate-500">
+                <div className="space-y-2 border-t border-dashed border-slate-300 pt-4 max-w-xs mx-auto w-full">
+                  <p className="font-bold text-slate-700">Autorizado Por (Gerencia/Auditoría)</p>
+                  <p className="text-[10px] text-slate-400">Usuario: {oc.aprobadoPor?.nombre || oc.aprobadoPor?.usuario || 'N/A'}</p>
+                  <p className="text-[10px] text-slate-400">Fecha: {oc.fechaAprobacion ? new Date(oc.fechaAprobacion).toLocaleString('es-CO') : 'N/A'}</p>
+                </div>
+                <div className="space-y-2 border-t border-dashed border-slate-300 pt-4 max-w-xs mx-auto w-full">
+                  <p className="font-bold text-slate-700">Firma Recibido / Proveedor</p>
+                  <p className="text-[10px] text-slate-400">Nombre:</p>
+                  <p className="text-[10px] text-slate-400">Fecha aceptación:</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

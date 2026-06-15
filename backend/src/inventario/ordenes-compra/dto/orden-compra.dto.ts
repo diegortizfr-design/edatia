@@ -16,6 +16,9 @@ export class CreateOrdenCompraItemDto {
 }
 
 export class CreateOrdenCompraDto {
+  @IsOptional() @IsInt()
+  documentoConfigId?: number;
+
   @IsInt()
   proveedorId!: number;
 
@@ -30,6 +33,16 @@ export class CreateOrdenCompraDto {
 
   @IsArray() @ValidateNested({ each: true }) @Type(() => CreateOrdenCompraItemDto)
   items!: CreateOrdenCompraItemDto[];
+}
+
+export class AprobarOrdenCompraDto {
+  @IsOptional() @IsString()
+  notasAprobacion?: string;
+}
+
+export class RechazarOrdenCompraDto {
+  @IsOptional() @IsString()
+  notasRechazo?: string;
 }
 
 export class UpdateOrdenCompraDto {

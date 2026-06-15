@@ -30,6 +30,7 @@ export class FacturasCompraService {
       include: {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
+        ordenCompra: { select: { id: true, numero: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -41,6 +42,7 @@ export class FacturasCompraService {
       include: {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
+        ordenCompra: { select: { id: true, numero: true } },
       },
     });
     if (!fc) throw new NotFoundException('Factura de compra no encontrada');
@@ -85,6 +87,7 @@ export class FacturasCompraService {
           prefijoProveedor: dto.prefijoProveedor,
           consecutivoProveedor: dto.consecutivoProveedor,
           proveedorId: dto.proveedorId,
+          ordenCompraId: dto.ordenCompraId,
           fechaEmision: new Date(dto.fechaEmision),
           fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
           subtotal: dto.subtotal,
@@ -105,6 +108,102 @@ export class FacturasCompraService {
           } : undefined
         },
       });
+
+      // If we are crossing with a reception (RP)
+      if (dto.recepcionId) {
+        const recepcion = await tx.recepcionMercancia.findFirst({
+          where: { numero: dto.recepcionId, empresaId },
+          include: { 
+            items: { 
+              include: { 
+                ordenCompraItem: true 
+              } 
+            },
+            ordenCompra: true
+          }
+        });
+
+        if (recepcion && !recepcion.inventarioAfectado) {
+          const year = new Date().getFullYear();
+          
+          // For each item in the physical reception, update stock, CPP, and create Kardex entry
+          for (const ri of recepcion.items) {
+            const ocItem = ri.ordenCompraItem;
+            const productoId = ocItem.productoId;
+            const bodegaId = recepcion.ordenCompra.bodegaId;
+            const costoUnitario = Number(ri.costoUnitario);
+            const cantNueva = Number(ri.cantidadRecibida);
+
+            const producto = await tx.producto.findUnique({ where: { id: productoId } });
+            if (!producto) throw new NotFoundException(`Producto ${productoId} no encontrado`);
+
+            // Check stock
+            let stock = await tx.stock.findUnique({
+              where: { productoId_bodegaId: { productoId, bodegaId } },
+            });
+            if (!stock) {
+              stock = await tx.stock.create({
+                data: { productoId, bodegaId, empresaId, cantidad: 0, cantidadReservada: 0 },
+              });
+            }
+
+            const cantAnterior = parseFloat(stock.cantidad.toString());
+            const cppAnterior = parseFloat(producto.costoPromedio.toString());
+            const cantTotal = cantAnterior + cantNueva;
+
+            // Recalcular CPP
+            const nuevoCPP = cantTotal > 0
+              ? (cantAnterior * cppAnterior + cantNueva * costoUnitario) / cantTotal
+              : costoUnitario;
+
+            // Actualizar stock
+            await tx.stock.update({
+              where: { productoId_bodegaId: { productoId, bodegaId } },
+              data: { cantidad: { increment: cantNueva } },
+            });
+
+            // Actualizar CPP
+            await tx.producto.update({
+              where: { id: productoId },
+              data: { costoPromedio: nuevoCPP },
+            });
+
+            // Generar número de movimiento
+            const movCount = await tx.movimientoInventario.count({
+              where: { empresaId, numero: { startsWith: `MOV-${year}-` } },
+            });
+            const numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
+
+            // Crear movimiento en el kardex
+            await tx.movimientoInventario.create({
+              data: {
+                numero: numMov,
+                empresaId,
+                tipo: 'ENTRADA',
+                concepto: 'COMPRA',
+                productoId,
+                bodegaDestinoId: bodegaId,
+                cantidad: cantNueva,
+                costoUnitario,
+                costoTotal: cantNueva * costoUnitario,
+                saldoCantidad: cantTotal,
+                saldoCostoTotal: cantTotal * nuevoCPP,
+                saldoCpp: nuevoCPP,
+                usuarioId,
+                referenciaId: String(recepcion.ordenCompraId),
+                referenciaTipo: 'OrdenCompra',
+                notas: `Cruce FC ${numero} con Recepción ${recepcion.numero}`,
+              },
+            });
+          }
+
+          // Mark reception as inventory affected
+          await tx.recepcionMercancia.update({
+            where: { id: recepcion.id },
+            data: { inventarioAfectado: true },
+          });
+        }
+      }
 
       // 2. Causación Contable Automatizada (PUC 1435 vs 2205)
       // Resolver cuenta de inventario desde la clasificación contable o el grupo de los productos de la factura

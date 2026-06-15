@@ -222,8 +222,10 @@ export const createOrdenCompra = (data: any) =>
   api.post('/inventario/ordenes-compra', data).then(r => r.data)
 export const updateOrdenCompra = (id: number, data: any) =>
   api.patch(`/inventario/ordenes-compra/${id}`, data).then(r => r.data)
-export const aprobarOrdenCompra = (id: number) =>
-  api.post(`/inventario/ordenes-compra/${id}/aprobar`).then(r => r.data)
+export const aprobarOrdenCompra = (id: number, data: { notasAprobacion?: string }) =>
+  api.post(`/inventario/ordenes-compra/${id}/aprobar`, data).then(r => r.data)
+export const rechazarOrdenCompra = (id: number, data: { notasRechazo?: string }) =>
+  api.post(`/inventario/ordenes-compra/${id}/rechazar`, data).then(r => r.data)
 export const anularOrdenCompra = (id: number) =>
   api.post(`/inventario/ordenes-compra/${id}/anular`).then(r => r.data)
 export const recibirOrdenCompra = (id: number, data: any) =>

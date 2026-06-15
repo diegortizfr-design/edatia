@@ -2,18 +2,21 @@ import {
   Injectable, NotFoundException, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto } from './dto/orden-compra.dto';
+import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto, AprobarOrdenCompraDto, RechazarOrdenCompraDto } from './dto/orden-compra.dto';
 
 const OC_INCLUDE = {
   proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } },
   bodega: { select: { id: true, nombre: true, codigo: true } },
+  documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+  aprobadoPor: { select: { id: true, nombre: true, usuario: true } },
+  rechazadoPor: { select: { id: true, nombre: true, usuario: true } },
   items: {
     include: {
-      producto: { select: { id: true, nombre: true, sku: true, costoPromedio: true, unidadMedida: { select: { abreviatura: true } } } },
+      producto: { select: { id: true, nombre: true, sku: true, costoPromedio: true, tipoIva: true, unidadMedida: { select: { abreviatura: true } } } },
     },
   },
   recepciones: {
-    include: { items: { include: { ordenCompraItem: { include: { producto: { select: { nombre: true, sku: true } } } } } } },
+    include: { items: { include: { ordenCompraItem: { include: { producto: { select: { id: true, nombre: true, sku: true, tipoIva: true } } } } } } },
     orderBy: { createdAt: 'desc' as const },
   },
 };
@@ -138,11 +141,28 @@ export class OrdenesCompraService {
     const totalesOC = this.calcularTotalesOC(itemsCalculados);
 
     return this.prisma.$transaction(async (tx: any) => {
-      const numero = await this.generarNumeroOC(empresaId, tx);
+      let numero: string;
+      if (dto.documentoConfigId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoConfigId, empresaId, sigla: 'OC' },
+        });
+        if (!docConfig) {
+          throw new NotFoundException('Resolución de documento de orden de compra no encontrada');
+        }
+        numero = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numero = await this.generarNumeroOC(empresaId, tx);
+      }
+
       return tx.ordenCompra.create({
         data: {
           numero,
           empresaId,
+          documentoConfigId: dto.documentoConfigId,
           proveedorId: dto.proveedorId,
           bodegaId: dto.bodegaId,
           fechaEsperada: dto.fechaEsperada ? new Date(dto.fechaEsperada) : undefined,
@@ -240,14 +260,36 @@ export class OrdenesCompraService {
 
   // ── Transiciones de estado ────────────────────────────────────────────────
 
-  async aprobar(id: number, empresaId: number) {
+  async aprobar(id: number, dto: AprobarOrdenCompraDto, empresaId: number, usuarioId: number) {
     const oc = await this.findOne(id, empresaId);
     if (oc.estado !== 'BORRADOR') {
       throw new BadRequestException(`No se puede aprobar una orden en estado ${oc.estado}`);
     }
     return (this.prisma as any).ordenCompra.update({
       where: { id },
-      data: { estado: 'APROBADA' },
+      data: {
+        estado: 'APROBADA',
+        aprobadoPorId: usuarioId,
+        fechaAprobacion: new Date(),
+        notasAprobacion: dto.notasAprobacion || null,
+      },
+      include: OC_INCLUDE,
+    });
+  }
+
+  async rechazar(id: number, dto: RechazarOrdenCompraDto, empresaId: number, usuarioId: number) {
+    const oc = await this.findOne(id, empresaId);
+    if (oc.estado !== 'BORRADOR') {
+      throw new BadRequestException(`No se puede rechazar una orden en estado ${oc.estado}`);
+    }
+    return (this.prisma as any).ordenCompra.update({
+      where: { id },
+      data: {
+        estado: 'RECHAZADA',
+        rechazadoPorId: usuarioId,
+        fechaRechazo: new Date(),
+        notasRechazo: dto.notasRechazo || null,
+      },
       include: OC_INCLUDE,
     });
   }
@@ -294,6 +336,14 @@ export class OrdenesCompraService {
 
     return this.prisma.$transaction(async (tx: any) => {
       const numeroRec = await this.generarNumeroREC(empresaId, tx);
+
+      // Check if there is an uncrossed FacturaCompra for this OC
+      const fc = await tx.facturaCompra.findFirst({
+        where: { ordenCompraId: id, recepcionId: null, empresaId },
+      });
+
+      const inventarioAfectado = !!fc;
+
       // 1. Crear la recepción con sus ítems
       const recepcion = await tx.recepcionMercancia.create({
         data: {
@@ -302,6 +352,7 @@ export class OrdenesCompraService {
           ordenCompraId: id,
           usuarioId,
           notas: dto.notas,
+          inventarioAfectado,
           items: {
             create: dto.items.map(ri => {
               const ocItem = ocItemsMap.get(ri.ordenCompraItemId) as any;
@@ -315,171 +366,189 @@ export class OrdenesCompraService {
         },
       });
 
-      // 2. Para cada ítem recibido: actualizar stock + recalcular CPP + crear movimiento en kardex
-      for (const ri of dto.items) {
-        const ocItem = ocItemsMap.get(ri.ordenCompraItemId) as any;
-        const costoUnitario = ri.costoUnitario ?? parseFloat(ocItem.costoUnitario.toString());
-        const productoId = ocItem.productoId;
-        const bodegaId = oc.bodegaId;
+      if (inventarioAfectado) {
+        // Link the FC to this reception
+        await tx.facturaCompra.update({
+          where: { id: fc.id },
+          data: { recepcionId: numeroRec },
+        });
 
-        // Obtener producto actual (CPP vigente)
-        const producto = await tx.producto.findUnique({ where: { id: productoId } });
-        if (!producto) throw new NotFoundException(`Producto ${productoId} no encontrado`);
+        // 2. Para cada ítem recibido: actualizar stock + recalcular CPP + crear movimiento en kardex
+        for (const ri of dto.items) {
+          const ocItem = ocItemsMap.get(ri.ordenCompraItemId) as any;
+          const costoUnitario = ri.costoUnitario ?? parseFloat(ocItem.costoUnitario.toString());
+          const productoId = ocItem.productoId;
+          const bodegaId = oc.bodegaId;
 
-        // Validaciones de Lotes y Seriales
-        if (producto.manejaLotes && !ri.loteNumero) {
-          throw new BadRequestException(`Debe especificar el número de lote para el producto ${producto.nombre}`);
-        }
-        if (producto.manejaSerial) {
-          if (!ri.seriales || ri.seriales.length === 0) {
-            throw new BadRequestException(`Debe especificar los números de serie para el producto ${producto.nombre}`);
+          // Obtener producto actual (CPP vigente)
+          const producto = await tx.producto.findUnique({ where: { id: productoId } });
+          if (!producto) throw new NotFoundException(`Producto ${productoId} no encontrado`);
+
+          // Validaciones de Lotes y Seriales
+          if (producto.manejaLotes && !ri.loteNumero) {
+            throw new BadRequestException(`Debe especificar el número de lote para el producto ${producto.nombre}`);
           }
-          if (ri.seriales.length !== Math.ceil(ri.cantidadRecibida)) {
-            throw new BadRequestException(`La cantidad de seriales (${ri.seriales.length}) no coincide con la cantidad recibida (${ri.cantidadRecibida}) para el producto ${producto.nombre}`);
+          if (producto.manejaSerial) {
+            if (!ri.seriales || ri.seriales.length === 0) {
+              throw new BadRequestException(`Debe especificar los números de serie para el producto ${producto.nombre}`);
+            }
+            if (ri.seriales.length !== Math.ceil(ri.cantidadRecibida)) {
+              throw new BadRequestException(`La cantidad de seriales (${ri.seriales.length}) no coincide con la cantidad recibida (${ri.cantidadRecibida}) para el producto ${producto.nombre}`);
+            }
           }
-        }
 
-        // Obtener o crear stock
-        let stock = await tx.stock.findUnique({
-          where: { productoId_bodegaId: { productoId, bodegaId } },
-        });
-        if (!stock) {
-          stock = await tx.stock.create({
-            data: { productoId, bodegaId, empresaId, cantidad: 0, cantidadReservada: 0 },
+          // Obtener o crear stock
+          let stock = await tx.stock.findUnique({
+            where: { productoId_bodegaId: { productoId, bodegaId } },
           });
-        }
-
-        const cantAnterior = parseFloat(stock.cantidad.toString());
-        const cppAnterior = parseFloat(producto.costoPromedio.toString());
-        const cantNueva = ri.cantidadRecibida;
-        const cantTotal = cantAnterior + cantNueva;
-
-        // Recalcular CPP
-        const nuevoCPP = cantTotal > 0
-          ? (cantAnterior * cppAnterior + cantNueva * costoUnitario) / cantTotal
-          : costoUnitario;
-
-        // Actualizar stock
-        await tx.stock.update({
-          where: { productoId_bodegaId: { productoId, bodegaId } },
-          data: { cantidad: { increment: cantNueva } },
-        });
-
-        // Actualizar CPP del producto
-        await tx.producto.update({
-          where: { id: productoId },
-          data: { costoPromedio: nuevoCPP },
-        });
-
-        // Procesar Lote si maneja lotes
-        let loteId: number | undefined;
-        if (producto.manejaLotes && ri.loteNumero) {
-          let lote = await tx.lote.findFirst({
-            where: {
-              empresaId,
-              productoId,
-              bodegaId,
-              numero: ri.loteNumero,
-            },
-          });
-          if (lote) {
-            lote = await tx.lote.update({
-              where: { id: lote.id },
-              data: {
-                cantidad: { increment: cantNueva },
-                cantidadInicial: { increment: cantNueva },
-                fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : lote.fechaVencimiento,
-              },
+          if (!stock) {
+            stock = await tx.stock.create({
+              data: { productoId, bodegaId, empresaId, cantidad: 0, cantidadReservada: 0 },
             });
-          } else {
-            lote = await tx.lote.create({
-              data: {
+          }
+
+          const cantAnterior = parseFloat(stock.cantidad.toString());
+          const cppAnterior = parseFloat(producto.costoPromedio.toString());
+          const cantNueva = ri.cantidadRecibida;
+          const cantTotal = cantAnterior + cantNueva;
+
+          // Recalcular CPP
+          const nuevoCPP = cantTotal > 0
+            ? (cantAnterior * cppAnterior + cantNueva * costoUnitario) / cantTotal
+            : costoUnitario;
+
+          // Actualizar stock
+          await tx.stock.update({
+            where: { productoId_bodegaId: { productoId, bodegaId } },
+            data: { cantidad: { increment: cantNueva } },
+          });
+
+          // Actualizar CPP del producto
+          await tx.producto.update({
+            where: { id: productoId },
+            data: { costoPromedio: nuevoCPP },
+          });
+
+          // Procesar Lote si maneja lotes
+          let loteId: number | undefined;
+          if (producto.manejaLotes && ri.loteNumero) {
+            let lote = await tx.lote.findFirst({
+              where: {
                 empresaId,
                 productoId,
                 bodegaId,
                 numero: ri.loteNumero,
-                cantidadInicial: cantNueva,
-                cantidad: cantNueva,
-                fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : null,
-                activo: true,
               },
             });
-          }
-          loteId = lote.id;
-        }
-
-        // Generar número de movimiento
-        const movCount = await tx.movimientoInventario.count({
-          where: { empresaId, numero: { startsWith: `MOV-${year}-` } },
-        });
-        const numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
-
-        // Notas para registrar el lote si existe
-        const loteNotas = ri.loteNumero ? ` [Lote: ${ri.loteNumero}]` : '';
-
-        // Crear movimiento en el kardex
-        const mov = await tx.movimientoInventario.create({
-          data: {
-            numero: numMov,
-            empresaId,
-            tipo: 'ENTRADA',
-            concepto: 'COMPRA',
-            productoId,
-            bodegaDestinoId: bodegaId,
-            cantidad: cantNueva,
-            costoUnitario,
-            costoTotal: cantNueva * costoUnitario,
-            saldoCantidad: cantTotal,
-            saldoCostoTotal: cantTotal * nuevoCPP,
-            saldoCpp: nuevoCPP,
-            usuarioId,
-            referenciaId: String(id),
-            referenciaTipo: 'OrdenCompra',
-            notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}`,
-          },
-        });
-
-        // Procesar Seriales si maneja seriales
-        if (producto.manejaSerial && ri.seriales && ri.seriales.length > 0) {
-          for (const s of ri.seriales) {
-            const existeSerial = await tx.numeroSerie.findFirst({
-              where: {
-                empresaId,
-                productoId,
-                serial: s,
-              },
-            });
-            if (existeSerial) {
-              await tx.numeroSerie.update({
-                where: { id: existeSerial.id },
+            if (lote) {
+              lote = await tx.lote.update({
+                where: { id: lote.id },
                 data: {
-                  estado: 'DISPONIBLE',
-                  bodegaId,
-                  loteId: loteId ?? null,
-                  movimientoEntradaId: mov.id,
+                  cantidad: { increment: cantNueva },
+                  cantidadInicial: { increment: cantNueva },
+                  fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : lote.fechaVencimiento,
                 },
               });
             } else {
-              await tx.numeroSerie.create({
+              lote = await tx.lote.create({
                 data: {
                   empresaId,
                   productoId,
                   bodegaId,
-                  loteId: loteId ?? null,
-                  serial: s,
-                  estado: 'DISPONIBLE',
-                  movimientoEntradaId: mov.id,
+                  numero: ri.loteNumero,
+                  cantidadInicial: cantNueva,
+                  cantidad: cantNueva,
+                  fechaVencimiento: ri.fechaVencimiento ? new Date(ri.fechaVencimiento) : null,
+                  activo: true,
                 },
               });
             }
+            loteId = lote.id;
           }
-        }
 
-        // Actualizar cantidadRecibida del ítem de la OC
-        await tx.ordenCompraItem.update({
-          where: { id: ri.ordenCompraItemId },
-          data: { cantidadRecibida: { increment: cantNueva } },
-        });
+          // Generar número de movimiento
+          const movCount = await tx.movimientoInventario.count({
+            where: { empresaId, numero: { startsWith: `MOV-${year}-` } },
+          });
+          const numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
+
+          // Notas para registrar el lote si existe
+          const loteNotas = ri.loteNumero ? ` [Lote: ${ri.loteNumero}]` : '';
+
+          // Crear movimiento en el kardex
+          const mov = await tx.movimientoInventario.create({
+            data: {
+              numero: numMov,
+              empresaId,
+              tipo: 'ENTRADA',
+              concepto: 'COMPRA',
+              productoId,
+              bodegaDestinoId: bodegaId,
+              cantidad: cantNueva,
+              costoUnitario,
+              costoTotal: cantNueva * costoUnitario,
+              saldoCantidad: cantTotal,
+              saldoCostoTotal: cantTotal * nuevoCPP,
+              saldoCpp: nuevoCPP,
+              usuarioId,
+              referenciaId: String(id),
+              referenciaTipo: 'OrdenCompra',
+              notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}`,
+            },
+          });
+
+          // Procesar Seriales si maneja seriales
+          if (producto.manejaSerial && ri.seriales && ri.seriales.length > 0) {
+            for (const s of ri.seriales) {
+              const existeSerial = await tx.numeroSerie.findFirst({
+                where: {
+                  empresaId,
+                  productoId,
+                  serial: s,
+                },
+              });
+              if (existeSerial) {
+                await tx.numeroSerie.update({
+                  where: { id: existeSerial.id },
+                  data: {
+                    estado: 'DISPONIBLE',
+                    bodegaId,
+                    loteId: loteId ?? null,
+                    movimientoEntradaId: mov.id,
+                  },
+                });
+              } else {
+                await tx.numeroSerie.create({
+                  data: {
+                    empresaId,
+                    productoId,
+                    bodegaId,
+                    loteId: loteId ?? null,
+                    serial: s,
+                    estado: 'DISPONIBLE',
+                    movimientoEntradaId: mov.id,
+                  },
+                });
+              }
+            }
+          }
+
+          // Actualizar cantidadRecibida del ítem de la OC
+          await tx.ordenCompraItem.update({
+            where: { id: ri.ordenCompraItemId },
+            data: { cantidadRecibida: { increment: cantNueva } },
+          });
+        }
+      } else {
+        // Si no hay factura de compra, solo registramos que el producto llegó físicamente a nivel de orden
+        for (const ri of dto.items) {
+          const ocItem = ocItemsMap.get(ri.ordenCompraItemId) as any;
+          const cantNueva = ri.cantidadRecibida;
+          await tx.ordenCompraItem.update({
+            where: { id: ri.ordenCompraItemId },
+            data: { cantidadRecibida: { increment: cantNueva } },
+          });
+        }
       }
 
       // 3. Determinar nuevo estado de la OC

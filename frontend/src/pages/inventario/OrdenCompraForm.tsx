@@ -5,6 +5,7 @@ import {
   getProveedores, getBodegas, buscarProductos,
   createOrdenCompra,
 } from '../../services/inventario.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
 
 interface LineaItem {
@@ -26,16 +27,33 @@ export function OrdenCompraForm() {
   const [error, setError] = useState<string | null>(null)
 
   const [header, setHeader] = useState({ proveedorId: '', bodegaId: '', fechaEsperada: '', notas: '' })
+  const [documentoConfigId, setDocumentoConfigId] = useState('')
   const [items, setItems] = useState<LineaItem[]>([])
   const [busqueda, setBusqueda] = useState('')
 
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
+  const { data: documentos = [] } = useQuery({ queryKey: ['documentos-config'], queryFn: getDocumentosConfig })
+
   const { data: sugerencias = [], isFetching: buscando } = useQuery({
     queryKey: ['buscar-prod-oc', busqueda],
     queryFn: () => buscarProductos(busqueda),
     enabled: busqueda.length >= 2,
   })
+
+  // Filter documents by type 'OC' and active state, matching destination sucursal
+  const bodegaSeleccionada = bodegas.find(b => b.id === Number(header.bodegaId))
+  const sucursalId = bodegaSeleccionada?.sucursalId
+  const documentosFiltrados = documentos.filter((doc: any) => 
+    doc.sigla === 'OC' && 
+    doc.estado === 'ACTIVO' &&
+    (doc.sucursalId === null || doc.sucursalId === sucursalId)
+  )
+
+  const handleBodegaChange = (bId: string) => {
+    setHeader(h => ({ ...h, bodegaId: bId }))
+    setDocumentoConfigId('') // reset document resolution to avoid sucursal mismatch
+  }
 
   const mutation = useMutation({
     mutationFn: createOrdenCompra,
@@ -86,9 +104,11 @@ export function OrdenCompraForm() {
     setError(null)
     if (!header.proveedorId) return setError('Selecciona un proveedor')
     if (!header.bodegaId) return setError('Selecciona una bodega destino')
+    if (!documentoConfigId) return setError('Selecciona una resolución/documento para la orden de compra')
     if (items.length === 0) return setError('Agrega al menos un producto')
 
     mutation.mutate({
+      documentoConfigId: Number(documentoConfigId),
       proveedorId: +header.proveedorId,
       bodegaId: +header.bodegaId,
       fechaEsperada: header.fechaEsperada || undefined,
@@ -143,10 +163,19 @@ export function OrdenCompraForm() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Bodega destino *</label>
-              <select value={header.bodegaId} onChange={e => setHeader(h => ({ ...h, bodegaId: e.target.value }))} required className={inputCls}>
+              <select value={header.bodegaId} onChange={e => handleBodegaChange(e.target.value)} required className={inputCls}>
                 <option value="">— Seleccionar bodega —</option>
                 {bodegas.filter(b => b.activo).map(b => (
                   <option key={b.id} value={b.id}>{b.nombre} ({b.codigo})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Documento OC (Prefijo) *</label>
+              <select value={documentoConfigId} onChange={e => setDocumentoConfigId(e.target.value)} required className={inputCls}>
+                <option value="">— Seleccionar resolución OC —</option>
+                {documentosFiltrados.map(d => (
+                  <option key={d.id} value={d.id}>{d.nombre} ({d.prefijo})</option>
                 ))}
               </select>
             </div>

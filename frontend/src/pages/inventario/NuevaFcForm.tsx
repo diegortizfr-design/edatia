@@ -28,6 +28,7 @@ export function NuevaFcForm() {
   const [prefijo, setPrefijo] = useState('')
   const [consecutivo, setConsecutivo] = useState('')
   const [fechaEmision, setFechaEmision] = useState('')
+  const [ordenCompraId, setOrdenCompraId] = useState('')
   const [recepcionId, setRecepcionId] = useState('')
   const [xmlFile, setXmlFile] = useState<File | null>(null)
   const [xmlNombre, setXmlNombre] = useState<string | null>(null)
@@ -65,6 +66,7 @@ export function NuevaFcForm() {
     const rpObj = recepcionesDisponibles.find(r => r.id === rpId)
     if (rpObj) {
       setProveedorId(String(rpObj.proveedorId))
+      setOrdenCompraId(String(rpObj.ocId))
       
       // Map RP items to lines
       const mappedItems = rpObj.items.map((ri: any) => ({
@@ -77,6 +79,32 @@ export function NuevaFcForm() {
         tipoIva: ri.ordenCompraItem?.producto?.tipoIva || 'IVA_19'
       }))
       setItems(mappedItems)
+    } else {
+      setOrdenCompraId('')
+    }
+  }
+
+  // Auto-fill from selected OC
+  const handleSelectOC = (ocIdStr: string) => {
+    setOrdenCompraId(ocIdStr)
+    setRecepcionId('') // Clear RP selection since we are selecting OC directly
+    const ocObj = ocs.find((o: any) => String(o.id) === ocIdStr)
+    if (ocObj) {
+      setProveedorId(String(ocObj.proveedorId))
+      // Map OC items to lines
+      const mappedItems = ocObj.items.map((item: any) => ({
+        productoId: item.productoId,
+        productoNombre: item.producto?.nombre || 'Producto',
+        productoSku: item.producto?.sku || '',
+        cantidad: String(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)),
+        costoUnitario: String(item.costoUnitario),
+        descuentoPct: String(item.descuentoPct || 0),
+        tipoIva: item.producto?.tipoIva || 'IVA_19'
+      }))
+      setItems(mappedItems.filter((i: any) => parseFloat(i.cantidad) > 0))
+    } else {
+      setProveedorId('')
+      setItems([])
     }
   }
 
@@ -163,6 +191,7 @@ export function NuevaFcForm() {
       iva: totalIva,
       total: totalFactura,
       xmlAdjunto: xmlNombre || undefined,
+      ordenCompraId: ordenCompraId ? Number(ordenCompraId) : undefined,
       recepcionId: recepcionId || undefined,
       notas: notas || undefined,
       items: items.map(item => ({
@@ -226,32 +255,50 @@ export function NuevaFcForm() {
             </div>
           </div>
 
-          {/* Cruce con RP */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+          {/* Cruce con OC / RP */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-4">
             <div>
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 mb-1">
                 <Link2 size={16} className="text-indigo-600" />
-                Cruzamiento con Recepción (RP)
+                Cruzamiento con Documento de Compra (OC / RP)
               </h3>
-              <p className="text-slate-400 text-xs mb-4">
-                Cruza este cobro contable con una recepción de mercancía física previa para completar el 3-Way Match
+              <p className="text-slate-400 text-xs">
+                Asocia esta factura con una Orden de Compra aprobada o una Recepción física existente para autocompletar la información.
               </p>
             </div>
             
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Recepción Asociada (RP)</label>
-              <select 
-                value={recepcionId} 
-                onChange={e => handleSelectRP(e.target.value)} 
-                className={inputCls}
-              >
-                <option value="">— Ninguna (Crear compra directa sin RP) —</option>
-                {recepcionesDisponibles.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.id} · OC: {r.ocNumero} · {r.proveedorNombre}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Orden de Compra Asociada (OC)</label>
+                <select 
+                  value={ordenCompraId} 
+                  onChange={e => handleSelectOC(e.target.value)} 
+                  className={inputCls}
+                >
+                  <option value="">— Ninguna (Compra directa sin OC) —</option>
+                  {ocs.filter((o: any) => ['APROBADA', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(o.estado)).map((o: any) => (
+                    <option key={o.id} value={o.id}>
+                      {o.numero} ({o.proveedor?.nombre})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Recepción Asociada (RP)</label>
+                <select 
+                  value={recepcionId} 
+                  onChange={e => handleSelectRP(e.target.value)} 
+                  className={inputCls}
+                >
+                  <option value="">— Ninguna (Crear compra directa sin RP) —</option>
+                  {recepcionesDisponibles.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.id} · OC: {r.ocNumero} · {r.proveedorNombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
