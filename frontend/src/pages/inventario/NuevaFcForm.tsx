@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2 } from 'lucide-react'
 import { getApiError } from '../../services/api'
 
@@ -21,8 +22,24 @@ function fmt(n: number) {
 
 export function NuevaFcForm() {
   const navigate = useNavigate()
+  const location = useLocation()
   const qc = useQueryClient()
   const [error, setError] = useState<string | null>(null)
+
+  const queryParams = new URLSearchParams(location.search)
+  const queryOcId = queryParams.get('ordenCompraId')
+
+  const [documentoConfigId, setDocumentoConfigId] = useState('')
+
+  const { data: documentos = [] } = useQuery({
+    queryKey: ['documentos-config'],
+    queryFn: getDocumentosConfig,
+  })
+
+  const documentosFiltradosFC = documentos.filter((doc: any) => 
+    doc.sigla === 'FC' && 
+    doc.estado === 'ACTIVO'
+  )
 
   // Header states
   const [proveedorId, setProveedorId] = useState('')
@@ -42,6 +59,12 @@ export function NuevaFcForm() {
   // Queries
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
   const { data: ocs = [] } = useQuery({ queryKey: ['ordenes-compra'], queryFn: () => getOrdenesCompra() })
+  
+  useEffect(() => {
+    if (queryOcId && ocs.length > 0) {
+      handleSelectOC(queryOcId)
+    }
+  }, [queryOcId, ocs])
   
   const { data: sugerencias = [], isFetching: buscando } = useQuery({
     queryKey: ['buscar-prod-fc', busqueda],
@@ -178,12 +201,14 @@ export function NuevaFcForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!documentoConfigId) return setError('Selecciona un documento/resolución para la factura de compra')
     if (!proveedorId) return setError('Selecciona un proveedor')
     if (!consecutivo) return setError('Ingresa el consecutivo de factura del proveedor')
     if (items.length === 0) return setError('Agrega al menos un ítem a la factura')
 
     mutation.mutate({
       proveedorId: Number(proveedorId),
+      documentoConfigId: Number(documentoConfigId),
       prefijoProveedor: prefijo || undefined,
       consecutivoProveedor: consecutivo,
       fechaEmision: fechaEmision || new Date().toISOString().split('T')[0],
@@ -310,6 +335,23 @@ export function NuevaFcForm() {
           
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             
+            <div className="md:col-span-4">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento FC (Prefijo) *</label>
+              <select 
+                value={documentoConfigId} 
+                onChange={e => setDocumentoConfigId(e.target.value)} 
+                required 
+                className={inputCls}
+              >
+                <option value="">— Seleccionar resolución FC —</option>
+                {documentosFiltradosFC.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="md:col-span-5">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Proveedor *</label>
               <div className="flex gap-2 items-center">
@@ -336,28 +378,7 @@ export function NuevaFcForm() {
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Prefijo Factura</label>
-              <input 
-                value={prefijo} 
-                onChange={e => setPrefijo(e.target.value)} 
-                placeholder="ej: FE" 
-                className={inputCls} 
-              />
-            </div>
-
             <div className="md:col-span-3">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Consecutivo Proveedor *</label>
-              <input 
-                value={consecutivo} 
-                onChange={e => setConsecutivo(e.target.value)} 
-                placeholder="ej: 10482" 
-                required 
-                className={inputCls} 
-              />
-            </div>
-
-            <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Fecha Emisión</label>
               <input 
                 type="date" 
@@ -367,7 +388,28 @@ export function NuevaFcForm() {
               />
             </div>
 
-            <div className="md:col-span-12">
+            <div className="md:col-span-3">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Prefijo Factura Proveedor</label>
+              <input 
+                value={prefijo} 
+                onChange={e => setPrefijo(e.target.value)} 
+                placeholder="ej: FE" 
+                className={inputCls} 
+              />
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Consecutivo Factura Proveedor *</label>
+              <input 
+                value={consecutivo} 
+                onChange={e => setConsecutivo(e.target.value)} 
+                placeholder="ej: 10482" 
+                required 
+                className={inputCls} 
+              />
+            </div>
+
+            <div className="md:col-span-6">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Observaciones</label>
               <input 
                 value={notas} 

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getOrdenCompra, aprobarOrdenCompra, rechazarOrdenCompra, anularOrdenCompra, recibirOrdenCompra,
 } from '../../services/inventario.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText } from 'lucide-react'
 import { getApiError } from '../../services/api'
 
@@ -42,6 +43,12 @@ export function OrdenCompraDetalle() {
   const [notasAprobacion, setNotasAprobacion] = useState('')
   const [notasRechazo, setNotasRechazo] = useState('')
   const [showPrintPreview, setShowPrintPreview] = useState(false)
+  const [documentoConfigId, setDocumentoConfigId] = useState('')
+
+  const { data: documentos = [] } = useQuery({
+    queryKey: ['documentos-config'],
+    queryFn: getDocumentosConfig,
+  })
 
   const { data: oc, isLoading } = useQuery({
     queryKey: ['orden-compra', id],
@@ -134,17 +141,27 @@ export function OrdenCompraDetalle() {
         }
       })
 
+    if (!documentoConfigId) return setError('Selecciona una resolución/documento RP')
     if (itemsToSend.length === 0) return setError('Ingresa al menos una cantidad a recibir')
-    recibir.mutate({ items: itemsToSend, notas: recNotas || undefined })
+    recibir.mutate({ items: itemsToSend, documentoConfigId: Number(documentoConfigId), notas: recNotas || undefined })
   }
 
   if (isLoading) return <div className="text-center py-20 text-slate-400">Cargando...</div>
   if (!oc) return <div className="text-center py-20 text-slate-400">Orden no encontrada</div>
 
   const estadoCfg = ESTADOS[oc.estado] ?? ESTADOS.BORRADOR
+  const tieneFactura = oc.facturas && oc.facturas.length > 0
   const puedeAprobar = oc.estado === 'BORRADOR'
   const puedeAnular = !['RECIBIDA', 'ANULADA'].includes(oc.estado)
-  const puedeRecibir = ['APROBADA', 'RECIBIDA_PARCIAL'].includes(oc.estado)
+  const puedeRecibir = ['APROBADA', 'RECIBIDA_PARCIAL'].includes(oc.estado) && tieneFactura
+  const puedePasarFC = ['APROBADA', 'RECIBIDA_PARCIAL'].includes(oc.estado) && !tieneFactura
+
+  const sucursalId = oc.bodega?.sucursalId
+  const documentosFiltradosRP = documentos.filter((doc: any) => 
+    doc.sigla === 'RP' && 
+    doc.estado === 'ACTIVO' &&
+    (doc.sucursalId === null || doc.sucursalId === sucursalId)
+  )
 
   return (
     <>
@@ -184,6 +201,12 @@ export function OrdenCompraDetalle() {
             <button onClick={() => setShowPrintPreview(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-bold transition-all active:scale-95">
               <Printer size={15} /> Formato Gráfico
+            </button>
+          )}
+          {puedePasarFC && (
+            <button onClick={() => navigate(`/inventario/compras/nueva-fc?ordenCompraId=${oc.id}`)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition-all active:scale-95">
+              <FileText size={15} /> Pasar OC a FC
             </button>
           )}
           {puedeRecibir && (
@@ -280,11 +303,23 @@ export function OrdenCompraDetalle() {
                 )
               })}
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-amber-700 uppercase mb-1">Notas de recepción</label>
-              <input value={recNotas} onChange={e => setRecNotas(e.target.value)}
-                className="w-full px-3 py-2 border border-amber-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                placeholder="Remisión #, observaciones..." />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-amber-900 uppercase mb-1">Documento RP (Prefijo) *</label>
+                <select value={documentoConfigId} onChange={e => setDocumentoConfigId(e.target.value)} required 
+                  className="w-full px-3 py-2 border border-amber-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                  <option value="">— Seleccionar resolución RP —</option>
+                  {documentosFiltradosRP.map(d => (
+                    <option key={d.id} value={d.id}>{d.nombre} ({d.prefijo})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-amber-700 uppercase mb-1">Notas de recepción</label>
+                <input value={recNotas} onChange={e => setRecNotas(e.target.value)}
+                  className="w-full px-3 py-2 border border-amber-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  placeholder="Remisión #, observaciones..." />
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => setShowRecepcion(false)} className="px-3 py-2 text-slate-600 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">Cancelar</button>

@@ -31,6 +31,7 @@ export class FacturasCompraService {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
         ordenCompra: { select: { id: true, numero: true } },
+        documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -43,6 +44,7 @@ export class FacturasCompraService {
         proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
         ordenCompra: { select: { id: true, numero: true } },
+        documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
       },
     });
     if (!fc) throw new NotFoundException('Factura de compra no encontrada');
@@ -78,12 +80,29 @@ export class FacturasCompraService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const numero = await this.generarConsecutivoInterno(empresaId, tx);
+      let numero: string;
+      if (dto.documentoConfigId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoConfigId, empresaId, sigla: 'FC' },
+        });
+        if (!docConfig) {
+          throw new NotFoundException('Resolución de documento de factura de compra no encontrada');
+        }
+        numero = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numero = await this.generarConsecutivoInterno(empresaId, tx);
+      }
+
       // 1. Persistir la factura de compra
       const fc = await tx.facturaCompra.create({
         data: {
           empresaId,
           numero,
+          documentoConfigId: dto.documentoConfigId,
           prefijoProveedor: dto.prefijoProveedor,
           consecutivoProveedor: dto.consecutivoProveedor,
           proveedorId: dto.proveedorId,

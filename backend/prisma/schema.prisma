@@ -229,6 +229,8 @@ model DocumentoConfig {
 
   movimientosInventario MovimientoInventario[]
   ordenesCompra         OrdenCompra[]
+  facturasCompra        FacturaCompra[]
+  recepcionesMercancia  RecepcionMercancia[]
 
   @@unique([empresaId, prefijo])
   @@index([empresaId])
@@ -979,6 +981,9 @@ model FacturaCompra {
   empresaId             Int
   empresa               Empresa       @relation(fields: [empresaId], references: [id])
 
+  documentoConfigId     Int?
+  documentoConfig       DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+
   numero                String
   prefijoProveedor      String?
   consecutivoProveedor  String
@@ -1100,6 +1105,9 @@ model RecepcionMercancia {
   empresa       Empresa     @relation(fields: [empresaId], references: [id])
   ordenCompraId Int
   ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+
+  documentoConfigId     Int?
+  documentoConfig       DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
   numero        String      @unique
   fecha         DateTime    @default(now())

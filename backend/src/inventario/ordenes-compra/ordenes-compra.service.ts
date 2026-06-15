@@ -6,7 +6,7 @@ import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto, Apro
 
 const OC_INCLUDE = {
   proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } },
-  bodega: { select: { id: true, nombre: true, codigo: true } },
+  bodega: { select: { id: true, nombre: true, codigo: true, sucursalId: true } },
   documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
   aprobadoPor: { select: { id: true, nombre: true, usuario: true } },
   rechazadoPor: { select: { id: true, nombre: true, usuario: true } },
@@ -16,9 +16,15 @@ const OC_INCLUDE = {
     },
   },
   recepciones: {
-    include: { items: { include: { ordenCompraItem: { include: { producto: { select: { id: true, nombre: true, sku: true, tipoIva: true } } } } } } },
+    include: {
+      documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+      items: { include: { ordenCompraItem: { include: { producto: { select: { id: true, nombre: true, sku: true, tipoIva: true } } } } } }
+    },
     orderBy: { createdAt: 'desc' as const },
   },
+  facturas: {
+    select: { id: true, numero: true, total: true, estado: true, createdAt: true }
+  }
 };
 
 @Injectable()
@@ -335,7 +341,22 @@ export class OrdenesCompraService {
     const year = new Date().getFullYear();
 
     return this.prisma.$transaction(async (tx: any) => {
-      const numeroRec = await this.generarNumeroREC(empresaId, tx);
+      let numeroRec: string;
+      if (dto.documentoConfigId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoConfigId, empresaId, sigla: 'RP' },
+        });
+        if (!docConfig) {
+          throw new NotFoundException('Resolución de documento de recepción de mercancía no encontrada');
+        }
+        numeroRec = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        numeroRec = await this.generarNumeroREC(empresaId, tx);
+      }
 
       // Check if there is an uncrossed FacturaCompra for this OC
       const fc = await tx.facturaCompra.findFirst({
@@ -349,6 +370,7 @@ export class OrdenesCompraService {
         data: {
           numero: numeroRec,
           empresaId,
+          documentoConfigId: dto.documentoConfigId,
           ordenCompraId: id,
           usuarioId,
           notas: dto.notas,

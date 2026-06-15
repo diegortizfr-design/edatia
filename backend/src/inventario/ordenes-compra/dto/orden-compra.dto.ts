@@ -83,6 +83,9 @@ export class RecibirItemDto {
 }
 
 export class RecibirOrdenCompraDto {
+  @IsOptional() @IsInt()
+  documentoConfigId?: number;
+
   @IsArray() @ValidateNested({ each: true }) @Type(() => RecibirItemDto)
   items!: RecibirItemDto[];
 

@@ -49,6 +49,9 @@ export class CreateFacturaCompraDto {
   @IsOptional() @IsInt()
   ordenCompraId?: number;
 
+  @IsOptional() @IsInt()
+  documentoConfigId?: number;
+
   @IsOptional() @IsString()
   recepcionId?: string;
 
