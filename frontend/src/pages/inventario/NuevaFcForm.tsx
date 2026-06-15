@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
 import { ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2 } from 'lucide-react'
+import { getApiError } from '../../services/api'
 
 interface LineaItem {
   productoId: number
@@ -169,7 +170,7 @@ export function NuevaFcForm() {
       navigate('/inventario/compras')
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.message || 'Error al registrar la factura de compra')
+      setError(getApiError(err, 'Error al registrar la factura de compra'))
     }
   })
 

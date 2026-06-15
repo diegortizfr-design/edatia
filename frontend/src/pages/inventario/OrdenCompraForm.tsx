@@ -6,6 +6,7 @@ import {
   createOrdenCompra,
 } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
+import { getApiError } from '../../services/api'
 import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
 
 interface LineaItem {
@@ -62,8 +63,7 @@ export function OrdenCompraForm() {
       navigate(`/inventario/ordenes-compra/${data.id}`)
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message
-      setError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Error al crear la orden'))
+      setError(getApiError(err, 'Error al crear la orden'))
     },
   })
 

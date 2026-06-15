@@ -5,6 +5,7 @@ import {
   getOrdenCompra, aprobarOrdenCompra, rechazarOrdenCompra, anularOrdenCompra, recibirOrdenCompra,
 } from '../../services/inventario.service'
 import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText } from 'lucide-react'
+import { getApiError } from '../../services/api'
 
 const ESTADOS: Record<string, { label: string; color: string }> = {
   BORRADOR:         { label: 'Borrador',    color: 'bg-slate-100 text-slate-600' },
@@ -55,7 +56,7 @@ export function OrdenCompraDetalle() {
       setShowAprobarModal(false);
       setNotasAprobacion('');
     },
-    onError: (err: any) => setError(err.response?.data?.message ?? 'Error al aprobar'),
+    onError: (err: any) => setError(getApiError(err, 'Error al aprobar')),
   })
 
   const rechazar = useMutation({
@@ -66,13 +67,13 @@ export function OrdenCompraDetalle() {
       setShowRechazarModal(false);
       setNotasRechazo('');
     },
-    onError: (err: any) => setError(err.response?.data?.message ?? 'Error al rechazar'),
+    onError: (err: any) => setError(getApiError(err, 'Error al rechazar')),
   })
 
   const anular = useMutation({
     mutationFn: () => anularOrdenCompra(Number(id)),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orden-compra', id] }); qc.invalidateQueries({ queryKey: ['ordenes-compra'] }); navigate('/inventario/ordenes-compra') },
-    onError: (err: any) => setError(err.response?.data?.message ?? 'Error al anular'),
+    onError: (err: any) => setError(getApiError(err, 'Error al anular')),
   })
 
   const recibir = useMutation({
@@ -87,8 +88,7 @@ export function OrdenCompraDetalle() {
       setTimeout(() => setSuccessMsg(null), 5000)
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message
-      setError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Error al registrar recepción'))
+      setError(getApiError(err, 'Error al registrar recepción'))
     },
   })
 
