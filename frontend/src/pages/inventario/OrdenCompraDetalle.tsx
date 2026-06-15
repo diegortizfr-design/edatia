@@ -209,12 +209,7 @@ export function OrdenCompraDetalle() {
               <FileText size={15} /> Pasar OC a FC
             </button>
           )}
-          {puedeRecibir && (
-            <button onClick={() => setShowRecepcion(!showRecepcion)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 active:scale-95">
-              <Package size={15} /> Recibir mercancía
-            </button>
-          )}
+
           {puedeAnular && (
             <button onClick={() => { if (confirm('¿Seguro que deseas anular esta OC?')) anular.mutate() }} disabled={anular.isPending}
               className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-slate-700 transition-all disabled:opacity-50">
@@ -226,111 +221,6 @@ export function OrdenCompraDetalle() {
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2"><AlertTriangle size={15} />{error}</div>}
       {successMsg && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2"><CheckCircle size={15} />{successMsg}</div>}
-
-      {/* Panel de recepción */}
-      {showRecepcion && puedeRecibir && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-          <h2 className="font-semibold text-amber-900 mb-1">Registrar recepción de mercancía</h2>
-          <p className="text-xs text-amber-700 mb-4">Ingresa las cantidades recibidas. Puedes recibir parcialmente.</p>
-          <form onSubmit={handleRecibir} className="space-y-3">
-            <div className="space-y-2">
-              {oc.items.map(item => {
-                const pendiente = parseFloat(String(item.cantidad)) - parseFloat(String(item.cantidadRecibida))
-                if (pendiente <= 0.001) return null
-                return (
-                  <div key={item.id} className="space-y-3 bg-white rounded-lg p-4 border border-amber-200">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{item.producto?.nombre}</p>
-                        <p className="text-xs text-slate-400">{item.producto?.sku} · Pendiente: <span className="font-semibold text-amber-700">{pendiente.toFixed(3)}</span> {item.producto?.unidadMedida?.abreviatura ?? 'und'}</p>
-                      </div>
-                      <div className="w-32 shrink-0">
-                        <input
-                          type="number" min="0" max={pendiente} step="0.001"
-                          value={recItems[item.id] ?? ''}
-                          onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
-                          placeholder={String(pendiente.toFixed(3))}
-                          className="w-full text-right px-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Lotes inputs if product manejaLotes */}
-                    {item.producto?.manejaLotes && parseFloat(recItems[item.id] || '0') > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Número de Lote *</label>
-                          <input
-                            value={recLotes[item.id] ?? ''}
-                            onChange={e => setRecLotes(prev => ({ ...prev, [item.id]: e.target.value }))}
-                            placeholder="Lote..."
-                            required
-                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha de Vencimiento</label>
-                          <input
-                            type="date"
-                            value={recVencimientos[item.id] ?? ''}
-                            onChange={e => setRecVencimientos(prev => ({ ...prev, [item.id]: e.target.value }))}
-                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Seriales textarea if product manejaSerial */}
-                    {item.producto?.manejaSerial && parseFloat(recItems[item.id] || '0') > 0 && (
-                      <div className="border-t border-slate-100 pt-3">
-                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                          Números de Serie *
-                        </label>
-                        <textarea
-                          value={recSeriales[item.id] ?? ''}
-                          onChange={e => setRecSeriales(prev => ({ ...prev, [item.id]: e.target.value }))}
-                          placeholder="Ingrese un serial por línea o separados por comas..."
-                          rows={2}
-                          required
-                          className="w-full px-2.5 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 outline-none resize-none"
-                        />
-                        <span className="text-[9px] text-slate-400 block mt-0.5">
-                          Ingrese exactamente {Math.ceil(parseFloat(recItems[item.id] || '0'))} seriales.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-amber-900 uppercase mb-1">Documento RP (Prefijo) *</label>
-                <select value={documentoConfigId} onChange={e => setDocumentoConfigId(e.target.value)} required 
-                  className="w-full px-3 py-2 border border-amber-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-                  <option value="">— Seleccionar resolución RP —</option>
-                  {documentosFiltradosRP.map(d => (
-                    <option key={d.id} value={d.id}>{d.nombre} ({d.prefijo})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-amber-700 uppercase mb-1">Notas de recepción</label>
-                <input value={recNotas} onChange={e => setRecNotas(e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  placeholder="Remisión #, observaciones..." />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setShowRecepcion(false)} className="px-3 py-2 text-slate-600 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">Cancelar</button>
-              <button type="submit" disabled={recibir.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                <Package size={15} /> {recibir.isPending ? 'Registrando...' : 'Confirmar recepción'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Ítems de la OC */}

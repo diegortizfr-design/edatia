@@ -297,6 +297,7 @@ export interface FacturaCompra {
     costoUnitario: number;
     subtotal: number;
   }>;
+  ordenCompra?: { id: number; numero: string };
   createdAt: string;
 }
 
