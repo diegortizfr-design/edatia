@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getApiError } from '../../services/api'
 import { Plus, Trash2, ShoppingBag, CreditCard, Layers, CheckCircle2, ChevronRight, RefreshCw, AlertCircle, Calendar } from 'lucide-react'
 import {
   getClientes, getCliente, createFactura, getPedido, getPedidos, getFacturas
@@ -829,7 +830,7 @@ export function FacturaForm() {
             {mutCreate.isError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-[11px] text-red-700 flex gap-2">
                 <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                <span>{(mutCreate.error as any)?.response?.data?.message ?? 'Error al guardar el comprobante.'}</span>
+                <span>{getApiError(mutCreate.error, 'Error al guardar el comprobante.')}</span>
               </div>
             )}
 
@@ -844,12 +845,12 @@ export function FacturaForm() {
                 {mutCreate.isPending ? (
                   <>
                     <RefreshCw size={14} className="animate-spin" />
-                    <span>Guardando Factura...</span>
+                    <span>Creando Factura...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 size={14} />
-                    <span>Guardar y Emitir Factura</span>
+                    <span>Crear Factura</span>
                   </>
                 )}
               </button>
