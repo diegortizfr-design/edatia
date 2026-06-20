@@ -252,7 +252,7 @@ export function FacturaForm() {
     // Count how many matching invoices exist in the system
     const matching = (listFacturas as any[]).filter(f => f.tipoDocumento === tipoDocumento)
     const nextSeq = Math.max(startSeq, matching.length + 1)
-    return `${basePrefix}-${new Date().getFullYear()}-${String(nextSeq).padStart(5, '0')}`
+    return `${basePrefix}-${nextSeq}`
   }, [listFacturas, tipoDocumento, selectedDocId, docConfigs])
 
   // Totals calculations
