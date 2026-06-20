@@ -129,7 +129,7 @@ export function FacturaForm() {
   })
 
   const docConfigs = useMemo(() => {
-    return allDocs.filter((d: any) => (d.sigla === 'FV' || d.sigla === 'FVE') && d.activo)
+    return allDocs.filter((d: any) => (d.sigla === 'FV' || d.sigla === 'FVE') && d.estado === 'ACTIVO')
   }, [allDocs])
 
   const { data: vendedores = [] } = useQuery({
@@ -687,379 +687,6 @@ export function FacturaForm() {
               </div>
             )}
           </div>
-
-          {/* Card 3: Tabs Area (Detalles, Pago, Pedidos) */}
-          <div className={`bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-opacity duration-300 ${!isInvoiceActive ? 'opacity-40 pointer-events-none' : ''}`}>
-            
-            {/* Tabs Header */}
-            <div className="flex border-b border-slate-200 bg-slate-50/50">
-              <button
-                type="button"
-                onClick={() => setActiveTab('detalles')}
-                className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-r border-slate-200 transition-colors ${activeTab === 'detalles' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
-              >
-                <ShoppingBag size={14} /> Detalles de Artículos
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('formas_pago')}
-                className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-r border-slate-200 transition-colors ${activeTab === 'formas_pago' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
-              >
-                <CreditCard size={14} /> Formas de Pago
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('pedidos')}
-                className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'pedidos' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
-              >
-                <Layers size={14} /> Cargar Pedido/Prefactura
-              </button>
-            </div>
-
-            {/* Tab Contents */}
-            <div className="p-5">
-              
-              {/* TAB 1: DETALLES */}
-              {activeTab === 'detalles' && (
-                <div className="space-y-4">
-                  {/* Quick search and add bar */}
-                  <div className="relative">
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Búsqueda rápida y adición de productos</label>
-                    <input
-                      value={quickSearchQ}
-                      onChange={e => setQuickSearchQ(e.target.value)}
-                      placeholder="Escriba SKU, Código de barras o Nombre para agregar..."
-                      className="w-full p-2.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-semibold"
-                    />
-                    {quickSearchQ && quickSearchProds.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-2xl z-30 max-h-48 overflow-y-auto mt-1">
-                        {quickSearchProds.slice(0, 10).map((p: any) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => handleQuickAddProduct(p)}
-                            className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs border-b border-slate-150 last:border-0 flex justify-between items-center"
-                          >
-                            <div>
-                              <p className="font-bold text-slate-800">{p.nombre}</p>
-                              <p className="text-[10px] text-slate-400">SKU: {p.sku} | CPP: {fmt(Number(p.costoPromedio))}</p>
-                            </div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100">
-                              Base: {fmt(Number(p.precioBase))}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Items Table */}
-                  <div className="border border-slate-200 rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 bg-slate-50">
-                          <th className="px-3 py-2.5 text-left font-semibold">SKU / Producto</th>
-                          <th className="px-3 py-2.5 text-left font-semibold">Descripción</th>
-                          <th className="px-3 py-2.5 text-left font-semibold w-16">Lote</th>
-                          <th className="px-3 py-2.5 text-right font-semibold w-14">Disp</th>
-                          <th className="px-3 py-2.5 text-right font-semibold w-16">Cant</th>
-                          <th className="px-3 py-2.5 text-right font-semibold w-24">Precio Unit</th>
-                          <th className="px-3 py-2.5 text-right font-semibold w-14">Dcto %</th>
-                          <th className="px-3 py-2.5 text-left font-semibold w-20">IVA</th>
-                          <th className="px-3 py-2.5 text-right font-semibold w-24">Total</th>
-                          <th className="px-2 py-2.5 w-6" />
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-150">
-                        {lines.map((line) => {
-                          const calcResult = calcLine(line)
-                          const qKey = line._key
-                          const prodQ = productoQ[qKey] ?? ''
-                          const prodsFiltrados = prodQ
-                            ? (productosAll as any[]).filter((p: any) =>
-                                p.nombre.toLowerCase().includes(prodQ.toLowerCase()) ||
-                                p.sku.toLowerCase().includes(prodQ.toLowerCase()))
-                            : []
-
-                          const availableStock = line.productoId ? (stockMap.get(Number(line.productoId)) ?? 0) : 0
-
-                          return (
-                            <tr key={line._key} className="align-top hover:bg-slate-50/50">
-                              {/* Product selector */}
-                              <td className="px-2 py-2 relative">
-                                {line.productoId ? (
-                                  <div className="flex items-center gap-1 p-1 border border-slate-200 bg-slate-100 rounded text-[10px] font-bold">
-                                    <span className="truncate max-w-[100px]">
-                                      {(productosAll as any[]).find((p: any) => String(p.id) === String(line.productoId))?.nombre ?? `ID ${line.productoId}`}
-                                    </span>
-                                    <button onClick={() => updateLine(line._key, 'productoId', '')} className="text-slate-400 hover:text-red-500 font-bold ml-auto shrink-0">×</button>
-                                  </div>
-                                ) : (
-                                  <div className="relative">
-                                    <input
-                                      value={prodQ}
-                                      onChange={e => setProductoQ(prev => ({ ...prev, [qKey]: e.target.value }))}
-                                      placeholder="Buscar..."
-                                      className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-200"
-                                    />
-                                    {prodQ && prodsFiltrados.length > 0 && (
-                                      <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[200px] max-h-36 overflow-y-auto">
-                                        {prodsFiltrados.slice(0, 8).map((p: any) => (
-                                          <button key={p.id} type="button"
-                                            onClick={() => selectProductoForLine(line._key, p)}
-                                            className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100">
-                                            <p className="font-semibold">{p.nombre}</p>
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-
-                              {/* Desc */}
-                              <td className="px-2 py-2">
-                                <input
-                                  value={line.descripcion}
-                                  onChange={e => updateLine(line._key, 'descripcion', e.target.value)}
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100"
-                                />
-                              </td>
-
-                              {/* Lote */}
-                              <td className="px-2 py-2">
-                                <input
-                                  value={line.loteNumero}
-                                  onChange={e => updateLine(line._key, 'loteNumero', e.target.value)}
-                                  placeholder="N/A"
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 w-16"
-                                />
-                              </td>
-
-                              {/* Disp */}
-                              <td className="px-2 py-3 text-right text-[11px] font-semibold text-slate-500 pr-3">
-                                {availableStock}
-                              </td>
-
-                              {/* Cant */}
-                              <td className="px-2 py-2">
-                                <input
-                                  type="number"
-                                  min={0.0001}
-                                  step="any"
-                                  value={line.cantidad}
-                                  onChange={e => updateLine(line._key, 'cantidad', e.target.value)}
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                                />
-                              </td>
-
-                              {/* Precio */}
-                              <td className="px-2 py-2">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step="any"
-                                  value={line.precioUnitario}
-                                  onChange={e => updateLine(line._key, 'precioUnitario', e.target.value)}
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                                />
-                              </td>
-
-                              {/* Descuento Pct */}
-                              <td className="px-2 py-2">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  value={line.descuentoPct}
-                                  onChange={e => updateLine(line._key, 'descuentoPct', e.target.value)}
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                                />
-                              </td>
-
-                              {/* IVA */}
-                              <td className="px-2 py-2">
-                                <select
-                                  value={line.tipoIva}
-                                  onChange={e => updateLine(line._key, 'tipoIva', e.target.value)}
-                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 bg-white"
-                                >
-                                  {TIPO_IVA_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
-                              </td>
-
-                              {/* Total */}
-                              <td className="px-2 py-3 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">
-                                {fmt(calcResult.total)}
-                              </td>
-
-                              {/* Delete */}
-                              <td className="px-1 py-3 text-center">
-                                {lines.length > 1 && (
-                                  <button onClick={() => removeLine(line._key)} className="text-slate-300 hover:text-red-500 font-medium">
-                                    <Trash2 size={13} />
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <button
-                      type="button"
-                      onClick={addLine}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-650 rounded-lg transition-colors"
-                    >
-                      <Plus size={14} /> Agregar Item Vacío
-                    </button>
-                    <span className="text-xs text-slate-500 pt-2">Total ítems cargados: {lines.filter(l => l.productoId).length}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: FORMAS DE PAGO & RETENCIONES */}
-              {activeTab === 'formas_pago' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 pb-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Forma de Pago *</label>
-                      <select
-                        value={formaPago}
-                        onChange={e => setFormaPago(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
-                      >
-                        <option value="CONTADO">Contado</option>
-                        <option value="CREDITO">Crédito</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Medio de Pago</label>
-                      <select
-                        value={medioPago}
-                        onChange={e => setMedioPago(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
-                      >
-                        {MEDIO_PAGO_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                    </div>
-
-                    {formaPago === 'CREDITO' && (
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Vencimiento *</label>
-                        <input
-                          type="date"
-                          value={fechaVencimiento}
-                          onChange={e => setFechaVencimiento(e.target.value)}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-100"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Retenciones */}
-                  {esAgente ? (
-                    <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-5 space-y-3">
-                      <div className="flex gap-2 items-center text-amber-800 font-bold text-xs uppercase tracking-wider">
-                        <AlertCircle size={14} />
-                        <span>Retenciones Aplicables (Cliente es Agente Retenedor)</span>
-                      </div>
-                      <p className="text-amber-700/80 text-[10px]">
-                        El cliente seleccionado tiene habilitado el flag de agente retenedor. Ingrese los valores de retención que apliquen:
-                      </p>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">Retención en Fuente ($)</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={retefuente}
-                            onChange={e => setRetefuente(e.target.value)}
-                            placeholder="0"
-                            className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">ReteIVA ($)</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={reteiva}
-                            onChange={e => setReteiva(e.target.value)}
-                            placeholder="0"
-                            className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">ReteICA ($)</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={reteica}
-                            onChange={e => setReteica(e.target.value)}
-                            placeholder="0"
-                            className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 text-xs">
-                      Este cliente <strong>no es agente retenedor</strong>, por lo tanto no se causarán retenciones de forma automática.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 3: PEDIDOS PENDIENTES */}
-              {activeTab === 'pedidos' && (
-                <div className="space-y-4">
-                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Pedidos Aprobados del Cliente</h3>
-                  <p className="text-slate-500 text-xs">Haga clic en un pedido pendiente para importar todos sus artículos directamente a esta factura.</p>
-                  
-                  {loadingPedidos && <div className="text-center py-6 text-slate-400">Cargando pedidos...</div>}
-                  
-                  {!loadingPedidos && clientPedidos.length === 0 && (
-                    <div className="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-lg">
-                      No hay pedidos pendientes o pre-facturas en estado APROBADO para este cliente.
-                    </div>
-                  )}
-
-                  {!loadingPedidos && clientPedidos.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {clientPedidos.map((ped: any) => (
-                        <div
-                          key={ped.id}
-                          className="p-4 border border-slate-200 rounded-xl hover:border-indigo-400 bg-white hover:bg-indigo-50/10 cursor-pointer transition-all flex flex-col justify-between"
-                          onClick={() => importPedidoItems(ped)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="font-mono text-xs font-bold text-slate-700">{ped.numero}</span>
-                              <p className="text-[11px] text-slate-500">Fecha: {new Date(ped.fecha).toLocaleDateString('es-CO')}</p>
-                            </div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
-                              APROBADO
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100">
-                            <span className="text-xs text-slate-400">{ped.items?.length ?? 0} ítems</span>
-                            <span className="text-xs font-bold text-indigo-600">{fmt(Number(ped.total))}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </div>
-          </div>
         </div>
 
         {/* Right Side: Sidebar Panel (Totals & Action) */}
@@ -1193,19 +820,382 @@ export function FacturaForm() {
 
           </div>
 
-          {/* Quick Help Box */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-500 space-y-2">
-            <span className="font-bold text-slate-700 block uppercase tracking-wider text-[9px]">Guía Operativa</span>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>El modo borrador se desbloquea al seleccionar <strong>Prefijo</strong> y <strong>Cliente</strong>.</li>
-              <li>Al importar un pedido, se pre-cargarán todos sus ítems en la pestaña Detalles.</li>
-              <li>Las retenciones solo se habilitan si el cliente tiene la bandera de <em>Agente Retenedor</em> activa.</li>
-            </ul>
-          </div>
-
         </div>
 
       </div>
-    </div>
+
+      {/* Card 3: Tabs Area (Detalles, Pago, Pedidos) - Full Width Section */}
+      <div className={`transition-opacity duration-300 ${!isInvoiceActive ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          
+          {/* Tabs Header */}
+          <div className="flex border-b border-slate-200 bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setActiveTab('detalles')}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-r border-slate-200 transition-colors ${activeTab === 'detalles' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
+            >
+              <ShoppingBag size={14} /> Detalles de Artículos
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('formas_pago')}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-r border-slate-200 transition-colors ${activeTab === 'formas_pago' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
+            >
+              <CreditCard size={14} /> Formas de Pago
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pedidos')}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'pedidos' ? 'bg-white text-indigo-600 border-b-2 border-b-indigo-600' : 'text-slate-500 hover:bg-slate-100/50'}`}
+            >
+              <Layers size={14} /> Cargar Pedido/Prefactura
+            </button>
+          </div>
+
+          {/* Tab Contents */}
+          <div className="p-5">
+            
+            {/* TAB 1: DETALLES */}
+            {activeTab === 'detalles' && (
+              <div className="space-y-4">
+                {/* Quick search and add bar */}
+                <div className="relative">
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Búsqueda rápida y adición de productos</label>
+                  <input
+                    value={quickSearchQ}
+                    onChange={e => setQuickSearchQ(e.target.value)}
+                    placeholder="Escriba SKU, Código de barras o Nombre para agregar..."
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-semibold"
+                  />
+                  {quickSearchQ && quickSearchProds.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-2xl z-30 max-h-48 overflow-y-auto mt-1">
+                      {quickSearchProds.slice(0, 10).map((p: any) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleQuickAddProduct(p)}
+                          className="w-full text-left px-4 py-2 hover:bg-slate-50 text-xs border-b border-slate-150 last:border-0 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="font-bold text-slate-800">{p.nombre}</p>
+                            <p className="text-[10px] text-slate-400">SKU: {p.sku} | CPP: {fmt(Number(p.costoPromedio))}</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100">
+                            Base: {fmt(Number(p.precioBase))}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Items Table */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 bg-slate-50">
+                        <th className="px-3 py-2.5 text-left font-semibold">SKU / Producto</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Descripción</th>
+                        <th className="px-3 py-2.5 text-left font-semibold w-16">Lote</th>
+                        <th className="px-3 py-2.5 text-right font-semibold w-14">Disp</th>
+                        <th className="px-3 py-2.5 text-right font-semibold w-16">Cant</th>
+                        <th className="px-3 py-2.5 text-right font-semibold w-24">Precio Unit</th>
+                        <th className="px-3 py-2.5 text-right font-semibold w-14">Dcto %</th>
+                        <th className="px-3 py-2.5 text-left font-semibold w-20">IVA</th>
+                        <th className="px-3 py-2.5 text-right font-semibold w-24">Total</th>
+                        <th className="px-2 py-2.5 w-6" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150">
+                      {lines.map((line) => {
+                        const calcResult = calcLine(line)
+                        const qKey = line._key
+                        const prodQ = productoQ[qKey] ?? ''
+                        const prodsFiltrados = prodQ
+                          ? (productosAll as any[]).filter((p: any) =>
+                              p.nombre.toLowerCase().includes(prodQ.toLowerCase()) ||
+                              p.sku.toLowerCase().includes(prodQ.toLowerCase()))
+                          : []
+
+                        const availableStock = line.productoId ? (stockMap.get(Number(line.productoId)) ?? 0) : 0
+
+                        return (
+                          <tr key={line._key} className="align-top hover:bg-slate-50/50">
+                            {/* Product selector */}
+                            <td className="px-2 py-2 relative">
+                              {line.productoId ? (
+                                <div className="flex items-center gap-1 p-1 border border-slate-200 bg-slate-100 rounded text-[10px] font-bold">
+                                  <span className="truncate max-w-[100px]">
+                                    {(productosAll as any[]).find((p: any) => String(p.id) === String(line.productoId))?.nombre ?? `ID ${line.productoId}`}
+                                  </span>
+                                  <button onClick={() => updateLine(line._key, 'productoId', '')} className="text-slate-400 hover:text-red-500 font-bold ml-auto shrink-0">×</button>
+                                </div>
+                              ) : (
+                                <div className="relative">
+                                  <input
+                                    value={prodQ}
+                                    onChange={e => setProductoQ(prev => ({ ...prev, [qKey]: e.target.value }))}
+                                    placeholder="Buscar..."
+                                    className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-200"
+                                  />
+                                  {prodQ && prodsFiltrados.length > 0 && (
+                                    <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[200px] max-h-36 overflow-y-auto">
+                                      {prodsFiltrados.slice(0, 8).map((p: any) => (
+                                        <button key={p.id} type="button"
+                                          onClick={() => selectProductoForLine(line._key, p)}
+                                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100">
+                                          <p className="font-semibold">{p.nombre}</p>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Desc */}
+                            <td className="px-2 py-2">
+                              <input
+                                value={line.descripcion}
+                                onChange={e => updateLine(line._key, 'descripcion', e.target.value)}
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100"
+                              />
+                            </td>
+
+                            {/* Lote */}
+                            <td className="px-2 py-2">
+                              <input
+                                value={line.loteNumero}
+                                onChange={e => updateLine(line._key, 'loteNumero', e.target.value)}
+                                placeholder="N/A"
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 w-16"
+                              />
+                            </td>
+
+                            {/* Disp */}
+                            <td className="px-2 py-3 text-right text-[11px] font-semibold text-slate-500 pr-3">
+                              {availableStock}
+                            </td>
+
+                            {/* Cant */}
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                min={0.0001}
+                                step="any"
+                                value={line.cantidad}
+                                onChange={e => updateLine(line._key, 'cantidad', e.target.value)}
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                              />
+                            </td>
+
+                            {/* Precio */}
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                min={0}
+                                step="any"
+                                value={line.precioUnitario}
+                                onChange={e => updateLine(line._key, 'precioUnitario', e.target.value)}
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                              />
+                            </td>
+
+                            {/* Descuento Pct */}
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={line.descuentoPct}
+                                onChange={e => updateLine(line._key, 'descuentoPct', e.target.value)}
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                              />
+                            </td>
+
+                            {/* IVA */}
+                            <td className="px-2 py-2">
+                              <select
+                                value={line.tipoIva}
+                                onChange={e => updateLine(line._key, 'tipoIva', e.target.value)}
+                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 bg-white"
+                              >
+                                {TIPO_IVA_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                              </select>
+                            </td>
+
+                            {/* Total */}
+                            <td className="px-2 py-3 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">
+                              {fmt(calcResult.total)}
+                            </td>
+
+                            {/* Delete */}
+                            <td className="px-1 py-3 text-center">
+                              {lines.length > 1 && (
+                                <button onClick={() => removeLine(line._key)} className="text-slate-300 hover:text-red-500 font-medium">
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-between">
+                  <button
+                    type="button"
+                    onClick={addLine}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-655 rounded-lg transition-colors"
+                  >
+                    <Plus size={14} /> Agregar Item Vacío
+                  </button>
+                  <span className="text-xs text-slate-500 pt-2">Total ítems cargados: {lines.filter(l => l.productoId).length}</span>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: FORMAS DE PAGO & RETENCIONES */}
+            {activeTab === 'formas_pago' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-slate-100 pb-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Forma de Pago *</label>
+                    <select
+                      value={formaPago}
+                      onChange={e => setFormaPago(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
+                    >
+                      <option value="CONTADO">Contado</option>
+                      <option value="CREDITO">Crédito</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Medio de Pago</label>
+                    <select
+                      value={medioPago}
+                      onChange={e => setMedioPago(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
+                    >
+                      {MEDIO_PAGO_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+
+                  {formaPago === 'CREDITO' && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Vencimiento *</label>
+                      <input
+                        type="date"
+                        value={fechaVencimiento}
+                        onChange={e => setFechaVencimiento(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-100"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Retenciones */}
+                {esAgente ? (
+                  <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-5 space-y-3">
+                    <div className="flex gap-2 items-center text-amber-800 font-bold text-xs uppercase tracking-wider">
+                      <AlertCircle size={14} />
+                      <span>Retenciones Aplicables (Cliente es Agente Retenedor)</span>
+                    </div>
+                    <p className="text-amber-700/80 text-[10px]">
+                      El cliente seleccionado tiene habilitado el flag de agente retenedor. Ingrese los valores de retención que apliquen:
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">Retención en Fuente ($)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={retefuente}
+                          onChange={e => setRetefuente(e.target.value)}
+                          placeholder="0"
+                          className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">ReteIVA ($)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={reteiva}
+                          onChange={e => setReteiva(e.target.value)}
+                          placeholder="0"
+                          className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-amber-700 mb-1 uppercase tracking-wider">ReteICA ($)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={reteica}
+                          onChange={e => setReteica(e.target.value)}
+                          placeholder="0"
+                          className="w-full p-2 border border-amber-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-200 bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 text-xs">
+                    Este cliente <strong>no es agente retenedor</strong>, por lo tanto no se causarán retenciones de forma automática.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: PEDIDOS PENDIENTES */}
+            {activeTab === 'pedidos' && (
+              <div className="space-y-4">
+                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Pedidos Aprobados del Cliente</h3>
+                <p className="text-slate-500 text-xs">Haga clic en un pedido pendiente para importar todos sus artículos directamente a esta factura.</p>
+                
+                {loadingPedidos && <div className="text-center py-6 text-slate-400">Cargando pedidos...</div>}
+                
+                {!loadingPedidos && clientPedidos.length === 0 && (
+                  <div className="p-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                    No hay pedidos pendientes o pre-facturas en estado APROBADO para este cliente.
+                  </div>
+                )}
+
+                {!loadingPedidos && clientPedidos.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {clientPedidos.map((ped: any) => (
+                      <div
+                        key={ped.id}
+                        className="p-4 border border-slate-200 rounded-xl hover:border-indigo-400 bg-white hover:bg-indigo-50/10 cursor-pointer transition-all flex flex-col justify-between"
+                        onClick={() => importPedidoItems(ped)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="font-mono text-xs font-bold text-slate-700">{ped.numero}</span>
+                            <p className="text-[11px] text-slate-500">Fecha: {new Date(ped.fecha).toLocaleDateString('es-CO')}</p>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                            APROBADO
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100">
+                          <span className="text-xs text-slate-400">{ped.items?.length ?? 0} ítems</span>
+                          <span className="text-xs font-bold text-indigo-600">{fmt(Number(ped.total))}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
   )
 }
