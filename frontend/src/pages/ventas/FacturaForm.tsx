@@ -31,8 +31,8 @@ const MEDIO_PAGO_OPTIONS = [
   { value: 'OTRO', label: 'Otro' },
 ]
 
-const CANAL_OPTIONS = ['Directo', 'WhatsApp', 'E-commerce', 'Distribuidor', 'Corporativo', 'Feria']
-const NIVEL_OPTIONS = ['General', 'Minorista', 'Mayorista', 'Distribuidor']
+const CANAL_OPTIONS = ['Directo', 'Digital']
+const NIVEL_OPTIONS = ['Precio 1', 'Precio 2', 'Precio 3', 'Precio 4']
 
 const LINE_DEFAULT = () => ({
   _key: Math.random().toString(36).slice(2),
@@ -98,9 +98,8 @@ export function FacturaForm() {
   const [fecha, setFecha] = useState('')
   const [vendedorNombre, setVendedorNombre] = useState('')
   const [vendedorId, setVendedorId] = useState<number | ''>('')
-  const [atendidoPor, setAtendidoPor] = useState('')
   const [canal, setCanal] = useState('Directo')
-  const [nivel, setNivel] = useState('General')
+  const [nivel, setNivel] = useState('Precio 1')
   const [imprimeDcto, setImprimeDcto] = useState(true)
   const [notas, setNotas] = useState('')
 
@@ -140,6 +139,29 @@ export function FacturaForm() {
 
   const { data: clientesAll = [] } = useQuery({ queryKey: ['clientes'], queryFn: () => getClientes() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
+
+  const selectedDoc = useMemo(() => {
+    return docConfigs.find((d: any) => String(d.id) === String(selectedDocId))
+  }, [docConfigs, selectedDocId])
+
+  const bodegasFiltradas = useMemo(() => {
+    if (!selectedDoc || selectedDoc.sucursalId === null || selectedDoc.sucursalId === undefined) {
+      return bodegas
+    }
+    return bodegas.filter((b: any) => b.sucursalId === selectedDoc.sucursalId)
+  }, [bodegas, selectedDoc])
+
+  // Keep bodegaId valid within the filtered warehouses
+  useEffect(() => {
+    if (bodegasFiltradas.length > 0) {
+      const isValid = bodegasFiltradas.some((b: any) => String(b.id) === String(bodegaId))
+      if (!isValid) {
+        setBodegaId(String(bodegasFiltradas[0].id))
+      }
+    } else {
+      setBodegaId('')
+    }
+  }, [bodegasFiltradas, bodegaId])
   const { data: productosAll = [] } = useQuery({ queryKey: ['productos'], queryFn: () => getProductos({ activo: true }) })
 
   // Active client details (pagoPromedioDias, plazoCredito, etc.)
@@ -261,19 +283,18 @@ export function FacturaForm() {
   // Trigger invoice transition
   const activateInvoice = (tipo: 'FV' | 'FVE', cId: string, cName: string) => {
     setTipoDocumento(tipo)
-    const doc = docConfigs.find((d: any) => d.sigla === tipo && d.estado === 'ACTIVO')
-    if (doc) {
-      setSelectedDocId(doc.id)
+    if (!selectedDocId) {
+      const doc = docConfigs.find((d: any) => d.sigla === tipo && d.estado === 'ACTIVO')
+      if (doc) {
+        setSelectedDocId(String(doc.id))
+      } else {
+        setSelectedDocId(tipo)
+      }
     }
     setClienteId(cId)
     setClienteQ(cName)
     setFecha(new Date().toISOString().slice(0, 10))
     setLines([LINE_DEFAULT()])
-    
-    // Choose default warehouse
-    if (bodegas.length > 0 && !bodegaId) {
-      setBodegaId(String(bodegas[0].id))
-    }
   }
 
   // Pre-load from query parameter (pedidoId)
@@ -430,7 +451,6 @@ export function FacturaForm() {
       notas: notas || undefined,
       vendedorNombre: vendedorNombre || undefined,
       vendedorId: vendedorId ? Number(vendedorId) : undefined,
-      atendidoPor: atendidoPor || undefined,
       canal,
       nivel,
       imprimeDcto,
@@ -502,6 +522,8 @@ export function FacturaForm() {
                     const doc = docConfigs.find((d: any) => String(d.id) === String(docId))
                     if (doc) {
                       setTipoDocumento(doc.sigla)
+                    } else if (docId === 'FV' || docId === 'FVE') {
+                      setTipoDocumento(docId)
                     } else {
                       setTipoDocumento('')
                     }
@@ -603,7 +625,7 @@ export function FacturaForm() {
                   onChange={e => setBodegaId(e.target.value)}
                   className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
                 >
-                  {bodegas.map((b: any) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                  {bodegasFiltradas.map((b: any) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
                 </select>
               </div>
 
@@ -641,26 +663,15 @@ export function FacturaForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-4">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="imprimeDcto"
-                    checked={imprimeDcto}
-                    onChange={e => setImprimeDcto(e.target.checked)}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
-                  />
-                  <label htmlFor="imprimeDcto" className="text-xs text-slate-600 font-medium select-none">Imprime Dto.</label>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 mb-0.5 uppercase tracking-wider">Atendido Por</label>
-                  <input
-                    value={atendidoPor}
-                    onChange={e => setAtendidoPor(e.target.value)}
-                    placeholder="Ej: Counter"
-                    className="w-full p-1.5 border border-slate-200 rounded text-xs outline-none focus:ring-1 focus:ring-indigo-100"
-                  />
-                </div>
+              <div className="flex items-center gap-2 pt-7">
+                <input
+                  type="checkbox"
+                  id="imprimeDcto"
+                  checked={imprimeDcto}
+                  onChange={e => setImprimeDcto(e.target.checked)}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+                />
+                <label htmlFor="imprimeDcto" className="text-xs text-slate-600 font-medium select-none">Imprime Dto.</label>
               </div>
             </div>
             
