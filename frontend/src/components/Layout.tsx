@@ -243,7 +243,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos (Pre-facturas)" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
                   <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Devoluciones" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Notas Crédito" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
                 </NavGroup>
                 

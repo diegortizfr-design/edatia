@@ -10,7 +10,11 @@ export class NotaCreditoItemDto {
 }
 
 export class CreateNotaCreditoDto {
-  @IsNumber() @Type(() => Number) facturaId!: number
+  @IsNumber() @IsOptional() @Type(() => Number) facturaId?: number
+
+  @IsNumber() @IsOptional() @Type(() => Number) clienteId?: number
+
+  @IsString() @IsOptional() numero?: string
 
   @IsIn(['DEVOLUCION', 'DESCUENTO', 'ANULACION', 'OTRO'])
   motivo!: string

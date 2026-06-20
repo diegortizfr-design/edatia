@@ -28,4 +28,9 @@ export class NotasCreditoController {
   anular(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
     return this.svc.anular(id, u.empresaId!)
   }
+
+  @Patch(':id/emitir')
+  emitir(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
+    return this.svc.emitir(id, u.empresaId!, u.sub)
+  }
 }

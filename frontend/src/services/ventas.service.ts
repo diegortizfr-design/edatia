@@ -70,6 +70,8 @@ export const createNotaCredito = (data: any) =>
   api.post('/ventas/notas-credito', data).then(r => r.data)
 export const anularNotaCredito = (id: number) =>
   api.patch(`/ventas/notas-credito/${id}/anular`).then(r => r.data)
+export const emitirNotaCredito = (id: number) =>
+  api.patch(`/ventas/notas-credito/${id}/emitir`).then(r => r.data)
 
 // ── Recibos de Caja ───────────────────────────────────────────────────────────
 export const getRecibos = (clienteId?: number) =>

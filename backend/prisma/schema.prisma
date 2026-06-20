@@ -1562,8 +1562,8 @@ model NotaCredito {
   empresa          Empresa      @relation(fields: [empresaId], references: [id])
   numero           String
 
-  facturaId        Int
-  factura          FacturaVenta @relation(fields: [facturaId], references: [id])
+  facturaId        Int?
+  factura          FacturaVenta? @relation(fields: [facturaId], references: [id])
   clienteId        Int
   cliente          Tercero      @relation(fields: [clienteId], references: [id])
   resolucionId     Int?
