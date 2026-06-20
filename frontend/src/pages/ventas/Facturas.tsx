@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Download, Send, XCircle, FileText } from 'lucide-react'
+import { Plus, Download, Send, XCircle, FileText, Eye } from 'lucide-react'
 import {
   getFacturas, emitirFactura, anularFactura,
 } from '../../services/ventas.service'
@@ -185,6 +185,12 @@ export function Facturas() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
+                        <Link
+                          to={`/ventas/facturas/${f.id}`}
+                          title="Ver detalle"
+                          className="flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium">
+                          <Eye size={12} /> Ver
+                        </Link>
                         {f.estado === 'BORRADOR' && (
                           <button
                             onClick={() => mutEmitir.mutate(f.id)}
