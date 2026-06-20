@@ -296,38 +296,85 @@ export function NotaCreditoDetalle() {
                     NOTA CRÉDITO DE VENTA
                   </div>
                   <h1 className="text-xl font-bold font-mono text-slate-800 mt-1">{nc.numero}</h1>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Documento Contable de Ajuste</p>
                 </div>
               </div>
 
               {/* Informative Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-b border-slate-100 pb-6">
-                <div>
-                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">ADQUIRENTE (CLIENTE)</h4>
-                  <div className="space-y-1 text-slate-650">
-                    <p className="font-bold text-slate-800 text-sm">{nc.cliente?.nombre}</p>
-                    <p className="font-semibold text-slate-700">NIT/CC: {nc.cliente?.tipoDocumento} {nc.cliente?.numeroDocumento} {nc.cliente?.digitoVerificacion ? `-${nc.cliente.digitoVerificacion}` : ''}</p>
-                    <p><strong>Dirección:</strong> {nc.cliente?.direccion || 'N/A'}</p>
-                    <p><strong>Ciudad:</strong> {nc.cliente?.municipio || 'N/A'} {nc.cliente?.departamento ? `· ${nc.cliente.departamento}` : ''}</p>
-                    <p><strong>Correo:</strong> {nc.cliente?.email || 'N/A'}</p>
-                    <p><strong>Teléfono:</strong> {nc.cliente?.telefono || nc.cliente?.celular || 'N/A'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs border-b border-slate-100 pb-6">
+                
+                {/* DATOS DEL CLIENTE */}
+                <div className="md:col-span-2 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
+                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
+                    DATOS DEL CLIENTE
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5 text-xs text-slate-700">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Razón Social</p>
+                      <p className="font-semibold text-slate-800">{nc.cliente?.nombre || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ciudad</p>
+                      <p className="font-medium">{nc.cliente?.municipio || '—'} {nc.cliente?.departamento ? `· ${nc.cliente.departamento}` : ''}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email</p>
+                      <p className="font-medium break-all">{nc.cliente?.email || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nit</p>
+                      <p className="font-semibold text-slate-800">{nc.cliente?.numeroDocumento}{nc.cliente?.digitoVerificacion ? `-${nc.cliente.digitoVerificacion}` : ''}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección</p>
+                      <p className="font-medium">{nc.cliente?.direccion || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Celular</p>
+                      <p className="font-medium">{nc.cliente?.celular || '—'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección recepción</p>
+                      <p className="font-semibold text-indigo-700">
+                        {nc.factura?.direccion || nc.cliente?.direccion || '—'} {nc.factura?.sucursalCliente ? `(${nc.factura.sucursalCliente})` : ''}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Teléfono</p>
+                      <p className="font-medium">{nc.cliente?.telefono || '—'}</p>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">DETALLE DE AJUSTE</h4>
-                  <div className="space-y-1.5 text-slate-650 grid grid-cols-2 gap-x-2">
-                    <p><strong>Fecha Ajuste:</strong></p>
-                    <p>{new Date(nc.fecha || nc.createdAt).toLocaleDateString('es-CO')}</p>
-                    <p><strong>Documento Afectado:</strong></p>
-                    <p className="font-semibold text-indigo-700">
-                      {nc.facturaId ? `Factura ${nc.factura?.prefijo || ''}${nc.factura?.numero}` : 'Sin Factura (Ajuste Libre)'}
-                    </p>
-                    <p><strong>Motivo DIAN:</strong></p>
-                    <p>{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</p>
-                    <p><strong>Estado Documento:</strong></p>
-                    <p className="uppercase font-bold">{nc.estado}</p>
+
+                {/* DETALLE DE AJUSTE */}
+                <div className="md:col-span-1 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
+                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
+                    DETALLE DE AJUSTE
+                  </div>
+                  <div className="p-4 space-y-2.5 text-xs text-slate-700">
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Fecha Ajuste:</span>
+                      <span className="font-semibold">{new Date(nc.fecha || nc.createdAt).toLocaleDateString('es-CO')}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1 flex-col">
+                      <span className="text-slate-400 font-medium">Documento Afectado:</span>
+                      <span className="font-semibold text-indigo-700 text-right mt-0.5">
+                        {nc.facturaId ? `Factura ${nc.factura?.prefijo || ''}${nc.factura?.numero}` : 'Sin Factura (Ajuste Libre)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1 flex-col">
+                      <span className="text-slate-400 font-medium">Motivo DIAN:</span>
+                      <span className="font-semibold text-right mt-0.5">{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 font-medium">Estado Documento:</span>
+                      <span className="font-semibold uppercase">{nc.estado}</span>
+                    </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Items Table */}

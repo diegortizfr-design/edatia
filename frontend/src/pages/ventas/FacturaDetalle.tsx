@@ -213,6 +213,18 @@ export function FacturaDetalle() {
                   </p>
                 </div>
               )}
+              {f.sucursalCliente && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
+                  <p className="font-medium text-slate-700">{f.sucursalCliente}</p>
+                </div>
+              )}
+              {f.direccion && (
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
+                  <p className="font-medium text-slate-700">{f.direccion}</p>
+                </div>
+              )}
               {f.notas && (
                 <div className="col-span-2 md:col-span-3">
                   <p className="text-xs text-slate-400 mb-0.5">Notas</p>
@@ -457,43 +469,95 @@ export function FacturaDetalle() {
               </div>
 
               {/* Informative Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs border-b border-slate-100 pb-6">
-                <div>
-                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">ADQUIRENTE (CLIENTE)</h4>
-                  <div className="space-y-1 text-slate-650">
-                    <p className="font-bold text-slate-800 text-sm">{f.cliente?.nombre}</p>
-                    <p className="font-semibold text-slate-700">NIT/CC: {f.cliente?.tipoDocumento} {f.cliente?.numeroDocumento} {f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}</p>
-                    <p><strong>Dirección:</strong> {f.cliente?.direccion || 'N/A'}</p>
-                    <p><strong>Ciudad:</strong> {f.cliente?.municipio || 'N/A'} {f.cliente?.departamento ? `· ${f.cliente.departamento}` : ''}</p>
-                    <p><strong>Correo:</strong> {f.cliente?.email || 'N/A'}</p>
-                    <p><strong>Teléfono:</strong> {f.cliente?.telefono || f.cliente?.celular || 'N/A'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs border-b border-slate-100 pb-6">
+                
+                {/* DATOS DEL CLIENTE */}
+                <div className="md:col-span-2 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
+                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
+                    DATOS DEL CLIENTE
+                  </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5 text-xs text-slate-700">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Razón Social</p>
+                      <p className="font-semibold text-slate-800">{f.cliente?.nombre || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ciudad</p>
+                      <p className="font-medium">{f.cliente?.municipio || '—'} {f.cliente?.departamento ? `· ${f.cliente.departamento}` : ''}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email</p>
+                      <p className="font-medium break-all">{f.cliente?.email || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nit</p>
+                      <p className="font-semibold text-slate-800">{f.cliente?.numeroDocumento}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección</p>
+                      <p className="font-medium">{f.cliente?.direccion || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Celular</p>
+                      <p className="font-medium">{f.cliente?.celular || '—'}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección recepción</p>
+                      <p className="font-semibold text-indigo-700">{f.direccion || f.cliente?.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Teléfono</p>
+                      <p className="font-medium">{f.cliente?.telefono || '—'}</p>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">DETALLE COMERCIAL</h4>
-                  <div className="space-y-1 text-slate-650 grid grid-cols-2 gap-x-2">
-                    <p><strong>Fecha Emisión:</strong></p>
-                    <p>{new Date(f.fecha).toLocaleDateString('es-CO')}</p>
+
+                {/* DETALLE COMERCIAL */}
+                <div className="md:col-span-1 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
+                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
+                    DETALLE COMERCIAL
+                  </div>
+                  <div className="p-4 space-y-2.5 text-xs text-slate-700">
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Fecha Emisión:</span>
+                      <span className="font-semibold">{new Date(f.fecha).toLocaleDateString('es-CO')}</span>
+                    </div>
                     {f.fechaVencimiento && (
-                      <>
-                        <p><strong>Fecha Vencimiento:</strong></p>
-                        <p>{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
-                      </>
+                      <div className="flex justify-between border-b border-slate-100 pb-1">
+                        <span className="text-slate-400 font-medium">Vencimiento:</span>
+                        <span className="font-semibold">{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</span>
+                      </div>
                     )}
-                    <p><strong>Forma de Pago:</strong></p>
-                    <p className="uppercase">{f.formaPago}</p>
-                    <p><strong>Medio de Pago:</strong></p>
-                    <p className="uppercase">{f.medioPago?.replace('_', ' ')}</p>
-                    <p><strong>Vendedor:</strong></p>
-                    <p>{f.vendedorNombre || '—'}</p>
-                    <p><strong>Canal de Venta:</strong></p>
-                    <p>{f.canal || '—'}</p>
-                    <p><strong>Nivel de Precio:</strong></p>
-                    <p>{f.nivel || '—'}</p>
-                    <p><strong>Bodega Egreso:</strong></p>
-                    <p>{f.bodega?.nombre || '—'}</p>
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Forma de Pago:</span>
+                      <span className="font-semibold uppercase">{f.formaPago}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Medio de Pago:</span>
+                      <span className="font-semibold uppercase">{f.medioPago?.replace('_', ' ')}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Vendedor:</span>
+                      <span className="font-semibold">{f.vendedorNombre || '—'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Canal de Venta:</span>
+                      <span className="font-semibold">{f.canal || '—'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-1">
+                      <span className="text-slate-400 font-medium">Nivel de Precio:</span>
+                      <span className="font-semibold">{f.nivel || '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 font-medium">Bodega Egreso:</span>
+                      <span className="font-semibold">{f.bodega?.nombre || '—'}</span>
+                    </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Items Table */}

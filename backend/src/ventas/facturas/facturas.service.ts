@@ -119,6 +119,8 @@ export class FacturasService {
         nivel: dto.nivel,
         imprimeDcto: dto.imprimeDcto ?? true,
         tipoDocumento: dto.tipoDocumento ?? 'FV',
+        direccion: dto.direccion,
+        sucursalCliente: dto.sucursalCliente,
         ...totales,
         items: { create: itemsConCosto },
       },

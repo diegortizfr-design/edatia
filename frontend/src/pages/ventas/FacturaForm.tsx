@@ -102,6 +102,8 @@ export function FacturaForm() {
   const [nivel, setNivel] = useState('Precio 1')
   const [imprimeDcto, setImprimeDcto] = useState(true)
   const [notas, setNotas] = useState('')
+  const [direccion, setDireccion] = useState('')
+  const [sucursalCliente, setSucursalCliente] = useState('Principal')
 
   // Formas de pago
   const [formaPago, setFormaPago] = useState('CONTADO')
@@ -268,6 +270,8 @@ export function FacturaForm() {
   // Handle client selection defaults
   useEffect(() => {
     if (clienteFull) {
+      setSucursalCliente('Principal')
+      setDireccion(clienteFull.direccion || '')
       if (clienteFull.plazoCredito > 0) {
         setFormaPago('CREDITO')
         const limitDate = new Date()
@@ -279,6 +283,18 @@ export function FacturaForm() {
       }
     }
   }, [clienteFull])
+
+  const handleSucursalChange = (val: string) => {
+    setSucursalCliente(val)
+    if (val === 'Principal') {
+      setDireccion(clienteFull?.direccion || '')
+    } else {
+      const found = clienteFull?.sucursales?.find((s: any) => s.descripcion === val)
+      if (found) {
+        setDireccion(found.direccion || '')
+      }
+    }
+  }
 
   // Trigger invoice transition
   const activateInvoice = (tipo: 'FV' | 'FVE', cId: string, cName: string) => {
@@ -457,6 +473,8 @@ export function FacturaForm() {
       tipoDocumento: tipoDocumento || 'FV',
       numero: computedConsecutive,
       pedidoId: pedidoId || undefined,
+      direccion: direccion || undefined,
+      sucursalCliente: sucursalCliente || undefined,
       items: lines.map(l => ({
         productoId: Number(l.productoId),
         descripcion: l.descripcion,
@@ -649,6 +667,33 @@ export function FacturaForm() {
                 >
                   {NIVEL_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Sucursal Cliente</label>
+                <select
+                  value={sucursalCliente}
+                  onChange={e => handleSucursalChange(e.target.value)}
+                  className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
+                >
+                  <option value="Principal">Principal ({clienteFull?.direccion || 'Sin dirección'})</option>
+                  {(clienteFull?.sucursales || []).map((s: any) => (
+                    <option key={s.id} value={s.descripcion}>{s.descripcion}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Dirección de Despacho</label>
+                <input
+                  type="text"
+                  value={direccion}
+                  onChange={e => setDireccion(e.target.value)}
+                  placeholder="Dirección de despacho..."
+                  className="w-full p-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-100"
+                />
               </div>
             </div>
 

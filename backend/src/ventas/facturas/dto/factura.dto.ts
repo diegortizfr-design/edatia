@@ -44,6 +44,8 @@ export class CreateFacturaDto {
   @IsString() @IsOptional() nivel?: string
   @IsBoolean() @IsOptional() imprimeDcto?: boolean
   @IsIn(['FV', 'FVE']) @IsOptional() tipoDocumento?: string
+  @IsString() @IsOptional() direccion?: string
+  @IsString() @IsOptional() sucursalCliente?: string
 
   // Si true, genera CUFE y XML DIAN (requiere resolución activa configurada)
   @IsBoolean() @IsOptional() emitirDian?: boolean

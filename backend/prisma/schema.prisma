@@ -1474,6 +1474,8 @@ model FacturaVenta {
   nivel            String?
   imprimeDcto      Boolean      @default(true)
   tipoDocumento    String       @default("FV") // "FV" | "FVE"
+  direccion        String?
+  sucursalCliente  String?
 
   // DIAN
   resolucionId     Int?

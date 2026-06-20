@@ -214,7 +214,7 @@ export class UblService {
           <cbc:ID>${cliente.codigoDane ?? '11001'}</cbc:ID>
           <cbc:CityName>${escXml(cliente.municipio ?? '')}</cbc:CityName>
           <cbc:PostalZone>${cliente.codigoPostal ?? ''}</cbc:PostalZone>
-          <cac:AddressLine><cbc:Line><![CDATA[${escXml(cliente.direccion ?? '')}]]></cbc:Line></cac:AddressLine>
+          <cac:AddressLine><cbc:Line><![CDATA[${escXml(factura.direccion ?? cliente.direccion ?? '')}]]></cbc:Line></cac:AddressLine>
           <cac:Country>
             <cbc:IdentificationCode>${cliente.pais ?? 'CO'}</cbc:IdentificationCode>
             <cbc:Name languageID="es">Colombia</cbc:Name>
