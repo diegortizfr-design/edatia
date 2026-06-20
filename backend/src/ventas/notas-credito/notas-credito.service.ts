@@ -22,7 +22,7 @@ export class NotasCreditoService {
   async findOne(id: number, empresaId: number) {
     const nc = await this.prisma.notaCredito.findFirst({
       where: { id, empresaId },
-      include: { cliente: true, factura: true, items: true },
+      include: { cliente: true, factura: true, items: true, empresa: true },
     })
     if (!nc) throw new NotFoundException('Nota crédito no encontrada')
     return nc

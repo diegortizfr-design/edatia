@@ -8,6 +8,7 @@ import { calcularItem, calcularTotales } from '../cotizaciones/cotizaciones.serv
 
 const INCLUDE_FULL = {
   cliente: true,
+  empresa: true,
   bodega: { select: { nombre: true, codigo: true } },
   resolucion: true,
   pedido: true,

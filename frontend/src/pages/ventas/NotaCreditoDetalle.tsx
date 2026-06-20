@@ -15,6 +15,69 @@ function fmt(n: number) {
   }).format(n)
 }
 
+function fmtDec(n: number) {
+  return new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n)
+}
+
+function numeroALetras(num: number): string {
+  const unidades = ['cero', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve']
+  const decenas = ['', 'diez', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa']
+  const especiales = ['once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve']
+  const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos']
+
+  const convertGroup = (n: number): string => {
+    let out = ''
+    if (n >= 100) {
+      if (n === 100) return 'cien'
+      out += centenas[Math.floor(n / 100)] + ' '
+      n %= 100
+    }
+    if (n >= 10 && n < 20) {
+      if (n - 10 <= 9 && n - 10 >= 1) {
+        out += especiales[n - 11] + ' '
+      } else {
+        out += 'diez '
+      }
+      return out
+    }
+    if (n >= 20) {
+      if (n === 20) return out + 'veinte '
+      if (n < 30) return out + 'veinti' + unidades[n - 20] + ' '
+      out += decenas[Math.floor(n / 10)] + ' '
+      n %= 10
+      if (n > 0) out += 'y '
+    }
+    if (n > 0) {
+      out += unidades[n] + ' '
+    }
+    return out
+  }
+
+  if (num === 0) return 'Cero pesos m/cte'
+  let result = ''
+  num = Math.floor(num)
+
+  if (num >= 1000000) {
+    const mill = Math.floor(num / 1000000)
+    result += (mill === 1 ? 'un millón' : convertGroup(mill) + ' millones') + ' '
+    num %= 1000000
+  }
+  if (num >= 1000) {
+    const miles = Math.floor(num / 1000)
+    result += (miles === 1 ? 'mil' : convertGroup(miles) + ' mil') + ' '
+    num %= 1000
+  }
+  if (num > 0) {
+    result += convertGroup(num)
+  }
+
+  result = result.trim() + ' pesos m/cte'
+  return result.charAt(0).toUpperCase() + result.slice(1)
+}
+
 const ESTADO_COLOR: Record<string, string> = {
   BORRADOR: 'bg-slate-100 text-slate-600',
   EMITIDA:  'bg-blue-100 text-blue-700',
@@ -65,6 +128,19 @@ export function NotaCreditoDetalle() {
   if (error || !notaCredito) return <div className="flex items-center justify-center py-24 text-red-500">Nota crédito no encontrada</div>
 
   const nc = notaCredito as any
+  const empresa = nc.empresa || {
+    nombre: 'EDATIA S.A.S',
+    nit: '900.123.456',
+    digitoVerificacion: '7',
+    direccion: 'Calle 100 #15-30, Bogotá D.C.',
+    telefono: '(601) 555-0199',
+    email: 'info@edatia.com',
+    regimenFiscal: '48',
+    municipio: 'Bogotá',
+    pais: 'CO',
+    logo: ''
+  }
+
 
   return (
     <div className="space-y-6">
@@ -284,95 +360,101 @@ export function NotaCreditoDetalle() {
             <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
               
               {/* Header Grid */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-6">
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-extrabold tracking-tight text-indigo-700 font-sans">EDATIA S.A.S</h2>
-                  <p className="text-xs text-slate-500 font-medium">NIT: 900.123.456-7 · Régimen Común</p>
-                  <p className="text-xs text-slate-400">Teléfono: (601) 555-0199 · info@edatia.com</p>
-                  <p className="text-xs text-slate-400">Dirección: Calle 100 #15-30, Bogotá D.C.</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-4 text-slate-800">
+                {/* Logo */}
+                <div className="col-span-1 flex justify-start">
+                  {empresa.logo ? (
+                    <img src={empresa.logo} alt="Logo" className="max-h-16 object-contain" />
+                  ) : (
+                    <div className="h-14 w-14 bg-slate-800 text-white flex items-center justify-center rounded font-black text-xl">ED</div>
+                  )}
                 </div>
-                <div className="text-right space-y-1">
-                  <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-xs font-extrabold inline-block border border-indigo-150">
-                    NOTA CRÉDITO DE VENTA
+                {/* Company details */}
+                <div className="col-span-2 text-center text-[10px] text-slate-655 leading-tight space-y-0.5">
+                  <h2 className="text-sm font-extrabold text-slate-800 uppercase">{empresa.nombre}</h2>
+                  <p className="font-bold">NIT {empresa.nit}{empresa.digitoVerificacion ? `-${empresa.digitoVerificacion}` : ''} · {empresa.regimenFiscal === '48' ? 'Responsable de IVA' : 'No Responsable de IVA'}</p>
+                  <p>Dirección: {empresa.direccion || '—'}</p>
+                  <p>Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}</p>
+                  <p>{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
+                </div>
+                {/* QR code and NC card */}
+                <div className="col-span-1 flex items-center justify-end gap-2">
+                  <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent('https://catalogo-vpfe.dian.gov.co/User/SearchDocument?uuid=' + (nc.cufde || 'simulated-uuid-cude-dian-edatia'))}`} 
+                      alt="QR DIAN" 
+                      className="w-12 h-12" 
+                    />
                   </div>
-                  <h1 className="text-xl font-bold font-mono text-slate-800 mt-1">{nc.numero}</h1>
+                  <div className="border border-slate-350 p-2 text-center bg-white rounded-md w-full max-w-[180px]">
+                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none">
+                      Nota Crédito de Venta
+                    </p>
+                    <p className="text-xs font-black text-slate-800 mt-1 font-mono">No. {nc.numero}</p>
+                  </div>
                 </div>
               </div>
 
               {/* Informative Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs border-b border-slate-100 pb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs border-b border-slate-200 pb-4">
                 
-                {/* DATOS DEL CLIENTE */}
-                <div className="md:col-span-2 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
-                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
-                    DATOS DEL CLIENTE
-                  </div>
-                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5 text-xs text-slate-700">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Razón Social</p>
-                      <p className="font-semibold text-slate-800">{nc.cliente?.nombre || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ciudad</p>
-                      <p className="font-medium">{nc.cliente?.municipio || '—'} {nc.cliente?.departamento ? `· ${nc.cliente.departamento}` : ''}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email</p>
-                      <p className="font-medium break-all">{nc.cliente?.email || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nit</p>
-                      <p className="font-semibold text-slate-800">{nc.cliente?.numeroDocumento}{nc.cliente?.digitoVerificacion ? `-${nc.cliente.digitoVerificacion}` : ''}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección</p>
-                      <p className="font-medium">{nc.cliente?.direccion || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Celular</p>
-                      <p className="font-medium">{nc.cliente?.celular || '—'}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dirección recepción</p>
-                      <p className="font-semibold text-indigo-700">
-                        {nc.factura?.direccion || nc.cliente?.direccion || '—'} {nc.factura?.sucursalCliente ? `(${nc.factura.sucursalCliente})` : ''}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Teléfono</p>
-                      <p className="font-medium">{nc.cliente?.telefono || '—'}</p>
-                    </div>
-                  </div>
+                {/* Left side: Cliente Info (spans 2 columns) */}
+                <div className="md:col-span-2">
+                  <table className="w-full border-collapse text-[11px]">
+                    <tbody>
+                      <tr className="border border-slate-200">
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Señores</td>
+                        <td className="px-2.5 py-1.5 font-semibold text-slate-800 border-r border-slate-200" colSpan={3}>{nc.cliente?.nombre || '—'}</td>
+                      </tr>
+                      <tr className="border border-slate-200">
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">NIT</td>
+                        <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{nc.cliente?.numeroDocumento}{nc.cliente?.digitoVerificacion ? `-${nc.cliente.digitoVerificacion}` : ''}</td>
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Teléfono</td>
+                        <td className="px-2.5 py-1.5 font-medium">{nc.cliente?.celular || nc.cliente?.telefono || '—'}</td>
+                      </tr>
+                      <tr className="border border-slate-200">
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Dirección</td>
+                        <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{nc.cliente?.direccion || '—'}</td>
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Ciudad</td>
+                        <td className="px-2.5 py-1.5 font-medium">{nc.cliente?.municipio || '—'} {nc.cliente?.departamento ? `· ${nc.cliente.departamento}` : ''}</td>
+                      </tr>
+                      {(nc.factura?.direccion || nc.factura?.sucursalCliente) && (
+                        <tr className="border border-slate-200">
+                          <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-indigo-700 border-r border-slate-200 w-24">Dirección recepción</td>
+                          <td className="px-2.5 py-1.5 font-semibold text-indigo-900" colSpan={3}>
+                            {nc.factura?.direccion || nc.cliente?.direccion || '—'} {nc.factura?.sucursalCliente ? `(${nc.factura.sucursalCliente})` : ''}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* DETALLE DE AJUSTE */}
-                <div className="md:col-span-1 border border-slate-250 rounded-xl overflow-hidden bg-slate-50/20">
-                  <div className="bg-slate-100/70 border-b border-slate-200 px-4 py-2.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
-                    DETALLE DE AJUSTE
+                {/* Right side: Dates Card (spans 1 column) */}
+                <div className="md:col-span-1 border border-slate-200 rounded overflow-hidden">
+                  <div className="bg-slate-100/80 border-b border-slate-200 px-3 py-1.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
+                    Fecha y hora Ajuste
                   </div>
-                  <div className="p-4 space-y-2.5 text-xs text-slate-700">
-                    <div className="flex justify-between border-b border-slate-100 pb-1">
-                      <span className="text-slate-400 font-medium">Fecha Ajuste:</span>
-                      <span className="font-semibold">{new Date(nc.fecha || nc.createdAt).toLocaleDateString('es-CO')}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-100 pb-1 flex-col">
-                      <span className="text-slate-400 font-medium">Documento Afectado:</span>
-                      <span className="font-semibold text-indigo-700 text-right mt-0.5">
-                        {nc.facturaId ? `Factura ${nc.factura?.prefijo || ''}${nc.factura?.numero}` : 'Sin Factura (Ajuste Libre)'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-100 pb-1 flex-col">
-                      <span className="text-slate-400 font-medium">Motivo DIAN:</span>
-                      <span className="font-semibold text-right mt-0.5">{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400 font-medium">Estado Documento:</span>
-                      <span className="font-semibold uppercase">{nc.estado}</span>
-                    </div>
-                  </div>
+                  <table className="w-full text-[11px]">
+                    <tbody>
+                      <tr className="border-b border-slate-100">
+                        <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500 w-24">Generación</td>
+                        <td className="px-2.5 py-1.5 text-right font-medium">{new Date(nc.fecha || nc.createdAt).toLocaleDateString('es-CO')}, {new Date(nc.fecha || nc.createdAt).toTimeString().slice(0, 5)}</td>
+                      </tr>
+                      {nc.facturaId && (
+                        <tr className="border-b border-slate-100">
+                          <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500">Factura Ref.</td>
+                          <td className="px-2.5 py-1.5 text-right font-semibold text-indigo-750">
+                            Factura {nc.factura?.prefijo || ''}{nc.factura?.numero}
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-slate-100">
+                        <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500">Motivo</td>
+                        <td className="px-2.5 py-1.5 text-right font-medium">{nc.motivo === 'DEVOLUCION' ? 'Devolución' : nc.motivo === 'DESCUENTO' ? 'Descuento' : nc.motivo === 'ANULACION' ? 'Anulación' : 'Otro'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
               </div>
@@ -396,10 +478,10 @@ export function NotaCreditoDetalle() {
                       return (
                         <tr key={item.id} className="text-slate-700 hover:bg-slate-50/50">
                           <td className="py-2.5 px-2 font-semibold text-slate-800">{item.descripcion}</td>
-                          <td className="py-2.5 px-2 text-right">{Number(item.cantidad)}</td>
-                          <td className="py-2.5 px-2 text-right">{fmt(Number(item.precioUnitario))}</td>
+                          <td className="py-2.5 px-2 text-right">{Number(item.cantidad).toFixed(2)}</td>
+                          <td className="py-2.5 px-2 text-right">{fmtDec(Number(item.precioUnitario))}</td>
                           <td className="py-2.5 px-2 text-right">{tasaIva}%</td>
-                          <td className="py-2.5 px-2 text-right font-semibold text-slate-900">{fmt(Number(item.total))}</td>
+                          <td className="py-2.5 px-2 text-right font-semibold text-slate-900">{fmtDec(Number(item.total))}</td>
                         </tr>
                       )
                     })}
@@ -407,69 +489,68 @@ export function NotaCreditoDetalle() {
                 </table>
               </div>
 
-              {/* Totals Block */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200">
-                <div>
-                  {nc.descripcion && (
-                    <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl space-y-1">
-                      <h5 className="font-bold text-slate-400 uppercase tracking-widest text-[9px] mb-1">Notas / Observaciones de Ajuste</h5>
-                      <p className="italic">{nc.descripcion}</p>
-                    </div>
-                  )}
+              {/* Bottom Section: Totals, Payment Info & DIAN Banner */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-200 text-xs">
+                {/* Left Column: Observaciones & Info */}
+                <div className="md:col-span-2 space-y-3">
+                  <div>
+                    <span className="font-bold text-slate-600">Total items: </span>
+                    <span className="text-slate-800 font-semibold">{nc.items?.length ?? 0}</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-600">Valor en Letras:</p>
+                    <p className="text-slate-800 font-medium">{numeroALetras(Number(nc.total ?? 0))}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-600">Observaciones:</p>
+                    <p className="text-slate-800 font-medium whitespace-pre-line">{nc.descripcion || '—'}</p>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-slate-650 ml-auto w-full max-w-xs">
-                  <div className="flex justify-between">
-                    <span>Subtotal Acreditado:</span>
-                    <span>{fmt(Number(nc.subtotal ?? 0))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Impuesto IVA Liquidado:</span>
-                    <span>{fmt(Number(nc.iva ?? 0))}</span>
-                  </div>
-                  <div className="flex justify-between font-extrabold text-slate-900 text-sm border-t border-slate-200 pt-2.5">
-                    <span>VALOR TOTAL AJUSTE:</span>
-                    <span>{fmt(Number(nc.total ?? 0))}</span>
-                  </div>
+                {/* Right Column: Totals Table */}
+                <div className="md:col-span-1">
+                  <table className="w-full border-collapse text-xs">
+                    <tbody>
+                      <tr className="border border-slate-200">
+                        <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">Subtotal Acreditado</td>
+                        <td className="px-3 py-2 text-right text-slate-800 font-semibold">{fmtDec(Number(nc.subtotal ?? 0))}</td>
+                      </tr>
+                      {Number(nc.iva ?? 0) > 0 && (
+                        <tr className="border border-slate-200">
+                          <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">IVA Liquidado</td>
+                          <td className="px-3 py-2 text-right text-slate-800 font-semibold">{fmtDec(Number(nc.iva ?? 0))}</td>
+                        </tr>
+                      )}
+                      <tr className="border border-slate-250 bg-slate-100 font-bold">
+                        <td className="px-3 py-2.5 text-slate-900 border-r border-slate-200">Total Acreditado</td>
+                        <td className="px-3 py-2.5 text-right text-slate-900">{fmtDec(Number(nc.total ?? 0))}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               {/* DIAN E-Invoice Info Footer (CUDE + QR) */}
-              {nc.estado === 'EMITIDA' && (
-                <div className="flex gap-4 border-t border-indigo-100 pt-6 text-[10px] bg-slate-50/50 p-4 rounded-xl mt-6">
-                  <div className="shrink-0 border border-slate-200 p-1.5 bg-white rounded-lg self-center">
-                    {/* Generar un QR simulado con la url de validación */}
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('https://catalogo-vpfe.dian.gov.co/User/SearchDocument?uuid=' + (nc.cufde || 'simulated-uuid-cude-dian-edatia'))}`} 
-                      alt="QR DIAN" 
-                      className="w-20 h-20" 
-                    />
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <div>
-                      <p className="font-extrabold text-indigo-800 uppercase tracking-widest text-[8px]">Código Único de Documento Electrónico (CUDE)</p>
-                      <p className="font-mono text-[9px] text-slate-650 break-all select-all leading-normal bg-white p-2 border border-slate-100 rounded mt-1">
-                        {nc.cufde || '555a1239f88c889a77ef77db8890123cbef890121111904a88bc98dbe88cbfa11234c000'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-slate-400 leading-normal">
-                        Este documento es una representación gráfica de una nota crédito electrónica de venta y cumple con los requisitos técnicos exigidos por la DIAN.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="bg-slate-100 border border-slate-200 p-4 text-[10px] text-slate-700 space-y-1.5 text-center mt-6 rounded-lg">
+                <p className="leading-relaxed">
+                  Este documento es una representación gráfica de una nota crédito electrónica de venta y cumple con los requisitos técnicos exigidos por la DIAN.
+                </p>
+                <p className="font-bold">
+                  Responsable de IVA - Actividad Económica {empresa.actividadEconomica || '9329'} Otras actividades recreativas y de esparcimiento n.c.p. Tarifa ICA
+                </p>
+                {nc.estado === 'EMITIDA' && nc.cufde && (
+                  <p className="font-mono text-[9px] text-slate-655 select-all">
+                    CUDE: {nc.cufde}
+                  </p>
+                )}
+              </div>
 
-              {/* Signatures / Audit Log */}
-              <div className="grid grid-cols-2 gap-12 pt-14 border-t border-slate-100 text-center text-xs text-slate-500">
-                <div className="space-y-2 border-t border-dashed border-slate-200 pt-4 max-w-xs mx-auto w-full">
-                  <p className="font-bold text-slate-700">Autorizado por (Contabilidad/Gerencia)</p>
-                  <p className="text-[10px] text-slate-400">Edatia SaaS Cloud System</p>
+              <div className="flex justify-between items-center text-[8px] text-slate-400 mt-4 px-2">
+                <div>
+                  Firma electrónica: ver en el XML
                 </div>
-                <div className="space-y-2 border-t border-dashed border-slate-200 pt-4 max-w-xs mx-auto w-full">
-                  <p className="font-bold text-slate-700">Firma Recibido / Cliente</p>
-                  <p className="text-[10px] text-slate-400">Nombre, Cédula y Fecha</p>
+                <div>
+                  Fabricante Software: Edatia Software
                 </div>
               </div>
 
