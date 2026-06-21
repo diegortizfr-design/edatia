@@ -217,4 +217,116 @@ export class ConfiguracionService {
     await (this.prisma as any).tipoIdentificacion.findFirstOrThrow({ where: { id, empresaId } })
     return (this.prisma as any).tipoIdentificacion.delete({ where: { id } })
   }
+
+  // ──────────────────────────────────────────────────────────────
+  // FORMAS DE PAGO
+  // ──────────────────────────────────────────────────────────────
+
+  async getFormasPago(empresaId: number) {
+    const existing = await this.prisma.formaPago.findMany({
+      where: { empresaId },
+      orderBy: { codigo: 'asc' },
+    })
+
+    if (existing.length === 0) {
+      const defaults = [
+        { codigo: 'CONTADO', nombre: 'Contado', activo: true },
+        { codigo: 'CREDITO', nombre: 'Crédito', activo: true },
+      ]
+      await this.prisma.formaPago.createMany({
+        data: defaults.map(d => ({ empresaId, ...d })),
+        skipDuplicates: true,
+      })
+      return this.prisma.formaPago.findMany({
+        where: { empresaId },
+        orderBy: { codigo: 'asc' },
+      })
+    }
+    return existing
+  }
+
+  async createFormaPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean }) {
+    return this.prisma.formaPago.create({
+      data: {
+        empresaId,
+        codigo: dto.codigo.toUpperCase().trim(),
+        nombre: dto.nombre.trim(),
+        activo: dto.activo ?? true,
+      },
+    })
+  }
+
+  async updateFormaPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) {
+    await this.prisma.formaPago.findFirstOrThrow({ where: { id, empresaId } })
+    const data: any = { ...dto }
+    if (data.codigo) data.codigo = data.codigo.toUpperCase().trim()
+    if (data.nombre) data.nombre = data.nombre.trim()
+    return this.prisma.formaPago.update({
+      where: { id },
+      data,
+    })
+  }
+
+  async deleteFormaPago(id: number, empresaId: number) {
+    await this.prisma.formaPago.findFirstOrThrow({ where: { id, empresaId } })
+    return this.prisma.formaPago.delete({ where: { id } })
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // MEDIOS DE PAGO
+  // ──────────────────────────────────────────────────────────────
+
+  async getMediosPago(empresaId: number) {
+    const existing = await this.prisma.medioPago.findMany({
+      where: { empresaId },
+      orderBy: { codigo: 'asc' },
+    })
+
+    if (existing.length === 0) {
+      const defaults = [
+        { codigo: 'EFECTIVO', nombre: 'Efectivo', activo: true },
+        { codigo: 'TRANSFERENCIA', nombre: 'Transferencia Bancaria', activo: true },
+        { codigo: 'CHEQUE', nombre: 'Cheque', activo: true },
+        { codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta de Crédito', activo: true },
+        { codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta de Débito', activo: true },
+        { codigo: 'OTRO', nombre: 'Otro', activo: true },
+      ]
+      await this.prisma.medioPago.createMany({
+        data: defaults.map(d => ({ empresaId, ...d })),
+        skipDuplicates: true,
+      })
+      return this.prisma.medioPago.findMany({
+        where: { empresaId },
+        orderBy: { codigo: 'asc' },
+      })
+    }
+    return existing
+  }
+
+  async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean }) {
+    return this.prisma.medioPago.create({
+      data: {
+        empresaId,
+        codigo: dto.codigo.toUpperCase().trim(),
+        nombre: dto.nombre.trim(),
+        activo: dto.activo ?? true,
+      },
+    })
+  }
+
+  async updateMedioPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) {
+    await this.prisma.medioPago.findFirstOrThrow({ where: { id, empresaId } })
+    const data: any = { ...dto }
+    if (data.codigo) data.codigo = data.codigo.toUpperCase().trim()
+    if (data.nombre) data.nombre = data.nombre.trim()
+    return this.prisma.medioPago.update({
+      where: { id },
+      data,
+    })
+  }
+
+  async deleteMedioPago(id: number, empresaId: number) {
+    await this.prisma.medioPago.findFirstOrThrow({ where: { id, empresaId } })
+    return this.prisma.medioPago.delete({ where: { id } })
+  }
 }

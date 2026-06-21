@@ -192,6 +192,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/formas-medios-pago" icon={<Coins size={14}/>} label="Formas / Medios de Pago" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={isCollapsed} />
               <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />

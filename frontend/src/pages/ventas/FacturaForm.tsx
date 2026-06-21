@@ -7,7 +7,7 @@ import {
   getClientes, getCliente, createFactura, getPedido, getPedidos, getFacturas
 } from '../../services/ventas.service'
 import { getProductos, getBodegas, getStock } from '../../services/inventario.service'
-import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
+import { getDocumentosConfig, incrementarConsecutivo, getFormasPago, getMediosPago } from '../../services/configuracion.service'
 import { getVendedores } from '../../services/erp.service'
 
 function fmt(n: number) {
@@ -142,6 +142,32 @@ export function FacturaForm() {
 
   const { data: clientesAll = [] } = useQuery({ queryKey: ['clientes'], queryFn: () => getClientes() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
+
+  const { data: formasPagoList = [] } = useQuery({
+    queryKey: ['config-formas-pago'],
+    queryFn: getFormasPago,
+  })
+
+  const { data: mediosPagoList = [] } = useQuery({
+    queryKey: ['config-medios-pago'],
+    queryFn: getMediosPago,
+  })
+
+  // Set default forma de pago once loaded
+  useEffect(() => {
+    const activeFormas = formasPagoList.filter((f: any) => f.activo)
+    if (activeFormas.length > 0 && !activeFormas.find((f: any) => f.codigo === formaPago)) {
+      setFormaPago(activeFormas[0].codigo)
+    }
+  }, [formasPagoList, formaPago])
+
+  // Set default medio de pago once loaded
+  useEffect(() => {
+    const activeMedios = mediosPagoList.filter((m: any) => m.activo)
+    if (activeMedios.length > 0 && !activeMedios.find((m: any) => m.codigo === medioPago)) {
+      setMedioPago(activeMedios[0].codigo)
+    }
+  }, [mediosPagoList, medioPago])
 
   const selectedDoc = useMemo(() => {
     return docConfigs.find((d: any) => String(d.id) === String(selectedDocId))
@@ -1115,8 +1141,13 @@ export function FacturaForm() {
                       onChange={e => setFormaPago(e.target.value)}
                       className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
                     >
-                      <option value="CONTADO">Contado</option>
-                      <option value="CREDITO">Crédito</option>
+                      {formasPagoList
+                        .filter((f: any) => f.activo)
+                        .map((f: any) => (
+                          <option key={f.id} value={f.codigo}>
+                            {f.nombre}
+                          </option>
+                        ))}
                     </select>
                   </div>
 
@@ -1127,7 +1158,13 @@ export function FacturaForm() {
                       onChange={e => setMedioPago(e.target.value)}
                       className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
                     >
-                      {MEDIO_PAGO_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {mediosPagoList
+                        .filter((m: any) => m.activo)
+                        .map((m: any) => (
+                          <option key={m.id} value={m.codigo}>
+                            {m.nombre}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

@@ -196,3 +196,31 @@ export const deleteBarrio = (id: number) =>
 export const getColaboradores = () =>
   api.get('/colaboradores').then(r => r.data)
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FORMAS Y MEDIOS DE PAGO
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getFormasPago = () =>
+  api.get('/configuracion/formas-pago').then(r => r.data)
+
+export const createFormaPago = (dto: { codigo: string; nombre: string; activo?: boolean }) =>
+  api.post('/configuracion/formas-pago', dto).then(r => r.data)
+
+export const updateFormaPago = (id: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) =>
+  api.patch(`/configuracion/formas-pago/${id}`, dto).then(r => r.data)
+
+export const deleteFormaPago = (id: number) =>
+  api.delete(`/configuracion/formas-pago/${id}`).then(r => r.data)
+
+export const getMediosPago = () =>
+  api.get('/configuracion/medios-pago').then(r => r.data)
+
+export const createMedioPago = (dto: { codigo: string; nombre: string; activo?: boolean }) =>
+  api.post('/configuracion/medios-pago', dto).then(r => r.data)
+
+export const updateMedioPago = (id: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) =>
+  api.patch(`/configuracion/medios-pago/${id}`, dto).then(r => r.data)
+
+export const deleteMedioPago = (id: number) =>
+  api.delete(`/configuracion/medios-pago/${id}`).then(r => r.data)
+

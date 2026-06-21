@@ -159,6 +159,8 @@ model Empresa {
   periodosCierre       PeriodoCierreERP[]
   auditLogsERP         AuditLogERP[]
   notificaciones       Notificacion[]
+  formasPago           FormaPago[]
+  mediosPago           MedioPago[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2473,6 +2475,38 @@ model AuditoriaProducto {
 
   @@index([productoId])
   @@index([empresaId, createdAt])
+}
+
+model FormaPago {
+  id        Int      @id @default(autoincrement())
+  empresaId Int
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo    String   // CONTADO, CREDITO, etc.
+  nombre    String   // Contado, Crédito a 30 días, etc.
+  activo    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model MedioPago {
+  id        Int      @id @default(autoincrement())
+  empresaId Int
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+
+  codigo    String   // EFECTIVO, TRANSFERENCIA, CHEQUE, TARJETA_CREDITO, etc.
+  nombre    String   // Efectivo, Transferencia Bancaria, Nequi, etc.
+  activo    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
 }
 
 

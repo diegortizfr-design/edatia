@@ -144,4 +144,54 @@ export class ConfiguracionController {
   deleteTipoIdentificacion(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
     return this.svc.deleteTipoIdentificacion(id, u.empresaId!)
   }
+
+  // ── Formas de Pago ───────────────────────────────────────────
+  @Get('formas-pago')
+  getFormasPago(@GetUser() u: JwtPayload) {
+    return this.svc.getFormasPago(u.empresaId!)
+  }
+
+  @Post('formas-pago')
+  createFormaPago(@GetUser() u: JwtPayload, @Body() dto: any) {
+    return this.svc.createFormaPago(u.empresaId!, dto)
+  }
+
+  @Patch('formas-pago/:id')
+  updateFormaPago(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() u: JwtPayload,
+    @Body() dto: any,
+  ) {
+    return this.svc.updateFormaPago(id, u.empresaId!, dto)
+  }
+
+  @Delete('formas-pago/:id')
+  deleteFormaPago(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
+    return this.svc.deleteFormaPago(id, u.empresaId!)
+  }
+
+  // ── Medios de Pago ───────────────────────────────────────────
+  @Get('medios-pago')
+  getMediosPago(@GetUser() u: JwtPayload) {
+    return this.svc.getMediosPago(u.empresaId!)
+  }
+
+  @Post('medios-pago')
+  createMedioPago(@GetUser() u: JwtPayload, @Body() dto: any) {
+    return this.svc.createMedioPago(u.empresaId!, dto)
+  }
+
+  @Patch('medios-pago/:id')
+  updateMedioPago(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() u: JwtPayload,
+    @Body() dto: any,
+  ) {
+    return this.svc.updateMedioPago(id, u.empresaId!, dto)
+  }
+
+  @Delete('medios-pago/:id')
+  deleteMedioPago(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
+    return this.svc.deleteMedioPago(id, u.empresaId!)
+  }
 }
