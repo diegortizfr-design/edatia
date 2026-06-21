@@ -237,65 +237,67 @@ export function FacturaDetalle() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
-              <p className="font-semibold text-slate-800">{f.cliente?.nombre}</p>
-              <p className="text-xs text-slate-500">{f.cliente?.tipoDocumento} {f.cliente?.numeroDocumento}</p>
+              <p className="font-semibold text-slate-800">{f.cliente?.nombre || '—'}</p>
+              {f.cliente && (
+                <p className="text-xs text-slate-500">{f.cliente.tipoDocumento} {f.cliente.numeroDocumento}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Ciudad</p>
+              <p className="font-semibold text-slate-850">
+                {f.cliente?.municipio 
+                  ? `${f.cliente.municipio}${f.cliente.departamento ? `, ${f.cliente.departamento}` : ''}` 
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
+              <p className="font-semibold text-slate-850">{f.direccion || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Teléfono</p>
+              <p className="font-semibold text-slate-850">{f.cliente?.telefono || f.cliente?.celular || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Forma de pago</p>
-              <p className="font-semibold text-slate-850">{f.formaPago}</p>
+              <p className="font-semibold text-slate-850">{f.formaPago || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Medio de pago</p>
-              <p className="font-semibold text-slate-850">{f.medioPago?.replace('_', ' ')}</p>
+              <p className="font-semibold text-slate-850">{f.medioPago?.replace('_', ' ') || '—'}</p>
             </div>
-            {f.fechaVencimiento && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Vencimiento</p>
-                <p className="font-semibold text-slate-850">{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
-              </div>
-            )}
-            {f.bodega && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Bodega</p>
-                <p className="font-semibold text-slate-850">{f.bodega.nombre}</p>
-              </div>
-            )}
-            {f.vendedorNombre && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Vendedor</p>
-                <p className="font-semibold text-slate-850">{f.vendedorNombre}</p>
-              </div>
-            )}
-            {f.canal && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Canal de venta</p>
-                <p className="font-semibold text-slate-850">{f.canal}</p>
-              </div>
-            )}
-            {f.nivel && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Nivel de precio</p>
-                <p className="font-semibold text-slate-850">{f.nivel}</p>
-              </div>
-            )}
-            {f.sucursalCliente && (
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
-                <p className="font-semibold text-slate-855">{f.sucursalCliente}</p>
-              </div>
-            )}
-            {f.direccion && (
-              <div className="col-span-2">
-                <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
-                <p className="font-semibold text-slate-850">{f.direccion}</p>
-              </div>
-            )}
-            {f.notas && (
-              <div className="col-span-2 md:col-span-4">
-                <p className="text-xs text-slate-400 mb-0.5">Notas</p>
-                <p className="text-slate-600 text-xs italic">{f.notas}</p>
-              </div>
-            )}
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Vencimiento</p>
+              <p className="font-semibold text-slate-850">
+                {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Bodega</p>
+              <p className="font-semibold text-slate-850">{f.bodega?.nombre || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Vendedor</p>
+              <p className="font-semibold text-slate-850">{f.vendedorNombre || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Canal de venta</p>
+              <p className="font-semibold text-slate-850">{f.canal || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Nivel de precio</p>
+              <p className="font-semibold text-slate-850">{f.nivel || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
+              <p className="font-semibold text-slate-850">{f.sucursalCliente || '—'}</p>
+            </div>
+            <div className="col-span-2 md:col-span-4 lg:col-span-6 border-t border-slate-100 pt-3 mt-1">
+              <p className="text-xs text-slate-400 mb-0.5">Observación / Notas</p>
+              <p className="text-slate-600 text-xs italic bg-slate-50 border border-slate-100 rounded-xl p-3">
+                {f.notas || 'Sin observaciones'}
+              </p>
+            </div>
           </div>
           
           {f.resolucion && (

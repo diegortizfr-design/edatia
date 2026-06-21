@@ -224,13 +224,32 @@ export function NotaCreditoDetalle() {
         {/* Información General (Compact Full-Width Grid) */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información General</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
-              <p className="font-semibold text-slate-850">{nc.cliente?.nombre}</p>
-              <p className="text-xs text-slate-500">{nc.cliente?.tipoDocumento} {nc.cliente?.numeroDocumento}</p>
+              <p className="font-semibold text-slate-800">{nc.cliente?.nombre || '—'}</p>
+              {nc.cliente && (
+                <p className="text-xs text-slate-500">{nc.cliente.tipoDocumento} {nc.cliente.numeroDocumento}</p>
+              )}
             </div>
-            
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Ciudad</p>
+              <p className="font-semibold text-slate-850">
+                {nc.cliente?.municipio 
+                  ? `${nc.cliente.municipio}${nc.cliente.departamento ? `, ${nc.cliente.departamento}` : ''}` 
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
+              <p className="font-semibold text-slate-850">
+                {nc.factura?.direccion || nc.cliente?.direccion || '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Teléfono</p>
+              <p className="font-semibold text-slate-850">{nc.cliente?.telefono || nc.cliente?.celular || '—'}</p>
+            </div>
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Cruce / Referencia</p>
               {nc.facturaId ? (
@@ -245,20 +264,16 @@ export function NotaCreditoDetalle() {
                 <p className="font-medium text-amber-700 mt-0.5 italic">Ajuste libre (Sin Factura)</p>
               )}
             </div>
-
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Motivo</p>
               <p className="font-semibold text-slate-850 mt-0.5">{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</p>
             </div>
-
-            {nc.descripcion && (
-              <div className="col-span-1 sm:col-span-2 md:col-span-4">
-                <p className="text-xs text-slate-400 mb-0.5">Observación / Notas</p>
-                <p className="text-slate-600 text-xs italic bg-slate-50 border border-slate-100 rounded-xl p-3">
-                  {nc.descripcion}
-                </p>
-              </div>
-            )}
+            <div className="col-span-2 md:col-span-4 lg:col-span-6 border-t border-slate-100 pt-3 mt-1">
+              <p className="text-xs text-slate-400 mb-0.5">Observación / Notas</p>
+              <p className="text-slate-600 text-xs italic bg-slate-50 border border-slate-100 rounded-xl p-3">
+                {nc.descripcion || 'Sin observaciones'}
+              </p>
+            </div>
           </div>
         </div>
 
