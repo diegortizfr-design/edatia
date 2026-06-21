@@ -533,14 +533,21 @@ export function FacturaDetalle() {
             {/* Printable Area */}
             <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
               {/* Header Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-4 text-slate-800">
-                {/* Logo */}
-                <div className="col-span-1 flex justify-start">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start border-b-2 border-slate-800 pb-4 text-slate-800">
+                {/* Logo and Dates */}
+                <div className="col-span-1 flex flex-col items-start gap-1">
                   {empresa.logo ? (
-                    <img src={empresa.logo} alt="Logo" className="max-h-16 object-contain" />
+                    <img src={empresa.logo} alt="Logo" className="max-h-14 object-contain" />
                   ) : (
-                    <div className="h-14 w-14 bg-slate-800 text-white flex items-center justify-center rounded font-black text-xl">ED</div>
+                    <div className="h-12 w-12 bg-slate-800 text-white flex items-center justify-center rounded font-black text-lg">ED</div>
                   )}
+                  <div className="text-[8px] text-slate-500 mt-2 space-y-0.5 leading-tight">
+                    <p><span className="font-bold text-slate-600">Gen:</span> {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}</p>
+                    <p><span className="font-bold text-slate-600">Exp:</span> {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}</p>
+                    {f.fechaVencimiento && (
+                      <p><span className="font-bold text-slate-600">Venc:</span> {new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
+                    )}
+                  </div>
                 </div>
                 {/* Company details */}
                 <div className="col-span-2 text-center text-[10px] text-slate-650 leading-tight space-y-0.5">
@@ -550,10 +557,10 @@ export function FacturaDetalle() {
                   <p>Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}</p>
                   <p>{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
                 </div>
-                {/* QR code and Invoice card */}
-                <div className="col-span-1 flex items-center justify-end gap-2">
+                {/* QR code and Invoice card (Stacked) */}
+                <div className="col-span-1 flex flex-col items-end gap-1.5">
                   {f.qrUrl ? (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded">
+                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
                       <img 
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(f.qrUrl)}`} 
                         alt="QR DIAN" 
@@ -561,11 +568,11 @@ export function FacturaDetalle() {
                       />
                     </div>
                   ) : (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded">
+                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
                       <div className="w-12 h-12 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
                     </div>
                   )}
-                  <div className="border border-slate-300 p-2 text-center bg-white rounded-md w-full max-w-[180px]">
+                  <div className="border border-slate-300 p-1.5 text-center bg-white rounded-md w-full max-w-[170px] shadow-sm">
                     <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none">
                       {f.tipoDocumento === 'FVE' ? 'Factura electrónica de venta' : 'Factura de Venta'}
                     </p>
@@ -575,65 +582,35 @@ export function FacturaDetalle() {
               </div>
 
               {/* Informative Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs border-b border-slate-200 pb-4">
-                
-                {/* Left side: Cliente Info (spans 2 columns) */}
-                <div className="md:col-span-2">
-                  <table className="w-full border-collapse text-[11px]">
-                    <tbody>
+              <div className="border-b border-slate-200 pb-4">
+                <table className="w-full border-collapse text-[11px]">
+                  <tbody>
+                    <tr className="border border-slate-200">
+                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Señores</td>
+                      <td className="px-2.5 py-1.5 font-semibold text-slate-800 border-r border-slate-200" colSpan={3}>{f.cliente?.nombre || '—'}</td>
+                    </tr>
+                    <tr className="border border-slate-200">
+                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">NIT</td>
+                      <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.numeroDocumento}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}</td>
+                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Teléfono</td>
+                      <td className="px-2.5 py-1.5 font-medium">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
+                    </tr>
+                    <tr className="border border-slate-200">
+                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Dirección</td>
+                      <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.direccion || '—'}</td>
+                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Ciudad</td>
+                      <td className="px-2.5 py-1.5 font-medium">{f.cliente?.municipio || '—'} {f.cliente?.departamento ? `· ${f.cliente.departamento}` : ''}</td>
+                    </tr>
+                    {(f.direccion || f.sucursalCliente) && (
                       <tr className="border border-slate-200">
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Señores</td>
-                        <td className="px-2.5 py-1.5 font-semibold text-slate-800 border-r border-slate-200" colSpan={3}>{f.cliente?.nombre || '—'}</td>
+                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-indigo-700 border-r border-slate-200 w-24">Dirección recepción</td>
+                        <td className="px-2.5 py-1.5 font-semibold text-indigo-900" colSpan={3}>
+                          {f.direccion || f.cliente?.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
+                        </td>
                       </tr>
-                      <tr className="border border-slate-200">
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">NIT</td>
-                        <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.numeroDocumento}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}</td>
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Teléfono</td>
-                        <td className="px-2.5 py-1.5 font-medium">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
-                      </tr>
-                      <tr className="border border-slate-200">
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Dirección</td>
-                        <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.direccion || '—'}</td>
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Ciudad</td>
-                        <td className="px-2.5 py-1.5 font-medium">{f.cliente?.municipio || '—'} {f.cliente?.departamento ? `· ${f.cliente.departamento}` : ''}</td>
-                      </tr>
-                      {(f.direccion || f.sucursalCliente) && (
-                        <tr className="border border-slate-200">
-                          <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-indigo-700 border-r border-slate-200 w-24">Dirección recepción</td>
-                          <td className="px-2.5 py-1.5 font-semibold text-indigo-900" colSpan={3}>
-                            {f.direccion || f.cliente?.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Right side: Dates Card (spans 1 column) */}
-                <div className="md:col-span-1 border border-slate-200 rounded overflow-hidden">
-                  <div className="bg-slate-100/80 border-b border-slate-200 px-3 py-1.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider text-center">
-                    Fecha y hora Factura
-                  </div>
-                  <table className="w-full text-[11px]">
-                    <tbody>
-                      <tr className="border-b border-slate-100">
-                        <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500 w-24">Generación</td>
-                        <td className="px-2.5 py-1.5 text-right font-medium">{new Date(f.fecha).toLocaleDateString('es-CO')}, {new Date(f.fecha).toTimeString().slice(0, 5)}</td>
-                      </tr>
-                      <tr className="border-b border-slate-100">
-                        <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500">Expedición</td>
-                        <td className="px-2.5 py-1.5 text-right font-medium">{new Date(f.fecha).toLocaleDateString('es-CO')}, {new Date(f.fecha).toTimeString().slice(0, 5)}</td>
-                      </tr>
-                      {f.fechaVencimiento && (
-                        <tr>
-                          <td className="bg-slate-50/50 px-2.5 py-1.5 font-bold text-slate-500">Vencimiento</td>
-                          <td className="px-2.5 py-1.5 text-right font-medium">{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               {/* Items Table */}
