@@ -395,7 +395,10 @@ export function NotaCreditoDetalle() {
                 >
                   Cerrar
                 </button>
-                 {/* Printable Area */}
+              </div>
+            </div>
+
+            {/* Printable Area */}
             <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
               
               {/* Header Grid */}
