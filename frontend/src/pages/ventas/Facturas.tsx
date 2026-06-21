@@ -44,6 +44,8 @@ export function Facturas() {
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
   const [tipoDoc, setTipoDoc] = useState('')
+  const [clienteQ, setClienteQ] = useState('')
+  const [prefijoQ, setPrefijoQ] = useState('')
 
   const { data: facturas = [], isLoading } = useQuery({
     queryKey: ['facturas', estado, desde, hasta],
@@ -56,10 +58,24 @@ export function Facturas() {
 
   const filteredFacturas = useMemo(() => {
     return (facturas as any[]).filter((f: any) => {
-      if (!tipoDoc) return true
-      return f.tipoDocumento === tipoDoc
+      if (tipoDoc && f.tipoDocumento !== tipoDoc) return false
+
+      if (clienteQ) {
+        const nombreMatch = f.cliente?.nombre?.toLowerCase().includes(clienteQ.toLowerCase())
+        const docMatch = f.cliente?.numeroDocumento?.includes(clienteQ)
+        if (!nombreMatch && !docMatch) return false
+      }
+
+      if (prefijoQ) {
+        const pref = (f.prefijo || '').toLowerCase()
+        const numPart = (f.numero || '').toLowerCase()
+        const matchPref = pref.includes(prefijoQ.toLowerCase()) || numPart.startsWith(prefijoQ.toLowerCase())
+        if (!matchPref) return false
+      }
+
+      return true
     })
-  }, [facturas, tipoDoc])
+  }, [facturas, tipoDoc, clienteQ, prefijoQ])
 
   const mutEmitir = useMutation({
     mutationFn: (id: number) => emitirFactura(id),
@@ -112,6 +128,40 @@ export function Facturas() {
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-center">
+        <div className="relative">
+          <input 
+            type="text"
+            value={clienteQ} 
+            onChange={e => setClienteQ(e.target.value)}
+            placeholder="Buscar por cliente..."
+            className="p-2.5 pr-8 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white w-48"
+          />
+          {clienteQ && (
+            <button 
+              onClick={() => setClienteQ('')} 
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div className="relative">
+          <input 
+            type="text"
+            value={prefijoQ} 
+            onChange={e => setPrefijoQ(e.target.value)}
+            placeholder="Filtro prefijo..."
+            className="p-2.5 pr-8 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white w-32"
+          />
+          {prefijoQ && (
+            <button 
+              onClick={() => setPrefijoQ('')} 
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+            >
+              ×
+            </button>
+          )}
+        </div>
         <select value={tipoDoc} onChange={e => setTipoDoc(e.target.value)}
           className="p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
           <option value="">Todos los tipos (FV / FVE)</option>
@@ -133,8 +183,8 @@ export function Facturas() {
           <input type="date" value={hasta} onChange={e => setHasta(e.target.value)}
             className="p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
         </div>
-        {(tipoDoc || estado || desde || hasta) && (
-          <button onClick={() => { setTipoDoc(''); setEstado(''); setDesde(''); setHasta('') }}
+        {(tipoDoc || estado || desde || hasta || clienteQ || prefijoQ) && (
+          <button onClick={() => { setTipoDoc(''); setEstado(''); setDesde(''); setHasta(''); setClienteQ(''); setPrefijoQ('') }}
             className="text-xs text-slate-500 hover:text-red-600 underline">
             Limpiar filtros
           </button>
