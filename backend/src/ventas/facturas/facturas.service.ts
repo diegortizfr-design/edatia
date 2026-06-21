@@ -60,7 +60,42 @@ export class FacturasService {
 
   async create(dto: CreateFacturaDto, empresaId: number, usuarioId: number) {
     const totales = calcularTotales(dto.items)
-    const numero = dto.numero || await this.generarNumero(empresaId, dto.tipoDocumento)
+
+    // ── 1. Cargar Configuración DIAN y resoluciones activas ──────────────────────
+    const config = await this.prisma.configuracionDIAN.findUnique({
+      where: { empresaId },
+      include: {
+        resoluciones: {
+          where: { tipoDocumento: '01', activo: true, fechaVigencia: { gte: new Date() } },
+          orderBy: { id: 'desc' },
+          take: 1,
+        },
+      },
+    })
+
+    let cufe: string | null = null
+    let qrUrl: string | null = null
+    let xmlDIAN: string | null = null
+    let numeroDIAN: number | null = null
+    let prefijoDIAN: string | null = null
+    let resolucionId: number | null = null
+    let numero = dto.numero
+
+    if (config?.activo && config.resoluciones.length > 0) {
+      const res = config.resoluciones[0]
+      const updated = await this.prisma.resolucionDIAN.update({
+        where: { id: res.id },
+        data: { numeroCurrent: { increment: 1 } },
+      })
+      numeroDIAN = updated.numeroCurrent
+      prefijoDIAN = res.prefijo
+      resolucionId = res.id
+      numero = `${prefijoDIAN}${numeroDIAN}`
+    }
+
+    if (!numero) {
+      numero = await this.generarNumero(empresaId, dto.tipoDocumento || 'FV')
+    }
 
     // Obtener costos actuales (CPP) para el asiento contable
     const productosIds = [...new Set(dto.items.map(i => i.productoId))]
@@ -92,6 +127,64 @@ export class FacturasService {
       }
     })
 
+    // ── 2. Generar CUFE + XML DIAN si es facturador electrónico activo ────────────
+    if (config?.activo && config.resoluciones.length > 0 && resolucionId) {
+      const res = config.resoluciones[0]
+      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } })
+      const cliente = await this.prisma.tercero.findUnique({ where: { id: dto.clienteId } })
+      
+      if (empresa && cliente) {
+        const nitOFE = empresa.nit.replace(/[^0-9]/g, '').replace(/-.*/, '')
+        const ambiente = config.ambiente === 'PRODUCCION' ? '1' : '2'
+        const numFac = `${res.prefijo}${numeroDIAN}`
+        const now = new Date(dto.fecha)
+        const fecFac = now.toISOString().split('T')[0]
+        const horFac = now.toTimeString().split(' ')[0] + '-05:00'
+
+        cufe = this.cufeService.calcularCufe({
+          numFac,
+          fecFac,
+          horFac,
+          valFac: Number(totales.subtotal) - Number(totales.descuento),
+          valImp1: Number(totales.iva19) + Number(totales.iva5),
+          valImp2: 0,
+          valImp3: 0,
+          valTot: Number(totales.total),
+          nitOFE,
+          numAdq: cliente.numeroDocumento,
+          claveTecnica: res.claveTecnica,
+          ambiente,
+        })
+
+        const secCode = this.cufeService.calcularSoftwareSecurityCode(
+          config.softwareId ?? '', config.softwarePin ?? '', numFac
+        )
+        qrUrl = this.cufeService.qrUrl(cufe, ambiente)
+
+        xmlDIAN = this.ublService.buildFacturaXml({
+          empresa: { ...empresa, digitoVerificacion: empresa.digitoVerificacion },
+          cliente,
+          factura: { 
+            ...totales, 
+            numero, 
+            numeroDIAN, 
+            formaPago: dto.formaPago, 
+            medioPago: dto.medioPago,
+            direccion: dto.direccion,
+            sucursalCliente: dto.sucursalCliente,
+            fecha: new Date(dto.fecha),
+            fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+          },
+          items: itemsConCosto as any[],
+          resolucion: res,
+          config,
+          cufe,
+          qrUrl,
+          softwareSecurityCode: secCode,
+        })
+      }
+    }
+
     const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
 
     const factura = await this.prisma.facturaVenta.create({
@@ -111,7 +204,7 @@ export class FacturasService {
         reteica: dto.reteica ?? 0,
         notas: dto.notas,
         usuarioId,
-        estado: 'BORRADOR',
+        estado: 'EMITIDA',
         saldo,
         vendedorNombre: dto.vendedorNombre,
         vendedorId: dto.vendedorId,
@@ -122,6 +215,13 @@ export class FacturasService {
         tipoDocumento: dto.tipoDocumento ?? 'FV',
         direccion: dto.direccion,
         sucursalCliente: dto.sucursalCliente,
+        cufe,
+        qrUrl,
+        xmlDIAN,
+        estadoDIAN: cufe ? 'GENERADA' : 'PENDIENTE',
+        numeroDIAN,
+        prefijoDIAN,
+        resolucionId,
         ...totales,
         items: { create: itemsConCosto },
       },
@@ -143,6 +243,25 @@ export class FacturasService {
         data: { estado: 'FACTURADO' },
       })
     }
+
+    // ── 3. Descontar inventario (Kardex) ───────────────────────────────────────
+    for (const item of factura.items as any[]) {
+      await this.movimientos.registrarSalidaInterna(this.prisma, {
+        empresaId,
+        productoId: item.productoId,
+        bodegaId: factura.bodegaId,
+        cantidad: Number(item.cantidad),
+        concepto: `Factura ${factura.numero}`,
+        tipo: 'VENTA',
+        usuarioId,
+        referenciaId: String(factura.id),
+        referenciaTipo: 'FACTURA_VENTA',
+        numeroMov: `VTA-${factura.numero}-${item.id}`,
+      })
+    }
+
+    // ── 4. Generar asiento contable automático ────────────────────────────────
+    await this.crearAsientoFactura(factura as any, empresaId, usuarioId)
 
     return factura
   }
