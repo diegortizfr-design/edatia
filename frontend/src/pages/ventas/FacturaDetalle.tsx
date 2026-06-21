@@ -230,270 +230,274 @@ export function FacturaDetalle() {
           </span>
         </div>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Información cabecera */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
-                <p className="font-semibold text-slate-800">{f.cliente?.nombre}</p>
-                <p className="text-xs text-slate-500">{f.cliente?.tipoDocumento} {f.cliente?.numeroDocumento}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Forma de pago</p>
-                <p className="font-medium text-slate-700">{f.formaPago}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Medio de pago</p>
-                <p className="font-medium text-slate-700">{f.medioPago?.replace('_', ' ')}</p>
-              </div>
-              {f.fechaVencimiento && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Vencimiento</p>
-                  <p className="font-medium text-slate-700">{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
-                </div>
-              )}
-              {f.bodega && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Bodega</p>
-                  <p className="font-medium text-slate-700">{f.bodega.nombre}</p>
-                </div>
-              )}
-              {f.vendedorNombre && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Vendedor</p>
-                  <p className="font-medium text-slate-700">{f.vendedorNombre}</p>
-                </div>
-              )}
-              {f.canal && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Canal de venta</p>
-                  <p className="font-medium text-slate-700">{f.canal}</p>
-                </div>
-              )}
-              {f.nivel && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Nivel de precio</p>
-                  <p className="font-medium text-slate-700">{f.nivel}</p>
-                </div>
-              )}
-              {f.resolucion && (
-                <div className="col-span-2 md:col-span-3 bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-500">
-                  <p className="font-bold text-[10px] text-slate-400 uppercase tracking-widest mb-1">Autorización de Facturación DIAN</p>
-                  <p>
-                    Resolución No. <span className="font-semibold text-slate-700">{f.resolucion.numeroResolucion}</span> del {new Date(f.resolucion.fechaResolucion).toLocaleDateString('es-CO')}. 
-                    Vigente hasta {new Date(f.resolucion.fechaVigencia).toLocaleDateString('es-CO')}. Prefijo <span className="font-semibold text-slate-700">{f.resolucion.prefijo || 'Ninguno'}</span>, Rango desde No. <span className="font-semibold text-slate-700">{f.resolucion.numeroInicial}</span> al No. <span className="font-semibold text-slate-700">{f.resolucion.numeroFinal}</span>.
-                  </p>
-                </div>
-              )}
-              {f.sucursalCliente && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
-                  <p className="font-medium text-slate-700">{f.sucursalCliente}</p>
-                </div>
-              )}
-              {f.direccion && (
-                <div className="col-span-2">
-                  <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
-                  <p className="font-medium text-slate-700">{f.direccion}</p>
-                </div>
-              )}
-              {f.notas && (
-                <div className="col-span-2 md:col-span-3">
-                  <p className="text-xs text-slate-400 mb-0.5">Notas</p>
-                  <p className="text-slate-600 text-xs">{f.notas}</p>
-                </div>
-              )}
+        <div className="flex flex-col gap-6">
+        {/* Información cabecera (Compact Full-Width Grid) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información General</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
+              <p className="font-semibold text-slate-800">{f.cliente?.nombre}</p>
+              <p className="text-xs text-slate-500">{f.cliente?.tipoDocumento} {f.cliente?.numeroDocumento}</p>
             </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Forma de pago</p>
+              <p className="font-semibold text-slate-850">{f.formaPago}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Medio de pago</p>
+              <p className="font-semibold text-slate-850">{f.medioPago?.replace('_', ' ')}</p>
+            </div>
+            {f.fechaVencimiento && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Vencimiento</p>
+                <p className="font-semibold text-slate-850">{new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
+              </div>
+            )}
+            {f.bodega && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Bodega</p>
+                <p className="font-semibold text-slate-850">{f.bodega.nombre}</p>
+              </div>
+            )}
+            {f.vendedorNombre && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Vendedor</p>
+                <p className="font-semibold text-slate-850">{f.vendedorNombre}</p>
+              </div>
+            )}
+            {f.canal && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Canal de venta</p>
+                <p className="font-semibold text-slate-850">{f.canal}</p>
+              </div>
+            )}
+            {f.nivel && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Nivel de precio</p>
+                <p className="font-semibold text-slate-850">{f.nivel}</p>
+              </div>
+            )}
+            {f.sucursalCliente && (
+              <div>
+                <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
+                <p className="font-semibold text-slate-855">{f.sucursalCliente}</p>
+              </div>
+            )}
+            {f.direccion && (
+              <div className="col-span-2">
+                <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
+                <p className="font-semibold text-slate-850">{f.direccion}</p>
+              </div>
+            )}
+            {f.notas && (
+              <div className="col-span-2 md:col-span-4">
+                <p className="text-xs text-slate-400 mb-0.5">Notas</p>
+                <p className="text-slate-600 text-xs italic">{f.notas}</p>
+              </div>
+            )}
           </div>
-
-          {/* DIAN info */}
-          {f.cufe && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 space-y-3">
-              <h2 className="font-semibold text-indigo-800 text-sm flex items-center gap-2">
-                <CheckCircle size={15} /> Información DIAN
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><Hash size={11} /> CUFE</p>
-                  <p className="font-mono text-[10px] text-indigo-900 break-all bg-white/60 rounded p-2">{f.cufe}</p>
-                </div>
-                {f.qrUrl && (
-                  <div>
-                    <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><QrCode size={11} /> QR DIAN</p>
-                    <a href={f.qrUrl} target="_blank" rel="noreferrer"
-                      className="text-[10px] text-indigo-700 underline break-all">
-                      {f.qrUrl}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Tabla de ítems */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="font-semibold text-slate-800">Ítems ({f.items?.length ?? 0})</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                    <th className="px-4 py-2.5 text-left font-semibold">Producto</th>
-                    <th className="px-4 py-2.5 text-left font-semibold">Descripción</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-16">Cant.</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-28">Precio</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-16">Dto %</th>
-                    <th className="px-4 py-2.5 text-left font-semibold w-24">IVA</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-28">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {(f.items ?? []).map((item: any) => (
-                    <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <p className="text-xs font-medium text-slate-800">{item.producto?.nombre}</p>
-                        <p className="text-xs text-slate-400">{item.producto?.sku}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-600">{item.descripcion}</td>
-                      <td className="px-4 py-3 text-xs text-right text-slate-700">{item.cantidad} {item.unidad}</td>
-                      <td className="px-4 py-3 text-xs text-right text-slate-700">{fmt(Number(item.precioUnitario))}</td>
-                      <td className="px-4 py-3 text-xs text-right text-slate-600">{item.descuentoPct}%</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                          {item.tipoIva}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-right font-semibold text-slate-700">
-                        {fmt(Number(item.total))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Historial de recibos */}
-          {f.recibos?.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                  <CreditCard size={15} className="text-green-600" /> Pagos recibidos
-                </h2>
-                <span className="text-xs text-slate-400">{f.recibos.length} pago(s)</span>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                    <th className="px-4 py-2.5 text-left font-semibold">Recibo</th>
-                    <th className="px-4 py-2.5 text-left font-semibold">Fecha</th>
-                    <th className="px-4 py-2.5 text-right font-semibold">Valor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {f.recibos.map((r: any) => (
-                    <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono text-xs text-indigo-700">{r.recibo?.numero}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600">
-                        {r.recibo?.fecha ? new Date(r.recibo.fecha).toLocaleDateString('es-CO') : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-right font-semibold text-green-700">
-                        {fmt(Number(r.recibo?.valor ?? 0))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          
+          {f.resolucion && (
+            <div className="mt-4 bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-500">
+              <p className="font-bold text-[10px] text-slate-400 uppercase tracking-widest mb-1">Autorización de Facturación DIAN</p>
+              <p>
+                Resolución No. <span className="font-semibold text-slate-700">{f.resolucion.numeroResolucion}</span> del {new Date(f.resolucion.fechaResolucion).toLocaleDateString('es-CO')}. 
+                Vigente hasta {new Date(f.resolucion.fechaVigencia).toLocaleDateString('es-CO')}. Prefijo <span className="font-semibold text-slate-700">{f.resolucion.prefijo || 'Ninguno'}</span>, Rango desde No. <span className="font-semibold text-slate-700">{f.resolucion.numeroInicial}</span> al No. <span className="font-semibold text-slate-700">{f.resolucion.numeroFinal}</span>.
+              </p>
             </div>
           )}
         </div>
 
-        {/* Columna derecha: totales */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sticky top-4">
-            <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Totales</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-slate-500">
-                <span>Subtotal bruto</span>
-                <span>{fmt(Number(f.subtotal ?? 0))}</span>
+        {/* Tabla de ítems (Full Width) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="font-semibold text-slate-800">Ítems ({f.items?.length ?? 0})</h2>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
+                  <th className="px-4 py-2.5 text-left font-semibold">Producto</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Descripción</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-16">Cant.</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-28">Precio</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-16">Dto %</th>
+                  <th className="px-4 py-2.5 text-left font-semibold w-24">IVA</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-28">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {(f.items ?? []).map((item: any) => (
+                  <tr key={item.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-medium text-slate-800">{item.producto?.nombre}</p>
+                      <p className="text-xs text-slate-400">{item.producto?.sku}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-660">{item.descripcion}</td>
+                    <td className="px-4 py-3 text-xs text-right text-slate-700">{item.cantidad} {item.unidad || 'UND'}</td>
+                    <td className="px-4 py-3 text-xs text-right text-slate-700">{fmt(Number(item.precioUnitario))}</td>
+                    <td className="px-4 py-3 text-xs text-right text-slate-600">{item.descuentoPct}%</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                        {item.tipoIva}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-right font-semibold text-slate-700">
+                      {fmt(Number(item.total))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Bottom Section: Left (DIAN, Recibos) & Right (Totales) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            {/* DIAN info */}
+            {f.cufe && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 space-y-3">
+                <h2 className="font-semibold text-indigo-800 text-sm flex items-center gap-2">
+                  <CheckCircle size={15} /> Información DIAN
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><Hash size={11} /> CUFE</p>
+                    <p className="font-mono text-[10px] text-indigo-900 break-all bg-white/60 rounded p-2">{f.cufe}</p>
+                  </div>
+                  {f.qrUrl && (
+                    <div>
+                      <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><QrCode size={11} /> QR DIAN</p>
+                      <a href={f.qrUrl} target="_blank" rel="noreferrer"
+                        className="text-[10px] text-indigo-700 underline break-all">
+                        {f.qrUrl}
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-              {Number(f.descuento ?? 0) > 0 && (
+            )}
+
+            {/* Historial de recibos */}
+            {f.recibos?.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+                    <CreditCard size={15} className="text-green-600" /> Pagos recibidos
+                  </h2>
+                  <span className="text-xs text-slate-400">{f.recibos.length} pago(s)</span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
+                      <th className="px-4 py-2.5 text-left font-semibold">Recibo</th>
+                      <th className="px-4 py-2.5 text-left font-semibold">Fecha</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {f.recibos.map((r: any) => (
+                      <tr key={r.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-mono text-xs text-indigo-700">{r.recibo?.numero}</td>
+                        <td className="px-4 py-3 text-xs text-slate-660">
+                          {r.recibo?.fecha ? new Date(r.recibo.fecha).toLocaleDateString('es-CO') : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-right font-semibold text-green-700">
+                          {fmt(Number(r.recibo?.valor ?? 0))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Columna derecha: totales */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sticky top-4">
+              <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Totales</h2>
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-slate-500">
-                  <span>Descuento</span>
-                  <span>-{fmt(Number(f.descuento))}</span>
+                  <span>Subtotal bruto</span>
+                  <span>{fmt(Number(f.subtotal ?? 0))}</span>
                 </div>
-              )}
-              {Number(f.iva19 ?? 0) > 0 && (
-                <div className="flex justify-between text-slate-600 font-medium">
-                  <span>IVA 19%</span>
-                  <span>{fmt(Number(f.iva19))}</span>
-                </div>
-              )}
-              {Number(f.iva5 ?? 0) > 0 && (
-                <div className="flex justify-between text-slate-600 font-medium">
-                  <span>IVA 5%</span>
-                  <span>{fmt(Number(f.iva5))}</span>
-                </div>
-              )}
+                {Number(f.descuento ?? 0) > 0 && (
+                  <div className="flex justify-between text-slate-500">
+                    <span>Descuento</span>
+                    <span>-{fmt(Number(f.descuento))}</span>
+                  </div>
+                )}
+                {Number(f.iva19 ?? 0) > 0 && (
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>IVA 19%</span>
+                    <span>{fmt(Number(f.iva19))}</span>
+                  </div>
+                )}
+                {Number(f.iva5 ?? 0) > 0 && (
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>IVA 5%</span>
+                    <span>{fmt(Number(f.iva5))}</span>
+                  </div>
+                )}
 
-              {hayRetenciones && (
-                <div className="border-t border-dashed border-slate-100 pt-2 mt-2 space-y-1.5">
-                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Retenciones</p>
-                  {retefuente > 0 && (
-                    <div className="flex justify-between text-amber-700">
-                      <span>ReteFuente</span>
-                      <span>-{fmt(retefuente)}</span>
-                    </div>
-                  )}
-                  {reteiva > 0 && (
-                    <div className="flex justify-between text-amber-700">
-                      <span>ReteIVA</span>
-                      <span>-{fmt(reteiva)}</span>
-                    </div>
-                  )}
-                  {reteica > 0 && (
-                    <div className="flex justify-between text-amber-700">
-                      <span>ReteICA</span>
-                      <span>-{fmt(reteica)}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                {hayRetenciones && (
+                  <div className="border-t border-dashed border-slate-100 pt-2 mt-2 space-y-1.5">
+                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Retenciones</p>
+                    {retefuente > 0 && (
+                      <div className="flex justify-between text-amber-700">
+                        <span>ReteFuente</span>
+                        <span>-{fmt(retefuente)}</span>
+                      </div>
+                    )}
+                    {reteiva > 0 && (
+                      <div className="flex justify-between text-amber-700">
+                        <span>ReteIVA</span>
+                        <span>-{fmt(reteiva)}</span>
+                      </div>
+                    )}
+                    {reteica > 0 && (
+                      <div className="flex justify-between text-amber-700">
+                        <span>ReteICA</span>
+                        <span>-{fmt(reteica)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <div className="border-t border-slate-200 pt-3 flex justify-between font-bold text-base">
-                <span className="text-slate-800">TOTAL</span>
-                <span className="text-indigo-700">{fmt(Number(f.total ?? 0))}</span>
+                <div className="border-t border-slate-200 pt-3 flex justify-between font-bold text-base">
+                  <span className="text-slate-800">TOTAL</span>
+                  <span className="text-indigo-700">{fmt(Number(f.total ?? 0))}</span>
+                </div>
+
+                {Number(f.total) !== saldoPendiente && (
+                  <>
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Pagado</span>
+                      <span>{fmt(Number(f.total) - saldoPendiente)}</span>
+                    </div>
+                    <div className={`flex justify-between font-bold ${saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <span>Saldo</span>
+                      <span>{fmt(saldoPendiente)}</span>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {Number(f.total) !== saldoPendiente && (
-                <>
-                  <div className="flex justify-between text-green-600 font-medium">
-                    <span>Pagado</span>
-                    <span>{fmt(Number(f.total) - saldoPendiente)}</span>
-                  </div>
-                  <div className={`flex justify-between font-bold ${saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    <span>Saldo</span>
-                    <span>{fmt(saldoPendiente)}</span>
-                  </div>
-                </>
+              {/* Botón cobrar */}
+              {['EMITIDA', 'VENCIDA'].includes(f.estado) && saldoPendiente > 0 && (
+                <Link to={`/ventas/recibos?clienteId=${f.clienteId}`}
+                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+                  <CreditCard size={15} /> Registrar pago
+                </Link>
               )}
             </div>
-
-            {/* Botón cobrar */}
-            {['EMITIDA', 'VENCIDA'].includes(f.estado) && saldoPendiente > 0 && (
-              <Link to={`/ventas/recibos?clienteId=${f.clienteId}`}
-                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
-                <CreditCard size={15} /> Registrar pago
-              </Link>
-            )}
           </div>
         </div>
       </div>
+
 
       {/* Vista de Impresión / Formato Gráfico (Voucher) */}
       {showPrintPreview && (

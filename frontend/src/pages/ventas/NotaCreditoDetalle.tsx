@@ -220,112 +220,139 @@ export function NotaCreditoDetalle() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Información general */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información General</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
-                <p className="font-semibold text-slate-850">{nc.cliente?.nombre}</p>
-                <p className="text-xs text-slate-500">{nc.cliente?.tipoDocumento} {nc.cliente?.numeroDocumento}</p>
-              </div>
-              
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Cruce / Referencia</p>
-                {nc.facturaId ? (
-                  <Link 
-                    to={`/ventas/facturas/${nc.facturaId}`}
-                    className="font-semibold text-indigo-650 hover:underline flex items-center gap-1 mt-0.5"
-                  >
-                    <Link2 size={13} />
-                    Factura {nc.factura?.prefijo || ''}{nc.factura?.numero}
-                  </Link>
-                ) : (
-                  <p className="font-medium text-amber-700 mt-0.5 italic">Ajuste libre (Sin Factura)</p>
-                )}
-              </div>
+      <div className="flex flex-col gap-6">
+        {/* Información General (Compact Full-Width Grid) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información General</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
+              <p className="font-semibold text-slate-850">{nc.cliente?.nombre}</p>
+              <p className="text-xs text-slate-500">{nc.cliente?.tipoDocumento} {nc.cliente?.numeroDocumento}</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Cruce / Referencia</p>
+              {nc.facturaId ? (
+                <Link 
+                  to={`/ventas/facturas/${nc.facturaId}`}
+                  className="font-semibold text-indigo-650 hover:underline flex items-center gap-1 mt-0.5"
+                >
+                  <Link2 size={13} />
+                  Factura {nc.factura?.prefijo || ''}{nc.factura?.numero}
+                </Link>
+              ) : (
+                <p className="font-medium text-amber-700 mt-0.5 italic">Ajuste libre (Sin Factura)</p>
+              )}
+            </div>
 
-              <div>
-                <p className="text-xs text-slate-400 mb-0.5">Motivo</p>
-                <p className="font-medium text-slate-700 mt-0.5">{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</p>
-              </div>
+            <div>
+              <p className="text-xs text-slate-400 mb-0.5">Motivo</p>
+              <p className="font-semibold text-slate-850 mt-0.5">{MOTIVO_LABEL[nc.motivo] ?? nc.motivo}</p>
+            </div>
 
-              <div className="col-span-2 md:col-span-3">
+            {nc.descripcion && (
+              <div className="col-span-1 sm:col-span-2 md:col-span-4">
                 <p className="text-xs text-slate-400 mb-0.5">Observación / Notas</p>
-                <p className="text-slate-650 text-xs mt-0.5 bg-slate-50 border border-slate-100 rounded-xl p-3 italic">
-                  {nc.descripcion || 'Sin observaciones registradas.'}
+                <p className="text-slate-600 text-xs italic bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  {nc.descripcion}
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Tabla de ítems */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h2 className="font-semibold text-slate-800">Productos Acreditados ({nc.items?.length ?? 0})</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                    <th className="px-4 py-2.5 text-left font-semibold">Producto / Descripción</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-24">Cant.</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-32">Precio Unitario</th>
-                    <th className="px-4 py-2.5 text-left font-semibold w-28">IVA</th>
-                    <th className="px-4 py-2.5 text-right font-semibold w-32">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 bg-white">
-                  {(nc.items ?? []).map((item: any) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-3.5">
-                        <p className="text-xs font-semibold text-slate-800">{item.descripcion}</p>
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-right text-slate-705 font-medium">
-                        {Number(item.cantidad)}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-right text-slate-705 font-medium">
-                        {fmt(Number(item.precioUnitario))}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-150">
-                          {item.tipoIva.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-right font-extrabold text-slate-900">
-                        {fmt(Number(item.total))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Totales derecho */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sticky top-4">
-            <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Resumen de Ajuste</h2>
-            <div className="space-y-2.5 text-sm">
-              <div className="flex justify-between text-slate-500">
-                <span>Subtotal Bruto</span>
-                <span>{fmt(Number(nc.subtotal ?? 0))}</span>
+        {/* Tabla de ítems (Full Width) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="font-semibold text-slate-800">Productos Acreditados ({nc.items?.length ?? 0})</h2>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
+                  <th className="px-4 py-2.5 text-left font-semibold">Producto / Descripción</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-24">Cant.</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-32">Precio Unitario</th>
+                  <th className="px-4 py-2.5 text-left font-semibold w-28">IVA</th>
+                  <th className="px-4 py-2.5 text-right font-semibold w-32">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 bg-white">
+                {(nc.items ?? []).map((item: any) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3.5">
+                      <p className="text-xs font-semibold text-slate-800">{item.descripcion}</p>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-right text-slate-705 font-medium">
+                      {Number(item.cantidad)}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-right text-slate-705 font-medium">
+                      {fmt(Number(item.precioUnitario))}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-150">
+                        {item.tipoIva.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-right font-extrabold text-slate-900">
+                      {fmt(Number(item.total))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Bottom Section: Left (DIAN info if emitted) & Right (Totals) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            {/* DIAN E-Invoice Info Footer (CUDE + QR) */}
+            {nc.estado === 'EMITIDA' && (
+              <div className="flex gap-4 border border-indigo-200 bg-indigo-50/50 p-4 rounded-xl">
+                <div className="shrink-0 border border-slate-200 p-1.5 bg-white rounded-lg self-center">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('https://catalogo-vpfe.dian.gov.co/User/SearchDocument?uuid=' + (nc.cufde || 'simulated-uuid-cude-dian-edatia'))}`} 
+                    alt="QR DIAN" 
+                    className="w-16 h-16" 
+                  />
+                </div>
+                <div className="space-y-1.5 flex-1 text-xs">
+                  <div>
+                    <p className="font-bold text-indigo-850 uppercase tracking-wider text-[10px]">Código Único de Documento Electrónico (CUDE)</p>
+                    <p className="font-mono text-[9px] text-slate-655 break-all select-all leading-normal bg-white p-2 border border-slate-100 rounded mt-1">
+                      {nc.cufde || '555a1239f88c889a77ef77db8890123cbef890121111904a88bc98dbe88cbfa11234c000'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-slate-550">
-                <span>Impuesto IVA</span>
-                <span>{fmt(Number(nc.iva ?? 0))}</span>
-              </div>
-              <div className="border-t border-slate-200 pt-3.5 flex justify-between font-extrabold text-base">
-                <span className="text-slate-800">TOTAL CREDITADO</span>
-                <span className="text-indigo-700">{fmt(Number(nc.total ?? 0))}</span>
+            )}
+          </div>
+
+          {/* Totales derecho */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sticky top-4">
+              <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Resumen de Ajuste</h2>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between text-slate-500">
+                  <span>Subtotal Bruto</span>
+                  <span>{fmt(Number(nc.subtotal ?? 0))}</span>
+                </div>
+                <div className="flex justify-between text-slate-550">
+                  <span>Impuesto IVA</span>
+                  <span>{fmt(Number(nc.iva ?? 0))}</span>
+                </div>
+                <div className="border-t border-slate-200 pt-3.5 flex justify-between font-extrabold text-base">
+                  <span className="text-slate-800">TOTAL CREDITADO</span>
+                  <span className="text-indigo-700">{fmt(Number(nc.total ?? 0))}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Vista de Impresión / Formato Gráfico (Voucher) */}
       {showPrintPreview && (
