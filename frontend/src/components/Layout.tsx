@@ -240,7 +240,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <>
                 <NavGroup label="Facturación" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
                   <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos (Pre-facturas)" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
                   <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Notas Crédito" isCollapsed={isCollapsed} />
