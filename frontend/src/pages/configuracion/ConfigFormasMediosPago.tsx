@@ -10,6 +10,7 @@ import {
   updateMedioPago,
   deleteMedioPago,
 } from '../../services/configuracion.service'
+import { getCajasBancos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 import toast from 'react-hot-toast'
 import { CreditCard, Coins, Plus, Trash2, Edit3, X, Info, Check } from 'lucide-react'
@@ -21,6 +22,7 @@ interface FormaPago {
   codigo: string;
   nombre: string;
   activo: boolean;
+  generaCartera: boolean;
 }
 
 interface MedioPago {
@@ -28,6 +30,8 @@ interface MedioPago {
   codigo: string;
   nombre: string;
   activo: boolean;
+  cajaBancoId?: number | null;
+  cajaBanco?: { id: number; nombre: string } | null;
 }
 
 // ─── Componentes Helper Estilizados ──────────────────────────────────────────
@@ -69,11 +73,16 @@ export default function ConfigFormasMediosPago() {
     queryFn: getMediosPago,
   })
 
+  const { data: cajasBancos = [] } = useQuery<any[]>({
+    queryKey: ['cajas-bancos'],
+    queryFn: getCajasBancos,
+  })
+
   // Modals / Form State
   const [modalType, setModalType] = useState<'forma' | 'medio' | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [form, setForm] = useState({ codigo: '', nombre: '', activo: true })
+  const [form, setForm] = useState({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
 
   // Mutations - Formas de Pago
   const createFormaMutation = useMutation({
@@ -141,17 +150,23 @@ export default function ConfigFormasMediosPago() {
     setModalMode(mode)
     if (mode === 'edit' && item) {
       setEditingItem(item)
-      setForm({ codigo: item.codigo, nombre: item.nombre, activo: item.activo })
+      setForm({
+        codigo: item.codigo,
+        nombre: item.nombre,
+        activo: item.activo,
+        generaCartera: item.generaCartera ?? true,
+        cajaBancoId: item.cajaBancoId ? String(item.cajaBancoId) : '',
+      })
     } else {
       setEditingItem(null)
-      setForm({ codigo: '', nombre: '', activo: true })
+      setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
     }
   }
 
   const closeModal = () => {
     setModalType(null)
     setEditingItem(null)
-    setForm({ codigo: '', nombre: '', activo: true })
+    setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -161,19 +176,21 @@ export default function ConfigFormasMediosPago() {
       return
     }
 
-    const payload = {
+    const payload: any = {
       codigo: form.codigo.toUpperCase().trim(),
       nombre: form.nombre.trim(),
       activo: form.activo,
     }
 
     if (modalType === 'forma') {
+      payload.generaCartera = form.generaCartera
       if (modalMode === 'edit' && editingItem) {
         updateFormaMutation.mutate({ id: editingItem.id, dto: payload })
       } else {
         createFormaMutation.mutate(payload)
       }
     } else if (modalType === 'medio') {
+      payload.cajaBancoId = form.cajaBancoId ? Number(form.cajaBancoId) : null
       if (modalMode === 'edit' && editingItem) {
         updateMedioMutation.mutate({ id: editingItem.id, dto: payload })
       } else {
@@ -250,6 +267,7 @@ export default function ConfigFormasMediosPago() {
                   <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
                     <th className="p-4 pl-6">Código</th>
                     <th className="p-4">Nombre</th>
+                    <th className="p-4">Tipo</th>
                     <th className="p-4 text-center">Estado</th>
                     <th className="p-4 pr-6 text-right">Acciones</th>
                   </tr>
@@ -259,6 +277,11 @@ export default function ConfigFormasMediosPago() {
                     <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
                       <td className="p-4 pl-6 font-mono font-semibold text-slate-700">{item.codigo}</td>
                       <td className="p-4 text-slate-600 font-medium">{item.nombre}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${item.generaCartera ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                          {item.generaCartera ? 'Crédito' : 'Contado'}
+                        </span>
+                      </td>
                       <td className="p-4 text-center">
                         <button
                           onClick={() => toggleStatus('forma', item)}
@@ -325,6 +348,7 @@ export default function ConfigFormasMediosPago() {
                   <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider text-[11px]">
                     <th className="p-4 pl-6">Código</th>
                     <th className="p-4">Nombre</th>
+                    <th className="p-4">Caja / Banco</th>
                     <th className="p-4 text-center">Estado</th>
                     <th className="p-4 pr-6 text-right">Acciones</th>
                   </tr>
@@ -334,6 +358,15 @@ export default function ConfigFormasMediosPago() {
                     <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
                       <td className="p-4 pl-6 font-mono font-semibold text-slate-700">{item.codigo}</td>
                       <td className="p-4 text-slate-600 font-medium">{item.nombre}</td>
+                      <td className="p-4">
+                        {item.cajaBanco ? (
+                          <span className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl">
+                            {item.cajaBanco.nombre}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic font-medium">Caja General (Por Defecto)</span>
+                        )}
+                      </td>
                       <td className="p-4 text-center">
                         <button
                           onClick={() => toggleStatus('medio', item)}
@@ -423,6 +456,41 @@ export default function ConfigFormasMediosPago() {
                   placeholder="Escribe el nombre..."
                 />
               </Field>
+
+              {modalType === 'forma' && (
+                <div className="flex items-center gap-3 select-none cursor-pointer pt-2">
+                  <input
+                    type="checkbox"
+                    id="generacartera-checkbox"
+                    checked={form.generaCartera}
+                    onChange={e => setForm(prev => ({ ...prev, generaCartera: e.target.checked }))}
+                    className="w-4 h-4 text-indigo-600 bg-slate-50 border-slate-200 rounded focus:ring-indigo-500 focus:ring-2 focus:ring-offset-0"
+                  />
+                  <label htmlFor="generacartera-checkbox" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                    Genera cartera (Cuentas por Cobrar / Crédito)
+                  </label>
+                </div>
+              )}
+
+              {modalType === 'medio' && (
+                <Field
+                  label="Caja o Banco de Tesorería"
+                  hint="Determina la cuenta PUC que se debitará en ventas de contado."
+                >
+                  <select
+                    value={form.cajaBancoId}
+                    onChange={e => setForm(prev => ({ ...prev, cajaBancoId: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                  >
+                    <option value="">-- No vinculada (Caja General) --</option>
+                    {cajasBancos.map((cb: any) => (
+                      <option key={cb.id} value={cb.id}>
+                        {cb.nombre} ({cb.tipo === 'CAJA' ? 'Caja' : `Banco: ${cb.banco ?? ''}`} - {cb.cuentaPUC ?? 'Sin PUC'})
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
 
               <div className="flex items-center gap-3 select-none cursor-pointer pt-2">
                 <input

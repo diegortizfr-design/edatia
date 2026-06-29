@@ -398,10 +398,53 @@ export class FacturasService {
     if (!f.xmlDIAN) throw new NotFoundException('Esta factura no tiene XML DIAN generado')
     return f.xmlDIAN
   }
-
   private async crearAsientoFactura(factura: any, empresaId: number, usuarioId: number) {
+    // ── 1. Determinar cuenta de cargo (Clientes o Caja/Banco) ─────────────────
+    let cuentaCargoId: number | null = null;
+    let cuentaCargoCodigo = '1305'; // fallback por defecto si no cuadra nada
+
+    // Consultar Forma de Pago
+    const fp = await this.prisma.formaPago.findFirst({
+      where: { empresaId, codigo: factura.formaPago },
+    });
+
+    const esCredito = fp ? fp.generaCartera : (factura.formaPago !== 'CONTADO');
+
+    if (esCredito) {
+      cuentaCargoCodigo = '1305';
+    } else {
+      const mp = await this.prisma.medioPago.findFirst({
+        where: { empresaId, codigo: factura.medioPago },
+        include: { cajaBanco: true },
+      });
+
+      if (mp?.cajaBanco?.cuentaPUC) {
+        cuentaCargoCodigo = mp.cajaBanco.cuentaPUC;
+      } else {
+        cuentaCargoCodigo = '110505';
+      }
+    }
+
+    // Asegurar que la cuenta contable existe en el PUC
+    let dbCuentaCargo = await this.prisma.cuentaPUC.findFirst({
+      where: { empresaId, codigo: cuentaCargoCodigo, activo: true },
+      select: { id: true },
+    });
+
+    if (!dbCuentaCargo) {
+      dbCuentaCargo = await this.prisma.cuentaPUC.findFirst({
+        where: { empresaId, codigo: esCredito ? '1305' : '1105', activo: true },
+        select: { id: true },
+      }) ?? await this.prisma.cuentaPUC.findFirst({
+        where: { empresaId, codigo: { startsWith: esCredito ? '13' : '11' }, activo: true },
+        select: { id: true },
+      });
+    }
+
+    cuentaCargoId = dbCuentaCargo?.id ?? null;
+
     // Buscar cuentas PUC necesarias
-    const codigos = ['1305', '135515', '135517', '135518', '413505', '4135', '240801', '240802', '613505', '1435']
+    const codigos = ['135515', '135517', '135518', '413505', '4135', '240801', '240802', '613505', '1435']
     const cuentas = await this.prisma.cuentaPUC.findMany({
       where: { empresaId, codigo: { in: codigos }, activo: true },
       select: { id: true, codigo: true },
@@ -410,7 +453,7 @@ export class FacturasService {
 
     const get = (pref: string) => byCode.get(pref) ?? null
 
-    const cClientes  = get('1305')
+    const cClientes  = cuentaCargoId
     const cRete      = get('135515')
     const cReteIva   = get('135517')
     const cReteIca   = get('135518')
@@ -442,6 +485,7 @@ export class FacturasService {
     push(cRete,      `ReteFuente Fact ${factura.numero}`,  retefuente, 0)
     push(cReteIva,   `ReteIVA Fact ${factura.numero}`,     reteiva,    0)
     push(cReteIca,   `ReteICA Fact ${factura.numero}`,     reteica,    0)
+
     // Créditos
     // Crédito a Ingresos por producto (Grupo contable)
     for (const item of factura.items) {

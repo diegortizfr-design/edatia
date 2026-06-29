@@ -2039,6 +2039,8 @@ model CajaBanco {
   activo          Boolean  @default(true)
   notas           String?
 
+  mediosPago      MedioPago[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -2485,6 +2487,7 @@ model FormaPago {
   codigo    String   // CONTADO, CREDITO, etc.
   nombre    String   // Contado, Crédito a 30 días, etc.
   activo    Boolean  @default(true)
+  generaCartera Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2501,6 +2504,8 @@ model MedioPago {
   codigo    String   // EFECTIVO, TRANSFERENCIA, CHEQUE, TARJETA_CREDITO, etc.
   nombre    String   // Efectivo, Transferencia Bancaria, Nequi, etc.
   activo    Boolean  @default(true)
+  cajaBancoId Int?
+  cajaBanco   CajaBanco? @relation(fields: [cajaBancoId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

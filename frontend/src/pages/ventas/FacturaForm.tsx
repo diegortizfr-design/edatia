@@ -220,6 +220,12 @@ export function FacturaForm() {
     queryFn: () => getFacturas(),
   })
 
+  const selectedFormaPagoObj = useMemo(() => {
+    return formasPagoList.find((f: any) => f.codigo === formaPago)
+  }, [formasPagoList, formaPago])
+
+  const exigeVencimiento = selectedFormaPagoObj ? selectedFormaPagoObj.generaCartera : (formaPago !== 'CONTADO')
+
   const mutIncrementConsecutive = useMutation({
     mutationFn: (id: number) => incrementarConsecutivo(id),
     onSuccess: () => {
@@ -490,7 +496,7 @@ export function FacturaForm() {
       fecha,
       formaPago,
       medioPago,
-      fechaVencimiento: formaPago === 'CREDITO' ? (fechaVencimiento || undefined) : undefined,
+      fechaVencimiento: exigeVencimiento ? (fechaVencimiento || undefined) : undefined,
       notas: notas || undefined,
       vendedorNombre: vendedorNombre || undefined,
       vendedorId: vendedorId ? Number(vendedorId) : undefined,
@@ -844,7 +850,7 @@ export function FacturaForm() {
                 {fmt(totalFacturaFinal)}
               </p>
               <div className="text-[10px] text-rose-600/80 font-medium pt-1 border-t border-rose-100">
-                {formaPago === 'CREDITO' ? (
+                {exigeVencimiento ? (
                   <span>Registrará cartera a cobrar (Plazo {fechaVencimiento ? new Date(fechaVencimiento).toLocaleDateString('es-CO') : 'definido'})</span>
                 ) : (
                   <span>Registrará ingreso inmediato de contado via {medioPago.replace('_', ' ')}</span>
@@ -1167,8 +1173,7 @@ export function FacturaForm() {
                         ))}
                     </select>
                   </div>
-
-                  {formaPago === 'CREDITO' && (
+                  {exigeVencimiento && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Vencimiento *</label>
                       <input

@@ -230,8 +230,8 @@ export class ConfiguracionService {
 
     if (existing.length === 0) {
       const defaults = [
-        { codigo: 'CONTADO', nombre: 'Contado', activo: true },
-        { codigo: 'CREDITO', nombre: 'Crédito', activo: true },
+        { codigo: 'CONTADO', nombre: 'Contado', activo: true, generaCartera: false },
+        { codigo: 'CREDITO', nombre: 'Crédito', activo: true, generaCartera: true },
       ]
       await this.prisma.formaPago.createMany({
         data: defaults.map(d => ({ empresaId, ...d })),
@@ -245,18 +245,19 @@ export class ConfiguracionService {
     return existing
   }
 
-  async createFormaPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean }) {
+  async createFormaPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; generaCartera?: boolean }) {
     return this.prisma.formaPago.create({
       data: {
         empresaId,
         codigo: dto.codigo.toUpperCase().trim(),
         nombre: dto.nombre.trim(),
         activo: dto.activo ?? true,
+        generaCartera: dto.generaCartera ?? true,
       },
     })
   }
 
-  async updateFormaPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) {
+  async updateFormaPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean; generaCartera?: boolean }) {
     await this.prisma.formaPago.findFirstOrThrow({ where: { id, empresaId } })
     const data: any = { ...dto }
     if (data.codigo) data.codigo = data.codigo.toUpperCase().trim()
@@ -279,6 +280,7 @@ export class ConfiguracionService {
   async getMediosPago(empresaId: number) {
     const existing = await this.prisma.medioPago.findMany({
       where: { empresaId },
+      include: { cajaBanco: { select: { id: true, nombre: true } } },
       orderBy: { codigo: 'asc' },
     })
 
@@ -297,24 +299,27 @@ export class ConfiguracionService {
       })
       return this.prisma.medioPago.findMany({
         where: { empresaId },
+        include: { cajaBanco: { select: { id: true, nombre: true } } },
         orderBy: { codigo: 'asc' },
       })
     }
     return existing
   }
 
-  async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean }) {
+  async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; cajaBancoId?: number }) {
     return this.prisma.medioPago.create({
       data: {
         empresaId,
         codigo: dto.codigo.toUpperCase().trim(),
         nombre: dto.nombre.trim(),
         activo: dto.activo ?? true,
+        cajaBancoId: dto.cajaBancoId ?? null,
       },
+      include: { cajaBanco: { select: { id: true, nombre: true } } },
     })
   }
 
-  async updateMedioPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean }) {
+  async updateMedioPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean; cajaBancoId?: number }) {
     await this.prisma.medioPago.findFirstOrThrow({ where: { id, empresaId } })
     const data: any = { ...dto }
     if (data.codigo) data.codigo = data.codigo.toUpperCase().trim()
@@ -322,6 +327,7 @@ export class ConfiguracionService {
     return this.prisma.medioPago.update({
       where: { id },
       data,
+      include: { cajaBanco: { select: { id: true, nombre: true } } },
     })
   }
 
