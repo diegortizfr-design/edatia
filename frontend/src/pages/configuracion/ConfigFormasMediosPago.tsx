@@ -13,9 +13,7 @@ import {
 import { getCajasBancos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 import toast from 'react-hot-toast'
-import { CreditCard, Coins, Plus, Trash2, Edit3, X, Info, Check } from 'lucide-react'
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+import { CreditCard, Coins, Plus, Trash2, Edit3, X, Check } from 'lucide-react'
 
 interface FormaPago {
   id: number;
@@ -405,16 +403,7 @@ export default function ConfigFormasMediosPago() {
         </div>
       </div>
 
-      {/* Info Card */}
-      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3">
-        <Info size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">Precarga de datos por defecto</p>
-          <p className="text-xs text-amber-700 leading-relaxed">
-            Las formas de pago predeterminadas (Contado, Crédito) y medios de pago comunes (Efectivo, Transferencia, Cheque, Tarjetas) se crean automáticamente al consultar este panel. Puedes desactivar o renombrar los existentes, o agregar nuevos según el flujo de caja de tu negocio.
-          </p>
-        </div>
-      </div>
+
 
       {/* Modal - Create/Edit */}
       {modalType && (

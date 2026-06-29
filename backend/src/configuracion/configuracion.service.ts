@@ -223,26 +223,10 @@ export class ConfiguracionService {
   // ──────────────────────────────────────────────────────────────
 
   async getFormasPago(empresaId: number) {
-    const existing = await this.prisma.formaPago.findMany({
+    return this.prisma.formaPago.findMany({
       where: { empresaId },
       orderBy: { codigo: 'asc' },
     })
-
-    if (existing.length === 0) {
-      const defaults = [
-        { codigo: 'CONTADO', nombre: 'Contado', activo: true, generaCartera: false },
-        { codigo: 'CREDITO', nombre: 'Crédito', activo: true, generaCartera: true },
-      ]
-      await this.prisma.formaPago.createMany({
-        data: defaults.map(d => ({ empresaId, ...d })),
-        skipDuplicates: true,
-      })
-      return this.prisma.formaPago.findMany({
-        where: { empresaId },
-        orderBy: { codigo: 'asc' },
-      })
-    }
-    return existing
   }
 
   async createFormaPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; generaCartera?: boolean }) {
@@ -278,32 +262,11 @@ export class ConfiguracionService {
   // ──────────────────────────────────────────────────────────────
 
   async getMediosPago(empresaId: number) {
-    const existing = await this.prisma.medioPago.findMany({
+    return this.prisma.medioPago.findMany({
       where: { empresaId },
       include: { cajaBanco: { select: { id: true, nombre: true } } },
       orderBy: { codigo: 'asc' },
     })
-
-    if (existing.length === 0) {
-      const defaults = [
-        { codigo: 'EFECTIVO', nombre: 'Efectivo', activo: true },
-        { codigo: 'TRANSFERENCIA', nombre: 'Transferencia Bancaria', activo: true },
-        { codigo: 'CHEQUE', nombre: 'Cheque', activo: true },
-        { codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta de Crédito', activo: true },
-        { codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta de Débito', activo: true },
-        { codigo: 'OTRO', nombre: 'Otro', activo: true },
-      ]
-      await this.prisma.medioPago.createMany({
-        data: defaults.map(d => ({ empresaId, ...d })),
-        skipDuplicates: true,
-      })
-      return this.prisma.medioPago.findMany({
-        where: { empresaId },
-        include: { cajaBanco: { select: { id: true, nombre: true } } },
-        orderBy: { codigo: 'asc' },
-      })
-    }
-    return existing
   }
 
   async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; cajaBancoId?: number }) {
