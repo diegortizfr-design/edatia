@@ -6,6 +6,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCajasBancos, createCajaBanco, updateCajaBanco, deleteCajaBanco } from '../../services/erp.service'
 import { getSucursales } from '../../services/configuracion.service'
+import { getCuentasPUC } from '../../services/contabilidad.service'
 import toast from 'react-hot-toast'
 
 // ─── Interfaces y Estructuras de Datos ────────────────────────────────────────
@@ -172,6 +173,25 @@ export function ConfigCajasBancos() {
   const queryClient = useQueryClient()
   const { data: items = [], isLoading } = useQuery({ queryKey: ['cajas-bancos'], queryFn: getCajasBancos })
   const { data: sucursales = [] } = useQuery({ queryKey: ['sucursales'], queryFn: getSucursales })
+  const { data: cuentasPUC = [] } = useQuery<any[]>({ queryKey: ['cuentas-puc-disponible'], queryFn: () => getCuentasPUC() })
+
+  const dynamicPUCOptions = useMemo(() => {
+    const filtered = cuentasPUC.filter(c => c.codigo.startsWith('11'))
+    if (filtered.length > 0) {
+      return filtered.map(c => ({
+        value: c.codigo,
+        label: `${c.codigo} ${c.nombre}`
+      }))
+    }
+    return PUC_ACCOUNTS.filter(p => p.value.startsWith('11'))
+  }, [cuentasPUC])
+
+  const getAccountLabel = (cuenta: string) => {
+    const foundReal = cuentasPUC.find(c => c.codigo === cuenta)
+    if (foundReal) return `${foundReal.codigo} ${foundReal.nombre}`
+    const foundMock = PUC_ACCOUNTS.find(p => p.value === cuenta)
+    return foundMock ? foundMock.label : cuenta
+  }
 
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
@@ -360,7 +380,7 @@ export function ConfigCajasBancos() {
                   {filtered.length > 0 ? (
                     filtered.map(item => {
                       const sucursalName = sucursales.find(s => s.id === item.sucursalId)?.nombre || 'Principal'
-                      const accountLabel = PUC_ACCOUNTS.find(p => p.value === item.cuentaContable)?.label || item.cuentaContable
+                      const accountLabel = getAccountLabel(item.cuentaContable)
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
@@ -527,7 +547,7 @@ export function ConfigCajasBancos() {
                     <Select
                       value={form.cuentaContable || ''}
                       onChange={(v) => setForm(f => ({ ...f, cuentaContable: v }))}
-                      options={PUC_ACCOUNTS}
+                      options={dynamicPUCOptions}
                     />
                   </Field>
                 </div>
