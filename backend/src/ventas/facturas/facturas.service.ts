@@ -127,10 +127,6 @@ export class FacturasService {
       }
     })
 
-    // ── 2. Generar CUFE + XML DIAN en la creación removido (se hace al emitir) ──
-    const cufe: string | null = null
-    const qrUrl: string | null = null
-    const xmlDIAN: string | null = null
 
     const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
 
