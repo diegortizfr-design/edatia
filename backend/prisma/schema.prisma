@@ -2039,6 +2039,13 @@ model CajaBanco {
   activo          Boolean  @default(true)
   notas           String?
 
+  codigo          String?
+  controlOrden    Int      @default(0)
+  aplicaRecibos   Boolean  @default(true)
+  aplicaPagos     Boolean  @default(true)
+  aplicaControl   Boolean  @default(false)
+  restringida     Boolean  @default(false)
+
   mediosPago      MedioPago[]
 
   createdAt       DateTime @default(now())

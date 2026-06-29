@@ -45,7 +45,6 @@ export class CreateCajaBancoDto {
   @IsNumber()
   @Min(0)
   saldoInicial?: number;
-
   @IsOptional()
   @IsBoolean()
   activo?: boolean;
@@ -53,4 +52,30 @@ export class CreateCajaBancoDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  codigo?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  controlOrden?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  aplicaRecibos?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  aplicaPagos?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  aplicaControl?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  restringida?: boolean;
 }

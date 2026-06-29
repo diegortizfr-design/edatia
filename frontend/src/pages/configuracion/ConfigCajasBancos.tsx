@@ -10,14 +10,13 @@ import { getCuentasPUC } from '../../services/contabilidad.service'
 import toast from 'react-hot-toast'
 
 // ─── Interfaces y Estructuras de Datos ────────────────────────────────────────
-
 interface CajaBancoConfig {
   id: string;
   codigo: string;
-  descripcion: string;
+  nombre: string;
   sucursalId: string;
   controlOrden: number;
-  cuentaContable: string;
+  cuentaPUC: string;
   tipo: 'CAJA' | 'BANCO';
   activo: boolean;
   aplicaRecibos: boolean;
@@ -25,7 +24,6 @@ interface CajaBancoConfig {
   aplicaControl: boolean;
   restringida: boolean;
 }
-
 interface SucursalSummary {
   id: string;
   codigo: string;
@@ -47,15 +45,14 @@ const PUC_ACCOUNTS = [
   { value: '13050501', label: '13050501 CLIENTES NACIONALES' },
   { value: '22050502', label: '22050502 JOYEROS FABRICANTES' }
 ];
-
 const DEFAULT_CAJAS_BANCOS: CajaBancoConfig[] = [
   {
     id: 'caja_1',
     codigo: 'CM1',
-    descripcion: 'CAJA MAYOR',
+    nombre: 'CAJA MAYOR',
     sucursalId: 'suc_principal',
     controlOrden: 1,
-    cuentaContable: '11050501',
+    cuentaPUC: '11050501',
     tipo: 'CAJA',
     activo: true,
     aplicaRecibos: true,
@@ -66,10 +63,10 @@ const DEFAULT_CAJAS_BANCOS: CajaBancoConfig[] = [
   {
     id: 'banco_1',
     codigo: '81',
-    descripcion: 'BANCOLOMBIA HECTOR',
+    nombre: 'BANCOLOMBIA HECTOR',
     sucursalId: 'suc_principal',
     controlOrden: 1,
-    cuentaContable: '11100501',
+    cuentaPUC: '11100501',
     tipo: 'BANCO',
     activo: true,
     aplicaRecibos: true,
@@ -80,10 +77,10 @@ const DEFAULT_CAJAS_BANCOS: CajaBancoConfig[] = [
   {
     id: 'banco_2',
     codigo: '87',
-    descripcion: 'DAVIVIENDA',
+    nombre: 'DAVIVIENDA',
     sucursalId: 'suc_principal',
     controlOrden: 0,
-    cuentaContable: '11200501',
+    cuentaPUC: '11200501',
     tipo: 'BANCO',
     activo: true,
     aplicaRecibos: true,
@@ -94,10 +91,10 @@ const DEFAULT_CAJAS_BANCOS: CajaBancoConfig[] = [
   {
     id: 'caja_2',
     codigo: 'CR1',
-    descripcion: 'CREDITOS',
+    nombre: 'CREDITOS',
     sucursalId: 'suc_centro',
     controlOrden: 0,
-    cuentaContable: '13050501',
+    cuentaPUC: '13050501',
     tipo: 'CAJA',
     activo: true,
     aplicaRecibos: false,
@@ -106,7 +103,6 @@ const DEFAULT_CAJAS_BANCOS: CajaBancoConfig[] = [
     restringida: true
   }
 ];
-
 // ─── Componentes Helper Estilizados ──────────────────────────────────────────
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -234,10 +230,10 @@ export function ConfigCajasBancos() {
     setEditingId(null)
     setForm({
       codigo: '',
-      descripcion: '',
-      sucursalId: sucursales[0]?.id || 'suc_principal',
+      nombre: '',
+      sucursalId: sucursales[0]?.id ? String(sucursales[0].id) : '',
       controlOrden: 0,
-      cuentaContable: PUC_ACCOUNTS[0]?.value || '11050501',
+      cuentaPUC: dynamicPUCOptions[0]?.value || '11050501',
       tipo: 'CAJA',
       activo: true,
       aplicaRecibos: true,
@@ -248,9 +244,21 @@ export function ConfigCajasBancos() {
     setViewMode('form')
   }
 
-  const handleOpenEdit = (item: CajaBancoConfig) => {
+  const handleOpenEdit = (item: any) => {
     setEditingId(item.id)
-    setForm({ ...item })
+    setForm({
+      codigo: item.codigo ?? '',
+      nombre: item.nombre ?? '',
+      sucursalId: item.sucursalId ? String(item.sucursalId) : '',
+      controlOrden: item.controlOrden ?? 0,
+      cuentaPUC: item.cuentaPUC ?? '',
+      tipo: item.tipo,
+      activo: item.activo,
+      aplicaRecibos: item.aplicaRecibos !== false,
+      aplicaPagos: item.aplicaPagos !== false,
+      aplicaControl: !!item.aplicaControl,
+      restringida: !!item.restringida
+    })
     setViewMode('form')
   }
 
@@ -262,40 +270,38 @@ export function ConfigCajasBancos() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.codigo || !form.descripcion || !form.sucursalId || !form.cuentaContable || !form.tipo) {
-      alert('Código, Descripción, Sucursal, Cuenta y Tipo son obligatorios.')
+    if (!form.codigo || !form.nombre || !form.sucursalId || !form.cuentaPUC || !form.tipo) {
+      alert('Código, Nombre, Sucursal, Cuenta y Tipo son obligatorios.')
       return
     }
 
+    const payload = {
+      codigo: form.codigo.toUpperCase().trim(),
+      nombre: form.nombre.trim(),
+      sucursalId: form.sucursalId ? Number(form.sucursalId) : null,
+      controlOrden: Number(form.controlOrden || 0),
+      cuentaPUC: form.cuentaPUC,
+      tipo: form.tipo,
+      activo: form.activo !== false,
+      aplicaRecibos: form.aplicaRecibos !== false,
+      aplicaPagos: form.aplicaPagos !== false,
+      aplicaControl: !!form.aplicaControl,
+      restringida: !!form.restringida
+    }
+
     if (editingId) {
-      // Editar existente
-      updateMutation.mutate({ id: editingId, dto: { ...form } })
+      updateMutation.mutate({ id: editingId, dto: payload })
     } else {
-      // Crear nuevo
-      const newItem: Partial<CajaBancoConfig> = {
-        ...form,
-        codigo: form.codigo!.toUpperCase(),
-        descripcion: form.descripcion!.toUpperCase(),
-        sucursalId: form.sucursalId!,
-        controlOrden: form.controlOrden || 0,
-        cuentaContable: form.cuentaContable!,
-        tipo: form.tipo!,
-        activo: form.activo !== false,
-        aplicaRecibos: form.aplicaRecibos !== false,
-        aplicaPagos: form.aplicaPagos !== false,
-        aplicaControl: !!form.aplicaControl,
-        restringida: !!form.restringida
-      }
-      createMutation.mutate(newItem)
+      createMutation.mutate(payload)
     }
   }
 
   // Filtrar
   const filtered = useMemo(() => {
     return items.filter(i => 
-      i.codigo.toLowerCase().includes(search.toLowerCase()) ||
-      i.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-      i.cuentaContable.toLowerCase().includes(search.toLowerCase())
+      (i.codigo || '').toLowerCase().includes(search.toLowerCase()) ||
+      (i.nombre || '').toLowerCase().includes(search.toLowerCase()) ||
+      (i.cuentaPUC || '').toLowerCase().includes(search.toLowerCase())
     )
   }, [items, search])
 
@@ -380,7 +386,7 @@ export function ConfigCajasBancos() {
                   {filtered.length > 0 ? (
                     filtered.map(item => {
                       const sucursalName = sucursales.find(s => s.id === item.sucursalId)?.nombre || 'Principal'
-                      const accountLabel = getAccountLabel(item.cuentaContable)
+                      const accountLabel = getAccountLabel(item.cuentaPUC)
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
@@ -391,7 +397,7 @@ export function ConfigCajasBancos() {
                           <td className="p-4">
                             <div className="font-bold text-slate-800 flex items-center gap-1.5">
                               {item.tipo === 'BANCO' ? <Landmark size={14} className="text-slate-400" /> : <Wallet size={14} className="text-slate-400" />}
-                              {item.descripcion}
+                              {item.nombre}
                             </div>
                             <div className="text-xs text-slate-400 mt-0.5">Sucursal: {sucursalName}</div>
                           </td>
@@ -509,17 +515,15 @@ export function ConfigCajasBancos() {
                     />
                   </Field>
                 </div>
-
                 <div className="md:col-span-5">
                   <Field label="Descripción / Nombre *">
                     <Input
-                      value={form.descripcion}
-                      onChange={(v: string) => setForm(f => ({ ...f, descripcion: v }))}
+                      value={form.nombre}
+                      onChange={(v: string) => setForm(f => ({ ...f, nombre: v }))}
                       placeholder="Ej. BANCOLOMBIA DANIEL"
                     />
                   </Field>
                 </div>
-
                 <div className="md:col-span-4">
                   <Field label="Sucursal *">
                     <Select
@@ -541,17 +545,15 @@ export function ConfigCajasBancos() {
                     />
                   </Field>
                 </div>
-
                 <div className="md:col-span-6">
                   <Field label="Cuenta PUC *">
                     <Select
-                      value={form.cuentaContable || ''}
-                      onChange={(v) => setForm(f => ({ ...f, cuentaContable: v }))}
+                      value={form.cuentaPUC || ''}
+                      onChange={(v) => setForm(f => ({ ...f, cuentaPUC: v }))}
                       options={dynamicPUCOptions}
                     />
                   </Field>
                 </div>
-
                 <div className="md:col-span-3">
                   <Field label="Tipo *">
                     <Select
