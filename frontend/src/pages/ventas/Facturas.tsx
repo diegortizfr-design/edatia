@@ -15,11 +15,11 @@ function fmt(n: number) {
 }
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
-  BORRADOR: { label: 'Borrador', color: 'bg-slate-100 text-slate-600' },
-  EMITIDA:  { label: 'Emitida',  color: 'bg-blue-100 text-blue-700' },
-  PAGADA:   { label: 'Pagada',   color: 'bg-green-100 text-green-700' },
-  PARCIAL:  { label: 'Parcial',  color: 'bg-yellow-100 text-yellow-700' },
-  ANULADA:  { label: 'Anulada',  color: 'bg-red-100 text-red-700' },
+  CREADA:   { label: 'Creada',   color: 'bg-slate-100 text-slate-600 border border-slate-200' },
+  EMITIDA:  { label: 'Emitida',  color: 'bg-emerald-50 text-emerald-700 border border-emerald-100' },
+  PAGADA:   { label: 'Pagada',   color: 'bg-green-50 text-green-700 border border-green-100' },
+  PARCIAL:  { label: 'Parcial',  color: 'bg-yellow-50 text-yellow-700 border border-yellow-100' },
+  ANULADA:  { label: 'Anulada',  color: 'bg-red-50 text-red-700 border border-red-100' },
 }
 
 const DIAN_CONFIG: Record<string, { label: string; color: string }> = {
@@ -241,7 +241,7 @@ export function Facturas() {
                           className="flex items-center gap-1 text-xs text-slate-600 hover:text-indigo-600 font-medium">
                           <Eye size={12} /> Ver
                         </Link>
-                        {f.estado === 'BORRADOR' && (
+                        {f.estado === 'CREADA' && (
                           <button
                             onClick={() => mutEmitir.mutate(f.id)}
                             disabled={mutEmitir.isPending}

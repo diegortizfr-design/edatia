@@ -127,63 +127,10 @@ export class FacturasService {
       }
     })
 
-    // ── 2. Generar CUFE + XML DIAN si es facturador electrónico activo ────────────
-    if (config?.activo && config.resoluciones.length > 0 && resolucionId) {
-      const res = config.resoluciones[0]
-      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } })
-      const cliente = await this.prisma.tercero.findUnique({ where: { id: dto.clienteId } })
-      
-      if (empresa && cliente) {
-        const nitOFE = empresa.nit.replace(/[^0-9]/g, '').replace(/-.*/, '')
-        const ambiente = config.ambiente === 'PRODUCCION' ? '1' : '2'
-        const numFac = `${res.prefijo}${numeroDIAN}`
-        const now = new Date(dto.fecha)
-        const fecFac = now.toISOString().split('T')[0]
-        const horFac = now.toTimeString().split(' ')[0] + '-05:00'
-
-        cufe = this.cufeService.calcularCufe({
-          numFac,
-          fecFac,
-          horFac,
-          valFac: Number(totales.subtotal) - Number(totales.descuento),
-          valImp1: Number(totales.iva19) + Number(totales.iva5),
-          valImp2: 0,
-          valImp3: 0,
-          valTot: Number(totales.total),
-          nitOFE,
-          numAdq: cliente.numeroDocumento,
-          claveTecnica: res.claveTecnica,
-          ambiente,
-        })
-
-        const secCode = this.cufeService.calcularSoftwareSecurityCode(
-          config.softwareId ?? '', config.softwarePin ?? '', numFac
-        )
-        qrUrl = this.cufeService.qrUrl(cufe, ambiente)
-
-        xmlDIAN = this.ublService.buildFacturaXml({
-          empresa: { ...empresa, digitoVerificacion: empresa.digitoVerificacion },
-          cliente,
-          factura: { 
-            ...totales, 
-            numero, 
-            numeroDIAN, 
-            formaPago: dto.formaPago, 
-            medioPago: dto.medioPago,
-            direccion: dto.direccion,
-            sucursalCliente: dto.sucursalCliente,
-            fecha: new Date(dto.fecha),
-            fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
-          },
-          items: itemsConCosto as any[],
-          resolucion: res,
-          config,
-          cufe,
-          qrUrl,
-          softwareSecurityCode: secCode,
-        })
-      }
-    }
+    // ── 2. Generar CUFE + XML DIAN en la creación removido (se hace al emitir) ──
+    const cufe: string | null = null
+    const qrUrl: string | null = null
+    const xmlDIAN: string | null = null
 
     const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
 
@@ -204,7 +151,7 @@ export class FacturasService {
         reteica: dto.reteica ?? 0,
         notas: dto.notas,
         usuarioId,
-        estado: 'EMITIDA',
+        estado: 'CREADA',
         saldo,
         vendedorNombre: dto.vendedorNombre,
         vendedorId: dto.vendedorId,
@@ -218,7 +165,7 @@ export class FacturasService {
         cufe,
         qrUrl,
         xmlDIAN,
-        estadoDIAN: cufe ? 'GENERADA' : 'PENDIENTE',
+        estadoDIAN: 'PENDIENTE',
         numeroDIAN,
         prefijoDIAN,
         resolucionId,
@@ -266,32 +213,13 @@ export class FacturasService {
     return factura
   }
 
-  /**
-   * Emitir factura: descuenta inventario, genera CUFE/XML y cambia estado a EMITIDA
-   */
   async emitir(id: number, empresaId: number, usuarioId: number) {
     const factura = await this.findOne(id, empresaId)
-    if (factura.estado !== 'BORRADOR') {
-      throw new BadRequestException('Solo se pueden emitir facturas en estado BORRADOR')
+    if (factura.estado !== 'CREADA') {
+      throw new BadRequestException('Solo se pueden emitir facturas en estado CREADA')
     }
 
-    // ── 1. Descontar inventario ───────────────────────────────────────────────
-    for (const item of factura.items as any[]) {
-      await this.movimientos.registrarSalidaInterna(this.prisma, {
-        empresaId,
-        productoId: item.productoId,
-        bodegaId: factura.bodegaId,
-        cantidad: Number(item.cantidad),
-        concepto: `Factura ${factura.numero}`,
-        tipo: 'VENTA',
-        usuarioId,
-        referenciaId: String(factura.id),
-        referenciaTipo: 'FACTURA_VENTA',
-        numeroMov: `VTA-${factura.numero}-${item.id}`,
-      })
-    }
-
-    // ── 2. Generar CUFE + XML DIAN ────────────────────────────────────────────
+    // ── 1. Generar CUFE + XML DIAN ────────────────────────────────────────────
     const config = await this.prisma.configuracionDIAN.findUnique({
       where: { empresaId },
       include: {
@@ -306,26 +234,35 @@ export class FacturasService {
     let cufe: string | null = null
     let qrUrl: string | null = null
     let xmlDIAN: string | null = null
-    let numeroDIAN: number | null = null
-    let prefijoDIAN: string | null = null
-    let resolucionId: number | null = null
+    let numeroDIAN: number | null = factura.numeroDIAN
+    let prefijoDIAN: string | null = factura.prefijoDIAN
+    let resolucionId: number | null = factura.resolucionId
 
     if (config?.activo && config.resoluciones.length > 0) {
-      const res = config.resoluciones[0]
-      const updated = await this.prisma.resolucionDIAN.update({
-        where: { id: res.id },
-        data: { numeroCurrent: { increment: 1 } },
-      })
-      numeroDIAN = updated.numeroCurrent
-      prefijoDIAN = res.prefijo
-      resolucionId = res.id
+      let res = config.resoluciones[0]
+      if (!resolucionId) {
+        const updated = await this.prisma.resolucionDIAN.update({
+          where: { id: res.id },
+          data: { numeroCurrent: { increment: 1 } },
+        })
+        numeroDIAN = updated.numeroCurrent
+        prefijoDIAN = res.prefijo
+        resolucionId = res.id
+      } else {
+        const specificRes = await this.prisma.resolucionDIAN.findUnique({
+          where: { id: resolucionId },
+        })
+        if (specificRes) {
+          res = specificRes
+        }
+      }
 
-      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } })!
+      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } })
       const cliente = factura.cliente as any
       const nitOFE = empresa!.nit.replace(/[^0-9]/g, '').replace(/-.*/, '')
       const ambiente = config.ambiente === 'PRODUCCION' ? '1' : '2'
-      const numFac = `${res.prefijo}${numeroDIAN}`
-      const now = new Date(factura.fecha)
+      const numFac = `${prefijoDIAN}${numeroDIAN}`
+      const now = new Date()
       const fecFac = now.toISOString().split('T')[0]
       const horFac = now.toTimeString().split(' ')[0] + '-05:00'
 
@@ -350,9 +287,17 @@ export class FacturasService {
       qrUrl = this.cufeService.qrUrl(cufe, ambiente)
 
       xmlDIAN = this.ublService.buildFacturaXml({
-        empresa: { ...empresa, digitoVerificacion: empresa!.digitoVerificacion },
+        empresa: { ...empresa!, digitoVerificacion: empresa!.digitoVerificacion },
         cliente,
-        factura: { ...factura, numeroDIAN, formaPago: factura.formaPago, medioPago: factura.medioPago },
+        factura: { 
+          ...factura, 
+          numeroDIAN, 
+          prefijoDIAN,
+          numero: numFac, 
+          formaPago: factura.formaPago, 
+          medioPago: factura.medioPago,
+          fecha: now,
+        },
         items: factura.items as any[],
         resolucion: res,
         config,
@@ -362,10 +307,9 @@ export class FacturasService {
       })
     }
 
-    // ── 3. Asiento contable automático ───────────────────────────────────────
-    await this.crearAsientoFactura(factura as any, empresaId, usuarioId)
+    // Nota: El descuento de inventario y el asiento contable ya se crearon en el método `create` al quedar la factura en estado `CREADA`
 
-    // ── 4. Actualizar factura ─────────────────────────────────────────────────
+    // ── 2. Actualizar factura a EMITIDA ────────────────────────────────────────
     return this.prisma.facturaVenta.update({
       where: { id },
       data: {
@@ -377,7 +321,7 @@ export class FacturasService {
         numeroDIAN,
         prefijoDIAN,
         resolucionId,
-        numero: numeroDIAN && prefijoDIAN !== null
+        numero: (numeroDIAN && prefijoDIAN !== null)
           ? `${prefijoDIAN}${numeroDIAN}`
           : factura.numero,
       },
@@ -387,7 +331,7 @@ export class FacturasService {
 
   async anular(id: number, empresaId: number) {
     const f = await this.findOne(id, empresaId)
-    if (!['BORRADOR', 'EMITIDA'].includes(f.estado)) {
+    if (!['CREADA', 'EMITIDA'].includes(f.estado)) {
       throw new BadRequestException('No se puede anular una factura PAGADA o ya ANULADA')
     }
     return this.prisma.facturaVenta.update({ where: { id }, data: { estado: 'ANULADA' } })

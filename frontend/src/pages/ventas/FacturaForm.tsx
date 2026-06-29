@@ -279,7 +279,7 @@ export function FacturaForm() {
 
   // Calculate invoice numbers / Draft sequence
   const computedConsecutive = useMemo(() => {
-    if (!tipoDocumento) return 'BORRADOR'
+    if (!tipoDocumento) return '—'
     const doc = docConfigs.find((d: any) => String(d.id) === String(selectedDocId)) || docConfigs.find((d: any) => d.sigla === tipoDocumento)
     const basePrefix = doc?.prefijo || tipoDocumento
     const startSeq = doc?.consecutivoSiguiente || 1
@@ -538,7 +538,7 @@ export function FacturaForm() {
         </div>
         <div className="flex gap-2">
           <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full ${isInvoiceActive ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
-            {isInvoiceActive ? 'Modo Factura Real' : 'Borrador / Draft'}
+            {isInvoiceActive ? 'Facturación Habilitada' : 'Selecciona Tipo y Cliente'}
           </span>
         </div>
       </div>

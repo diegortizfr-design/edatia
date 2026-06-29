@@ -81,11 +81,11 @@ function numeroALetras(num: number): string {
 }
 
 const ESTADO_COLOR: Record<string, string> = {
-  BORRADOR: 'bg-slate-100 text-slate-600',
-  EMITIDA:  'bg-blue-100 text-blue-700',
-  PAGADA:   'bg-green-100 text-green-700',
-  ANULADA:  'bg-red-100 text-red-700',
-  VENCIDA:  'bg-amber-100 text-amber-700',
+  CREADA:   'bg-slate-100 text-slate-600 border border-slate-200',
+  EMITIDA:  'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  PAGADA:   'bg-green-50 text-green-700 border border-green-100',
+  ANULADA:  'bg-red-50 text-red-700 border border-red-100',
+  VENCIDA:  'bg-amber-50 text-amber-700 border border-amber-100',
 }
 
 const DIAN_COLOR: Record<string, string> = {
@@ -182,7 +182,7 @@ export function FacturaDetalle() {
             className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 bg-white rounded-lg text-sm hover:bg-slate-50 font-medium transition-all active:scale-95 shadow-sm">
             <Printer size={15} /> Ver/Descargar PDF
           </button>
-          {f.estado === 'BORRADOR' && (
+          {f.estado === 'CREADA' && (
             <button onClick={() => mutEmitir.mutate()} disabled={mutEmitir.isPending}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
               <Send size={15} />
@@ -201,7 +201,7 @@ export function FacturaDetalle() {
               <Plus size={15} /> Crear Nota Crédito
             </button>
           )}
-          {['BORRADOR', 'EMITIDA'].includes(f.estado) && !confirmAnular && (
+          {['CREADA', 'EMITIDA'].includes(f.estado) && !confirmAnular && (
             <button onClick={() => setConfirmAnular(true)}
               className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
               <XCircle size={15} /> Anular
