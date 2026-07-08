@@ -7,6 +7,7 @@ import {
   getFacturas, getClientes,
 } from '../../services/ventas.service'
 import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
+import { getBodegas } from '../../services/inventario.service'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', {
@@ -22,7 +23,7 @@ const MOTIVO_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string }> = {
-  BORRADOR: { label: 'Borrador', color: 'bg-slate-100 text-slate-600' },
+  CREADA:   { label: 'Creada',   color: 'bg-slate-100 text-slate-600' },
   EMITIDA:  { label: 'Emitida',  color: 'bg-blue-100 text-blue-700' },
   ANULADA:  { label: 'Anulada',  color: 'bg-red-100 text-red-700' },
 }
@@ -161,6 +162,7 @@ function NuevaNotaCreditoModal({ onClose, onSuccess }: any) {
   const [selectedDocId, setSelectedDocId] = useState('')
   const [motivo, setMotivo] = useState('DEVOLUCION')
   const [descripcion, setDescripcion] = useState('')
+  const [bodegaId, setBodegaId] = useState('')
   
   // Referenced Factura fields
   const [facturaQ, setFacturaQ] = useState('')
@@ -198,6 +200,22 @@ function NuevaNotaCreditoModal({ onClose, onSuccess }: any) {
     queryKey: ['documentos-config'],
     queryFn: getDocumentosConfig,
   })
+
+  const { data: bodegas = [] } = useQuery({
+    queryKey: ['bodegas'],
+    queryFn: getBodegas,
+  })
+
+  useEffect(() => {
+    if (bodegas.length > 0 && !bodegaId) {
+      const devBod = bodegas.find((b: any) => b.nombre?.toLowerCase().includes('devoluciones'))
+      if (devBod) {
+        setBodegaId(String(devBod.id))
+      } else {
+        setBodegaId(String(bodegas[0].id))
+      }
+    }
+  }, [bodegas, bodegaId])
 
   const ncDocs = useMemo(() => 
     docConfigs.filter((d: any) => d.sigla === 'NC' && d.estado === 'ACTIVO'),
@@ -369,6 +387,7 @@ function NuevaNotaCreditoModal({ onClose, onSuccess }: any) {
     mutCreate.mutate({
       facturaId: isReferenced ? Number(facturaId) : undefined,
       clienteId: isReferenced ? undefined : Number(clienteId),
+      bodegaId: (motivo === 'DEVOLUCION' || motivo === 'ANULACION') && bodegaId ? Number(bodegaId) : undefined,
       motivo,
       descripcion: descripcion || 'Nota Crédito de venta',
       numero: computedConsecutive,
@@ -459,6 +478,33 @@ function NuevaNotaCreditoModal({ onClose, onSuccess }: any) {
               </select>
             </div>
           </div>
+
+          {/* Bodega de Destino (Devoluciones) */}
+          {(motivo === 'DEVOLUCION' || motivo === 'ANULACION') && (
+            <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-200/50 space-y-2">
+              <label className="block text-[10px] font-bold text-orange-800 uppercase tracking-widest">
+                Bodega de Destino (Retorno de Inventario) *
+              </label>
+              <select
+                required
+                value={bodegaId}
+                onChange={e => setBodegaId(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none"
+              >
+                {bodegas.length === 0 && <option value="">No hay bodegas configuradas</option>}
+                {bodegas.map((b: any) => (
+                  <option key={b.id} value={b.id}>
+                    {b.nombre} {b.nombre?.toLowerCase().includes('devoluciones') ? '🌟 (Recomendada para Devoluciones)' : ''}
+                  </option>
+                ))}
+              </select>
+              {!bodegas.some((b: any) => b.nombre?.toLowerCase().includes('devoluciones')) && (
+                <p className="text-[10px] text-slate-500 italic mt-1">
+                  💡 Sugerencia: Se recomienda crear una bodega llamada "Devoluciones" en el submódulo de inventarios para separar la mercancía en cuarentena/inspección, o elegir la bodega general de retorno.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Referenced Invoice Lookup */}
           {isReferenced ? (

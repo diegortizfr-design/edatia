@@ -73,140 +73,141 @@ export class FacturasService {
       },
     })
 
-    let cufe: string | null = null
-    let qrUrl: string | null = null
-    let xmlDIAN: string | null = null
-    let numeroDIAN: number | null = null
-    let prefijoDIAN: string | null = null
-    let resolucionId: number | null = null
-    let numero = dto.numero
+    return this.prisma.$transaction(async (tx) => {
+      let cufe: string | null = null
+      let qrUrl: string | null = null
+      let xmlDIAN: string | null = null
+      let numeroDIAN: number | null = null
+      let prefijoDIAN: string | null = null
+      let resolucionId: number | null = null
+      let numero = dto.numero
 
-    if (config?.activo && config.resoluciones.length > 0) {
-      const res = config.resoluciones[0]
-      const updated = await this.prisma.resolucionDIAN.update({
-        where: { id: res.id },
-        data: { numeroCurrent: { increment: 1 } },
-      })
-      numeroDIAN = updated.numeroCurrent
-      prefijoDIAN = res.prefijo
-      resolucionId = res.id
-      numero = `${prefijoDIAN}${numeroDIAN}`
-    }
-
-    if (!numero) {
-      numero = await this.generarNumero(empresaId, dto.tipoDocumento || 'FV')
-    }
-
-    // Obtener costos actuales (CPP) para el asiento contable
-    const productosIds = [...new Set(dto.items.map(i => i.productoId))]
-    const productos = await this.prisma.producto.findMany({
-      where: { id: { in: productosIds }, empresaId },
-      select: { id: true, costoPromedio: true },
-    })
-    const costoMap = new Map(productos.map(p => [p.id, Number(p.costoPromedio)]))
-
-    const itemsConCosto = dto.items.map((item, idx) => {
-      const r = calcularItem(item)
-      const costoUnit = costoMap.get(item.productoId) ?? 0
-      return {
-        productoId: item.productoId,
-        descripcion: item.descripcion,
-        unidad: item.unidad ?? 'UND',
-        cantidad: item.cantidad,
-        precioUnitario: item.precioUnitario,
-        descuentoPct: item.descuentoPct ?? 0,
-        descuentoValor: r.descuentoValor,
-        tipoIva: item.tipoIva,
-        baseIva: r.baseIva,
-        ivaValor: r.ivaValor,
-        subtotal: r.subtotal,
-        total: r.total,
-        costoUnitario: costoUnit,
-        costoTotal: costoUnit * Number(item.cantidad),
-        orden: item.orden ?? idx,
+      if (config?.activo && config.resoluciones.length > 0) {
+        const res = config.resoluciones[0]
+        const updated = await tx.resolucionDIAN.update({
+          where: { id: res.id },
+          data: { numeroCurrent: { increment: 1 } },
+        })
+        numeroDIAN = updated.numeroCurrent
+        prefijoDIAN = res.prefijo
+        resolucionId = res.id
+        numero = `${prefijoDIAN}${numeroDIAN}`
       }
+
+      if (!numero) {
+        numero = await this.generarNumero(empresaId, dto.tipoDocumento || 'FV', tx)
+      }
+
+      // Obtener costos actuales (CPP) para el asiento contable
+      const productosIds = [...new Set(dto.items.map(i => i.productoId))]
+      const productos = await tx.producto.findMany({
+        where: { id: { in: productosIds }, empresaId },
+        select: { id: true, costoPromedio: true },
+      })
+      const costoMap = new Map(productos.map(p => [p.id, Number(p.costoPromedio)]))
+
+      const itemsConCosto = dto.items.map((item, idx) => {
+        const r = calcularItem(item)
+        const costoUnit = costoMap.get(item.productoId) ?? 0
+        return {
+          productoId: item.productoId,
+          descripcion: item.descripcion,
+          unidad: item.unidad ?? 'UND',
+          cantidad: item.cantidad,
+          precioUnitario: item.precioUnitario,
+          descuentoPct: item.descuentoPct ?? 0,
+          descuentoValor: r.descuentoValor,
+          tipoIva: item.tipoIva,
+          baseIva: r.baseIva,
+          ivaValor: r.ivaValor,
+          subtotal: r.subtotal,
+          total: r.total,
+          costoUnitario: costoUnit,
+          costoTotal: costoUnit * Number(item.cantidad),
+          orden: item.orden ?? idx,
+        }
+      })
+
+      const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
+
+      const factura = await tx.facturaVenta.create({
+        data: {
+          empresaId,
+          numero,
+          clienteId: dto.clienteId,
+          bodegaId: dto.bodegaId,
+          cotizacionId: dto.cotizacionId,
+          pedidoId: dto.pedidoId,
+          fecha: new Date(dto.fecha),
+          fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+          formaPago: dto.formaPago,
+          medioPago: dto.medioPago,
+          retefuente: dto.retefuente ?? 0,
+          reteiva: dto.reteiva ?? 0,
+          reteica: dto.reteica ?? 0,
+          notas: dto.notas,
+          usuarioId,
+          estado: 'CREADA',
+          saldo,
+          vendedorNombre: dto.vendedorNombre,
+          vendedorId: dto.vendedorId,
+          atendidoPor: dto.atendidoPor,
+          canal: dto.canal,
+          nivel: dto.nivel,
+          imprimeDcto: dto.imprimeDcto ?? true,
+          tipoDocumento: dto.tipoDocumento ?? 'FV',
+          direccion: dto.direccion,
+          sucursalCliente: dto.sucursalCliente,
+          cufe,
+          qrUrl,
+          xmlDIAN,
+          estadoDIAN: 'PENDIENTE',
+          numeroDIAN,
+          prefijoDIAN,
+          resolucionId,
+          ...totales,
+          items: { create: itemsConCosto },
+        },
+        include: INCLUDE_FULL,
+      })
+
+      // Si viene de cotización, marcarla como FACTURADA
+      if (dto.cotizacionId) {
+        await tx.cotizacion.update({
+          where: { id: dto.cotizacionId },
+          data: { estado: 'FACTURADA' },
+        })
+      }
+
+      // Si viene de pedido, marcarlo como FACTURADO
+      if (dto.pedidoId) {
+        await tx.pedidoVenta.update({
+          where: { id: dto.pedidoId },
+          data: { estado: 'FACTURADO' },
+        })
+      }
+
+      // ── 3. Descontar inventario (Kardex) ───────────────────────────────────────
+      for (const item of factura.items as any[]) {
+        await this.movimientos.registrarSalidaInterna(tx, {
+          empresaId,
+          productoId: item.productoId,
+          bodegaId: factura.bodegaId,
+          cantidad: Number(item.cantidad),
+          concepto: `Factura ${factura.numero}`,
+          tipo: 'VENTA',
+          usuarioId,
+          referenciaId: String(factura.id),
+          referenciaTipo: 'FACTURA_VENTA',
+          numeroMov: `VTA-${factura.numero}-${item.id}`,
+        })
+      }
+
+      // ── 4. Generar asiento contable automático ────────────────────────────────
+      await this.crearAsientoFactura(factura as any, empresaId, usuarioId, tx)
+
+      return factura
     })
-
-
-    const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
-
-    const factura = await this.prisma.facturaVenta.create({
-      data: {
-        empresaId,
-        numero,
-        clienteId: dto.clienteId,
-        bodegaId: dto.bodegaId,
-        cotizacionId: dto.cotizacionId,
-        pedidoId: dto.pedidoId,
-        fecha: new Date(dto.fecha),
-        fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
-        formaPago: dto.formaPago,
-        medioPago: dto.medioPago,
-        retefuente: dto.retefuente ?? 0,
-        reteiva: dto.reteiva ?? 0,
-        reteica: dto.reteica ?? 0,
-        notas: dto.notas,
-        usuarioId,
-        estado: 'CREADA',
-        saldo,
-        vendedorNombre: dto.vendedorNombre,
-        vendedorId: dto.vendedorId,
-        atendidoPor: dto.atendidoPor,
-        canal: dto.canal,
-        nivel: dto.nivel,
-        imprimeDcto: dto.imprimeDcto ?? true,
-        tipoDocumento: dto.tipoDocumento ?? 'FV',
-        direccion: dto.direccion,
-        sucursalCliente: dto.sucursalCliente,
-        cufe,
-        qrUrl,
-        xmlDIAN,
-        estadoDIAN: 'PENDIENTE',
-        numeroDIAN,
-        prefijoDIAN,
-        resolucionId,
-        ...totales,
-        items: { create: itemsConCosto },
-      },
-      include: INCLUDE_FULL,
-    })
-
-    // Si viene de cotización, marcarla como FACTURADA
-    if (dto.cotizacionId) {
-      await this.prisma.cotizacion.update({
-        where: { id: dto.cotizacionId },
-        data: { estado: 'FACTURADA' },
-      })
-    }
-
-    // Si viene de pedido, marcarlo como FACTURADO
-    if (dto.pedidoId) {
-      await this.prisma.pedidoVenta.update({
-        where: { id: dto.pedidoId },
-        data: { estado: 'FACTURADO' },
-      })
-    }
-
-    // ── 3. Descontar inventario (Kardex) ───────────────────────────────────────
-    for (const item of factura.items as any[]) {
-      await this.movimientos.registrarSalidaInterna(this.prisma, {
-        empresaId,
-        productoId: item.productoId,
-        bodegaId: factura.bodegaId,
-        cantidad: Number(item.cantidad),
-        concepto: `Factura ${factura.numero}`,
-        tipo: 'VENTA',
-        usuarioId,
-        referenciaId: String(factura.id),
-        referenciaTipo: 'FACTURA_VENTA',
-        numeroMov: `VTA-${factura.numero}-${item.id}`,
-      })
-    }
-
-    // ── 4. Generar asiento contable automático ────────────────────────────────
-    await this.crearAsientoFactura(factura as any, empresaId, usuarioId)
-
-    return factura
   }
 
   async emitir(id: number, empresaId: number, usuarioId: number) {
@@ -338,13 +339,14 @@ export class FacturasService {
     if (!f.xmlDIAN) throw new NotFoundException('Esta factura no tiene XML DIAN generado')
     return f.xmlDIAN
   }
-  private async crearAsientoFactura(factura: any, empresaId: number, usuarioId: number) {
+  private async crearAsientoFactura(factura: any, empresaId: number, usuarioId: number, tx?: any) {
+    const client = tx || this.prisma;
     // ── 1. Determinar cuenta de cargo (Clientes o Caja/Banco) ─────────────────
     let cuentaCargoId: number | null = null;
     let cuentaCargoCodigo = '1305'; // fallback por defecto si no cuadra nada
 
     // Consultar Forma de Pago
-    const fp = await this.prisma.formaPago.findFirst({
+    const fp = await client.formaPago.findFirst({
       where: { empresaId, codigo: factura.formaPago },
     });
 
@@ -353,7 +355,7 @@ export class FacturasService {
     if (esCredito) {
       cuentaCargoCodigo = '1305';
     } else {
-      const mp = await this.prisma.medioPago.findFirst({
+      const mp = await client.medioPago.findFirst({
         where: { empresaId, codigo: factura.medioPago },
         include: { cajaBanco: true },
       });
@@ -366,16 +368,16 @@ export class FacturasService {
     }
 
     // Asegurar que la cuenta contable existe en el PUC
-    let dbCuentaCargo = await this.prisma.cuentaPUC.findFirst({
+    let dbCuentaCargo = await client.cuentaPUC.findFirst({
       where: { empresaId, codigo: cuentaCargoCodigo, activo: true },
       select: { id: true },
     });
 
     if (!dbCuentaCargo) {
-      dbCuentaCargo = await this.prisma.cuentaPUC.findFirst({
+      dbCuentaCargo = await client.cuentaPUC.findFirst({
         where: { empresaId, codigo: esCredito ? '1305' : '1105', activo: true },
         select: { id: true },
-      }) ?? await this.prisma.cuentaPUC.findFirst({
+      }) ?? await client.cuentaPUC.findFirst({
         where: { empresaId, codigo: { startsWith: esCredito ? '13' : '11' }, activo: true },
         select: { id: true },
       });
@@ -385,11 +387,11 @@ export class FacturasService {
 
     // Buscar cuentas PUC necesarias
     const codigos = ['135515', '135517', '135518', '413505', '4135', '240801', '240802', '613505', '1435']
-    const cuentas = await this.prisma.cuentaPUC.findMany({
+    const cuentas = await client.cuentaPUC.findMany({
       where: { empresaId, codigo: { in: codigos }, activo: true },
       select: { id: true, codigo: true },
     })
-    const byCode = new Map(cuentas.map(c => [c.codigo, c.id]))
+    const byCode = new Map<string, number>(cuentas.map((c: any) => [c.codigo as string, c.id as number]))
 
     const get = (pref: string) => byCode.get(pref) ?? null
 
@@ -429,7 +431,7 @@ export class FacturasService {
     // Créditos
     // Crédito a Ingresos por producto (Grupo contable)
     for (const item of factura.items) {
-      const product = await this.prisma.producto.findUnique({
+      const product = await client.producto.findUnique({
         where: { id: item.productoId },
         include: { grupo: true }
       })
@@ -437,7 +439,7 @@ export class FacturasService {
       let cIngresoItem = cIngresos
       const customIngresoCode = (product?.grupo?.contable as any)?.ingresoEnVentas
       if (customIngresoCode) {
-        const customAcc = await this.prisma.cuentaPUC.findFirst({
+        const customAcc = await client.cuentaPUC.findFirst({
           where: { empresaId, codigo: customIngresoCode }
         })
         if (customAcc) cIngresoItem = customAcc.id
@@ -456,7 +458,7 @@ export class FacturasService {
     for (const item of factura.items) {
       const cTotal = Number(item.costoTotal || 0)
       if (cTotal > 0) {
-        const product = await this.prisma.producto.findUnique({
+        const product = await client.producto.findUnique({
           where: { id: item.productoId },
           include: { clasificacion: true, grupo: true }
         })
@@ -464,12 +466,12 @@ export class FacturasService {
         let cInvId = cInventario
         const customInvCode = (product?.grupo?.contable as any)?.inventarioVenta
         if (customInvCode) {
-          const customInv = await this.prisma.cuentaPUC.findFirst({
+          const customInv = await client.cuentaPUC.findFirst({
             where: { empresaId, codigo: customInvCode }
           })
           if (customInv) cInvId = customInv.id
         } else if (product?.clasificacion?.pucCuenta) {
-          const customInv = await this.prisma.cuentaPUC.findFirst({
+          const customInv = await client.cuentaPUC.findFirst({
             where: { empresaId, codigo: product.clasificacion.pucCuenta }
           })
           if (customInv) cInvId = customInv.id
@@ -478,7 +480,7 @@ export class FacturasService {
         let cCostoVtaId = cCostoVta
         const customCostoCode = (product?.grupo?.contable as any)?.costoEnVentas
         if (customCostoCode) {
-          const customCosto = await this.prisma.cuentaPUC.findFirst({
+          const customCosto = await client.cuentaPUC.findFirst({
             where: { empresaId, codigo: customCostoCode }
           })
           if (customCosto) cCostoVtaId = customCosto.id
@@ -499,14 +501,14 @@ export class FacturasService {
     const fecha = new Date(factura.fecha)
     const mes = fecha.getMonth() + 1
     const anio = fecha.getFullYear()
-    const periodo = await this.prisma.periodoContable.upsert({
+    const periodo = await client.periodoContable.upsert({
       where: { empresaId_anio_mes: { empresaId, anio, mes } },
       create: { empresaId, anio, mes, estado: 'ABIERTO' },
       update: {},
     })
 
     // Número de comprobante
-    const ultimo = await this.prisma.comprobante.findFirst({
+    const ultimo = await client.comprobante.findFirst({
       where: { empresaId, tipo: 'VENTA' },
       orderBy: { id: 'desc' },
       select: { numero: true },
@@ -514,7 +516,7 @@ export class FacturasService {
     const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() ?? '0') + 1 : 1
     const numero = `VTA-${anio}-${String(seq).padStart(5, '0')}`
 
-    await this.prisma.comprobante.create({
+    await client.comprobante.create({
       data: {
         empresaId,
         tipo: 'VENTA',
@@ -529,8 +531,9 @@ export class FacturasService {
     })
   }
 
-  private async generarNumero(empresaId: number, tipoDocumento = 'FV'): Promise<string> {
-    const last = await this.prisma.facturaVenta.findFirst({
+  private async generarNumero(empresaId: number, tipoDocumento = 'FV', tx?: any): Promise<string> {
+    const client = tx || this.prisma
+    const last = await client.facturaVenta.findFirst({
       where: { empresaId, tipoDocumento },
       orderBy: { id: 'desc' },
     })

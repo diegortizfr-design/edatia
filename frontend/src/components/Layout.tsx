@@ -270,6 +270,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavGroup label="Contabilidad" icon={<Calculator size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.contabilidad} onClick={() => toggleGroup('contabilidad')}>
                 <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={isCollapsed} />
                 <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={isCollapsed} />
+                <div className="h-px bg-slate-100 my-1 mx-2" />
+                <NavItem to="/contabilidad/tesoreria/pagos" icon={<ClipboardList size={14}/>} label="Gestionar Pagos" isCollapsed={isCollapsed} />
+                <NavItem to="/contabilidad/tesoreria/saldos" icon={<Wallet size={14}/>} label="Saldos Cajas/Bancos" isCollapsed={isCollapsed} />
               </NavGroup>
             </div>
           )}

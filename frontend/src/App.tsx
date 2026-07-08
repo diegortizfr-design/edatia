@@ -87,6 +87,7 @@ import { PosCierre } from './pages/pos/PosCierre'
 import { PUC } from './pages/contabilidad/PUC'
 import { Comprobantes } from './pages/contabilidad/Comprobantes'
 import { ContReportes } from './pages/contabilidad/ContReportes'
+import { CajasBancosList } from './pages/contabilidad/CajasBancosList'
 
 function P({ children }: { children: React.ReactNode }) {
   return (
@@ -221,6 +222,8 @@ function App() {
         <Route path="/contabilidad/puc"           element={<P><PUC /></P>} />
         <Route path="/contabilidad/comprobantes"  element={<P><Comprobantes /></P>} />
         <Route path="/contabilidad/reportes"      element={<P><ContReportes /></P>} />
+        <Route path="/contabilidad/tesoreria/pagos"  element={<P><ReciboCaja /></P>} />
+        <Route path="/contabilidad/tesoreria/saldos" element={<P><CajasBancosList /></P>} />
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

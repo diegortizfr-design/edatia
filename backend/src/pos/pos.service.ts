@@ -398,7 +398,7 @@ export class PosService {
       }
 
       // 3. Actualizar totales de la sesión
-      const pagoEfectivo = dto.pagoEfectivo ?? 0
+      const pagoEfectivo = Math.max(0, (dto.pagoEfectivo ?? 0) - (dto.cambio ?? 0))
       const pagoTarjeta = (dto.pagoTarjetaDebito ?? 0) + (dto.pagoTarjetaCredito ?? 0)
       const pagoTransferencia = dto.pagoTransferencia ?? 0
       const pagoNequi = dto.pagoNequi ?? 0
@@ -563,7 +563,7 @@ export class PosService {
     })
 
     // 2. Definir cuentas (códigos estándar PUC Colombia)
-    const codigos = ['1105', '4135', '240801', '240802', '6135', '1435']
+    const codigos = ['1105', '1110', '4135', '240801', '240802', '6135', '1435']
     const cuentas = await tx.cuentaPUC.findMany({
       where: { empresaId, codigo: { in: codigos } },
     })
@@ -603,15 +603,44 @@ export class PosService {
     const lineas = []
     const desc = `Venta POS ${venta.numero}`
 
-    // Débito a Caja (Total recibido)
-    lineas.push({
-      cuentaId: cCaja,
-      descripcion: desc,
-      debito: Number(venta.total),
-      credito: 0,
-      terceroNit: venta.clienteDoc,
-      terceroNombre: venta.clienteNombre,
-    })
+    // Débito distribuido por medio de pago recibido
+    const payments = [
+      { key: 'pagoEfectivo', code: 'EFECTIVO', fallback: '1105', name: 'Efectivo' },
+      { key: 'pagoTarjetaDebito', code: 'TARJETA_DEBITO', fallback: '1110', name: 'Tarjeta Débito' },
+      { key: 'pagoTarjetaCredito', code: 'TARJETA_CREDITO', fallback: '1110', name: 'Tarjeta Crédito' },
+      { key: 'pagoTransferencia', code: 'TRANSFERENCIA', fallback: '1110', name: 'Transferencia' },
+      { key: 'pagoNequi', code: 'NEQUI', fallback: '1110', name: 'Nequi' },
+    ]
+
+    for (const p of payments) {
+      const val = p.key === 'pagoEfectivo'
+        ? Number(venta.pagoEfectivo ?? 0) - Number(venta.cambio ?? 0)
+        : Number(venta[p.key] ?? 0)
+
+      if (val > 0) {
+        let accountId = cCaja // Por defecto cuenta de la Caja POS
+        if (p.code !== 'EFECTIVO') {
+          const mp = await tx.medioPago.findFirst({
+            where: { empresaId, codigo: p.code },
+            include: { cajaBanco: true },
+          })
+          if (mp?.cajaBanco?.cuentaPUCId) {
+            accountId = mp.cajaBanco.cuentaPUCId
+          } else {
+            accountId = byCode.get(p.fallback) || cCaja
+          }
+        }
+
+        lineas.push({
+          cuentaId: accountId,
+          descripcion: `${desc} - Pago ${p.name}`,
+          debito: val,
+          credito: 0,
+          terceroNit: venta.clienteDoc,
+          terceroNombre: venta.clienteNombre,
+        })
+      }
+    }
 
     // Crédito a Ingresos (Base) por producto (Grupo contable)
     for (const item of venta.items) {

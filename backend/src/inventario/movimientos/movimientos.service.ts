@@ -259,6 +259,100 @@ export class MovimientosService {
     return mov;
   }
 
+  /**
+   * Registra una entrada de inventario de forma centralizada.
+   * Puede ser llamada desde otros servicios dentro de una transacción.
+   */
+  async registrarEntradaInterna(
+    tx: any,
+    data: {
+      empresaId: number;
+      productoId: number;
+      bodegaId: number;
+      cantidad: number;
+      concepto: string;
+      tipo: string;
+      referenciaId?: string;
+      referenciaTipo?: string;
+      usuarioId?: number;
+      numeroMov?: string;
+      notas?: string;
+      loteNumero?: string;
+      seriales?: string[];
+      costoUnitario?: number;
+    },
+  ) {
+    const producto = await tx.producto.findUnique({ where: { id: data.productoId } });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+
+    const stock = await this.getOrCreateStock(data.productoId, data.bodegaId, data.empresaId, tx);
+
+    const cantAnterior = parseFloat(stock.cantidad.toString());
+    const cppAnterior  = parseFloat(producto.costoPromedio.toString());
+    const cantNueva    = data.cantidad;
+    const costoNuevo   = data.costoUnitario !== undefined && data.costoUnitario !== null
+      ? data.costoUnitario
+      : cppAnterior;
+
+    const totalAnterior = cantAnterior * cppAnterior;
+    const totalNuevo    = cantNueva * costoNuevo;
+    const cantTotal     = cantAnterior + cantNueva;
+    const nuevoCPP      = cantTotal > 0 ? (totalAnterior + totalNuevo) / cantTotal : costoNuevo;
+    const saldoCantidad = cantTotal;
+
+    // 1. Actualizar stock
+    await tx.stock.update({
+      where: { productoId_bodegaId: { productoId: data.productoId, bodegaId: data.bodegaId } },
+      data: { cantidad: { increment: cantNueva } },
+    });
+
+    // 2. Actualizar CPP del producto
+    await tx.producto.update({
+      where: { id: data.productoId },
+      data: { costoPromedio: nuevoCPP },
+    });
+
+    // 3. Crear movimiento
+    const numero = data.numeroMov || await this.generarNumero('MOV', data.empresaId, tx);
+    const mov = await tx.movimientoInventario.create({
+      data: {
+        numero,
+        empresaId: data.empresaId,
+        tipo: data.tipo,
+        concepto: data.concepto,
+        productoId: data.productoId,
+        bodegaDestinoId: data.bodegaId,
+        cantidad: cantNueva,
+        costoUnitario: costoNuevo,
+        costoTotal: cantNueva * costoNuevo,
+        saldoCantidad,
+        saldoCostoTotal: saldoCantidad * nuevoCPP,
+        saldoCpp: nuevoCPP,
+        usuarioId: data.usuarioId,
+        referenciaId: data.referenciaId,
+        referenciaTipo: data.referenciaTipo,
+        notas: data.notas,
+      },
+    });
+
+    // 4. Auditoría
+    void this.auditLog.log({
+      accion: 'STOCK_IN',
+      entidad: 'Producto',
+      entidadId: data.productoId,
+      colaboradorId: data.usuarioId,
+      detalles: {
+        cantidad: data.cantidad,
+        tipo: data.tipo,
+        concepto: data.concepto,
+        bodegaId: data.bodegaId,
+        numeroMov: numero,
+      },
+    });
+
+    return mov;
+  }
+
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 

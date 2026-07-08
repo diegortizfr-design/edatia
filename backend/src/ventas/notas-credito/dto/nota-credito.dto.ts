@@ -14,6 +14,8 @@ export class CreateNotaCreditoDto {
 
   @IsNumber() @IsOptional() @Type(() => Number) clienteId?: number
 
+  @IsNumber() @IsOptional() @Type(() => Number) bodegaId?: number
+
   @IsString() @IsOptional() numero?: string
 
   @IsIn(['DEVOLUCION', 'DESCUENTO', 'ANULACION', 'OTRO'])
