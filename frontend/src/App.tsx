@@ -44,6 +44,7 @@ import { PedidoForm } from './pages/ventas/PedidoForm'
 import { Facturas } from './pages/ventas/Facturas'
 import { FacturaForm } from './pages/ventas/FacturaForm'
 import { FacturaDetalle } from './pages/ventas/FacturaDetalle'
+import { FacturasPendientesEmitir } from './pages/ventas/FacturasPendientesEmitir'
 import { NotasCredito } from './pages/ventas/NotasCredito'
 import { NotaCreditoDetalle } from './pages/ventas/NotaCreditoDetalle'
 import { ReciboCaja } from './pages/ventas/ReciboCaja'
@@ -82,6 +83,7 @@ import { PosDashboard } from './pages/pos/PosDashboard'
 import { PosScreen } from './pages/pos/PosScreen'
 import { PosConfig } from './pages/pos/PosConfig'
 import { PosCierre } from './pages/pos/PosCierre'
+import { VentasPosList } from './pages/pos/VentasPosList'
 
 // ── Contabilidad ──
 import { PUC } from './pages/contabilidad/PUC'
@@ -159,6 +161,7 @@ function App() {
         <Route path="/ventas/pedidos/:id"        element={<P><PedidoForm /></P>} />
         <Route path="/ventas/facturas"        element={<P><Facturas /></P>} />
         <Route path="/ventas/facturas/nueva" element={<P><FacturaForm /></P>} />
+        <Route path="/ventas/facturas/pendientes-emitir" element={<P><FacturasPendientesEmitir /></P>} />
         <Route path="/ventas/facturas/:id"   element={<P><FacturaDetalle /></P>} />
         <Route path="/ventas/notas-credito" element={<P><NotasCredito /></P>} />
         <Route path="/ventas/notas-credito/:id" element={<P><NotaCreditoDetalle /></P>} />
@@ -216,6 +219,7 @@ function App() {
         <Route path="/pos/config" element={<P><PosConfig /></P>} />
         <Route path="/pos/cierre/:sesionId" element={<P><PosCierre /></P>} />
         <Route path="/pos/screen/:sesionId" element={<PosWrap><PosScreen /></PosWrap>} />
+        <Route path="/pos/ventas" element={<P><VentasPosList /></P>} />
 
         {/* ── Contabilidad ── */}
         <Route path="/contabilidad" element={<Navigate to="/contabilidad/puc" replace />} />

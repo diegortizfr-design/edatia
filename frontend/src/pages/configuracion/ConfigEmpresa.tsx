@@ -191,6 +191,7 @@ export function ConfigEmpresa() {
         plazoPagoDefecto: erp.plazoPagoDefecto ?? '30',
         tasaInteresMora: erp.tasaInteresMora ?? '1.5',
         bloquearClientesMora: erp.bloquearClientesMora ?? false,
+        facturadorElectronico: erp.facturadorElectronico ?? true,
         entornoDian: erp.entornoDian ?? 'PRUEBAS',
         softwarePinDian: erp.softwarePinDian ?? '',
         softwareIdDian: erp.softwareIdDian ?? '',
@@ -239,6 +240,7 @@ export function ConfigEmpresa() {
         plazoPagoDefecto: form.plazoPagoDefecto,
         tasaInteresMora: form.tasaInteresMora,
         bloquearClientesMora: form.bloquearClientesMora,
+        facturadorElectronico: form.facturadorElectronico,
         entornoDian: form.entornoDian,
         softwarePinDian: form.softwarePinDian,
         softwareIdDian: form.softwareIdDian,
@@ -268,7 +270,7 @@ export function ConfigEmpresa() {
         'skuAutogenerado', 'skuLength', 'permitirDuplicadoBarras', 'unidadMedidaDefecto',
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
-        'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
+        'facturadorElectronico', 'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
         'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal'
       ]
       frontendKeys.forEach((k: string) => { delete databasePayload[k] })
@@ -1110,63 +1112,83 @@ export function ConfigEmpresa() {
 
         {/* ─── TAB 9: EMISIÓN ELECTRÓNICA (ANCHO COMPLETO APILADOS) ───────── */}
         {tab === 'emision' && (
-          <div className="space-y-6 w-full">
-            <SectionCard title="Configuración de Habilitación DIAN" icon={ShieldCheck}>
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-4">
-                  <Field label="Entorno de emisión actual" hint="Pruebas Sandbox o Producción Real API.">
-                    <Select
-                      value={form.entornoDian}
-                      onChange={set('entornoDian')}
-                      options={[
-                        { value: 'PRUEBAS', label: 'Pruebas / Habilitación (DIAN SandBox)' },
-                        { value: 'PRODUCCION', label: 'Producción Real (DIAN API)' },
-                      ]}
-                    />
-                  </Field>
-                </div>
-
-                <div className="md:col-span-4">
-                  <Field label="PIN del software DIAN">
-                    <Input type="password" value={form.softwarePinDian} onChange={set('softwarePinDian')} placeholder="*****" />
-                  </Field>
-                </div>
-
-                <div className="md:col-span-4">
-                  <Field label="ID del software (UUID DIAN)">
-                    <Input value={form.softwareIdDian} onChange={set('softwareIdDian')} placeholder="12345678-abcd-1234-abcd-1234567890ab" />
-                  </Field>
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Certificación y Envío" icon={Shield}>
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                <div className="md:col-span-6">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Firma Digital Activa</h4>
-                      <p className="text-[11px] text-emerald-700 leading-relaxed mt-1">
-                        Tu certificado de firma digital está configurado correctamente.
-                      </p>
-                      <p className="text-[10px] text-emerald-600 mt-0.5">Vencimiento: 31-Dic-2026</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-6 space-y-2">
-                  <Toggle
-                    checked={form.notificarEmisionEmail}
-                    onChange={setCheck('notificarEmisionEmail')}
-                    label="Notificar emisión de factura automáticamente"
-                  />
-                  <p className="text-xs text-slate-400 leading-tight">
-                    Envía de manera inmediata la representación gráfica (PDF) y el XML oficial de la factura al correo de facturación del adquiriente tras ser autorizada.
+          <div className="space-y-6 w-full animate-fade-in">
+            <SectionCard title="Estado del Facturador Electrónico" icon={Shield}>
+              <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Facturar Electrónicamente</h4>
+                  <p className="text-[11px] text-slate-450 leading-relaxed mt-0.5">
+                    Habilite la emisión electrónica de facturas y notas de crédito ante la DIAN
                   </p>
                 </div>
+                <Toggle
+                  checked={form.facturadorElectronico}
+                  onChange={setCheck('facturadorElectronico')}
+                  label={form.facturadorElectronico ? 'SI' : 'NO'}
+                />
               </div>
             </SectionCard>
+
+            <div className={`space-y-6 transition-all duration-350 ${form.facturadorElectronico ? '' : 'opacity-40 pointer-events-none'}`}>
+              <SectionCard title="Configuración de Habilitación DIAN" icon={ShieldCheck}>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  <div className="md:col-span-4">
+                    <Field label="Entorno de emisión actual" hint="Pruebas Sandbox o Producción Real API.">
+                      <Select
+                        disabled={!form.facturadorElectronico}
+                        value={form.entornoDian}
+                        onChange={set('entornoDian')}
+                        options={[
+                          { value: 'PRUEBAS', label: 'Pruebas / Habilitación (DIAN SandBox)' },
+                          { value: 'PRODUCCION', label: 'Producción Real (DIAN API)' },
+                        ]}
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="md:col-span-4">
+                    <Field label="PIN del software DIAN">
+                      <Input disabled={!form.facturadorElectronico} type="password" value={form.softwarePinDian} onChange={set('softwarePinDian')} placeholder="*****" />
+                    </Field>
+                  </div>
+
+                  <div className="md:col-span-4">
+                    <Field label="ID del software (UUID DIAN)">
+                      <Input disabled={!form.facturadorElectronico} value={form.softwareIdDian} onChange={set('softwareIdDian')} placeholder="12345678-abcd-1234-abcd-1234567890ab" />
+                    </Field>
+                  </div>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Certificación y Envío" icon={Shield}>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                  <div className="md:col-span-6">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Firma Digital Activa</h4>
+                        <p className="text-[11px] text-emerald-700 leading-relaxed mt-1">
+                          Tu certificado de firma digital está configurado correctamente.
+                        </p>
+                        <p className="text-[10px] text-emerald-600 mt-0.5">Vencimiento: 31-Dic-2026</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-6 space-y-2">
+                    <Toggle
+                      disabled={!form.facturadorElectronico}
+                      checked={form.notificarEmisionEmail}
+                      onChange={setCheck('notificarEmisionEmail')}
+                      label="Notificar emisión de factura automáticamente"
+                    />
+                    <p className="text-xs text-slate-400 leading-tight">
+                      Envía de manera inmediata la representación gráfica (PDF) y el XML oficial de la factura al correo de facturación del adquiriente tras ser autorizada.
+                    </p>
+                  </div>
+                </div>
+              </SectionCard>
+            </div>
           </div>
         )}
 

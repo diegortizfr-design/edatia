@@ -274,6 +274,7 @@ model ConfiguracionERP {
   bloquearClientesMora  Boolean  @default(false)
 
   // ── Emisión Electrónica ───────────────────────────
+  facturadorElectronico Boolean  @default(true)
   entornoDian           String?  @default("PRUEBAS")
   softwarePinDian       String?
   softwareIdDian        String?
