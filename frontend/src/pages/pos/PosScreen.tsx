@@ -91,7 +91,20 @@ export function PosScreen() {
           console.error("Error updating consecutive on server:", e)
         }
       }
-      setVentaOk(data)
+      setVentaOk({
+        ...data,
+        items: cart.map(i => ({
+          producto: { nombre: i.nombre },
+          cantidad: i.cantidad,
+          precioUnitario: i.precio,
+          descuentoPct: i.descuentoPct,
+          tipoIva: i.tipoIva,
+        })),
+        subtotal: totales.subtotal,
+        descuento: totales.descuento + descuentoExtra,
+        iva19: cart.filter(i => i.tipoIva === 'IVA_19' || i.tipoIva === 'GRAVADO_19').reduce((a, b) => a + calcItem(b).iva, 0),
+        iva5: cart.filter(i => i.tipoIva === 'IVA_5' || i.tipoIva === 'GRAVADO_5').reduce((a, b) => a + calcItem(b).iva, 0),
+      })
       setCart([])
       setPago({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
       setDescuentoExtra(0)
@@ -213,6 +226,9 @@ export function PosScreen() {
   const imprimirTirilla = (venta: any) => {
     const w = window.open('', '_blank', 'width=300,height=600')
     if (!w) return
+    
+    const fmtVal = (val: any) => fmt(Number(val ?? 0))
+
     w.document.write(`
       <html><head><style>
         body { font-family: monospace; font-size: 11px; margin: 0; padding: 8px; width: 280px; }
@@ -231,22 +247,26 @@ export function PosScreen() {
         <div class="row"><span>Cliente:</span><span>${venta.clienteNombre}</span></div>
         <div class="row"><span>Vendedor:</span><span>${sesion?.vendedorNombre ?? '-'}</span></div>
         <div class="line"></div>
-        ${cart.map(i => {
-          const c = calcItem(i)
-          return `<div>
-            <div class="bold">${i.nombre}</div>
-            <div class="row"><span>${i.cantidad} x ${fmt(i.precio)}</span><span>${fmt(c.total)}</span></div>
-          </div>`
-        }).join('')}
+        ${(venta.items ?? []).map((i: any) => `
+          <div>
+            <div class="bold">${i.producto?.nombre || 'Producto'}</div>
+            <div class="row"><span>${Number(i.cantidad)} x ${fmtVal(i.precioUnitario)}</span><span>${fmtVal(Number(i.cantidad) * Number(i.precioUnitario))}</span></div>
+          </div>
+        `).join('')}
         <div class="line"></div>
-        <div class="row"><span>Subtotal:</span><span>${fmt(totales.subtotal)}</span></div>
-        ${totales.descuento > 0 ? `<div class="row"><span>Descuento:</span><span>-${fmt(totales.descuento)}</span></div>` : ''}
-        <div class="row"><span>IVA:</span><span>${fmt(totales.iva)}</span></div>
+        <div class="row"><span>Subtotal:</span><span>${fmtVal(venta.subtotal)}</span></div>
+        ${Number(venta.descuento) > 0 ? `<div class="row"><span>Descuento:</span><span>-${fmtVal(venta.descuento)}</span></div>` : ''}
+        ${Number(venta.iva19) > 0 ? `<div class="row"><span>IVA 19%:</span><span>${fmtVal(venta.iva19)}</span></div>` : ''}
+        ${Number(venta.iva5) > 0 ? `<div class="row"><span>IVA 5%:</span><span>${fmtVal(venta.iva5)}</span></div>` : ''}
         <div class="line"></div>
-        <div class="row big"><span>TOTAL:</span><span>${fmt(totales.total)}</span></div>
+        <div class="row big"><span>TOTAL:</span><span>${fmtVal(venta.total)}</span></div>
         <div class="line"></div>
-        ${pago.efectivo > 0 ? `<div class="row"><span>Efectivo:</span><span>${fmt(pago.efectivo)}</span></div>` : ''}
-        ${cambio > 0 ? `<div class="row bold"><span>Cambio:</span><span>${fmt(cambio)}</span></div>` : ''}
+        ${Number(venta.pagoEfectivo) > 0 ? `<div class="row"><span>Efectivo:</span><span>${fmtVal(venta.pagoEfectivo)}</span></div>` : ''}
+        ${Number(venta.pagoTarjetaDebito) > 0 ? `<div class="row"><span>T. Débito:</span><span>${fmtVal(venta.pagoTarjetaDebito)}</span></div>` : ''}
+        ${Number(venta.pagoTarjetaCredito) > 0 ? `<div class="row"><span>T. Crédito:</span><span>${fmtVal(venta.pagoTarjetaCredito)}</span></div>` : ''}
+        ${Number(venta.pagoTransferencia) > 0 ? `<div class="row"><span>Transferencia:</span><span>${fmtVal(venta.pagoTransferencia)}</span></div>` : ''}
+        ${Number(venta.pagoNequi) > 0 ? `<div class="row"><span>Nequi:</span><span>${fmtVal(venta.pagoNequi)}</span></div>` : ''}
+        ${Number(venta.cambio) > 0 ? `<div class="row bold"><span>Cambio:</span><span>${fmtVal(venta.cambio)}</span></div>` : ''}
         <div class="line"></div>
         <div class="center">¡Gracias por su compra!</div>
         <div class="center">Edatia ERP</div>
