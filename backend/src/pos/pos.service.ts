@@ -749,17 +749,17 @@ export class PosService {
         : Number(venta[p.key] ?? 0)
 
       if (val > 0) {
-        let accountId = cCaja // Por defecto cuenta de la Caja POS
-        if (p.code !== 'EFECTIVO') {
-          const mp = await tx.medioPago.findFirst({
-            where: { empresaId, codigo: p.code },
-            include: { cajaBanco: true },
-          })
-          if (mp?.cajaBanco?.cuentaPUCId) {
-            accountId = mp.cajaBanco.cuentaPUCId
-          } else {
-            accountId = byCode.get(p.fallback) || cCaja
-          }
+        let accountId = cCaja
+        
+        const mp = await tx.medioPago.findFirst({
+          where: { empresaId, codigo: p.code },
+          include: { cajaBanco: true },
+        })
+        
+        if (mp?.cajaBanco?.cuentaPUCId) {
+          accountId = mp.cajaBanco.cuentaPUCId
+        } else {
+          accountId = byCode.get(p.fallback) || cCaja
         }
 
         lineas.push({

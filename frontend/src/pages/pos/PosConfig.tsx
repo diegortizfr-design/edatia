@@ -160,9 +160,8 @@ export function PosConfig() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Caja / Banco Contable (PUC) *</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Caja / Banco Contable (PUC) (Opcional)</label>
               <select
-                required
                 value={form.cajaBancoId}
                 onChange={set('cajaBancoId')}
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
