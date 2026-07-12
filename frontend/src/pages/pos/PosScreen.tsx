@@ -8,9 +8,10 @@ import { getDocumentosConfig, incrementarConsecutivo } from '../../services/conf
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Scan, Users,
+  Tag, Scan, Users, Sun, Moon,
 } from 'lucide-react'
 import { getClientes } from '../../services/ventas.service'
+import { getMediosPago } from '../../services/configuracion.service'
 
 const IVA_RATES: Record<string, number> = {
   IVA_19: 0.19, GRAVADO_19: 0.19,
@@ -33,6 +34,16 @@ type PayMethod = { efectivo: number; tarjetaDebito: number; tarjetaCredito: numb
 
 const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
+const mapCodeToKey = (code: string): keyof PayMethod => {
+  const c = code.toUpperCase()
+  if (c === 'EFECTIVO') return 'efectivo'
+  if (c === 'TARJETA_DEBITO' || c.includes('DEBITO')) return 'tarjetaDebito'
+  if (c === 'TARJETA_CREDITO' || c.includes('CREDITO') || c.includes('TARJETA')) return 'tarjetaCredito'
+  if (c === 'TRANSFERENCIA') return 'transferencia'
+  if (c === 'NEQUI' || c === 'DAVIPLATA') return 'nequi'
+  return 'efectivo'
+}
+
 export function PosScreen() {
   const { sesionId } = useParams<{ sesionId: string }>()
   const navigate = useNavigate()
@@ -49,6 +60,7 @@ export function PosScreen() {
   const [pago, setPago] = useState<PayMethod>({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
 
   const sesId = parseInt(sesionId ?? '0')
 
@@ -58,6 +70,7 @@ export function PosScreen() {
   })
 
   const { data: clientes = [] } = useQuery(['clientes'], () => getClientes())
+  const { data: mediosPago = [] } = useQuery(['medios-pago'], getMediosPago)
 
   const { data: productos = [], refetch: refetchProductos } = useQuery(
     ['pos-productos', q, sesion?.caja?.bodegaId],
@@ -150,6 +163,17 @@ export function PosScreen() {
       }
     })
   }, [productos, q, rotationTab])
+  const activeMedios = useMemo(() => {
+    const list = mediosPago.filter((mp: any) => mp.activo)
+    if (list.length > 0) return list
+    return [
+      { codigo: 'EFECTIVO', nombre: 'Efectivo' },
+      { codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta Débito' },
+      { codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta Crédito' },
+      { codigo: 'TRANSFERENCIA', nombre: 'Transferencia' },
+      { codigo: 'NEQUI', nombre: 'Nequi / Daviplata' },
+    ]
+  }, [mediosPago])
   const totales = cart.reduce((acc, item) => {
     const c = calcItem(item)
     acc.subtotal += c.bruto
@@ -286,23 +310,34 @@ export function PosScreen() {
   )
 
   return (
-    <div className="fixed inset-0 bg-slate-900 flex flex-col overflow-hidden" style={{ fontFamily: 'system-ui' }}>
+    <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-200 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`} style={{ fontFamily: 'system-ui' }}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-slate-800 px-4 py-2 flex items-center justify-between border-b border-slate-700 shrink-0">
+      <div className={`px-4 py-2 flex items-center justify-between border-b shrink-0 transition-colors duration-200 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/pos')}
-            className="text-slate-400 hover:text-white transition-colors">
+            className={`transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-855'}`}>
             <ChevronLeft size={20} />
           </button>
           <div>
-            <span className="text-white font-bold text-sm">{sesion.caja?.nombre}</span>
-            <span className="text-slate-400 text-xs ml-2">• {sesion.vendedorNombre}</span>
+            <span className={`font-bold text-sm transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{sesion.caja?.nombre}</span>
+            <span className={`text-xs ml-2 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>• {sesion.vendedorNombre}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              isDark
+                ? 'text-slate-450 hover:text-white bg-slate-700/50'
+                : 'text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200'
+            }`}
+            title={isDark ? 'Modo claro' : 'Modo oscuro'}
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <div className="text-right">
-            <div className="text-xs text-slate-400">Ventas del turno</div>
-            <div className="text-green-400 font-bold text-sm">{fmt(Number(sesion.totalVentas ?? 0))}</div>
+            <div className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ventas del turno</div>
+            <div className={`font-bold text-sm transition-colors duration-200 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(sesion.totalVentas ?? 0))}</div>
           </div>
           <button onClick={() => navigate(`/pos/cierre/${sesId}`)}
             className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
@@ -314,33 +349,33 @@ export function PosScreen() {
       {/* ── Cuerpo ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Panel izquierdo: productos */}
-        <div className="flex flex-col flex-1 overflow-hidden border-r border-slate-700">
+        <div className={`flex flex-col flex-1 overflow-hidden border-r transition-colors duration-200 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
           {/* Búsqueda */}
-          <div className="p-3 bg-slate-800 shrink-0">
+          <div className={`p-3 shrink-0 transition-colors duration-200 ${isDark ? 'bg-slate-800' : 'bg-white border-b border-slate-200'}`}>
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Scan size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              <Scan size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               <input
                 ref={searchRef}
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 placeholder="Buscar por nombre, SKU o escanear código de barras..."
-                className="w-full bg-slate-700 text-white placeholder-slate-400 pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white placeholder-slate-400' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-200'}`}
                 autoFocus
               />
             </div>
           </div>
 
           {/* Grid de productos */}
-          <div className="flex-1 flex flex-col min-h-0 bg-slate-900">
+          <div className={`flex-1 flex flex-col min-h-0 transition-colors duration-200 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
             {q.length === 0 && (
-              <div className="px-3 py-2 shrink-0 bg-slate-800 border-b border-slate-700/50 flex gap-2">
+              <div className={`px-3 py-2 shrink-0 border-b flex gap-2 transition-colors duration-200 ${isDark ? 'bg-slate-800 border-slate-700/50' : 'bg-white border-slate-200'}`}>
                 <button
                   onClick={() => setRotationTab('alta')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     rotationTab === 'alta'
                       ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 bg-slate-700/40'
+                      : isDark ? 'text-slate-400 hover:text-slate-200 bg-slate-700/40' : 'text-slate-500 hover:text-slate-800 bg-slate-100'
                   }`}
                 >
                   🔥 Alta Rotación (Más vendidos)
@@ -350,7 +385,7 @@ export function PosScreen() {
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     rotationTab === 'baja'
                       ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 bg-slate-700/40'
+                      : isDark ? 'text-slate-400 hover:text-slate-200 bg-slate-700/40' : 'text-slate-500 hover:text-slate-800 bg-slate-100'
                   }`}
                 >
                   ❄️ Baja Rotación
@@ -360,7 +395,7 @@ export function PosScreen() {
 
             <div className="flex-1 overflow-y-auto p-3">
               {filteredProducts.length === 0 ? (
-                <div className="text-center text-slate-500 py-16">
+                <div className={`text-center py-16 transition-colors duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   <Search size={32} className="mx-auto mb-2 opacity-50" />
                   <p>{q.length > 0 ? `Sin resultados para "${q}"` : 'No hay productos en esta categoría'}</p>
                 </div>
@@ -370,22 +405,30 @@ export function PosScreen() {
                     <button
                       key={prod.id}
                       onClick={() => addToCart(prod)}
-                      className="bg-slate-700 hover:bg-slate-600 rounded-xl p-3 text-left transition-all border-2 border-transparent hover:border-indigo-500 active:scale-95 flex flex-col justify-between"
+                      className={`rounded-xl p-3 text-left transition-all border-2 border-transparent hover:border-indigo-500 active:scale-95 flex flex-col justify-between transition-colors duration-200 ${
+                        isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-sm border-slate-200'
+                      }`}
                     >
                       <div>
-                        <div className="w-full aspect-square bg-slate-600 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                        <div className={`w-full aspect-square rounded-lg mb-2 flex items-center justify-center overflow-hidden transition-colors duration-200 ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}>
                           {prod.imagen ? (
                             <img src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover rounded-lg" />
                           ) : (
-                            <Tag size={24} className="text-slate-400" />
+                            <Tag size={24} className={isDark ? 'text-slate-400' : 'text-slate-300'} />
                           )}
                         </div>
-                        <div className="text-white text-xs font-semibold leading-tight line-clamp-2">{prod.nombre}</div>
-                        {prod.sku && <div className="text-[10px] text-slate-400 font-mono mt-0.5">{prod.sku}</div>}
+                        <div className={`text-xs font-semibold leading-tight line-clamp-2 transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{prod.nombre}</div>
+                        {prod.sku && <div className={`text-[10px] font-mono mt-0.5 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{prod.sku}</div>}
                       </div>
                       <div className="mt-2">
-                        <div className="text-indigo-400 font-extrabold text-sm">{fmt(prod.precioBase)}</div>
-                        <div className={`text-[10px] mt-0.5 font-medium ${prod.stock <= 0 ? 'text-rose-400' : prod.stock < 5 ? 'text-amber-400' : 'text-slate-400'}`}>
+                        <div className={`font-extrabold text-sm transition-colors duration-200 ${isDark ? 'text-indigo-400' : 'text-indigo-650'}`}>{fmt(prod.precioBase)}</div>
+                        <div className={`text-[10px] mt-0.5 font-medium transition-colors duration-200 ${
+                          prod.stock <= 0
+                            ? (isDark ? 'text-rose-400' : 'text-rose-600')
+                            : prod.stock < 5
+                              ? (isDark ? 'text-amber-400' : 'text-amber-600')
+                              : (isDark ? 'text-slate-400' : 'text-slate-550')
+                        }`}>
                           Stock: {prod.stock}
                         </div>
                       </div>
@@ -398,23 +441,25 @@ export function PosScreen() {
         </div>
 
         {/* Panel derecho: carrito */}
-        <div className="w-80 xl:w-96 flex flex-col bg-slate-800">
+        <div className={`w-80 xl:w-96 flex flex-col transition-colors duration-200 ${isDark ? 'bg-slate-800 text-white' : 'bg-white border-l border-slate-200 text-slate-800'}`}>
           {/* Cliente */}
-          <div className="p-3 border-b border-slate-700 shrink-0">
+          <div className={`p-3 border-b shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <User size={14} className="text-slate-400" />
-              <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">Cliente</span>
+              <User size={14} className={isDark ? 'text-slate-400' : 'text-slate-550'} />
+              <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>Cliente</span>
             </div>
             <select
               value={selectedCliente?.id || ''}
               onChange={e => {
                 const val = e.target.value
                 const found = clientes.find((c: any) => String(c.id) === val)
-                setSelectedCliente(found || { nombre: 'Consumidor Final', numeroDocumento: '' })
+                setSelectedCliente(found || null)
               }}
-              className="w-full bg-slate-700 text-white border border-slate-600 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200 ${
+                isDark ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-50 text-slate-800 border-slate-250'
+              }`}
             >
-              <option value="">Consumidor Final</option>
+              <option value="">Seleccione un cliente...</option>
               {clientes.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre} ({c.numeroDocumento || 'Sin doc'})
@@ -426,7 +471,7 @@ export function PosScreen() {
           {/* Items del carrito */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {cart.length === 0 ? (
-              <div className="text-center text-slate-600 py-12">
+              <div className={`text-center py-12 transition-colors duration-200 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
                 <ShoppingCart size={40} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm">El carrito está vacío</p>
               </div>
@@ -434,39 +479,45 @@ export function PosScreen() {
               cart.map(item => {
                 const c = calcItem(item)
                 return (
-                  <div key={item.productoId} className="bg-slate-700 rounded-xl p-3">
+                  <div key={item.productoId} className={`rounded-xl p-3 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800 shadow-sm'}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
-                        <div className="text-white text-xs font-medium leading-tight truncate">{item.nombre}</div>
-                        <div className="text-slate-400 text-xs">{fmt(item.precio)} c/u</div>
+                        <div className={`text-xs font-semibold leading-tight truncate transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-850'}`}>{item.nombre}</div>
+                        <div className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{fmt(item.precio)} c/u</div>
                       </div>
-                      <button onClick={() => removeFromCart(item.productoId)} className="text-slate-500 hover:text-red-400 shrink-0">
+                      <button onClick={() => removeFromCart(item.productoId)} className={`shrink-0 transition-colors duration-200 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-600'}`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <button onClick={() => updateQty(item.productoId, -1)}
-                          className="w-6 h-6 bg-slate-600 hover:bg-slate-500 rounded-full flex items-center justify-center text-white">
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                            isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                          }`}>
                           <Minus size={12} />
                         </button>
-                        <span className="text-white font-bold text-sm w-8 text-center">{item.cantidad}</span>
+                        <span className={`font-bold text-sm w-8 text-center transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.cantidad}</span>
                         <button onClick={() => updateQty(item.productoId, 1)}
-                          className="w-6 h-6 bg-slate-600 hover:bg-slate-500 rounded-full flex items-center justify-center text-white">
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                            isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                          }`}>
                           <Plus size={12} />
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                          <Tag size={10} className="text-slate-400" />
+                          <Tag size={10} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
                           <input
                             type="number" min={0} max={100} value={item.descuentoPct}
                             onChange={e => updateDescuento(item.productoId, +e.target.value)}
-                            className="w-10 bg-slate-600 text-white text-xs text-center rounded px-1 py-0.5 outline-none"
+                            className={`w-10 text-xs text-center rounded px-1 py-0.5 outline-none transition-colors duration-200 ${
+                              isDark ? 'bg-slate-600 text-white' : 'bg-white text-slate-800 border border-slate-250'
+                            }`}
                           />
-                          <span className="text-slate-400 text-xs">%</span>
+                          <span className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>%</span>
                         </div>
-                        <div className="text-green-400 font-bold text-sm">{fmt(c.total)}</div>
+                        <div className={`font-extrabold text-sm transition-colors duration-200 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(c.total)}</div>
                       </div>
                     </div>
                   </div>
@@ -476,35 +527,41 @@ export function PosScreen() {
           </div>
 
           {/* Totales y botón pagar */}
-          <div className="border-t border-slate-700 p-3 shrink-0">
+          <div className={`border-t p-3 shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             {cart.length > 0 && (
               <div className="space-y-1 mb-3 text-sm">
-                <div className="flex justify-between text-slate-400">
+                <div className={`flex justify-between transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
                   <span>Subtotal</span><span>{fmt(totales.subtotal)}</span>
                 </div>
                 {totales.descuento > 0 && (
-                  <div className="flex justify-between text-amber-400">
+                  <div className={`flex justify-between transition-colors duration-200 ${isDark ? 'text-amber-450' : 'text-amber-600 font-medium'}`}>
                     <span>Descuento</span><span>-{fmt(totales.descuento)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-slate-400">
+                <div className={`flex justify-between transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
                   <span>IVA</span><span>{fmt(totales.iva)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400 text-xs">Desc. adicional $</span>
+                  <span className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>Desc. adicional $</span>
                   <input type="number" min={0} value={descuentoExtra}
                     onChange={e => setDescuentoExtra(+e.target.value)}
-                    className="w-24 bg-slate-700 text-white text-xs px-2 py-1 rounded outline-none" />
+                    className={`w-24 text-xs px-2 py-1 rounded outline-none transition-colors duration-200 ${
+                      isDark ? 'bg-slate-700 text-white' : 'bg-slate-50 text-slate-800 border border-slate-250'
+                    }`} />
                 </div>
-                <div className="flex justify-between text-white font-bold text-lg pt-1 border-t border-slate-600">
-                  <span>TOTAL</span><span className="text-green-400">{fmt(totales.total)}</span>
+                <div className={`flex justify-between font-bold text-lg pt-1 border-t transition-colors duration-200 ${isDark ? 'border-slate-600 text-white' : 'border-slate-200 text-slate-850'}`}>
+                  <span>TOTAL</span><span className={`transition-colors duration-200 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(totales.total)}</span>
                 </div>
               </div>
             )}
             <button
-              onClick={() => setShowPago(true)}
+              onClick={() => {
+                // Pre-populate cash exact option default value
+                setPago({ efectivo: totales.total, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
+                setShowPago(true)
+              }}
               disabled={cart.length === 0 || !selectedCliente?.id}
-              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-base transition-colors flex items-center justify-center gap-2">
+              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-base transition-colors flex items-center justify-center gap-2 shadow-sm">
               <CreditCard size={20} />
               Cobrar {cart.length > 0 ? fmt(totales.total) : ''}
             </button>
@@ -515,78 +572,194 @@ export function PosScreen() {
       {/* ── Modal Pago ─────────────────────────────────────────────────────── */}
       {showPago && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-md border border-slate-600">
-            <div className="flex items-center justify-between p-5 border-b border-slate-700">
-              <h2 className="text-white font-bold text-lg">Cobro</h2>
-              <button onClick={() => setShowPago(false)}><X size={20} className="text-slate-400 hover:text-white" /></button>
+          <div className={`rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border shadow-2xl overflow-hidden transition-colors duration-200 ${
+            isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            {/* Modal Header */}
+            <div className={`flex items-center justify-between p-4 border-b transition-colors duration-200 ${
+              isDark ? 'border-slate-700' : 'border-slate-200'
+            }`}>
+              <h2 className="font-bold text-lg">Confirmación de Venta y Pago</h2>
+              <button onClick={() => setShowPago(false)} className={isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}>
+                <X size={20} />
+              </button>
             </div>
-            <div className="p-5 space-y-3">
-              <div className="bg-slate-700 rounded-xl p-3 text-center mb-2">
-                <div className="text-slate-400 text-sm">Total a cobrar</div>
-                <div className="text-green-400 font-bold text-3xl">{fmt(totales.total)}</div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-0">
+              
+              {/* Left Side: Payment Options (7 Columns) */}
+              <div className="md:col-span-7 p-5 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0">
+                <div className="space-y-4">
+                  {/* Total indicator */}
+                  <div className={`rounded-xl p-4 text-center transition-colors duration-200 ${
+                    isDark ? 'bg-slate-700/50' : 'bg-slate-100'
+                  }`}>
+                    <div className={isDark ? 'text-slate-400 text-sm' : 'text-slate-500 text-sm font-medium'}>Total a cobrar</div>
+                    <div className={`font-black text-3xl mt-1 transition-colors duration-200 ${
+                      isDark ? 'text-green-400' : 'text-green-600'
+                    }`}>{fmt(totales.total)}</div>
+                  </div>
+
+                  {/* Payment Inputs */}
+                  <div className="space-y-3">
+                    {activeMedios.map((m: any) => {
+                      const key = mapCodeToKey(m.codigo)
+                      const isEfectivo = m.codigo === 'EFECTIVO'
+                      const isTarjeta = m.codigo.includes('TARJETA')
+                      const icon = isEfectivo ? <Banknote size={16} /> : (isTarjeta ? <CreditCard size={16} /> : <Smartphone size={16} />)
+                      const color = isEfectivo 
+                        ? (isDark ? 'text-green-400' : 'text-green-600') 
+                        : (m.codigo.includes('DEBITO') 
+                          ? (isDark ? 'text-blue-450' : 'text-blue-600') 
+                          : (m.codigo.includes('CREDITO') 
+                            ? (isDark ? 'text-purple-450' : 'text-purple-600') 
+                            : (isDark ? 'text-cyan-450' : 'text-cyan-600')))
+                      
+                      return (
+                        <div key={m.codigo} className="flex items-center gap-3">
+                          <div className={`${color} w-8 shrink-0 flex justify-center`}>{icon}</div>
+                          <span className="text-sm font-semibold w-36 shrink-0">{m.nombre}</span>
+                          <input
+                            type="number" min={0}
+                            value={(pago as any)[key] || ''}
+                            onChange={e => setPago(prev => ({ ...prev, [key]: +e.target.value }))}
+                            placeholder="$ 0"
+                            className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${
+                              isDark ? 'bg-slate-700 text-white placeholder-slate-500 border border-transparent' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-205'
+                            }`}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Fast Action exact cash button */}
+                  <button
+                    onClick={() => setPago(prev => ({ ...prev, efectivo: totales.total, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 }))}
+                    className={`w-full text-xs py-2 rounded-lg font-bold transition-all transition-colors duration-200 ${
+                      isDark ? 'text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-650' : 'text-slate-600 hover:text-slate-850 bg-slate-100 hover:bg-slate-200'
+                    }`}>
+                    ⚡ Pago exacto en efectivo
+                  </button>
+                </div>
+
+                {/* Change or Missing warnings */}
+                <div className="space-y-2 pt-2">
+                  {pago.efectivo > 0 && cambio > 0 && (
+                    <div className={`border rounded-xl p-3 flex items-center justify-between transition-colors duration-200 ${
+                      isDark ? 'bg-green-900/20 border-green-600 text-green-300' : 'bg-green-50 border-green-200 text-green-700'
+                    }`}>
+                      <span className="text-sm font-medium">Cambio a devolver</span>
+                      <span className="font-extrabold text-2xl">{fmt(cambio)}</span>
+                    </div>
+                  )}
+
+                  {totalPago > 0 && totalPago < totales.total && (
+                    <div className={`border rounded-xl p-3 flex items-center gap-2 transition-colors duration-200 ${
+                      isDark ? 'bg-amber-900/20 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-700'
+                    }`}>
+                      <AlertCircle size={16} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
+                      <span className="text-sm font-medium">Falta por pagar: {fmt(totales.total - totalPago)}</span>
+                    </div>
+                  )}
+
+                  {/* Left Side Modal Actions (integrated at bottom of payment panel) */}
+                  <div className="flex gap-3 pt-4 border-t border-slate-700/50">
+                    <button onClick={() => setShowPago(false)}
+                      className={`flex-1 py-3 rounded-xl font-bold transition-colors duration-200 ${
+                        isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-205 text-slate-800'
+                      }`}>
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleFinalizarVenta}
+                      disabled={!selectedCliente?.id || totalPago < totales.total || mutVenta.isLoading}
+                      className="flex-2 flex-grow bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
+                      {mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
+                    </button>
+                  </div>
+                  {mutVenta.isError && (
+                    <p className="text-red-500 text-xs text-center font-semibold pt-2">
+                      {(mutVenta.error as any)?.response?.data?.message ?? 'Error al procesar la venta'}
+                    </p>
+                  )}
+                </div>
               </div>
 
+              {/* Right Side: Purchase Confirmation (5 Columns) */}
+              <div className={`md:col-span-5 p-5 border-t md:border-t-0 md:border-l flex flex-col justify-between overflow-hidden min-h-0 transition-colors duration-200 ${
+                isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50/50'
+              }`}>
+                <div className="flex-1 flex flex-col min-h-0 space-y-3">
+                  <div className="shrink-0">
+                    <div className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cliente de la Venta</div>
+                    <div className="font-extrabold text-sm mt-0.5">{selectedCliente?.nombre || 'Ninguno'}</div>
+                    {selectedCliente?.numeroDocumento && (
+                      <div className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Doc: {selectedCliente.numeroDocumento}</div>
+                    )}
+                  </div>
 
-
-              {/* Medios de pago */}
-              {[
-                { key: 'efectivo', label: 'Efectivo', icon: <Banknote size={16} />, color: 'text-green-400' },
-                { key: 'tarjetaDebito', label: 'Tarjeta Débito', icon: <CreditCard size={16} />, color: 'text-blue-400' },
-                { key: 'tarjetaCredito', label: 'Tarjeta Crédito', icon: <CreditCard size={16} />, color: 'text-purple-400' },
-                { key: 'transferencia', label: 'Transferencia', icon: <Smartphone size={16} />, color: 'text-cyan-400' },
-                { key: 'nequi', label: 'Nequi / Daviplata', icon: <Smartphone size={16} />, color: 'text-pink-400' },
-              ].map(m => (
-                <div key={m.key} className="flex items-center gap-3">
-                  <div className={`${m.color} w-8 shrink-0 flex justify-center`}>{m.icon}</div>
-                  <span className="text-white text-sm w-36 shrink-0">{m.label}</span>
-                  <input
-                    type="number" min={0}
-                    value={(pago as any)[m.key] || ''}
-                    onChange={e => setPago(prev => ({ ...prev, [m.key]: +e.target.value }))}
-                    placeholder="$ 0"
-                    className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <div className={`border-t pt-2 flex-1 flex flex-col min-h-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-250'}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Resumen de Productos</div>
+                    
+                    {/* List of items */}
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[30vh]">
+                      {cart.map((item) => {
+                        const c = calcItem(item)
+                        return (
+                          <div key={item.productoId} className={`p-2 rounded-lg text-xs flex justify-between gap-3 transition-colors duration-200 ${
+                            isDark ? 'bg-slate-700/35 border border-transparent' : 'bg-white border border-slate-200'
+                          }`}>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold truncate">{item.nombre}</div>
+                              <div className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                                {item.cantidad} x {fmt(item.precio)}
+                                {item.descuentoPct > 0 && <span className="text-amber-500 ml-1">(-{item.descuentoPct}%)</span>}
+                              </div>
+                            </div>
+                            <div className="text-right font-extrabold shrink-0">{fmt(c.total)}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
-              ))}
 
-              {/* Acceso rápido efectivo exacto */}
-              <button
-                onClick={() => setPago(prev => ({ ...prev, efectivo: totales.total }))}
-                className="w-full text-xs text-slate-400 hover:text-white bg-slate-700 py-1.5 rounded-lg transition-colors">
-                Pago exacto en efectivo
-              </button>
-
-              {pago.efectivo > 0 && cambio > 0 && (
-                <div className="bg-green-900/40 border border-green-600 rounded-xl p-3 flex items-center justify-between">
-                  <span className="text-green-300 text-sm font-medium">Cambio a devolver</span>
-                  <span className="text-green-400 font-bold text-xl">{fmt(cambio)}</span>
+                {/* Summary of Totals */}
+                <div className={`border-t pt-3 mt-4 space-y-1 text-xs shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-250'}`}>
+                  <div className="flex justify-between">
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Subtotal</span>
+                    <span className="font-semibold">{fmt(totales.subtotal)}</span>
+                  </div>
+                  {totales.descuento > 0 && (
+                    <div className="flex justify-between text-amber-500">
+                      <span>Descuento</span>
+                      <span className="font-semibold">-{fmt(totales.descuento)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>IVA</span>
+                    <span className="font-semibold">{fmt(totales.iva)}</span>
+                  </div>
+                  {descuentoExtra > 0 && (
+                    <div className="flex justify-between text-amber-500">
+                      <span>Descuento Adicional</span>
+                      <span className="font-semibold">-{fmt(descuentoExtra)}</span>
+                    </div>
+                  )}
+                  <div className={`flex justify-between font-bold text-base pt-2 border-t transition-colors duration-200 ${
+                    isDark ? 'border-slate-700 text-white' : 'border-slate-200 text-slate-800'
+                  }`}>
+                    <span>TOTAL</span>
+                    <span className={isDark ? 'text-green-400' : 'text-green-600'}>{fmt(totales.total)}</span>
+                  </div>
                 </div>
-              )}
 
-              {totalPago > 0 && totalPago < totales.total && (
-                <div className="bg-amber-900/40 border border-amber-600 rounded-xl p-3 flex items-center gap-2">
-                  <AlertCircle size={16} className="text-amber-400" />
-                  <span className="text-amber-300 text-sm">Falta: {fmt(totales.total - totalPago)}</span>
-                </div>
-              )}
+              </div>
+
             </div>
-            <div className="p-5 pt-0 flex gap-3">
-              <button onClick={() => setShowPago(false)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-medium transition-colors">
-                Cancelar
-              </button>
-              <button
-                onClick={handleFinalizarVenta}
-                disabled={!selectedCliente?.id || totalPago < totales.total || mutVenta.isLoading}
-                className="flex-2 flex-grow bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
-                {mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
-              </button>
-            </div>
-            {mutVenta.isError && (
-              <p className="text-red-400 text-sm text-center px-5 pb-4">
-                {(mutVenta.error as any)?.response?.data?.message ?? 'Error al procesar la venta'}
-              </p>
-            )}
+
           </div>
         </div>
       )}
@@ -594,19 +767,23 @@ export function PosScreen() {
       {/* ── Modal Venta Exitosa ─────────────────────────────────────────────── */}
       {ventaOk && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-sm border border-green-600 text-center p-8">
+          <div className={`rounded-2xl w-full max-w-sm border text-center p-8 transition-colors duration-200 ${
+            isDark ? 'bg-slate-800 border-green-600 text-white shadow-2xl' : 'bg-white border-green-400 text-slate-800 shadow-xl'
+          }`}>
             <CheckCircle2 size={56} className="text-green-400 mx-auto mb-4" />
-            <h2 className="text-white font-bold text-xl mb-1">¡Venta completada!</h2>
-            <p className="text-slate-400 text-sm mb-2">{ventaOk.numero}</p>
-            <p className="text-green-400 font-bold text-2xl mb-1">{fmt(Number(ventaOk.total))}</p>
-            {cambio > 0 && <p className="text-slate-300 text-sm mb-4">Cambio: {fmt(cambio)}</p>}
+            <h2 className="font-bold text-xl mb-1">¡Venta completada!</h2>
+            <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-555'}`}>{ventaOk.numero}</p>
+            <p className={`font-bold text-2xl mb-1 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(ventaOk.total))}</p>
+            {cambio > 0 && <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600 font-medium'}`}>Cambio: {fmt(cambio)}</p>}
             <div className="flex gap-3 mt-6">
               <button onClick={() => imprimirTirilla(ventaOk)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                }`}>
                 <Printer size={16} /> Imprimir
               </button>
               <button onClick={() => setVentaOk(null)}
-                className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors">
+                className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                 Nueva venta
               </button>
             </div>
