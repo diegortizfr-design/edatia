@@ -73,21 +73,9 @@ export function PosScreen() {
     }
   }, [sesion])
 
-  const mutIncrementConsecutive = useMutation({
-    mutationFn: (id: number) => incrementarConsecutivo(id)
-  })
-
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
     onSuccess: async (data) => {
-      const docId = sesion?.caja?.documentoConfigId
-      if (docId) {
-        try {
-          await mutIncrementConsecutive.mutateAsync(docId)
-        } catch (e) {
-          console.error("Error updating consecutive on server:", e)
-        }
-      }
       setVentaOk({
         ...data,
         items: cart.map(i => ({
@@ -213,6 +201,7 @@ export function PosScreen() {
     if (cart.length === 0) return
     mutVenta.mutate({
       sesionId: sesId,
+      clienteId: selectedCliente?.id || undefined,
       clienteNombre: selectedCliente?.nombre || 'Consumidor Final',
       clienteDoc: selectedCliente?.numeroDocumento || undefined,
       descuento: descuentoExtra,

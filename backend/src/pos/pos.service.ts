@@ -397,24 +397,27 @@ export class PosService {
     // Generar número de venta
     let numero = (dto as any).numero
     if (!numero) {
-      let prefijo = (dto as any).tipoDocumento || 'POS'
       if (sesion.caja.documentoConfig) {
-        prefijo = sesion.caja.documentoConfig.prefijo || prefijo
-      }
-      const año = new Date().getFullYear()
-      const ultimaVenta = await this.prisma.ventaPos.findFirst({
-        where: { empresaId, numero: { startsWith: `${prefijo}-${año}-` } },
-        orderBy: { numero: 'desc' },
-      })
-      let seq = 1
-      if (ultimaVenta) {
-        const parts = ultimaVenta.numero.split('-')
-        const lastPart = parts[parts.length - 1]
-        if (!isNaN(parseInt(lastPart))) {
-          seq = parseInt(lastPart) + 1
+        const prefijo = sesion.caja.documentoConfig.prefijo || 'POS'
+        const consecutivo = sesion.caja.documentoConfig.consecutivoSiguiente
+        numero = `${prefijo}-${consecutivo}`
+      } else {
+        const prefijo = (dto as any).tipoDocumento || 'POS'
+        const año = new Date().getFullYear()
+        const ultimaVenta = await this.prisma.ventaPos.findFirst({
+          where: { empresaId, numero: { startsWith: `${prefijo}-${año}-` } },
+          orderBy: { numero: 'desc' },
+        })
+        let seq = 1
+        if (ultimaVenta) {
+          const parts = ultimaVenta.numero.split('-')
+          const lastPart = parts[parts.length - 1]
+          if (!isNaN(parseInt(lastPart))) {
+            seq = parseInt(lastPart) + 1
+          }
         }
+        numero = `${prefijo}-${año}-${String(seq).padStart(5, '0')}`
       }
-      numero = `${prefijo}-${año}-${String(seq).padStart(5, '0')}`
     }
 
     // Calcular totales
@@ -541,6 +544,14 @@ export class PosService {
 
       // 5. Crear Asiento Contable Automático
       await this.crearAsientoVentaPos(tx, v, empresaId, dto.sesionId)
+
+      // 6. Incrementar Consecutivo del Documento Config
+      if (sesion.caja.documentoConfig) {
+        await tx.documentoConfig.update({
+          where: { id: sesion.caja.documentoConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        })
+      }
 
       return v
     })
