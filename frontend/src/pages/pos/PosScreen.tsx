@@ -61,6 +61,7 @@ export function PosScreen() {
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const isDark = theme === 'dark'
 
   const sesId = parseInt(sesionId ?? '0')
 
