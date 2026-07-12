@@ -1310,6 +1310,7 @@ model Tercero {
   notasCredito        NotaCredito[]
   recibos             ReciboCaja[]
   ventasPos           VentaPos[]
+  cajasPosDefault     CajaPos[]         @relation("CajaClienteDefault")
 
   // Relaciones transaccionales de Proveedor
   ordenesCompra       OrdenCompra[]
@@ -1762,6 +1763,10 @@ model CajaPos {
   // Vendedor por defecto
   vendedorId       Int?
   vendedorNombre   String?
+
+  // Cliente por defecto
+  clienteDefaultId Int?
+  clienteDefault   Tercero?  @relation("CajaClienteDefault", fields: [clienteDefaultId], references: [id])
 
   // Impresora
   impresora        String?   // IP:puerto o nombre de dispositivo

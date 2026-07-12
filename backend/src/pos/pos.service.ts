@@ -26,6 +26,7 @@ export class PosService {
             sucursal: { select: { id: true, nombre: true } }
           }
         },
+        clienteDefault: { select: { id: true, nombre: true, numeroDocumento: true } },
         sesiones: {
           where: { estado: 'ABIERTA' },
           select: { id: true, vendedorNombre: true, abiertaAt: true, montoInicial: true },
@@ -37,7 +38,7 @@ export class PosService {
   }
 
   async createCaja(empresaId: number, dto: any) {
-    const { cajaBancoId, documentoConfigId, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, clienteDefaultId, ...rest } = dto
     let resolvedBodegaId = 1 // default fallback
     
     if (documentoConfigId) {
@@ -62,6 +63,7 @@ export class PosService {
         bodegaId: resolvedBodegaId,
         cajaBancoId: cajaBancoId ? +cajaBancoId : null,
         documentoConfigId: documentoConfigId ? +documentoConfigId : null,
+        clienteDefaultId: clienteDefaultId ? +clienteDefaultId : null,
       },
       include: {
         bodega: { select: { id: true, nombre: true } },
@@ -71,16 +73,18 @@ export class PosService {
             sucursal: { select: { id: true, nombre: true } }
           }
         },
+        clienteDefault: { select: { id: true, nombre: true } },
       },
     })
   }
 
   async updateCaja(empresaId: number, cajaId: number, dto: any) {
     await this.findCaja(empresaId, cajaId)
-    const { cajaBancoId, documentoConfigId, codigo, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, clienteDefaultId, codigo, ...rest } = dto
     const updateData: any = { ...rest }
     
     if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
+    if (clienteDefaultId !== undefined) updateData.clienteDefaultId = clienteDefaultId ? +clienteDefaultId : null
     if (documentoConfigId !== undefined) {
       updateData.documentoConfigId = documentoConfigId ? +documentoConfigId : null
       if (documentoConfigId) {
@@ -138,6 +142,7 @@ export class PosService {
             bodega: { select: { id: true, nombre: true } },
             cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
             documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+            clienteDefault: { select: { id: true, nombre: true, numeroDocumento: true } },
           },
         },
         ventas: {
@@ -646,7 +651,7 @@ export class PosService {
       include: {
         stock: { where: { bodegaId }, select: { cantidad: true, cantidadReservada: true } },
       },
-      take: 20,
+      take: 50,
     })
 
     return productos.map(p => ({
@@ -657,6 +662,7 @@ export class PosService {
       precioBase: Number(p.precioBase),
       tipoIva: p.tipoIva,
       imagen: p.imagen,
+      claseAbc: p.claseAbc,
       stock: p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada) : 0,
     }))
   }

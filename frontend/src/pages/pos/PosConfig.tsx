@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCajas, createCaja, updateCaja } from '../../services/pos.service'
 import { getCajasBancos, getVendedores } from '../../services/erp.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
-import { Monitor, Plus, X, Settings, Printer, Warehouse, Landmark, FileCheck, ArrowLeft, Tag, User } from 'lucide-react'
+import { getClientes } from '../../services/ventas.service'
+import { Monitor, Plus, X, Settings, Printer, Warehouse, Landmark, FileCheck, ArrowLeft, Tag, User, Users } from 'lucide-react'
 
 const EMPTY = {
   nombre: '',
@@ -13,6 +14,7 @@ const EMPTY = {
   documentoConfigId: '',
   vendedorId: '',
   vendedorNombre: '',
+  clienteDefaultId: '',
   impresora: '',
   tipoConexion: 'NINGUNA',
   anchoPapel: 80,
@@ -33,6 +35,7 @@ export function PosConfig() {
   const { data: cajasBancos = [] } = useQuery(['cajas-bancos'], getCajasBancos)
   const { data: documentosConfig = [] } = useQuery(['documentos-config'], getDocumentosConfig)
   const { data: vendedores = [] } = useQuery(['vendedores'], getVendedores)
+  const { data: clientes = [] } = useQuery(['clientes'], () => getClientes())
 
   // Filtrar documentos tipo POS / FVP o FVE (Facturación de punto de venta)
   const docPosOptions = (documentosConfig as any[]).filter(d =>
@@ -52,6 +55,7 @@ export function PosConfig() {
       documentoConfigId: caja.documentoConfigId ? String(caja.documentoConfigId) : '',
       vendedorId: caja.vendedorId ? String(caja.vendedorId) : '',
       vendedorNombre: caja.vendedorNombre ?? '',
+      clienteDefaultId: caja.clienteDefaultId ? String(caja.clienteDefaultId) : '',
       impresora: caja.impresora ?? '',
       tipoConexion: caja.tipoConexion ?? 'NINGUNA',
       anchoPapel: caja.anchoPapel ?? 80,
@@ -69,6 +73,7 @@ export function PosConfig() {
       cajaBancoId: form.cajaBancoId ? +form.cajaBancoId : null,
       documentoConfigId: form.documentoConfigId ? +form.documentoConfigId : null,
       vendedorId: form.vendedorId ? +form.vendedorId : null,
+      clienteDefaultId: form.clienteDefaultId ? +form.clienteDefaultId : null,
       anchoPapel: +form.anchoPapel,
       maxDescuento: +form.maxDescuento,
     }
@@ -170,6 +175,22 @@ export function PosConfig() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Cliente por Defecto (Terceros)</label>
+            <select
+              value={form.clienteDefaultId}
+              onChange={e => setForm((f: any) => ({ ...f, clienteDefaultId: e.target.value }))}
+              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
+            >
+              <option value="">Seleccionar cliente por defecto...</option>
+              {clientes.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} ({c.numeroDocumento || 'Sin doc'})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="pt-4 border-t border-slate-100">
@@ -332,6 +353,10 @@ export function PosConfig() {
                 <div className="flex items-center gap-2">
                   <User size={12} className="text-slate-400 shrink-0" />
                   <span><strong>Vendedor habitual:</strong> {caja.vendedorNombre || 'Sin asignar'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users size={12} className="text-slate-400 shrink-0" />
+                  <span><strong>Cliente por defecto:</strong> {caja.clienteDefault?.nombre || 'Consumidor Final'}</span>
                 </div>
                 {caja.referencia && (
                   <div className="flex items-center gap-2">

@@ -8,8 +8,9 @@ import { getDocumentosConfig, incrementarConsecutivo } from '../../services/conf
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Scan,
+  Tag, Scan, Users,
 } from 'lucide-react'
+import { getClientes } from '../../services/ventas.service'
 
 const IVA_RATES: Record<string, number> = {
   IVA_19: 0.19, GRAVADO_19: 0.19,
@@ -43,25 +44,11 @@ export function PosScreen() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPago, setShowPago] = useState(false)
   const [showAnular, setShowAnular] = useState<number | null>(null)
-  const [clienteNombre, setClienteNombre] = useState('Consumidor Final')
-  const [clienteDoc, setClienteDoc] = useState('')
+  const [selectedCliente, setSelectedCliente] = useState<any>(null)
+  const [rotationTab, setRotationTab] = useState<'alta' | 'baja'>('alta')
   const [pago, setPago] = useState<PayMethod>({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
-
-  const { data: allDocs = [] } = useQuery(['documentos-config'], getDocumentosConfig)
-
-  const docConfigs = useMemo(() => {
-    return allDocs.filter((d: any) => (d.sigla === 'POS' || d.sigla === 'DPE') && d.activo)
-  }, [allDocs])
-
-  const [tipoDocumento, setTipoDocumento] = useState<'POS' | 'DPE'>('POS')
-
-  useEffect(() => {
-    if (docConfigs.length > 0) {
-      setTipoDocumento(docConfigs[0].sigla)
-    }
-  }, [docConfigs])
 
   const sesId = parseInt(sesionId ?? '0')
 
@@ -70,11 +57,21 @@ export function PosScreen() {
     refetchInterval: 30000,
   })
 
+  const { data: clientes = [] } = useQuery(['clientes'], () => getClientes())
+
   const { data: productos = [], refetch: refetchProductos } = useQuery(
     ['pos-productos', q, sesion?.caja?.bodegaId],
     () => buscarProductosPos(q, sesion?.caja?.bodegaId ?? 0),
-    { enabled: !!sesion?.caja?.bodegaId && q.length > 0, keepPreviousData: true }
+    { enabled: !!sesion?.caja?.bodegaId, keepPreviousData: true }
   )
+
+  useEffect(() => {
+    if (sesion?.caja?.clienteDefault) {
+      setSelectedCliente(sesion.caja.clienteDefault)
+    } else {
+      setSelectedCliente({ nombre: 'Consumidor Final', numeroDocumento: '' })
+    }
+  }, [sesion])
 
   const mutIncrementConsecutive = useMutation({
     mutationFn: (id: number) => incrementarConsecutivo(id)
@@ -83,10 +80,10 @@ export function PosScreen() {
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
     onSuccess: async (data) => {
-      const doc = docConfigs.find((d: any) => d.sigla === tipoDocumento && d.activo)
-      if (doc) {
+      const docId = sesion?.caja?.documentoConfigId
+      if (docId) {
         try {
-          await mutIncrementConsecutive.mutateAsync(doc.id)
+          await mutIncrementConsecutive.mutateAsync(docId)
         } catch (e) {
           console.error("Error updating consecutive on server:", e)
         }
@@ -108,8 +105,11 @@ export function PosScreen() {
       setCart([])
       setPago({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
       setDescuentoExtra(0)
-      setClienteNombre('Consumidor Final')
-      setClienteDoc('')
+      if (sesion?.caja?.clienteDefault) {
+        setSelectedCliente(sesion.caja.clienteDefault)
+      } else {
+        setSelectedCliente({ nombre: 'Consumidor Final', numeroDocumento: '' })
+      }
       setShowPago(false)
     },
   })
@@ -151,7 +151,17 @@ export function PosScreen() {
     const iva = base * ivaRate
     return { bruto, descVal, base, iva, total: base + iva }
   }
-
+  const filteredProducts = useMemo(() => {
+    if (q.length > 0) return productos
+    return productos.filter((p: any) => {
+      const cat = p.claseAbc?.toUpperCase()
+      if (rotationTab === 'alta') {
+        return cat === 'A' || cat === 'B' || !cat
+      } else {
+        return cat === 'C'
+      }
+    })
+  }, [productos, q, rotationTab])
   const totales = cart.reduce((acc, item) => {
     const c = calcItem(item)
     acc.subtotal += c.bruto
@@ -192,8 +202,8 @@ export function PosScreen() {
   const removeFromCart = (productoId: number) => setCart(prev => prev.filter(i => i.productoId !== productoId))
   const updateQty = (productoId: number, delta: number) => setCart(prev =>
     prev.map(i => i.productoId === productoId
-      ? { ...i, cantidad: Math.max(0.001, Math.min(i.stock, i.cantidad + delta)) }
-      : i).filter(i => i.cantidad > 0)
+      ? { ...i, cantidad: Math.max(1, Math.floor(i.cantidad + delta)) }
+      : i)
   )
   const updateDescuento = (productoId: number, pct: number) => setCart(prev =>
     prev.map(i => i.productoId === productoId ? { ...i, descuentoPct: Math.max(0, Math.min(100, pct)) } : i)
@@ -203,8 +213,8 @@ export function PosScreen() {
     if (cart.length === 0) return
     mutVenta.mutate({
       sesionId: sesId,
-      clienteNombre,
-      clienteDoc: clienteDoc || undefined,
+      clienteNombre: selectedCliente?.nombre || 'Consumidor Final',
+      clienteDoc: selectedCliente?.numeroDocumento || undefined,
       descuento: descuentoExtra,
       pagoEfectivo: pago.efectivo,
       pagoTarjetaDebito: pago.tarjetaDebito,
@@ -212,7 +222,7 @@ export function PosScreen() {
       pagoTransferencia: pago.transferencia,
       pagoNequi: pago.nequi,
       cambio,
-      tipoDocumento,
+      tipoDocumento: sesion?.caja?.documentoConfig?.sigla || 'POS',
       items: cart.map(i => ({
         productoId: i.productoId,
         cantidad: i.cantidad,
@@ -333,42 +343,68 @@ export function PosScreen() {
           </div>
 
           {/* Grid de productos */}
-          <div className="flex-1 overflow-y-auto p-3">
-            {q.length > 0 ? (
-              productos.length === 0 ? (
+          <div className="flex-1 flex flex-col min-h-0 bg-slate-900">
+            {q.length === 0 && (
+              <div className="px-3 py-2 shrink-0 bg-slate-800 border-b border-slate-700/50 flex gap-2">
+                <button
+                  onClick={() => setRotationTab('alta')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    rotationTab === 'alta'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 bg-slate-700/40'
+                  }`}
+                >
+                  🔥 Alta Rotación (Más vendidos)
+                </button>
+                <button
+                  onClick={() => setRotationTab('baja')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    rotationTab === 'baja'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 bg-slate-700/40'
+                  }`}
+                >
+                  ❄️ Baja Rotación
+                </button>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-3">
+              {filteredProducts.length === 0 ? (
                 <div className="text-center text-slate-500 py-16">
                   <Search size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>Sin resultados para "{q}"</p>
+                  <p>{q.length > 0 ? `Sin resultados para "${q}"` : 'No hay productos en esta categoría'}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {productos.map((prod: any) => (
-                    <button key={prod.id} onClick={() => addToCart(prod)}
-                      disabled={prod.stock <= 0}
-                      className={`bg-slate-700 hover:bg-slate-600 rounded-xl p-3 text-left transition-all border-2 ${
-                        prod.stock <= 0 ? 'opacity-40 cursor-not-allowed border-transparent' : 'border-transparent hover:border-indigo-500 active:scale-95'
-                      }`}>
-                      <div className="w-full aspect-square bg-slate-600 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                        {prod.imagen
-                          ? <img src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover rounded-lg" />
-                          : <Tag size={24} className="text-slate-400" />}
+                  {filteredProducts.map((prod: any) => (
+                    <button
+                      key={prod.id}
+                      onClick={() => addToCart(prod)}
+                      className="bg-slate-700 hover:bg-slate-600 rounded-xl p-3 text-left transition-all border-2 border-transparent hover:border-indigo-500 active:scale-95 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="w-full aspect-square bg-slate-600 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                          {prod.imagen ? (
+                            <img src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Tag size={24} className="text-slate-400" />
+                          )}
+                        </div>
+                        <div className="text-white text-xs font-semibold leading-tight line-clamp-2">{prod.nombre}</div>
+                        {prod.sku && <div className="text-[10px] text-slate-400 font-mono mt-0.5">{prod.sku}</div>}
                       </div>
-                      <div className="text-white text-xs font-medium leading-tight line-clamp-2">{prod.nombre}</div>
-                      <div className="text-indigo-400 font-bold text-sm mt-1">{fmt(prod.precioBase)}</div>
-                      <div className={`text-xs mt-0.5 ${prod.stock < 5 ? 'text-amber-400' : 'text-slate-400'}`}>
-                        Stock: {prod.stock}
+                      <div className="mt-2">
+                        <div className="text-indigo-400 font-extrabold text-sm">{fmt(prod.precioBase)}</div>
+                        <div className={`text-[10px] mt-0.5 font-medium ${prod.stock <= 0 ? 'text-rose-400' : prod.stock < 5 ? 'text-amber-400' : 'text-slate-400'}`}>
+                          Stock: {prod.stock}
+                        </div>
                       </div>
                     </button>
                   ))}
                 </div>
-              )
-            ) : (
-              <div className="text-center text-slate-500 py-20">
-                <Scan size={48} className="mx-auto mb-3 opacity-30" />
-                <p className="text-lg">Busca un producto o escanea el código de barras</p>
-                <p className="text-xs mt-1 text-slate-600">El lector de código de barras funciona automáticamente</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -380,18 +416,22 @@ export function PosScreen() {
               <User size={14} className="text-slate-400" />
               <span className="text-slate-400 text-xs font-medium uppercase tracking-wide">Cliente</span>
             </div>
-            <input
-              value={clienteNombre}
-              onChange={e => setClienteNombre(e.target.value)}
-              placeholder="Consumidor Final"
-              className="w-full bg-slate-700 text-white placeholder-slate-400 px-3 py-1.5 rounded-lg text-sm outline-none mb-1"
-            />
-            <input
-              value={clienteDoc}
-              onChange={e => setClienteDoc(e.target.value)}
-              placeholder="Documento (opcional)"
-              className="w-full bg-slate-700 text-white placeholder-slate-400 px-3 py-1.5 rounded-lg text-xs outline-none"
-            />
+            <select
+              value={selectedCliente?.id || ''}
+              onChange={e => {
+                const val = e.target.value
+                const found = clientes.find((c: any) => String(c.id) === val)
+                setSelectedCliente(found || { nombre: 'Consumidor Final', numeroDocumento: '' })
+              }}
+              className="w-full bg-slate-700 text-white border border-slate-600 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="">Consumidor Final</option>
+              {clientes.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} ({c.numeroDocumento || 'Sin doc'})
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Items del carrito */}
@@ -497,23 +537,7 @@ export function PosScreen() {
                 <div className="text-green-400 font-bold text-3xl">{fmt(totales.total)}</div>
               </div>
 
-              {/* Selector de tipo de comprobante (POS o DPE) */}
-              {docConfigs.length > 0 && (
-                <div className="flex items-center gap-3 bg-slate-700/50 p-2.5 rounded-xl border border-slate-600/50 mb-2">
-                  <span className="text-white text-xs font-semibold uppercase tracking-wider">Tipo Documento:</span>
-                  <select
-                    value={tipoDocumento}
-                    onChange={e => setTipoDocumento(e.target.value as any)}
-                    className="flex-1 bg-slate-800 text-white border border-slate-600 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    {docConfigs.map((doc: any) => (
-                      <option key={doc.id} value={doc.sigla}>
-                        {doc.nombre} ({doc.prefijo}) {doc.esElectronico ? '⚡ Electrónico' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+
 
               {/* Medios de pago */}
               {[
