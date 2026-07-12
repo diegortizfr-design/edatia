@@ -184,6 +184,7 @@ model Sucursal {
   estado        String   @default("ACTIVO")  // ACTIVO | INACTIVO
 
   bodegas       Bodega[]
+  documentosConfig DocumentoConfig[]
 
   // Soft delete con auditoría
   deletedAt     DateTime?
@@ -214,6 +215,9 @@ model DocumentoConfig {
 
   // Sucursal vinculada (opcional)
   sucursalId            Int?
+  sucursal              Sucursal? @relation(fields: [sucursalId], references: [id])
+
+  cajasPos              CajaPos[]
 
   // Campos DIAN para documentos electrónicos
   resolucionDian        String?
@@ -1669,7 +1673,6 @@ model CuentaPUC {
   activo           Boolean  @default(true)
 
   lineas           ComprobanteLinea[]
-  cajasPos         CajaPos[]
 
   @@unique([empresaId, codigo])
   @@index([empresaId, nivel])
@@ -1747,8 +1750,12 @@ model CajaPos {
   nombre           String    // "Caja 1", "Caja Principal"
   bodegaId         Int
   bodega           Bodega    @relation(fields: [bodegaId], references: [id])
-  cuentaPUCId      Int?      // Cuenta PUC efectivo (ej: 110505)
-  cuentaPUC        CuentaPUC? @relation(fields: [cuentaPUCId], references: [id])
+  
+  cajaBancoId      Int?
+  cajaBanco        CajaBanco? @relation(fields: [cajaBancoId], references: [id])
+
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
   // Vendedor por defecto
   vendedorId       Int?
@@ -2048,6 +2055,7 @@ model CajaBanco {
   restringida     Boolean  @default(false)
 
   mediosPago      MedioPago[]
+  cajasPos        CajaPos[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

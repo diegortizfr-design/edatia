@@ -1,14 +1,21 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCajas, createCaja, updateCaja } from '../../services/pos.service'
-import { getCuentasPUC } from '../../services/contabilidad.service'
-import { getBodegas } from '../../services/inventario.service'
-import { Monitor, Plus, X, Settings, Printer, Warehouse, BookOpen } from 'lucide-react'
+import { getCajasBancos } from '../../services/erp.service'
+import { getDocumentosConfig } from '../../services/configuracion.service'
+import { Monitor, Plus, X, Settings, Printer, Warehouse, BookOpen, Landmark, FileCheck } from 'lucide-react'
 
 const EMPTY = {
-  nombre: '', bodegaId: '', cuentaPUCId: '', vendedorNombre: '',
-  impresora: '', tipoConexion: 'NINGUNA', anchoPapel: 80,
-  permiteCreditoPos: false, permiteDescuento: true, maxDescuento: 100,
+  nombre: '',
+  cajaBancoId: '',
+  documentoConfigId: '',
+  vendedorNombre: '',
+  impresora: '',
+  tipoConexion: 'NINGUNA',
+  anchoPapel: 80,
+  permiteCreditoPos: false,
+  permiteDescuento: true,
+  maxDescuento: 100,
 }
 
 export function PosConfig() {
@@ -19,12 +26,12 @@ export function PosConfig() {
   const set = (k: string) => (e: any) => setForm((f: any) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
 
   const { data: cajas = [] } = useQuery(['pos-cajas'], getCajas)
-  const { data: bodegas = [] } = useQuery(['bodegas'], () => getBodegas())
-  const { data: cuentas = [] } = useQuery(['puc'], () => getCuentasPUC())
+  const { data: cajasBancos = [] } = useQuery(['cajas-bancos'], getCajasBancos)
+  const { data: documentosConfig = [] } = useQuery(['documentos-config'], getDocumentosConfig)
 
-  // Filtrar cuentas de efectivo (clase 1 — Activo, nivel 3-5)
-  const cuentasEfectivo = (cuentas as any[]).filter(c =>
-    c.codigo?.startsWith('11') && c.nivel >= 3
+  // Filtrar documentos tipo POS / FVP o FVE (Facturación de punto de venta)
+  const docPosOptions = (documentosConfig as any[]).filter(d =>
+    d.sigla?.toLowerCase() === 'pos' || d.sigla?.toLowerCase() === 'fvp' || d.prefijo?.toLowerCase().includes('pos') || d.prefijo?.toLowerCase().includes('fvp')
   )
 
   const mutCreate = useMutation({ mutationFn: createCaja, onSuccess: () => { qc.invalidateQueries(['pos-cajas']); setShowForm(false); setForm(EMPTY) } })
@@ -33,12 +40,15 @@ export function PosConfig() {
   const openEdit = (caja: any) => {
     setEditing(caja)
     setForm({
-      nombre: caja.nombre, bodegaId: String(caja.bodegaId),
-      cuentaPUCId: caja.cuentaPUCId ? String(caja.cuentaPUCId) : '',
+      nombre: caja.nombre,
+      cajaBancoId: caja.cajaBancoId ? String(caja.cajaBancoId) : '',
+      documentoConfigId: caja.documentoConfigId ? String(caja.documentoConfigId) : '',
       vendedorNombre: caja.vendedorNombre ?? '',
-      impresora: caja.impresora ?? '', tipoConexion: caja.tipoConexion ?? 'NINGUNA',
+      impresora: caja.impresora ?? '',
+      tipoConexion: caja.tipoConexion ?? 'NINGUNA',
       anchoPapel: caja.anchoPapel ?? 80,
-      permiteCreditoPos: caja.permiteCreditoPos, permiteDescuento: caja.permiteDescuento,
+      permiteCreditoPos: caja.permiteCreditoPos,
+      permiteDescuento: caja.permiteDescuento,
       maxDescuento: caja.maxDescuento,
     })
     setShowForm(true)
@@ -48,8 +58,8 @@ export function PosConfig() {
     e.preventDefault()
     const dto = {
       ...form,
-      bodegaId: +form.bodegaId,
-      cuentaPUCId: form.cuentaPUCId ? +form.cuentaPUCId : null,
+      cajaBancoId: form.cajaBancoId ? +form.cajaBancoId : null,
+      documentoConfigId: form.documentoConfigId ? +form.documentoConfigId : null,
       anchoPapel: +form.anchoPapel,
       maxDescuento: +form.maxDescuento,
     }
@@ -87,11 +97,15 @@ export function PosConfig() {
             <div className="p-4 space-y-2 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <Warehouse size={14} className="text-slate-400" />
-                <span><strong>Bodega:</strong> {caja.bodega?.nombre ?? '—'}</span>
+                <span><strong>Sucursal:</strong> {caja.documentoConfig?.sucursal?.nombre || caja.bodega?.nombre || '—'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <BookOpen size={14} className="text-slate-400" />
-                <span><strong>Cuenta PUC:</strong> {caja.cuentaPUC ? `${caja.cuentaPUC.codigo} — ${caja.cuentaPUC.nombre}` : 'Sin asignar'}</span>
+                <Landmark size={14} className="text-slate-400" />
+                <span><strong>Caja/Banco:</strong> {caja.cajaBanco?.nombre || 'Sin asignar'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileCheck size={14} className="text-slate-400" />
+                <span><strong>Doc. Defecto:</strong> {caja.documentoConfig?.nombre || 'Ninguno'} ({caja.documentoConfig?.prefijo || '—'})</span>
               </div>
               <div className="flex items-center gap-2">
                 <Printer size={14} className="text-slate-400" />
@@ -134,21 +148,29 @@ export function PosConfig() {
                   className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Bodega *</label>
-                  <select required value={form.bodegaId} onChange={set('bodegaId')}
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Documento POS por Defecto *</label>
+                  <select required value={form.documentoConfigId} onChange={set('documentoConfigId')}
                     className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
                     <option value="">Seleccionar...</option>
-                    {(bodegas as any[]).map((b: any) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                    {docPosOptions.map((d: any) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} ({d.prefijo})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Cuenta PUC (efectivo)</label>
-                  <select value={form.cuentaPUCId} onChange={set('cuentaPUCId')}
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Caja / Banco Contable *</label>
+                  <select required value={form.cajaBancoId} onChange={set('cajaBancoId')}
                     className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
-                    <option value="">Sin asignar</option>
-                    {cuentasEfectivo.map((c: any) => <option key={c.id} value={c.id}>{c.codigo} — {c.nombre}</option>)}
+                    <option value="">Seleccionar...</option>
+                    {cajasBancos.map((cb: any) => (
+                      <option key={cb.id} value={cb.id}>
+                        {cb.nombre} (PUC: {cb.cuentaPUC || 'Sin PUC'})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

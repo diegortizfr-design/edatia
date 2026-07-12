@@ -75,9 +75,19 @@ export class PosController {
   getVentas(
     @GetUser() u: any,
     @Query('sesionId') sesionId: string,
-    @Query('fecha') fecha: string,
+    @Query('cajaId') cajaId: string,
+    @Query('desde') desde: string,
+    @Query('hasta') hasta: string,
+    @Query('prefijo') prefijo: string,
   ) {
-    return this.pos.getVentasPos(u.empresaId, sesionId ? +sesionId : undefined, fecha)
+    return this.pos.getVentasPos(
+      u.empresaId,
+      sesionId ? +sesionId : undefined,
+      cajaId ? +cajaId : undefined,
+      desde,
+      hasta,
+      prefijo,
+    )
   }
 
   @Post('ventas')

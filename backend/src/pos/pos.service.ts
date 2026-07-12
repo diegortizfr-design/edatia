@@ -20,7 +20,12 @@ export class PosService {
       where: { empresaId },
       include: {
         bodega: { select: { id: true, nombre: true, codigo: true } },
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
+        documentoConfig: {
+          include: {
+            sucursal: { select: { id: true, nombre: true } }
+          }
+        },
         sesiones: {
           where: { estado: 'ABIERTA' },
           select: { id: true, vendedorNombre: true, abiertaAt: true, montoInicial: true },
@@ -32,20 +37,71 @@ export class PosService {
   }
 
   async createCaja(empresaId: number, dto: any) {
+    const { cajaBancoId, documentoConfigId, ...rest } = dto
+    let resolvedBodegaId = 1 // default fallback
+    
+    if (documentoConfigId) {
+      const doc = await this.prisma.documentoConfig.findUnique({
+        where: { id: +documentoConfigId }
+      })
+      if (doc?.sucursalId) {
+        const bodega = await this.prisma.bodega.findFirst({
+          where: { sucursalId: doc.sucursalId, empresaId, activo: true },
+          orderBy: { esPrincipal: 'desc' }
+        })
+        if (bodega) {
+          resolvedBodegaId = bodega.id
+        }
+      }
+    }
+
     return this.prisma.cajaPos.create({
-      data: { ...dto, empresaId },
+      data: {
+        ...rest,
+        empresaId,
+        bodegaId: resolvedBodegaId,
+        cajaBancoId: cajaBancoId ? +cajaBancoId : null,
+        documentoConfigId: documentoConfigId ? +documentoConfigId : null,
+      },
       include: {
         bodega: { select: { id: true, nombre: true } },
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cajaBanco: { select: { id: true, nombre: true } },
+        documentoConfig: {
+          include: {
+            sucursal: { select: { id: true, nombre: true } }
+          }
+        },
       },
     })
   }
 
   async updateCaja(empresaId: number, cajaId: number, dto: any) {
     await this.findCaja(empresaId, cajaId)
+    const { cajaBancoId, documentoConfigId, ...rest } = dto
+    const updateData: any = { ...rest }
+    
+    if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
+    if (documentoConfigId !== undefined) {
+      updateData.documentoConfigId = documentoConfigId ? +documentoConfigId : null
+      if (documentoConfigId) {
+        const doc = await this.prisma.documentoConfig.findUnique({
+          where: { id: +documentoConfigId }
+        })
+        if (doc?.sucursalId) {
+          const bodega = await this.prisma.bodega.findFirst({
+            where: { sucursalId: doc.sucursalId, empresaId, activo: true },
+            orderBy: { esPrincipal: 'desc' }
+          })
+          if (bodega) {
+            updateData.bodegaId = bodega.id
+          }
+        }
+      }
+    }
+
     return this.prisma.cajaPos.update({
       where: { id: cajaId },
-      data: dto,
+      data: updateData,
     })
   }
 
@@ -80,7 +136,8 @@ export class PosService {
         caja: {
           include: {
             bodega: { select: { id: true, nombre: true } },
-            cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+            cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
+            documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
           },
         },
         ventas: {
@@ -225,18 +282,45 @@ export class PosService {
 
   // ─── Ventas POS ──────────────────────────────────────────────────────────────
 
-  async getVentasPos(empresaId: number, sesionId?: number, fecha?: string) {
+  async getVentasPos(
+    empresaId: number,
+    sesionId?: number,
+    cajaId?: number,
+    desde?: string,
+    hasta?: string,
+    prefijo?: string,
+  ) {
     const where: any = { empresaId }
     if (sesionId) where.sesionId = sesionId
-    if (fecha) {
-      const d = new Date(fecha)
-      const desde = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-      const hasta = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
-      where.fecha = { gte: desde, lt: hasta }
+    if (cajaId) where.sesion = { cajaId }
+    if (prefijo) {
+      where.numero = { startsWith: prefijo, mode: 'insensitive' }
     }
+    
+    if (desde || hasta) {
+      where.fecha = {}
+      if (desde) {
+        const dDesde = new Date(desde)
+        where.fecha.gte = new Date(dDesde.getFullYear(), dDesde.getMonth(), dDesde.getDate())
+      }
+      if (hasta) {
+        const dHasta = new Date(hasta)
+        where.fecha.lt = new Date(dHasta.getFullYear(), dHasta.getMonth(), dHasta.getDate() + 1)
+      }
+    }
+
     return this.prisma.ventaPos.findMany({
       where,
-      include: { items: { include: { producto: { select: { nombre: true, sku: true } } } } },
+      include: {
+        sesion: {
+          include: {
+            caja: {
+              select: { id: true, nombre: true }
+            }
+          }
+        },
+        items: { include: { producto: { select: { nombre: true, sku: true } } } }
+      },
       orderBy: { fecha: 'desc' },
       take: 100,
     })
@@ -267,7 +351,14 @@ export class PosService {
     // Verificar sesión abierta
     const sesion = await this.prisma.sesionCaja.findFirst({
       where: { id: dto.sesionId, empresaId, estado: 'ABIERTA' },
-      include: { caja: { include: { bodega: true } } },
+      include: {
+        caja: {
+          include: {
+            bodega: true,
+            documentoConfig: true,
+          }
+        }
+      },
     })
     if (!sesion) throw new BadRequestException('Sesión no encontrada o cerrada')
 
@@ -290,18 +381,24 @@ export class PosService {
     // Generar número de venta
     let numero = (dto as any).numero
     if (!numero) {
-      const tipo = (dto as any).tipoDocumento || 'POS'
+      let prefijo = (dto as any).tipoDocumento || 'POS'
+      if (sesion.caja.documentoConfig) {
+        prefijo = sesion.caja.documentoConfig.prefijo || prefijo
+      }
       const año = new Date().getFullYear()
       const ultimaVenta = await this.prisma.ventaPos.findFirst({
-        where: { empresaId, numero: { startsWith: `${tipo}-${año}-` } },
+        where: { empresaId, numero: { startsWith: `${prefijo}-${año}-` } },
         orderBy: { numero: 'desc' },
       })
       let seq = 1
       if (ultimaVenta) {
         const parts = ultimaVenta.numero.split('-')
-        seq = parseInt(parts[parts.length - 1]) + 1
+        const lastPart = parts[parts.length - 1]
+        if (!isNaN(parseInt(lastPart))) {
+          seq = parseInt(lastPart) + 1
+        }
       }
-      numero = `${tipo}-${año}-${String(seq).padStart(5, '0')}`
+      numero = `${prefijo}-${año}-${String(seq).padStart(5, '0')}`
     }
 
     // Calcular totales
@@ -559,7 +656,7 @@ export class PosService {
     // 1. Obtener configuración de la sesión/caja para la cuenta de efectivo
     const sesion = await tx.sesionCaja.findUnique({
       where: { id: sesionId },
-      include: { caja: true },
+      include: { caja: { include: { cajaBanco: true } } },
     })
 
     // 2. Definir cuentas (códigos estándar PUC Colombia)
@@ -569,7 +666,13 @@ export class PosService {
     })
     const byCode = new Map(cuentas.map((c: any) => [c.codigo, c.id]))
 
-    const cCaja = sesion?.caja?.cuentaPUCId || byCode.get('1105')
+    let cCaja = byCode.get('1105')
+    if (sesion?.caja?.cajaBanco?.cuentaPUC) {
+      const dbAcc = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: sesion.caja.cajaBanco.cuentaPUC }
+      })
+      if (dbAcc) cCaja = dbAcc.id
+    }
     const cIngresos = byCode.get('4135')
     const cCostoVta = byCode.get('6135')
     const cInventario = byCode.get('1435')

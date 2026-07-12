@@ -18,15 +18,25 @@ export function VentasPosList() {
     const tzOffset = d.getTimezoneOffset() * 60000
     return new Date(d.getTime() - tzOffset).toISOString().split('T')[0]
   }
-  const [fecha, setFecha] = useState(getLocalDateString())
+  const [desde, setDesde] = useState(getLocalDateString())
+  const [hasta, setHasta] = useState(getLocalDateString())
+  const [cajaId, setCajaId] = useState('')
+  const [prefijo, setPrefijo] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedVenta, setSelectedVenta] = useState<any | null>(null)
   const [anularId, setAnularId] = useState<number | null>(null)
   const [motivoAnulacion, setMotivoAnulacion] = useState('')
 
+  const { data: cajas = [] } = useQuery(['pos-cajas'], getCajas)
+
   const { data: ventas = [], isLoading } = useQuery({
-    queryKey: ['ventas-pos', fecha],
-    queryFn: () => getVentasPos({ fecha }),
+    queryKey: ['ventas-pos', desde, hasta, cajaId, prefijo],
+    queryFn: () => getVentasPos({
+      desde: desde || undefined,
+      hasta: hasta || undefined,
+      cajaId: cajaId ? +cajaId : undefined,
+      prefijo: prefijo || undefined
+    }),
   })
 
   const mutAnular = useMutation({
@@ -188,24 +198,64 @@ export function VentasPosList() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-4 items-center">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap gap-3 items-center w-full">
+        {/* Búsqueda rápida */}
         <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500">
-          <Search size={16} className="text-slate-400" />
+          <Search size={14} className="text-slate-400" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Buscar ticket o cliente..."
-            className="text-xs outline-none bg-transparent w-48 font-medium"
+            className="text-xs outline-none bg-transparent w-44 font-medium"
           />
         </div>
 
+        {/* Rango de Fechas */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl">
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Desde</span>
+            <input
+              type="date"
+              value={desde}
+              onChange={e => setDesde(e.target.value)}
+              className="text-xs outline-none bg-transparent font-bold text-slate-700"
+            />
+          </div>
+          <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl">
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Hasta</span>
+            <input
+              type="date"
+              value={hasta}
+              onChange={e => setHasta(e.target.value)}
+              className="text-xs outline-none bg-transparent font-bold text-slate-700"
+            />
+          </div>
+        </div>
+
+        {/* Caja POS */}
         <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl">
-          <Calendar size={16} className="text-slate-400" />
+          <span className="text-[10px] text-slate-400 font-bold uppercase">Caja</span>
+          <select
+            value={cajaId}
+            onChange={e => setCajaId(e.target.value)}
+            className="text-xs outline-none bg-transparent font-bold text-slate-700 bg-white cursor-pointer"
+          >
+            <option value="">Todas las cajas</option>
+            {cajas.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Prefijo */}
+        <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl">
+          <span className="text-[10px] text-slate-400 font-bold uppercase">Prefijo</span>
           <input
-            type="date"
-            value={fecha}
-            onChange={e => setFecha(e.target.value)}
-            className="text-xs outline-none bg-transparent font-bold text-slate-700"
+            type="text"
+            value={prefijo}
+            onChange={e => setPrefijo(e.target.value)}
+            placeholder="Ej: FVP"
+            className="text-xs outline-none bg-transparent font-bold text-slate-700 w-20 uppercase"
           />
         </div>
 
@@ -227,6 +277,7 @@ export function VentasPosList() {
               <thead>
                 <tr className="text-xs text-slate-400 uppercase tracking-wider font-bold border-b border-slate-100 bg-slate-50/20">
                   <th className="px-6 py-3.5 text-left">Número</th>
+                  <th className="px-6 py-3.5 text-left">Caja POS</th>
                   <th className="px-6 py-3.5 text-left">Fecha</th>
                   <th className="px-6 py-3.5 text-left">Cliente</th>
                   <th className="px-6 py-3.5 text-left">Medios de Pago</th>
@@ -243,6 +294,9 @@ export function VentasPosList() {
                   return (
                     <tr key={v.id} className="hover:bg-slate-50/30 transition-colors">
                       <td className="px-6 py-4 font-mono font-bold text-xs text-indigo-700">{v.numero}</td>
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-slate-800 text-xs">{v.sesion?.caja?.nombre || '—'}</span>
+                      </td>
                       <td className="px-6 py-4 text-slate-500 text-xs">
                         {new Date(v.fecha).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                       </td>

@@ -29,7 +29,13 @@ export const buscarProductosPos = (q: string, bodegaId: number) =>
 
 // ─── Ventas POS ──────────────────────────────────────────────────────────────
 
-export const getVentasPos = (params?: { sesionId?: number; fecha?: string }) =>
+export const getVentasPos = (params?: {
+  sesionId?: number
+  cajaId?: number
+  desde?: string
+  hasta?: string
+  prefijo?: string
+}) =>
   api.get('/pos/ventas', { params }).then(r => r.data)
 
 export const crearVentaPos = (dto: any) => api.post('/pos/ventas', dto).then(r => r.data)
