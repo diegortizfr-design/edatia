@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getVentasPos, anularVentaPos } from '../../services/pos.service'
+import { getVentasPos, anularVentaPos, getCajas } from '../../services/pos.service'
 import { Link } from 'react-router-dom'
 import { Search, Printer, Eye, XCircle, Calendar, CreditCard, Banknote, Smartphone, CheckCircle, AlertTriangle, FileText, Send } from 'lucide-react'
 

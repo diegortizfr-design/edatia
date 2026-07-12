@@ -1748,6 +1748,8 @@ model CajaPos {
   empresa          Empresa   @relation(fields: [empresaId], references: [id])
 
   nombre           String    // "Caja 1", "Caja Principal"
+  codigo           String    @default("") // Código único identificador de la caja
+  referencia       String?   // Referencia/Serial de hardware informativo
   bodegaId         Int
   bodega           Bodega    @relation(fields: [bodegaId], references: [id])
   

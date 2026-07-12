@@ -77,7 +77,7 @@ export class PosService {
 
   async updateCaja(empresaId: number, cajaId: number, dto: any) {
     await this.findCaja(empresaId, cajaId)
-    const { cajaBancoId, documentoConfigId, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, codigo, ...rest } = dto
     const updateData: any = { ...rest }
     
     if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
