@@ -70,7 +70,10 @@ export function FacturasPendientesEmitir() {
         await emitirFactura(id)
         setCompletedIds(prev => [...prev, id])
       } catch (err: any) {
-        const errorMsg = err?.response?.data?.message || 'Error en validación DIAN'
+        const msg = err?.response?.data?.message
+        const errorMsg = Array.isArray(msg)
+          ? msg.join(', ')
+          : (typeof msg === 'object' ? JSON.stringify(msg) : (msg || 'Error en validación DIAN'))
         setFailedIds(prev => ({ ...prev, [id]: errorMsg }))
       } finally {
         setEmittingIds(prev => prev.filter(x => x !== id))

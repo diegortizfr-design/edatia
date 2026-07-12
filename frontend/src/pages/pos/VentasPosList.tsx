@@ -13,7 +13,12 @@ const cop = (n: number) =>
 
 export function VentasPosList() {
   const qc = useQueryClient()
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
+  const getLocalDateString = () => {
+    const d = new Date()
+    const tzOffset = d.getTimezoneOffset() * 60000
+    return new Date(d.getTime() - tzOffset).toISOString().split('T')[0]
+  }
+  const [fecha, setFecha] = useState(getLocalDateString())
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedVenta, setSelectedVenta] = useState<any | null>(null)
   const [anularId, setAnularId] = useState<number | null>(null)
