@@ -69,7 +69,7 @@ export function PosScreen() {
     if (sesion?.caja?.clienteDefault) {
       setSelectedCliente(sesion.caja.clienteDefault)
     } else {
-      setSelectedCliente({ nombre: 'Consumidor Final', numeroDocumento: '' })
+      setSelectedCliente(null)
     }
   }, [sesion])
 
@@ -96,7 +96,7 @@ export function PosScreen() {
       if (sesion?.caja?.clienteDefault) {
         setSelectedCliente(sesion.caja.clienteDefault)
       } else {
-        setSelectedCliente({ nombre: 'Consumidor Final', numeroDocumento: '' })
+        setSelectedCliente(null)
       }
       setShowPago(false)
     },
@@ -503,7 +503,7 @@ export function PosScreen() {
             )}
             <button
               onClick={() => setShowPago(true)}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || !selectedCliente?.id}
               className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-base transition-colors flex items-center justify-center gap-2">
               <CreditCard size={20} />
               Cobrar {cart.length > 0 ? fmt(totales.total) : ''}
@@ -577,7 +577,7 @@ export function PosScreen() {
               </button>
               <button
                 onClick={handleFinalizarVenta}
-                disabled={totalPago < totales.total || mutVenta.isLoading}
+                disabled={!selectedCliente?.id || totalPago < totales.total || mutVenta.isLoading}
                 className="flex-2 flex-grow bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
                 {mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
               </button>
