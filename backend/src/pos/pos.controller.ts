@@ -57,7 +57,7 @@ export class PosController {
 
   @Post('sesiones/abrir')
   abrirCaja(@GetUser() u: any, @Body() dto: any) {
-    return this.pos.abrirCaja(u.empresaId, dto)
+    return this.pos.abrirCaja(u.empresaId, dto, u.sub)
   }
 
   @Post('sesiones/:id/cerrar')

@@ -159,7 +159,7 @@ export class PosService {
     return sesion
   }
 
-  async abrirCaja(empresaId: number, dto: { cajaId: number; montoInicial: number; vendedorId?: number; vendedorNombre?: string }) {
+  async abrirCaja(empresaId: number, dto: { cajaId: number; montoInicial: number; vendedorId?: number; vendedorNombre?: string }, userId?: number) {
     const caja = await this.findCaja(empresaId, dto.cajaId)
 
     // Verificar que no hay sesión abierta
@@ -168,13 +168,24 @@ export class PosService {
     })
     if (sesionAbierta) throw new BadRequestException('Esta caja ya tiene una sesión abierta')
 
+    let resolvedVendedorNombre = dto.vendedorNombre || 'Vendedor'
+    if (!dto.vendedorNombre && userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { nombre: true, usuario: true }
+      })
+      if (user) {
+        resolvedVendedorNombre = user.nombre || user.usuario
+      }
+    }
+
     const sesion = await this.prisma.sesionCaja.create({
       data: {
         empresaId,
         cajaId: dto.cajaId,
         montoInicial: dto.montoInicial,
         vendedorId: dto.vendedorId,
-        vendedorNombre: dto.vendedorNombre ?? 'Vendedor',
+        vendedorNombre: resolvedVendedorNombre,
         estado: 'ABIERTA',
       },
     })
