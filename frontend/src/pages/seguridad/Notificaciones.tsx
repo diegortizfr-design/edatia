@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Plus, Trash2, CheckCircle2, ShieldAlert, Check, Mail, Phone, Laptop, RefreshCw } from 'lucide-react'
+import { Bell, Plus, Search, Trash2, CheckCircle2, ShieldAlert, Check, Mail, Phone, Laptop, RefreshCw } from 'lucide-react'
 import { getNotificaciones, createNotificacion, marcarNotificacionLeida, marcarTodasLeidas, deleteNotificacion } from '../../services/erp.service'
 
 interface NotificacionItem {
