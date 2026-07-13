@@ -1,45 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Shield, Plus, Search, Trash2, Edit3, CheckCircle2, ShieldCheck, Check } from 'lucide-react'
+import { Shield, Plus, Search, Trash2, Edit3, CheckCircle2, ShieldCheck, Check, RefreshCw } from 'lucide-react'
+import { getRoles, createRol, updateRol, deleteRol } from '../../services/erp.service'
 
 interface RolConfig {
-  id: string;
+  id: string | number;
   nombre: string; // ej. Administrador, Facturador
   descripcion: string;
   permisos: string[]; // ['prod_crear', 'fact_anular', 'cont_cerrar', ...]
 }
-
-const DEFAULT_ROLES: RolConfig[] = [
-  {
-    id: 'rol_admin',
-    nombre: 'Administrador',
-    descripcion: 'Acceso total y sin restricciones a todos los módulos y configuraciones del ERP.',
-    permisos: ['inv_ver', 'inv_crear', 'inv_editar', 'inv_eliminar', 'vnt_ver', 'vnt_crear', 'vnt_anular', 'cnt_puc', 'cnt_cerrar', 'seg_auditoria', 'seg_usuarios']
-  },
-  {
-    id: 'rol_facturador',
-    nombre: 'Facturador',
-    descripcion: 'Encargado de la creación de cotizaciones y facturas, sin privilegios de eliminación.',
-    permisos: ['vnt_ver', 'vnt_crear']
-  },
-  {
-    id: 'rol_cajero',
-    nombre: 'Cajero POS',
-    descripcion: 'Operario de la caja del punto de venta para facturar y realizar cuadres diarios.',
-    permisos: ['vnt_ver', 'vnt_crear']
-  },
-  {
-    id: 'rol_contador',
-    nombre: 'Contador',
-    descripcion: 'Responsable de la auditoría de comprobantes contables, PUC y cierres de periodos.',
-    permisos: ['inv_ver', 'vnt_ver', 'cnt_puc', 'cnt_cerrar']
-  },
-  {
-    id: 'rol_auxiliar',
-    nombre: 'Auxiliar de Bodega',
-    descripcion: 'Encargado de registrar movimientos de almacén, lotes y despachos físicos.',
-    permisos: ['inv_ver', 'inv_crear', 'inv_editar']
-  }
-];
 
 const PERMISSION_GROUPS = [
   {
@@ -75,36 +43,49 @@ const PERMISSION_GROUPS = [
   }
 ];
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5 font-sans">
+      <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">{label}</label>
+      {children}
+    </div>
+  )
+}
+
 export function Roles() {
   const [data, setData] = useState<RolConfig[]>([])
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
-  const [savedAlert, setSavedAlert] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Estados del Formulario
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | number | null>(null)
   const [form, setForm] = useState<Partial<RolConfig>>({})
 
-  useEffect(() => {
-    const saved = localStorage.getItem('edatia_seguridad_roles')
-    if (saved) {
-      try {
-        setData(JSON.parse(saved))
-      } catch (e) {
-        setData(DEFAULT_ROLES)
-      }
-    } else {
-      setData(DEFAULT_ROLES)
-      localStorage.setItem('edatia_seguridad_roles', JSON.stringify(DEFAULT_ROLES))
+  const fetchRolesList = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = await getRoles()
+      const mapped = (res || []).map((item: any) => ({
+        id: item.id,
+        nombre: item.nombre,
+        descripcion: item.descripcion || '',
+        permisos: Array.isArray(item.permisos) ? item.permisos : [],
+      }))
+      setData(mapped)
+    } catch (e: any) {
+      console.error(e)
+      setError('Fallo al obtener los roles desde el servidor.')
+    } finally {
+      setIsLoading(false)
     }
-  }, [])
-
-  const saveToLocalStorage = (newState: RolConfig[]) => {
-    setData(newState)
-    localStorage.setItem('edatia_seguridad_roles', JSON.stringify(newState))
-    setSavedAlert(true)
-    setTimeout(() => setSavedAlert(false), 3000)
   }
+
+  useEffect(() => {
+    fetchRolesList()
+  }, [])
 
   const handleOpenNew = () => {
     setEditingId(null)
@@ -122,10 +103,15 @@ export function Roles() {
     setViewMode('form')
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string | number) => {
     if (window.confirm('¿Está seguro de eliminar este Rol?')) {
-      const filtered = data.filter(r => r.id !== id)
-      saveToLocalStorage(filtered)
+      try {
+        await deleteRol(Number(id))
+        fetchRolesList()
+      } catch (err: any) {
+        console.error(err)
+        alert(err.response?.data?.message || 'Error al eliminar el rol.')
+      }
     }
   }
 
@@ -138,27 +124,31 @@ export function Roles() {
     }
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.nombre || !form.descripcion) {
       return alert('El nombre del rol y la descripción son obligatorios.')
     }
 
-    let newState = [...data]
-    if (editingId) {
-      newState = data.map(r => r.id === editingId ? { ...r, ...form } as RolConfig : r)
-    } else {
-      const newRol: RolConfig = {
-        id: `rol_${Date.now()}`,
+    try {
+      const payload = {
         nombre: form.nombre,
         descripcion: form.descripcion,
         permisos: form.permisos || []
       }
-      newState = [...data, newRol]
-    }
 
-    saveToLocalStorage(newState)
-    setViewMode('list')
+      if (editingId) {
+        await updateRol(Number(editingId), payload)
+      } else {
+        await createRol(payload)
+      }
+
+      fetchRolesList()
+      setViewMode('list')
+    } catch (err: any) {
+      console.error(err)
+      alert(err.response?.data?.message || 'Error al guardar el rol.')
+    }
   }
 
   const filteredItems = data.filter(r => 
@@ -187,12 +177,14 @@ export function Roles() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              {savedAlert && (
-                <div className="flex items-center gap-1.5 text-green-600 text-sm font-semibold animate-bounce">
-                  <CheckCircle2 size={16} /> Configuración actualizada
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchRolesList}
+                className="flex items-center justify-center p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all border border-slate-200"
+                title="Refrescar roles"
+              >
+                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              </button>
               <button
                 onClick={handleOpenNew}
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all"
@@ -218,45 +210,54 @@ export function Roles() {
           </div>
 
           {/* Listado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredItems.map(item => (
-              <div key={item.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold uppercase border border-indigo-100">
-                      <ShieldCheck size={14} />
-                      {item.nombre}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenEdit(item)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        title="Editar permisos"
-                      >
-                        <Edit3 size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                        title="Eliminar rol"
-                        disabled={item.id === 'rol_admin'}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+          {isLoading ? (
+            <div className="text-center p-8 text-slate-500 font-medium">Cargando roles del sistema...</div>
+          ) : error ? (
+            <div className="text-center p-8 text-rose-500 font-semibold bg-rose-50 rounded-2xl border border-rose-100">{error}</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredItems.map(item => (
+                <div key={item.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between hover:shadow-md transition-all">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold uppercase border border-indigo-100">
+                        <ShieldCheck size={14} />
+                        {item.nombre}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenEdit(item)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Editar permisos"
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Eliminar rol"
+                          disabled={item.nombre.toLowerCase() === 'administrador' || item.nombre.toLowerCase() === 'admin'}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
+                    <p className="text-slate-500 text-xs leading-normal">{item.descripcion}</p>
                   </div>
-                  <p className="text-slate-500 text-xs leading-normal">{item.descripcion}</p>
-                </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Permisos activos:</span>
-                  <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                    {item.permisos.length} de 11
-                  </span>
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Permisos activos:</span>
+                    <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                      {item.permisos.length} de 11
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+              {filteredItems.length === 0 && (
+                <div className="col-span-full text-center p-8 text-slate-400 italic">No se encontraron roles.</div>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -292,7 +293,7 @@ export function Roles() {
                       value={form.nombre || ''}
                       onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                       placeholder="Ej. Facturador POS"
-                      disabled={editingId === 'rol_admin'}
+                      disabled={form.nombre?.toLowerCase() === 'administrador' || form.nombre?.toLowerCase() === 'admin'}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-bold disabled:bg-slate-100 disabled:cursor-not-allowed"
                     />
                   </Field>
@@ -334,7 +335,7 @@ export function Roles() {
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => togglePermission(item.id)}
-                                disabled={editingId === 'rol_admin'}
+                                disabled={form.nombre?.toLowerCase() === 'administrador' || form.nombre?.toLowerCase() === 'admin'}
                                 className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                               />
                             </label>

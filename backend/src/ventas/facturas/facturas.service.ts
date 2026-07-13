@@ -5,6 +5,7 @@ import { CufeService } from './cufe.service'
 import { UblService } from './ubl.service'
 import { MovimientosService } from '../../inventario/movimientos/movimientos.service'
 import { calcularItem, calcularTotales } from '../cotizaciones/cotizaciones.service'
+import { AuditoriaErpService } from '../../auditoria-erp/auditoria-erp.service'
 
 const INCLUDE_FULL = {
   cliente: true,
@@ -26,6 +27,7 @@ export class FacturasService {
     private cufeService: CufeService,
     private ublService: UblService,
     private movimientos: MovimientosService,
+    private auditoria: AuditoriaErpService,
   ) {}
 
   findAll(empresaId: number, params?: { clienteId?: number; estado?: string; desde?: string; hasta?: string }) {
@@ -73,7 +75,7 @@ export class FacturasService {
       },
     })
 
-    return this.prisma.$transaction(async (tx) => {
+    const nuevaFactura = await this.prisma.$transaction(async (tx) => {
       let cufe: string | null = null
       let qrUrl: string | null = null
       let xmlDIAN: string | null = null
@@ -208,6 +210,20 @@ export class FacturasService {
 
       return factura
     })
+
+    // ── 5. Registrar log de auditoría ──────────────────────────────────────────
+    await this.auditoria.log(empresaId, {
+      modulo: 'VENTAS',
+      accion: 'FACTURA_CREAR',
+      entidad: 'FacturaVenta',
+      entidadId: String(nuevaFactura.id),
+      descripcion: `Creada factura de venta ${nuevaFactura.numero} por valor de $${nuevaFactura.total}`,
+      valorAntes: undefined,
+      valorDespues: JSON.parse(JSON.stringify(nuevaFactura)),
+      usuarioId,
+    });
+
+    return nuevaFactura
   }
 
   async emitir(id: number, empresaId: number, usuarioId: number) {
@@ -307,7 +323,7 @@ export class FacturasService {
     // Nota: El descuento de inventario y el asiento contable ya se crearon en el método `create` al quedar la factura en estado `CREADA`
 
     // ── 2. Actualizar factura a EMITIDA ────────────────────────────────────────
-    return this.prisma.facturaVenta.update({
+    const updated = await this.prisma.facturaVenta.update({
       where: { id },
       data: {
         estado: 'EMITIDA',
@@ -324,14 +340,42 @@ export class FacturasService {
       },
       include: INCLUDE_FULL,
     })
+
+    // ── 3. Registrar log de auditoría ──────────────────────────────────────────
+    await this.auditoria.log(empresaId, {
+      modulo: 'VENTAS',
+      accion: 'FACTURA_EMITIR_DIAN',
+      entidad: 'FacturaVenta',
+      entidadId: String(updated.id),
+      descripcion: `Factura de venta ${updated.numero} emitida exitosamente a la DIAN. CUFE: ${cufe || 'N/A'}`,
+      valorAntes: JSON.parse(JSON.stringify(factura)),
+      valorDespues: JSON.parse(JSON.stringify(updated)),
+      usuarioId,
+    });
+
+    return updated;
   }
 
-  async anular(id: number, empresaId: number) {
+  async anular(id: number, empresaId: number, usuarioId?: number) {
     const f = await this.findOne(id, empresaId)
     if (!['CREADA', 'EMITIDA'].includes(f.estado)) {
       throw new BadRequestException('No se puede anular una factura PAGADA o ya ANULADA')
     }
-    return this.prisma.facturaVenta.update({ where: { id }, data: { estado: 'ANULADA' } })
+    const updated = await this.prisma.facturaVenta.update({ where: { id }, data: { estado: 'ANULADA' } })
+
+    // ── 3. Registrar log de auditoría ──────────────────────────────────────────
+    await this.auditoria.log(empresaId, {
+      modulo: 'VENTAS',
+      accion: 'FACTURA_ANULAR',
+      entidad: 'FacturaVenta',
+      entidadId: String(updated.id),
+      descripcion: `Factura de venta ${updated.numero} anulada por el usuario`,
+      valorAntes: JSON.parse(JSON.stringify(f)),
+      valorDespues: JSON.parse(JSON.stringify(updated)),
+      usuarioId,
+    });
+
+    return updated;
   }
 
   async getXml(id: number, empresaId: number): Promise<string> {

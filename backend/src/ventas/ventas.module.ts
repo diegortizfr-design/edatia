@@ -31,9 +31,10 @@ import { TercerosController } from './terceros/terceros.controller'
 import { TercerosService } from './terceros/terceros.service'
 
 import { InventarioModule } from '../inventario/inventario.module'
+import { AuditoriaErpModule } from '../auditoria-erp/auditoria-erp.module'
 
 @Module({
-  imports: [AuthModule, InventarioModule],
+  imports: [AuthModule, InventarioModule, AuditoriaErpModule],
   controllers: [
     ClientesController,
     ConfigDianController,

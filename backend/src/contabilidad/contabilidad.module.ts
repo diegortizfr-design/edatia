@@ -8,8 +8,10 @@ import { ComprobantesService } from './comprobantes/comprobantes.service'
 import { ContReportesController } from './reportes/cont-reportes.controller'
 import { ContReportesService } from './reportes/cont-reportes.service'
 
+import { AuditoriaErpModule } from '../auditoria-erp/auditoria-erp.module'
+
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AuditoriaErpModule],
   controllers: [PucController, ComprobantesController, ContReportesController],
   providers: [PucService, ComprobantesService, ContReportesService],
   exports: [PucService, ComprobantesService],

@@ -35,6 +35,17 @@ export class AuditoriaErpService {
    */
   async log(empresaId: number, data: AuditoriaErpLogData): Promise<void> {
     try {
+      let usuarioNombre = data.usuarioNombre;
+      if (data.usuarioId && !usuarioNombre) {
+        const u = await this.prisma.user.findUnique({
+          where: { id: data.usuarioId },
+          select: { nombre: true, usuario: true },
+        });
+        if (u) {
+          usuarioNombre = u.nombre || u.usuario;
+        }
+      }
+
       await this.prisma.auditLogERP.create({
         data: {
           empresaId,
@@ -46,7 +57,7 @@ export class AuditoriaErpService {
           valorAntes: data.valorAntes as any,
           valorDespues: data.valorDespues as any,
           usuarioId: data.usuarioId,
-          usuarioNombre: data.usuarioNombre,
+          usuarioNombre,
           ip: data.ip,
         },
       });

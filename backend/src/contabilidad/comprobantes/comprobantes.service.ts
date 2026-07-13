@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { PucService } from '../puc/puc.service'
+import { AuditoriaErpService } from '../../auditoria-erp/auditoria-erp.service'
 
 export interface LineaComprobanteDto {
   cuentaId: number
@@ -24,7 +25,11 @@ export interface CreateComprobanteDto {
 
 @Injectable()
 export class ComprobantesService {
-  constructor(private prisma: PrismaService, private puc: PucService) {}
+  constructor(
+    private prisma: PrismaService,
+    private puc: PucService,
+    private auditoria: AuditoriaErpService,
+  ) {}
 
   findAll(empresaId: number, params?: { tipo?: string; desde?: string; hasta?: string }) {
     return this.prisma.comprobante.findMany({
@@ -84,7 +89,7 @@ export class ComprobantesService {
 
     const numero = await this.generarNumero(empresaId, dto.tipo)
 
-    return this.prisma.comprobante.create({
+    const comp = await this.prisma.comprobante.create({
       data: {
         empresaId,
         numero,
@@ -110,13 +115,41 @@ export class ComprobantesService {
       },
       include: { lineas: { include: { cuenta: true } }, periodo: true },
     })
+
+    // ── 5. Registrar log de auditoría ──────────────────────────────────────────
+    await this.auditoria.log(empresaId, {
+      modulo: 'CONTABILIDAD',
+      accion: 'COMPROBANTE_CREAR',
+      entidad: 'Comprobante',
+      entidadId: String(comp.id),
+      descripcion: `Comprobante contable ${comp.numero} de tipo ${comp.tipo} creado por concepto: ${comp.concepto}`,
+      valorAntes: undefined,
+      valorDespues: JSON.parse(JSON.stringify(comp)),
+      usuarioId,
+    });
+
+    return comp;
   }
 
-  async anular(id: number, empresaId: number) {
+  async anular(id: number, empresaId: number, usuarioId?: number) {
     const c = await this.findOne(id, empresaId)
     if (c.estado === 'ANULADO') throw new BadRequestException('Ya está anulado')
     if (c.periodo.estado === 'CERRADO') throw new BadRequestException('El período está cerrado')
-    return this.prisma.comprobante.update({ where: { id }, data: { estado: 'ANULADO' } })
+    const updated = await this.prisma.comprobante.update({ where: { id }, data: { estado: 'ANULADO' } })
+
+    // ── 3. Registrar log de auditoría ──────────────────────────────────────────
+    await this.auditoria.log(empresaId, {
+      modulo: 'CONTABILIDAD',
+      accion: 'COMPROBANTE_ANULAR',
+      entidad: 'Comprobante',
+      entidadId: String(updated.id),
+      descripcion: `Comprobante contable ${updated.numero} anulado por el usuario`,
+      valorAntes: JSON.parse(JSON.stringify(c)),
+      valorDespues: JSON.parse(JSON.stringify(updated)),
+      usuarioId,
+    });
+
+    return updated;
   }
 
   private async generarNumero(empresaId: number, tipo: string): Promise<string> {

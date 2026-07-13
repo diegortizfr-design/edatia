@@ -46,6 +46,6 @@ export class FacturasController {
 
   @Patch(':id/anular')
   anular(@Param('id', ParseIntPipe) id: number, @GetUser() u: JwtPayload) {
-    return this.svc.anular(id, u.empresaId!)
+    return this.svc.anular(id, u.empresaId!, u.sub)
   }
 }

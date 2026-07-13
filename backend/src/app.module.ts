@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -32,6 +32,7 @@ import { GruposProductoModule } from './grupos-producto/grupos-producto.module';
 import { AuditoriaErpModule } from './auditoria-erp/auditoria-erp.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { CierrePeriodoModule } from './cierre-periodo/cierre-periodo.module';
+import { AuditoriaInterceptor } from './common/interceptors/auditoria.interceptor';
 
 @Module({
   imports: [
@@ -80,6 +81,11 @@ import { CierrePeriodoModule } from './cierre-periodo/cierre-periodo.module';
     {
       provide:  APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Aplica AuditoriaInterceptor globalmente a toda la API
+    {
+      provide:  APP_INTERCEPTOR,
+      useClass: AuditoriaInterceptor,
     },
   ],
 })

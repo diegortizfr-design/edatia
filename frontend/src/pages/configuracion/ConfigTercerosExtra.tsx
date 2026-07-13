@@ -7,7 +7,39 @@ import {
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getVendedores, createVendedor, updateVendedor, deleteVendedor, getTerceros } from '../../services/erp.service'
+import {
+  getVendedores,
+  createVendedor,
+  updateVendedor,
+  deleteVendedor,
+  getTerceros,
+  getClasificacionesContables,
+  createClasificacionContable,
+  updateClasificacionContable,
+  deleteClasificacionContable,
+  getImpuestos,
+  createImpuesto,
+  updateImpuesto,
+  deleteImpuesto,
+  getTagsProducto,
+  createTagProducto,
+  updateTagProducto,
+  deleteTagProducto
+} from '../../services/erp.service'
+import {
+  getCodigosCIIU,
+  createCodigoCIIU,
+  updateCodigoCIIU,
+  deleteCodigoCIIU,
+  getTiposIdentificacion,
+  createTipoIdentificacion,
+  updateTipoIdentificacion,
+  deleteTipoIdentificacion,
+  getRegimenesFiscales,
+  createRegimenFiscal,
+  updateRegimenFiscal,
+  deleteRegimenFiscal
+} from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
 
 // ── Types ──
@@ -159,70 +191,56 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
   const [regimenesTributarios, setRegimenesTributarios] = useState<RegimenTributario[]>([])
   const [tags, setTags] = useState<AuxTag[]>([])
 
-  // ── Load & Seed Database ──
+  const fetchSectionData = async () => {
+    try {
+      if (section === 'ciiu') {
+        const res = await getCodigosCIIU()
+        setCiiuses(res || [])
+      }
+      if (section === 'clasificaciones') {
+        const res = await getClasificacionesContables()
+        setClasificaciones(res || [])
+      }
+      if (section === 'tipos-identificacion') {
+        const res = await getTiposIdentificacion()
+        setIdentificaciones(res || [])
+      }
+      if (section === 'tipos-regimen') {
+        const res = await getRegimenesFiscales()
+        setRegimenes(res || [])
+      }
+      if (section === 'regimen-tributario') {
+        const res = await getImpuestos()
+        const mapped = (res || []).map((x: any) => ({
+          id: x.id,
+          codigo: x.codigo,
+          nombre: x.nombre,
+          tarifa: x.tarifa,
+          activo: x.activo !== false
+        }))
+        setRegimenesTributarios(mapped)
+      }
+      if (section === 'tags') {
+        const res = await getTagsProducto()
+        const mapped = (res || []).map((x: any) => ({
+          id: x.id,
+          nombre: x.nombre,
+          color: x.color || 'indigo',
+          descripcion: x.descripcion || ''
+        }))
+        setTags(mapped)
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Error al cargar datos de esta sección')
+    }
+  }
+
   useEffect(() => {
-    // Vendedores (Eliminado localStorage local, consumido del backend)
-
-    // CIIU
-    const cSeed: CIIU[] = [
-      { id: 1, codigo: '6201', descripcion: 'Actividades de desarrollo de sistemas informáticos', categoria: 'Tecnología' },
-      { id: 2, codigo: '6202', descripcion: 'Actividades de consultoría informática y tecnología', categoria: 'Tecnología' },
-      { id: 3, codigo: '4711', descripcion: 'Comercio al por menor en establecimientos no especializados', categoria: 'Comercio' },
-      { id: 4, codigo: '4690', descripcion: 'Comercio al por mayor no especializado', categoria: 'Comercio' },
-      { id: 5, codigo: '7020', descripcion: 'Actividades de consultoría de gestión empresarial', categoria: 'Servicios' }
-    ]
-    setCiiuses(getLS('edatia_ciiu', cSeed))
-
-    // Clasificaciones
-    const clSeed: Clasificacion[] = [
-      { id: 1, codigo: 'CL-01', nombre: 'VIP', descripcion: 'Clientes premium con facturación superior a 10M COP' },
-      { id: 2, codigo: 'CL-02', nombre: 'Distribuidor', descripcion: 'Socios comerciales con lista de precios wholesale' },
-      { id: 3, codigo: 'CL-03', nombre: 'Minorista', descripcion: 'Clientes finales con precio general de vitrina' },
-      { id: 4, codigo: 'CL-04', nombre: 'Proveedor Exterior', descripcion: 'Proveedores de insumos y materia prima internacional' }
-    ]
-    setClasificaciones(getLS('edatia_clasificaciones', clSeed))
-
-    // Identificaciones
-    const idSeed: Identificacion[] = [
-      { id: 1, codigoDian: '31', nombreCorto: 'NIT', descripcion: 'Número de Identificación Tributaria', activo: true },
-      { id: 2, codigoDian: '13', nombreCorto: 'CC', descripcion: 'Cédula de Ciudadanía', activo: true },
-      { id: 3, codigoDian: '22', nombreCorto: 'CE', descripcion: 'Cédula de Extranjería', activo: true },
-      { id: 4, codigoDian: '41', nombreCorto: 'Pasaporte', descripcion: 'Pasaporte Extranjero', activo: true },
-      { id: 5, codigoDian: '11', nombreCorto: 'Registro Civil', descripcion: 'Registro Civil de Nacimiento', activo: false }
-    ]
-    setIdentificaciones(getLS('edatia_identificaciones', idSeed))
-
-    // Regimenes
-    const regSeed: Regimen[] = [
-      { id: 1, codigoDian: 'O-48', nombre: 'Responsable de IVA', descripcion: 'Antiguo régimen común obligado a declarar IVA' },
-      { id: 2, codigoDian: 'R-99-PN', nombre: 'No Responsable de IVA', descripcion: 'Antiguo régimen simplificado, personas naturales' },
-      { id: 3, codigoDian: 'O-47', nombre: 'Régimen Simple (RST)', descripcion: 'Régimen Simple de Tributación de la DIAN' }
-    ]
-    setRegimenes(getLS('edatia_regimenes', regSeed))
-
-    // Regimenes Tributarios (Tasas)
-    const rtSeed: RegimenTributario[] = [
-      { id: 1, codigo: 'IVA-19', nombre: 'Tarifa General IVA', tarifa: 19, activo: true },
-      { id: 2, codigo: 'IVA-5', nombre: 'Tarifa Diferencial IVA', tarifa: 5, activo: true },
-      { id: 3, codigo: 'IVA-EX', nombre: 'Exento de IVA', tarifa: 0, activo: true },
-      { id: 4, codigo: 'INC-8', nombre: 'Impuesto Consumo', tarifa: 8, activo: false }
-    ]
-    setRegimenesTributarios(getLS('edatia_regimenes_tributarios', rtSeed))
-
-    // Tags
-    const tagSeed: AuxTag[] = [
-      { id: 1, nombre: 'Cliente Recurrente', color: 'indigo', descripcion: 'Mantiene compras cada mes' },
-      { id: 2, nombre: 'Riesgo de Cartera', color: 'rose', descripcion: 'Alerta en cobro de facturas' },
-      { id: 3, nombre: 'Importador', color: 'emerald', descripcion: 'Maneja transacciones en moneda extranjera' },
-      { id: 4, nombre: 'Descuento Especial', color: 'purple', descripcion: 'Aplica 5% extra en compras' },
-      { id: 5, nombre: 'Revisar RUT', color: 'amber', descripcion: 'RUT vencido o desactualizado' }
-    ]
-    setTags(getLS('edatia_tags', tagSeed))
+    fetchSectionData()
   }, [section])
 
-  // ── Sync to LocalStorage ──
   const syncData = (key: string, val: any, updater: any) => {
-    setLS(key, val)
     updater(val)
   }
 
@@ -268,141 +286,141 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
     setShowModal(true)
   }
 
-  const handleSave = () => {
-    if (section === 'vendedores') {
-      if (!formVendedor.nombre) return toast.error('El nombre es obligatorio')
-      const payload = {
-        nombre: formVendedor.nombre,
-        telefono: formVendedor.telefono || null,
-        documento: formVendedor.codigo || null,
-        comisionPct: formVendedor.comision,
-        activo: formVendedor.activo,
+  const handleSave = async () => {
+    try {
+      if (section === 'vendedores') {
+        if (!formVendedor.nombre) return toast.error('El nombre es obligatorio')
+        const payload = {
+          nombre: formVendedor.nombre,
+          telefono: formVendedor.telefono || null,
+          documento: formVendedor.codigo || null,
+          comisionPct: formVendedor.comision,
+          activo: formVendedor.activo,
+        }
+        if (editingId) {
+          mutUpdateVendedor.mutate({ id: editingId, data: payload })
+        } else {
+          mutCreateVendedor.mutate(payload)
+        }
+        return
       }
-      if (editingId) {
-        mutUpdateVendedor.mutate({ id: editingId, data: payload })
-      } else {
-        mutCreateVendedor.mutate(payload)
-      }
-      return
-    }
 
-    if (section === 'ciiu') {
-      if (!formCiiu.codigo || !formCiiu.descripcion) return toast.error('Código y descripción obligatorios')
-      let updated
-      if (editingId) {
-        updated = ciiuses.map(c => c.id === editingId ? { ...formCiiu, id: editingId } : c)
-        toast.success('Código CIIU actualizado')
-      } else {
-        updated = [...ciiuses, { ...formCiiu, id: Date.now() }]
-        toast.success('Código CIIU creado')
+      if (section === 'ciiu') {
+        if (!formCiiu.codigo || !formCiiu.descripcion) return toast.error('Código y descripción obligatorios')
+        if (editingId) {
+          await updateCodigoCIIU(editingId, formCiiu)
+          toast.success('Código CIIU actualizado')
+        } else {
+          await createCodigoCIIU(formCiiu)
+          toast.success('Código CIIU creado')
+        }
       }
-      syncData('edatia_ciiu', updated, setCiiuses)
-    }
 
-    if (section === 'clasificaciones') {
-      if (!formClasificacion.codigo || !formClasificacion.nombre) return toast.error('Código y nombre obligatorios')
-      let updated
-      if (editingId) {
-        updated = clasificaciones.map(c => c.id === editingId ? { ...formClasificacion, id: editingId } : c)
-        toast.success('Clasificación actualizada')
-      } else {
-        updated = [...clasificaciones, { ...formClasificacion, id: Date.now() }]
-        toast.success('Clasificación creada')
+      if (section === 'clasificaciones') {
+        if (!formClasificacion.codigo || !formClasificacion.nombre) return toast.error('Código y nombre obligatorios')
+        if (editingId) {
+          await updateClasificacionContable(editingId, formClasificacion)
+          toast.success('Clasificación actualizada')
+        } else {
+          await createClasificacionContable(formClasificacion)
+          toast.success('Clasificación creada')
+        }
       }
-      syncData('edatia_clasificaciones', updated, setClasificaciones)
-    }
 
-    if (section === 'tipos-identificacion') {
-      if (!formIdentificacion.codigoDian || !formIdentificacion.nombreCorto) return toast.error('Código y nombre corto obligatorios')
-      let updated
-      if (editingId) {
-        updated = identificaciones.map(i => i.id === editingId ? { ...formIdentificacion, id: editingId } : i)
-        toast.success('Tipo de identificación actualizado')
-      } else {
-        updated = [...identificaciones, { ...formIdentificacion, id: Date.now() }]
-        toast.success('Tipo de identificación creado')
+      if (section === 'tipos-identificacion') {
+        if (!formIdentificacion.codigoDian || !formIdentificacion.nombreCorto) return toast.error('Código y nombre corto obligatorios')
+        if (editingId) {
+          await updateTipoIdentificacion(editingId, formIdentificacion)
+          toast.success('Tipo de identificación actualizado')
+        } else {
+          await createTipoIdentificacion(formIdentificacion)
+          toast.success('Tipo de identificación creado')
+        }
       }
-      syncData('edatia_identificaciones', updated, setIdentificaciones)
-    }
 
-    if (section === 'tipos-regimen') {
-      if (!formRegimen.codigoDian || !formRegimen.nombre) return toast.error('Código y nombre obligatorios')
-      let updated
-      if (editingId) {
-        updated = regimenes.map(r => r.id === editingId ? { ...formRegimen, id: editingId } : r)
-        toast.success('Régimen fiscal actualizado')
-      } else {
-        updated = [...regimenes, { ...formRegimen, id: Date.now() }]
-        toast.success('Régimen fiscal creado')
+      if (section === 'tipos-regimen') {
+        if (!formRegimen.codigoDian || !formRegimen.nombre) return toast.error('Código y nombre obligatorios')
+        if (editingId) {
+          await updateRegimenFiscal(editingId, formRegimen)
+          toast.success('Régimen fiscal actualizado')
+        } else {
+          await createRegimenFiscal(formRegimen)
+          toast.success('Régimen fiscal creado')
+        }
       }
-      syncData('edatia_regimenes', updated, setRegimenes)
-    }
 
-    if (section === 'regimen-tributario') {
-      if (!formRegimenTributario.codigo || !formRegimenTributario.nombre) return toast.error('Código y nombre obligatorios')
-      let updated
-      if (editingId) {
-        updated = regimenesTributarios.map(r => r.id === editingId ? { ...formRegimenTributario, id: editingId } : r)
-        toast.success('Impuesto actualizado')
-      } else {
-        updated = [...regimenesTributarios, { ...formRegimenTributario, id: Date.now() }]
-        toast.success('Impuesto creado')
+      if (section === 'regimen-tributario') {
+        if (!formRegimenTributario.codigo || !formRegimenTributario.nombre) return toast.error('Código y nombre obligatorios')
+        const payload = {
+          codigo: formRegimenTributario.codigo,
+          nombre: formRegimenTributario.nombre,
+          tarifa: Number(formRegimenTributario.tarifa),
+          activo: formRegimenTributario.activo
+        }
+        if (editingId) {
+          await updateImpuesto(editingId, payload)
+          toast.success('Impuesto actualizado')
+        } else {
+          await createImpuesto(payload)
+          toast.success('Impuesto creado')
+        }
       }
-      syncData('edatia_regimenes_tributarios', updated, setRegimenesTributarios)
-    }
 
-    if (section === 'tags') {
-      if (!formTag.nombre) return toast.error('Nombre de etiqueta obligatorio')
-      let updated
-      if (editingId) {
-        updated = tags.map(t => t.id === editingId ? { ...formTag, id: editingId } : t)
-        toast.success('Etiqueta actualizada')
-      } else {
-        updated = [...tags, { ...formTag, id: Date.now() }]
-        toast.success('Etiqueta creada')
+      if (section === 'tags') {
+        if (!formTag.nombre) return toast.error('Nombre de etiqueta obligatorio')
+        if (editingId) {
+          await updateTagProducto(editingId, formTag)
+          toast.success('Etiqueta actualizada')
+        } else {
+          await createTagProducto(formTag)
+          toast.success('Etiqueta creada')
+        }
       }
-      syncData('edatia_tags', updated, setTags)
-    }
 
-    setShowModal(false)
+      await fetchSectionData()
+      setShowModal(false)
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.response?.data?.message || 'Error al guardar el registro')
+    }
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (!window.confirm('¿Está seguro de eliminar este registro auxiliar?')) return
 
-    if (section === 'vendedores') {
-      mutDeleteVendedor.mutate(id)
-      return
-    }
-    if (section === 'ciiu') {
-      const updated = ciiuses.filter(c => c.id !== id)
-      syncData('edatia_ciiu', updated, setCiiuses)
-      toast.success('Código CIIU eliminado')
-    }
-    if (section === 'clasificaciones') {
-      const updated = clasificaciones.filter(c => c.id !== id)
-      syncData('edatia_clasificaciones', updated, setClasificaciones)
-      toast.success('Clasificación eliminada')
-    }
-    if (section === 'tipos-identificacion') {
-      const updated = identificaciones.filter(i => i.id !== id)
-      syncData('edatia_identificaciones', updated, setIdentificaciones)
-      toast.success('Tipo de identificación eliminado')
-    }
-    if (section === 'tipos-regimen') {
-      const updated = regimenes.filter(r => r.id !== id)
-      syncData('edatia_regimenes', updated, setRegimenes)
-      toast.success('Régimen fiscal eliminado')
-    }
-    if (section === 'regimen-tributario') {
-      const updated = regimenesTributarios.filter(r => r.id !== id)
-      syncData('edatia_regimenes_tributarios', updated, setRegimenesTributarios)
-      toast.success('Impuesto eliminado')
-    }
-    if (section === 'tags') {
-      const updated = tags.filter(t => t.id !== id)
-      syncData('edatia_tags', updated, setTags)
-      toast.success('Etiqueta eliminada')
+    try {
+      if (section === 'vendedores') {
+        mutDeleteVendedor.mutate(id)
+        return
+      }
+      if (section === 'ciiu') {
+        await deleteCodigoCIIU(id)
+        toast.success('Código CIIU eliminado')
+      }
+      if (section === 'clasificaciones') {
+        await deleteClasificacionContable(id)
+        toast.success('Clasificación eliminada')
+      }
+      if (section === 'tipos-identificacion') {
+        await deleteTipoIdentificacion(id)
+        toast.success('Tipo de identificación eliminado')
+      }
+      if (section === 'tipos-regimen') {
+        await deleteRegimenFiscal(id)
+        toast.success('Régimen fiscal eliminado')
+      }
+      if (section === 'regimen-tributario') {
+        await deleteImpuesto(id)
+        toast.success('Impuesto eliminado')
+      }
+      if (section === 'tags') {
+        await deleteTagProducto(id)
+        toast.success('Etiqueta eliminada')
+      }
+      await fetchSectionData()
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.response?.data?.message || 'Error al eliminar el registro')
     }
   }
 
