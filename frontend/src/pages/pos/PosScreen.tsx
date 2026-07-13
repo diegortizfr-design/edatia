@@ -252,6 +252,8 @@ export function PosScreen() {
     if (!w) return
     
     const fmtVal = (val: any) => fmt(Number(val ?? 0))
+    const sucursal = sesion?.caja?.documentoConfig?.sucursal
+    const docConfig = sesion?.caja?.documentoConfig
 
     w.document.write(`
       <html><head><style>
@@ -262,21 +264,31 @@ export function PosScreen() {
         .row { display: flex; justify-content: space-between; }
         .big { font-size: 14px; font-weight: bold; }
       </style></head><body>
-        <div class="center bold" style="font-size:14px">${sesion?.empresa?.nombre ?? 'EDATIA ERP'}</div>
+        <div class="center bold" style="font-size:13px">${sesion?.empresa?.nombre ?? 'EDATIA ERP'}</div>
         <div class="center">NIT: ${sesion?.empresa?.nit ?? ''}</div>
+        
+        ${sucursal ? `
+          <div class="center bold">${sucursal.nombre}</div>
+          <div class="center">${sucursal.direccion}</div>
+          <div class="center">${sucursal.municipio ?? ''} - ${sucursal.departamento ?? ''}</div>
+        ` : ''}
+        
         <div class="center">${sesion?.caja?.nombre ?? ''}</div>
         <div class="line"></div>
+        
         <div class="row"><span>Ticket:</span><span class="bold">${venta.numero}</span></div>
         <div class="row"><span>Fecha:</span><span>${new Date(venta.fecha ?? Date.now()).toLocaleString('es-CO')}</span></div>
         <div class="row"><span>Cliente:</span><span>${venta.clienteNombre}</span></div>
         <div class="row"><span>Vendedor:</span><span>${sesion?.vendedorNombre ?? '-'}</span></div>
         <div class="line"></div>
+        
         ${(venta.items ?? []).map((i: any) => `
           <div>
             <div class="bold">${i.producto?.nombre || 'Producto'}</div>
             <div class="row"><span>${Number(i.cantidad)} x ${fmtVal(i.precioUnitario)}</span><span>${fmtVal(Number(i.cantidad) * Number(i.precioUnitario))}</span></div>
           </div>
         `).join('')}
+        
         <div class="line"></div>
         <div class="row"><span>Subtotal:</span><span>${fmtVal(venta.subtotal)}</span></div>
         ${Number(venta.descuento) > 0 ? `<div class="row"><span>Descuento:</span><span>-${fmtVal(venta.descuento)}</span></div>` : ''}
@@ -285,12 +297,23 @@ export function PosScreen() {
         <div class="line"></div>
         <div class="row big"><span>TOTAL:</span><span>${fmtVal(venta.total)}</span></div>
         <div class="line"></div>
+        
         ${Number(venta.pagoEfectivo) > 0 ? `<div class="row"><span>Efectivo:</span><span>${fmtVal(venta.pagoEfectivo)}</span></div>` : ''}
         ${Number(venta.pagoTarjetaDebito) > 0 ? `<div class="row"><span>T. Débito:</span><span>${fmtVal(venta.pagoTarjetaDebito)}</span></div>` : ''}
         ${Number(venta.pagoTarjetaCredito) > 0 ? `<div class="row"><span>T. Crédito:</span><span>${fmtVal(venta.pagoTarjetaCredito)}</span></div>` : ''}
         ${Number(venta.pagoTransferencia) > 0 ? `<div class="row"><span>Transferencia:</span><span>${fmtVal(venta.pagoTransferencia)}</span></div>` : ''}
         ${Number(venta.pagoNequi) > 0 ? `<div class="row"><span>Nequi:</span><span>${fmtVal(venta.pagoNequi)}</span></div>` : ''}
         ${Number(venta.cambio) > 0 ? `<div class="row bold"><span>Cambio:</span><span>${fmtVal(venta.cambio)}</span></div>` : ''}
+        
+        ${docConfig?.resolucionDian ? `
+          <div class="line"></div>
+          <div class="center" style="font-size:9px">
+            Resolución DIAN No. ${docConfig.resolucionDian}<br/>
+            Autoriza prefijo ${docConfig.prefijo}<br/>
+            del No. ${docConfig.rangoDesde ?? 1} al ${docConfig.rangoHasta ?? 999999}
+          </div>
+        ` : ''}
+        
         <div class="line"></div>
         <div class="center">¡Gracias por su compra!</div>
         <div class="center">Edatia ERP</div>

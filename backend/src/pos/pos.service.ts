@@ -137,11 +137,42 @@ export class PosService {
     const sesion = await this.prisma.sesionCaja.findFirst({
       where: { id: sesionId, empresaId },
       include: {
+        empresa: {
+          select: {
+            id: true,
+            nombre: true,
+            nombreComercial: true,
+            nit: true,
+            digitoVerificacion: true,
+            telefono: true,
+            email: true,
+          }
+        },
         caja: {
           include: {
             bodega: { select: { id: true, nombre: true } },
             cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
-            documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+            documentoConfig: {
+              select: {
+                id: true,
+                nombre: true,
+                prefijo: true,
+                sigla: true,
+                resolucionDian: true,
+                fechaResolucion: true,
+                rangoDesde: true,
+                rangoHasta: true,
+                sucursal: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                    direccion: true,
+                    municipio: true,
+                    departamento: true,
+                  }
+                }
+              }
+            },
             clienteDefault: { select: { id: true, nombre: true, numeroDocumento: true } },
           },
         },
