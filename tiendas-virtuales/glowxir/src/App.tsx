@@ -17,6 +17,18 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000'
   : 'https://api.edatia.com'
 
+const getStoreSlug = () => {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  if (isLocal) return 'glowxir'
+  const host = window.location.hostname.replace('www.', '')
+  if (host.endsWith('.edatia.com')) {
+    return host.replace('.edatia.com', '')
+  }
+  return host
+}
+
+const STORE_SLUG = getStoreSlug()
+
 export function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [cart, setCart] = useState<CartItem[]>([])
@@ -28,7 +40,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState(true)
 
   React.useEffect(() => {
-    fetch(`${API_BASE}/public/tiendas/glowxir/productos`)
+    fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`)
       .then(r => r.json())
       .then(data => {
         const mapped = (data || []).map((p: any) => ({
@@ -43,7 +55,9 @@ export function App() {
                       p.sku.startsWith('PAL') ? 'Ojos' :
                       p.sku.startsWith('MASC') ? 'Ojos' :
                       p.sku.startsWith('KIT') ? 'Accesorios' : 'Rostro') as any,
-          imagen: p.imagen || 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600',
+          imagen: p.imagen
+            ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE}${p.imagen}`)
+            : 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600',
           rating: p.esDestacado ? 4.9 : 4.6,
           stock: p.stock || 20,
           detalles: p.esDestacado ? ["Acabado premium", "Fórmula exclusiva"] : ["Acabado impecable", "Cruelty-free"]
@@ -257,6 +271,7 @@ export function App() {
         cartItems={cart}
         onSuccess={handleCheckoutSuccess}
         API_BASE={API_BASE}
+        storeSlug={STORE_SLUG}
       />
     </div>
   )

@@ -15,6 +15,13 @@ interface ProductoWeb {
   imagen: string | null;
 }
 
+const getImageUrl = (url: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.edatia.com';
+  return `${BASE_URL}${url}`;
+};
+
 export function CatalogoDigital() {
   const navigate = useNavigate()
   const [productos, setProductos] = useState<ProductoWeb[]>([])
@@ -135,7 +142,7 @@ export function CatalogoDigital() {
                         <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                           {p.imagen ? (
                             <img 
-                              src={p.imagen} 
+                              src={getImageUrl(p.imagen)} 
                               alt={p.nombre} 
                               className="w-full h-full object-contain p-0.5" 
                               onError={(e) => {

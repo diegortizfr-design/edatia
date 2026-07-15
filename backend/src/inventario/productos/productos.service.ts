@@ -273,6 +273,35 @@ export class ProductosService {
     return { clasificados: updates.length, mensaje: 'Clasificación ABC actualizada correctamente' };
   }
 
+  async getFacturas(productoId: number, empresaId: number) {
+    await this.findOne(productoId, empresaId);
+    return (this.prisma as any).facturaVentaItem.findMany({
+      where: {
+        productoId,
+        factura: {
+          empresaId,
+        },
+      },
+      include: {
+        factura: {
+          include: {
+            cliente: {
+              select: {
+                nombre: true,
+                numeroDocumento: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        factura: {
+          fecha: 'desc',
+        },
+      },
+    });
+  }
+
   async remove(id: number, empresaId: number) {
     await this.findOne(id, empresaId);
     try {

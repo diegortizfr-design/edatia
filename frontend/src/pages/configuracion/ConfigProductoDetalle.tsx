@@ -51,6 +51,7 @@ const TABS = [
   { id: 'stock',      label: 'Stock',             icon: Layers },
   { id: 'costeo',     label: 'Costeo',            icon: DollarSign },
   { id: 'codigos',    label: 'Códigos de Barra',  icon: Barcode },
+  { id: 'facturas',   label: 'Facturas Venta',    icon: FileText },
 ]
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -219,8 +220,11 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         {data.imagenes.length > 0 ? (
           <div className="flex flex-wrap gap-3">
             {data.imagenes.map((img, i) => (
-              <div key={i} className="group flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 font-mono">
-                <span className="truncate max-w-[200px]">{img}</span>
+              <div key={i} className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'https://api.edatia.com'}${img}`} alt="Preview" className="w-full h-full object-contain" / >
+                </div>
+                <span className="truncate max-w-[150px] font-mono">{img}</span>
                 <button type="button" onClick={() => setData(p => ({ ...p, imagenes: p.imagenes.filter((_, j) => j !== i) }))}
                   className="text-slate-300 hover:text-rose-500 transition-colors"><X size={12} /></button>
               </div>
@@ -1163,6 +1167,110 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
   )
 }
 
+/* ---- TAB: Facturas Venta ---- */
+function TabFacturas({ productoId }: { productoId: number }) {
+  const [facturas, setFacturas] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get(`/inventario/productos/${productoId}/facturas`)
+        setFacturas(res.data || [])
+      } catch (err) {
+        console.error('Error al cargar facturas de venta:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [productoId])
+
+  const fmtCOP = (val: number) => `$${Number(val).toLocaleString('es-CO')}`
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 size={24} className="animate-spin text-indigo-600 mr-2" />
+        <span className="text-xs text-slate-500 font-semibold">Cargando trazabilidad de facturas...</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+          <FileText size={18} className="text-indigo-600" /> Trazabilidad de Facturas de Venta
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Historial de todas las facturas de venta emitidas que incluyen este producto en sus líneas de detalle.
+        </p>
+      </div>
+
+      {facturas.length > 0 ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/75 border-b border-slate-100">
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Factura</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">P. Unitario</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Descuento</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Item</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {facturas.map((item) => {
+                const f = item.factura
+                return (
+                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-4">
+                      <a 
+                        href={`/ventas/facturas/${f.id}`}
+                        className="font-mono font-extrabold text-indigo-600 hover:text-indigo-800 hover:underline text-sm"
+                      >
+                        {f.consecutivo || f.numero || `FAC-${f.id}`}
+                      </a>
+                    </td>
+                    <td className="p-4 text-xs text-slate-500">
+                      {new Date(f.fecha).toLocaleDateString('es-CO')}
+                    </td>
+                    <td className="p-4">
+                      <p className="text-xs font-bold text-slate-800">{f.cliente?.nombre || '—'}</p>
+                      <p className="text-[10px] font-mono text-slate-400">{f.cliente?.numeroDocumento || '—'}</p>
+                    </td>
+                    <td className="p-4 text-right font-mono text-xs text-slate-600">
+                      {Number(item.cantidad).toLocaleString()}
+                    </td>
+                    <td className="p-4 text-right font-mono text-xs text-slate-600">
+                      {fmtCOP(Number(item.precioUnitario))}
+                    </td>
+                    <td className="p-4 text-right font-mono text-xs text-rose-600">
+                      {Number(item.descuentoPct) > 0 ? `${Number(item.descuentoPct)}%` : '—'}
+                    </td>
+                    <td className="p-4 text-right font-mono text-xs font-extrabold text-slate-800">
+                      {fmtCOP(Number(item.total))}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
+          <FileText size={36} className="mx-auto text-slate-300 mb-3" />
+          <p className="text-sm font-bold text-slate-400">Sin ventas registradas</p>
+          <p className="text-xs text-slate-300 mt-1">Este producto aún no se ha incluido en ninguna factura de venta.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 export function ConfigProductoDetalle() {
@@ -1416,6 +1524,7 @@ export function ConfigProductoDetalle() {
           {activeTab === 'stock'       && <TabStock producto={producto} refetch={refetch} />}
           {activeTab === 'costeo'      && <TabCosteo producto={producto} refetch={refetch} />}
           {activeTab === 'codigos'     && <TabCodigosBarra producto={producto} refetch={refetch} />}
+          {activeTab === 'facturas'    && <TabFacturas productoId={productoId} />}
         </div>
       </div>
     </div>

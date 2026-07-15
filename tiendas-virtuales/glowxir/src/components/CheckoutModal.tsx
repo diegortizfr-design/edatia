@@ -13,9 +13,10 @@ interface CheckoutModalProps {
   cartItems: CartItem[]
   onSuccess: () => void
   API_BASE: string
+  storeSlug: string
 }
 
-export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess, API_BASE }: CheckoutModalProps) {
+export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess, API_BASE, storeSlug }: CheckoutModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -59,7 +60,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess, API_BASE 
       }))
     }
 
-    fetch(`${API_BASE}/public/tiendas/glowxir/pedidos`, {
+    fetch(`${API_BASE}/public/tiendas/${storeSlug}/pedidos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

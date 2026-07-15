@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 interface TiendaConfig {
   nombreTienda: string;
   slugTienda: string;
+  dominioPropio?: string;
   colorPrimario: string;
   whatsappVentas: string;
   instagramUrl: string;
@@ -91,6 +92,20 @@ export function ConfigTienda() {
               required
             />
             <p className="text-[10px] text-slate-400 mt-1">Define tu URL de acceso (ej: glowxir.edatia.com o edatia.com/t/glowxir). Solo minúsculas, números y guiones.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Dominio Personalizado (Opcional)</label>
+            <input 
+              type="text" 
+              value={config?.dominioPropio || ''}
+              onChange={(e) => {
+                const cleanDom = e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, '')
+                setConfig(prev => prev ? {...prev, dominioPropio: cleanDom} : null)
+              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" 
+              placeholder="ej: glowxir.com" 
+            />
+            <p className="text-[10px] text-slate-400 mt-1">Si posees un dominio propio, ingrésalo aquí y apunta tu CNAME o registro A en tu proveedor DNS a la IP del ERP.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de la Tienda</label>

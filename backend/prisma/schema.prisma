@@ -868,6 +868,7 @@ model ConfiguracionTienda {
 
   nombreTienda    String?
   slugTienda      String   @unique
+  dominioPropio   String?  @unique
   
   logoUrl         String?
   bannerUrl       String?

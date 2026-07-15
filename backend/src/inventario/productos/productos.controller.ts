@@ -50,6 +50,11 @@ export class ProductosController {
     return this.svc.update(id, dto, user.empresaId!);
   }
 
+  @Get(':id/facturas')
+  getFacturas(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
+    return this.svc.getFacturas(id, user.empresaId!);
+  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
     return this.svc.remove(id, user.empresaId!);

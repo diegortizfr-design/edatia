@@ -178,8 +178,13 @@ export class DigitalService {
   async getProductosWebPublic(slug: string) {
     await this.autoInitializeGlowxir(slug);
 
-    const config = await this.prisma.configuracionTienda.findUnique({
-      where: { slugTienda: slug }
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      }
     });
     if (!config || !config.activo) {
       throw new NotFoundException('Tienda no encontrada o inactiva');
@@ -203,8 +208,13 @@ export class DigitalService {
   }
 
   async crearPedidoWeb(slug: string, dto: any) {
-    const config = await this.prisma.configuracionTienda.findUnique({
-      where: { slugTienda: slug }
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      }
     });
     if (!config || !config.activo) {
       throw new NotFoundException('Tienda no encontrada o inactiva');
