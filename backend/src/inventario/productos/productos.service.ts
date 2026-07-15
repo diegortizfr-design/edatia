@@ -73,7 +73,18 @@ export class ProductosService {
       include: PRODUCTO_INCLUDE,
     });
     if (!p) throw new NotFoundException('Producto no encontrado');
-    return p;
+
+    const metadata = (p.metadataWeb as Record<string, any>) || {};
+    return {
+      ...p,
+      esDigital: metadata.esDigital ?? false,
+      nombreWeb: metadata.nombreWeb ?? '',
+      imagenes: Array.isArray(metadata.imagenes) ? metadata.imagenes : [],
+      etiquetaSeo: metadata.etiquetaSeo ?? '',
+      metaDescripcion: metadata.metaDescripcion ?? '',
+      ordenMostrar: metadata.ordenMostrar ?? 0,
+      urlDescarga: metadata.urlDescarga ?? '',
+    };
   }
 
   async create(dto: CreateProductoDto, empresaId: number) {
@@ -83,7 +94,30 @@ export class ProductosService {
     if (exists) throw new ConflictException(`Ya existe un producto con SKU "${dto.sku}"`);
     
     const { proveedores, codigos, ...productData } = dto as any;
-    
+
+    const metadataFields = {
+      esDigital: productData.esDigital,
+      nombreWeb: productData.nombreWeb,
+      imagenes: productData.imagenes,
+      etiquetaSeo: productData.etiquetaSeo,
+      metaDescripcion: productData.metaDescripcion,
+      ordenMostrar: productData.ordenMostrar,
+      urlDescarga: productData.urlDescarga
+    };
+
+    delete productData.esDigital;
+    delete productData.nombreWeb;
+    delete productData.imagenes;
+    delete productData.etiquetaSeo;
+    delete productData.metaDescripcion;
+    delete productData.ordenMostrar;
+    delete productData.urlDescarga;
+
+    productData.metadataWeb = metadataFields;
+    if (Array.isArray(metadataFields.imagenes) && metadataFields.imagenes.length > 0) {
+      productData.imagen = metadataFields.imagenes[0];
+    }
+
     const p = await (this.prisma as any).producto.create({
       data: {
         ...productData,
@@ -91,7 +125,7 @@ export class ProductosService {
       },
       include: PRODUCTO_INCLUDE,
     });
-    
+
     // Sync suppliers if any
     if (proveedores && Array.isArray(proveedores)) {
       await (this.prisma as any).productoProveedor.createMany({
@@ -106,7 +140,7 @@ export class ProductosService {
         }))
       });
     }
-    
+
     // Sync barcodes if any
     if (codigos && Array.isArray(codigos)) {
       await (this.prisma as any).codigoBarras.createMany({
@@ -120,7 +154,7 @@ export class ProductosService {
         }))
       });
     }
-    
+
     return this.findOne(p.id, empresaId);
   }
 
@@ -134,7 +168,34 @@ export class ProductosService {
     }
     
     const { proveedores, codigos, ...productData } = dto as any;
-    
+
+    const existing = await this.findOne(id, empresaId);
+    const existingMetadata = (existing.metadataWeb as Record<string, any>) || {};
+
+    const metadataFields = {
+      ...existingMetadata,
+      ...(productData.esDigital !== undefined && { esDigital: productData.esDigital }),
+      ...(productData.nombreWeb !== undefined && { nombreWeb: productData.nombreWeb }),
+      ...(productData.imagenes !== undefined && { imagenes: productData.imagenes }),
+      ...(productData.etiquetaSeo !== undefined && { etiquetaSeo: productData.etiquetaSeo }),
+      ...(productData.metaDescripcion !== undefined && { metaDescripcion: productData.metaDescripcion }),
+      ...(productData.ordenMostrar !== undefined && { ordenMostrar: productData.ordenMostrar }),
+      ...(productData.urlDescarga !== undefined && { urlDescarga: productData.urlDescarga }),
+    };
+
+    delete productData.esDigital;
+    delete productData.nombreWeb;
+    delete productData.imagenes;
+    delete productData.etiquetaSeo;
+    delete productData.metaDescripcion;
+    delete productData.ordenMostrar;
+    delete productData.urlDescarga;
+
+    productData.metadataWeb = metadataFields;
+    if (Array.isArray(metadataFields.imagenes) && metadataFields.imagenes.length > 0) {
+      productData.imagen = metadataFields.imagenes[0];
+    }
+
     const p = await (this.prisma as any).producto.update({
       where: { id },
       data: productData,
