@@ -34,7 +34,7 @@ export class DigitalService {
 
   async getProductosWeb(empresaId: number) {
     return this.prisma.producto.findMany({
-      where: { empresaId },
+      where: { empresaId, publicadoWeb: true },
       select: {
         id: true,
         nombre: true,

@@ -72,6 +72,28 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   })
   const [saved, setSaved] = useState(false)
   const [newImagen, setNewImagen] = useState('')
+  const [uploadingImg, setUploadingImg] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImg(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await api.post('/configuracion/archivo/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const { url } = response.data
+      setData(p => ({ ...p, imagenes: [...p.imagenes, url] }))
+      toast.success('Imagen subida exitosamente ✓')
+    } catch (err: any) {
+      toast.error('Error al subir la imagen')
+    } finally {
+      setUploadingImg(false)
+    }
+  }
 
   const save = async () => {
     try {
@@ -185,8 +207,14 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2"><Upload size={14} /> Imágenes del Producto (URLs)</h4>
         <div className="flex gap-2">
           <input type="text" value={newImagen} onChange={e => setNewImagen(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addImagen())}
-            placeholder="URL de imagen (ej. https://cdn.tutienda.com/img/P001.jpg)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
-          <button type="button" onClick={addImagen} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"><Plus size={14} /></button>
+            placeholder="Pegar URL de imagen o usa el botón de subir" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
+          <button type="button" onClick={addImagen} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" title="Agregar URL manual"><Plus size={14} /></button>
+          
+          <label className="flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all border border-slate-200 shrink-0">
+            {uploadingImg ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            <span className="ml-1.5">{uploadingImg ? 'Subiendo...' : 'Subir Imagen'}</span>
+            <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImg} className="hidden" />
+          </label>
         </div>
         {data.imagenes.length > 0 ? (
           <div className="flex flex-wrap gap-3">

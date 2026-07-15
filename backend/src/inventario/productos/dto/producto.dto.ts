@@ -238,6 +238,21 @@ export class CreateProductoDto {
 
   @IsOptional() @IsString()
   urlDescarga?: string;
+
+  @IsOptional() @IsBoolean()
+  publicadoWeb?: boolean;
+
+  @IsOptional() @IsString()
+  slug?: string;
+
+  @IsOptional() @IsBoolean()
+  esDestacado?: boolean;
+
+  @IsOptional() @IsNumber()
+  precioWeb?: number;
+
+  @IsOptional() @IsString()
+  descripcionWeb?: string;
 }
 
 export class UpdateProductoDto {
@@ -476,4 +491,19 @@ export class UpdateProductoDto {
 
   @IsOptional() @IsString()
   urlDescarga?: string;
+
+  @IsOptional() @IsBoolean()
+  publicadoWeb?: boolean;
+
+  @IsOptional() @IsString()
+  slug?: string;
+
+  @IsOptional() @IsBoolean()
+  esDestacado?: boolean;
+
+  @IsOptional() @IsNumber()
+  precioWeb?: number;
+
+  @IsOptional() @IsString()
+  descripcionWeb?: string;
 }
