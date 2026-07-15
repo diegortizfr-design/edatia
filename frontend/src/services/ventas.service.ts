@@ -84,6 +84,8 @@ export const createRecibo = (data: any) =>
   api.post('/ventas/recibos', data).then(r => r.data)
 export const anularRecibo = (id: number) =>
   api.patch(`/ventas/recibos/${id}/anular`).then(r => r.data)
+export const getDocumentosTesoreria = () =>
+  api.get('/configuracion/documentos').then(r => (r.data || []).filter((d: any) => d.tipoOperacion === 'TESORERIA' && d.estado === 'ACTIVO' && d.sigla === 'RC'))
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export const getVentasKpis = () =>

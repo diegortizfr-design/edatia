@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, DollarSign, X } from 'lucide-react'
 import {
-  getRecibos, createRecibo, getFacturasPendientes, getClientes,
+  getRecibos, createRecibo, getFacturasPendientes, getClientes, getDocumentosTesoreria,
 } from '../../services/ventas.service'
 
 function fmt(n: number) {
@@ -124,13 +124,14 @@ export function ReciboCaja() {
   )
 }
 
-function NuevoReciboModal({ onClose, onSuccess }: any) {
-  const [clienteId, setClienteId] = useState('')
+export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) {
+  const [clienteId, setClienteId] = useState(initialClienteId || '')
   const [clienteQ, setClienteQ] = useState('')
   const [valor, setValor] = useState('')
   const [medioPago, setMedioPago] = useState('EFECTIVO')
   const [referencia, setReferencia] = useState('')
   const [concepto, setConcepto] = useState('')
+  const [documentoConfigId, setDocumentoConfigId] = useState('')
 
   // Facturas pendientes a aplicar: { facturaId, valorAplicar }
   const [aplicaciones, setAplicaciones] = useState<Record<number, string>>({})
@@ -142,6 +143,17 @@ function NuevoReciboModal({ onClose, onSuccess }: any) {
     queryFn: () => getFacturasPendientes(Number(clienteId)),
     enabled: !!clienteId,
   })
+  
+  const { data: documentos = [] } = useQuery({
+    queryKey: ['documentos-tesoreria'],
+    queryFn: () => getDocumentosTesoreria(),
+  })
+
+  useEffect(() => {
+    if (documentos.length > 0 && !documentoConfigId) {
+      setDocumentoConfigId(String(documentos[0].id))
+    }
+  }, [documentos, documentoConfigId])
 
   useEffect(() => {
     if (clienteId) {
@@ -194,6 +206,7 @@ function NuevoReciboModal({ onClose, onSuccess }: any) {
       referencia: referencia || undefined,
       concepto: concepto || undefined,
       aplicaciones: aplicacionesArr,
+      documentoConfigId: documentoConfigId ? Number(documentoConfigId) : undefined,
     })
   }
 
@@ -232,6 +245,32 @@ function NuevoReciboModal({ onClose, onSuccess }: any) {
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* Consecutivo de Tesorería */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Documento de Control (Consecutivo) *</label>
+            <select
+              value={documentoConfigId}
+              onChange={e => setDocumentoConfigId(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
+              required
+            >
+              {documentos.length === 0 ? (
+                <option value="">-- No hay configuraciones RC registradas --</option>
+              ) : (
+                documentos.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo} - consecutivo actual: {d.consecutivoSiguiente})
+                  </option>
+                ))
+              )}
+            </select>
+            {documentos.length === 0 && (
+              <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                Se usará el consecutivo secuencial por defecto del sistema. Se recomienda crear una configuración con sigla 'RC' y tipo 'TESORERIA'.
+              </p>
             )}
           </div>
 

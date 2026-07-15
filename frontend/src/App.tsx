@@ -49,6 +49,8 @@ import { NotasCredito } from './pages/ventas/NotasCredito'
 import { NotaCreditoDetalle } from './pages/ventas/NotaCreditoDetalle'
 import { ReciboCaja } from './pages/ventas/ReciboCaja'
 import { ConfigDian } from './pages/ventas/ConfigDian'
+import { CarteraCxC } from './pages/ventas/CarteraCxC'
+import { CarteraPorEdades } from './pages/ventas/CarteraPorEdades'
 
 // ── Configuración ──
 import { ConfigEmpresa } from './pages/configuracion/ConfigEmpresa'
@@ -167,8 +169,8 @@ function App() {
         <Route path="/ventas/notas-credito/:id" element={<P><NotaCreditoDetalle /></P>} />
         <Route path="/ventas/recibos"       element={<P><ReciboCaja /></P>} />
         <Route path="/ventas/config-dian"   element={<P><ConfigDian /></P>} />
-        <Route path="/ventas/cartera/cxc"   element={<P><div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-lg mx-auto mt-10 text-center"><h1 className="text-xl font-bold text-slate-800">Cuentas por Cobrar</h1><p className="text-slate-550 text-sm mt-2">Módulo en etapa de diseño y desarrollo. Próximamente se integrará aquí el control de facturas vencidas y abonos.</p></div></P>} />
-        <Route path="/ventas/cartera/por-edades" element={<P><div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-lg mx-auto mt-10 text-center"><h1 className="text-xl font-bold text-slate-800">Cartera por Edades</h1><p className="text-slate-555 text-sm mt-2">Módulo en etapa de diseño y desarrollo. Próximamente se integrará aquí el análisis de antigüedad de saldos.</p></div></P>} />
+        <Route path="/ventas/cartera/cxc"   element={<P><CarteraCxC /></P>} />
+        <Route path="/ventas/cartera/por-edades" element={<P><CarteraPorEdades /></P>} />
 
         {/* ── Configuración ── */}
         <Route path="/configuracion/empresa" element={<P><ConfigEmpresa /></P>} />

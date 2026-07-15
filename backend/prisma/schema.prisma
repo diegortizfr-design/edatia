@@ -237,6 +237,7 @@ model DocumentoConfig {
   ordenesCompra         OrdenCompra[]
   facturasCompra        FacturaCompra[]
   recepcionesMercancia  RecepcionMercancia[]
+  recibosCaja           ReciboCaja[]
 
   @@unique([empresaId, prefijo])
   @@index([empresaId])
@@ -1635,6 +1636,9 @@ model ReciboCaja {
   createdAt        DateTime   @default(now())
 
   aplicaciones     ReciboCajaFactura[]
+
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
   @@unique([empresaId, numero])
   @@index([empresaId])

@@ -8,6 +8,7 @@ export interface CreateReciboDto {
   referencia?: string
   concepto?: string
   aplicaciones?: Array<{ facturaId: number; valor: number }>
+  documentoConfigId?: number
 }
 
 @Injectable()
@@ -53,9 +54,27 @@ export class RecibosService {
       }
     }
 
-    const numero = await this.generarNumero(empresaId)
-
     const recibo = await this.prisma.$transaction(async (tx) => {
+      let numero = ''
+      if (dto.documentoConfigId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoConfigId, empresaId, sigla: 'RC' }
+        })
+        if (!docConfig) {
+          throw new NotFoundException('Configuración de documento no encontrada')
+        }
+
+        const updatedDoc = await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } }
+        })
+
+        const numDcto = updatedDoc.consecutivoSiguiente - 1
+        numero = `${docConfig.prefijo}${numDcto}`
+      } else {
+        numero = await this.generarNumero(empresaId, tx)
+      }
+
       // 1. Crear el recibo de caja
       const r = await tx.reciboCaja.create({
         data: {
@@ -67,6 +86,7 @@ export class RecibosService {
           referencia: dto.referencia,
           concepto: dto.concepto ?? 'Recibo de caja',
           usuarioId,
+          documentoConfigId: dto.documentoConfigId || undefined,
           aplicaciones: dto.aplicaciones ? {
             create: dto.aplicaciones.map(ap => ({
               facturaId: ap.facturaId,
@@ -149,8 +169,9 @@ export class RecibosService {
     })
   }
 
-  private async generarNumero(empresaId: number): Promise<string> {
-    const last = await this.prisma.reciboCaja.findFirst({
+  private async generarNumero(empresaId: number, tx?: any): Promise<string> {
+    const client = tx || this.prisma
+    const last = await client.reciboCaja.findFirst({
       where: { empresaId }, orderBy: { id: 'desc' },
     })
     const year = new Date().getFullYear()
