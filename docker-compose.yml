@@ -160,6 +160,27 @@ services:
           cpus: '0.25'
           memory: 64M
 
+  glowxir:
+    build:
+      context: ./tiendas-virtuales/glowxir
+      dockerfile: Dockerfile
+    container_name: edatia-glowxir
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.edatia-glowxir.rule=Host(`glowxir.edatia.com`)"
+      - "traefik.http.routers.edatia-glowxir.entrypoints=websecure"
+      - "traefik.http.routers.edatia-glowxir.tls=true"
+      - "traefik.http.routers.edatia-glowxir.tls.certresolver=letsencrypt"
+      - "traefik.http.services.edatia-glowxir.loadbalancer.server.port=80"
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+
 networks:
   default:
     external: true
