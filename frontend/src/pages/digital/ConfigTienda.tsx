@@ -26,9 +26,26 @@ export function ConfigTienda() {
     try {
       setLoading(true)
       const res = await api.get('/digital/config')
-      setConfig(res.data)
+      setConfig(res.data || {
+        nombreTienda: '',
+        slugTienda: '',
+        dominioPropio: '',
+        colorPrimario: '#4F46E5',
+        whatsappVentas: '',
+        instagramUrl: '',
+        facebookUrl: ''
+      })
     } catch (error) {
       toast.error('No se pudo cargar la configuración de la tienda')
+      setConfig({
+        nombreTienda: '',
+        slugTienda: '',
+        dominioPropio: '',
+        colorPrimario: '#4F46E5',
+        whatsappVentas: '',
+        instagramUrl: '',
+        facebookUrl: ''
+      })
     } finally {
       setLoading(false)
     }
@@ -85,7 +102,7 @@ export function ConfigTienda() {
               value={config?.slugTienda || ''}
               onChange={(e) => {
                 const cleanSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-                setConfig(prev => prev ? {...prev, slugTienda: cleanSlug} : null)
+                setConfig(prev => ({ ...(prev || {}), slugTienda: cleanSlug } as TiendaConfig))
               }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" 
               placeholder="ej: glowxir" 
@@ -100,7 +117,7 @@ export function ConfigTienda() {
               value={config?.dominioPropio || ''}
               onChange={(e) => {
                 const cleanDom = e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, '')
-                setConfig(prev => prev ? {...prev, dominioPropio: cleanDom} : null)
+                setConfig(prev => ({ ...(prev || {}), dominioPropio: cleanDom } as TiendaConfig))
               }}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" 
               placeholder="ej: glowxir.com" 
@@ -112,7 +129,7 @@ export function ConfigTienda() {
             <input 
               type="text" 
               value={config?.nombreTienda || ''}
-              onChange={(e) => setConfig(prev => prev ? {...prev, nombreTienda: e.target.value} : null)}
+              onChange={(e) => setConfig(prev => ({ ...(prev || {}), nombreTienda: e.target.value } as TiendaConfig))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
               placeholder="Ej: Mi Boutique Digital" 
             />
@@ -123,13 +140,13 @@ export function ConfigTienda() {
               <input 
                 type="color" 
                 value={config?.colorPrimario || '#4F46E5'}
-                onChange={(e) => setConfig(prev => prev ? {...prev, colorPrimario: e.target.value} : null)}
+                onChange={(e) => setConfig(prev => ({ ...(prev || {}), colorPrimario: e.target.value } as TiendaConfig))}
                 className="h-10 w-10 rounded border border-slate-200 cursor-pointer p-1" 
               />
               <input 
                 type="text" 
                 value={config?.colorPrimario || ''}
-                onChange={(e) => setConfig(prev => prev ? {...prev, colorPrimario: e.target.value} : null)}
+                onChange={(e) => setConfig(prev => ({ ...(prev || {}), colorPrimario: e.target.value } as TiendaConfig))}
                 className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono" 
               />
             </div>
@@ -149,7 +166,7 @@ export function ConfigTienda() {
               <input 
                 type="text" 
                 value={config?.whatsappVentas || ''}
-                onChange={(e) => setConfig(prev => prev ? {...prev, whatsappVentas: e.target.value} : null)}
+                onChange={(e) => setConfig(prev => ({ ...(prev || {}), whatsappVentas: e.target.value } as TiendaConfig))}
                 className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
                 placeholder="+57 300 000 0000" 
               />
@@ -162,7 +179,7 @@ export function ConfigTienda() {
               <input 
                 type="text" 
                 value={config?.instagramUrl || ''}
-                onChange={(e) => setConfig(prev => prev ? {...prev, instagramUrl: e.target.value} : null)}
+                onChange={(e) => setConfig(prev => ({ ...(prev || {}), instagramUrl: e.target.value } as TiendaConfig))}
                 className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
                 placeholder="ej: @mi_tienda" 
               />
