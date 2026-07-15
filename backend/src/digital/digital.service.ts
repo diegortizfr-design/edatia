@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -27,10 +27,28 @@ export class DigitalService {
 
   async updateConfig(empresaId: number, data: any) {
     const { id, empresaId: _, createdAt, empresa, ...updateData } = data;
-    return this.prisma.configuracionTienda.update({
-      where: { empresaId },
-      data: updateData,
-    });
+    try {
+      return await this.prisma.configuracionTienda.upsert({
+        where: { empresaId },
+        update: updateData,
+        create: {
+          ...updateData,
+          empresaId,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        const target = error.meta?.target || [];
+        if (target.includes('slugTienda')) {
+          throw new ConflictException('El identificador de la tienda (slug) ya está en uso por otra empresa.');
+        }
+        if (target.includes('dominioPropio')) {
+          throw new ConflictException('El dominio personalizado ya está registrado por otra empresa.');
+        }
+        throw new ConflictException('El identificador o dominio ya están en uso.');
+      }
+      throw error;
+    }
   }
 
   async getProductosWeb(empresaId: number) {
