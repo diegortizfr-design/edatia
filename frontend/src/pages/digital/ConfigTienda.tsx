@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Settings, Globe, Palette, Share2, Phone, Save, Loader2, Link2 } from 'lucide-react'
-import axios from 'axios'
+import api from '../../services/api'
 import toast from 'react-hot-toast'
 
 interface TiendaConfig {
@@ -24,7 +24,7 @@ export function ConfigTienda() {
   const fetchConfig = async () => {
     try {
       setLoading(true)
-      const res = await axios.get('/api/digital/config')
+      const res = await api.get('/digital/config')
       setConfig(res.data)
     } catch (error) {
       toast.error('No se pudo cargar la configuración de la tienda')
@@ -39,7 +39,7 @@ export function ConfigTienda() {
 
     try {
       setSaving(true)
-      await axios.patch('/api/digital/config', config)
+      await api.patch('/digital/config', config)
       toast.success('Configuración guardada correctamente')
     } catch (error) {
       toast.error('Error al guardar la configuración')

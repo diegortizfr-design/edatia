@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Search, Globe, Eye, Loader2, Save } from 'lucide-react'
-import axios from 'axios'
+import api from '../../services/api'
 import toast from 'react-hot-toast'
 
 interface ProductoWeb {
@@ -27,7 +27,7 @@ export function CatalogoDigital() {
   const fetchProductos = async () => {
     try {
       setLoading(true)
-      const res = await axios.get('/api/digital/productos')
+      const res = await api.get('/digital/productos')
       setProductos(res.data)
     } catch (error) {
       toast.error('Error al cargar productos del catálogo')
@@ -38,7 +38,7 @@ export function CatalogoDigital() {
 
   const handleToggle = async (id: number, currentStatus: boolean) => {
     try {
-      await axios.patch(`/api/digital/productos/${id}/toggle`, { publicado: !currentStatus })
+      await api.patch(`/digital/productos/${id}/toggle`, { publicado: !currentStatus })
       setProductos(prev => prev.map(p => p.id === id ? { ...p, publicadoWeb: !currentStatus } : p))
       toast.success(currentStatus ? 'Producto retirado de la web' : 'Producto publicado en la web')
     } catch (error) {
