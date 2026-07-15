@@ -9,7 +9,7 @@ import {
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock
+  BarChart3, Clock, Loader2
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
