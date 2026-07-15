@@ -26,9 +26,10 @@ export class DigitalService {
   }
 
   async updateConfig(empresaId: number, data: any) {
+    const { id, empresaId: _, createdAt, empresa, ...updateData } = data;
     return this.prisma.configuracionTienda.update({
       where: { empresaId },
-      data,
+      data: updateData,
     });
   }
 
