@@ -38,6 +38,7 @@ async function bootstrap() {
         },
       },
       crossOriginEmbedderPolicy: false, // necesario para Swagger en desarrollo
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // permitir incrustar imágenes en otros dominios
     }),
   );
 
