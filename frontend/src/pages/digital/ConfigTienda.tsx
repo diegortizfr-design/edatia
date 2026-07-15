@@ -78,6 +78,21 @@ export function ConfigTienda() {
             Branding y Estilo
           </div>
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Identificador de la Tienda (Slug / URL) *</label>
+            <input 
+              type="text" 
+              value={config?.slugTienda || ''}
+              onChange={(e) => {
+                const cleanSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+                setConfig(prev => prev ? {...prev, slugTienda: cleanSlug} : null)
+              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none" 
+              placeholder="ej: glowxir" 
+              required
+            />
+            <p className="text-[10px] text-slate-400 mt-1">Define tu URL de acceso (ej: glowxir.edatia.com o edatia.com/t/glowxir). Solo minúsculas, números y guiones.</p>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de la Tienda</label>
             <input 
               type="text" 
