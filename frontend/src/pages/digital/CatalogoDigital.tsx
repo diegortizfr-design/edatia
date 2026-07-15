@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Search, Globe, Eye, Loader2, Save } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import toast from 'react-hot-toast'
 
@@ -15,10 +16,17 @@ interface ProductoWeb {
 }
 
 export function CatalogoDigital() {
+  const navigate = useNavigate()
   const [productos, setProductos] = useState<ProductoWeb[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+
+  const handlePreview = (p: ProductoWeb) => {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    const storeUrl = isLocal ? 'http://localhost:5173' : 'https://glowxir.edatia.com'
+    window.open(storeUrl, '_blank')
+  }
 
   useEffect(() => {
     fetchProductos()
@@ -124,9 +132,16 @@ export function CatalogoDigital() {
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                           {p.imagen ? (
-                            <img src={p.imagen} alt={p.nombre} className="w-full h-full object-cover" />
+                            <img 
+                              src={p.imagen} 
+                              alt={p.nombre} 
+                              className="w-full h-full object-contain p-0.5" 
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=100'
+                              }}
+                            />
                           ) : (
                             <Package size={20} className="text-slate-300" />
                           )}
@@ -162,12 +177,14 @@ export function CatalogoDigital() {
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button 
+                          onClick={() => handlePreview(p)}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Vista Previa"
+                          title="Vista Previa en Tienda"
                         >
                           <Eye size={18} />
                         </button>
                         <button 
+                          onClick={() => navigate(`/configuracion/productos/${p.id}/detalle?tab=web`)}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                           title="Editar detalles web"
                         >

@@ -1169,7 +1169,10 @@ export function ConfigProductoDetalle() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const productoId = parseInt(id || '0', 10)
-  const [activeTab, setActiveTab] = useState('web')
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('tab') || 'web'
+  })
 
   const { data: producto, isLoading, isError, refetch } = useQuery({
     queryKey: ['producto_detalle', productoId],
