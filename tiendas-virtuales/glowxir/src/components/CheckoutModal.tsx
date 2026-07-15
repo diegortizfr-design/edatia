@@ -12,9 +12,10 @@ interface CheckoutModalProps {
   onClose: () => void
   cartItems: CartItem[]
   onSuccess: () => void
+  API_BASE: string
 }
 
-export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess }: CheckoutModalProps) {
+export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess, API_BASE }: CheckoutModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -25,6 +26,7 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess }: Checkou
   })
   const [isSuccess, setIsSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
@@ -40,10 +42,43 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess }: Checkou
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Generar un número de pedido simulado
-    const num = 'GWX-' + Math.floor(100000 + Math.random() * 900000)
-    setOrderNumber(num)
-    setIsSuccess(true)
+    setIsSubmitting(true)
+
+    const payload = {
+      nombre: formData.nombre,
+      email: formData.email,
+      telefono: formData.telefono,
+      direccion: formData.direccion,
+      ciudad: formData.ciudad,
+      medioPago: formData.medioPago,
+      items: cartItems.map(item => ({
+        productoId: item.product.id,
+        nombre: item.product.nombre,
+        precioUnitario: item.product.precio,
+        cantidad: item.quantity,
+      }))
+    }
+
+    fetch(`${API_BASE}/public/tiendas/glowxir/pedidos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setOrderNumber(res.numero)
+          setIsSuccess(true)
+        } else {
+          alert('Hubo un error al procesar el pedido')
+        }
+        setIsSubmitting(false)
+      })
+      .catch(err => {
+        console.error('Error checkout:', err)
+        alert('Error de conexión al procesar el pedido')
+        setIsSubmitting(false)
+      })
   }
 
   const handleFinish = () => {
@@ -180,9 +215,10 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onSuccess }: Checkou
 
             <button
               type="submit"
-              className="w-full py-3 bg-glowxir-600 hover:bg-glowxir-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-glowxir-600 hover:bg-glowxir-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:bg-slate-350 disabled:cursor-not-allowed"
             >
-              Confirmar Pedido
+              {isSubmitting ? 'Procesando pedido...' : 'Confirmar Pedido'}
             </button>
           </form>
         ) : (

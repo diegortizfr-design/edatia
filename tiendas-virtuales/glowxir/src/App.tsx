@@ -13,17 +13,54 @@ interface CartItem {
   quantity: number
 }
 
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://api.edatia.com'
+
 export function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  React.useEffect(() => {
+    fetch(`${API_BASE}/public/tiendas/glowxir/productos`)
+      .then(r => r.json())
+      .then(data => {
+        const mapped = (data || []).map((p: any) => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion: p.descripcion || 'Sin descripción',
+          descripcionLarga: p.descripcionWeb || p.descripcion || 'Sin descripción detallada',
+          precio: Number(p.precioWeb || p.precioBase || 0),
+          categoria: (p.sku.startsWith('LIP') ? 'Labios' :
+                      p.sku.startsWith('BASE') ? 'Rostro' :
+                      p.sku.startsWith('BLUSH') ? 'Rostro' :
+                      p.sku.startsWith('PAL') ? 'Ojos' :
+                      p.sku.startsWith('MASC') ? 'Ojos' :
+                      p.sku.startsWith('KIT') ? 'Accesorios' : 'Rostro') as any,
+          imagen: p.imagen || 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600',
+          rating: p.esDestacado ? 4.9 : 4.6,
+          stock: p.stock || 20,
+          detalles: p.esDestacado ? ["Acabado premium", "Fórmula exclusiva"] : ["Acabado impecable", "Cruelty-free"]
+        }))
+        setProducts(mapped)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        console.error('Error cargando catálogo:', err)
+        setIsLoading(false)
+      })
+  }, [])
 
   // Filter products by category
   const filteredProducts = activeCategory === 'Todos'
-    ? PRODUCTOS
-    : PRODUCTOS.filter(p => p.categoria === activeCategory)
+    ? products
+    : products.filter(p => p.categoria === activeCategory)
 
   const handleAddToCart = (product: Product) => {
     setCart(prev => {
@@ -134,16 +171,32 @@ export function App() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-              onViewDetails={p => setSelectedProduct(p)}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(n => (
+              <div key={n} className="bg-white border border-slate-100 rounded-2xl p-4 space-y-4 animate-pulse">
+                <div className="aspect-[4/5] bg-slate-100 rounded-xl" />
+                <div className="h-4 bg-slate-100 rounded w-2/3" />
+                <div className="h-3 bg-slate-100 rounded w-1/2" />
+                <div className="flex justify-between items-center pt-2">
+                  <div className="h-5 bg-slate-100 rounded w-1/3" />
+                  <div className="h-8 w-8 bg-slate-100 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredProducts.map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+                onViewDetails={p => setSelectedProduct(p)}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Footer */}
@@ -203,6 +256,7 @@ export function App() {
         onClose={() => setIsCheckoutOpen(false)}
         cartItems={cart}
         onSuccess={handleCheckoutSuccess}
+        API_BASE={API_BASE}
       />
     </div>
   )
