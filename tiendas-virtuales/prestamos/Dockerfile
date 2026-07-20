@@ -8,6 +8,7 @@ RUN npm run build
 
 # --- STAGE 2: Build Node Backend and Run App ---
 FROM node:20-alpine
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 # Copy root configurations and install backend dependencies
