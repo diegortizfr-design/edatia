@@ -111,16 +111,32 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         return;
       }
 
+      // Save current scroll position
+      const originalScrollY = window.scrollY || document.documentElement.scrollTop;
+      // Scroll to top to avoid offset and cut-offs
+      window.scrollTo(0, 0);
+
       const opt = {
         margin:       [0.4, 0.4, 0.4, 0.4],
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { 
+          scale: 2.2, 
+          useCORS: true, 
+          scrollX: 0, 
+          scrollY: 0,
+          windowWidth: 800
+        },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
       html2pdf().set(opt).from(element).save()
+        .then(() => {
+          // Restore original scroll
+          window.scrollTo(0, originalScrollY);
+        })
         .catch((err: any) => {
+          window.scrollTo(0, originalScrollY);
           alert('Error al compilar el PDF: ' + (err.message || err));
         });
     } catch (e: any) {
@@ -143,16 +159,29 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         return;
       }
 
+      // Save scroll
+      const originalScrollY = window.scrollY || document.documentElement.scrollTop;
+      window.scrollTo(0, 0);
+
       const opt = {
         margin:       [0.2, 0.2, 0.2, 0.2],
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2.5, useCORS: true },
+        html2canvas:  { 
+          scale: 2.5, 
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0
+        },
         jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
       };
 
       html2pdf().set(opt).from(element).save()
+        .then(() => {
+          window.scrollTo(0, originalScrollY);
+        })
         .catch((err: any) => {
+          window.scrollTo(0, originalScrollY);
           alert('Error al compilar el ticket: ' + (err.message || err));
         });
     } catch (e: any) {
