@@ -188,7 +188,7 @@ services:
     container_name: edatia-prestamos
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://admin:edatia_secret_2026@db:5432/prestamos_edatia?schema=public
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/prestamos_edatia?schema=public
       - JWT_SECRET=prestamos_secret_jwt_key_2026_PROD
       - PORT=3000
       - NODE_ENV=production
