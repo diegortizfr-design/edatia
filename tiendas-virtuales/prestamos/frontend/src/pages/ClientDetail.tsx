@@ -97,47 +97,67 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [renewLoading, setRenewLoading] = useState(false);
 
   const handleDownloadPDF = (elementId: string, filename: string) => {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    try {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        alert('Error: Elemento de impresión no encontrado en la página.');
+        return;
+      }
 
-    // @ts-ignore
-    const html2pdf = window.html2pdf;
-    if (!html2pdf) {
-      alert('La librería de PDF está cargando, por favor reintente en un momento...');
-      return;
+      // @ts-ignore
+      const html2pdf = window.html2pdf;
+      if (!html2pdf) {
+        alert('Error: La librería de generación de PDF no se ha cargado. Por favor, refresca la página (Ctrl + F5) e intenta nuevamente.');
+        return;
+      }
+
+      const opt = {
+        margin:       [0.4, 0.4, 0.4, 0.4],
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save()
+        .catch((err: any) => {
+          alert('Error al compilar el PDF: ' + (err.message || err));
+        });
+    } catch (e: any) {
+      alert('Excepción al generar el PDF: ' + e.message);
     }
-
-    const opt = {
-      margin:       [0.4, 0.4, 0.4, 0.4],
-      filename:     filename,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2.5, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(element).save();
   };
 
   const handleDownloadReceiptPDF = (elementId: string, filename: string) => {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    try {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        alert('Error: Elemento del recibo no encontrado.');
+        return;
+      }
 
-    // @ts-ignore
-    const html2pdf = window.html2pdf;
-    if (!html2pdf) {
-      alert('La librería de PDF está cargando, por favor reintente en un momento...');
-      return;
+      // @ts-ignore
+      const html2pdf = window.html2pdf;
+      if (!html2pdf) {
+        alert('Error: La librería de generación de PDF no se ha cargado. Por favor, refresca la página (Ctrl + F5) e intenta nuevamente.');
+        return;
+      }
+
+      const opt = {
+        margin:       [0.2, 0.2, 0.2, 0.2],
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2.5, useCORS: true },
+        jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save()
+        .catch((err: any) => {
+          alert('Error al compilar el ticket: ' + (err.message || err));
+        });
+    } catch (e: any) {
+      alert('Excepción al generar el ticket: ' + e.message);
     }
-
-    const opt = {
-      margin:       [0.2, 0.2, 0.2, 0.2],
-      filename:     filename,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 3, useCORS: true },
-      jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(element).save();
   };
 
   const fetchClientDetails = async () => {
