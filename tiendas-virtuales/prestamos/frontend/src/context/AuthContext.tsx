@@ -6,6 +6,7 @@ export interface Tenant {
   nit: string;
   name: string;
   email: string;
+  isPremium: boolean;
 }
 
 interface AuthContextType {

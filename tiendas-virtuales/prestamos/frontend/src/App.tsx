@@ -9,10 +9,50 @@ import { Portfolio } from './pages/Portfolio';
 import { Route } from './pages/Route';
 import { Transactions } from './pages/Transactions';
 
-import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet, Receipt } from 'lucide-react';
+import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet, Receipt, Sun, Moon } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, tenant, logout } = useAuth();
+
+  // Theme state with localStorage persistence
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
+
+  // Dynamic Google AdSense Loader based on Premium Subscription
+  useEffect(() => {
+    // If authenticated and tenant is premium: do not load ads, remove script and frames if exists
+    if (isAuthenticated && tenant?.isPremium) {
+      const existingScript = document.getElementById('adsense-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const googlePlacements = document.querySelectorAll('.google-auto-placed, ins.adsbygoogle');
+      googlePlacements.forEach(el => el.remove());
+      return;
+    }
+
+    // If not logged in (landing/login page) or if logged in as FREE (non-premium) tenant:
+    // Load the script tag dynamically
+    if (!document.getElementById('adsense-script')) {
+      const script = document.createElement('script');
+      script.id = 'adsense-script';
+      script.async = true;
+      script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9138086731888541';
+      script.crossOrigin = 'anonymous';
+      document.head.appendChild(script);
+    }
+  }, [isAuthenticated, tenant]);
   
   // Hash-based simple router
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -79,17 +119,26 @@ const AppContent: React.FC = () => {
             {tenant && <span className="text-[10px] text-slate-400 font-semibold block mt-0.5 max-w-[150px] truncate">{tenant.name}</span>}
           </div>
         </div>
-        <button 
-          onClick={logout} 
-          className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"
-          title="Cerrar Sesión"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 text-slate-400 hover:bg-slate-800 rounded-lg transition"
+            title={theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
+          </button>
+          <button 
+            onClick={logout} 
+            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+            title="Cerrar Sesión"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Sidebar Navigation (Desktop only) */}
-      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} theme={theme} setTheme={setTheme} />
 
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 min-h-screen relative overflow-y-auto print:ml-0 print:p-0 print:bg-white print:text-black pt-16 md:pt-8 pb-20 md:pb-8">

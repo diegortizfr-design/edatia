@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+:root {
+  --bg-main: #020617;
+  --bg-panel: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.45);
+  --border-color: rgba(255, 255, 255, 0.05);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --bg-input: #020617;
+  --border-input: #1e293b;
+}
+
+.light {
+  --bg-main: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --bg-input: #ffffff;
+  --border-input: #cbd5e1;
+}
+
 @theme {
   --color-brand-50: #f0f6ff;
   --color-brand-100: #e0edff;
@@ -12,6 +34,13 @@
   --color-brand-800: #002e94;
   --color-brand-900: #00257a;
   --color-brand-950: #00134a;
+
+  --color-slate-950: var(--bg-main);
+  --color-slate-900: var(--bg-panel);
+  --color-slate-800: var(--border-color);
+  --color-slate-850: var(--border-color);
+  --color-white: var(--text-main);
+  --color-slate-400: var(--text-muted);
 }
 
 @utility glass-panel {
@@ -37,8 +66,8 @@
 }
 
 body {
-  background-color: #020617; /* slate-950 */
-  color: #f1f5f9; /* slate-100 */
+  background-color: var(--bg-main);
+  color: var(--text-main);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -77,3 +106,131 @@ body {
     margin: 0;
   }
 }
+
+/* Light mode specific element adjustments */
+.light body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+/* Force light theme container backgrounds */
+.light .glass-card {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light .glass-panel {
+  background: var(--bg-panel) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Ensure form controls are readable */
+.light input:not([type="date"]):not([type="checkbox"]):not([type="submit"]),
+.light select,
+.light textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-input) !important;
+}
+
+.light input:focus,
+.light select:focus,
+.light textarea:focus {
+  border-color: var(--color-brand-500) !important;
+}
+
+/* Dark sidebar overrides in light theme */
+.light aside {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.light aside h2,
+.light aside p {
+  color: #0f172a !important;
+}
+
+.light aside span {
+  color: var(--color-brand-700) !important;
+}
+
+.light aside button:not(.bg-brand-600):not(.text-red-400) {
+  color: #475569 !important;
+}
+
+.light aside button:not(.bg-brand-600):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Header overrides */
+.light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light header h1 {
+  color: #0f172a !important;
+}
+
+/* Mobile nav overrides */
+.light nav.md\:hidden {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.light nav.md\:hidden button:not(.text-brand-400) {
+  color: #64748b !important;
+}
+
+/* Modal overrides */
+.light .fixed.inset-0 .bg-slate-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .fixed.inset-0 .bg-slate-900 h3,
+.light .fixed.inset-0 .bg-slate-900 label,
+.light .fixed.inset-0 .bg-slate-900 p:not(.text-slate-400) {
+  color: #0f172a !important;
+}
+
+.light .fixed.inset-0 .bg-slate-900 .bg-slate-950 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.light .fixed.inset-0 .bg-slate-900 .bg-slate-950 p,
+.light .fixed.inset-0 .bg-slate-900 .bg-slate-950 span {
+  color: #334155 !important;
+}
+
+/* Utility overrides */
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-300,
+.light .text-slate-350 {
+  color: #334155 !important;
+}
+
+.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+.light .bg-slate-900\/30 {
+  background-color: #f1f5f9 !important;
+}
+
+.light .divide-slate-850 > * + * {
+  border-color: #e2e8f0 !important;
+}
+

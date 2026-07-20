@@ -20,6 +20,13 @@ app.use(express.json());
 // Mount API routes
 app.use('/api', apiRouter);
 
+// Serve ads.txt for Google AdSense verification dynamically
+app.get('/ads.txt', (req, res) => {
+  const publisherId = process.env.ADSENSE_PUBLISHER_ID || 'pub-9138086731888541';
+  res.type('text/plain');
+  res.send(`google.com, ${publisherId}, DIRECT, f08c47fec0942fa0`);
+});
+
 // Serve Frontend Static Assets (Production build)
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendDistPath));

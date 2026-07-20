@@ -51,7 +51,8 @@ export const register = async (req: AuthenticatedRequest, res: Response) => {
         id: tenant.id,
         nit: tenant.nit,
         name: tenant.name,
-        email: tenant.email
+        email: tenant.email,
+        isPremium: tenant.isPremium
       }
     });
   } catch (error: any) {
@@ -96,7 +97,8 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
         id: tenant.id,
         nit: tenant.nit,
         name: tenant.name,
-        email: tenant.email
+        email: tenant.email,
+        isPremium: tenant.isPremium
       }
     });
   } catch (error: any) {
@@ -118,7 +120,8 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
         nit: true,
         name: true,
         email: true,
-        createdAt: true
+        createdAt: true,
+        isPremium: true
       }
     });
 

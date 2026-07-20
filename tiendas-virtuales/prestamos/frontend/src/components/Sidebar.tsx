@@ -1,13 +1,16 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet, Receipt } from 'lucide-react';
+import { AdSenseBanner } from './AdSenseBanner';
+import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet, Receipt, Sun, Moon } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, theme, setTheme }) => {
   const { tenant, logout } = useAuth();
 
   const navItems = [
@@ -64,6 +67,40 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage })
           );
         })}
       </nav>
+
+      {/* Theme Selector Toggle */}
+      <div className="px-4 py-3 border-t border-slate-850">
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-2">
+          Tema Visual
+        </label>
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-950/80 rounded-lg border border-slate-850">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-semibold transition ${
+              theme === 'light'
+                ? 'bg-slate-800 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sun className="w-3.5 h-3.5 text-amber-400" /> Claro
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-semibold transition ${
+              theme === 'dark'
+                ? 'bg-slate-800 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Moon className="w-3.5 h-3.5 text-indigo-400" /> Oscuro
+          </button>
+        </div>
+      </div>
+
+      {/* Ad Banner for Free Tier */}
+      <div className="px-4 py-1 no-print">
+        <AdSenseBanner slot="1234567890" style={{ height: '90px' }} />
+      </div>
 
       {/* Logout */}
       <div className="p-4 border-t border-slate-850">

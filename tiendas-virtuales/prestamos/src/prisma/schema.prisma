@@ -16,6 +16,7 @@ model Tenant {
   password  String   // Hash bcrypt
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isPremium Boolean  @default(false)
 
   customers Customer[]
   loans     Loan[]
