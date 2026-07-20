@@ -181,6 +181,35 @@ services:
           cpus: '0.25'
           memory: 64M
 
+  prestamos:
+    build:
+      context: ./tiendas-virtuales/prestamos
+      dockerfile: Dockerfile
+    container_name: edatia-prestamos
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://admin:edatia_secret_2026@db:5432/prestamos_edatia?schema=public
+      - JWT_SECRET=prestamos_secret_jwt_key_2026_PROD
+      - PORT=3000
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.edatia-prestamos.rule=Host(`prestamos.edatia.com`)"
+      - "traefik.http.routers.edatia-prestamos.entrypoints=websecure"
+      - "traefik.http.routers.edatia-prestamos.tls=true"
+      - "traefik.http.routers.edatia-prestamos.tls.certresolver=letsencrypt"
+      - "traefik.http.services.edatia-prestamos.loadbalancer.server.port=3000"
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
 networks:
   default:
     external: true

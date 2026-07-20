@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0f6ff;
+  --color-brand-100: #e0edff;
+  --color-brand-200: #b8d6ff;
+  --color-brand-300: #7cb2ff;
+  --color-brand-400: #3b89ff;
+  --color-brand-500: #0062ff;
+  --color-brand-600: #004ee0;
+  --color-brand-700: #003bb8;
+  --color-brand-800: #002e94;
+  --color-brand-900: #00257a;
+  --color-brand-950: #00134a;
+}
+
+@utility glass-panel {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@utility glass-card {
+  background: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@utility hover-glow {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    box-shadow: 0 0 15px rgba(0, 98, 255, 0.25);
+    border-color: rgba(0, 98, 255, 0.4);
+  }
+}
+
+body {
+  background-color: #020617; /* slate-950 */
+  color: #f1f5f9; /* slate-100 */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Print Styles for thermal printer and invoices */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  /* Remove page headers/footers in printing */
+  @page {
+    margin: 0;
+  }
+}

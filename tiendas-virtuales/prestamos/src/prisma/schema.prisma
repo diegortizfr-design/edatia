@@ -1,0 +1,122 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Inquilinos / Empresas (SaaS Multitenant)
+model Tenant {
+  id        String   @id @default(uuid())
+  nit       String   @unique
+  name      String
+  email     String   @unique
+  password  String   // Hash bcrypt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customers Customer[]
+  loans     Loan[]
+  payments  Payment[]
+  products  LoanProduct[]
+}
+
+// 2. Clientes (Deudores)
+model Customer {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  documentId String   // Cédula o NIT del deudor
+  phone      String
+  address    String
+  email      String?
+  status     String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  loans      Loan[]
+  payments   Payment[]
+
+  @@unique([tenantId, documentId]) // Un cliente único por empresa
+}
+
+// 3. Plantillas de Productos (Préstamos Estándar)
+model LoanProduct {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  interestRate     Float    // Porcentaje de interés (ej: 20)
+  paymentFrequency String   // DAILY, WEEKLY, BIWEEKLY, MONTHLY
+  installments     Int      // Número de cuotas predeterminado
+  createdAt        DateTime @default(now())
+}
+
+// 4. Préstamos
+model Loan {
+  id               String   @id @default(uuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  loanNumber       String   // Código consecutivo (ej: PREST-0001)
+  principal        Float    // Monto inicial prestado
+  interestRate     Float    // Porcentaje de interés cobrado (ej: 20)
+  interestAmount   Float    // Total interés generado
+  totalAmount      Float    // Principal + Intereses
+  balance          Float    // Saldo pendiente actual
+  paymentFrequency String   // DAILY, WEEKLY, BIWEEKLY, MONTHLY
+  installments     Int      // Total de cuotas
+  installmentAmt   Float    // Valor de cada cuota
+  status           String   @default("ACTIVE") // ACTIVE, PAID, OVERDUE, RENEWED
+  
+  startDate        DateTime @default(now())
+  endDate          DateTime
+  
+  // Relación para renovación de créditos (compra de cartera)
+  renewalFromId    String?  @unique
+  renewalFrom      Loan?    @relation("RenewalRelation", fields: [renewalFromId], references: [id])
+  renewalTo        Loan?    @relation("RenewalRelation")
+
+  createdAt        DateTime @default(now())
+
+  amortizations   AmortizationSchedule[]
+  payments        Payment[]
+}
+
+// 5. Cronograma de Amortización (Cuotas)
+model AmortizationSchedule {
+  id                String   @id @default(uuid())
+  loanId            String
+  loan              Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  installmentNumber Int
+  dueDate           DateTime
+  amount            Float    // Monto de la cuota
+  principalPaid     Float    @default(0)
+  interestPaid      Float    @default(0)
+  amountPaid        Float    @default(0) // Total pagado en esta cuota
+  status            String   @default("PENDING") // PENDING, PAID, PARTIAL, OVERDUE
+  paidAt            DateTime?
+}
+
+// 6. Recibos de Pago
+model Payment {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loanId        String
+  loan          Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  receiptNumber String   // Consecutivo de recibo (ej: REC-0001)
+  amount        Float    // Monto pagado
+  paymentDate   DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+}
