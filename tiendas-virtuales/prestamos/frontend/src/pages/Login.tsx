@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Wallet, Shield, Mail, Key, User } from 'lucide-react';
+import { AdSenseBanner } from '../components/AdSenseBanner';
 
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
@@ -38,7 +39,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-slate-950">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden bg-slate-950">
       {/* Background glowing gradients */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
@@ -153,6 +154,11 @@ export const Login: React.FC = () => {
             {isRegister ? '¿Ya tienes cuenta? Inicia sesión aquí' : '¿Nueva empresa? Regístrate aquí'}
           </button>
         </div>
+      </div>
+
+      {/* AdSense Banner on Login Screen */}
+      <div className="w-full max-w-md mt-6 no-print">
+        <AdSenseBanner slot="1234567890" style={{ height: '90px' }} />
       </div>
     </div>
   );
