@@ -239,6 +239,29 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     fetchClientDetails();
   }, [clientId]);
 
+  // Auto-download on mobile (instead of opening full-screen print overlay)
+  useEffect(() => {
+    if (printInvoiceData && window.innerWidth < 768) {
+      const filename = `Contrato_Credito_${printInvoiceData.loan.loanNumber}.pdf`;
+      const timer = setTimeout(() => {
+        handleDownloadPDF('invoice-print-area', filename);
+        setPrintInvoiceData(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [printInvoiceData]);
+
+  useEffect(() => {
+    if (printReceiptData && window.innerWidth < 768) {
+      const filename = `Recibo_${printReceiptData.receiptNumber}.pdf`;
+      const timer = setTimeout(() => {
+        handleDownloadReceiptPDF('receipt-print-area', filename);
+        setPrintReceiptData(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [printReceiptData]);
+
   // Handle Real-time Loan Assignment Simulation
   useEffect(() => {
     if (showAssignModal && principal && interestRate && installments) {
@@ -435,7 +458,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   }
 
   // --- RENDERING SPECIAL PRINT VIEWS (facturas / recibos) ---
-  if (printInvoiceData) {
+  if (printInvoiceData && window.innerWidth >= 768) {
     const { loan, isRenewal, excedente, debtSettled } = printInvoiceData;
     return (
       <div className="bg-white text-black min-h-screen p-8 max-w-3xl mx-auto shadow-xl rounded-lg border border-gray-200">
@@ -545,7 +568,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     );
   }
 
-  if (printReceiptData) {
+  if (printReceiptData && window.innerWidth >= 768) {
     const r = printReceiptData;
     return (
       <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg">
@@ -638,18 +661,18 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {activeLoan ? (
             <>
               <button
                 onClick={() => setShowPayModal(true)}
-                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold transition shadow-md shadow-emerald-600/10"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition shadow-md shadow-emerald-600/10"
               >
                 <Coins className="w-4 h-4" /> Registrar Cobro
               </button>
               <button
                 onClick={() => setShowRenewModal(true)}
-                className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-semibold transition shadow-md shadow-purple-600/10"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition shadow-md shadow-purple-600/10"
               >
                 <RefreshCw className="w-4 h-4" /> Renovar Crédito
               </button>
@@ -657,7 +680,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           ) : (
             <button
               onClick={() => setShowAssignModal(true)}
-              className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg font-semibold transition shadow-md shadow-brand-600/10"
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg font-semibold transition shadow-md shadow-brand-600/10"
             >
               <Plus className="w-4 h-4" /> Asignar Préstamo
             </button>
@@ -723,29 +746,29 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           {/* Amortization schedule */}
           <div className="glass-card p-6 rounded-xl lg:col-span-2">
             <h3 className="text-lg font-bold text-white mb-4">Plan de Amortización (Cuotas)</h3>
-            <div className="overflow-y-auto max-h-[400px] border border-slate-850 rounded-lg">
+            <div className="overflow-auto max-h-[400px] border border-slate-850 rounded-lg">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-850 bg-slate-900/30 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                    <th className="p-3">Cuota</th>
-                    <th className="p-3">Vencimiento</th>
-                    <th className="p-3 text-right">Monto</th>
-                    <th className="p-3 text-right">Pagado</th>
-                    <th className="p-3">Estado</th>
+                    <th className="p-2 md:p-3">Cuota</th>
+                    <th className="p-2 md:p-3">Vencimiento</th>
+                    <th className="p-2 md:p-3 text-right">Monto</th>
+                    <th className="p-2 md:p-3 text-right">Pagado</th>
+                    <th className="p-2 md:p-3">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850">
                   {activeLoan.amortizations.map((am) => (
-                    <tr key={am.id} className="hover:bg-slate-900/20 text-sm">
-                      <td className="p-3 font-mono font-medium text-slate-350">Cuota {am.installmentNumber}</td>
-                      <td className="p-3 text-slate-400">
-                        {new Date(am.dueDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <tr key={am.id} className="hover:bg-slate-900/20 text-xs md:text-sm">
+                      <td className="p-2 md:p-3 font-mono font-medium text-slate-350">Cuota {am.installmentNumber}</td>
+                      <td className="p-2 md:p-3 text-slate-400 whitespace-nowrap">
+                        {new Date(am.dueDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                       </td>
-                      <td className="p-3 text-right font-mono text-slate-200">${am.amount.toLocaleString('es-CO')}</td>
-                      <td className="p-3 text-right font-mono text-emerald-500/80">
+                      <td className="p-2 md:p-3 text-right font-mono text-slate-200">${am.amount.toLocaleString('es-CO')}</td>
+                      <td className="p-2 md:p-3 text-right font-mono text-emerald-500/80">
                         {am.amountPaid > 0 ? `$${am.amountPaid.toLocaleString('es-CO')}` : '-'}
                       </td>
-                      <td className="p-3">{getAmortizationStatusBadge(am.status)}</td>
+                      <td className="p-2 md:p-3 whitespace-nowrap">{getAmortizationStatusBadge(am.status)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -776,36 +799,36 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           <p className="text-slate-500 text-sm text-center py-6">Sin historial de créditos anteriores.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
+            <table className="w-full text-left text-xs md:text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase">
-                  <th className="pb-3">Código</th>
-                  <th className="pb-3">Principal</th>
-                  <th className="pb-3">Interés</th>
-                  <th className="pb-3">Frecuencia</th>
-                  <th className="pb-3">Cuotas</th>
-                  <th className="pb-3">Estado</th>
-                  <th className="pb-3 text-right">Acción</th>
+                  <th className="pb-2 md:pb-3">Código</th>
+                  <th className="pb-2 md:pb-3">Principal</th>
+                  <th className="pb-2 md:pb-3">Interés</th>
+                  <th className="pb-2 md:pb-3">Frecuencia</th>
+                  <th className="pb-2 md:pb-3">Cuotas</th>
+                  <th className="pb-2 md:pb-3">Estado</th>
+                  <th className="pb-2 md:pb-3 text-right">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-850 text-slate-300">
                 {client.loans.map((loan) => (
-                  <tr key={loan.id} className="hover:bg-slate-900/10">
-                    <td className="py-3 font-mono font-semibold text-slate-200">{loan.loanNumber}</td>
-                    <td className="py-3 font-mono">${loan.principal.toLocaleString('es-CO')}</td>
-                    <td className="py-3 font-mono">{loan.interestRate}%</td>
-                    <td className="py-3">{translateFrequency(loan.paymentFrequency)}</td>
-                    <td className="py-3">{loan.installments}</td>
-                    <td className="py-3">
-                      {loan.status === 'PAID' && <span className="text-emerald-400 font-semibold bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10 text-xs">PAGADO</span>}
-                      {loan.status === 'ACTIVE' && <span className="text-brand-400 font-semibold bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10 text-xs">ACTIVO</span>}
-                      {loan.status === 'RENEWED' && <span className="text-purple-400 font-semibold bg-purple-500/5 px-2 py-0.5 rounded-full border border-purple-500/10 text-xs">RENOVADO</span>}
-                      {loan.status === 'OVERDUE' && <span className="text-red-400 font-semibold bg-red-500/5 px-2 py-0.5 rounded-full border border-red-500/10 text-xs">EN MORA</span>}
+                  <tr key={loan.id} className="hover:bg-slate-900/10 text-xs md:text-sm">
+                    <td className="py-2 md:py-3 font-mono font-semibold text-slate-200">{loan.loanNumber}</td>
+                    <td className="py-2 md:py-3 font-mono">${loan.principal.toLocaleString('es-CO')}</td>
+                    <td className="py-2 md:py-3 font-mono">{loan.interestRate}%</td>
+                    <td className="py-2 md:py-3">{translateFrequency(loan.paymentFrequency)}</td>
+                    <td className="py-2 md:py-3">{loan.installments}</td>
+                    <td className="py-2 md:py-3 whitespace-nowrap">
+                      {loan.status === 'PAID' && <span className="text-emerald-400 font-semibold bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10 text-[10px] md:text-xs">PAGADO</span>}
+                      {loan.status === 'ACTIVE' && <span className="text-brand-400 font-semibold bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10 text-[10px] md:text-xs">ACTIVO</span>}
+                      {loan.status === 'RENEWED' && <span className="text-purple-400 font-semibold bg-purple-500/5 px-2 py-0.5 rounded-full border border-purple-500/10 text-[10px] md:text-xs">RENOVADO</span>}
+                      {loan.status === 'OVERDUE' && <span className="text-red-400 font-semibold bg-red-500/5 px-2 py-0.5 rounded-full border border-red-500/10 text-[10px] md:text-xs">EN MORA</span>}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2 md:py-3 text-right">
                       <button
                         onClick={() => setPrintInvoiceData({ client, loan })}
-                        className="text-slate-400 hover:text-white transition"
+                        className="text-slate-400 hover:text-white transition p-1"
                       >
                         <Printer className="w-4 h-4" />
                       </button>
@@ -1100,6 +1123,132 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden print container for mobile background PDF generation */}
+      {printInvoiceData && window.innerWidth < 768 && (
+        <div style={{ position: 'fixed', left: '-9999px', top: '0', width: '800px', opacity: 0, pointerEvents: 'none' }} className="no-print">
+          <div id="invoice-print-area" className="p-6 bg-white text-black" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            <div className="flex justify-between items-start pb-6 mb-6" style={{ borderBottom: '1px solid #d1d5db' }}>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#003bb8' }}>FACTURA Y CONTRATO DE CRÉDITO</h1>
+                <p className="text-sm font-mono mt-1" style={{ color: '#6b7280' }}>Crédito Nro: {printInvoiceData.loan.loanNumber}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs uppercase font-semibold px-2 py-1 rounded" style={{ backgroundColor: '#e0edff', color: '#003bb8' }}>
+                  {printInvoiceData.isRenewal ? 'Renovación de Cartera' : 'Nuevo Préstamo'}
+                </span>
+                <p className="text-xs mt-1" style={{ color: '#6b7280' }}>{new Date(printInvoiceData.loan.startDate).toLocaleDateString('es-CO')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 text-sm mb-6">
+              <div>
+                <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Datos del Cliente:</h3>
+                <p className="font-bold text-base" style={{ color: '#111827' }}>{printInvoiceData.client.name}</p>
+                <p style={{ color: '#4b5563' }}>CC: {printInvoiceData.client.documentId}</p>
+                <p style={{ color: '#4b5563' }}>Tel: {printInvoiceData.client.phone}</p>
+                <p style={{ color: '#4b5563' }}>Dirección: {printInvoiceData.client.address}</p>
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Condiciones del Crédito:</h3>
+                <div className="space-y-1">
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Capital:</span> <span className="font-semibold" style={{ color: '#111827' }}>${printInvoiceData.loan.principal.toLocaleString('es-CO')}</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Tasa de Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>{printInvoiceData.loan.interestRate}%</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>${printInvoiceData.loan.interestAmount.toLocaleString('es-CO')}</span></div>
+                  <div className="flex justify-between pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span className="font-bold" style={{ color: '#1f2937' }}>Total a Pagar:</span> <span className="font-bold" style={{ color: '#003bb8' }}>${printInvoiceData.loan.totalAmount.toLocaleString('es-CO')}</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Frecuencia de Pago:</span> <span className="font-semibold" style={{ color: '#111827' }}>{translateFrequency(printInvoiceData.loan.paymentFrequency)}</span></div>
+                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cuotas:</span> <span className="font-semibold" style={{ color: '#111827' }}>{printInvoiceData.loan.installments} cuotas de ${printInvoiceData.loan.installmentAmt.toLocaleString('es-CO')}</span></div>
+                </div>
+              </div>
+            </div>
+
+            {printInvoiceData.isRenewal && printInvoiceData.debtSettled !== undefined && printInvoiceData.excedente !== undefined && (
+              <div className="rounded p-4 text-sm mb-6" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#065f46', borderStyle: 'solid', borderWidth: '1px' }}>
+                <h4 className="font-bold uppercase text-xs mb-1">Liquidación por Refinanciamiento</h4>
+                <div className="flex justify-between"><span>Deuda anterior cancelada:</span> <span>${printInvoiceData.debtSettled.toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #d1fae5' }}><span>Excedente neto entregado al cliente:</span> <span>${printInvoiceData.excedente.toLocaleString('es-CO')}</span></div>
+              </div>
+            )}
+
+            <div className="mb-8">
+              <h3 className="font-bold uppercase tracking-wide text-xs mb-3" style={{ color: '#374151' }}>Cronograma de Amortización (Cuotas)</h3>
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="font-bold" style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #d1d5db', color: '#374151' }}>
+                    <th className="p-2">Nro Cuota</th>
+                    <th className="p-2">Fecha de Vencimiento</th>
+                    <th className="p-2 text-right">Valor Cuota</th>
+                    <th className="p-2">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printInvoiceData.loan.amortizations.map((am: any) => (
+                    <tr key={am.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td className="p-2 font-mono" style={{ color: '#4b5563' }}>Cuota {am.installmentNumber}</td>
+                      <td className="p-2" style={{ color: '#4b5563' }}>{new Date(am.dueDate).toLocaleDateString('es-CO')}</td>
+                      <td className="p-2 text-right font-mono" style={{ color: '#4b5563' }}>${am.amount.toLocaleString('es-CO')}</td>
+                      <td className="p-2 uppercase text-[10px] font-semibold" style={{ color: '#6b7280' }}>Pendiente</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-16 grid grid-cols-2 gap-12 text-center text-xs mt-16" style={{ borderTop: '1px solid #e5e7eb' }}>
+              <div>
+                <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
+                <p className="font-semibold" style={{ color: '#374151' }}>Firma del Acreedor</p>
+              </div>
+              <div>
+                <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
+                <p className="font-semibold" style={{ color: '#374151' }}>{printInvoiceData.client.name}</p>
+                <p style={{ color: '#6b7280' }}>C.C. {printInvoiceData.client.documentId}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden print container for mobile background Receipt PDF generation */}
+      {printReceiptData && window.innerWidth < 768 && (
+        <div style={{ position: 'fixed', left: '-9999px', top: '0', width: '350px', opacity: 0, pointerEvents: 'none' }} className="no-print">
+          <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
+            <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
+              <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
+              <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{printReceiptData.receiptNumber}</p>
+              <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(printReceiptData.paymentDate).toLocaleString('es-CO')}</p>
+            </div>
+
+            <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
+              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{printReceiptData.clientName}</span></div>
+              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{printReceiptData.documentId}</span></div>
+              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{printReceiptData.loanNumber}</span></div>
+            </div>
+
+            <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
+              <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
+              <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${printReceiptData.amount.toLocaleString('es-CO')}</h1>
+            </div>
+
+            <div className="space-y-1.5 text-xs mb-8">
+              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(printReceiptData.remainingBalance + printReceiptData.amount).toLocaleString('es-CO')}</span></div>
+              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${printReceiptData.amount.toLocaleString('es-CO')}</span></div>
+              <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${printReceiptData.remainingBalance.toLocaleString('es-CO')}</span></div>
+              {printReceiptData.notes && (
+                <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
+                  Nota: {printReceiptData.notes}
+                </div>
+              )}
+            </div>
+
+            <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
+              <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
+              <p>Firma del Recaudador</p>
+              <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
             </div>
           </div>
         </div>
