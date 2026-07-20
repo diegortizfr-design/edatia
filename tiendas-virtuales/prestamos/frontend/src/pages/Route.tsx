@@ -58,10 +58,11 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
       const clonedElement = element.cloneNode(true) as HTMLElement;
 
       const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
+      container.style.position = 'fixed';
+      container.style.left = '0';
       container.style.top = '0';
       container.style.width = '300px'; // Standard thermal width in pixels
+      container.style.zIndex = '-9999';
       container.style.background = 'white';
       container.style.color = 'black';
       container.appendChild(clonedElement);
