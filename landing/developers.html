@@ -100,6 +100,277 @@
             background-image: radial-gradient(rgba(139, 92, 246, 0.05) 1.5px, transparent 1.5px);
             background-size: 28px 28px;
         }
+
+        /* ============ NUESTROS CLIENTES ============ */
+        .clientes-section {
+            background: #08080c;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8rem 0 6rem 0;
+        }
+
+        .clientes-top {
+            background: transparent;
+            padding: 0 5%;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            overflow: visible;
+        }
+
+        .clientes-bottom {
+            background: transparent;
+            padding: 2rem 5% 0 5%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Decoraciones de Fondo */
+        .clientes-bg-decorations {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .decor-hexagon-network {
+            position: absolute;
+            right: 0;
+            top: 5%;
+            width: 320px;
+            height: 320px;
+            background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' viewBox='0 0 300 300' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M150 37 L225 80 L225 168 L150 212 L75 168 L75 80 Z' stroke='rgba(139, 92, 246, 0.05)' stroke-width='1.5'/%3E%3Cpath d='M225 80 L300 37 L300 -50 L225 -93 L150 -50 L150 37' stroke='rgba(139, 92, 246, 0.05)' stroke-width='1.5'/%3E%3Cpath d='M75 80 L0 37 L0 -50 L75 -93 L150 -50' stroke='rgba(139, 92, 246, 0.05)' stroke-width='1.5'/%3E%3Cpath d='M225 168 L300 212 L300 300 L225 343 L150 300 L150 168' stroke='rgba(139, 92, 246, 0.05)' stroke-width='1.5'/%3E%3Cpath d='M75 168 L0 212 L0 300 L75 343 L150 300' stroke='rgba(139, 92, 246, 0.05)' stroke-width='1.5'/%3E%3Ccircle cx='150' cy='37' r='3.5' fill='rgba%28139, 92, 246, 0.15%29'/%3E%3Ccircle cx='225' cy='80' r='2.5' fill='rgba%28139, 92, 246, 0.1%29'/%3E%3Ccircle cx='225' cy='168' r='3.5' fill='rgba%28139, 92, 246, 0.15%29'/%3E%3Ccircle cx='150' cy='212' r='2.5' fill='rgba%28139, 92, 246, 0.1%29'/%3E%3Ccircle cx='75' cy='168' r='3.5' fill='rgba%28139, 92, 246, 0.15%29'/%3E%3Ccircle cx='75' cy='80' r='2.5' fill='rgba%28139, 92, 246, 0.1%29'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.8;
+        }
+
+        .decor-chat-bubble {
+            position: absolute;
+            right: 20%;
+            bottom: 35px;
+            width: 54px;
+            height: 54px;
+            background: #0e0e12;
+            border: 2px solid rgba(139, 92, 246, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 1;
+        }
+
+        .decor-chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 10px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 8px 0 0;
+            border-color: #0e0e12 transparent transparent transparent;
+        }
+
+        .decor-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.4);
+        }
+
+        /* Contenido del Header */
+        .clientes-subtitle {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clientes-title {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 1.2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .clientes-desc {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto 4rem auto;
+            line-height: 1.6;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Slider Wrapper */
+        .clientes-slider-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            z-index: 10;
+        }
+
+        .clientes-slide {
+            display: none;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            animation: fadeSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .clientes-slide.active {
+            display: grid;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card de Cliente */
+        .client-card {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            height: 180px;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 0;
+            box-sizing: border-box;
+            box-shadow: none;
+            transition: none;
+            text-decoration: none;
+        }
+
+        .client-logo-wrapper {
+            background: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            padding: 1.5rem;
+        }
+
+        .client-card:hover .client-logo-wrapper {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .client-logo-wrapper svg {
+            max-width: 85%;
+            max-height: 85%;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        /* Controles: Dots */
+        .clientes-controls {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .clientes-dots {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .cliente-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.25);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .cliente-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+        }
+
+        /* Media Queries de Responsividad */
+        @media (max-width: 1024px) {
+            .clientes-title {
+                font-size: 2.2rem;
+            }
+            .clientes-slider-wrapper {
+                margin-bottom: 2rem;
+            }
+            .clientes-slide {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.2rem;
+            }
+            .client-card {
+                height: 150px;
+            }
+            .client-logo-wrapper {
+                border-radius: 16px;
+                padding: 1rem;
+            }
+            .clientes-slide .client-card:nth-child(n+4) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .clientes-title {
+                font-size: 1.8rem;
+            }
+            .clientes-desc {
+                font-size: 0.95rem;
+                margin-bottom: 3rem;
+            }
+            .clientes-slider-wrapper {
+                margin-bottom: 1.5rem;
+            }
+            .client-card {
+                height: 120px;
+            }
+            .client-logo-wrapper {
+                border-radius: 12px;
+                padding: 0.8rem;
+            }
+            .clientes-slide {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            .clientes-slide .client-card:nth-child(n+3) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -519,6 +790,317 @@
         </div>
     </section>
 
+    </section>
+
+    <!-- ====== SECCIÓN: NUESTROS CLIENTES ====== -->
+    <section class="clientes-section">
+        <div class="clientes-top">
+            <!-- Decoraciones de fondo -->
+            <div class="clientes-bg-decorations">
+                <div class="decor-hexagon-network"></div>
+                <div class="decor-chat-bubble">
+                    <span class="decor-dot"></span>
+                    <span class="decor-dot"></span>
+                    <span class="decor-dot"></span>
+                </div>
+            </div>
+
+            <div class="clientes-subtitle">CLIENTES EDATIA</div>
+            <h2 class="clientes-title font-display">Clientes que han confiado en EDATIA</h2>
+            <p class="clientes-desc">Más de 5 años de experiencia y más de 700 clientes satisfechos nos dan la confianza y la seguridad para ser su mejor aliado tecnológico.</p>
+
+            <div class="clientes-slider-wrapper">
+                <!-- Slide 1 -->
+                <div class="clientes-slide active">
+                    <a class="client-card" href="https://nexttechnology.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <text x="15" y="44" font-family="'Inter', sans-serif" font-weight="900" font-size="34" fill="#111111" letter-spacing="-1">NEXT</text>
+                                <path d="M120 22 L132 34 L120 46 M132 22 L144 34 L132 46" fill="none" stroke="#e11d48" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+                                <text x="17" y="60" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#777777" letter-spacing="4.5">TECHNOLOGY</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://niatec.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(10, 16)">
+                                    <polygon points="15,0 30,8 30,26 15,34 0,26 0,8" fill="none" stroke="#111111" stroke-width="2.5" stroke-linejoin="round"/>
+                                    <path d="M0,8 L15,16 L15,34 M30,8 L15,16 M15,0 L15,16" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round"/>
+                                </g>
+                                <text x="52" y="39" font-family="'Inter', sans-serif" font-weight="900" font-size="25" fill="#111111" letter-spacing="-0.5">NIATEC</text>
+                                <text x="52" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="5.5" fill="#555555" letter-spacing="0.2">TECNOLOGIA QUE IMPACTA TUS SENTIDOS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://brillocolor.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 100" width="100" height="50" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="75" y="4" width="50" height="50" rx="8" fill="#111111" />
+                                <text x="100" y="41" font-family="'Georgia', serif" font-weight="bold" font-size="30" fill="#ffffff" text-anchor="middle">BC</text>
+                                <text x="100" y="78" font-family="'Inter', sans-serif" font-weight="700" font-size="16" fill="#111111" text-anchor="middle" letter-spacing="-0.5">BrilloColor</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://bodegaelrincon.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 90" width="130" height="58" xmlns="http://www.w3.org/2000/svg">
+                                <path id="curve-rincon-dev" d="M 25,32 A 80,80 0 0,1 175,32" fill="none" />
+                                <text font-family="'Inter', sans-serif" font-weight="700" font-size="8.5" fill="#e11d48" letter-spacing="1.8" text-anchor="middle">
+                                    <textPath href="#curve-rincon-dev" startOffset="50%">BODEGA MAYORISTA</textPath>
+                                </text>
+                                <text x="100" y="65" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" text-anchor="middle" letter-spacing="-0.5">
+                                    EL <tspan fill="#e11d48">R</tspan>INCON
+                                </text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://hangar.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 100" width="84" height="84" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="50" r="42" fill="#111111" />
+                                <text x="100" y="56" font-family="'Inter', sans-serif" font-weight="300" font-size="14" fill="#ffffff" letter-spacing="4.5" text-anchor="middle">HANGAR</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://cafelamontana.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20,50 L35,25 L45,38 L60,18 L80,50 Z" fill="none" stroke="#0f766e" stroke-width="3" stroke-linejoin="round"/>
+                                <circle cx="50" cy="45" r="5" fill="#b45309"/>
+                                <text x="90" y="38" font-family="'Georgia', serif" font-weight="bold" font-size="18" fill="#111111">Café</text>
+                                <text x="90" y="54" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#0f766e" letter-spacing="1">LA MONTAÑA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://clinicasaludtotal.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,25 L25,25 L25,15 L35,15 L35,25 L45,25 L45,35 L35,35 L35,45 L25,45 L25,35 L15,35 Z" fill="#10b981" />
+                                <path d="M48,30 L58,30 L63,20 L68,40 L73,26 L78,34 L88,30" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <text x="96" y="34" font-family="'Inter', sans-serif" font-weight="800" font-size="17" fill="#111111">Salud</text>
+                                <text x="96" y="48" font-family="'Inter', sans-serif" font-weight="500" font-size="13" fill="#6b7280" letter-spacing="1">TOTAL</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://distribuidoraandina.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(15, 20)">
+                                    <path d="M0,25 L15,0 L30,25 Z" fill="#1d4ed8" />
+                                    <path d="M10,25 L25,0 L40,25 Z" fill="#3b82f6" opacity="0.7" />
+                                </g>
+                                <text x="68" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="16" fill="#111111">DISTRIBUIDORA</text>
+                                <text x="68" y="52" font-family="'Inter', sans-serif" font-weight="700" font-size="13" fill="#1d4ed8" letter-spacing="2">ANDINA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://hotelnativo.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="20" fill="none" stroke="#d97706" stroke-width="2"/>
+                                <path d="M35,25 C35,25 43,33 35,45 C27,33 35,25 35,25 Z" fill="#d97706"/>
+                                <text x="70" y="36" font-family="'Georgia', serif" font-style="italic" font-weight="bold" font-size="20" fill="#111111">Nativo</text>
+                                <text x="70" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="9" fill="#78350f" letter-spacing="4">HOTEL & SPA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://logisticaveloz.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10,20 L30,20 L40,40 L20,40 Z" fill="#ea580c"/>
+                                <path d="M28,20 L48,20 L58,40 L38,40 Z" fill="#f97316"/>
+                                <text x="66" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">VELOZ</text>
+                                <text x="66" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#ea580c" letter-spacing="3">LOGISTICA</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://agrodalleverde.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="18" fill="none" stroke="#15803d" stroke-width="2"/>
+                                <path d="M27,45 C27,35 35,32 35,32 C35,32 43,35 43,45" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M35,22 L35,32" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+                                <text x="68" y="36" font-family="'Inter', sans-serif" font-weight="800" font-size="16" fill="#111111" letter-spacing="-0.5">VALLE VERDE</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="10" fill="#15803d" letter-spacing="4">AGROPECUARIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://minimarketrapido.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10,25 L40,25 L35,45 L15,45 Z" fill="none" stroke="#dc2626" stroke-width="3" stroke-linejoin="round"/>
+                                <circle cx="20" cy="55" r="4" fill="#111111"/>
+                                <circle cx="30" cy="55" r="4" fill="#111111"/>
+                                <path d="M5,18 L15,25" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+                                <text x="52" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" letter-spacing="-1">RÁPIDO</text>
+                                <text x="52" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#dc2626" letter-spacing="2">MINIMARKET</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://gymprofitness.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="120" height="48" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="15" y="32" width="6" height="16" rx="2" fill="#111111"/>
+                                <rect x="23" y="24" width="8" height="32" rx="2" fill="#111111"/>
+                                <rect x="33" y="37" width="24" height="6" fill="#111111"/>
+                                <rect x="59" y="24" width="8" height="32" rx="2" fill="#111111"/>
+                                <rect x="69" y="32" width="6" height="16" rx="2" fill="#111111"/>
+                                <text x="90" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="22" fill="#111111" letter-spacing="-0.5">GYMPRO</text>
+                                <text x="90" y="52" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#6b7280" letter-spacing="3">FITNESS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://textilco.com.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,40 C15,20 30,15 45,30 C60,45 45,55 35,45 C25,35 40,20 50,40" fill="none" stroke="#0891b2" stroke-width="3" stroke-linecap="round"/>
+                                <text x="70" y="38" font-family="'Inter', sans-serif" font-weight="800" font-size="19" fill="#111111" letter-spacing="-0.5">TEXTILCO</text>
+                                <text x="70" y="50" font-family="'Inter', sans-serif" font-weight="600" font-size="8.5" fill="#0891b2" letter-spacing="3.5">CONFECCIONES</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://ferreteriaelconstructor.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="140" height="56" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L35,25 L45,35 L25,55 Z" fill="#d97706"/>
+                                <path d="M35,25 L45,15 L55,25 L45,35 Z" fill="#1e293b"/>
+                                <text x="64" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="16" fill="#111111">CONSTRUCTOR</text>
+                                <text x="64" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#d97706" letter-spacing="2">FERRETERIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 4 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://grupoavala.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L35,15 L55,45 Z" fill="#0f766e" />
+                                <path d="M30,45 L50,15 L70,45 Z" fill="#0d9488" opacity="0.8" />
+                                <text x="85" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">AVALA</text>
+                                <text x="85" y="51" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#0f766e" letter-spacing="3">GRUPO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://lexandco.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="120" height="48" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L45,45 M30,45 L30,20 M20,28 L40,28 M20,28 L20,38 M40,28 L40,38" fill="none" stroke="#b45309" stroke-width="2"/>
+                                <text x="60" y="38" font-family="'Georgia', serif" font-weight="bold" font-size="22" fill="#111111">LEX &amp; CO</text>
+                                <text x="60" y="52" font-family="'Inter', sans-serif" font-weight="600" font-size="9" fill="#78350f" letter-spacing="4">ABOGADOS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://primefoods.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="18" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+                                <path d="M27,33 L43,33 C43,33 43,45 35,45 C27,45 27,33 27,33 Z" fill="#e11d48"/>
+                                <text x="68" y="36" font-family="'Georgia', serif" font-weight="bold" font-size="20" fill="#111111">Prime</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#e11d48" letter-spacing="2">FOODS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://novaseguros.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M30,15 C45,15 45,20 45,35 C45,50 30,55 30,55 C30,55 15,50 15,35 C15,20 15,15 30,15 Z" fill="#6d28d9"/>
+                                <polygon points="30,23 33,30 40,30 35,34 37,41 30,37 23,41 25,34 20,30 27,30" fill="#ffffff"/>
+                                <text x="62" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">NOVA</text>
+                                <text x="62" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#6d28d9" letter-spacing="3.5">SEGUROS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://urbanbuilders.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,45 L15,15 L35,15 M35,15 L35,45 M25,45 L25,25 M25,25 L45,25 M45,25 L45,45" fill="none" stroke="#475569" stroke-width="2.5"/>
+                                <text x="60" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">URBAN</text>
+                                <text x="60" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#475569" letter-spacing="3">BUILDERS</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Slide 5 -->
+                <div class="clientes-slide">
+                    <a class="client-card" href="https://institutofuturo.edu.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,30 L35,20 L55,30 L35,40 Z" fill="#2563eb" />
+                                <path d="M22,33.5 L22,45 C22,45 30,50 35,50 C40,50 48,45 48,45 L48,33.5" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+                                <text x="68" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">FUTURO</text>
+                                <text x="68" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#2563eb" letter-spacing="3.5">INSTITUTO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://kromastudio.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="16" fill="none" stroke="#db2777" stroke-width="3"/>
+                                <circle cx="45" cy="40" r="12" fill="none" stroke="#ea580c" stroke-width="3" opacity="0.8"/>
+                                <text x="75" y="38" font-family="'Inter', sans-serif" font-weight="900" font-size="19" fill="#111111">KROMA</text>
+                                <text x="75" y="51" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#db2777" letter-spacing="3">STUDIO</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://apexlogistics.com" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15,25 L45,25 L35,40 L15,40 Z" fill="#0369a1"/>
+                                <polygon points="40,20 52,32.5 40,45" fill="#f97316"/>
+                                <text x="66" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="20" fill="#111111" letter-spacing="-0.5">APEX</text>
+                                <text x="66" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#0369a1" letter-spacing="3">LOGISTICS</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://vanguardmedia.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="15,20 45,35 15,50" fill="#4f46e5"/>
+                                <polygon points="30,20 60,35 30,50" fill="#818cf8" opacity="0.6"/>
+                                <text x="72" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="17" fill="#111111">VANGUARD</text>
+                                <text x="72" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#4f46e5" letter-spacing="3">MEDIA</text>
+                            </svg>
+                        </div>
+                    </a>
+                    <a class="client-card" href="https://solarenergy.co" target="_blank" rel="noopener">
+                        <div class="client-logo-wrapper">
+                            <svg viewBox="0 0 200 80" width="130" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="35" cy="40" r="15" fill="#eab308"/>
+                                <path d="M35,20 L35,12 M35,60 L35,52 M15,40 L7,40 M63,40 L55,40" stroke="#ca8a04" stroke-width="2" stroke-linecap="round"/>
+                                <text x="65" y="36" font-family="'Inter', sans-serif" font-weight="900" font-size="18" fill="#111111">SOLAR</text>
+                                <text x="65" y="50" font-family="'Inter', sans-serif" font-weight="700" font-size="10" fill="#15803d" letter-spacing="3.5">ENERGY</text>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="clientes-bottom">
+            <div class="clientes-controls">
+                <div class="clientes-dots" id="clientes-dots">
+                    <button class="cliente-dot active" onclick="goToClienteSlide(0)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(1)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(2)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(3)"></button>
+                    <button class="cliente-dot" onclick="goToClienteSlide(4)"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contacto & CTA -->
     <section id="contacto" class="py-28 px-6 bg-gradient-to-b from-[#050505] to-[#010103] relative overflow-hidden text-center">
         <div class="absolute inset-0 bg-dev-purple/5 opacity-40 z-0"></div>
@@ -871,6 +1453,37 @@
                 mainNav.classList.remove('nav-scrolled');
             }
         });
+
+        // --- SLIDER DE CLIENTES ---
+        let clienteSlideActual = 0;
+        const totalClienteSlides = 5;
+        const INTERVALO_MS = 10000;
+        let clienteTimer = null;
+
+        function goToClienteSlide(index) {
+            const slides = document.querySelectorAll('.clientes-slide');
+            const dots   = document.querySelectorAll('.cliente-dot');
+            if (!slides.length || !dots.length) return;
+
+            slides[clienteSlideActual].classList.remove('active');
+            dots[clienteSlideActual].classList.remove('active');
+
+            clienteSlideActual = (index + totalClienteSlides) % totalClienteSlides;
+
+            slides[clienteSlideActual].classList.add('active');
+            dots[clienteSlideActual].classList.add('active');
+
+            resetClienteTimer();
+        }
+
+        function resetClienteTimer() {
+            clearTimeout(clienteTimer);
+            clienteTimer = setTimeout(() => {
+                goToClienteSlide(clienteSlideActual + 1);
+            }, INTERVALO_MS);
+        }
+
+        resetClienteTimer();
 
         // Refuerzo de Autoplay para videos
         window.addEventListener('load', () => {
