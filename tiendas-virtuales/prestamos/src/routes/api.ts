@@ -4,7 +4,7 @@ import { register, login, getMe } from '../controllers/authController';
 import { getClients, getClientById, createClient, updateClient, deleteClient } from '../controllers/clientController';
 import { simulateLoan, createProduct, getProducts, createLoan, renewLoan, getLoanById, getLoans } from '../controllers/loanController';
 import { createPayment, getPaymentById, getPayments } from '../controllers/paymentController';
-import { getDailyRoute } from '../controllers/routeController';
+import { getDailyRoute, getRouteCheckout } from '../controllers/routeController';
 import { getPortfolioStats } from '../controllers/reportsController';
 
 const router = Router();
@@ -37,6 +37,7 @@ router.get('/payments/:id', authenticateToken as any, getPaymentById);
 
 // --- ROUTE ---
 router.get('/route', authenticateToken as any, getDailyRoute);
+router.get('/route/checkout', authenticateToken as any, getRouteCheckout);
 
 // --- REPORTS / DASHBOARD ---
 router.get('/reports/portfolio', authenticateToken as any, getPortfolioStats);

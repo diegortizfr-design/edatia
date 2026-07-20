@@ -82,3 +82,116 @@ export const getDailyRoute = async (req: AuthenticatedRequest, res: Response) =>
     return res.status(500).json({ error: 'Error al generar la ruta de cobranza del día.' });
   }
 };
+
+// Arqueo / Cierre de caja de la ruta diaria
+export const getRouteCheckout = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const { date } = req.query; // Expects YYYY-MM-DD
+
+  try {
+    const targetDate = date ? new Date(String(date)) : new Date();
+    
+    // Start and end of the target day
+    const startOfDay = new Date(targetDate.getTime());
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate.getTime());
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 1. Fetch scheduled amortizations that were pending at the start of today
+    const scheduledAmortizations = await prisma.amortizationSchedule.findMany({
+      where: {
+        loan: {
+          tenantId,
+          status: { in: ['ACTIVE', 'OVERDUE', 'PAID', 'RENEWED'] }
+        },
+        dueDate: { lte: endOfDay },
+        OR: [
+          { status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } },
+          { 
+            status: 'PAID',
+            paidAt: { gte: startOfDay, lte: endOfDay }
+          }
+        ]
+      },
+      include: {
+        loan: {
+          include: {
+            customer: true
+          }
+        }
+      }
+    });
+
+    // 2. Fetch payments registered on the target date
+    const paymentsToday = await prisma.payment.findMany({
+      where: {
+        tenantId,
+        paymentDate: { gte: startOfDay, lte: endOfDay }
+      },
+      include: {
+        customer: true,
+        loan: true
+      }
+    });
+
+    // Map scheduled loans
+    const scheduledLoansMap = new Map<string, any>();
+    scheduledAmortizations.forEach(am => {
+      const loan = am.loan;
+      const amountDue = am.status === 'PAID' ? am.amount : (am.amount - am.amountPaid);
+
+      if (!scheduledLoansMap.has(loan.id)) {
+        scheduledLoansMap.set(loan.id, {
+          loan,
+          customer: loan.customer,
+          amountDue: 0
+        });
+      }
+      scheduledLoansMap.get(loan.id).amountDue += amountDue;
+    });
+
+    const scheduledClientsCount = scheduledLoansMap.size;
+    const scheduledAmount = Array.from(scheduledLoansMap.values()).reduce((sum, item) => sum + item.amountDue, 0);
+
+    // Map collected totals
+    const collectedAmount = paymentsToday.reduce((sum, p) => sum + p.amount, 0);
+    const collectedCustomersSet = new Set<string>();
+    paymentsToday.forEach(p => collectedCustomersSet.add(p.customerId));
+    const collectedClientsCount = collectedCustomersSet.size;
+
+    // Calculate pending totals from scheduled target
+    let pendingAmount = 0;
+    const pendingLoansSet = new Set<string>();
+
+    scheduledLoansMap.forEach((item, loanId) => {
+      const paymentsForLoan = paymentsToday.filter(p => p.loanId === loanId);
+      const totalPaidToday = paymentsForLoan.reduce((sum, p) => sum + p.amount, 0);
+      
+      const remainingDue = Math.max(0, item.amountDue - totalPaidToday);
+      if (remainingDue > 0) {
+        pendingAmount += remainingDue;
+        pendingLoansSet.add(item.customer.id);
+      }
+    });
+
+    const pendingClientsCount = pendingLoansSet.size;
+    const complianceRate = scheduledAmount > 0 ? Math.round((collectedAmount / scheduledAmount) * 100) : 100;
+    const isCompleted = pendingClientsCount === 0 && pendingAmount === 0;
+
+    return res.json({
+      date: startOfDay.toISOString().split('T')[0],
+      scheduledClientsCount,
+      scheduledAmount,
+      collectedClientsCount,
+      collectedAmount,
+      pendingClientsCount,
+      pendingAmount,
+      complianceRate,
+      isCompleted
+    });
+  } catch (error) {
+    console.error('Error al generar cierre de ruta:', error);
+    return res.status(500).json({ error: 'Error al generar el cierre de la ruta.' });
+  }
+};
