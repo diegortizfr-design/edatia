@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { register, login, getMe } from '../controllers/authController';
 import { getClients, getClientById, createClient, updateClient, deleteClient } from '../controllers/clientController';
-import { simulateLoan, createProduct, getProducts, createLoan, renewLoan, getLoanById } from '../controllers/loanController';
-import { createPayment, getPaymentById } from '../controllers/paymentController';
+import { simulateLoan, createProduct, getProducts, createLoan, renewLoan, getLoanById, getLoans } from '../controllers/loanController';
+import { createPayment, getPaymentById, getPayments } from '../controllers/paymentController';
 import { getDailyRoute } from '../controllers/routeController';
 import { getPortfolioStats } from '../controllers/reportsController';
 
@@ -27,9 +27,11 @@ router.post('/loans/products', authenticateToken as any, createProduct);
 router.get('/loans/products', authenticateToken as any, getProducts);
 router.post('/loans', authenticateToken as any, createLoan);
 router.post('/loans/renew', authenticateToken as any, renewLoan);
+router.get('/loans', authenticateToken as any, getLoans);
 router.get('/loans/:id', authenticateToken as any, getLoanById);
 
 // --- PAYMENTS ---
+router.get('/payments', authenticateToken as any, getPayments);
 router.post('/payments', authenticateToken as any, createPayment);
 router.get('/payments/:id', authenticateToken as any, getPaymentById);
 

@@ -7,8 +7,9 @@ import { Clients } from './pages/Clients';
 import { ClientDetail } from './pages/ClientDetail';
 import { Portfolio } from './pages/Portfolio';
 import { Route } from './pages/Route';
+import { Transactions } from './pages/Transactions';
 
-import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet, Receipt } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, tenant, logout } = useAuth();
@@ -22,13 +23,14 @@ const AppContent: React.FC = () => {
     { id: 'clients', name: 'Clientes', icon: Users },
     { id: 'portfolio', name: 'Cartera', icon: FolderHeart },
     { id: 'route', name: 'Ruta', icon: RouteIcon },
+    { id: 'transactions', name: 'Recibos', icon: Receipt },
   ];
 
   // Synchronize hash changes
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (['dashboard', 'clients', 'portfolio', 'route'].includes(hash)) {
+      if (['dashboard', 'clients', 'portfolio', 'route', 'transactions'].includes(hash)) {
         setCurrentPage(hash);
       } else if (hash.startsWith('clients/') && hash.split('/')[1]) {
         setSelectedClientId(hash.split('/')[1]);
@@ -47,7 +49,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (currentPage === 'client-detail' && selectedClientId) {
       window.location.hash = `clients/${selectedClientId}`;
-    } else if (['dashboard', 'clients', 'portfolio', 'route'].includes(currentPage)) {
+    } else if (['dashboard', 'clients', 'portfolio', 'route', 'transactions'].includes(currentPage)) {
       window.location.hash = currentPage;
     }
   }, [currentPage, selectedClientId]);
@@ -116,6 +118,7 @@ const AppContent: React.FC = () => {
             setSelectedClientId={setSelectedClientId} 
           />
         )}
+        {currentPage === 'transactions' && <Transactions />}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}

@@ -146,3 +146,26 @@ export const getPaymentById = async (req: AuthenticatedRequest, res: Response) =
     return res.status(500).json({ error: 'Error al cargar el recibo de pago.' });
   }
 };
+
+// List all payments
+export const getPayments = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+
+  try {
+    const payments = await prisma.payment.findMany({
+      where: { tenantId },
+      include: {
+        customer: true,
+        loan: true
+      },
+      orderBy: {
+        paymentDate: 'desc'
+      }
+    });
+
+    return res.json(payments);
+  } catch (error) {
+    console.error('Error al obtener abonos:', error);
+    return res.status(500).json({ error: 'Error al cargar la lista de recibos.' });
+  }
+};

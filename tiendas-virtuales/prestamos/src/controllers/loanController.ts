@@ -371,3 +371,25 @@ export const getLoanById = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(500).json({ error: 'Error al consultar los detalles del préstamo.' });
   }
 };
+
+// List all loans
+export const getLoans = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+
+  try {
+    const loans = await prisma.loan.findMany({
+      where: { tenantId },
+      include: {
+        customer: true
+      },
+      orderBy: {
+        startDate: 'desc'
+      }
+    });
+
+    return res.json(loans);
+  } catch (error) {
+    console.error('Error al obtener préstamos:', error);
+    return res.status(500).json({ error: 'Error al cargar la lista de préstamos.' });
+  }
+};

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet, Receipt } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
@@ -15,6 +15,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage })
     { id: 'clients', name: 'Clientes', icon: Users },
     { id: 'portfolio', name: 'Cartera', icon: FolderHeart },
     { id: 'route', name: 'Ruta del Día', icon: Route },
+    { id: 'transactions', name: 'Recibos / Facturas', icon: Receipt },
   ];
 
   return (
