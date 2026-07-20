@@ -111,44 +111,46 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         return;
       }
 
-      // Clone the element to render it in a clean off-screen container
-      const clonedElement = element.cloneNode(true) as HTMLElement;
-      
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '0';
-      container.style.top = '0';
-      container.style.width = '750px'; // Fixed letter width in pixels
-      container.style.zIndex = '-9999';
-      container.style.background = 'white';
-      container.style.color = 'black';
-      container.appendChild(clonedElement);
-      document.body.appendChild(container);
+      // Wrap inner HTML in a clean, standalone document with Tailwind v2 (which uses standard hex/RGB colors)
+      const contentHtml = element.innerHTML;
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Factura y Contrato</title>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            <style>
+              body {
+                background-color: white !important;
+                color: black !important;
+                font-family: system-ui, -apple-system, sans-serif;
+                padding: 15px;
+              }
+            </style>
+          </head>
+          <body>
+            <div style="width: 720px; margin: 0 auto;">
+              ${contentHtml}
+            </div>
+          </body>
+        </html>
+      `;
 
       const opt = {
-        margin:       [0.4, 0.4, 0.4, 0.4],
+        margin:       [0.3, 0.3, 0.3, 0.3],
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { 
-          scale: 2.2, 
-          useCORS: true, 
-          scrollX: 0, 
-          scrollY: 0,
-          windowWidth: 800
+          scale: 2, 
+          useCORS: true,
+          logging: false
         },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(clonedElement).save()
-        .then(() => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
-        })
+      html2pdf().from(fullHtml).set(opt).save()
         .catch((err: any) => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
           alert('Error al compilar el PDF: ' + (err.message || err));
         });
     } catch (e: any) {
@@ -171,19 +173,30 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         return;
       }
 
-      // Clone the element
-      const clonedElement = element.cloneNode(true) as HTMLElement;
-
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '0';
-      container.style.top = '0';
-      container.style.width = '300px'; // Standard thermal width in pixels
-      container.style.zIndex = '-9999';
-      container.style.background = 'white';
-      container.style.color = 'black';
-      container.appendChild(clonedElement);
-      document.body.appendChild(container);
+      const contentHtml = element.innerHTML;
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Recibo de Caja</title>
+            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            <style>
+              body {
+                background-color: white !important;
+                color: black !important;
+                font-family: monospace;
+                padding: 10px;
+              }
+            </style>
+          </head>
+          <body>
+            <div style="width: 280px; margin: 0 auto;">
+              ${contentHtml}
+            </div>
+          </body>
+        </html>
+      `;
 
       const opt = {
         margin:       [0.1, 0.1, 0.1, 0.1],
@@ -192,23 +205,13 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         html2canvas:  { 
           scale: 2.5, 
           useCORS: true,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 320
+          logging: false
         },
         jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(clonedElement).save()
-        .then(() => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
-        })
+      html2pdf().from(fullHtml).set(opt).save()
         .catch((err: any) => {
-          if (document.body.contains(container)) {
-            document.body.removeChild(container);
-          }
           alert('Error al compilar el ticket: ' + (err.message || err));
         });
     } catch (e: any) {
