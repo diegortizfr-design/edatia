@@ -8,12 +8,21 @@ import { ClientDetail } from './pages/ClientDetail';
 import { Portfolio } from './pages/Portfolio';
 import { Route } from './pages/Route';
 
+import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet } from 'lucide-react';
+
 const AppContent: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, tenant, logout } = useAuth();
   
   // Hash-based simple router
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  const navItems = [
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+    { id: 'clients', name: 'Clientes', icon: Users },
+    { id: 'portfolio', name: 'Cartera', icon: FolderHeart },
+    { id: 'route', name: 'Ruta', icon: RouteIcon },
+  ];
 
   // Synchronize hash changes
   useEffect(() => {
@@ -56,12 +65,32 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
-      {/* Sidebar Navigation */}
+    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row">
+      {/* Mobile Top Header */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 fixed top-0 left-0 right-0 z-40 no-print">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-md">
+            <Wallet className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-sm text-white leading-none">Préstamos</h1>
+            {tenant && <span className="text-[10px] text-slate-400 font-semibold block mt-0.5 max-w-[150px] truncate">{tenant.name}</span>}
+          </div>
+        </div>
+        <button 
+          onClick={logout} 
+          className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+          title="Cerrar Sesión"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* Sidebar Navigation (Desktop only) */}
       <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 p-8 min-h-screen relative overflow-y-auto print:ml-0 print:p-0 print:bg-white print:text-black">
+      <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 min-h-screen relative overflow-y-auto print:ml-0 print:p-0 print:bg-white print:text-black pt-16 md:pt-8 pb-20 md:pb-8">
         {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
         {currentPage === 'clients' && (
           <Clients 
@@ -88,6 +117,34 @@ const AppContent: React.FC = () => {
           />
         )}
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden flex items-center justify-around bg-slate-900/95 backdrop-blur border-t border-slate-800 fixed bottom-0 left-0 right-0 h-16 z-40 px-2 no-print pb-safe">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage === item.id || (item.id === 'clients' && currentPage === 'client-detail');
+          
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setSelectedClientId(null);
+                setCurrentPage(item.id);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-all text-xs font-semibold ${
+                isActive 
+                  ? 'text-brand-400' 
+                  : 'text-slate-400'
+              }`}
+            >
+              <div className={`p-1 rounded-lg transition-all ${isActive ? 'bg-brand-600/15 text-brand-400' : ''}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] mt-0.5">{item.name}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 };

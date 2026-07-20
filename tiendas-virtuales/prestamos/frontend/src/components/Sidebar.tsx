@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage })
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 no-print">
+    <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col h-screen fixed left-0 top-0 no-print">
       {/* Header / Logo */}
       <div className="p-6 border-b border-slate-800 flex items-center gap-3">
         <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/10">

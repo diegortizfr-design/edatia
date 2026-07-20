@@ -149,80 +149,133 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
         </div>
       ) : (
         /* Clients Table */
-        <div className="glass-card rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                  <th className="p-4">Nombre / Cédula</th>
-                  <th className="p-4">Contacto</th>
-                  <th className="p-4">Dirección</th>
-                  <th className="p-4 text-center">Créditos Activos</th>
-                  <th className="p-4 text-right">Saldo Pendiente</th>
-                  <th className="p-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850">
-                {clients.map((client) => (
-                  <tr
-                    key={client.id}
-                    onClick={() => handleSelectClient(client.id)}
-                    className="hover:bg-slate-900/30 cursor-pointer transition group"
-                  >
-                    <td className="p-4">
-                      <div className="font-semibold text-white group-hover:text-brand-400 transition-colors">
-                        {client.name}
-                      </div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">
-                        CC: {client.documentId}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                        <Phone className="w-3.5 h-3.5 text-slate-500" />
-                        {client.phone}
-                      </div>
-                      {client.email && (
-                        <div className="text-xs text-slate-500 truncate max-w-[200px] mt-0.5">
-                          {client.email}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 text-sm text-slate-300 max-w-[220px] truncate">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        {client.address}
-                      </div>
-                    </td>
-                    <td className="p-4 text-center">
-                      <span
-                        className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold leading-none ${
-                          client.activeLoansCount > 0
-                            ? 'bg-brand-500/10 text-brand-400'
-                            : 'bg-slate-850 text-slate-500'
-                        }`}
-                      >
-                        {client.activeLoansCount}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right font-mono font-semibold text-slate-200">
-                      {client.totalDebt > 0 ? (
-                        <span className="text-brand-400">
-                          ${client.totalDebt.toLocaleString('es-CO')}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500">$0</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
-                    </td>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block glass-card rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="p-4">Nombre / Cédula</th>
+                    <th className="p-4">Contacto</th>
+                    <th className="p-4">Dirección</th>
+                    <th className="p-4 text-center">Créditos Activos</th>
+                    <th className="p-4 text-right">Saldo Pendiente</th>
+                    <th className="p-4"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-850">
+                  {clients.map((client) => (
+                    <tr
+                      key={client.id}
+                      onClick={() => handleSelectClient(client.id)}
+                      className="hover:bg-slate-900/30 cursor-pointer transition group"
+                    >
+                      <td className="p-4">
+                        <div className="font-semibold text-white group-hover:text-brand-400 transition-colors">
+                          {client.name}
+                        </div>
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">
+                          CC: {client.documentId}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
+                          <Phone className="w-3.5 h-3.5 text-slate-500" />
+                          {client.phone}
+                        </div>
+                        {client.email && (
+                          <div className="text-xs text-slate-500 truncate max-w-[200px] mt-0.5">
+                            {client.email}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 text-sm text-slate-300 max-w-[220px] truncate">
+                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          {client.address}
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span
+                          className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold leading-none ${
+                            client.activeLoansCount > 0
+                              ? 'bg-brand-500/10 text-brand-400'
+                              : 'bg-slate-850 text-slate-500'
+                          }`}
+                        >
+                          {client.activeLoansCount}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right font-mono font-semibold text-slate-200">
+                        {client.totalDebt > 0 ? (
+                          <span className="text-brand-400">
+                            ${client.totalDebt.toLocaleString('es-CO')}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">$0</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {clients.map((client) => (
+              <div
+                key={client.id}
+                onClick={() => handleSelectClient(client.id)}
+                className="glass-card p-4 rounded-xl border border-slate-800 active:border-brand-500 transition space-y-3"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-bold text-white text-base">{client.name}</h4>
+                    <span className="text-xs text-slate-500 font-mono">CC: {client.documentId}</span>
+                  </div>
+                  {client.activeLoansCount > 0 ? (
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                      {client.activeLoansCount} Activos
+                    </span>
+                  ) : (
+                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-850 text-slate-500">
+                      Sin Créditos
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-end pt-3 border-t border-slate-850 text-xs text-slate-400">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-305">
+                      <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      {client.phone}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400 max-w-[180px] truncate">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      {client.address}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] text-slate-550 block">Saldo Pendiente:</span>
+                    {client.totalDebt > 0 ? (
+                      <span className="font-mono font-bold text-sm text-brand-400">
+                        ${client.totalDebt.toLocaleString('es-CO')}
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">$0</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Creation Modal */}

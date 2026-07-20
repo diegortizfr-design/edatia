@@ -3,7 +3,7 @@ import { apiCall } from '../utils/api';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
   Coins, RefreshCw, Plus, 
-  AlertTriangle, Printer, Sparkles
+  AlertTriangle, Printer, Sparkles, Download
 } from 'lucide-react';
 
 interface Amortization {
@@ -95,6 +95,50 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [renewInstallments, setRenewInstallments] = useState('24');
   const [renewError, setRenewError] = useState('');
   const [renewLoading, setRenewLoading] = useState(false);
+
+  const handleDownloadPDF = (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // @ts-ignore
+    const html2pdf = window.html2pdf;
+    if (!html2pdf) {
+      alert('La librería de PDF está cargando, por favor reintente en un momento...');
+      return;
+    }
+
+    const opt = {
+      margin:       [0.4, 0.4, 0.4, 0.4],
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2.5, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const handleDownloadReceiptPDF = (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // @ts-ignore
+    const html2pdf = window.html2pdf;
+    if (!html2pdf) {
+      alert('La librería de PDF está cargando, por favor reintente en un momento...');
+      return;
+    }
+
+    const opt = {
+      margin:       [0.2, 0.2, 0.2, 0.2],
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 3, useCORS: true },
+      jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
 
   const fetchClientDetails = async () => {
     setLoading(true);
@@ -312,90 +356,100 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     const { loan, isRenewal, excedente, debtSettled } = printInvoiceData;
     return (
       <div className="bg-white text-black min-h-screen p-8 max-w-3xl mx-auto shadow-xl rounded-lg border border-gray-200">
-        <div className="flex justify-between items-start border-b border-gray-300 pb-6 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-brand-700">FACTURA Y CONTRATO DE CRÉDITO</h1>
-            <p className="text-sm font-mono text-gray-500 mt-1">Crédito Nro: {loan.loanNumber}</p>
+        {/* Printable Area */}
+        <div id="invoice-print-area" className="p-6 bg-white text-black">
+          <div className="flex justify-between items-start border-b border-gray-300 pb-6 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-brand-700">FACTURA Y CONTRATO DE CRÉDITO</h1>
+              <p className="text-sm font-mono text-gray-500 mt-1">Crédito Nro: {loan.loanNumber}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs uppercase bg-brand-100 text-brand-700 font-semibold px-2 py-1 rounded">
+                {isRenewal ? 'Renovación de Cartera' : 'Nuevo Préstamo'}
+              </span>
+              <p className="text-xs text-gray-500 mt-1">{new Date(loan.startDate).toLocaleDateString('es-CO')}</p>
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-xs uppercase bg-brand-100 text-brand-700 font-semibold px-2 py-1 rounded">
-              {isRenewal ? 'Renovación de Cartera' : 'Nuevo Préstamo'}
-            </span>
-            <p className="text-xs text-gray-500 mt-1">{new Date(loan.startDate).toLocaleDateString('es-CO')}</p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-8 text-sm mb-6">
-          <div>
-            <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-2">Datos del Cliente:</h3>
-            <p className="font-semibold text-gray-900">{client.name}</p>
-            <p className="text-gray-600">CC: {client.documentId}</p>
-            <p className="text-gray-600">Tel: {client.phone}</p>
-            <p className="text-gray-600">Dirección: {client.address}</p>
+          <div className="grid grid-cols-2 gap-8 text-sm mb-6">
+            <div>
+              <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-2">Datos del Cliente:</h3>
+              <p className="font-semibold text-gray-900">{client.name}</p>
+              <p className="text-gray-600">CC: {client.documentId}</p>
+              <p className="text-gray-600">Tel: {client.phone}</p>
+              <p className="text-gray-600">Dirección: {client.address}</p>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-2">Condiciones del Crédito:</h3>
+              <div className="space-y-1">
+                <div className="flex justify-between"><span className="text-gray-600">Monto Capital:</span> <span className="font-semibold">${loan.principal.toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Tasa de Interés:</span> <span className="font-semibold">{loan.interestRate}%</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Monto Interés:</span> <span className="font-semibold">${loan.interestAmount.toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between border-t border-gray-200 pt-1"><span className="font-bold text-gray-800">Total a Pagar:</span> <span className="font-bold text-brand-700">${loan.totalAmount.toLocaleString('es-CO')}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Frecuencia de Pago:</span> <span className="font-semibold">{translateFrequency(loan.paymentFrequency)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-600">Cuotas:</span> <span className="font-semibold">{loan.installments} cuotas de ${loan.installmentAmt.toLocaleString('es-CO')}</span></div>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-2">Condiciones del Crédito:</h3>
-            <div className="space-y-1">
-              <div className="flex justify-between"><span className="text-gray-600">Monto Capital:</span> <span className="font-semibold">${loan.principal.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Tasa de Interés:</span> <span className="font-semibold">{loan.interestRate}%</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Monto Interés:</span> <span className="font-semibold">${loan.interestAmount.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between border-t border-gray-200 pt-1"><span className="font-bold text-gray-800">Total a Pagar:</span> <span className="font-bold text-brand-700">${loan.totalAmount.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Frecuencia de Pago:</span> <span className="font-semibold">{translateFrequency(loan.paymentFrequency)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Cuotas:</span> <span className="font-semibold">{loan.installments} cuotas de ${loan.installmentAmt.toLocaleString('es-CO')}</span></div>
+
+          {isRenewal && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded p-4 text-sm mb-6 text-emerald-800">
+              <h4 className="font-bold uppercase text-xs mb-1">Liquidación por Refinanciamiento</h4>
+              <div className="flex justify-between"><span>Deuda anterior cancelada:</span> <span>${debtSettled.toLocaleString('es-CO')}</span></div>
+              <div className="flex justify-between font-bold border-t border-emerald-100 pt-1"><span>Excedente neto entregado al cliente:</span> <span>${excedente.toLocaleString('es-CO')}</span></div>
+            </div>
+          )}
+
+          <div className="mb-8">
+            <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-3">Cronograma de Amortización (Cuotas)</h3>
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-150 border-b border-gray-300 font-bold text-gray-700">
+                  <th className="p-2">Nro Cuota</th>
+                  <th className="p-2">Fecha de Vencimiento</th>
+                  <th className="p-2 text-right">Valor Cuota</th>
+                  <th className="p-2">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {loan.amortizations.map((am: any) => (
+                  <tr key={am.id}>
+                    <td className="p-2 font-mono">Cuota {am.installmentNumber}</td>
+                    <td className="p-2">{new Date(am.dueDate).toLocaleDateString('es-CO')}</td>
+                    <td className="p-2 text-right font-mono">${am.amount.toLocaleString('es-CO')}</td>
+                    <td className="p-2 uppercase text-[10px] font-semibold text-gray-500">Pendiente</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-gray-350 pt-16 grid grid-cols-2 gap-12 text-center text-xs mt-16">
+            <div>
+              <div className="border-b border-gray-400 mx-auto w-48 mb-2"></div>
+              <p className="font-semibold text-gray-700">Firma del Acreedor</p>
+            </div>
+            <div>
+              <div className="border-b border-gray-400 mx-auto w-48 mb-2"></div>
+              <p className="font-semibold text-gray-700">{client.name}</p>
+              <p className="text-gray-500">C.C. {client.documentId}</p>
             </div>
           </div>
         </div>
 
-        {isRenewal && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded p-4 text-sm mb-6 text-emerald-800">
-            <h4 className="font-bold uppercase text-xs mb-1">Liquidación por Refinanciamiento</h4>
-            <div className="flex justify-between"><span>Deuda anterior cancelada:</span> <span>${debtSettled.toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between font-bold border-t border-emerald-100 pt-1"><span>Excedente neto entregado al cliente:</span> <span>${excedente.toLocaleString('es-CO')}</span></div>
-          </div>
-        )}
-
-        <div className="mb-8">
-          <h3 className="font-bold text-gray-700 uppercase tracking-wide text-xs mb-3">Cronograma de Amortización (Cuotas)</h3>
-          <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-150 border-b border-gray-300 font-bold text-gray-700">
-                <th className="p-2">Nro Cuota</th>
-                <th className="p-2">Fecha de Vencimiento</th>
-                <th className="p-2 text-right">Valor Cuota</th>
-                <th className="p-2">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loan.amortizations.map((am: any) => (
-                <tr key={am.id}>
-                  <td className="p-2 font-mono">Cuota {am.installmentNumber}</td>
-                  <td className="p-2">{new Date(am.dueDate).toLocaleDateString('es-CO')}</td>
-                  <td className="p-2 text-right font-mono">${am.amount.toLocaleString('es-CO')}</td>
-                  <td className="p-2 uppercase text-[10px] font-semibold text-gray-500">Pendiente</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="border-t border-gray-350 pt-16 grid grid-cols-2 gap-12 text-center text-xs mt-16">
-          <div>
-            <div className="border-b border-gray-400 mx-auto w-48 mb-2"></div>
-            <p className="font-semibold text-gray-700">Firma del Acreedor</p>
-          </div>
-          <div>
-            <div className="border-b border-gray-400 mx-auto w-48 mb-2"></div>
-            <p className="font-semibold text-gray-700">{client.name}</p>
-            <p className="text-gray-500">C.C. {client.documentId}</p>
-          </div>
-        </div>
-
+        {/* Action Buttons */}
         <div className="flex gap-4 justify-end mt-12 no-print">
           <button
             onClick={() => setPrintInvoiceData(null)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition"
           >
             Volver a la Ficha
+          </button>
+          <button
+            onClick={() => handleDownloadPDF('invoice-print-area', `Contrato_Credito_${loan.loanNumber}.pdf`)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg transition shadow-lg"
+          >
+            <Download className="w-5 h-5" /> Descargar PDF
           </button>
           <button
             onClick={() => window.print()}
@@ -412,46 +466,56 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     const r = printReceiptData;
     return (
       <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg">
-        <div className="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
-          <h2 className="font-bold text-lg">RECIBO DE CAJA</h2>
-          <p className="text-xs mt-1">{r.receiptNumber}</p>
-          <p className="text-[10px] text-gray-500">{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+        {/* Printable Area */}
+        <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
+          <div className="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
+            <h2 className="font-bold text-lg">RECIBO DE CAJA</h2>
+            <p className="text-xs mt-1">{r.receiptNumber}</p>
+            <p className="text-[10px] text-gray-500">{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+          </div>
+
+          <div className="space-y-2 border-b border-dashed border-gray-400 pb-4 mb-4 text-xs">
+            <div className="flex justify-between"><span>Cliente:</span> <span className="font-bold truncate max-w-[180px]">{r.clientName}</span></div>
+            <div className="flex justify-between"><span>Cédula:</span> <span>{r.documentId}</span></div>
+            <div className="flex justify-between"><span>Crédito Nro:</span> <span>{r.loanNumber}</span></div>
+          </div>
+
+          <div className="text-center py-4 border-b border-dashed border-gray-400 mb-4 bg-gray-50">
+            <p className="text-xs uppercase text-gray-500">Monto Recibido</p>
+            <h1 className="text-2xl font-bold text-gray-900">${r.amount.toLocaleString('es-CO')}</h1>
+          </div>
+
+          <div className="space-y-1.5 text-xs mb-8">
+            <div className="flex justify-between"><span>Saldo anterior:</span> <span>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between"><span>Abono realizado:</span> <span>-${r.amount.toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>Nuevo saldo deuda:</span> <span>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
+            {r.notes && (
+              <div className="text-left mt-3 pt-2 border-t border-gray-100 italic text-[10px]">
+                Nota: {r.notes}
+              </div>
+            )}
+          </div>
+
+          <div className="text-center text-[10px] text-gray-500 mt-12">
+            <div className="border-b border-dashed border-gray-300 w-32 mx-auto mb-2"></div>
+            <p>Firma del Recaudador</p>
+            <p className="mt-6 font-bold">¡Gracias por su puntualidad!</p>
+          </div>
         </div>
 
-        <div className="space-y-2 border-b border-dashed border-gray-400 pb-4 mb-4 text-xs">
-          <div className="flex justify-between"><span>Cliente:</span> <span className="font-bold truncate max-w-[180px]">{r.clientName}</span></div>
-          <div className="flex justify-between"><span>Cédula:</span> <span>{r.documentId}</span></div>
-          <div className="flex justify-between"><span>Crédito Nro:</span> <span>{r.loanNumber}</span></div>
-        </div>
-
-        <div className="text-center py-4 border-b border-dashed border-gray-400 mb-4 bg-gray-50">
-          <p className="text-xs uppercase text-gray-500">Monto Recibido</p>
-          <h1 className="text-2xl font-bold text-gray-900">${r.amount.toLocaleString('es-CO')} COP</h1>
-        </div>
-
-        <div className="space-y-1.5 text-xs mb-8">
-          <div className="flex justify-between"><span>Saldo anterior:</span> <span>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between"><span>Abono realizado:</span> <span>-${r.amount.toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>Nuevo saldo deuda:</span> <span>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
-          {r.notes && (
-            <div className="text-left mt-3 pt-2 border-t border-gray-100 italic text-[10px]">
-              Nota: {r.notes}
-            </div>
-          )}
-        </div>
-
-        <div className="text-center text-[10px] text-gray-500 mt-12">
-          <div className="border-b border-dashed border-gray-300 w-32 mx-auto mb-2"></div>
-          <p>Firma del Recaudador</p>
-          <p className="mt-6 font-bold">¡Gracias por su puntualidad!</p>
-        </div>
-
+        {/* Action Buttons */}
         <div className="flex gap-4 justify-center mt-12 no-print font-sans">
           <button
             onClick={() => setPrintReceiptData(null)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs transition"
           >
             Cerrar Recibo
+          </button>
+          <button
+            onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
+          >
+            <Download className="w-4 h-4" /> PDF
           </button>
           <button
             onClick={() => window.print()}

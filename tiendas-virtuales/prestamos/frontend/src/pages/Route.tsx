@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
-import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Printer, Navigation } from 'lucide-react';
+import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Printer, Navigation, Download } from 'lucide-react';
 
 interface RouteItem {
   loanId: string;
@@ -38,6 +38,28 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
   const [payError, setPayError] = useState('');
   const [payLoading, setPayLoading] = useState(false);
   const [printReceiptData, setPrintReceiptData] = useState<any>(null);
+
+  const handleDownloadReceiptPDF = (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // @ts-ignore
+    const html2pdf = window.html2pdf;
+    if (!html2pdf) {
+      alert('La librería de PDF está cargando, por favor reintente en un momento...');
+      return;
+    }
+
+    const opt = {
+      margin:       [0.2, 0.2, 0.2, 0.2],
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 3, useCORS: true },
+      jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
 
   const fetchRouteData = async (dateStr: string) => {
     setLoading(true);
@@ -122,46 +144,56 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
     const r = printReceiptData;
     return (
       <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg animate-fadeIn">
-        <div className="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
-          <h2 className="font-bold text-lg">RECIBO DE CAJA</h2>
-          <p className="text-xs mt-1">{r.receiptNumber}</p>
-          <p className="text-[10px] text-gray-500">{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+        {/* Printable Area */}
+        <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
+          <div className="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
+            <h2 className="font-bold text-lg">RECIBO DE CAJA</h2>
+            <p className="text-xs mt-1">{r.receiptNumber}</p>
+            <p className="text-[10px] text-gray-500">{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+          </div>
+
+          <div className="space-y-2 border-b border-dashed border-gray-400 pb-4 mb-4 text-xs">
+            <div className="flex justify-between"><span>Cliente:</span> <span className="font-bold truncate max-w-[180px]">{r.clientName}</span></div>
+            <div className="flex justify-between"><span>Cédula:</span> <span>{r.documentId}</span></div>
+            <div className="flex justify-between"><span>Crédito Nro:</span> <span>{r.loanNumber}</span></div>
+          </div>
+
+          <div className="text-center py-4 border-b border-dashed border-gray-400 mb-4 bg-gray-50">
+            <p className="text-xs uppercase text-gray-500">Monto Recibido</p>
+            <h1 className="text-2xl font-bold text-gray-900">${r.amount.toLocaleString('es-CO')}</h1>
+          </div>
+
+          <div className="space-y-1.5 text-xs mb-8">
+            <div className="flex justify-between"><span>Saldo anterior:</span> <span>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between"><span>Abono realizado:</span> <span>-${r.amount.toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>Nuevo saldo deuda:</span> <span>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
+            {r.notes && (
+              <div className="text-left mt-3 pt-2 border-t border-gray-100 italic text-[10px]">
+                Nota: {r.notes}
+              </div>
+            )}
+          </div>
+
+          <div className="text-center text-[10px] text-gray-500 mt-12">
+            <div className="border-b border-dashed border-gray-300 w-32 mx-auto mb-2"></div>
+            <p>Firma del Recaudador</p>
+            <p className="mt-6 font-bold">¡Gracias por su puntualidad!</p>
+          </div>
         </div>
 
-        <div className="space-y-2 border-b border-dashed border-gray-400 pb-4 mb-4 text-xs">
-          <div className="flex justify-between"><span>Cliente:</span> <span className="font-bold truncate max-w-[180px]">{r.clientName}</span></div>
-          <div className="flex justify-between"><span>Cédula:</span> <span>{r.documentId}</span></div>
-          <div className="flex justify-between"><span>Crédito Nro:</span> <span>{r.loanNumber}</span></div>
-        </div>
-
-        <div className="text-center py-4 border-b border-dashed border-gray-400 mb-4 bg-gray-50">
-          <p className="text-xs uppercase text-gray-500">Monto Recibido</p>
-          <h1 className="text-2xl font-bold text-gray-900">${r.amount.toLocaleString('es-CO')} COP</h1>
-        </div>
-
-        <div className="space-y-1.5 text-xs mb-8">
-          <div className="flex justify-between"><span>Saldo anterior:</span> <span>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between"><span>Abono realizado:</span> <span>-${r.amount.toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>Nuevo saldo deuda:</span> <span>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
-          {r.notes && (
-            <div className="text-left mt-3 pt-2 border-t border-gray-100 italic text-[10px]">
-              Nota: {r.notes}
-            </div>
-          )}
-        </div>
-
-        <div className="text-center text-[10px] text-gray-500 mt-12">
-          <div className="border-b border-dashed border-gray-300 w-32 mx-auto mb-2"></div>
-          <p>Firma del Recaudador</p>
-          <p className="mt-6 font-bold">¡Gracias por su puntualidad!</p>
-        </div>
-
+        {/* Action Buttons */}
         <div className="flex gap-4 justify-center mt-12 no-print font-sans">
           <button
             onClick={() => setPrintReceiptData(null)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs transition"
           >
             Cerrar Recibo
+          </button>
+          <button
+            onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
+          >
+            <Download className="w-4 h-4" /> PDF
           </button>
           <button
             onClick={() => window.print()}

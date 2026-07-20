@@ -27,4 +27,4 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Expose port and run DB migration + start app
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=src/prisma/schema.prisma && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --schema=src/prisma/schema.prisma --accept-data-loss && node dist/server.js"]
