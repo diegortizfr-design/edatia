@@ -156,38 +156,38 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
       <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg animate-fadeIn">
         {/* Printable Area */}
         <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
-          <div className="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
-            <h2 className="font-bold text-lg">RECIBO DE CAJA</h2>
-            <p className="text-xs mt-1">{r.receiptNumber}</p>
-            <p className="text-[10px] text-gray-500">{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+          <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
+            <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
+            <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{r.receiptNumber}</p>
+            <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
           </div>
 
-          <div className="space-y-2 border-b border-dashed border-gray-400 pb-4 mb-4 text-xs">
-            <div className="flex justify-between"><span>Cliente:</span> <span className="font-bold truncate max-w-[180px]">{r.clientName}</span></div>
-            <div className="flex justify-between"><span>Cédula:</span> <span>{r.documentId}</span></div>
-            <div className="flex justify-between"><span>Crédito Nro:</span> <span>{r.loanNumber}</span></div>
+          <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{r.clientName}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{r.documentId}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{r.loanNumber}</span></div>
           </div>
 
-          <div className="text-center py-4 border-b border-dashed border-gray-400 mb-4 bg-gray-50">
-            <p className="text-xs uppercase text-gray-500">Monto Recibido</p>
-            <h1 className="text-2xl font-bold text-gray-900">${r.amount.toLocaleString('es-CO')}</h1>
+          <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
+            <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
+            <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${r.amount.toLocaleString('es-CO')}</h1>
           </div>
 
           <div className="space-y-1.5 text-xs mb-8">
-            <div className="flex justify-between"><span>Saldo anterior:</span> <span>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between"><span>Abono realizado:</span> <span>-${r.amount.toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>Nuevo saldo deuda:</span> <span>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${r.amount.toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
             {r.notes && (
-              <div className="text-left mt-3 pt-2 border-t border-gray-100 italic text-[10px]">
+              <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
                 Nota: {r.notes}
               </div>
             )}
           </div>
 
-          <div className="text-center text-[10px] text-gray-500 mt-12">
-            <div className="border-b border-dashed border-gray-300 w-32 mx-auto mb-2"></div>
+          <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
+            <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
             <p>Firma del Recaudador</p>
-            <p className="mt-6 font-bold">¡Gracias por su puntualidad!</p>
+            <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
           </div>
         </div>
 
