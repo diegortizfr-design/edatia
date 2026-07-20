@@ -54,29 +54,43 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
         return;
       }
 
-      // Save scroll
-      const originalScrollY = window.scrollY || document.documentElement.scrollTop;
-      window.scrollTo(0, 0);
+      // Clone the element
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '300px'; // Standard thermal width in pixels
+      container.style.background = 'white';
+      container.style.color = 'black';
+      container.appendChild(clonedElement);
+      document.body.appendChild(container);
 
       const opt = {
-        margin:       [0.2, 0.2, 0.2, 0.2],
+        margin:       [0.1, 0.1, 0.1, 0.1],
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { 
           scale: 2.5, 
           useCORS: true,
           scrollX: 0,
-          scrollY: 0
+          scrollY: 0,
+          windowWidth: 320
         },
         jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(element).save()
+      html2pdf().set(opt).from(clonedElement).save()
         .then(() => {
-          window.scrollTo(0, originalScrollY);
+          if (document.body.contains(container)) {
+            document.body.removeChild(container);
+          }
         })
         .catch((err: any) => {
-          window.scrollTo(0, originalScrollY);
+          if (document.body.contains(container)) {
+            document.body.removeChild(container);
+          }
           alert('Error al compilar el ticket: ' + (err.message || err));
         });
     } catch (e: any) {
