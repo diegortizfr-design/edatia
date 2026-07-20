@@ -144,7 +144,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         html2canvas:  { 
           scale: 2, 
           useCORS: true,
-          logging: false
+          logging: false,
+          scrollX: 0,
+          scrollY: 0
         },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
@@ -205,7 +207,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         html2canvas:  { 
           scale: 2.5, 
           useCORS: true,
-          logging: false
+          logging: false,
+          scrollX: 0,
+          scrollY: 0
         },
         jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
       };
