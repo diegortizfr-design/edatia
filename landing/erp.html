@@ -1214,6 +1214,110 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Estilos de Descripciones y Especificaciones de Módulo */
+        .module-header-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .module-title-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .module-title-box i {
+            font-size: 1.3rem;
+        }
+
+        .module-title-box h4 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            color: #f8fafc;
+        }
+
+        .module-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .module-desc-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
+            line-height: 1.5;
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-desc-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--module-accent, #38bdf8);
+        }
+
+        .module-highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .module-highlights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .module-highlight-item {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 0.85rem;
+            transition: all 0.25s ease;
+        }
+
+        .module-highlight-item:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .module-highlight-item h5 {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 0.35rem;
+        }
+
+        .module-highlight-item p {
+            font-size: 0.76rem;
+            color: #94a3b8;
+            margin: 0;
+            line-height: 1.4;
+        }
+
         /* Estilos específicos de los Dashboards del ERP */
         
         /* 1. POS Ventas */
@@ -2327,7 +2431,7 @@
     <section id="modulos" class="modules">
         <div class="section-header reveal">
             <h2>Ingeniería Modular</h2>
-            <p style="color: var(--text-secondary);">Selecciona un módulo a la izquierda y pruébalo en tiempo real en la pantalla interactiva de la derecha.</p>
+            <p style="color: var(--text-secondary);">Explora nuestros módulos a la izquierda para conocer su alcance, funcionalidades clave y probar la experiencia interactiva.</p>
         </div>
 
         <div class="modules-interactive-container reveal">
@@ -2387,10 +2491,39 @@
                 <div class="preview-body">
                     <!-- Vista 1: Ventas y POS -->
                     <div class="preview-tab-content active" id="preview-ventas">
-                        <div class="pos-grid">
+                        <div class="module-header-info">
+                            <div class="module-title-box">
+                                <i class="fa-solid fa-cart-shopping" style="color: #38bdf8;"></i>
+                                <h4>Ventas y Punto de Venta (POS)</h4>
+                            </div>
+                            <span class="module-badge-tag" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+                                <i class="fa-solid fa-bolt"></i> Mostrador & Facturación DIAN
+                            </span>
+                        </div>
+
+                        <div class="module-desc-card" style="--module-accent: #38bdf8;">
+                            Punto de venta omnicanal y facturación electrónica instantánea. Diseñado para operaciones de mostrador ágiles, control estricto de cajas y emisión automática de documentos normativos sin fricción operacional.
+                        </div>
+
+                        <div class="module-highlights-grid">
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-file-invoice-dollar" style="color: #38bdf8;"></i> Facturación DIAN</h5>
+                                <p>Emisión automática de facturas electrónicas y tiquetes POS con generación de XML y QR normativos.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-cash-register" style="color: #38bdf8;"></i> Mostrador Táctil</h5>
+                                <p>Interfaz ágil optimizada para pantallas táctiles, lectura de código de barras y múltiples medios de pago.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-vault" style="color: #38bdf8;"></i> Arqueos de Caja</h5>
+                                <p>Control de turnos por cajero, cierres ciegos de caja y auditoría inmediata de sobrantes o faltantes.</p>
+                            </div>
+                        </div>
+
+                        <!-- Simulador Interactivo POS -->
+                        <div class="pos-grid" style="margin-top: 0.5rem;">
                             <div>
-                                <h4 style="margin-bottom: 1rem; color: #38bdf8; font-size: 1rem;"><i class="fa-solid fa-cash-register mr-2"></i> POS Mostrador Ágil</h4>
-                                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Haz clic en los productos para agregarlos a la venta actual:</p>
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.8rem;"><i class="fa-solid fa-hand-pointer mr-1"></i> Prueba el mostrador interactivo:</p>
                                 <div class="pos-products">
                                     <div class="pos-product-card" onclick="addPosItem('Café Latte', 8500, 'fa-mug-hot')">
                                         <i class="fa-solid fa-mug-hot"></i>
@@ -2422,7 +2555,7 @@
                                     Factura de Venta POS Nro: <span style="font-family: monospace;">E-2026-4421</span>
                                 </div>
                                 <div class="receipt-items" id="receipt-items">
-                                    <div style="text-align: center; color: #64748b; margin-top: 2rem; font-size: 0.8rem;">El ticket está vacío.<br>Agrega productos a la izquierda.</div>
+                                    <div style="text-align: center; color: #64748b; margin-top: 1.5rem; font-size: 0.8rem;">El ticket está vacío.<br>Agrega productos a la izquierda.</div>
                                 </div>
                                 <div class="receipt-totals">
                                     <span>TOTAL FACTURA:</span>
@@ -2437,10 +2570,37 @@
 
                     <!-- Vista 2: Contabilidad -->
                     <div class="preview-tab-content" id="preview-contabilidad">
-                        <h4 style="color: #10b981; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-chart-line mr-2"></i> Contabilidad y Estados Financieros en Vivo</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Todo proceso en el ERP genera asientos contables en tiempo real sin doble digitación.</p>
-                        
-                        <div class="kpis-grid">
+                        <div class="module-header-info">
+                            <div class="module-title-box">
+                                <i class="fa-solid fa-calculator" style="color: #10b981;"></i>
+                                <h4>Contabilidad Automatizada NIIF</h4>
+                            </div>
+                            <span class="module-badge-tag" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">
+                                <i class="fa-solid fa-robot"></i> Asientos en Tiempo Real
+                            </span>
+                        </div>
+
+                        <div class="module-desc-card" style="--module-accent: #10b981;">
+                            Motor contable NIIF en tiempo real de doble entrada. Elimina la causa raíz del error humano registrando asientos automáticos por cada factura, cobro, compra o traslado operacional.
+                        </div>
+
+                        <div class="module-highlights-grid">
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-wand-magic-sparkles" style="color: #10b981;"></i> Cero Doble Digitación</h5>
+                                <p>Cada venta o egreso genera su asiento contable mapped al PUC sin intervención manual del usuario.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Estados al Instante</h5>
+                                <p>Balance general, PyG y libro diario actualizados al segundo para decisiones financieras precisas.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Cumplimiento Fiscal</h5>
+                                <p>Informes tributarios e información exógena DIAN listos para ser presentados sin inconsistencias.</p>
+                            </div>
+                        </div>
+
+                        <!-- Panel de Métricas / Gráfico -->
+                        <div class="kpis-grid" style="margin-top: 0.2rem;">
                             <div class="kpi-card" style="--kpi-color: #10b981;">
                                 <small>INGRESOS HOY</small>
                                 <span>$4.820.000</span>
@@ -2456,17 +2616,14 @@
                         </div>
 
                         <div class="chart-box">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.8rem;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">
                                 <span>Flujo de Caja - Últimas 6 horas</span>
                                 <span style="color: #10b981;"><i class="fa-solid fa-circle mr-1" style="font-size: 6px;"></i> Generado en Tiempo Real</span>
                             </div>
                             <div class="svg-chart-container">
                                 <svg viewBox="0 0 500 150" width="100%" height="100%">
-                                    <!-- Gráfico de fondo -->
                                     <path d="M 0,150 L 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20 L 500,150 Z" fill="rgba(16, 185, 129, 0.05)"></path>
-                                    <!-- Línea de tendencia -->
                                     <path d="M 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20" fill="none" stroke="#10b981" stroke-width="3" class="chart-line"></path>
-                                    <!-- Puntos del gráfico -->
                                     <circle cx="100" cy="90" r="5" fill="#10b981"></circle>
                                     <circle cx="200" cy="120" r="5" fill="#10b981"></circle>
                                     <circle cx="300" cy="70" r="5" fill="#10b981"></circle>
@@ -2483,10 +2640,37 @@
 
                     <!-- Vista 3: Inventario -->
                     <div class="preview-tab-content" id="preview-inventario">
-                        <h4 style="color: #f59e0b; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-boxes-stacked mr-2"></i> Inventario Inteligente Multi-Bodega</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Control preciso de existencias, costos y alertas automáticas de reabastecimiento.</p>
-                        
-                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1.2rem;">
+                        <div class="module-header-info">
+                            <div class="module-title-box">
+                                <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
+                                <h4>Inventario Inteligente Multi-Bodega</h4>
+                            </div>
+                            <span class="module-badge-tag" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
+                                <i class="fa-solid fa-layer-group"></i> Lotes & Stock Crítico
+                            </span>
+                        </div>
+
+                        <div class="module-desc-card" style="--module-accent: #f59e0b;">
+                            Control centralizado multi-bodega y valorización de existencias en tiempo real. Optimiza niveles de stock, evita quiebres de inventario y mantiene trazabilidad total de lotes y vencimientos.
+                        </div>
+
+                        <div class="module-highlights-grid">
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-warehouse" style="color: #f59e0b;"></i> Gestión Multi-Bodega</h5>
+                                <p>Control unificado de existencias en múltiples sucursales con traslados auditados entre bodegas.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-barcode" style="color: #f59e0b;"></i> Lotes y Vencimientos</h5>
+                                <p>Trazabilidad rigurosa de lotes, fechas de caducidad y números de serie para productos regulados.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-truck-ramp-box" style="color: #f59e0b;"></i> Reabastecimiento Ágil</h5>
+                                <p>Alertas automáticas por bajo stock y generación de órdenes de compra con un solo clic.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Existencias Simulada -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem; margin-top: 0.2rem;">
                             <div class="table-responsive">
                                 <table class="stock-table">
                                     <thead>
@@ -2520,7 +2704,7 @@
                                 </table>
                             </div>
                             
-                            <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
+                            <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
                                 <div style="flex-grow: 1;">
                                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.2rem;">
                                         <span>Capacidad Total de Bodega Central</span>
@@ -2530,8 +2714,8 @@
                                         <div class="stock-progress-bar" id="stock-progress" style="width: 45%;"></div>
                                     </div>
                                 </div>
-                                <button class="pos-action-btn" onclick="replenishStock()" style="background: #f59e0b; color: #0f172a; width: auto; font-size: 0.8rem; padding: 0.6rem 1.2rem;">
-                                    <i class="fa-solid fa-truck-ramp-box"></i> Ordenar Compra (Reabastecer)
+                                <button class="pos-action-btn" onclick="replenishStock()" style="background: #f59e0b; color: #0f172a; width: auto; font-size: 0.8rem; padding: 0.5rem 1rem;">
+                                    <i class="fa-solid fa-truck-ramp-box"></i> Ordenar Compra
                                 </button>
                             </div>
                         </div>
@@ -2539,10 +2723,37 @@
 
                     <!-- Vista 4: E-Commerce -->
                     <div class="preview-tab-content" id="preview-ecommerce">
-                        <h4 style="color: #a855f7; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-network-wired mr-2"></i> Omnicanalidad: Sincronización Web E-Commerce</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Cuando un cliente compra en tu sitio web, el pedido entra de inmediato en el ERP de Edatia.</p>
-                        
-                        <div class="sync-grid">
+                        <div class="module-header-info">
+                            <div class="module-title-box">
+                                <i class="fa-solid fa-globe" style="color: #a855f7;"></i>
+                                <h4>E-Commerce Nativo Sincronizado</h4>
+                            </div>
+                            <span class="module-badge-tag" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">
+                                <i class="fa-solid fa-arrows-rotate"></i> Stock Omnicanal 100% Vivo
+                            </span>
+                        </div>
+
+                        <div class="module-desc-card" style="--module-accent: #a855f7;">
+                            Plataforma de comercio electrónico omnicanal directamente conectada al ERP. Tu tienda virtual comparte existencias, catálogo de productos y precios en tiempo real con tus puntos de venta físicos.
+                        </div>
+
+                        <div class="module-highlights-grid">
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-store" style="color: #a855f7;"></i> Stock Unificado</h5>
+                                <p>Evita sobreventas; cada transacción en la web descuenta inmediatamente las existencias del ERP.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-network-wired" style="color: #a855f7;"></i> Pedidos Automáticos</h5>
+                                <p>Los pedidos web ingresan de inmediato a la cola de despacho y facturación electrónica central.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-user-check" style="color: #a855f7;"></i> Cliente Omnicanal</h5>
+                                <p>Perfil único de cliente integrando su historial de compras tanto físicas como en la tienda online.</p>
+                            </div>
+                        </div>
+
+                        <!-- Simulador de Sincronización Web -> ERP -->
+                        <div class="sync-grid" style="margin-top: 0.2rem;">
                             <!-- Tienda Digital Virtual -->
                             <div class="sync-window">
                                 <div class="sync-title"><i class="fa-solid fa-store" style="color: #a855f7;"></i> Tienda Online Edatia</div>
@@ -2564,16 +2775,16 @@
                             
                             <!-- Canal de Sincronización -->
                             <div class="sync-arrow">
-                                <i class="fa-solid fa-arrows-spin fa-spin" style="margin-bottom: 0.5rem; display: block;"></i>
+                                <i class="fa-solid fa-arrows-spin fa-spin" style="margin-bottom: 0.3rem; display: block;"></i>
                                 <span style="font-size: 0.65rem; color: #94a3b8; font-family: monospace; display: block;">API REST</span>
-                                <i class="fa-solid fa-right-long arrow-pulse" style="margin-top: 0.5rem;"></i>
+                                <i class="fa-solid fa-right-long arrow-pulse" style="margin-top: 0.3rem;"></i>
                             </div>
                             
                             <!-- Edatia ERP Central -->
                             <div class="sync-window">
                                 <div class="sync-title"><i class="fa-solid fa-server" style="color: #10b981;"></i> Edatia Central ERP</div>
                                 <div class="erp-sync-list" id="erp-sync-list">
-                                    <div style="text-align: center; color: #64748b; margin-top: 2rem;">Esperando ventas en tienda web...</div>
+                                    <div style="text-align: center; color: #64748b; margin-top: 1.5rem;">Esperando ventas en tienda web...</div>
                                 </div>
                             </div>
                         </div>
@@ -2581,13 +2792,40 @@
 
                     <!-- Vista 5: Administrativo y RH -->
                     <div class="preview-tab-content" id="preview-admin">
-                        <h4 style="color: #06b6d4; font-size: 1rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-users-gear mr-2"></i> Gestión de Nómina y Clima Organizacional</h4>
-                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1.2rem;">Liquida la nómina de tus colaboradores y monitorea su satisfacción de forma centralizada.</p>
-                        
-                        <div class="admin-grid">
+                        <div class="module-header-info">
+                            <div class="module-title-box">
+                                <i class="fa-solid fa-users-gear" style="color: #06b6d4;"></i>
+                                <h4>Gestión Administrativa y Rec. Humanos</h4>
+                            </div>
+                            <span class="module-badge-tag" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">
+                                <i class="fa-solid fa-address-card"></i> Nómina & Clima Laboral
+                            </span>
+                        </div>
+
+                        <div class="module-desc-card" style="--module-accent: #06b6d4;">
+                            Suite integrada para la gestión del talento humano, nómina electrónica y control operacional. Centraliza la administración de personal y garantiza la trazabilidad de cada acción en el sistema.
+                        </div>
+
+                        <div class="module-highlights-grid">
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-calculator" style="color: #06b6d4;"></i> Nómina Electrónica</h5>
+                                <p>Liquidación precisa de salarios, seguridad social y dispersión de nómina electrónica a la DIAN.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-folder-user" style="color: #06b6d4;"></i> Hoja de Vida Digital</h5>
+                                <p>Expediente completo de colaboradores, perfiles de cargo, contratos y matriz de permisos.</p>
+                            </div>
+                            <div class="module-highlight-item">
+                                <h5><i class="fa-solid fa-heart-pulse" style="color: #06b6d4;"></i> Clima & eNPS</h5>
+                                <p>Monitoreo continuo de la satisfacción laboral y evaluación del clima organizacional en tiempo real.</p>
+                            </div>
+                        </div>
+
+                        <!-- Panel Interactivo de Nómina y Clima -->
+                        <div class="admin-grid" style="margin-top: 0.2rem;">
                             <!-- Liquidación de Nómina -->
                             <div class="payroll-box">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem; margin-bottom: 0.2rem;">
                                     <span style="font-size: 0.8rem; font-weight: bold; color: #06b6d4;">Nómina del Período</span>
                                     <span style="font-size: 0.75rem; color: #94a3b8;">Mayo 2026</span>
                                 </div>
@@ -2617,7 +2855,7 @@
                                         <span class="payroll-status status-pending" id="payroll-status-2">Pendiente</span>
                                     </div>
                                 </div>
-                                <button class="pos-action-btn" id="payroll-run-btn" onclick="runPayroll()" style="background: #06b6d4; color: #0f172a; font-size: 0.8rem; padding: 0.6rem 1rem;">
+                                <button class="pos-action-btn" id="payroll-run-btn" onclick="runPayroll()" style="background: #06b6d4; color: #0f172a; font-size: 0.8rem; padding: 0.5rem 1rem;">
                                     <i class="fa-solid fa-calculator"></i> Liquidar y Dispersar Nómina
                                 </button>
                             </div>
@@ -2625,7 +2863,7 @@
                             <!-- Clima y Encuestas -->
                             <div class="clima-box">
                                 <div>
-                                    <span style="font-size: 0.8rem; font-weight: bold; color: #10b981; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem; margin-bottom: 0.8rem;">Clima Organizacional</span>
+                                    <span style="font-size: 0.8rem; font-weight: bold; color: #10b981; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem; margin-bottom: 0.5rem;">Clima Organizacional</span>
                                     <div class="enps-score-container">
                                         <div class="enps-circle">
                                             <span class="enps-value" id="enps-score-val">+74</span>
@@ -2646,7 +2884,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button class="pos-action-btn" id="survey-btn" onclick="sendClimateSurvey()" style="background: transparent; border: 1px solid #10b981; color: #10b981; font-size: 0.8rem; padding: 0.6rem 1rem; margin-top: 1rem;">
+                                <button class="pos-action-btn" id="survey-btn" onclick="sendClimateSurvey()" style="background: transparent; border: 1px solid #10b981; color: #10b981; font-size: 0.8rem; padding: 0.5rem 1rem; margin-top: 0.5rem;">
                                     <i class="fa-solid fa-paper-plane"></i> Enviar Encuesta de Clima
                                 </button>
                             </div>
