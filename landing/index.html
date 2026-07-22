@@ -681,27 +681,42 @@
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        // Mock de actualizaciones y recomendaciones Edatia
+        // Mock de actualizaciones y columnas editoriales Edatia Insights
         const mockNews = [
             {
-                title: "Lanzamiento: Nuevo módulo de facturación electrónica automática",
-                source: "Actualización",
-                date: "v2.4"
+                slug: "pos-dian",
+                title: "El fin del punto de venta tradicional: Por qué facturar en Excel es un riesgo fiscal y operativo desastroso",
+                source: "Ventas & POS",
+                date: "5 min de lectura",
+                image: "assets/blog_pos.jpg"
             },
             {
-                title: "Recomendación: 5 formas de optimizar tu inventario este mes",
-                source: "Tips Edatia",
-                date: "Lectura 3 min"
+                slug: "contabilidad-autonoma",
+                title: "La muerte de la doble digitación: Por qué la contabilidad autónoma en tiempo real es el nuevo estándar",
+                source: "Contabilidad Automatizada",
+                date: "6 min de lectura",
+                image: "assets/blog_contabilidad.jpg"
             },
             {
-                title: "Próximamente: Integración nativa con pasarelas de pago internacionales",
-                source: "Roadmap",
-                date: "Q3 2026"
+                slug: "inventario-multibodega",
+                title: "Adiós al caos de inventarios en hojas de cálculo: La guía estratégica para dominar existencias multi-bodega",
+                source: "Inventario Inteligente",
+                date: "5 min de lectura",
+                image: "assets/blog_inventario.jpg"
             },
             {
-                title: "Mejora de rendimiento: Procesamiento de datos 40% más rápido",
-                source: "Infraestructura",
-                date: "Finalizado"
+                slug: "ecommerce-omnicanal",
+                title: "El mito de vender por internet y gestionar por WhatsApp: Omnicanalidad nativa sin sobreventas",
+                source: "E-Commerce Nativo",
+                date: "4 min de lectura",
+                image: "assets/blog_ecommerce.jpg"
+            },
+            {
+                slug: "talento-humano-nomina",
+                title: "Más allá del salario: La revolución del talento humano, nómina electrónica DIAN y clima laboral",
+                source: "Administrativo y RH",
+                date: "5 min de lectura",
+                image: "assets/blog_rh.jpg"
             }
         ];
 
@@ -711,14 +726,17 @@
                 const slide = document.createElement('div');
                 slide.className = 'swiper-slide';
                 slide.innerHTML = `
-                    <div class="news-card">
-                        <span class="news-tag">${news.source}</span>
-                        <h3>${news.title}</h3>
-                        <div class="news-footer">
-                            <span>Edatia Team</span>
-                            <span>${news.date}</span>
+                    <a href="blog.html?art=${news.slug}" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+                        <div class="news-card" style="cursor: pointer; overflow: hidden;">
+                            <img src="${news.image}" alt="${news.title}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 14px; margin-bottom: -0.5rem;">
+                            <span class="news-tag">${news.source}</span>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; line-height: 1.4; color: #0f172a;">${news.title}</h3>
+                            <div class="news-footer" style="margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 0.8rem;">
+                                <span style="font-weight: 600; color: #0284c7;">Edatia Insights <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                                <span>${news.date}</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 `;
                 container.appendChild(slide);
             });
@@ -732,7 +750,8 @@
                     clickable: true,
                 },
                 autoplay: {
-                    delay: 3000,
+                    delay: 4000,
+                    disableOnInteraction: false,
                 },
                 breakpoints: {
                     768: { slidesPerView: 2 },

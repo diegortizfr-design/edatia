@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edatia Insights — Artículos & Auditoría del ERP</title>
+    <meta name="description"
+        content="Artículos de análisis, columnas de opinión y hallazgos de auditoría sobre la transformación digital de empresas con Edatia ERP.">
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+            --accent-teal: #06b6d4;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header Navigation */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 5%;
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .navbar-logo span {
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #fff;
+            padding: 0.55rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+        }
+
+        /* Container Principal de Artículo */
+        .article-container {
+            max-width: 920px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header del Artículo / Revista */
+        .article-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .article-category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1.2rem;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            color: var(--accent-cyan);
+        }
+
+        .article-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.3rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .article-subtitle {
+            font-size: 1.12rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.8rem;
+            font-weight: 400;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .author-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .author-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8 0%, #10b981 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 0.9rem;
+        }
+
+        .meta-details {
+            display: flex;
+            gap: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        /* Imagen Principal del Artículo */
+        .featured-image-box {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2.5rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .featured-image-box img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            max-height: 480px;
+        }
+
+        /* Caja de Apuntes de Auditoría */
+        .audit-callout-box {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-left: 5px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 1.5rem 1.8rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .audit-callout-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--accent-cyan);
+            margin-bottom: 0.8rem;
+        }
+
+        .audit-callout-box h4 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 0.6rem;
+        }
+
+        .audit-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+        }
+
+        .audit-list li {
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .audit-list li i {
+            color: var(--accent-cyan);
+            margin-top: 0.2rem;
+        }
+
+        /* Cuerpo del Artículo estilo Revista */
+        .article-content {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+        }
+
+        .article-content p {
+            margin-bottom: 1.6rem;
+        }
+
+        .article-content h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 2.5rem 0 1rem 0;
+            line-height: 1.35;
+        }
+
+        .article-content h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin: 2rem 0 0.8rem 0;
+        }
+
+        .pull-quote {
+            margin: 2rem 0;
+            padding: 1.5rem 2rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 4px solid var(--accent-cyan);
+            border-radius: 0 12px 12px 0;
+            font-size: 1.15rem;
+            font-style: italic;
+            color: #f1f5f9;
+            line-height: 1.6;
+        }
+
+        .highlight-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin: 1.8rem 0;
+        }
+
+        .highlight-card h4 {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .highlight-card p {
+            font-size: 0.92rem;
+            margin: 0;
+            color: #94a3b8;
+        }
+
+        /* Banner CTA al Final del Artículo */
+        .cta-box {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            margin: 3.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            color: #fff;
+            margin-bottom: 0.8rem;
+        }
+
+        .cta-box p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 600px;
+            margin: 0 auto 1.5rem auto;
+        }
+
+        .cta-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary-cta {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: #fff;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(14, 165, 233, 0.6);
+        }
+
+        .btn-secondary-cta {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary-cta:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Carrusel / Selector de Otros Artículos */
+        .other-blogs-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 3rem;
+            margin-top: 3rem;
+        }
+
+        .other-blogs-section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 1.5rem;
+        }
+
+        .blogs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .blog-card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .mini-blog-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mini-blog-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .mini-blog-img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+        }
+
+        .mini-blog-content {
+            padding: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+
+        .mini-blog-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-cyan);
+            margin-bottom: 0.4rem;
+        }
+
+        .mini-blog-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            line-height: 1.4;
+            margin-bottom: 0.8rem;
+        }
+
+        .mini-blog-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="navbar-logo">
+            EDATIA <span>ERP 1.0 READY</span>
+        </a>
+        <div class="navbar-links">
+            <a href="index.html" class="nav-link">Inicio</a>
+            <a href="erp.html" class="nav-link">Módulos ERP</a>
+            <a href="https://erp.edatia.com" class="nav-btn"><i class="fa-solid fa-lock mr-1"></i> Acceso ERP</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="article-container">
+        <!-- Contenido renderizado dinámicamente -->
+        <div id="article-render-target"></div>
+
+        <!-- Selector de Otras Columnas -->
+        <section class="other-blogs-section">
+            <h3><i class="fa-solid fa-newspaper mr-2" style="color: var(--accent-cyan);"></i> Más Columnas de Edatia Insights</h3>
+            <div class="blogs-grid" id="other-blogs-grid">
+                <!-- Se cargan vía JS -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2026 EDATIA GRUPO EMPRESARIAL S.A.S. — Todos los derechos reservados.</p>
+        <p style="margin-top: 0.4rem; font-size: 0.75rem;">Plataforma ERP SaaS de Automatización Transaccional & Fiscal.</p>
+    </footer>
+
+    <script>
+        // BASE DE DATOS DE ARTÍCULOS DE BLOG / REVISTA (AUDITORÍA & COLUMNAS)
+        const articles = {
+            "pos-dian": {
+                slug: "pos-dian",
+                module: "Ventas y POS",
+                category: "PUNTO DE VENTA & DIAN",
+                title: "El fin del punto de venta tradicional: Por qué facturar en Excel o cuadernos es un riesgo fiscal y operativo desastroso",
+                subtitle: "Analizamos cómo la velocidad en mostrador (< 1s), el control anti-fugas de caja y la facturación electrónica automática DIAN separan a los comercios prósperos de las empresas estancadas.",
+                author: "Columna de Tecnología & Negocios",
+                date: "21 Julio, 2026",
+                readTime: "5 min de lectura",
+                accentColor: "#38bdf8",
+                image: "assets/blog_pos.jpg",
+                auditKeyPoints: [
+                    "Hallazgo de Auditoría 1: Tiempo de emisión de tiquete POS/Factura reducida a menos de 1 segundo por cliente.",
+                    "Hallazgo de Auditoría 2: Cumplimiento 100% automático de la norma DIAN con firma XML, PDF y código QR instantáneo.",
+                    "Hallazgo de Auditoría 3: Sistema de arqueo ciego por turno de cajero que elimina diferencias y faltantes de dinero."
+                ],
+                contentHTML: `
+                    <p>Durante décadas, cientos de comercios y empresas de retail en Colombia han intentado controlar su caja registradora mediante plantillas de Excel, cuadernos físicos o software contable obsoleto de escritorio. Sin embargo, en la era de la facturación electrónica instantánea y los consumidores impacientes, este esquema tradicional se ha convertido en una bomba de tiempo operacional y tributaria.</p>
+                    
+                    <h2>La ilusión de la "hoja de cálculo rápida"</h2>
+                    <p>El uso de hojas de cálculo en el punto de venta genera una falsa sensación de control. Aunque parece económico al principio, el costo oculto es abrumador: filas lentas en el mostrador, errores humanos al digitar precios, cobros mal calculados y, lo más grave, la imposibilidad de cumplir con las exigencias en tiempo real de la DIAN.</p>
+                    
+                    <div class="pull-quote">
+                        "El Excel está mandado a recoger en la caja. No valida resoluciones fiscales, no genera archivos XML normativos ni previene las fugas de dinero por cierres ciegos no auditados."
+                    </div>
+
+                    <h2>La auditoría técnica de Edatia ERP Versión 1.0</h2>
+                    <p>Al auditar el módulo de <strong>Ventas y POS</strong> de Edatia ERP, descubrimos una arquitectura diseñada específicamente para eliminar la fricción de mostrador. Cada transacción no solo emite el comprobante normativo en menos de un segundo, sino que desencadena de forma invisible un efecto en cadena:</p>
+                    
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-bolt"></i> 1. Descuento de Kardex en Tiempo Real</h4>
+                        <p>El inventario de la bodega asignada a la sucursal se descuenta de inmediato, evitando ventas sin stock o sobreventas.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-calculator"></i> 2. Asiento Contable PUC Autónomo</h4>
+                        <p>El cajero no necesita saber contabilidad. La venta contabiliza el ingreso, el costo de mercancía y el IVA generado al instante.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-shield-halved"></i> 3. Transmisión DIAN Directa</h4>
+                        <p>La factura electrónica o documento equivalente POS se envía a la DIAN con su correspondiente XML y código QR sin depender de terceros.</p>
+                    </div>
+
+                    <h2>Conclusión del Columnista</h2>
+                    <p>Continuar operando la caja de un negocio con métodos manuales o no integrados es el equivalente a correr una maratón con los cordones atados. Edatia ERP 1.0 demuestra que la tecnología de punto de venta no es un lujo, sino el cimiento indispensable para escalar cualquier operación comercial en Colombia.</p>
+                `
+            },
+            "contabilidad-autonoma": {
+                slug: "contabilidad-autonoma",
+                module: "Contabilidad Automatizada",
+                category: "FINANZAS & NIIF",
+                title: "La muerte de la doble digitación: Por qué la contabilidad autónoma en tiempo real es el nuevo estándar empresarial",
+                subtitle: "Auditamos el motor contable NIIF de Edatia ERP y explicamos cómo pasar datos manualmente de facturas a Excel o programas aislados destruye la rentabilidad.",
+                author: "Columna de Economía & Contabilidad",
+                date: "21 Julio, 2026",
+                readTime: "6 min de lectura",
+                accentColor: "#10b981",
+                image: "assets/blog_contabilidad.jpg",
+                auditKeyPoints: [
+                    "Hallazgo de Auditoría 1: Cero doble digitación; el 100% de los asientos contables son generados de forma transparente por la operación.",
+                    "Hallazgo de Auditoría 2: Balances Generales, PyG y Libros Mayores actualizados segundo a segundo sin cierres traumáticos de mes.",
+                    "Hallazgo de Auditoría 3: Generación automatizada de reportes tributarios e información exógena DIAN sin inconsistencias."
+                ],
+                contentHTML: `
+                    <p>El departamento de contabilidad tradicional de muchas empresas latinoamericanas padece un mal crónico: el síndrome del "cierre de mes". Semanas enteras perdidas recopilando facturas físicas, digitando recibos de caja en Excel y cruzando datos manualmente con programas contables que no se hablan con el resto de la empresa.</p>
+                    
+                    <h2>Por qué la digitación manual destruye el valor del contador</h2>
+                    <p>Cuando un contador profesional dedica el 80% de su jornada a pasar datos de un papel a una pantalla, la empresa pierde su activo analítico más valioso. Además, los datos obtenidos al final del mes representan la fotografía de lo que ocurrió hace 30 o 40 días, imposibilitando reaccionar a tiempo ante pérdidas de margen o iliquidez.</p>
+
+                    <div class="pull-quote">
+                        "La contabilidad no debe ser un registro histórico doloroso al final del mes; debe ser un tablero de control en vivo que guíe las decisiones de cada hora."
+                    </div>
+
+                    <h2>Auditoría del Motor Contable NIIF de Edatia ERP</h2>
+                    <p>Nuestra auditoría técnica al núcleo contable de <strong>Edatia ERP 1.0</strong> reveló una paradoja brillante: es un sistema contable de nivel corporativo NIIF / PUC en el que los usuarios operativos jamás tienen que digitar un asiento contable.</p>
+
+                    <p>¿Cómo funciona? Cada evento operacional (una venta en mostrador, un cobro de cartera, un pago a proveedor o un traslado de mercancía entre bodegas) lleva amarrada una regla de contabilización inteligente. Al hacer la venta, el sistema genera la partida doble exacta de forma invisible.</p>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Reportes Financieros en Tiempo Real</h4>
+                        <p>Los estados financieros (Balance General, Estado de Resultados PyG, Flujo de Caja) se leen en tiempo real con un solo clic.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-file-csv" style="color: #10b981;"></i> Exógena DIAN en Segundos</h4>
+                        <p>Al estar todos los terceros e impuestos mapeados desde el origen, la información exógena se genera sin descuadres ni sanciones.</p>
+                    </div>
+
+                    <h2>Conclusión del Columnista</h2>
+                    <p>El rol del profesional contable ha evolucionado hacia la consultoría estratégica de negocios. Edatia ERP elimina la causa raíz del error humano y libera al equipo financiero del trabajo pesado de digitación.</p>
+                `
+            },
+            "inventario-multibodega": {
+                slug: "inventario-multibodega",
+                module: "Inventario Inteligente",
+                category: "LOGÍSTICA & CADENA DE SUMINISTRO",
+                title: "Adiós al caos de inventarios en hojas de cálculo: La guía estratégica para dominar existencias multi-bodega",
+                subtitle: "Revelamos el costo oculto de las mermas por vencimiento y los quiebres de stock provocados por el control manual de mercancía en hojas de Excel.",
+                author: "Columna de Cadena de Suministro",
+                date: "21 Julio, 2026",
+                readTime: "5 min de lectura",
+                accentColor: "#f59e0b",
+                image: "assets/blog_inventario.jpg",
+                auditKeyPoints: [
+                    "Hallazgo de Auditoría 1: Control unificado multi-bodega con traslados de mercancía auditados en tiempo real.",
+                    "Hallazgo de Auditoría 2: Trazabilidad rigurosa de lotes y fechas de caducidad (FEFO) que elimina mermas por vencimiento.",
+                    "Hallazgo de Auditoría 3: Valorización Kardex automática por costo promedio ponderado y PEPS al instante."
+                ],
+                contentHTML: `
+                    <p>El inventario no es simplemente cajas almacenadas en un depósito; es dinero en efectivo transformado en productos físicos. Sin embargo, es asombroso comprobar cuántas empresas millonarias siguen gestionando sus existencias mediante archivos dispersos de Excel creados por distintos colaboradores.</p>
+                    
+                    <h2>La trampa de controlar existencias en Excel</h2>
+                    <p>Un archivo de Excel carece de concurrencia segura. Cuando dos empleados editan la misma plantilla de inventario, los datos se sobreescriben. Peor aún, una hoja de cálculo no alerta cuando un lote de productos está a 15 días de vencerse ni genera guías de traslado auditadas entre sucursales.</p>
+
+                    <div class="pull-quote">
+                        "El costo de un quiebre de stock no es solo la venta perdida en el momento; es el cliente decepcionado que se va definitivamente con la competencia."
+                    </div>
+
+                    <h2>Hallazgos de Auditoría del Módulo de Inventario Edatia</h2>
+                    <p>La auditoría operativa del módulo de <strong>Inventario Inteligente</strong> de Edatia ERP 1.0 destaca 3 innovaciones clave para retail y distribución:</p>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-warehouse" style="color: #f59e0b;"></i> 1. Arquitectura Multi-Bodega Real</h4>
+                        <p>Visibilidad en tiempo real del stock disponible en Bodega Central, Puntos de Venta y Mercancía en Tránsito.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-barcode" style="color: #f59e0b;"></i> 2. Despacho Prioritario FEFO (First Expired, First Out)</h4>
+                        <p>Garantiza que los lotes con fecha de vencimiento más cercana sean los primeros en ser facturados y despachados.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-truck-ramp-box" style="color: #f59e0b;"></i> 3. Reabastecimiento Automático por Punto de Reorden</h4>
+                        <p>Al llegar al stock mínimo configurado, el ERP genera automáticamente el borrador de la Orden de Compra sugerida.</p>
+                    </div>
+
+                    <h2>Conclusión del Columnista</h2>
+                    <p>Optimizar el inventario es la forma más rápida de liberar flujo de caja atrapado. Edatia ERP demuestra que la trazabilidad precisa y el control multi-bodega son la piedra angular de una empresa rentable.</p>
+                `
+            },
+            "ecommerce-omnicanal": {
+                slug: "ecommerce-omnicanal",
+                module: "E-Commerce Nativo",
+                category: "COMERCIO DIGITAL & OMNICANALIDAD",
+                title: "El mito de vender por internet y gestionar por WhatsApp: Omnicanalidad nativa sin sobreventas",
+                subtitle: "Auditamos el impacto de sincronizar tu tienda virtual directamente al núcleo del ERP frente al caos de la gestión manual de pedidos.",
+                author: "Columna de Transformación Digital",
+                date: "21 Julio, 2026",
+                readTime: "4 min de lectura",
+                accentColor: "#a855f7",
+                image: "assets/blog_ecommerce.jpg",
+                auditKeyPoints: [
+                    "Hallazgo de Auditoría 1: Sincronización bidireccional inmediata de stock e inventario entre tienda web y puntos físicos.",
+                    "Hallazgo de Auditoría 2: Entrada automática de pedidos virtuales a la cola de despacho y facturación electrónica central.",
+                    "Hallazgo de Auditoría 3: Perfil único omnicanal de cliente integrando hábitos de consumo online y en mostrador."
+                ],
+                contentHTML: `
+                    <p>Durante la ola del comercio electrónico, miles de empresas abrieron sitios web y tiendas en redes sociales. Sin embargo, muchas descubrieron una amarga realidad: vender online se convirtió en una pesadilla operativa de mensajes manuales de WhatsApp, llamadas a bodega y cancelaciones de pedidos por falta de stock.</p>
+                    
+                    <h2>El peligro mortal de la sobreventa</h2>
+                    <p>No hay nada más frustrante para un comprador online que pagar por un producto, esperar su paquete y recibir horas después un mensaje diciendo: <em>"Disculpe, el producto se agotó en nuestra tienda física"</em>. Este fallo destruye la reputación de la marca al instante.</p>
+
+                    <div class="pull-quote">
+                        "La verdadera omnicanalidad no consiste en publicar productos en redes sociales; consiste en que tu tienda web y tus puntos físicos compartan un mismo cerebro transaccional."
+                    </div>
+
+                    <h2>Auditoría del Módulo E-Commerce Nativo Edatia ERP</h2>
+                    <p>Nuestra auditoría al módulo de <strong>E-Commerce Nativo</strong> de Edatia ERP comprueba el valor de una arquitectura sin conectores de terceros propensos a fallos:</p>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-arrows-rotate" style="color: #a855f7;"></i> Sincronización a Cero Milisegundos</h4>
+                        <p>Cuando un producto se vende en el POS físico, el stock en la tienda web se actualiza inmediatamente sin riesgo de sobreventa.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-boxes-packing" style="color: #a855f7;"></i> Despacho Directo desde ERP</h4>
+                        <p>El pedido ingresa a la pantalla de alistamiento de bodega y genera la factura electrónica DIAN al ser aprobado.</p>
+                    </div>
+
+                    <h2>Conclusión del Columnista</h2>
+                    <p>Crecer en canales digitales sin un ERP omnicanal por detrás es insostenible. Edatia ERP brinda la infraestructura para vender 24/7 con total tranquilidad operativa.</p>
+                `
+            },
+            "talento-humano-nomina": {
+                slug: "talento-humano-nomina",
+                module: "Administrativo y RH",
+                category: "TALENTO & GESTIÓN DE PERSONAL",
+                title: "Más allá del salario: La revolución en la gestión del talento humano, nómina electrónica y clima laboral",
+                subtitle: "Por qué la administración moderna de personal exige expedientes digitales completos, auditoría de seguridad y escucha activa del equipo.",
+                author: "Columna de Gestión de Talento",
+                date: "21 Julio, 2026",
+                readTime: "5 min de lectura",
+                accentColor: "#06b6d4",
+                image: "assets/blog_rh.jpg",
+                auditKeyPoints: [
+                    "Hallazgo de Auditoría 1: Liquidación y dispersión de nómina electrónica DIAN en pocos clics sin errores de cálculo.",
+                    "Hallazgo de Auditoría 2: Expediente digital completo con más de 35 campos laborales, seguridad social y contratos.",
+                    "Hallazgo de Auditoría 3: Medición del clima organizacional y eNPS en vivo integrados al portal de colaboradores."
+                ],
+                contentHTML: `
+                    <p>La gestión del talento humano en las PyMEs ha sido históricamente relegada a una tarea administrativa menor: calcular salarios cada quincena en una planilla de Excel y guardar contratos en carpetas de cartón.</p>
+                    
+                    <h2>El costo del desorden administrativo en RH</h2>
+                    <p>Perder documentos de seguridad social, equivocarse en la liquidación de recargos nocturnos o ignorar el descontento del personal causa costosas demandas laborales, sanciones de la UGPP / DIAN y una alta rotación de empleados capacitados.</p>
+
+                    <div class="pull-quote">
+                        "Las empresas que escalan con éxito no son las que solo pagan salarios; son las que ofrecen procesos transparentes, seguridad laboral y escuchan el clima organizacional."
+                    </div>
+
+                    <h2>Hallazgos de Auditoría del Módulo Administrativo y RH Edatia ERP</h2>
+                    <p>La auditoría al módulo <strong>Administrativo y RH</strong> de Edatia ERP 1.0 reveló una plataforma integral que une el cumplimiento legal con la cultura laboral:</p>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-calculator" style="color: #06b6d4;"></i> 1. Nómina Electrónica Integrada</h4>
+                        <p>Liquidación exacta de sueldos, horas extras, prestaciones y transmisión del soporte XML a la DIAN sin plataformas intermediarias.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-folder-open" style="color: #06b6d4;"></i> 2. Hoja de Vida de 35+ Campos Normativos</h4>
+                        <p>Expediente digital centralizado con información personal, laboral, académica, financiera, seguridad social y contactos de emergencia.</p>
+                    </div>
+
+                    <div class="highlight-card">
+                        <h4><i class="fa-solid fa-heart-pulse" style="color: #06b6d4;"></i> 3. Evaluación de Clima eNPS en Tiempo Real</h4>
+                        <p>Monitoreo continuo del nivel de satisfacción laboral (Employee Net Promoter Score) para tomar decisiones antes de que haya fuga de talento.</p>
+                    </div>
+
+                    <h2>Conclusión del Columnista</h2>
+                    <p>Edatia ERP demuestra que la gestión de personal puede ser ágil, segura y motivadora. Automatizar la nómina y cuidar al talento es la mejor estrategia de crecimiento corporativo.</p>
+                `
+            }
+        };
+
+        // RENDERIZADO DEL ARTÍCULO ACTUAL
+        function renderArticle() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let artSlug = urlParams.get('art') || 'pos-dian';
+            
+            // Fallback si el slug no existe
+            if (!articles[artSlug]) artSlug = 'pos-dian';
+            
+            const article = articles[artSlug];
+
+            // Renderizar contenido principal
+            const target = document.getElementById('article-render-target');
+            
+            let auditItemsHTML = article.auditKeyPoints.map(point => `
+                <li><i class="fa-solid fa-check-circle"></i> <span>${point}</span></li>
+            `).join('');
+
+            target.innerHTML = `
+                <article class="article-header">
+                    <div class="article-category-badge" style="color: ${article.accentColor}; border-color: ${article.accentColor}40; background: ${article.accentColor}15;">
+                        <i class="fa-solid fa-feather-pointed"></i> ${article.category}
+                    </div>
+                    <h1 class="article-title">${article.title}</h1>
+                    <p class="article-subtitle">${article.subtitle}</p>
+
+                    <div class="article-meta">
+                        <div class="author-box">
+                            <div class="author-avatar" style="background: ${article.accentColor}">ED</div>
+                            <div>
+                                <strong style="color: #fff; display: block;">${article.author}</strong>
+                                <span style="font-size: 0.78rem; color: var(--text-muted);">Edatia ERP Insights & Audit</span>
+                            </div>
+                        </div>
+                        <div class="meta-details">
+                            <span><i class="fa-regular fa-calendar mr-1"></i> ${article.date}</span>
+                            <span><i class="fa-regular fa-clock mr-1"></i> ${article.readTime}</span>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="featured-image-box">
+                    <img src="${article.image}" alt="${article.title}">
+                </div>
+
+                <!-- Caja de Auditoría ERP -->
+                <div class="audit-callout-box" style="border-left-color: ${article.accentColor};">
+                    <div class="audit-callout-header" style="color: ${article.accentColor};">
+                        <i class="fa-solid fa-clipboard-check"></i> Hallazgos de Auditoría — Edatia ERP v1.0 (${article.module})
+                    </div>
+                    <h4>Apuntes Clave para Clientes & Directivos</h4>
+                    <ul class="audit-list">
+                        ${auditItemsHTML}
+                    </ul>
+                </div>
+
+                <!-- Cuerpo del Artículo -->
+                <div class="article-content">
+                    ${article.contentHTML}
+                </div>
+
+                <!-- Banner CTA -->
+                <div class="cta-box">
+                    <h3>¿Listo para transformar la operación de tu empresa?</h3>
+                    <p>Edatia ERP Versión 1.0 está officially disponible para producción en retail y distribución en Colombia. Elimina los errores de Excel y automatiza tu negocio hoy mismo.</p>
+                    <div class="cta-btn-group">
+                        <a href="https://erp.edatia.com" class="btn-primary-cta"><i class="fa-solid fa-rocket mr-1"></i> Acceder a Edatia ERP</a>
+                        <a href="erp.html" class="btn-secondary-cta"><i class="fa-solid fa-layer-group mr-1"></i> Explorar Módulos</a>
+                    </div>
+                </div>
+            `;
+
+            // Renderizar carrusel/grid de otros artículos
+            renderOtherBlogs(artSlug);
+        }
+
+        function renderOtherBlogs(currentSlug) {
+            const grid = document.getElementById('other-blogs-grid');
+            grid.innerHTML = '';
+
+            Object.keys(articles).forEach(slug => {
+                if (slug === currentSlug) return; // Omitir artículo actual
+
+                const item = articles[slug];
+                const card = document.createElement('a');
+                card.className = 'blog-card-link';
+                card.href = `blog.html?art=${slug}`;
+                card.innerHTML = `
+                    <div class="mini-blog-card">
+                        <img src="${item.image}" alt="${item.title}" class="mini-blog-img">
+                        <div class="mini-blog-content">
+                            <div>
+                                <div class="mini-blog-tag" style="color: ${item.accentColor}">${item.tag}</div>
+                                <h4 class="mini-blog-title">${item.title}</h4>
+                            </div>
+                            <div class="mini-blog-meta">
+                                <span>${item.date}</span>
+                                <span>${item.readTime}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Cargar artículo al iniciar
+        window.addEventListener('DOMContentLoaded', renderArticle);
+    </script>
+</body>
+</html>
