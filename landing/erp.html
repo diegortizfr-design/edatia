@@ -1214,108 +1214,206 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Estilos de Descripciones y Especificaciones de Módulo */
-        .module-header-info {
+        /* Diseños Creativos y Formales para Propiedades de Módulos (Sin Simulación) */
+        .module-showcase-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            height: 100%;
+        }
+
+        .module-showcase-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 0.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .module-title-box {
+        .module-showcase-title {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.85rem;
         }
 
-        .module-title-box i {
-            font-size: 1.3rem;
+        .module-icon-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            color: var(--accent-color, #38bdf8);
         }
 
-        .module-title-box h4 {
-            font-size: 1.15rem;
+        .module-showcase-title h3 {
+            font-size: 1.25rem;
             font-weight: 700;
-            margin: 0;
             color: #f8fafc;
+            margin: 0 0 0.15rem 0;
+            letter-spacing: -0.01em;
         }
 
-        .module-badge-tag {
+        .module-showcase-title span {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+        }
+
+        .module-metrics-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .metric-pill {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.73rem;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .module-desc-card {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 1.1rem 1.25rem;
-            line-height: 1.5;
-            font-size: 0.88rem;
             color: #cbd5e1;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .module-hero-quote {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--accent-color, #38bdf8);
+            border-radius: 12px;
+            padding: 1.1rem 1.35rem;
             position: relative;
-            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
         }
 
-        .module-desc-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--module-accent, #38bdf8);
+        .module-hero-quote p {
+            margin: 0;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+            font-weight: 400;
         }
 
-        .module-highlights-grid {
+        .module-properties-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.85rem;
         }
 
-        @media (max-width: 768px) {
-            .module-highlights-grid {
+        @media (max-width: 992px) {
+            .module-properties-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .module-properties-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .module-highlight-item {
+        .property-card {
             background: rgba(255, 255, 255, 0.025);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
-            padding: 0.85rem;
-            transition: all 0.25s ease;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 0.95rem 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.55rem;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .module-highlight-item:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.04);
-            transform: translateY(-2px);
+        .property-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, var(--accent-glow, rgba(56, 189, 248, 0.15)) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .module-highlight-item h5 {
+        .property-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.045);
+            border-color: var(--accent-border, rgba(56, 189, 248, 0.35));
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .property-card:hover::after {
+            opacity: 1;
+        }
+
+        .property-card-header {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #f1f5f9;
-            margin-bottom: 0.35rem;
+            gap: 0.55rem;
         }
 
-        .module-highlight-item p {
-            font-size: 0.76rem;
-            color: #94a3b8;
+        .property-card-header i {
+            font-size: 1.1rem;
+            color: var(--accent-color, #38bdf8);
+        }
+
+        .property-card-header h5 {
             margin: 0;
-            line-height: 1.4;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .property-card p {
+            margin: 0;
+            font-size: 0.76rem;
+            line-height: 1.45;
+            color: #94a3b8;
+        }
+
+        .property-badge {
+            align-self: flex-start;
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-color, #38bdf8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .module-impact-banner {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 0.75rem 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 0.1rem;
+        }
+
+        .module-impact-banner strong {
+            color: #f8fafc;
         }
 
         /* Estilos específicos de los Dashboards del ERP */
@@ -2431,7 +2529,7 @@
     <section id="modulos" class="modules">
         <div class="section-header reveal">
             <h2>Ingeniería Modular</h2>
-            <p style="color: var(--text-secondary);">Explora nuestros módulos a la izquierda para conocer su alcance, funcionalidades clave y probar la experiencia interactiva.</p>
+            <p style="color: var(--text-secondary);">Selecciona un módulo a la izquierda para descubrir su arquitectura, capacidades operativas y el valor que aporta a tu empresa.</p>
         </div>
 
         <div class="modules-interactive-container reveal">
@@ -2489,407 +2587,410 @@
                 </div>
                 
                 <div class="preview-body">
-                    <!-- Vista 1: Ventas y POS -->
+                        <!-- Vista 1: Ventas y POS -->
                     <div class="preview-tab-content active" id="preview-ventas">
-                        <div class="module-header-info">
-                            <div class="module-title-box">
-                                <i class="fa-solid fa-cart-shopping" style="color: #38bdf8;"></i>
-                                <h4>Ventas y Punto de Venta (POS)</h4>
+                        <div class="module-showcase-container" style="--accent-color: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.18); --accent-border: rgba(56, 189, 248, 0.35);">
+                            <div class="module-showcase-header">
+                                <div class="module-showcase-title">
+                                    <div class="module-icon-badge">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                    </div>
+                                    <div>
+                                        <h3>Ventas y Punto de Venta (POS)</h3>
+                                        <span>Módulo de Facturación & Mostrador Ágil</span>
+                                    </div>
+                                </div>
+                                <div class="module-metrics-bar">
+                                    <span class="metric-pill"><i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Emisión &lt; 1s</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-shield-check" style="color: #10b981;"></i> DIAN Colombia</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-credit-card" style="color: #a855f7;"></i> Multi-Pago</span>
+                                </div>
                             </div>
-                            <span class="module-badge-tag" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-                                <i class="fa-solid fa-bolt"></i> Mostrador & Facturación DIAN
-                            </span>
-                        </div>
 
-                        <div class="module-desc-card" style="--module-accent: #38bdf8;">
-                            Punto de venta omnicanal y facturación electrónica instantánea. Diseñado para operaciones de mostrador ágiles, control estricto de cajas y emisión automática de documentos normativos sin fricción operacional.
-                        </div>
+                            <div class="module-hero-quote">
+                                <p>Punto de venta omnicanal y facturación electrónica instantánea. Diseñado para operaciones de mostrador ágiles, control estricto de cajas y emisión automática de documentos normativos sin fricción operacional.</p>
+                            </div>
 
-                        <div class="module-highlights-grid">
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-file-invoice-dollar" style="color: #38bdf8;"></i> Facturación DIAN</h5>
-                                <p>Emisión automática de facturas electrónicas y tiquetes POS con generación de XML y QR normativos.</p>
+                            <div class="module-properties-grid">
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                                        <h5>Facturación DIAN</h5>
+                                    </div>
+                                    <p>Emisión instantánea de facturas electrónicas y tiquetes POS con generación de XML, PDF y código QR normativo.</p>
+                                    <span class="property-badge">⚡ 100% Automático</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-cash-register"></i>
+                                        <h5>Mostrador Táctil</h5>
+                                    </div>
+                                    <p>Interfaz veloz optimizada para pantallas táctiles, pistolas de código de barras y atajos de teclado.</p>
+                                    <span class="property-badge">🚀 Cobro Ultra-Ágil</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-vault"></i>
+                                        <h5>Arqueos de Caja</h5>
+                                    </div>
+                                    <p>Control estricto de turnos por cajero, cierres ciegos de caja y auditoría inmediata de sobrantes o faltantes.</p>
+                                    <span class="property-badge">🔒 Control Anti-Fuga</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-percent"></i>
+                                        <h5>Descuentos & Promos</h5>
+                                    </div>
+                                    <p>Listas de precios diferenciadas por cliente, promociones temporales y descuentos autorizados por perfil.</p>
+                                    <span class="property-badge">🏷️ Reglas Dinámicas</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-wallet"></i>
+                                        <h5>Medios de Pago</h5>
+                                    </div>
+                                    <p>Registro combinado de efectivo, datáfonos, transferencias bancarias y credenciales de crédito al instante.</p>
+                                    <span class="property-badge">💳 Cobro Mixto</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-sync"></i>
+                                        <h5>Sync Inventario</h5>
+                                    </div>
+                                    <p>Descuento automático de existencias en tiempo real al finalizar cada venta, evitando vender sin stock.</p>
+                                    <span class="property-badge">📦 Kardex Vivo</span>
+                                </div>
                             </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-cash-register" style="color: #38bdf8;"></i> Mostrador Táctil</h5>
-                                <p>Interfaz ágil optimizada para pantallas táctiles, lectura de código de barras y múltiples medios de pago.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-vault" style="color: #38bdf8;"></i> Arqueos de Caja</h5>
-                                <p>Control de turnos por cajero, cierres ciegos de caja y auditoría inmediata de sobrantes o faltantes.</p>
-                            </div>
-                        </div>
 
-                        <!-- Simulador Interactivo POS -->
-                        <div class="pos-grid" style="margin-top: 0.5rem;">
-                            <div>
-                                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.8rem;"><i class="fa-solid fa-hand-pointer mr-1"></i> Prueba el mostrador interactivo:</p>
-                                <div class="pos-products">
-                                    <div class="pos-product-card" onclick="addPosItem('Café Latte', 8500, 'fa-mug-hot')">
-                                        <i class="fa-solid fa-mug-hot"></i>
-                                        <span>Café Latte</span>
-                                        <small>$8.500</small>
-                                    </div>
-                                    <div class="pos-product-card" onclick="addPosItem('Pastel Choco', 12000, 'fa-cake-candles')">
-                                        <i class="fa-solid fa-cake-candles"></i>
-                                        <span>Pastel Choco</span>
-                                        <small>$12.000</small>
-                                    </div>
-                                    <div class="pos-product-card" onclick="addPosItem('Soda Italiana', 9500, 'fa-glass-water')">
-                                        <i class="fa-solid fa-glass-water"></i>
-                                        <span>Soda Ital.</span>
-                                        <small>$9.500</small>
-                                    </div>
-                                    <div class="pos-product-card" onclick="addPosItem('Panini Pavo', 16500, 'fa-bread-slice')">
-                                        <i class="fa-solid fa-bread-slice"></i>
-                                        <span>Panini Pavo</span>
-                                        <small>$16.500</small>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="pos-receipt" id="pos-receipt">
-                                <div class="receipt-header">
-                                    <strong>EDATIA CAFE & RESTAURANTE</strong><br>
-                                    NIT: 901.452.883-1<br>
-                                    Factura de Venta POS Nro: <span style="font-family: monospace;">E-2026-4421</span>
-                                </div>
-                                <div class="receipt-items" id="receipt-items">
-                                    <div style="text-align: center; color: #64748b; margin-top: 1.5rem; font-size: 0.8rem;">El ticket está vacío.<br>Agrega productos a la izquierda.</div>
-                                </div>
-                                <div class="receipt-totals">
-                                    <span>TOTAL FACTURA:</span>
-                                    <span id="receipt-total-val">$0</span>
-                                </div>
-                                <button class="pos-action-btn" id="pos-billing-btn" onclick="billPos()" disabled>
-                                    <i class="fa-solid fa-file-invoice-dollar"></i> Facturar Electrónicamente (DIAN)
-                                </button>
+                            <div class="module-impact-banner">
+                                <span><i class="fa-solid fa-chart-line mr-2" style="color: #38bdf8;"></i> <strong>Impacto Operativo:</strong> Reduce el tiempo de atención en caja un 70% y elimina reprocesos de facturación DIAN.</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Vista 2: Contabilidad -->
                     <div class="preview-tab-content" id="preview-contabilidad">
-                        <div class="module-header-info">
-                            <div class="module-title-box">
-                                <i class="fa-solid fa-calculator" style="color: #10b981;"></i>
-                                <h4>Contabilidad Automatizada NIIF</h4>
+                        <div class="module-showcase-container" style="--accent-color: #10b981; --accent-glow: rgba(16, 185, 129, 0.18); --accent-border: rgba(16, 185, 129, 0.35);">
+                            <div class="module-showcase-header">
+                                <div class="module-showcase-title">
+                                    <div class="module-icon-badge" style="color: #10b981;">
+                                        <i class="fa-solid fa-calculator"></i>
+                                    </div>
+                                    <div>
+                                        <h3>Contabilidad Automatizada NIIF</h3>
+                                        <span>Motor Contable Autónomo & Fiscal</span>
+                                    </div>
+                                </div>
+                                <div class="module-metrics-bar">
+                                    <span class="metric-pill"><i class="fa-solid fa-robot" style="color: #10b981;"></i> Cero Digitación</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-scale-balanced" style="color: #38bdf8;"></i> NIIF / PUC</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-chart-pie" style="color: #a855f7;"></i> Balances en Vivo</span>
+                                </div>
                             </div>
-                            <span class="module-badge-tag" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">
-                                <i class="fa-solid fa-robot"></i> Asientos en Tiempo Real
-                            </span>
-                        </div>
 
-                        <div class="module-desc-card" style="--module-accent: #10b981;">
-                            Motor contable NIIF en tiempo real de doble entrada. Elimina la causa raíz del error humano registrando asientos automáticos por cada factura, cobro, compra o traslado operacional.
-                        </div>
+                            <div class="module-hero-quote">
+                                <p>Motor contable NIIF en tiempo real de doble entrada. Elimina la causa raíz del error humano registrando asientos automáticos por cada factura, cobro, compra o traslado operacional.</p>
+                            </div>
 
-                        <div class="module-highlights-grid">
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-wand-magic-sparkles" style="color: #10b981;"></i> Cero Doble Digitación</h5>
-                                <p>Cada venta o egreso genera su asiento contable mapped al PUC sin intervención manual del usuario.</p>
+                            <div class="module-properties-grid">
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #10b981;"></i>
+                                        <h5>Asientos Automáticos</h5>
+                                    </div>
+                                    <p>Generación autónoma e invisible de comprobantes contables por cada transacción en el ERP.</p>
+                                    <span class="property-badge" style="color: #10b981;">✨ 100% Autónomo</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-sitemap" style="color: #10b981;"></i>
+                                        <h5>Mapeo Dinámico PUC</h5>
+                                    </div>
+                                    <p>Parametrización limpia de cuentas PUC por sucursal, producto e impuestos asociados.</p>
+                                    <span class="property-badge" style="color: #10b981;">📐 Reglas Flexibles</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-chart-column" style="color: #10b981;"></i>
+                                        <h5>Estados Financieros</h5>
+                                    </div>
+                                    <p>Balance General, PyG y Libro Mayor actualizados segundo a segundo sin cierres de mes traumáticos.</p>
+                                    <span class="property-badge" style="color: #10b981;">📊 Tiempo Real</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                                        <h5>Cumplimiento DIAN</h5>
+                                    </div>
+                                    <p>Reportes tributarios integrados, retenciones, IVA, ICA y archivos de exógena listos.</p>
+                                    <span class="property-badge" style="color: #10b981;">📜 Exógena Ready</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-building-columns" style="color: #10b981;"></i>
+                                        <h5>Conciliación Bancaria</h5>
+                                    </div>
+                                    <p>Cruce inteligente de extractos bancarios contra recibos de caja y egresos registrados.</p>
+                                    <span class="property-badge" style="color: #10b981;">🏦 Cruce Ágil</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-clock-rotate-left" style="color: #10b981;"></i>
+                                        <h5>Auditoría Completa</h5>
+                                    </div>
+                                    <p>Historial inalterable de modificaciones, usuario creador y trazabilidad de origen de cada asiento.</p>
+                                    <span class="property-badge" style="color: #10b981;">🛡️ Inmutable</span>
+                                </div>
                             </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> Estados al Instante</h5>
-                                <p>Balance general, PyG y libro diario actualizados al segundo para decisiones financieras precisas.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Cumplimiento Fiscal</h5>
-                                <p>Informes tributarios e información exógena DIAN listos para ser presentados sin inconsistencias.</p>
-                            </div>
-                        </div>
 
-                        <!-- Panel de Métricas / Gráfico -->
-                        <div class="kpis-grid" style="margin-top: 0.2rem;">
-                            <div class="kpi-card" style="--kpi-color: #10b981;">
-                                <small>INGRESOS HOY</small>
-                                <span>$4.820.000</span>
-                            </div>
-                            <div class="kpi-card" style="--kpi-color: #ef4444;">
-                                <small>EGRESOS HOY</small>
-                                <span>$1.240.000</span>
-                            </div>
-                            <div class="kpi-card" style="--kpi-color: #38bdf8;">
-                                <small>SALDO CAJAS</small>
-                                <span>$3.580.000</span>
-                            </div>
-                        </div>
-
-                        <div class="chart-box">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">
-                                <span>Flujo de Caja - Últimas 6 horas</span>
-                                <span style="color: #10b981;"><i class="fa-solid fa-circle mr-1" style="font-size: 6px;"></i> Generado en Tiempo Real</span>
-                            </div>
-                            <div class="svg-chart-container">
-                                <svg viewBox="0 0 500 150" width="100%" height="100%">
-                                    <path d="M 0,150 L 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20 L 500,150 Z" fill="rgba(16, 185, 129, 0.05)"></path>
-                                    <path d="M 0,110 L 100,90 L 200,120 L 300,70 L 400,50 L 500,20" fill="none" stroke="#10b981" stroke-width="3" class="chart-line"></path>
-                                    <circle cx="100" cy="90" r="5" fill="#10b981"></circle>
-                                    <circle cx="200" cy="120" r="5" fill="#10b981"></circle>
-                                    <circle cx="300" cy="70" r="5" fill="#10b981"></circle>
-                                    <circle cx="400" cy="50" r="5" fill="#10b981"></circle>
-                                    <circle cx="500" cy="20" r="5" fill="#10b981"></circle>
-                                    
-                                    <text x="90" y="80" fill="#94a3b8" font-size="9" font-family="sans-serif">$2.5M</text>
-                                    <text x="290" y="60" fill="#94a3b8" font-size="9" font-family="sans-serif">$3.8M</text>
-                                    <text x="470" y="35" fill="#10b981" font-size="10" font-family="sans-serif" font-weight="bold">$4.8M</text>
-                                </svg>
+                            <div class="module-impact-banner">
+                                <span><i class="fa-solid fa-piggy-bank mr-2" style="color: #10b981;"></i> <strong>Impacto Financiero:</strong> Ahorra cientos de horas de digitación contable y elimina errores en cierres de mes.</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Vista 3: Inventario -->
                     <div class="preview-tab-content" id="preview-inventario">
-                        <div class="module-header-info">
-                            <div class="module-title-box">
-                                <i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i>
-                                <h4>Inventario Inteligente Multi-Bodega</h4>
-                            </div>
-                            <span class="module-badge-tag" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
-                                <i class="fa-solid fa-layer-group"></i> Lotes & Stock Crítico
-                            </span>
-                        </div>
-
-                        <div class="module-desc-card" style="--module-accent: #f59e0b;">
-                            Control centralizado multi-bodega y valorización de existencias en tiempo real. Optimiza niveles de stock, evita quiebres de inventario y mantiene trazabilidad total de lotes y vencimientos.
-                        </div>
-
-                        <div class="module-highlights-grid">
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-warehouse" style="color: #f59e0b;"></i> Gestión Multi-Bodega</h5>
-                                <p>Control unificado de existencias en múltiples sucursales con traslados auditados entre bodegas.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-barcode" style="color: #f59e0b;"></i> Lotes y Vencimientos</h5>
-                                <p>Trazabilidad rigurosa de lotes, fechas de caducidad y números de serie para productos regulados.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-truck-ramp-box" style="color: #f59e0b;"></i> Reabastecimiento Ágil</h5>
-                                <p>Alertas automáticas por bajo stock y generación de órdenes de compra con un solo clic.</p>
-                            </div>
-                        </div>
-
-                        <!-- Tabla de Existencias Simulada -->
-                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem; margin-top: 0.2rem;">
-                            <div class="table-responsive">
-                                <table class="stock-table">
-                                    <thead>
-                                        <tr>
-                                            <th>PRODUCTO</th>
-                                            <th>BODEGA</th>
-                                            <th>EXISTENCIA</th>
-                                            <th>ESTADO</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Café Orgánico 1Kg</td>
-                                            <td>Principal</td>
-                                            <td id="stock-val-1">12 Unidades</td>
-                                            <td><span class="badge-status badge-low" id="stock-badge-1">Bajo Stock</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Vasos Biodegradables</td>
-                                            <td>Principal</td>
-                                            <td id="stock-val-2">450 Unidades</td>
-                                            <td><span class="badge-status badge-ok">Disponible</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Materia Prima Panini</td>
-                                            <td>Bodega Norte</td>
-                                            <td id="stock-val-3">85 Unidades</td>
-                                            <td><span class="badge-status badge-ok">Disponible</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 2rem;">
-                                <div style="flex-grow: 1;">
-                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.2rem;">
-                                        <span>Capacidad Total de Bodega Central</span>
-                                        <span id="stock-percentage-text">45%</span>
+                        <div class="module-showcase-container" style="--accent-color: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.18); --accent-border: rgba(245, 158, 11, 0.35);">
+                            <div class="module-showcase-header">
+                                <div class="module-showcase-title">
+                                    <div class="module-icon-badge" style="color: #f59e0b;">
+                                        <i class="fa-solid fa-boxes-stacked"></i>
                                     </div>
-                                    <div class="stock-progress-container">
-                                        <div class="stock-progress-bar" id="stock-progress" style="width: 45%;"></div>
+                                    <div>
+                                        <h3>Inventario Inteligente Multi-Bodega</h3>
+                                        <span>Control Logístico & Valorización en Vivo</span>
                                     </div>
                                 </div>
-                                <button class="pos-action-btn" onclick="replenishStock()" style="background: #f59e0b; color: #0f172a; width: auto; font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                    <i class="fa-solid fa-truck-ramp-box"></i> Ordenar Compra
-                                </button>
+                                <div class="module-metrics-bar">
+                                    <span class="metric-pill"><i class="fa-solid fa-warehouse" style="color: #f59e0b;"></i> Multi-Bodega</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-barcode" style="color: #38bdf8;"></i> Lotes & FEFO</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-truck-fast" style="color: #10b981;"></i> Reabastecimiento</span>
+                                </div>
+                            </div>
+
+                            <div class="module-hero-quote">
+                                <p>Control centralizado multi-bodega y valorización de existencias en tiempo real. Optimiza niveles de stock, evita quiebres de inventario y mantiene trazabilidad total de lotes y vencimientos.</p>
+                            </div>
+
+                            <div class="module-properties-grid">
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-warehouse" style="color: #f59e0b;"></i>
+                                        <h5>Multi-Bodega</h5>
+                                    </div>
+                                    <p>Administración unificada del stock distribuido en múltiples sucursales, bodegas y centros logísticos.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">🏢 Stock Global</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-truck-arrow-right" style="color: #f59e0b;"></i>
+                                        <h5>Traslados Auditados</h5>
+                                    </div>
+                                    <p>Transferencias de mercancía entre bodegas con estados de tránsito, guía y recepción firmada.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">🚚 Trazabilidad</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-calendar-xmark" style="color: #f59e0b;"></i>
+                                        <h5>Lotes & FEFO</h5>
+                                    </div>
+                                    <p>Trazabilidad rigurosa de lotes y vencimientos con alertas previas y salidas por rotación cercana.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">🏷️ Cero Pérdidas</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-calculator" style="color: #f59e0b;"></i>
+                                        <h5>Kardex & Valorización</h5>
+                                    </div>
+                                    <p>Cálculo automático de costo promedio ponderado y PEPS con historial detallado de movimiento.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">📈 Costos Exactos</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-bell-concierge" style="color: #f59e0b;"></i>
+                                        <h5>Stock Crítico</h5>
+                                    </div>
+                                    <p>Alertas inteligentes por bajo stock y generación de órdenes de compra al alcanzarse el punto de reorden.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">🔔 Auto-Orden</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-clipboard-check" style="color: #f59e0b;"></i>
+                                        <h5>Conteos Físicos</h5>
+                                    </div>
+                                    <p>Módulo para tomas físicas de inventario, detección de mermas y ajustes de inventario autorizados.</p>
+                                    <span class="property-badge" style="color: #f59e0b;">📋 Auditoría Fís.</span>
+                                </div>
+                            </div>
+
+                            <div class="module-impact-banner">
+                                <span><i class="fa-solid fa-box-open mr-2" style="color: #f59e0b;"></i> <strong>Impacto Logístico:</strong> Garantiza 0% quiebres de stock en productos clave y elimina mermas por vencimiento.</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Vista 4: E-Commerce -->
                     <div class="preview-tab-content" id="preview-ecommerce">
-                        <div class="module-header-info">
-                            <div class="module-title-box">
-                                <i class="fa-solid fa-globe" style="color: #a855f7;"></i>
-                                <h4>E-Commerce Nativo Sincronizado</h4>
-                            </div>
-                            <span class="module-badge-tag" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">
-                                <i class="fa-solid fa-arrows-rotate"></i> Stock Omnicanal 100% Vivo
-                            </span>
-                        </div>
-
-                        <div class="module-desc-card" style="--module-accent: #a855f7;">
-                            Plataforma de comercio electrónico omnicanal directamente conectada al ERP. Tu tienda virtual comparte existencias, catálogo de productos y precios en tiempo real con tus puntos de venta físicos.
-                        </div>
-
-                        <div class="module-highlights-grid">
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-store" style="color: #a855f7;"></i> Stock Unificado</h5>
-                                <p>Evita sobreventas; cada transacción en la web descuenta inmediatamente las existencias del ERP.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-network-wired" style="color: #a855f7;"></i> Pedidos Automáticos</h5>
-                                <p>Los pedidos web ingresan de inmediato a la cola de despacho y facturación electrónica central.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-user-check" style="color: #a855f7;"></i> Cliente Omnicanal</h5>
-                                <p>Perfil único de cliente integrando su historial de compras tanto físicas como en la tienda online.</p>
-                            </div>
-                        </div>
-
-                        <!-- Simulador de Sincronización Web -> ERP -->
-                        <div class="sync-grid" style="margin-top: 0.2rem;">
-                            <!-- Tienda Digital Virtual -->
-                            <div class="sync-window">
-                                <div class="sync-title"><i class="fa-solid fa-store" style="color: #a855f7;"></i> Tienda Online Edatia</div>
-                                <div class="ecom-store-item">
-                                    <div>
-                                        <strong>Café Molido 500g</strong><br>
-                                        <span style="color: #a855f7; font-weight: bold; font-size: 0.75rem;">$24.500 COP</span>
+                        <div class="module-showcase-container" style="--accent-color: #a855f7; --accent-glow: rgba(168, 85, 247, 0.18); --accent-border: rgba(168, 85, 247, 0.35);">
+                            <div class="module-showcase-header">
+                                <div class="module-showcase-title">
+                                    <div class="module-icon-badge" style="color: #a855f7;">
+                                        <i class="fa-solid fa-globe"></i>
                                     </div>
-                                    <button class="ecom-buy-btn" onclick="simulateEcomPurchase('Café Molido 500g', 24500)">Comprar</button>
-                                </div>
-                                <div class="ecom-store-item">
                                     <div>
-                                        <strong>Prensa Francesa</strong><br>
-                                        <span style="color: #a855f7; font-weight: bold; font-size: 0.75rem;">$85.000 COP</span>
+                                        <h3>E-Commerce Nativo Sincronizado</h3>
+                                        <span>Omnicanalidad Digital & Venta Online</span>
                                     </div>
-                                    <button class="ecom-buy-btn" onclick="simulateEcomPurchase('Prensa Francesa', 85000)">Comprar</button>
+                                </div>
+                                <div class="module-metrics-bar">
+                                    <span class="metric-pill"><i class="fa-solid fa-arrows-rotate" style="color: #a855f7;"></i> Sync Realtime</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-store" style="color: #38bdf8;"></i> Catálogo Único</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-truck-ramp-box" style="color: #10b981;"></i> Auto-Despacho</span>
                                 </div>
                             </div>
-                            
-                            <!-- Canal de Sincronización -->
-                            <div class="sync-arrow">
-                                <i class="fa-solid fa-arrows-spin fa-spin" style="margin-bottom: 0.3rem; display: block;"></i>
-                                <span style="font-size: 0.65rem; color: #94a3b8; font-family: monospace; display: block;">API REST</span>
-                                <i class="fa-solid fa-right-long arrow-pulse" style="margin-top: 0.3rem;"></i>
+
+                            <div class="module-hero-quote">
+                                <p>Plataforma de comercio electrónico omnicanal directamente conectada al ERP. Tu tienda virtual comparte existencias, catálogo de productos y precios en tiempo real con tus puntos de venta físicos.</p>
                             </div>
-                            
-                            <!-- Edatia ERP Central -->
-                            <div class="sync-window">
-                                <div class="sync-title"><i class="fa-solid fa-server" style="color: #10b981;"></i> Edatia Central ERP</div>
-                                <div class="erp-sync-list" id="erp-sync-list">
-                                    <div style="text-align: center; color: #64748b; margin-top: 1.5rem;">Esperando ventas en tienda web...</div>
+
+                            <div class="module-properties-grid">
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-rotate" style="color: #a855f7;"></i>
+                                        <h5>Stock Unificado</h5>
+                                    </div>
+                                    <p>Sincronización instantánea; al vender en tienda física o web, el stock se descuenta en ambos cananles.</p>
+                                    <span class="property-badge" style="color: #a855f7;">🔄 0% Sobreventa</span>
                                 </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-cart-arrow-down" style="color: #a855f7;"></i>
+                                        <h5>Pedidos Automáticos</h5>
+                                    </div>
+                                    <p>Los pedidos web entran directamente a la cola de alistamiento, despacho y facturación del ERP.</p>
+                                    <span class="property-badge" style="color: #a855f7;">⚡ Flujo Directo</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-credit-card" style="color: #a855f7;"></i>
+                                        <h5>Pasarelas Integradas</h5>
+                                    </div>
+                                    <p>Conexión directa con pasarelas de pago digitales y conciliación bancaria automática.</p>
+                                    <span class="property-badge" style="color: #a855f7;">💳 Cobro Seguro</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-images" style="color: #a855f7;"></i>
+                                        <h5>Catálogo Unificado</h5>
+                                    </div>
+                                    <p>Publicación de fotos, precios y descripciones directo desde el maestro de productos del ERP.</p>
+                                    <span class="property-badge" style="color: #a855f7;">🖼️ Control Central</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-user-gear" style="color: #a855f7;"></i>
+                                        <h5>Perfil Omnicanal</h5>
+                                    </div>
+                                    <p>Vista 360° del comprador integrando su historial de compras tanto web como en tiendas físicas.</p>
+                                    <span class="property-badge" style="color: #a855f7;">👤 Cliente 360°</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-paper-plane" style="color: #a855f7;"></i>
+                                        <h5>Notificaciones</h5>
+                                    </div>
+                                    <p>Envío automático de actualizaciones de estado (pedido recibido, empacado, en camino) por e-mail.</p>
+                                    <span class="property-badge" style="color: #a855f7;">📩 Auto-Tracking</span>
+                                </div>
+                            </div>
+
+                            <div class="module-impact-banner">
+                                <span><i class="fa-solid fa-rocket mr-2" style="color: #a855f7;"></i> <strong>Impacto Comercial:</strong> Multiplica tus canales de venta sin aumentar la carga operativa de gestión de stock.</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Vista 5: Administrativo y RH -->
                     <div class="preview-tab-content" id="preview-admin">
-                        <div class="module-header-info">
-                            <div class="module-title-box">
-                                <i class="fa-solid fa-users-gear" style="color: #06b6d4;"></i>
-                                <h4>Gestión Administrativa y Rec. Humanos</h4>
-                            </div>
-                            <span class="module-badge-tag" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">
-                                <i class="fa-solid fa-address-card"></i> Nómina & Clima Laboral
-                            </span>
-                        </div>
-
-                        <div class="module-desc-card" style="--module-accent: #06b6d4;">
-                            Suite integrada para la gestión del talento humano, nómina electrónica y control operacional. Centraliza la administración de personal y garantiza la trazabilidad de cada acción en el sistema.
-                        </div>
-
-                        <div class="module-highlights-grid">
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-calculator" style="color: #06b6d4;"></i> Nómina Electrónica</h5>
-                                <p>Liquidación precisa de salarios, seguridad social y dispersión de nómina electrónica a la DIAN.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-folder-user" style="color: #06b6d4;"></i> Hoja de Vida Digital</h5>
-                                <p>Expediente completo de colaboradores, perfiles de cargo, contratos y matriz de permisos.</p>
-                            </div>
-                            <div class="module-highlight-item">
-                                <h5><i class="fa-solid fa-heart-pulse" style="color: #06b6d4;"></i> Clima & eNPS</h5>
-                                <p>Monitoreo continuo de la satisfacción laboral y evaluación del clima organizacional en tiempo real.</p>
-                            </div>
-                        </div>
-
-                        <!-- Panel Interactivo de Nómina y Clima -->
-                        <div class="admin-grid" style="margin-top: 0.2rem;">
-                            <!-- Liquidación de Nómina -->
-                            <div class="payroll-box">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem; margin-bottom: 0.2rem;">
-                                    <span style="font-size: 0.8rem; font-weight: bold; color: #06b6d4;">Nómina del Período</span>
-                                    <span style="font-size: 0.75rem; color: #94a3b8;">Mayo 2026</span>
-                                </div>
-                                <div class="employee-card">
-                                    <div class="employee-info">
-                                        <div class="employee-avatar">SC</div>
-                                        <div class="employee-details">
-                                            <h5>Sofía Castro</h5>
-                                            <small>Diseñadora UI/UX</small>
-                                        </div>
-                                    </div>
-                                    <div class="payroll-amount">
-                                        <span>$4.200.000</span><br>
-                                        <span class="payroll-status status-pending" id="payroll-status-1">Pendiente</span>
-                                    </div>
-                                </div>
-                                <div class="employee-card">
-                                    <div class="employee-info">
-                                        <div class="employee-avatar" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">CR</div>
-                                        <div class="employee-details">
-                                            <h5>Carlos Ruiz</h5>
-                                            <small>Dev Backend</small>
-                                        </div>
-                                    </div>
-                                    <div class="payroll-amount">
-                                        <span>$5.800.000</span><br>
-                                        <span class="payroll-status status-pending" id="payroll-status-2">Pendiente</span>
-                                    </div>
-                                </div>
-                                <button class="pos-action-btn" id="payroll-run-btn" onclick="runPayroll()" style="background: #06b6d4; color: #0f172a; font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                    <i class="fa-solid fa-calculator"></i> Liquidar y Dispersar Nómina
-                                </button>
-                            </div>
-                            
-                            <!-- Clima y Encuestas -->
-                            <div class="clima-box">
-                                <div>
-                                    <span style="font-size: 0.8rem; font-weight: bold; color: #10b981; display: block; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem; margin-bottom: 0.5rem;">Clima Organizacional</span>
-                                    <div class="enps-score-container">
-                                        <div class="enps-circle">
-                                            <span class="enps-value" id="enps-score-val">+74</span>
-                                            <span class="enps-label">eNPS</span>
-                                        </div>
-                                        <div style="font-size: 0.8rem;">
-                                            <strong style="color: #10b981;">Excelente</strong><br>
-                                            <span style="color: #94a3b8; font-size: 0.75rem;" id="enps-responses-count">Basado en 15 respuestas</span>
-                                        </div>
+                        <div class="module-showcase-container" style="--accent-color: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.18); --accent-border: rgba(6, 182, 212, 0.35);">
+                            <div class="module-showcase-header">
+                                <div class="module-showcase-title">
+                                    <div class="module-icon-badge" style="color: #06b6d4;">
+                                        <i class="fa-solid fa-users-gear"></i>
                                     </div>
                                     <div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.2rem;">
-                                            <span>Satisfacción Colaboradores</span>
-                                            <span id="satisfaction-pct-text">88%</span>
-                                        </div>
-                                        <div class="satisfaction-bar-container">
-                                            <div class="satisfaction-bar" id="satisfaction-bar" style="width: 88%;"></div>
-                                        </div>
+                                        <h3>Gestión Administrativa y RH</h3>
+                                        <span>Talento Humano & Auditoría Operacional</span>
                                     </div>
                                 </div>
-                                <button class="pos-action-btn" id="survey-btn" onclick="sendClimateSurvey()" style="background: transparent; border: 1px solid #10b981; color: #10b981; font-size: 0.8rem; padding: 0.5rem 1rem; margin-top: 0.5rem;">
-                                    <i class="fa-solid fa-paper-plane"></i> Enviar Encuesta de Clima
-                                </button>
+                                <div class="module-metrics-bar">
+                                    <span class="metric-pill"><i class="fa-solid fa-file-invoice" style="color: #06b6d4;"></i> Nómina DIAN</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-address-card" style="color: #10b981;"></i> 35+ Campos HR</span>
+                                    <span class="metric-pill"><i class="fa-solid fa-heart" style="color: #ef4444;"></i> Clima eNPS</span>
+                                </div>
+                            </div>
+
+                            <div class="module-hero-quote">
+                                <p>Suite integrada para la gestión del talento humano, nómina electrónica y control operacional. Centraliza la administración de personal y garantiza la trazabilidad de cada acción en el sistema.</p>
+                            </div>
+
+                            <div class="module-properties-grid">
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-calculator" style="color: #06b6d4;"></i>
+                                        <h5>Nómina Electrónica</h5>
+                                    </div>
+                                    <p>Liquidación precisa de salarios, horas extras, seguridad social y transmisión XML directa a la DIAN.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">💼 DIAN Approved</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-folder-user" style="color: #06b6d4;"></i>
+                                        <h5>Expediente Digital</h5>
+                                    </div>
+                                    <p>Hoja de vida completa con datos laborales, contratos, seguridad social y documentos escaneados.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">📄 35+ Campos HR</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-user-shield" style="color: #06b6d4;"></i>
+                                        <h5>Perfiles & Permisos</h5>
+                                    </div>
+                                    <p>Definición de cargos, responsabilidades y matriz granular de permisos por rol de usuario.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">🔐 Control Accesos</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-face-smile" style="color: #06b6d4;"></i>
+                                        <h5>Clima & eNPS</h5>
+                                    </div>
+                                    <p>Monitoreo continuo de la satisfacción del colaborador y evaluaciones de clima laboral.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">❤️ Clima Vivo</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-shield-cat" style="color: #06b6d4;"></i>
+                                        <h5>Logs & Auditoría</h5>
+                                    </div>
+                                    <p>Registro detallado de accesos, cambios en datos sensibles y acciones operativas de cada empleado.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">🛡️ Trazabilidad</span>
+                                </div>
+                                <div class="property-card">
+                                    <div class="property-card-header">
+                                        <i class="fa-solid fa-diagram-project" style="color: #06b6d4;"></i>
+                                        <h5>Organigrama</h5>
+                                    </div>
+                                    <p>Estructura de jerarquías y departamentos para aprobaciones de solicitudes y flujos de trabajo.</p>
+                                    <span class="property-badge" style="color: #06b6d4;">🌳 Estructura</span>
+                                </div>
+                            </div>
+
+                            <div class="module-impact-banner">
+                                <span><i class="fa-solid fa-users mr-2" style="color: #06b6d4;"></i> <strong>Impacto Organizacional:</strong> Simplifica la gestión humana y garantiza el cumplimiento legal y laboral de tu empresa.</span>
                             </div>
                         </div>
-                    </div>
+                    </div>                   
                 </div>
             </div>
         </div>
