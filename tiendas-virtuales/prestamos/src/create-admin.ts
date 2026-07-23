@@ -4,47 +4,62 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const nit = '1143875756';
-  const name = 'Administrador Edatia';
-  const email = 'admin@edatia.com';
-  const password = 'Admin123!';
-
-  console.log('Iniciando creación de usuario administrador en la base de datos...');
-
-  // Check if tenant already exists
-  const existing = await prisma.tenant.findFirst({
-    where: {
-      OR: [
-        { nit },
-        { email }
-      ]
+  const defaultTenants = [
+    {
+      nit: '1143875756',
+      name: 'Administrador Edatia',
+      email: 'admin@edatia.com',
+      password: 'Admin123!',
+      isPremium: true
+    },
+    {
+      nit: '1033680464',
+      name: 'Créditos Rápidos',
+      email: 'creditorapidos26@gmail.com',
+      password: 'Créditosrapidos2026',
+      isPremium: true
     }
-  });
+  ];
 
-  if (existing) {
-    console.log('Aviso: El NIT o Correo ya se encuentran registrados en la base de datos.');
-    return;
+  console.log('Iniciando creación/actualización de empresas administradoras en prestamos_edatia...');
+
+  for (const item of defaultTenants) {
+    const existing = await prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { nit: item.nit },
+          { email: item.email }
+        ]
+      }
+    });
+
+    const hashedPassword = await bcrypt.hash(item.password, 10);
+
+    if (existing) {
+      await prisma.tenant.update({
+        where: { id: existing.id },
+        data: {
+          nit: item.nit,
+          name: item.name,
+          email: item.email,
+          password: hashedPassword,
+          isPremium: item.isPremium
+        }
+      });
+      console.log(`✅ Empresa ${item.name} (${item.email}) actualizada.`);
+    } else {
+      await prisma.tenant.create({
+        data: {
+          nit: item.nit,
+          name: item.name,
+          email: item.email,
+          password: hashedPassword,
+          isPremium: item.isPremium
+        }
+      });
+      console.log(`✅ Empresa ${item.name} (${item.email}) creada exitosamente.`);
+    }
   }
-
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create tenant
-  const tenant = await prisma.tenant.create({
-    data: {
-      nit,
-      name,
-      email,
-      password: hashedPassword
-    }
-  });
-
-  console.log('¡Usuario Creado Exitosamente!');
-  console.log('------------------------------------');
-  console.log(`Empresa:  ${tenant.name}`);
-  console.log(`NIT:      ${tenant.nit}`);
-  console.log(`Correo:   ${tenant.email}`);
-  console.log('------------------------------------');
 }
 
 main()
