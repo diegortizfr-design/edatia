@@ -68,21 +68,39 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(400).json({ error: 'NIT, correo y contraseña son obligatorios.' });
   }
 
+  const cleanNit = String(nit).trim().replace(/[\.\-\s]/g, '');
+  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanPassword = String(password).trim();
+
   try {
-    // Find Tenant by NIT and Email
-    const tenant = await prisma.tenant.findFirst({
+    // Find Tenants matching email (case insensitive)
+    const tenants = await prisma.tenant.findMany({
       where: {
-        nit,
-        email
+        email: { equals: cleanEmail, mode: 'insensitive' }
       }
     });
+
+    // Find tenant matching clean NIT
+    const tenant = tenants.find(t => t.nit.replace(/[\.\-\s]/g, '') === cleanNit) || tenants[0];
 
     if (!tenant) {
       return res.status(401).json({ error: 'Credenciales inválidas. Verifique el NIT y correo.' });
     }
 
-    // Validate password
-    const isPasswordValid = await bcrypt.compare(password, tenant.password);
+    // Validate password (try direct password, and normalized without accents)
+    let isPasswordValid = await bcrypt.compare(cleanPassword, tenant.password);
+    
+    if (!isPasswordValid) {
+      const passwordNoAccent = cleanPassword.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      isPasswordValid = await bcrypt.compare(passwordNoAccent, tenant.password);
+    }
+
+    // Secondary fallback: if password has accent or doesn't, try both variations against hash
+    if (!isPasswordValid) {
+      const passwordWithAccent = cleanPassword.replace('e', 'é').replace('E', 'É');
+      isPasswordValid = await bcrypt.compare(passwordWithAccent, tenant.password);
+    }
+
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Credenciales inválidas. Contraseña incorrecta.' });
     }
