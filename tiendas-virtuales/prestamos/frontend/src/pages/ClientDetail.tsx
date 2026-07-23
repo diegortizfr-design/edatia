@@ -852,7 +852,14 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-8 h-8 text-brand-400 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-white">Expediente de Identificación & Documentación</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white">Expediente de Identificación & Documentación</h3>
+                  {savingAttachment && (
+                    <span className="px-2.5 py-0.5 bg-brand-500/20 text-brand-300 text-[10px] font-bold rounded-full animate-pulse border border-brand-500/30">
+                      Guardando...
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Adjunta o toma fotos en tiempo real con la cámara de la Cédula (Anverso/Reverso) y Rostro del cliente para autorizar préstamos.
                 </p>

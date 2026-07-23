@@ -5,7 +5,7 @@ import { AdSenseBanner } from '../components/AdSenseBanner';
 
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister] = useState(false);
   const [nit, setNit] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
