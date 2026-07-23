@@ -215,11 +215,11 @@ export function Login() {
             Canales de atención
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
-            <a href="https://wa.me/573168285514" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg transition-colors group">
+            <a href="https://wa.me/573235136562" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg transition-colors group">
               <MessageSquare size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
               <div>
                 <p className="font-bold text-slate-800">Soporte WhatsApp</p>
-                <p className="text-[10px] text-slate-500">(+57) 316 828 5514</p>
+                <p className="text-[10px] text-slate-500">(+57) 323 513 6562</p>
               </div>
             </a>
             <div className="flex items-center gap-2 p-2">

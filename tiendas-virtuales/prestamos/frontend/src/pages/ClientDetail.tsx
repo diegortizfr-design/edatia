@@ -3,7 +3,8 @@ import { apiCall } from '../utils/api';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
   Coins, RefreshCw, Plus, 
-  AlertTriangle, Printer, Sparkles, Download
+  AlertTriangle, Printer, Sparkles, Download,
+  Camera, Upload, FileText, CheckCircle, Eye, Trash2, Image as ImageIcon, FilePlus, X, ShieldCheck, FileCheck, Layers
 } from 'lucide-react';
 
 interface Amortization {
@@ -51,6 +52,10 @@ interface ClientFullDetails {
   address: string;
   email: string | null;
   status: string;
+  idFront?: string | null;
+  idBack?: string | null;
+  photo?: string | null;
+  attachmentsJson?: string | null;
   loans: Loan[];
 }
 
@@ -63,6 +68,131 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [client, setClient] = useState<ClientFullDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Tabs Navigation State
+  const [activeTab, setActiveTab] = useState<'info' | 'attachments'>('info');
+
+  // Camera Modal & Camera State
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState<'idFront' | 'idBack' | 'photo' | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+
+  // Image Preview Lightbox State
+  const [previewImage, setPreviewImage] = useState<{ title: string; url: string } | null>(null);
+  const [savingAttachment, setSavingAttachment] = useState(false);
+
+  // Custom Document Form State
+  const [showAddCustomDoc, setShowAddCustomDoc] = useState(false);
+  const [customDocTitle, setCustomDocTitle] = useState('');
+
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  const startCamera = async (target: 'idFront' | 'idBack' | 'photo', mode: 'user' | 'environment' = 'environment') => {
+    setCameraTarget(target);
+    setFacingMode(mode);
+    setShowCameraModal(true);
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err: any) {
+      alert('No se pudo abrir la cámara: ' + (err.message || 'Verifique los permisos de su navegador.'));
+      setShowCameraModal(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      setCameraStream(null);
+    }
+    setShowCameraModal(false);
+    setCameraTarget(null);
+  };
+
+  const capturePhotoFromCamera = async () => {
+    if (!videoRef.current || !canvasRef.current || !cameraTarget || !client) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const target = cameraTarget;
+      stopCamera();
+      await updateClientField(target, dataUrl);
+    }
+  };
+
+  const updateClientField = async (field: string, value: any) => {
+    if (!client) return;
+    setSavingAttachment(true);
+    try {
+      await apiCall(`/clients/${client.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ [field]: value })
+      });
+      setClient(prev => prev ? { ...prev, [field]: value } : null);
+    } catch (err: any) {
+      alert('Error al guardar adjunto: ' + (err.message || err));
+    } finally {
+      setSavingAttachment(false);
+    }
+  };
+
+  const handleFileUpload = (field: 'idFront' | 'idBack' | 'photo', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('El archivo no debe superar los 10 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      await updateClientField(field, reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddCustomDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !customDocTitle.trim()) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const result = reader.result as string;
+      const existingDocs = client?.attachmentsJson ? JSON.parse(client.attachmentsJson) : [];
+      const newDoc = {
+        id: 'doc_' + Date.now(),
+        title: customDocTitle.trim(),
+        type: file.type.includes('pdf') ? 'pdf' : 'image',
+        url: result,
+        date: new Date().toLocaleDateString('es-CO')
+      };
+      const updatedDocs = [...existingDocs, newDoc];
+      await updateClientField('attachmentsJson', JSON.stringify(updatedDocs));
+      setCustomDocTitle('');
+      setShowAddCustomDoc(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeCustomDoc = async (docId: string) => {
+    if (!client || !confirm('¿Estás seguro de eliminar este documento adjunto?')) return;
+    const existingDocs = client.attachmentsJson ? JSON.parse(client.attachmentsJson) : [];
+    const updatedDocs = existingDocs.filter((d: any) => d.id !== docId);
+    await updateClientField('attachmentsJson', JSON.stringify(updatedDocs));
+  };
 
   // Modals Visibility
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -688,7 +818,281 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         </div>
       </div>
 
-      {/* active Loan & Amortization Card */}
+      {/* Navigation Tabs Bar */}
+      <div className="flex border-b border-slate-800 gap-6">
+        <button
+          onClick={() => setActiveTab('info')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-all ${
+            activeTab === 'info'
+              ? 'border-brand-500 text-brand-400 font-bold'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Layers className="w-4 h-4" /> Resumen & Créditos
+        </button>
+        <button
+          onClick={() => setActiveTab('attachments')}
+          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-all ${
+            activeTab === 'attachments'
+              ? 'border-brand-500 text-brand-400 font-bold'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <FileCheck className="w-4 h-4" /> Datos & Documentos Adjuntos
+          {(client.idFront || client.idBack || client.photo || client.attachmentsJson) && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'attachments' ? (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Identity Documents Header Info */}
+          <div className="glass-card p-5 rounded-xl border border-brand-500/20 bg-brand-600/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-brand-400 shrink-0" />
+              <div>
+                <h3 className="text-base font-bold text-white">Expediente de Identificación & Documentación</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Adjunta o toma fotos en tiempo real con la cámara de la Cédula (Anverso/Reverso) y Rostro del cliente para autorizar préstamos.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddCustomDoc(true)}
+              className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-md"
+            >
+              <FilePlus className="w-4 h-4" /> Adjuntar Otro Documento
+            </button>
+          </div>
+
+          {/* Core 3 Identity Photos Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 1. Cédula Anverso */}
+            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20">
+                    Cédula — Frente (Anverso)
+                  </span>
+                  {client.idFront ? (
+                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-500 italic">Pendiente</span>
+                  )}
+                </div>
+
+                {client.idFront ? (
+                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
+                    <img src={client.idFront} alt="Cédula Frente" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setPreviewImage({ title: 'Cédula de Ciudadanía — Anverso', url: client.idFront! })}
+                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Eye className="w-4 h-4" /> Ampliar
+                      </button>
+                      <button
+                        onClick={() => updateClientField('idFront', null)}
+                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Trash2 className="w-4 h-4" /> Borrar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
+                    <ImageIcon className="w-8 h-8 text-slate-600 mb-2" />
+                    <p className="text-xs font-semibold text-slate-400">Sin foto de cédula (frente)</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
+                <button
+                  onClick={() => startCamera('idFront', 'environment')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white rounded-lg text-xs font-bold transition border border-brand-500/30"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Cámara
+                </button>
+                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
+                  <Upload className="w-3.5 h-3.5" /> Subir
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('idFront', e)} />
+                </label>
+              </div>
+            </div>
+
+            {/* 2. Cédula Reverso */}
+            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20">
+                    Cédula — Atrás (Reverso)
+                  </span>
+                  {client.idBack ? (
+                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-500 italic">Pendiente</span>
+                  )}
+                </div>
+
+                {client.idBack ? (
+                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
+                    <img src={client.idBack} alt="Cédula Reverso" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setPreviewImage({ title: 'Cédula de Ciudadanía — Reverso', url: client.idBack! })}
+                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Eye className="w-4 h-4" /> Ampliar
+                      </button>
+                      <button
+                        onClick={() => updateClientField('idBack', null)}
+                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Trash2 className="w-4 h-4" /> Borrar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
+                    <ImageIcon className="w-8 h-8 text-slate-600 mb-2" />
+                    <p className="text-xs font-semibold text-slate-400">Sin foto de cédula (reverso)</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
+                <button
+                  onClick={() => startCamera('idBack', 'environment')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white rounded-lg text-xs font-bold transition border border-brand-500/30"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Cámara
+                </button>
+                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
+                  <Upload className="w-3.5 h-3.5" /> Subir
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('idBack', e)} />
+                </label>
+              </div>
+            </div>
+
+            {/* 3. Foto de Rostro / Selfie */}
+            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-purple-500/10 text-purple-400 rounded-md border border-purple-500/20">
+                    Foto de Rostro / Perfil
+                  </span>
+                  {client.photo ? (
+                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-500 italic">Pendiente</span>
+                  )}
+                </div>
+
+                {client.photo ? (
+                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
+                    <img src={client.photo} alt="Foto de Rostro" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setPreviewImage({ title: 'Foto de Rostro — ' + client.name, url: client.photo! })}
+                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Eye className="w-4 h-4" /> Ampliar
+                      </button>
+                      <button
+                        onClick={() => updateClientField('photo', null)}
+                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
+                      >
+                        <Trash2 className="w-4 h-4" /> Borrar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
+                    <User className="w-8 h-8 text-slate-600 mb-2" />
+                    <p className="text-xs font-semibold text-slate-400">Sin foto de rostro</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
+                <button
+                  onClick={() => startCamera('photo', 'user')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white rounded-lg text-xs font-bold transition border border-purple-500/30"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Tomar Selfie
+                </button>
+                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
+                  <Upload className="w-3.5 h-3.5" /> Subir
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('photo', e)} />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Additional Documents Section */}
+          <div className="glass-card p-6 rounded-xl space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-brand-400" />
+                Documentos Adicionales Adjuntos
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">
+                {client.attachmentsJson ? JSON.parse(client.attachmentsJson).length : 0} archivos
+              </span>
+            </div>
+
+            {client.attachmentsJson && JSON.parse(client.attachmentsJson).length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {JSON.parse(client.attachmentsJson).map((doc: any) => (
+                  <div key={doc.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-10 h-10 bg-brand-600/10 rounded-lg flex items-center justify-center text-brand-400 shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="text-xs font-bold text-slate-200 truncate">{doc.title}</p>
+                        <span className="text-[10px] text-slate-500 block font-mono">{doc.date}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setPreviewImage({ title: doc.title, url: doc.url })}
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"
+                        title="Ver Documento"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => removeCustomDoc(doc.id)}
+                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 border border-dashed border-slate-800 rounded-xl bg-slate-950/20">
+                <FileText className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-slate-400">No hay documentos adicionales adjuntos</p>
+                <p className="text-xs text-slate-500 mt-1">Puedes agregar comprobantes de servicios, cartas laborales o pagarés firmados.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* active Loan & Amortization Card */}
       {activeLoan ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Active loan specs */}
@@ -840,6 +1244,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           </div>
         )}
       </div>
+      )}
 
       {/* --- MODAL 1: ASSIGN LOAN --- */}
       {showAssignModal && (
@@ -1249,6 +1654,143 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
               <p>Firma del Recaudador</p>
               <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CAMERA LIVE CAPTURE MODAL --- */}
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Camera className="w-5 h-5 text-brand-400" />
+                Capturar Foto en Vivo — {
+                  cameraTarget === 'idFront' ? 'Cédula Frente (Anverso)' :
+                  cameraTarget === 'idBack' ? 'Cédula Atrás (Reverso)' : 'Foto de Rostro / Selfie'
+                }
+              </h3>
+              <button onClick={stopCamera} className="text-slate-400 hover:text-white p-1">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Live Video Viewport */}
+            <div className="relative rounded-xl overflow-hidden bg-black aspect-video border border-slate-800 mb-4 shadow-inner flex items-center justify-center">
+              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-x-0 bottom-3 text-center pointer-events-none">
+                <span className="text-[10px] text-white/80 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur">
+                  Encuadre el documento o rostro en la pantalla
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center gap-3">
+              <button
+                type="button"
+                onClick={() => startCamera(cameraTarget!, facingMode === 'user' ? 'environment' : 'user')}
+                className="text-xs text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 transition flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Cambiar Cámara ({facingMode === 'user' ? 'Frontal' : 'Trasera'})
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={capturePhotoFromCamera}
+                  className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-brand-600/30 transition flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" /> Capturar Foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- IMAGE LIGHTBOX PREVIEW MODAL --- */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn" onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl flex flex-col items-center" onClick={e => e.stopPropagation()}>
+            <div className="w-full flex justify-between items-center mb-3 px-2">
+              <h3 className="text-sm font-bold text-white font-mono">{previewImage.title}</h3>
+              <button onClick={() => setPreviewImage(null)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            {previewImage.url.startsWith('data:application/pdf') ? (
+              <iframe src={previewImage.url} className="w-full h-[70vh] rounded-lg border border-slate-800" />
+            ) : (
+              <img src={previewImage.url} alt={previewImage.title} className="max-w-full max-h-[75vh] object-contain rounded-lg border border-slate-800 shadow-lg" />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- ADD CUSTOM DOCUMENT MODAL --- */}
+      {showAddCustomDoc && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 relative">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FilePlus className="w-5 h-5 text-brand-400" />
+                Adjuntar Documento Adicional
+              </h3>
+              <button onClick={() => setShowAddCustomDoc(false)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre o Tipo de Documento *</label>
+                <input
+                  type="text"
+                  value={customDocTitle}
+                  onChange={e => setCustomDocTitle(e.target.value)}
+                  placeholder="ej: Recibo de Servicios Públicos / Pagaré Firmado"
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Seleccionar Archivo (Imagen o PDF) *</label>
+                <label className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-800 hover:border-brand-500/50 bg-slate-950/40 rounded-xl cursor-pointer transition">
+                  <Upload className="w-8 h-8 text-brand-400 mb-2" />
+                  <span className="text-xs font-semibold text-slate-300">Haz clic aquí para examinar archivos</span>
+                  <span className="text-[10px] text-slate-500 mt-1">PNG, JPG, WEBP o PDF (Máximo 10 MB)</span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    disabled={!customDocTitle.trim()}
+                    onChange={handleAddCustomDoc}
+                  />
+                </label>
+                {!customDocTitle.trim() && (
+                  <p className="text-[10px] text-amber-400 mt-1.5">* Ingresa primero un nombre para habilitar la selección del archivo.</p>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddCustomDoc(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

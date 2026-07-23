@@ -22,7 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
   ];
 
   return (
-    <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col h-screen fixed left-0 top-0 no-print">
+    <aside className="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col h-screen fixed left-0 top-0 no-print overflow-y-auto">
       {/* Header / Logo */}
       <div className="p-6 border-b border-slate-800 flex items-center gap-3">
         <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/10">
@@ -36,17 +36,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
         </div>
       </div>
 
-      {/* Tenant Info */}
+      {/* Tenant Info & Quick Logout */}
       {tenant && (
-        <div className="px-6 py-4 border-b border-slate-850 bg-slate-950/40">
-          <p className="text-xs text-slate-400 font-medium">Empresa activa:</p>
-          <p className="text-sm font-bold text-slate-200 truncate">{tenant.name}</p>
-          <p className="text-[10px] text-slate-500 font-mono mt-0.5">NIT: {tenant.nit}</p>
+        <div className="px-5 py-3 border-b border-slate-850 bg-slate-950/50 flex items-center justify-between">
+          <div className="overflow-hidden">
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Empresa activa:</p>
+            <p className="text-xs font-bold text-slate-200 truncate">{tenant.name}</p>
+            <p className="text-[10px] text-slate-500 font-mono">NIT: {tenant.nit}</p>
+          </div>
+          <button
+            onClick={logout}
+            className="p-2 text-red-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all flex items-center gap-1.5 shrink-0 ml-2 border border-red-500/20 bg-red-500/10"
+            title="Cerrar Sesión"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-[11px] font-bold">Salir</span>
+          </button>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id || (item.id === 'clients' && currentPage === 'client-detail');
@@ -66,6 +76,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
             </button>
           );
         })}
+
+        {/* Botón de Salir en Navegación */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-all mt-4 border border-red-500/20 bg-red-500/5"
+        >
+          <LogOut className="w-5 h-5 text-red-400" />
+          Cerrar Sesión
+        </button>
       </nav>
 
       {/* Theme Selector Toggle */}
@@ -100,17 +119,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
       {/* Ad Banner for Free Tier */}
       <div className="px-4 py-1 no-print">
         <AdSenseBanner slot="1234567890" style={{ height: '90px' }} />
-      </div>
-
-      {/* Logout */}
-      <div className="p-4 border-t border-slate-850">
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/5 hover:text-red-300 transition-all"
-        >
-          <LogOut className="w-5 h-5" />
-          Cerrar Sesión
-        </button>
       </div>
     </aside>
   );

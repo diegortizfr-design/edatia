@@ -143,17 +143,6 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          <button
-            onClick={() => {
-              setIsRegister(!isRegister);
-              setError('');
-            }}
-            className="text-brand-400 hover:text-brand-300 font-medium transition"
-          >
-            {isRegister ? '¿Ya tienes cuenta? Inicia sesión aquí' : '¿Nueva empresa? Regístrate aquí'}
-          </button>
-        </div>
       </div>
 
       {/* AdSense Banner on Login Screen */}

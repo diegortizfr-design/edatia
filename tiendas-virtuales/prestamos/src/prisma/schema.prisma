@@ -35,6 +35,10 @@ model Customer {
   address    String
   email      String?
   status     String   @default("ACTIVE") // ACTIVE, INACTIVE
+  idFront    String?  // Base64 o URL foto Cédula Anverso
+  idBack     String?  // Base64 o URL foto Cédula Reverso
+  photo      String?  // Base64 o URL foto Rostro / Perfil
+  attachmentsJson String? // JSON de adjuntos adicionales
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

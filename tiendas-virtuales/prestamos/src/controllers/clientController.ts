@@ -133,7 +133,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
 export const updateClient = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
   const { id } = req.params;
-  const { name, documentId, phone, address, email, status } = req.body;
+  const { name, documentId, phone, address, email, status, idFront, idBack, photo, attachmentsJson } = req.body;
 
   try {
     const client = await prisma.customer.findFirst({
@@ -158,7 +158,7 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
       }
     }
 
-    const updatedClient = await prisma.customer.update({
+    const updatedClient = await (prisma.customer as any).update({
       where: { id },
       data: {
         name: name !== undefined ? name : client.name,
@@ -166,7 +166,11 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
         phone: phone !== undefined ? phone : client.phone,
         address: address !== undefined ? address : client.address,
         email: email !== undefined ? email : client.email,
-        status: status !== undefined ? status : client.status
+        status: status !== undefined ? status : client.status,
+        ...(idFront !== undefined ? { idFront } : {}),
+        ...(idBack !== undefined ? { idBack } : {}),
+        ...(photo !== undefined ? { photo } : {}),
+        ...(attachmentsJson !== undefined ? { attachmentsJson } : {})
       }
     });
 
