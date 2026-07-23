@@ -1091,7 +1091,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           </div>
         </div>
       ) : (
-        <>
+        <div className="space-y-8 animate-fadeIn">
           {/* active Loan & Amortization Card */}
       {activeLoan ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1243,7 +1243,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             </table>
           </div>
         )}
-      </div>
+        </div>
       )}
 
       {/* --- MODAL 1: ASSIGN LOAN --- */}
