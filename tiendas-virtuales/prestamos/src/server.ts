@@ -4,6 +4,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import apiRouter from './routes/api';
 import prisma from './config/db';
+import { seedDefaultTenants } from './seed';
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +43,8 @@ const startServer = async () => {
     console.log('Probando conexión con PostgreSQL...');
     await prisma.$connect();
     console.log('Conectado con éxito a la base de datos prestamos_edatia.');
+
+    await seedDefaultTenants();
 
     app.listen(PORT, () => {
       console.log(`Servidor de préstamos ejecutándose en el puerto ${PORT}`);
