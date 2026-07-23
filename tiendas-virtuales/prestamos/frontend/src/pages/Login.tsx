@@ -5,7 +5,7 @@ import { AdSenseBanner } from '../components/AdSenseBanner';
 
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
-  const [isRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
   const [nit, setNit] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -143,6 +143,18 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
+        <div className="mt-6 text-center text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError('');
+            }}
+            className="text-brand-400 hover:text-brand-300 font-medium transition"
+          >
+            {isRegister ? '¿Ya tienes cuenta? Inicia sesión aquí' : '¿Nueva empresa? Regístrate aquí'}
+          </button>
+        </div>
       </div>
 
       {/* AdSense Banner on Login Screen */}
