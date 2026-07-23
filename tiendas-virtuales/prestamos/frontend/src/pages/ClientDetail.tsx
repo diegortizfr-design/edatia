@@ -1242,9 +1242,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               </tbody>
             </table>
           </div>
-        )}
         </div>
-      )}
+      </div>
+    )}
 
       {/* --- MODAL 1: ASSIGN LOAN --- */}
       {showAssignModal && (
