@@ -1827,6 +1827,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               </div>
             </div>
           </div>
+        </div>
+      )}
+
       {/* --- MODAL 5: DELETE CLIENT WARNING --- */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
