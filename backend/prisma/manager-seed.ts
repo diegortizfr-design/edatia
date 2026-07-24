@@ -36,7 +36,11 @@ async function main() {
 
   const admin = await (prisma as any).colaborador.upsert({
     where: { email: 'admin@edatia.com' },
-    update: {},
+    update: {
+      password: hash,
+      rol: 'ADMIN',
+      activo: true,
+    },
     create: {
       email: 'admin@edatia.com',
       nombre: 'Administrador Edatia',

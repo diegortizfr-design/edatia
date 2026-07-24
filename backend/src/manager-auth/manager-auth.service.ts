@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -25,12 +25,54 @@ function generateRefreshToken(): string {
 }
 
 @Injectable()
-export class ManagerAuthService {
+export class ManagerAuthService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly auditLog: AuditLogService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const email = 'admin@edatia.com';
+      const managerPassword = process.env.MANAGER_ADMIN_PASSWORD ?? 'Manager123!';
+      const hash = await bcrypt.hash(managerPassword, 12);
+
+      let perfilAdmin = await (this.prisma as any).perfilCargo.findFirst({
+        where: { nombre: 'Administrador del Sistema' },
+      });
+
+      if (!perfilAdmin) {
+        perfilAdmin = await (this.prisma as any).perfilCargo.create({
+          data: {
+            nombre: 'Administrador del Sistema',
+            descripcion: 'Acceso total al portal Manager de Edatia',
+            permisos: ['*'],
+          },
+        });
+      }
+
+      await (this.prisma as any).colaborador.upsert({
+        where: { email },
+        update: {
+          password: hash,
+          rol: 'ADMIN',
+          activo: true,
+        },
+        create: {
+          email,
+          nombre: 'Administrador Edatia',
+          password: hash,
+          rol: 'ADMIN',
+          activo: true,
+          perfilCargoId: perfilAdmin.id,
+        },
+      });
+      console.log(`✅ [ManagerAuthService] Colaborador admin autosembrado/actualizado: ${email}`);
+    } catch (err) {
+      console.error('⚠️ [ManagerAuthService] Error al autosembrar admin colaborador:', err);
+    }
+  }
 
   async login(dto: ManagerLoginDto, ctx: RequestCtx = {}) {
     const email = dto.email.toLowerCase().trim();
