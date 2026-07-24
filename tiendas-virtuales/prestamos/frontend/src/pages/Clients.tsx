@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
-import { Plus, Search, User, Phone, MapPin, ChevronRight } from 'lucide-react';
+import { Plus, Search, User, Phone, MapPin, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -26,6 +26,11 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Delete modal state
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   // Form State
   const [name, setName] = useState('');
   const [documentId, setDocumentId] = useState('');
@@ -34,6 +39,21 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
   const [email, setEmail] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirmDeleteClient = async () => {
+    if (!clientToDelete) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await apiCall(`/clients/${clientToDelete.id}`, { method: 'DELETE' });
+      setClientToDelete(null);
+      fetchClients(search);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Error al eliminar cliente.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchClients = async (query = '') => {
     try {
@@ -217,7 +237,19 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
                         )}
                       </td>
                       <td className="p-4 text-right">
-                        <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setClientToDelete(client);
+                            }}
+                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                            title="Eliminar Cliente"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -239,15 +271,27 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
                     <h4 className="font-bold text-white text-base">{client.name}</h4>
                     <span className="text-xs text-slate-500 font-mono">CC: {client.documentId}</span>
                   </div>
-                  {client.activeLoansCount > 0 ? (
-                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                      {client.activeLoansCount} Activos
-                    </span>
-                  ) : (
-                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-850 text-slate-500">
-                      Sin Créditos
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {client.activeLoansCount > 0 ? (
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                        {client.activeLoansCount} Activos
+                      </span>
+                    ) : (
+                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-850 text-slate-500">
+                        Sin Créditos
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setClientToDelete(client);
+                      }}
+                      className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition"
+                      title="Eliminar Cliente"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-end pt-3 border-t border-slate-850 text-xs text-slate-400">
@@ -378,6 +422,57 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
                 </button>
               </div>
             </form>
+          </div>
+      {/* Delete Confirmation Modal */}
+      {clientToDelete && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-xl shadow-2xl p-6 relative animate-zoomIn space-y-5">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">¿Eliminar Cliente?</h3>
+                <p className="text-xs text-slate-400">Acción permanente e irreversible</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-xl space-y-2">
+              <p className="text-xs font-semibold text-red-200 leading-relaxed">
+                ⚠️ <strong>Advertencia importante:</strong> Si se elimina el cliente se pierde la trazabilidad de sus créditos, plan de amortización e historial de pagos registrados en el sistema.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-850 space-y-1">
+              <div className="text-[10px] uppercase font-semibold text-slate-500">Cliente a eliminar:</div>
+              <div className="text-sm font-bold text-white">{clientToDelete.name}</div>
+              <div className="text-xs text-slate-400 font-mono">CC / NIT: {clientToDelete.documentId}</div>
+            </div>
+
+            {deleteError && (
+              <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-slate-850">
+              <button
+                type="button"
+                onClick={() => setClientToDelete(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteClient}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800/50 text-white text-xs font-bold rounded-lg shadow-lg shadow-red-600/20 transition flex items-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleting ? 'Eliminando...' : 'Sí, Eliminar Cliente'}
+              </button>
+            </div>
           </div>
         </div>
       )}

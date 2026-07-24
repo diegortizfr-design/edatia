@@ -72,6 +72,24 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   // Tabs Navigation State
   const [activeTab, setActiveTab] = useState<'info' | 'attachments'>('info');
 
+  // Delete Client State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+  const [deleteClientError, setDeleteClientError] = useState('');
+
+  const handleDeleteClient = async () => {
+    if (!client) return;
+    setDeletingClient(true);
+    setDeleteClientError('');
+    try {
+      await apiCall(`/clients/${client.id}`, { method: 'DELETE' });
+      onBack();
+    } catch (err: any) {
+      setDeleteClientError(err.message || 'Error al eliminar el cliente.');
+      setDeletingClient(false);
+    }
+  };
+
   // Camera Modal & Camera State
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<'idFront' | 'idBack' | 'photo' | null>(null);
@@ -815,6 +833,14 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               <Plus className="w-4 h-4" /> Asignar Préstamo
             </button>
           )}
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition"
+            title="Eliminar este cliente"
+          >
+            <Trash2 className="w-4 h-4" /> Eliminar Cliente
+          </button>
         </div>
       </div>
 
@@ -1799,6 +1825,57 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
                   Cancelar
                 </button>
               </div>
+            </div>
+          </div>
+      {/* --- MODAL 5: DELETE CLIENT WARNING --- */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-xl shadow-2xl p-6 relative animate-zoomIn space-y-5">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">¿Eliminar Cliente?</h3>
+                <p className="text-xs text-slate-400">Acción permanente e irreversible</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-xl space-y-2">
+              <p className="text-xs font-semibold text-red-200 leading-relaxed">
+                ⚠️ <strong>Advertencia importante:</strong> Si se elimina el cliente se pierde la trazabilidad de sus créditos, plan de amortización e historial de pagos registrados en el sistema.
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-850 space-y-1">
+              <div className="text-[10px] uppercase font-semibold text-slate-500">Cliente a eliminar:</div>
+              <div className="text-sm font-bold text-white">{client.name}</div>
+              <div className="text-xs text-slate-400 font-mono">CC / NIT: {client.documentId}</div>
+            </div>
+
+            {deleteClientError && (
+              <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg">
+                {deleteClientError}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-slate-850">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteClient}
+                disabled={deletingClient}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800/50 text-white text-xs font-bold rounded-lg shadow-lg shadow-red-600/20 transition flex items-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deletingClient ? 'Eliminando...' : 'Sí, Eliminar Cliente'}
+              </button>
             </div>
           </div>
         </div>
