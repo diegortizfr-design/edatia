@@ -53,6 +53,16 @@ if grep -q 'CAMBIAR_POR_SECRET' "$ENV_FILE"; then
   error "JWT_SECRET aún tiene el valor de ejemplo. Genera uno real con: openssl rand -base64 64"
 fi
 
+# 5.5. Crear copia de seguridad automática de la base de datos de producción
+log "Creando copia de seguridad preventiva de la base de datos..."
+mkdir -p ./backups
+BACKUP_FILE="./backups/edatia_backup_$(date +'%Y%m%d_%H%M%S').sql"
+if docker compose exec -T db pg_dumpall -U postgres > "$BACKUP_FILE" 2>/dev/null; then
+  log "✅ Respaldado exitosamente en: $BACKUP_FILE"
+else
+  warn "No se pudo realizar el backup preventivo (posiblemente la DB aún no está inicializada)."
+fi
+
 # 6. Construir y levantar contenedores
 log "Construyendo imágenes y levantando contenedores..."
 docker compose up -d --build
