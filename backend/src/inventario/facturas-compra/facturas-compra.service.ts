@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ComprobantesService } from '../../contabilidad/comprobantes/comprobantes.service';
-import { CreateFacturaCompraDto, UpdateFacturaCompraDto } from './dto/factura-compra.dto';
+import { CreateFacturaCompraDto, UpdateFacturaCompraDto, CreateRecepcionProductoDto } from './dto/factura-compra.dto';
 
 @Injectable()
 export class FacturasCompraService {
@@ -392,14 +392,14 @@ export class FacturasCompraService {
           numero: numeroRec,
           empresaId,
           facturaCompraId,
-          ordenCompraId: fc.ordenCompraId,
+          ordenCompraId: fc.ordenCompraId ?? undefined,
           bodegaId: dto.bodegaId,
           documentoConfigId: dto.documentoConfigId,
           usuarioId,
           notas: dto.notas || `Recepción física por FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
           inventarioAfectado: true,
           items: {
-            create: dto.items.map(it => ({
+            create: dto.items.map((it: any) => ({
               productoId: it.productoId,
               facturaCompraItemId: it.facturaCompraItemId,
               cantidadRecibida: it.cantidadRecibida,
