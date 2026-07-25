@@ -64,6 +64,36 @@ export class CreateFacturaCompraDto {
   items?: FacturaCompraItemDto[];
 }
 
+export class CreateRecepcionItemDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsOptional() @IsInt()
+  facturaCompraItemId?: number;
+
+  @IsNumber() @Min(0.001)
+  cantidadRecibida!: number;
+
+  @IsNumber() @Min(0)
+  costoUnitario!: number;
+}
+
+export class CreateRecepcionProductoDto {
+  @IsInt()
+  bodegaId!: number;
+
+  @IsOptional() @IsInt()
+  documentoConfigId?: number;
+
+  @IsOptional() @IsString()
+  notas?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateRecepcionItemDto)
+  items!: CreateRecepcionItemDto[];
+}
+
 export class UpdateFacturaCompraDto {
   @IsOptional() @IsString()
   prefijoProveedor?: string;

@@ -281,19 +281,19 @@ export function NuevaFcForm() {
             </div>
           </div>
 
-          {/* Cruce con OC / RP */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-4">
+          {/* Vínculo con Orden de Compra (OC) */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between gap-4">
             <div>
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 mb-1">
                 <Link2 size={16} className="text-indigo-600" />
-                Cruzamiento con Documento de Compra (OC / RP)
+                Vincular Orden de Compra (OC)
               </h3>
               <p className="text-slate-400 text-xs">
-                Asocia esta factura con una Orden de Compra aprobada o una Recepción física existente para autocompletar la información.
+                Asocia esta factura con una Orden de Compra aprobada para autocompletar el proveedor y productos.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Orden de Compra Asociada (OC)</label>
                 <select 
@@ -302,8 +302,8 @@ export function NuevaFcForm() {
                   className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
                   disabled={!!queryOcId}
                 >
-                  <option value="">— Ninguna (Compra directa sin OC) —</option>
-                  {ocs.filter((o: any) => ['APROBADA', 'RECIBIDA_PARCIAL', 'RECIBIDA'].includes(o.estado)).map((o: any) => (
+                  <option value="">— Ninguna (Factura de Compra directa) —</option>
+                  {ocs.filter((o: any) => ['APROBADA', 'ENVIADA', 'FACTURADA', 'RECIBIDA_PARCIAL'].includes(o.estado)).map((o: any) => (
                     <option key={o.id} value={o.id}>
                        {o.numero} ({o.proveedor?.nombre})
                     </option>
@@ -311,21 +311,9 @@ export function NuevaFcForm() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Recepción Asociada (RP)</label>
-                <select 
-                  value={recepcionId} 
-                  onChange={e => handleSelectRP(e.target.value)} 
-                  className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
-                  disabled={!!queryOcId}
-                >
-                  <option value="">— Ninguna (Crear compra directa sin RP) —</option>
-                  {recepcionesDisponibles.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.id} · OC: {r.ocNumero} · {r.proveedorNombre}
-                    </option>
-                  ))}
-                </select>
+              <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl text-indigo-900 text-xs flex items-start gap-2">
+                <span className="font-bold shrink-0 text-indigo-600">ℹ️ Nota:</span>
+                <span>Al registrar esta Factura de Compra se formaliza la obligación contable. El ingreso físico a inventario se realiza creando la <strong>Recepción de Producto (RP)</strong> sobre esta factura.</span>
               </div>
             </div>
           </div>

@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getOrdenesCompra, getFacturasCompra, FacturaCompra, getOrdenCompra, recibirOrdenCompra } from '../../services/inventario.service'
+import { 
+  getOrdenesCompra, getFacturasCompra, FacturaCompra, getOrdenCompra, 
+  getBodegas, createRecepcionProducto, getRecepcionesProducto 
+} from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
 import { 
   Plus, ShoppingCart, ChevronRight, Clock, CheckCircle, XCircle, 
-  Package, FileText, Upload, Calendar, ArrowUpRight, CheckSquare, Library, X, AlertTriangle
+  Package, FileText, Upload, Calendar, ArrowUpRight, CheckSquare, Library, X, AlertTriangle, Building2
 } from 'lucide-react'
 
 const ESTADOS: Record<string, { label: string; color: string; Icon: any }> = {
   BORRADOR:         { label: 'Borrador',        color: 'bg-slate-100 text-slate-600 border-slate-200',   Icon: Clock },
   APROBADA:         { label: 'Aprobada',         color: 'bg-blue-50 text-blue-700 border-blue-200',     Icon: CheckCircle },
   ENVIADA:          { label: 'Enviada',          color: 'bg-indigo-50 text-indigo-700 border-indigo-200', Icon: ShoppingCart },
+  FACTURADA:        { label: 'Facturada',        color: 'bg-purple-50 text-purple-700 border-purple-200', Icon: FileText },
   RECIBIDA_PARCIAL: { label: 'Parcial',          color: 'bg-amber-50 text-amber-700 border-amber-200',   Icon: Package },
   RECIBIDA:         { label: 'Recibida',         color: 'bg-green-50 text-green-700 border-green-200',   Icon: CheckCircle },
   ANULADA:          { label: 'Anulada',          color: 'bg-red-50 text-red-600 border-red-200',       Icon: XCircle },
@@ -22,8 +26,6 @@ function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 }
 
-
-
 export function Compras() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -32,123 +34,88 @@ export function Compras() {
 
   // For the physical receipt modal (from FC)
   const [selectedFcForRecepcion, setSelectedFcForRecepcion] = useState<any | null>(null)
+  const [bodegaDestinoId, setBodegaDestinoId] = useState('')
   const [documentoConfigId, setDocumentoConfigId] = useState('')
   const [recNotas, setRecNotas] = useState('')
   const [recItems, setRecItems] = useState<Record<number, string>>({})
-  const [recLotes, setRecLotes] = useState<Record<number, string>>({})
-  const [recVencimientos, setRecVencimientos] = useState<Record<number, string>>({})
-  const [recSeriales, setRecSeriales] = useState<Record<number, string>>({})
   const [errorRecepcion, setErrorRecepcion] = useState<string | null>(null)
 
-  // Fetch associated OC for the selected FC
-  const { data: selectedOc, isLoading: cargandoSelectedOc } = useQuery({
-    queryKey: ['orden-compra-recepcion', selectedFcForRecepcion?.ordenCompra?.id],
-    queryFn: () => getOrdenCompra(selectedFcForRecepcion!.ordenCompra!.id),
-    enabled: !!selectedFcForRecepcion?.ordenCompra?.id,
+  // Bodegas query
+  const { data: bodegas = [] } = useQuery({
+    queryKey: ['bodegas'],
+    queryFn: () => getBodegas(),
   })
 
-  // Get RP resolutions
+  // RP resolutions
   const { data: documentos = [] } = useQuery({
     queryKey: ['documentos-config-rp'],
     queryFn: getDocumentosConfig,
     enabled: !!selectedFcForRecepcion,
   })
 
-  const sucursalId = selectedOc?.bodega?.sucursalId
   const documentosFiltradosRP = documentos.filter((doc: any) => 
-    doc.sigla === 'RP' && 
-    doc.estado === 'ACTIVO' &&
-    (doc.sucursalId === null || doc.sucursalId === sucursalId)
+    doc.sigla === 'RP' && doc.estado === 'ACTIVO'
   )
 
   useEffect(() => {
-    if (selectedFcForRecepcion && selectedOc) {
+    if (bodegas.length > 0 && !bodegaDestinoId) {
+      const principal = bodegas.find((b: any) => b.esPrincipal) || bodegas[0]
+      if (principal) setBodegaDestinoId(String(principal.id))
+    }
+  }, [bodegas])
+
+  useEffect(() => {
+    if (selectedFcForRecepcion) {
       const quantities: Record<number, string> = {}
       for (const fcItem of selectedFcForRecepcion.items || []) {
-        const ocItem = selectedOc.items.find((oi: any) => oi.productoId === fcItem.productoId)
-        if (ocItem) {
-          const pendiente = parseFloat(String(ocItem.cantidad)) - parseFloat(String(ocItem.cantidadRecibida))
-          const cantidadFC = parseFloat(String(fcItem.cantidad))
-          const toReceive = Math.max(0, Math.min(pendiente, cantidadFC))
-          if (toReceive > 0.001) {
-            quantities[ocItem.id] = String(toReceive)
-          }
+        const pendiente = parseFloat(String(fcItem.cantidad)) - parseFloat(String(fcItem.cantidadRecibida || 0))
+        if (pendiente > 0.001) {
+          quantities[fcItem.id] = String(pendiente)
         }
       }
       setRecItems(quantities)
     }
-  }, [selectedFcForRecepcion, selectedOc])
+  }, [selectedFcForRecepcion])
 
   const mutationRecibir = useMutation({
-    mutationFn: (data: { id: number; payload: any }) => recibirOrdenCompra(data.id, data.payload),
+    mutationFn: (data: { fcId: number; payload: any }) => createRecepcionProducto(data.fcId, data.payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facturas-compra'] })
       queryClient.invalidateQueries({ queryKey: ['ordenes-compra'] })
+      queryClient.invalidateQueries({ queryKey: ['recepciones-producto'] })
+      queryClient.invalidateQueries({ queryKey: ['productos'] })
+      queryClient.invalidateQueries({ queryKey: ['movimientos'] })
       setSelectedFcForRecepcion(null)
       setRecItems({})
-      setRecLotes({})
-      setRecVencimientos({})
-      setRecSeriales({})
       setRecNotas('')
       setDocumentoConfigId('')
       setErrorRecepcion(null)
     },
     onError: (err: any) => {
-      setErrorRecepcion(getApiError(err, 'Error al registrar la recepción'))
+      setErrorRecepcion(getApiError(err, 'Error al registrar la recepción de producto'))
     }
   })
 
   const handleRecibir = (e: React.FormEvent) => {
     e.preventDefault()
     setErrorRecepcion(null)
-    if (!selectedFcForRecepcion || !selectedOc) return
-
-    if (!documentoConfigId) {
-      setErrorRecepcion('Selecciona una resolución/documento RP')
+    if (!selectedFcForRecepcion) return
+    if (!bodegaDestinoId) {
+      setErrorRecepcion('Selecciona una bodega de destino para ingresar el inventario')
       return
     }
 
     const itemsToSend: any[] = []
-    for (const item of selectedOc.items) {
-      const cantStr = recItems[item.id]
+    for (const fcItem of selectedFcForRecepcion.items || []) {
+      const cantStr = recItems[fcItem.id]
       if (!cantStr || parseFloat(cantStr) <= 0) continue
 
-      const cant = parseFloat(cantStr)
-      const itemPayload: any = {
-        ordenCompraItemId: item.id,
-        cantidadRecibida: cant,
-      }
-
-      if (item.producto?.manejaLotes) {
-        const lote = recLotes[item.id]
-        if (!lote) {
-          setErrorRecepcion(`El producto ${item.producto.nombre} requiere número de lote`)
-          return
-        }
-        itemPayload.lote = lote
-        itemPayload.fechaVencimiento = recVencimientos[item.id] || null
-      }
-
-      if (item.producto?.manejaSerial) {
-        const serialesStr = recSeriales[item.id]
-        if (!serialesStr) {
-          setErrorRecepcion(`El producto ${item.producto.nombre} requiere números de serie`)
-          return
-        }
-        const serials = serialesStr
-          .split(/[\n,]/)
-          .map(s => s.trim())
-          .filter(Boolean)
-        if (serials.length !== Math.ceil(cant)) {
-          setErrorRecepcion(
-            `El producto ${item.producto.nombre} requiere exactamente ${Math.ceil(cant)} números de serie (ingresados: ${serials.length})`
-          )
-          return
-        }
-        itemPayload.seriales = serials
-      }
-
-      itemsToSend.push(itemPayload)
+      itemsToSend.push({
+        productoId: fcItem.productoId,
+        facturaCompraItemId: fcItem.id,
+        cantidadRecibida: parseFloat(cantStr),
+        costoUnitario: parseFloat(String(fcItem.costoUnitario)),
+      })
     }
 
     if (itemsToSend.length === 0) {
@@ -157,11 +124,12 @@ export function Compras() {
     }
 
     mutationRecibir.mutate({
-      id: selectedOc.id,
+      fcId: selectedFcForRecepcion.id,
       payload: {
-        items: itemsToSend,
-        documentoConfigId: Number(documentoConfigId),
+        bodegaId: Number(bodegaDestinoId),
+        documentoConfigId: documentoConfigId ? Number(documentoConfigId) : undefined,
         notas: recNotas || undefined,
+        items: itemsToSend,
       }
     })
   }
@@ -365,71 +333,78 @@ export function Compras() {
                     <th className="text-left px-6 py-4">Orden de Compra (OC)</th>
                     <th className="text-left px-6 py-4 hidden md:table-cell">Fecha Emisión</th>
                     <th className="text-center px-6 py-4">Soporte XML</th>
-                    <th className="text-center px-6 py-4">Cruce Recepción</th>
+                    <th className="text-center px-6 py-4">Estado Recepción</th>
                     <th className="text-right px-6 py-4">Total</th>
                     <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {fcs.map(fc => (
-                    <tr key={fc.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                        <Link 
-                          to={`/inventario/movimientos?ver=${fc.numero}`}
-                          className="text-indigo-600 hover:text-indigo-850 hover:underline"
-                        >
-                          {fc.numero}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-800">
-                        {fc.prefijoProveedor ? `${fc.prefijoProveedor}-` : ''}{fc.consecutivoProveedor}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-800">{fc.proveedor?.nombre}</td>
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-500">
-                        {fc.ordenCompra ? (
-                          <Link to={`/inventario/ordenes-compra/${fc.ordenCompra.id}`} className="text-indigo-600 hover:text-indigo-850 hover:underline">
-                            {fc.ordenCompra.numero}
-                          </Link>
-                        ) : (
-                          <span className="text-slate-400 font-sans text-xs">— Directa</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">
-                        {new Date(fc.fechaEmision).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {fc.xmlAdjunto ? (
-                          <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded font-bold text-[10px]">
-                            <Library size={10} /> XML Cargado
-                          </span>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {fc.recepcionId ? (
-                          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-bold text-[10px]">
-                            {fc.recepcionId}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded font-bold text-[10px]">
-                            Sin Cruzar
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right font-extrabold text-slate-800">{fmt(fc.total)}</td>
-                      <td className="px-6 py-4 text-right">
-                        {!fc.recepcionId && fc.ordenCompra && (
-                          <button
-                            onClick={() => setSelectedFcForRecepcion(fc)}
-                            className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                  {fcs.map((fc: any) => {
+                    const estRec = fc.estadoRecepcion || 'PENDIENTE'
+                    return (
+                      <tr key={fc.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                          <Link 
+                            to={`/inventario/movimientos?ver=${fc.numero}`}
+                            className="text-indigo-600 hover:text-indigo-850 hover:underline"
                           >
-                            <Package size={12} /> Recibir
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {fc.numero}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">
+                          {fc.prefijoProveedor ? `${fc.prefijoProveedor}-` : ''}{fc.consecutivoProveedor}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">{fc.proveedor?.nombre}</td>
+                        <td className="px-6 py-4 font-mono font-semibold text-slate-500">
+                          {fc.ordenCompra ? (
+                            <Link to={`/inventario/ordenes-compra/${fc.ordenCompra.id}`} className="text-indigo-600 hover:text-indigo-850 hover:underline">
+                              {fc.ordenCompra.numero}
+                            </Link>
+                          ) : (
+                            <span className="text-slate-400 font-sans text-xs">— Directa</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">
+                          {new Date(fc.fechaEmision).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          {fc.xmlAdjunto ? (
+                            <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded font-bold text-[10px]">
+                              <Library size={10} /> XML Cargado
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          {estRec === 'RECIBIDO' ? (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <CheckCircle size={10} /> Recibido
+                            </span>
+                          ) : estRec === 'PARCIAL' ? (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <Package size={10} /> Parcial
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <Clock size={10} /> Pendiente RP
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right font-extrabold text-slate-800">{fmt(fc.total)}</td>
+                        <td className="px-6 py-4 text-right">
+                          {estRec !== 'RECIBIDO' && fc.estado !== 'ANULADA' && (
+                            <button
+                              onClick={() => setSelectedFcForRecepcion(fc)}
+                              className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                            >
+                              <Package size={12} /> Recibir Mercancía (RP)
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -450,11 +425,11 @@ export function Compras() {
               <table className="w-full text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
-                    <th className="text-left px-6 py-4">N° Recepción</th>
-                    <th className="text-left px-6 py-4">Orden de Compra</th>
+                    <th className="text-left px-6 py-4">N° Recepción (RP)</th>
+                    <th className="text-left px-6 py-4">Factura de Compra</th>
                     <th className="text-left px-6 py-4">Proveedor</th>
-                    <th className="text-left px-6 py-4 hidden md:table-cell">Bodega</th>
-                    <th className="text-center px-6 py-4">Artículos Recibidos</th>
+                    <th className="text-left px-6 py-4 hidden md:table-cell">Bodega Destino</th>
+                    <th className="text-center px-6 py-4">Ítems Recibidos</th>
                     <th className="text-left px-6 py-4 hidden lg:table-cell">Fecha</th>
                     <th className="px-6 py-4"></th>
                   </tr>
@@ -470,20 +445,31 @@ export function Compras() {
                           {rec.numero}
                         </Link>
                       </td>
-                      <td className="px-6 py-4">
-                        <Link to={`/inventario/ordenes-compra/${rec.ocId}`} className="font-mono font-semibold text-indigo-600 hover:underline">
-                          {rec.ocNumero}
-                        </Link>
+                      <td className="px-6 py-4 font-mono font-semibold text-slate-700">
+                        {rec.facturaCompra ? (
+                          <span>{rec.facturaCompra.numero} (N° {rec.facturaCompra.consecutivoProveedor})</span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-800">{rec.proveedorNombre}</td>
-                      <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">{rec.bodegaNombre}</td>
-                      <td className="px-6 py-4 text-center font-bold text-slate-700">{rec.totalArticulos}</td>
+                      <td className="px-6 py-4 font-semibold text-slate-800">
+                        {rec.facturaCompra?.proveedor?.nombre || rec.proveedorNombre || 'Proveedor'}
+                      </td>
+                      <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">
+                        <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
+                          <Building2 size={12} className="text-indigo-600" />
+                          {rec.bodega?.nombre || rec.bodegaNombre || 'Bodega Principal'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-700">
+                        {rec.items?.reduce((sum: number, it: any) => sum + Number(it.cantidadRecibida), 0) || 0} und
+                      </td>
                       <td className="px-6 py-4 hidden lg:table-cell text-slate-400 font-medium">
                         {new Date(rec.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link to={`/inventario/ordenes-compra/${rec.ocId}`} className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 font-semibold">
-                          Detalle OC <ArrowUpRight size={12} />
+                        <Link to={`/inventario/movimientos?ver=${rec.numero}`} className="inline-flex items-center gap-1 text-indigo-600 hover:underline font-semibold">
+                          Ver en Kardex <ArrowUpRight size={12} />
                         </Link>
                       </td>
                     </tr>
@@ -495,7 +481,7 @@ export function Compras() {
         </div>
       )}
 
-      {/* Modal de Recepción de Mercancía */}
+      {/* Modal de Recepción de Mercancía (RP) desde Factura de Compra (FC) */}
       {selectedFcForRecepcion && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
@@ -505,10 +491,10 @@ export function Compras() {
               <div>
                 <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
                   <Package className="text-emerald-600" />
-                  Registrar Recepción (RP)
+                  Registrar Recepción de Producto (RP)
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 font-medium">
-                  Cruce con Factura: <span className="font-bold text-slate-600">{selectedFcForRecepcion.numero}</span> · OC: <span className="font-bold text-slate-600">{selectedFcForRecepcion.ordenCompra?.numero}</span>
+                  Cruce con Factura: <span className="font-bold text-slate-600">{selectedFcForRecepcion.numero}</span> (N° Proveedor: <span className="font-bold text-indigo-600">{selectedFcForRecepcion.consecutivoProveedor}</span>)
                 </p>
               </div>
               <button 
@@ -530,127 +516,95 @@ export function Compras() {
                   </div>
                 )}
 
-                {cargandoSelectedOc ? (
-                  <div className="text-center py-12 text-slate-400 font-medium text-xs">
-                    Cargando información de la orden de compra...
-                  </div>
-                ) : !selectedOc ? (
-                  <div className="text-center py-12 text-slate-400 font-medium text-xs">
-                    Error al cargar los datos de la orden de compra.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5">Productos a Recibir</h4>
-                    
-                    <div className="space-y-3">
-                      {selectedOc.items.map((item: any) => {
-                        const pendiente = parseFloat(String(item.cantidad)) - parseFloat(String(item.cantidadRecibida))
-                        const cantPrefilled = parseFloat(recItems[item.id] || '0')
-                        if (pendiente <= 0.001 && cantPrefilled <= 0.001) return null
+                {/* Seleccionar Bodega de Destino */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 size={14} className="text-indigo-600" />
+                    Bodega de Destino del Inventario *
+                  </label>
+                  <select
+                    value={bodegaDestinoId}
+                    onChange={e => setBodegaDestinoId(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">— Seleccionar Bodega —</option>
+                    {bodegas.map((b: any) => (
+                      <option key={b.id} value={b.id}>
+                        {b.nombre} {b.esPrincipal ? '(Principal)' : ''} — {b.codigo}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[10px] text-slate-400 block">
+                    Los productos recibidos ingresarán al Stock de esta bodega y actualizarán el Kardex.
+                  </span>
+                </div>
 
-                        return (
-                          <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm hover:border-slate-300 transition-colors">
-                            <div className="flex justify-between items-start gap-4">
-                              <div className="min-w-0">
-                                <span className="font-mono text-[10px] font-bold text-slate-400 block">{item.producto?.sku}</span>
-                                <span className="font-bold text-slate-800 text-xs truncate block">{item.producto?.nombre}</span>
-                                <span className="text-[10px] text-slate-400 block mt-0.5">
-                                  Pendiente en OC: <span className="font-bold text-slate-600">{pendiente.toFixed(3)}</span> · En Factura: <span className="font-bold text-indigo-600">{parseFloat(String(selectedFcForRecepcion.items?.find((fi: any) => fi.productoId === item.productoId)?.cantidad || 0)).toFixed(3)}</span>
-                                </span>
-                              </div>
-                              <div className="w-28 shrink-0 text-right">
-                                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cant. Recibir *</label>
-                                <input
-                                  type="number"
-                                  step="0.001"
-                                  min="0"
-                                  max={Math.max(pendiente, cantPrefilled)}
-                                  value={recItems[item.id] ?? ''}
-                                  onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                  placeholder={String(pendiente.toFixed(3))}
-                                  required
-                                  className="w-full text-right px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all"
-                                />
-                              </div>
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1.5">Productos de la Factura a Recibir</h4>
+                  
+                  <div className="space-y-3">
+                    {(selectedFcForRecepcion.items || []).map((item: any) => {
+                      const cantFacturada = parseFloat(String(item.cantidad))
+                      const cantRecibidaPrev = parseFloat(String(item.cantidadRecibida || 0))
+                      const pendiente = Math.max(0, cantFacturada - cantRecibidaPrev)
+
+                      return (
+                        <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm hover:border-slate-300 transition-colors">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="min-w-0">
+                              <span className="font-mono text-[10px] font-bold text-slate-400 block">{item.producto?.sku}</span>
+                              <span className="font-bold text-slate-800 text-xs truncate block">{item.producto?.nombre}</span>
+                              <span className="text-[10px] text-slate-400 block mt-0.5">
+                                Facturado: <span className="font-bold text-slate-600">{cantFacturada.toFixed(3)}</span> · Previamente Recibido: <span className="font-bold text-emerald-600">{cantRecibidaPrev.toFixed(3)}</span> · Pendiente: <span className="font-bold text-amber-600">{pendiente.toFixed(3)}</span>
+                              </span>
                             </div>
-
-                            {/* Lotes inputs if product manejaLotes */}
-                            {item.producto?.manejaLotes && parseFloat(recItems[item.id] || '0') > 0 && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-200 pt-3">
-                                <div>
-                                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Número de Lote *</label>
-                                  <input
-                                    value={recLotes[item.id] ?? ''}
-                                    onChange={e => setRecLotes(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                    placeholder="Lote..."
-                                    required
-                                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha Vencimiento</label>
-                                  <input
-                                    type="date"
-                                    value={recVencimientos[item.id] ?? ''}
-                                    onChange={e => setRecVencimientos(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Seriales textarea if product manejaSerial */}
-                            {item.producto?.manejaSerial && parseFloat(recItems[item.id] || '0') > 0 && (
-                              <div className="border-t border-slate-200 pt-3">
-                                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                  Números de Serie *
-                                </label>
-                                <textarea
-                                  value={recSeriales[item.id] ?? ''}
-                                  onChange={e => setRecSeriales(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                  placeholder="Ingrese un serial por línea o separados por comas..."
-                                  rows={2}
-                                  required
-                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none resize-none"
-                                />
-                                <span className="text-[9px] text-slate-400 block mt-0.5">
-                                  Ingrese exactamente {Math.ceil(parseFloat(recItems[item.id] || '0'))} seriales.
-                                </span>
-                              </div>
-                            )}
+                            <div className="w-28 shrink-0 text-right">
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cant. Recibir *</label>
+                              <input
+                                type="number"
+                                step="0.001"
+                                min="0"
+                                max={pendiente}
+                                value={recItems[item.id] ?? ''}
+                                onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                placeholder={String(pendiente.toFixed(3))}
+                                required
+                                className="w-full text-right px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all"
+                              />
+                            </div>
                           </div>
-                        )
-                      })}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento RP (Resolución) *</label>
-                        <select 
-                          value={documentoConfigId} 
-                          onChange={e => setDocumentoConfigId(e.target.value)} 
-                          required 
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all outline-none"
-                        >
-                          <option value="">— Seleccionar resolución RP —</option>
-                          {documentosFiltradosRP.map((d: any) => (
-                            <option key={d.id} value={d.id}>{d.nombre} ({d.prefijo})</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Observaciones de Recepción</label>
-                        <input 
-                          value={recNotas} 
-                          onChange={e => setRecNotas(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all outline-none"
-                          placeholder="Remisión #, observaciones..." 
-                        />
-                      </div>
-                    </div>
-
+                        </div>
+                      )
+                    })}
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Documento RP (Resolución) *</label>
+                      <select 
+                        value={documentoConfigId} 
+                        onChange={e => setDocumentoConfigId(e.target.value)} 
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all outline-none"
+                      >
+                        <option value="">— Consecutivo Automático RP —</option>
+                        {documentosFiltradosRP.map((d: any) => (
+                          <option key={d.id} value={d.id}>{d.nombre} ({d.prefijo})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Observaciones de Recepción</label>
+                      <input 
+                        value={recNotas} 
+                        onChange={e => setRecNotas(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all outline-none"
+                        placeholder="Remisión #, transportadora, notas..." 
+                      />
+                    </div>
+                  </div>
+
+                </div>
 
               </div>
 
@@ -665,11 +619,11 @@ export function Compras() {
                 </button>
                 <button 
                   type="submit" 
-                  disabled={mutationRecibir.isPending || cargandoSelectedOc}
+                  disabled={mutationRecibir.isPending}
                   className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-100 disabled:opacity-50 active:scale-95"
                 >
                   <Package size={14} /> 
-                  {mutationRecibir.isPending ? 'Confirmando...' : 'Confirmar Recepción'}
+                  {mutationRecibir.isPending ? 'Ingresando...' : 'Confirmar e Ingresar a Inventario'}
                 </button>
               </div>
 

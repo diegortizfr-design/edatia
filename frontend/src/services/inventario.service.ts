@@ -289,11 +289,13 @@ export interface FacturaCompra {
   recepcionId?: string;
   notas?: string;
   estado: string;
+  estadoRecepcion?: string; // PENDIENTE, PARCIAL, RECIBIDO
   items?: Array<{
     id: number;
     productoId: number;
     producto?: { id: number; nombre: string; sku: string };
     cantidad: number;
+    cantidadRecibida?: number;
     costoUnitario: number;
     subtotal: number;
   }>;
@@ -309,6 +311,11 @@ export const createFacturaCompra = (data: any) =>
   api.post<FacturaCompra>('/inventario/facturas-compra', data).then(r => r.data)
 export const deleteFacturaCompra = (id: number) =>
   api.delete(`/inventario/facturas-compra/${id}`).then(r => r.data)
+
+export const createRecepcionProducto = (facturaCompraId: number, data: any) =>
+  api.post(`/inventario/facturas-compra/${facturaCompraId}/recepciones`, data).then(r => r.data)
+export const getRecepcionesProducto = () =>
+  api.get('/inventario/facturas-compra/recepciones/todas').then(r => r.data)
 
 export const recibirTraslado = (id: number, documentoId?: number) =>
   api.post(`/inventario/movimientos/${id}/recibir-traslado`, { documentoId }).then(r => r.data)

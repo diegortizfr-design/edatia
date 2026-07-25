@@ -1011,11 +1011,13 @@ model FacturaCompra {
   recepcionId           String?       // RP cruzada
   notas                 String?
   estado                String        @default("REGISTRADA")
+  estadoRecepcion       String        @default("PENDIENTE") // PENDIENTE, PARCIAL, RECIBIDO
 
   ordenCompraId         Int?
   ordenCompra           OrdenCompra?  @relation(fields: [ordenCompraId], references: [id])
 
   items                 FacturaCompraItem[]
+  recepciones           RecepcionMercancia[]
 
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -1031,8 +1033,10 @@ model FacturaCompraItem {
   productoId       Int
   producto         Producto      @relation(fields: [productoId], references: [id])
   cantidad         Decimal       @db.Decimal(12, 3)
+  cantidadRecibida Decimal       @default(0) @db.Decimal(12, 3)
   costoUnitario    Decimal       @db.Decimal(14, 2)
   subtotal         Decimal       @db.Decimal(14, 2)
+  recepcionItems   RecepcionItem[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -1109,35 +1113,53 @@ model OrdenCompraItem {
 }
 
 model RecepcionMercancia {
-  id            Int         @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   empresaId     Int
-  empresa       Empresa     @relation(fields: [empresaId], references: [id])
-  ordenCompraId Int
-  ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+  empresa       Empresa      @relation(fields: [empresaId], references: [id])
+  
+  ordenCompraId Int?
+  ordenCompra   OrdenCompra? @relation(fields: [ordenCompraId], references: [id])
+
+  facturaCompraId Int?
+  facturaCompra   FacturaCompra? @relation(fields: [facturaCompraId], references: [id])
+
+  bodegaId      Int?
+  bodega        Bodega?      @relation(fields: [bodegaId], references: [id])
 
   documentoConfigId     Int?
   documentoConfig       DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
-  numero        String      @unique
-  fecha         DateTime    @default(now())
+  numero        String       @unique
+  fecha         DateTime     @default(now())
   usuarioId     Int?
   notas         String?
 
-  inventarioAfectado Boolean      @default(false)
+  inventarioAfectado Boolean @default(false)
 
   items         RecepcionItem[]
 
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime     @default(now())
 }
 
 model RecepcionItem {
   id                  Int                 @id @default(autoincrement())
   recepcionId         Int
   recepcion           RecepcionMercancia  @relation(fields: [recepcionId], references: [id])
-  ordenCompraItemId   Int
-  ordenCompraItem     OrdenCompraItem     @relation(fields: [ordenCompraItemId], references: [id])
+  
+  productoId          Int?
+  producto            Producto?           @relation(fields: [productoId], references: [id])
 
-  cantidadRecibida    Decimal  @db.Decimal(12, 3)
+  ordenCompraItemId   Int?
+  ordenCompraItem     OrdenCompraItem?    @relation(fields: [ordenCompraItemId], references: [id])
+
+  facturaCompraItemId Int?
+  facturaCompraItem   FacturaCompraItem?  @relation(fields: [facturaCompraItemId], references: [id])
+
+  cantidadRecibida    Decimal             @db.Decimal(12, 3)
+  costoUnitario       Decimal             @db.Decimal(14, 4)
+
+  createdAt           DateTime            @default(now())
+}
   costoUnitario       Decimal  @db.Decimal(14, 4)
 
   createdAt           DateTime @default(now())
