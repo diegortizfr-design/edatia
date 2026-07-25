@@ -757,6 +757,7 @@ model Producto {
   pedidoItems     PedidoVentaItem[]
   ventaPosItems   VentaPosItem[]
   facturasCompraItems FacturaCompraItem[]
+  recepcionItems  RecepcionItem[]
 
   // 🌐 Módulo Digital
   publicadoWeb    Boolean  @default(false)
@@ -911,6 +912,7 @@ model Bodega {
   stockVariantes       StockVariante[]
   facturasVenta        FacturaVenta[]
   cajasPos             CajaPos[]
+  recepciones          RecepcionMercancia[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
