@@ -1183,8 +1183,45 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           </div>
 
           {/* Amortization schedule */}
-          <div className="glass-card p-6 rounded-xl lg:col-span-2">
-            <h3 className="text-lg font-bold text-white mb-4">Plan de Amortización (Cuotas)</h3>
+          <div className="glass-card p-6 rounded-xl lg:col-span-2 space-y-4">
+            <h3 className="text-lg font-bold text-white">Plan de Amortización (Cuotas)</h3>
+
+            {/* Totalizadores de Amortización */}
+            {(() => {
+              const amorts = activeLoan.amortizations || [];
+              const totalPagado = amorts.reduce((sum, a) => sum + (a.amountPaid || 0), 0);
+              
+              // Total en Mora: cuotas atrasadas (dueDate < hoy o status OVERDUE)
+              const now = new Date();
+              const moraAmorts = amorts.filter(a => {
+                const isPastDue = new Date(a.dueDate) < now;
+                return (a.status === 'OVERDUE' || (isPastDue && (a.status === 'PENDING' || a.status === 'PARTIAL')));
+              });
+              const totalMora = moraAmorts.reduce((sum, a) => sum + (a.amount - (a.amountPaid || 0)), 0);
+
+              // Total Pendiente a tiempo
+              const totalPendiente = Math.max(0, activeLoan.balance - totalMora);
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Total Pagado</span>
+                    <span className="text-base font-extrabold text-emerald-300 font-mono">${totalPagado.toLocaleString('es-CO')}</span>
+                  </div>
+
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Total en Mora</span>
+                    <span className="text-base font-extrabold text-amber-300 font-mono">${totalMora.toLocaleString('es-CO')}</span>
+                  </div>
+
+                  <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pendiente</span>
+                    <span className="text-base font-extrabold text-slate-200 font-mono">${totalPendiente.toLocaleString('es-CO')}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="overflow-auto max-h-[400px] border border-slate-850 rounded-lg">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -1211,6 +1248,19 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-slate-800 bg-slate-900/60 font-bold text-xs">
+                    <td className="p-2 md:p-3 text-slate-300">TOTALES ({activeLoan.amortizations.length} Cuotas)</td>
+                    <td className="p-2 md:p-3"></td>
+                    <td className="p-2 md:p-3 text-right font-mono text-white">${activeLoan.totalAmount.toLocaleString('es-CO')}</td>
+                    <td className="p-2 md:p-3 text-right font-mono text-emerald-400">
+                      ${activeLoan.amortizations.reduce((sum, a) => sum + (a.amountPaid || 0), 0).toLocaleString('es-CO')}
+                    </td>
+                    <td className="p-2 md:p-3 font-mono text-slate-300">
+                      Deuda: ${activeLoan.balance.toLocaleString('es-CO')}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
