@@ -16,7 +16,12 @@ model Tenant {
   password  String   // Hash bcrypt
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  isPremium Boolean  @default(false)
+  isPremium           Boolean  @default(false)
+  phone               String?
+  address             String?
+  lateInterestEnabled Boolean  @default(false)
+  lateInterestRate    Float    @default(0)
+  lateInterestPeriod  String   @default("MONTHLY") // DAILY, MONTHLY
 
   customers Customer[]
   loans     Loan[]
@@ -119,9 +124,10 @@ model Payment {
   customerId    String
   customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   
-  receiptNumber String   // Consecutivo de recibo (ej: REC-0001)
-  amount        Float    // Monto pagado
-  paymentDate   DateTime @default(now())
+  receiptNumber      String   // Consecutivo de recibo (ej: REC-0001)
+  amount             Float    // Monto pagado
+  lateInterestAmount Float    @default(0) // Interés de mora cobrado
+  paymentDate        DateTime @default(now())
   notes         String?
   createdAt     DateTime @default(now())
 }

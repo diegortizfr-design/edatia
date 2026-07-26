@@ -4,7 +4,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 
 export const createPayment = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
-  const { loanId, amount, notes } = req.body;
+  const { loanId, amount, notes, lateInterestAmount } = req.body;
 
   if (!loanId || !amount || parseFloat(amount) <= 0) {
     return res.status(400).json({ error: 'El ID del préstamo y un monto válido mayor a 0 son obligatorios.' });
@@ -49,6 +49,7 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
           customerId: loan.customerId,
           receiptNumber,
           amount: payAmount,
+          lateInterestAmount: lateInterestAmount ? parseFloat(String(lateInterestAmount)) : 0,
           notes: notes || null
         }
       });

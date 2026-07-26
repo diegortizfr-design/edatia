@@ -8,8 +8,9 @@ import { ClientDetail } from './pages/ClientDetail';
 import { Portfolio } from './pages/Portfolio';
 import { Route } from './pages/Route';
 import { Transactions } from './pages/Transactions';
+import { Settings } from './pages/Settings';
 
-import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet, Receipt, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, FolderHeart, Route as RouteIcon, LogOut, Wallet, Receipt, Sun, Moon, Settings as SettingsIcon } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, tenant, logout } = useAuth();
@@ -64,13 +65,14 @@ const AppContent: React.FC = () => {
     { id: 'portfolio', name: 'Cartera', icon: FolderHeart },
     { id: 'route', name: 'Ruta', icon: RouteIcon },
     { id: 'transactions', name: 'Recibos', icon: Receipt },
+    { id: 'settings', name: 'Ajustes', icon: SettingsIcon },
   ];
 
   // Synchronize hash changes
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (['dashboard', 'clients', 'portfolio', 'route', 'transactions'].includes(hash)) {
+      if (['dashboard', 'clients', 'portfolio', 'route', 'transactions', 'settings'].includes(hash)) {
         setCurrentPage(hash);
       } else if (hash.startsWith('clients/') && hash.split('/')[1]) {
         setSelectedClientId(hash.split('/')[1]);
@@ -89,7 +91,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (currentPage === 'client-detail' && selectedClientId) {
       window.location.hash = `clients/${selectedClientId}`;
-    } else if (['dashboard', 'clients', 'portfolio', 'route', 'transactions'].includes(currentPage)) {
+    } else if (['dashboard', 'clients', 'portfolio', 'route', 'transactions', 'settings'].includes(currentPage)) {
       window.location.hash = currentPage;
     }
   }, [currentPage, selectedClientId]);
@@ -168,6 +170,7 @@ const AppContent: React.FC = () => {
           />
         )}
         {currentPage === 'transactions' && <Transactions />}
+        {currentPage === 'settings' && <Settings />}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}

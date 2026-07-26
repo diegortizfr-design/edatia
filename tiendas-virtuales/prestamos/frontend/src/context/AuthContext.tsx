@@ -7,6 +7,11 @@ export interface Tenant {
   name: string;
   email: string;
   isPremium: boolean;
+  phone?: string;
+  address?: string;
+  lateInterestEnabled?: boolean;
+  lateInterestRate?: number;
+  lateInterestPeriod?: string;
 }
 
 interface AuthContextType {

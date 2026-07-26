@@ -6,6 +6,7 @@ import { simulateLoan, createProduct, getProducts, createLoan, renewLoan, getLoa
 import { createPayment, getPaymentById, getPayments } from '../controllers/paymentController';
 import { getDailyRoute, getRouteCheckout } from '../controllers/routeController';
 import { getPortfolioStats } from '../controllers/reportsController';
+import { getTenantSettings, updateTenantSettings } from '../controllers/tenantController';
 
 const router = Router();
 
@@ -41,5 +42,9 @@ router.get('/route/checkout', authenticateToken as any, getRouteCheckout);
 
 // --- REPORTS / DASHBOARD ---
 router.get('/reports/portfolio', authenticateToken as any, getPortfolioStats);
+
+// --- TENANT / SETTINGS ---
+router.get('/tenant/settings', authenticateToken as any, getTenantSettings);
+router.put('/tenant/settings', authenticateToken as any, updateTenantSettings);
 
 export default router;

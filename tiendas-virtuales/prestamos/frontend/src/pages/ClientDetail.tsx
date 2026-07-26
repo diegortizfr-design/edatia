@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
   Coins, RefreshCw, Plus, 
@@ -65,6 +66,7 @@ interface ClientDetailProps {
 }
 
 export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) => {
+  const { tenant } = useAuth();
   const [client, setClient] = useState<ClientFullDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1399,6 +1401,38 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             <h3 className="text-xl font-bold text-white mb-2">Registrar Pago / Abono</h3>
             <p className="text-slate-400 text-xs mb-4">Crédito: {activeLoan?.loanNumber} | Saldo: ${activeLoan?.balance.toLocaleString('es-CO')}</p>
             
+            {/* Late Interest Notice if customer has overdue installments & tenant has late interest enabled */}
+            {(() => {
+              const overdueAmorts = activeLoan?.amortizations?.filter((a: any) => {
+                const isPastDue = new Date(a.dueDate) < new Date();
+                return (a.status === 'OVERDUE' || (isPastDue && (a.status === 'PENDING' || a.status === 'PARTIAL')));
+              }) || [];
+              const overdueBalance = overdueAmorts.reduce((sum: number, a: any) => sum + (a.amount - (a.amountPaid || 0)), 0);
+              const lateRate = Number(tenant?.lateInterestRate || 0);
+              const isEnabled = Boolean(tenant?.lateInterestEnabled);
+              const lateAmount = (isEnabled && overdueBalance > 0 && lateRate > 0)
+                ? Math.round(overdueBalance * (lateRate / 100))
+                : 0;
+
+              if (!isEnabled || overdueBalance <= 0) return null;
+
+              return (
+                <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
+                  <div className="flex justify-between items-center text-amber-400 font-bold">
+                    <span>⚠️ Saldo en Mora Detectado:</span>
+                    <span>${overdueBalance.toLocaleString('es-CO')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span>Interés de Mora Aplicable ({lateRate}%):</span>
+                    <span className="font-bold text-amber-300">+${lateAmount.toLocaleString('es-CO')}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    * El interés de mora se calcula únicamente sobre el monto vencido.
+                  </p>
+                </div>
+              );
+            })()}
+
             {payError && <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg mb-4">{payError}</div>}
 
             <form onSubmit={handlePaySubmit} className="space-y-4">
