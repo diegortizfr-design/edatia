@@ -5,7 +5,7 @@ import {
   ArrowLeft, User, Phone, MapPin, Mail, 
   Coins, RefreshCw, Plus, 
   AlertTriangle, Printer, Sparkles, Download,
-  Camera, Upload, FileText, CheckCircle, Eye, Trash2, Image as ImageIcon, FilePlus, X, ShieldCheck, FileCheck, Layers
+  Camera, Upload, FileText, CheckCircle, Eye, Trash2, Image as ImageIcon, FilePlus, X, ShieldCheck, FileCheck, Layers, Edit3
 } from 'lucide-react';
 
 interface Amortization {
@@ -78,6 +78,54 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingClient, setDeletingClient] = useState(false);
   const [deleteClientError, setDeleteClientError] = useState('');
+
+  // Edit Client Profile State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDocumentId, setEditDocumentId] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  const openEditModal = () => {
+    if (!client) return;
+    setEditName(client.name || '');
+    setEditDocumentId(client.documentId || '');
+    setEditPhone(client.phone || '');
+    setEditAddress(client.address || '');
+    setEditEmail(client.email || '');
+    setEditError('');
+    setShowEditModal(true);
+  };
+
+  const handleEditClientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!client) return;
+    setEditError('');
+    setEditLoading(true);
+
+    try {
+      await apiCall(`/clients/${client.id}`, {
+        method: 'PUT',
+        bodyData: {
+          name: editName,
+          documentId: editDocumentId,
+          phone: editPhone,
+          address: editAddress,
+          email: editEmail || null
+        }
+      });
+
+      setShowEditModal(false);
+      fetchClientDetails();
+    } catch (err: any) {
+      setEditError(err.message || 'Error al actualizar la información del cliente.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const handleDeleteClient = async () => {
     if (!client) return;
@@ -835,6 +883,14 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               <Plus className="w-4 h-4" /> Asignar Préstamo
             </button>
           )}
+
+          <button
+            onClick={openEditModal}
+            className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition"
+            title="Editar información del cliente"
+          >
+            <Edit3 className="w-4 h-4 text-brand-400" /> Editar Cliente
+          </button>
 
           <button
             onClick={() => setShowDeleteModal(true)}
@@ -1647,6 +1703,115 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 4: EDITAR INFORMACIÓN DEL CLIENTE --- */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 relative animate-zoomIn space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-brand-400" />
+                Editar Ficha del Cliente
+              </h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditClientSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Nombre Completo *
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Cédula / NIT / Documento *
+                  </label>
+                  <input
+                    type="text"
+                    value={editDocumentId}
+                    onChange={(e) => setEditDocumentId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-brand-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Teléfono / Celular *
+                  </label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="opcional@email.com"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Dirección de Residencia / Trabajo *
+                </label>
+                <input
+                  type="text"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold rounded-lg text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-500 disabled:bg-brand-800 text-white font-semibold rounded-lg shadow-lg shadow-brand-500/10 text-sm flex items-center gap-2"
+                >
+                  {editLoading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
