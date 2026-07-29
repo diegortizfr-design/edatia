@@ -154,7 +154,7 @@ export const EditClientModal: React.FC<EditClientModalProps> = ({
               onChange={e => setEditDefaultFrequency(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition"
             >
-              <option value="DAILY">Diario (Lunes a Sábado)</option>
+              <option value="DAILY">Diario (Todos los Días)</option>
               <option value="WEEKLY">Semanal</option>
               <option value="BIWEEKLY">Quincenal</option>
               <option value="MONTHLY">Mensual</option>

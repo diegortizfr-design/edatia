@@ -9,12 +9,8 @@ export const calculateInstallmentDates = (startDate: Date, frequency: string, in
 
   for (let i = 0; i < installments; i++) {
     if (frequency === 'DAILY') {
-      // Add 1 day
+      // Add 1 day (Every day, Monday to Sunday)
       currentDate.setDate(currentDate.getDate() + 1);
-      // Skip Sundays (0 = Sunday)
-      if (currentDate.getDay() === 0) {
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
     } else if (frequency === 'WEEKLY') {
       // Add 7 days
       currentDate.setDate(currentDate.getDate() + 7);

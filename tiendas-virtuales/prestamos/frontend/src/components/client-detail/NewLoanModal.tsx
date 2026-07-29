@@ -46,13 +46,12 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
         const dates: Date[] = [];
         let currentDate = new Date();
         for (let i = 0; i < inst; i++) {
-          currentDate.setDate(currentDate.getDate() + 1);
-          if (frequency === 'DAILY' && currentDate.getDay() === 0) {
+          if (frequency === 'DAILY') {
             currentDate.setDate(currentDate.getDate() + 1);
           } else if (frequency === 'WEEKLY') {
-            currentDate.setDate(currentDate.getDate() + 6);
+            currentDate.setDate(currentDate.getDate() + 7);
           } else if (frequency === 'BIWEEKLY') {
-            currentDate.setDate(currentDate.getDate() + 14);
+            currentDate.setDate(currentDate.getDate() + 15);
           } else if (frequency === 'MONTHLY') {
             currentDate.setMonth(currentDate.getMonth() + 1);
           }
@@ -65,11 +64,17 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
           interestAmount,
           totalAmount,
           installmentAmt,
-          dates
+          schedule: dates.map((d, i) => ({
+            installmentNumber: i + 1,
+            dueDate: d.toISOString(),
+            amount: installmentAmt
+          }))
         });
+      } else {
+        setSimulation(null);
       }
     }
-  }, [show, principal, interestRate, frequency, installments]);
+  }, [show, principal, interestRate, installments, frequency]);
 
   if (!show) return null;
 
@@ -171,7 +176,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
                 onChange={e => setFrequency(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition"
               >
-                <option value="DAILY">Diario (Lunes a Sábado)</option>
+                <option value="DAILY">Diario (Todos los Días)</option>
                 <option value="WEEKLY">Semanal</option>
                 <option value="BIWEEKLY">Quincenal</option>
                 <option value="MONTHLY">Mensual</option>
