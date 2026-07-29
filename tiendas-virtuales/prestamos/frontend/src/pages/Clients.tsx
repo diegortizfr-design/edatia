@@ -37,6 +37,7 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
+  const [defaultFrequency, setDefaultFrequency] = useState('DAILY');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,7 +89,7 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
     try {
       await apiCall('/clients', {
         method: 'POST',
-        bodyData: { name, documentId, phone, address, email }
+        bodyData: { name, documentId, phone, address, email, defaultFrequency }
       });
       
       // Reset form
@@ -97,6 +98,7 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
       setPhone('');
       setAddress('');
       setEmail('');
+      setDefaultFrequency('DAILY');
       setIsModalOpen(false);
       fetchClients(search); // Refresh list
     } catch (err: any) {
@@ -403,6 +405,22 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 transition"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Clasificación / Periodicidad de Cobro *
+                </label>
+                <select
+                  value={defaultFrequency}
+                  onChange={(e) => setDefaultFrequency(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-brand-500 transition"
+                >
+                  <option value="DAILY">Diario (Lunes a Sábado)</option>
+                  <option value="WEEKLY">Semanal</option>
+                  <option value="BIWEEKLY">Quincenal</option>
+                  <option value="MONTHLY">Mensual</option>
+                </select>
               </div>
 
               <div className="flex gap-3 justify-end pt-4 border-t border-slate-800 mt-6">

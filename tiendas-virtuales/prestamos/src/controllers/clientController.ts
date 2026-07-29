@@ -45,6 +45,7 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
         address: client.address,
         email: client.email,
         status: client.status,
+        defaultFrequency: client.defaultFrequency || 'DAILY',
         activeLoansCount: activeLoans.length,
         totalDebt,
         createdAt: client.createdAt
@@ -93,7 +94,7 @@ export const getClientById = async (req: AuthenticatedRequest, res: Response) =>
 
 export const createClient = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
-  const { name, documentId, phone, address, email } = req.body;
+  const { name, documentId, phone, address, email, defaultFrequency } = req.body;
 
   if (!name || !documentId || !phone || !address) {
     return res.status(400).json({ error: 'Nombre, Cédula/NIT, teléfono y dirección son obligatorios.' });
@@ -112,14 +113,15 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
       return res.status(400).json({ error: 'Ya existe un cliente registrado con ese número de identificación.' });
     }
 
-    const client = await prisma.customer.create({
+    const client = await (prisma.customer as any).create({
       data: {
         tenantId,
         name,
         documentId,
         phone,
         address,
-        email: email || null
+        email: email || null,
+        defaultFrequency: defaultFrequency || 'DAILY'
       }
     });
 
@@ -133,7 +135,7 @@ export const createClient = async (req: AuthenticatedRequest, res: Response) => 
 export const updateClient = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
   const { id } = req.params;
-  const { name, documentId, phone, address, email, status, idFront, idBack, photo, attachmentsJson } = req.body;
+  const { name, documentId, phone, address, email, status, defaultFrequency, idFront, idBack, photo, attachmentsJson } = req.body;
 
   try {
     const client = await prisma.customer.findFirst({
@@ -167,6 +169,7 @@ export const updateClient = async (req: AuthenticatedRequest, res: Response) => 
         address: address !== undefined ? address : client.address,
         email: email !== undefined ? email : client.email,
         status: status !== undefined ? status : client.status,
+        defaultFrequency: defaultFrequency !== undefined ? defaultFrequency : (client as any).defaultFrequency,
         ...(idFront !== undefined ? { idFront } : {}),
         ...(idBack !== undefined ? { idBack } : {}),
         ...(photo !== undefined ? { photo } : {}),

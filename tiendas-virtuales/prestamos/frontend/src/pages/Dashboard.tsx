@@ -6,6 +6,8 @@ import { TrendingUp, Users, AlertCircle, Calendar, Landmark, Coins } from 'lucid
 interface PortfolioSummary {
   totalCustomers: number;
   activeLoansCount: number;
+  initialCapital?: number;
+  availableCapital?: number;
   capitalPrestado: number;
   expectedRecuperacion: number;
   outstandingBalance: number;
@@ -92,13 +94,27 @@ export const Dashboard: React.FC<{ setCurrentPage: (page: string) => void }> = (
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight font-sans">
-          Dashboard General
-        </h1>
-        <p className="text-slate-400 mt-1">
-          Resumen operativo y estado financiero de la cartera de <span className="text-brand-400 font-semibold">{tenant?.name}</span>.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight font-sans">
+            Dashboard General
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Resumen operativo y estado financiero de la cartera de <span className="text-brand-400 font-semibold">{tenant?.name}</span>.
+          </p>
+        </div>
+
+        {summary?.initialCapital !== undefined && summary.initialCapital > 0 && (
+          <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl flex items-center gap-3">
+            <div className="w-9 h-9 bg-brand-600/10 border border-brand-500/20 rounded-lg flex items-center justify-center text-brand-400">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Capital Base Inicial</span>
+              <span className="text-sm font-bold text-white font-mono">${summary.initialCapital.toLocaleString('es-CO')} COP</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}

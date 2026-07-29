@@ -19,6 +19,7 @@ export const getTenantSettings = async (req: AuthenticatedRequest, res: Response
         lateInterestEnabled: true,
         lateInterestRate: true,
         lateInterestPeriod: true,
+        initialCapital: true,
         isPremium: true,
         createdAt: true,
       }
@@ -38,7 +39,7 @@ export const getTenantSettings = async (req: AuthenticatedRequest, res: Response
 // Update tenant settings
 export const updateTenantSettings = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
-  const { name, nit, email, phone, address, lateInterestEnabled, lateInterestRate, lateInterestPeriod } = req.body;
+  const { name, nit, email, phone, address, lateInterestEnabled, lateInterestRate, lateInterestPeriod, initialCapital } = req.body;
 
   try {
     const updatedTenant = await prisma.tenant.update({
@@ -52,6 +53,7 @@ export const updateTenantSettings = async (req: AuthenticatedRequest, res: Respo
         ...(lateInterestEnabled !== undefined ? { lateInterestEnabled: Boolean(lateInterestEnabled) } : {}),
         ...(lateInterestRate !== undefined ? { lateInterestRate: parseFloat(lateInterestRate) } : {}),
         ...(lateInterestPeriod !== undefined ? { lateInterestPeriod } : {}),
+        ...(initialCapital !== undefined ? { initialCapital: parseFloat(initialCapital) || 0 } : {}),
       },
       select: {
         id: true,
@@ -63,6 +65,7 @@ export const updateTenantSettings = async (req: AuthenticatedRequest, res: Respo
         lateInterestEnabled: true,
         lateInterestRate: true,
         lateInterestPeriod: true,
+        initialCapital: true,
         isPremium: true,
       }
     });

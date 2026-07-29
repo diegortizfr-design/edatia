@@ -1,64 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiCall } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
-  Coins, RefreshCw, Plus, 
-  AlertTriangle, Printer, Sparkles, Download,
-  Camera, Upload, FileText, CheckCircle, Eye, Trash2, Image as ImageIcon, FilePlus, X, ShieldCheck, FileCheck, Layers, Edit3
+  Coins, RefreshCw, Plus, Edit3, Trash2, ShieldCheck, FolderHeart, Receipt, Printer 
 } from 'lucide-react';
 
-interface Amortization {
-  id: string;
-  installmentNumber: number;
-  dueDate: string;
-  amount: number;
-  amountPaid: number;
-  status: string;
-  paidAt: string | null;
-}
-
-interface Payment {
-  id: string;
-  receiptNumber: string;
-  amount: number;
-  paymentDate: string;
-  notes: string | null;
-}
-
-interface Loan {
-  id: string;
-  loanNumber: string;
-  principal: number;
-  interestRate: number;
-  interestAmount: number;
-  totalAmount: number;
-  balance: number;
-  paymentFrequency: string;
-  installments: number;
-  installmentAmt: number;
-  status: string;
-  startDate: string;
-  endDate: string;
-  renewalFromId: string | null;
-  amortizations: Amortization[];
-  payments: Payment[];
-}
-
-interface ClientFullDetails {
-  id: string;
-  name: string;
-  documentId: string;
-  phone: string;
-  address: string;
-  email: string | null;
-  status: string;
-  idFront?: string | null;
-  idBack?: string | null;
-  photo?: string | null;
-  attachmentsJson?: string | null;
-  loans: Loan[];
-}
+import { 
+  ClientFullDetails, Loan, PrintInvoiceData, PrintReceiptData 
+} from '../components/client-detail/clientDetailTypes';
+import { EditClientModal } from '../components/client-detail/EditClientModal';
+import { DeleteClientModal } from '../components/client-detail/DeleteClientModal';
+import { CameraModal } from '../components/client-detail/CameraModal';
+import { KycAttachmentsTab } from '../components/client-detail/KycAttachmentsTab';
+import { NewLoanModal } from '../components/client-detail/NewLoanModal';
+import { RenewLoanModal } from '../components/client-detail/RenewLoanModal';
+import { PaymentModal } from '../components/client-detail/PaymentModal';
+import { AmortizationTable } from '../components/client-detail/AmortizationTable';
+import { PrintInvoiceView, PrintReceiptView } from '../components/client-detail/PrintViews';
 
 interface ClientDetailProps {
   clientId: string;
@@ -71,92 +30,47 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Tabs Navigation State
-  const [activeTab, setActiveTab] = useState<'info' | 'attachments'>('info');
+  // Tabs Navigation
+  const [activeTab, setActiveTab] = useState<'info' | 'payments' | 'attachments'>('info');
 
-  // Delete Client State
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingClient, setDeletingClient] = useState(false);
-  const [deleteClientError, setDeleteClientError] = useState('');
-
-  // Edit Client Profile State
+  // Modals Visibility
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editDocumentId, setEditDocumentId] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editAddress, setEditAddress] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [showRenewModal, setShowRenewModal] = useState(false);
 
-  const openEditModal = () => {
-    if (!client) return;
-    setEditName(client.name || '');
-    setEditDocumentId(client.documentId || '');
-    setEditPhone(client.phone || '');
-    setEditAddress(client.address || '');
-    setEditEmail(client.email || '');
-    setEditError('');
-    setShowEditModal(true);
-  };
+  // Print Views Data
+  const [printInvoiceData, setPrintInvoiceData] = useState<PrintInvoiceData | null>(null);
+  const [printReceiptData, setPrintReceiptData] = useState<PrintReceiptData | null>(null);
 
-  const handleEditClientSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!client) return;
-    setEditError('');
-    setEditLoading(true);
-
-    try {
-      await apiCall(`/clients/${client.id}`, {
-        method: 'PUT',
-        bodyData: {
-          name: editName,
-          documentId: editDocumentId,
-          phone: editPhone,
-          address: editAddress,
-          email: editEmail || null
-        }
-      });
-
-      setShowEditModal(false);
-      fetchClientDetails();
-    } catch (err: any) {
-      setEditError(err.message || 'Error al actualizar la información del cliente.');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDeleteClient = async () => {
-    if (!client) return;
-    setDeletingClient(true);
-    setDeleteClientError('');
-    try {
-      await apiCall(`/clients/${client.id}`, { method: 'DELETE' });
-      onBack();
-    } catch (err: any) {
-      setDeleteClientError(err.message || 'Error al eliminar el cliente.');
-      setDeletingClient(false);
-    }
-  };
-
-  // Camera Modal & Camera State
+  // Camera & Attachments State
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<'idFront' | 'idBack' | 'photo' | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-
-  // Image Preview Lightbox State
-  const [previewImage, setPreviewImage] = useState<{ title: string; url: string } | null>(null);
   const [savingAttachment, setSavingAttachment] = useState(false);
 
-  // Custom Document Form State
-  const [showAddCustomDoc, setShowAddCustomDoc] = useState(false);
-  const [customDocTitle, setCustomDocTitle] = useState('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const fetchClientDetails = async () => {
+    setLoading(true);
+    try {
+      const data = await apiCall(`/clients/${clientId}`);
+      setClient(data);
+    } catch (err: any) {
+      setError(err.message || 'Error al obtener ficha de cliente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchClientDetails();
+  }, [clientId]);
+
+  // Camera Stream Controls
   const startCamera = async (target: 'idFront' | 'idBack' | 'photo', mode: 'user' | 'environment' = 'environment') => {
     setCameraTarget(target);
     setFacingMode(mode);
@@ -187,6 +101,22 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     setCameraTarget(null);
   };
 
+  const updateClientField = async (field: string, value: any) => {
+    if (!client) return;
+    setSavingAttachment(true);
+    try {
+      await apiCall(`/clients/${client.id}`, {
+        method: 'PUT',
+        bodyData: { [field]: value }
+      });
+      setClient(prev => prev ? { ...prev, [field]: value } : null);
+    } catch (err: any) {
+      alert('Error al guardar adjunto: ' + (err.message || err));
+    } finally {
+      setSavingAttachment(false);
+    }
+  };
+
   const capturePhotoFromCamera = async () => {
     if (!videoRef.current || !canvasRef.current || !cameraTarget || !client) return;
     const video = videoRef.current;
@@ -203,22 +133,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     }
   };
 
-  const updateClientField = async (field: string, value: any) => {
-    if (!client) return;
-    setSavingAttachment(true);
-    try {
-      await apiCall(`/clients/${client.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ [field]: value })
-      });
-      setClient(prev => prev ? { ...prev, [field]: value } : null);
-    } catch (err: any) {
-      alert('Error al guardar adjunto: ' + (err.message || err));
-    } finally {
-      setSavingAttachment(false);
-    }
-  };
-
   const handleFileUpload = (field: 'idFront' | 'idBack' | 'photo', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -231,405 +145,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
       await updateClientField(field, reader.result as string);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleAddCustomDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !customDocTitle.trim()) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const result = reader.result as string;
-      const existingDocs = client?.attachmentsJson ? JSON.parse(client.attachmentsJson) : [];
-      const newDoc = {
-        id: 'doc_' + Date.now(),
-        title: customDocTitle.trim(),
-        type: file.type.includes('pdf') ? 'pdf' : 'image',
-        url: result,
-        date: new Date().toLocaleDateString('es-CO')
-      };
-      const updatedDocs = [...existingDocs, newDoc];
-      await updateClientField('attachmentsJson', JSON.stringify(updatedDocs));
-      setCustomDocTitle('');
-      setShowAddCustomDoc(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removeCustomDoc = async (docId: string) => {
-    if (!client || !confirm('¿Estás seguro de eliminar este documento adjunto?')) return;
-    const existingDocs = client.attachmentsJson ? JSON.parse(client.attachmentsJson) : [];
-    const updatedDocs = existingDocs.filter((d: any) => d.id !== docId);
-    await updateClientField('attachmentsJson', JSON.stringify(updatedDocs));
-  };
-
-  // Modals Visibility
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [showRenewModal, setShowRenewModal] = useState(false);
-
-  // Print Mode State (to render printable overlays)
-  const [printInvoiceData, setPrintInvoiceData] = useState<any>(null);
-  const [printReceiptData, setPrintReceiptData] = useState<any>(null);
-
-  // Assign Loan Form State
-  const [principal, setPrincipal] = useState('500000');
-  const [interestRate, setInterestRate] = useState('20');
-  const [frequency, setFrequency] = useState('DAILY');
-  const [installments, setInstallments] = useState('24');
-  const [simulation, setSimulation] = useState<any>(null);
-  const [assignError, setAssignError] = useState('');
-  const [assignLoading, setAssignLoading] = useState(false);
-
-  // Pay Form State
-  const [payAmount, setPayAmount] = useState('');
-  const [payNotes, setPayNotes] = useState('');
-  const [payError, setPayError] = useState('');
-  const [payLoading, setPayLoading] = useState(false);
-
-  // Renew Form State
-  const [renewPrincipal, setRenewPrincipal] = useState('');
-  const [renewInterestRate, setRenewInterestRate] = useState('20');
-  const [renewFrequency, setRenewFrequency] = useState('DAILY');
-  const [renewInstallments, setRenewInstallments] = useState('24');
-  const [renewError, setRenewError] = useState('');
-  const [renewLoading, setRenewLoading] = useState(false);
-
-  const handleDownloadPDF = (elementId: string, filename: string) => {
-    try {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        alert('Error: Elemento de impresión no encontrado en la página.');
-        return;
-      }
-
-      // @ts-ignore
-      const html2pdf = window.html2pdf;
-      if (!html2pdf) {
-        alert('Error: La librería de generación de PDF no se ha cargado. Por favor, refresca la página (Ctrl + F5) e intenta nuevamente.');
-        return;
-      }
-
-      // Wrap inner HTML in a clean, standalone document with Tailwind v2 (which uses standard hex/RGB colors)
-      const contentHtml = element.innerHTML;
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Factura y Contrato</title>
-            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-            <style>
-              body {
-                background-color: white !important;
-                color: black !important;
-                font-family: system-ui, -apple-system, sans-serif;
-                padding: 15px;
-              }
-            </style>
-          </head>
-          <body>
-            <div style="width: 720px; margin: 0 auto;">
-              ${contentHtml}
-            </div>
-          </body>
-        </html>
-      `;
-
-      const opt = {
-        margin:       [0.3, 0.3, 0.3, 0.3],
-        filename:     filename,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-          scale: 2, 
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-
-      html2pdf().from(fullHtml).set(opt).save()
-        .catch((err: any) => {
-          alert('Error al compilar el PDF: ' + (err.message || err));
-        });
-    } catch (e: any) {
-      alert('Excepción al generar el PDF: ' + e.message);
-    }
-  };
-
-  const handleDownloadReceiptPDF = (elementId: string, filename: string) => {
-    try {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        alert('Error: Elemento del recibo no encontrado.');
-        return;
-      }
-
-      // @ts-ignore
-      const html2pdf = window.html2pdf;
-      if (!html2pdf) {
-        alert('Error: La librería de generación de PDF no se ha cargado. Por favor, refresca la página (Ctrl + F5) e intenta nuevamente.');
-        return;
-      }
-
-      const contentHtml = element.innerHTML;
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Recibo de Caja</title>
-            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-            <style>
-              body {
-                background-color: white !important;
-                color: black !important;
-                font-family: monospace;
-                padding: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div style="width: 280px; margin: 0 auto;">
-              ${contentHtml}
-            </div>
-          </body>
-        </html>
-      `;
-
-      const opt = {
-        margin:       [0.1, 0.1, 0.1, 0.1],
-        filename:     filename,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-          scale: 2.5, 
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
-      };
-
-      html2pdf().from(fullHtml).set(opt).save()
-        .catch((err: any) => {
-          alert('Error al compilar el ticket: ' + (err.message || err));
-        });
-    } catch (e: any) {
-      alert('Excepción al generar el ticket: ' + e.message);
-    }
-  };
-
-  const fetchClientDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await apiCall(`/clients/${clientId}`);
-      setClient(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al obtener ficha de cliente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchClientDetails();
-  }, [clientId]);
-
-  // Auto-download on mobile (instead of opening full-screen print overlay)
-  useEffect(() => {
-    if (printInvoiceData && window.innerWidth < 768) {
-      const filename = `Contrato_Credito_${printInvoiceData.loan.loanNumber}.pdf`;
-      const timer = setTimeout(() => {
-        handleDownloadPDF('invoice-print-area', filename);
-        setPrintInvoiceData(null);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [printInvoiceData]);
-
-  useEffect(() => {
-    if (printReceiptData && window.innerWidth < 768) {
-      const filename = `Recibo_${printReceiptData.receiptNumber}.pdf`;
-      const timer = setTimeout(() => {
-        handleDownloadReceiptPDF('receipt-print-area', filename);
-        setPrintReceiptData(null);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [printReceiptData]);
-
-  // Handle Real-time Loan Assignment Simulation
-  useEffect(() => {
-    if (showAssignModal && principal && interestRate && installments) {
-      const p = parseFloat(principal);
-      const r = parseFloat(interestRate);
-      const inst = parseInt(installments);
-      
-      if (!isNaN(p) && !isNaN(r) && !isNaN(inst) && inst > 0) {
-        const interestAmount = p * (r / 100);
-        const totalAmount = p + interestAmount;
-        const installmentAmt = Math.round(totalAmount / inst);
-        
-        // Generate simulated dates locally to avoid calling backend on every change
-        const dates: Date[] = [];
-        let currentDate = new Date();
-        for (let i = 0; i < inst; i++) {
-          currentDate.setDate(currentDate.getDate() + 1);
-          if (frequency === 'DAILY' && currentDate.getDay() === 0) {
-            currentDate.setDate(currentDate.getDate() + 1); // Skip Sunday
-          } else if (frequency === 'WEEKLY') {
-            currentDate.setDate(currentDate.getDate() + 6); // Add rest of week
-          } else if (frequency === 'BIWEEKLY') {
-            currentDate.setDate(currentDate.getDate() + 14);
-          } else if (frequency === 'MONTHLY') {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-          }
-          dates.push(new Date(currentDate.getTime()));
-        }
-
-        setSimulation({
-          principal: p,
-          interestRate: r,
-          interestAmount,
-          totalAmount,
-          installmentAmt,
-          dates
-        });
-      }
-    }
-  }, [showAssignModal, principal, interestRate, frequency, installments]);
-
-  const activeLoan = client?.loans.find(l => l.status === 'ACTIVE' || l.status === 'OVERDUE');
-
-  // Trigger Renewal simulation defaults
-  useEffect(() => {
-    if (showRenewModal && activeLoan) {
-      // Set default new principal equal to current debt rounded up to nearest 100k plus some buffer
-      const suggestedAmount = Math.ceil(activeLoan.balance / 100000) * 100000 + 200000;
-      setRenewPrincipal(String(suggestedAmount));
-    }
-  }, [showRenewModal, activeLoan]);
-
-  const handleAssignLoanSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAssignError('');
-    setAssignLoading(true);
-
-    try {
-      const newLoan = await apiCall('/loans', {
-        method: 'POST',
-        bodyData: {
-          customerId: client?.id,
-          principal: parseFloat(principal),
-          interestRate: parseFloat(interestRate),
-          paymentFrequency: frequency,
-          installments: parseInt(installments)
-        }
-      });
-      
-      setShowAssignModal(false);
-      setPrintInvoiceData({ client, loan: newLoan });
-      fetchClientDetails();
-    } catch (err: any) {
-      setAssignError(err.message || 'Error al asignar préstamo.');
-    } finally {
-      setAssignLoading(false);
-    }
-  };
-
-  const handlePaySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPayError('');
-    setPayLoading(true);
-
-    try {
-      const res = await apiCall('/payments', {
-        method: 'POST',
-        bodyData: {
-          loanId: activeLoan?.id,
-          amount: parseFloat(payAmount),
-          notes: payNotes
-        }
-      });
-
-      setShowPayModal(false);
-      setPayAmount('');
-      setPayNotes('');
-      setPrintReceiptData({
-        clientName: client?.name,
-        documentId: client?.documentId,
-        loanNumber: activeLoan?.loanNumber,
-        receiptNumber: res.payment.receiptNumber,
-        amount: res.payment.amount,
-        paymentDate: res.payment.paymentDate,
-        notes: res.payment.notes,
-        remainingBalance: res.remainingBalance
-      });
-      fetchClientDetails();
-    } catch (err: any) {
-      setPayError(err.message || 'Error al registrar abono.');
-    } finally {
-      setPayLoading(false);
-    }
-  };
-
-  const handleRenewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRenewError('');
-    setRenewLoading(true);
-
-    try {
-      const res = await apiCall('/loans/renew', {
-        method: 'POST',
-        bodyData: {
-          oldLoanId: activeLoan?.id,
-          principal: parseFloat(renewPrincipal),
-          interestRate: parseFloat(renewInterestRate),
-          paymentFrequency: renewFrequency,
-          installments: parseInt(renewInstallments)
-        }
-      });
-
-      setShowRenewModal(false);
-      setPrintInvoiceData({ client, loan: res.loan, isRenewal: true, excedente: res.excedente, debtSettled: res.debtSettled });
-      fetchClientDetails();
-    } catch (err: any) {
-      setRenewError(err.message || 'Error al renovar préstamo.');
-    } finally {
-      setRenewLoading(false);
-    }
-  };
-
-  const translateFrequency = (freq: string) => {
-    const freqs: Record<string, string> = {
-      DAILY: 'Diario',
-      WEEKLY: 'Semanal',
-      BIWEEKLY: 'Quincenal',
-      MONTHLY: 'Mensual'
-    };
-    return freqs[freq] || freq;
-  };
-
-  const getAmortizationStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      PAID: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      PENDING: 'bg-slate-800 text-slate-400 border-slate-700/50',
-      PARTIAL: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      OVERDUE: 'bg-red-500/10 text-red-400 border-red-500/30'
-    };
-    const labels: Record<string, string> = {
-      PAID: 'Pagado',
-      PENDING: 'Pendiente',
-      PARTIAL: 'Abonado',
-      OVERDUE: 'Atrasado'
-    };
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${styles[status]}`}>
-        {labels[status] || status}
-      </span>
-    );
   };
 
   if (loading) {
@@ -655,184 +170,25 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
     );
   }
 
-  // --- RENDERING SPECIAL PRINT VIEWS (facturas / recibos) ---
-  if (printInvoiceData && window.innerWidth >= 768) {
-    const { loan, isRenewal, excedente, debtSettled } = printInvoiceData;
-    return (
-      <div className="bg-white text-black min-h-screen p-8 max-w-3xl mx-auto shadow-xl rounded-lg border border-gray-200">
-        {/* Printable Area */}
-        <div id="invoice-print-area" className="p-6 bg-white text-black" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-          <div className="flex justify-between items-start pb-6 mb-6" style={{ borderBottom: '1px solid #d1d5db' }}>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#003bb8' }}>FACTURA Y CONTRATO DE CRÉDITO</h1>
-              <p className="text-sm font-mono mt-1" style={{ color: '#6b7280' }}>Crédito Nro: {loan.loanNumber}</p>
-            </div>
-            <div className="text-right">
-              <span className="text-xs uppercase font-semibold px-2 py-1 rounded" style={{ backgroundColor: '#e0edff', color: '#003bb8' }}>
-                {isRenewal ? 'Renovación de Cartera' : 'Nuevo Préstamo'}
-              </span>
-              <p className="text-xs mt-1" style={{ color: '#6b7280' }}>{new Date(loan.startDate).toLocaleDateString('es-CO')}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 text-sm mb-6">
-            <div>
-              <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Datos del Cliente:</h3>
-              <p className="font-semibold" style={{ color: '#111827' }}>{client.name}</p>
-              <p style={{ color: '#4b5563' }}>CC: {client.documentId}</p>
-              <p style={{ color: '#4b5563' }}>Tel: {client.phone}</p>
-              <p style={{ color: '#4b5563' }}>Dirección: {client.address}</p>
-            </div>
-            <div>
-              <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Condiciones del Crédito:</h3>
-              <div className="space-y-1">
-                <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Capital:</span> <span className="font-semibold" style={{ color: '#111827' }}>${loan.principal.toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Tasa de Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>{loan.interestRate}%</span></div>
-                <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>${loan.interestAmount.toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span className="font-bold" style={{ color: '#1f2937' }}>Total a Pagar:</span> <span className="font-bold" style={{ color: '#003bb8' }}>${loan.totalAmount.toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Frecuencia de Pago:</span> <span className="font-semibold" style={{ color: '#111827' }}>{translateFrequency(loan.paymentFrequency)}</span></div>
-                <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cuotas:</span> <span className="font-semibold" style={{ color: '#111827' }}>{loan.installments} cuotas de ${loan.installmentAmt.toLocaleString('es-CO')}</span></div>
-              </div>
-            </div>
-          </div>
-
-          {isRenewal && (
-            <div className="rounded p-4 text-sm mb-6" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#065f46', borderStyle: 'solid', borderWidth: '1px' }}>
-              <h4 className="font-bold uppercase text-xs mb-1">Liquidación por Refinanciamiento</h4>
-              <div className="flex justify-between"><span>Deuda anterior cancelada:</span> <span>${debtSettled.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #d1fae5' }}><span>Excedente neto entregado al cliente:</span> <span>${excedente.toLocaleString('es-CO')}</span></div>
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h3 className="font-bold uppercase tracking-wide text-xs mb-3" style={{ color: '#374151' }}>Cronograma de Amortización (Cuotas)</h3>
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="font-bold" style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #d1d5db', color: '#374151' }}>
-                  <th className="p-2">Nro Cuota</th>
-                  <th className="p-2">Fecha de Vencimiento</th>
-                  <th className="p-2 text-right">Valor Cuota</th>
-                  <th className="p-2">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loan.amortizations.map((am: any) => (
-                  <tr key={am.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td className="p-2 font-mono" style={{ color: '#4b5563' }}>Cuota {am.installmentNumber}</td>
-                    <td className="p-2" style={{ color: '#4b5563' }}>{new Date(am.dueDate).toLocaleDateString('es-CO')}</td>
-                    <td className="p-2 text-right font-mono" style={{ color: '#4b5563' }}>${am.amount.toLocaleString('es-CO')}</td>
-                    <td className="p-2 uppercase text-[10px] font-semibold" style={{ color: '#6b7280' }}>Pendiente</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="pt-16 grid grid-cols-2 gap-12 text-center text-xs mt-16" style={{ borderTop: '1px solid #e5e7eb' }}>
-            <div>
-              <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
-              <p className="font-semibold" style={{ color: '#374151' }}>Firma del Acreedor</p>
-            </div>
-            <div>
-              <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
-              <p className="font-semibold" style={{ color: '#374151' }}>{client.name}</p>
-              <p style={{ color: '#6b7280' }}>C.C. {client.documentId}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-end mt-12 no-print">
-          <button
-            onClick={() => setPrintInvoiceData(null)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition"
-          >
-            Volver a la Ficha
-          </button>
-          <button
-            onClick={() => handleDownloadPDF('invoice-print-area', `Contrato_Credito_${loan.loanNumber}.pdf`)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg transition shadow-lg"
-          >
-            <Download className="w-5 h-5" /> Descargar PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg transition shadow-lg"
-          >
-            <Printer className="w-5 h-5" /> Imprimir Documento
-          </button>
-        </div>
-      </div>
-    );
+  // --- PRINTABLE OVERLAYS (Factura / Recibo) ---
+  if (printInvoiceData) {
+    return <PrintInvoiceView data={printInvoiceData} onClose={() => setPrintInvoiceData(null)} />;
   }
 
-  if (printReceiptData && window.innerWidth >= 768) {
-    const r = printReceiptData;
-    return (
-      <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg">
-        {/* Printable Area */}
-        <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
-          <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
-            <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
-            <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{r.receiptNumber}</p>
-            <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
-          </div>
-
-          <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{r.clientName}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{r.documentId}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{r.loanNumber}</span></div>
-          </div>
-
-          <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
-            <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
-            <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${r.amount.toLocaleString('es-CO')}</h1>
-          </div>
-
-          <div className="space-y-1.5 text-xs mb-8">
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${r.amount.toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
-            {r.notes && (
-              <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
-                Nota: {r.notes}
-              </div>
-            )}
-          </div>
-
-          <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
-            <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
-            <p>Firma del Recaudador</p>
-            <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center mt-12 no-print font-sans">
-          <button
-            onClick={() => setPrintReceiptData(null)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs transition"
-          >
-            Cerrar Recibo
-          </button>
-          <button
-            onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-          >
-            <Download className="w-4 h-4" /> PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-          >
-            <Printer className="w-4 h-4" /> Imprimir
-          </button>
-        </div>
-      </div>
-    );
+  if (printReceiptData) {
+    return <PrintReceiptView data={printReceiptData} onClose={() => setPrintReceiptData(null)} />;
   }
 
-  // --- STANDARD FRONTEND VIEW ---
+  const activeLoan = client.loans.find(l => l.status === 'ACTIVE' || l.status === 'OVERDUE') || null;
+
+  const allClientPayments = client.loans
+    .flatMap(loan => (loan.payments || []).map(p => ({
+      ...p,
+      loanNumber: loan.loanNumber,
+      loanBalance: loan.balance
+    })))
+    .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Back link */}
@@ -843,14 +199,23 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         <ArrowLeft className="w-5 h-5" /> Volver a Clientes
       </button>
 
-      {/* Ficha Header Card */}
+      {/* Header Profile Card */}
       <div className="glass-card p-6 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-brand-600/10 border border-brand-500/20 rounded-xl flex items-center justify-center text-brand-400">
-            <User className="w-6 h-6" />
+          <div className="w-12 h-12 bg-brand-600/10 border border-brand-500/20 rounded-xl flex items-center justify-center text-brand-400 flex-shrink-0">
+            {client.photo ? (
+              <img src={client.photo} alt={client.name} className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <User className="w-6 h-6" />
+            )}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">{client.name}</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-white">{client.name}</h2>
+              <span className="inline-flex items-center text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                Cobro {client.defaultFrequency === 'WEEKLY' ? 'Semanal' : client.defaultFrequency === 'BIWEEKLY' ? 'Quincenal' : client.defaultFrequency === 'MONTHLY' ? 'Mensual' : 'Diario'}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400 mt-1">
               <span className="font-mono">CC: {client.documentId}</span>
               <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-500" /> {client.phone}</span>
@@ -859,6 +224,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             </div>
           </div>
         </div>
+
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {activeLoan ? (
             <>
@@ -885,11 +251,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
           )}
 
           <button
-            onClick={openEditModal}
+            onClick={() => setShowEditModal(true)}
             className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition"
             title="Editar información del cliente"
           >
-            <Edit3 className="w-4 h-4 text-brand-400" /> Editar Cliente
+            <Edit3 className="w-4 h-4 text-brand-400" /> Editar
           </button>
 
           <button
@@ -897,1241 +263,220 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
             className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition"
             title="Eliminar este cliente"
           >
-            <Trash2 className="w-4 h-4" /> Eliminar Cliente
+            <Trash2 className="w-4 h-4" /> Eliminar
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
-      <div className="flex border-b border-slate-800 gap-6">
+      {/* Tabs Switcher */}
+      <div className="flex border-b border-slate-800 gap-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('info')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition shrink-0 ${
             activeTab === 'info'
-              ? 'border-brand-500 text-brand-400 font-bold'
+              ? 'border-brand-500 text-brand-400'
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Layers className="w-4 h-4" /> Resumen & Créditos
+          <FolderHeart className="w-4 h-4" /> Información y Préstamos ({client.loans.length})
         </button>
+
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition shrink-0 ${
+            activeTab === 'payments'
+              ? 'border-brand-500 text-brand-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Receipt className="w-4 h-4" /> Historial de Recibos de Caja ({allClientPayments.length})
+        </button>
+
         <button
           onClick={() => setActiveTab('attachments')}
-          className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 transition-all ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition shrink-0 ${
             activeTab === 'attachments'
-              ? 'border-brand-500 text-brand-400 font-bold'
+              ? 'border-brand-500 text-brand-400'
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          <FileCheck className="w-4 h-4" /> Datos & Documentos Adjuntos
-          {(client.idFront || client.idBack || client.photo || client.attachmentsJson) && (
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-          )}
+          <ShieldCheck className="w-4 h-4" /> Documentos & KYC
         </button>
       </div>
 
+      {/* Tab Contents */}
       {activeTab === 'attachments' ? (
-        <div className="space-y-8 animate-fadeIn">
-          {/* Identity Documents Header Info */}
-          <div className="glass-card p-5 rounded-xl border border-brand-500/20 bg-brand-600/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-8 h-8 text-brand-400 shrink-0" />
+        <KycAttachmentsTab
+          client={client}
+          startCamera={startCamera}
+          handleFileUpload={handleFileUpload}
+          onUpdateClientField={updateClientField}
+          savingAttachment={savingAttachment}
+        />
+      ) : activeTab === 'payments' ? (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">Expediente de Identificación & Documentación</h3>
-                  {savingAttachment && (
-                    <span className="px-2.5 py-0.5 bg-brand-500/20 text-brand-300 text-[10px] font-bold rounded-full animate-pulse border border-brand-500/30">
-                      Guardando...
-                    </span>
-                  )}
-                </div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-400" />
+                  Historial de Recibos de Caja
+                </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Adjunta o toma fotos en tiempo real con la cámara de la Cédula (Anverso/Reverso) y Rostro del cliente para autorizar préstamos.
+                  Todos los comprobantes de abono registrados para {client.name}
                 </p>
               </div>
-            </div>
-            <button
-              onClick={() => setShowAddCustomDoc(true)}
-              className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-md"
-            >
-              <FilePlus className="w-4 h-4" /> Adjuntar Otro Documento
-            </button>
-          </div>
-
-          {/* Core 3 Identity Photos Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 1. Cédula Anverso */}
-            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20">
-                    Cédula — Frente (Anverso)
-                  </span>
-                  {client.idFront ? (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-500 italic">Pendiente</span>
-                  )}
-                </div>
-
-                {client.idFront ? (
-                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
-                    <img src={client.idFront} alt="Cédula Frente" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setPreviewImage({ title: 'Cédula de Ciudadanía — Anverso', url: client.idFront! })}
-                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Eye className="w-4 h-4" /> Ampliar
-                      </button>
-                      <button
-                        onClick={() => updateClientField('idFront', null)}
-                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Trash2 className="w-4 h-4" /> Borrar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
-                    <ImageIcon className="w-8 h-8 text-slate-600 mb-2" />
-                    <p className="text-xs font-semibold text-slate-400">Sin foto de cédula (frente)</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
-                <button
-                  onClick={() => startCamera('idFront', 'environment')}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white rounded-lg text-xs font-bold transition border border-brand-500/30"
-                >
-                  <Camera className="w-3.5 h-3.5" /> Cámara
-                </button>
-                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
-                  <Upload className="w-3.5 h-3.5" /> Subir
-                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('idFront', e)} />
-                </label>
-              </div>
-            </div>
-
-            {/* 2. Cédula Reverso */}
-            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md border border-indigo-500/20">
-                    Cédula — Atrás (Reverso)
-                  </span>
-                  {client.idBack ? (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-500 italic">Pendiente</span>
-                  )}
-                </div>
-
-                {client.idBack ? (
-                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
-                    <img src={client.idBack} alt="Cédula Reverso" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setPreviewImage({ title: 'Cédula de Ciudadanía — Reverso', url: client.idBack! })}
-                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Eye className="w-4 h-4" /> Ampliar
-                      </button>
-                      <button
-                        onClick={() => updateClientField('idBack', null)}
-                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Trash2 className="w-4 h-4" /> Borrar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
-                    <ImageIcon className="w-8 h-8 text-slate-600 mb-2" />
-                    <p className="text-xs font-semibold text-slate-400">Sin foto de cédula (reverso)</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
-                <button
-                  onClick={() => startCamera('idBack', 'environment')}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white rounded-lg text-xs font-bold transition border border-brand-500/30"
-                >
-                  <Camera className="w-3.5 h-3.5" /> Cámara
-                </button>
-                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
-                  <Upload className="w-3.5 h-3.5" /> Subir
-                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('idBack', e)} />
-                </label>
-              </div>
-            </div>
-
-            {/* 3. Foto de Rostro / Selfie */}
-            <div className="glass-card p-5 rounded-xl flex flex-col justify-between space-y-4 border border-slate-800 hover:border-slate-700 transition">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-purple-500/10 text-purple-400 rounded-md border border-purple-500/20">
-                    Foto de Rostro / Perfil
-                  </span>
-                  {client.photo ? (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Cargado
-                    </span>
-                  ) : (
-                    <span className="text-xs text-slate-500 italic">Pendiente</span>
-                  )}
-                </div>
-
-                {client.photo ? (
-                  <div className="relative group rounded-lg overflow-hidden border border-slate-800 bg-slate-950 aspect-[1.6/1] flex items-center justify-center">
-                    <img src={client.photo} alt="Foto de Rostro" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setPreviewImage({ title: 'Foto de Rostro — ' + client.name, url: client.photo! })}
-                        className="p-2 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Eye className="w-4 h-4" /> Ampliar
-                      </button>
-                      <button
-                        onClick={() => updateClientField('photo', null)}
-                        className="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow-lg"
-                      >
-                        <Trash2 className="w-4 h-4" /> Borrar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border-2 border-dashed border-slate-800 bg-slate-950/40 aspect-[1.6/1] flex flex-col items-center justify-center p-4 text-center">
-                    <User className="w-8 h-8 text-slate-600 mb-2" />
-                    <p className="text-xs font-semibold text-slate-400">Sin foto de rostro</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-850">
-                <button
-                  onClick={() => startCamera('photo', 'user')}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white rounded-lg text-xs font-bold transition border border-purple-500/30"
-                >
-                  <Camera className="w-3.5 h-3.5" /> Tomar Selfie
-                </button>
-                <label className="flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold cursor-pointer transition border border-slate-700">
-                  <Upload className="w-3.5 h-3.5" /> Subir
-                  <input type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload('photo', e)} />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Custom Additional Documents Section */}
-          <div className="glass-card p-6 rounded-xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-brand-400" />
-                Documentos Adicionales Adjuntos
-              </h3>
-              <span className="text-xs text-slate-400 font-mono">
-                {client.attachmentsJson ? JSON.parse(client.attachmentsJson).length : 0} archivos
+              <span className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full w-fit">
+                {allClientPayments.length} Recibos
               </span>
             </div>
 
-            {client.attachmentsJson && JSON.parse(client.attachmentsJson).length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {JSON.parse(client.attachmentsJson).map((doc: any) => (
-                  <div key={doc.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3 group hover:border-slate-700 transition">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-10 h-10 bg-brand-600/10 rounded-lg flex items-center justify-center text-brand-400 shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-slate-200 truncate">{doc.title}</p>
-                        <span className="text-[10px] text-slate-500 block font-mono">{doc.date}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => setPreviewImage({ title: doc.title, url: doc.url })}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"
-                        title="Ver Documento"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => removeCustomDoc(doc.id)}
-                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+            {allClientPayments.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-sm">
+                No hay recibos de caja registrados para este cliente.
               </div>
             ) : (
-              <div className="text-center py-8 border border-dashed border-slate-800 rounded-xl bg-slate-950/20">
-                <FileText className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-400">No hay documentos adicionales adjuntos</p>
-                <p className="text-xs text-slate-500 mt-1">Puedes agregar comprobantes de servicios, cartas laborales o pagarés firmados.</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-800">
+                    <tr>
+                      <th className="px-4 py-3">Recibo Nro</th>
+                      <th className="px-4 py-3">Crédito Nro</th>
+                      <th className="px-4 py-3">Fecha y Hora</th>
+                      <th className="px-4 py-3 text-right">Monto Abonado</th>
+                      <th className="px-4 py-3">Notas</th>
+                      <th className="px-4 py-3 text-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                    {allClientPayments.map(p => (
+                      <tr key={p.id} className="hover:bg-slate-800/40 transition">
+                        <td className="px-4 py-3 font-mono font-bold text-white">{p.receiptNumber}</td>
+                        <td className="px-4 py-3 font-mono text-brand-400">{p.loanNumber}</td>
+                        <td className="px-4 py-3 font-mono text-slate-400">{new Date(p.paymentDate).toLocaleString('es-CO')}</td>
+                        <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">+${p.amount.toLocaleString('es-CO')}</td>
+                        <td className="px-4 py-3 italic text-slate-400">{p.notes || '-'}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => setPrintReceiptData({
+                              clientName: client.name,
+                              documentId: client.documentId,
+                              loanNumber: p.loanNumber,
+                              receiptNumber: p.receiptNumber,
+                              amount: p.amount,
+                              paymentDate: p.paymentDate,
+                              notes: p.notes,
+                              remainingBalance: p.loanBalance
+                            })}
+                            className="inline-flex items-center gap-1.5 bg-brand-600/10 hover:bg-brand-600/20 text-brand-400 border border-brand-500/20 px-2.5 py-1 rounded-lg font-semibold text-[11px] transition"
+                          >
+                            <Printer className="w-3.5 h-3.5" /> Imprimir Recibo
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="space-y-8 animate-fadeIn">
-          {/* active Loan & Amortization Card */}
-      {activeLoan ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Active loan specs */}
-          <div className="glass-card p-6 rounded-xl space-y-6 lg:col-span-1 h-fit">
-            <div>
-              <div className="flex justify-between items-start">
-                <span className="text-xs uppercase font-bold tracking-wider text-brand-400">Préstamo Activo</span>
-                <span className="font-mono text-sm font-semibold text-slate-200">{activeLoan.loanNumber}</span>
-              </div>
-              <h3 className="text-3xl font-extrabold text-white font-mono mt-3">
-                ${activeLoan.balance.toLocaleString('es-CO')}
-                <span className="text-sm text-slate-400 font-normal block mt-1">saldo deuda restante</span>
-              </h3>
-            </div>
-
-            <div className="space-y-3.5 border-t border-slate-800 pt-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-450">Monto prestado:</span>
-                <span className="font-semibold text-slate-200">${activeLoan.principal.toLocaleString('es-CO')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Tasa de interés:</span>
-                <span className="font-semibold text-slate-200">{activeLoan.interestRate}% (${activeLoan.interestAmount.toLocaleString('es-CO')})</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Total facturado:</span>
-                <span className="font-semibold text-slate-250">${activeLoan.totalAmount.toLocaleString('es-CO')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Forma de pago:</span>
-                <span className="font-semibold text-slate-200">{translateFrequency(activeLoan.paymentFrequency)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Cuotas programadas:</span>
-                <span className="font-semibold text-slate-200">{activeLoan.installments} de ${activeLoan.installmentAmt.toLocaleString('es-CO')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Fecha de entrega:</span>
-                <span className="font-semibold text-slate-200">{new Date(activeLoan.startDate).toLocaleDateString('es-CO')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-450">Fecha de término:</span>
-                <span className="font-semibold text-slate-200">{new Date(activeLoan.endDate).toLocaleDateString('es-CO')}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setPrintInvoiceData({ client, loan: activeLoan })}
-              className="w-full flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-500 bg-slate-850 hover:bg-slate-800 text-slate-200 py-2.5 rounded-lg text-sm font-semibold transition"
-            >
-              <Printer className="w-4 h-4" /> Ver Factura / Contrato
-            </button>
-          </div>
-
-          {/* Amortization schedule */}
-          <div className="glass-card p-6 rounded-xl lg:col-span-2 space-y-4">
-            <h3 className="text-lg font-bold text-white">Plan de Amortización (Cuotas)</h3>
-
-            {/* Totalizadores de Amortización */}
-            {(() => {
-              const amorts = activeLoan.amortizations || [];
-              const totalPagado = amorts.reduce((sum, a) => sum + (a.amountPaid || 0), 0);
-              
-              // Total en Mora: cuotas atrasadas (dueDate < hoy o status OVERDUE)
-              const now = new Date();
-              const moraAmorts = amorts.filter(a => {
-                const isPastDue = new Date(a.dueDate) < now;
-                return (a.status === 'OVERDUE' || (isPastDue && (a.status === 'PENDING' || a.status === 'PARTIAL')));
-              });
-              const totalMora = moraAmorts.reduce((sum, a) => sum + (a.amount - (a.amountPaid || 0)), 0);
-
-              // Total Pendiente a tiempo
-              const totalPendiente = Math.max(0, activeLoan.balance - totalMora);
-
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Total Pagado</span>
-                    <span className="text-base font-extrabold text-emerald-300 font-mono">${totalPagado.toLocaleString('es-CO')}</span>
-                  </div>
-
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">Total en Mora</span>
-                    <span className="text-base font-extrabold text-amber-300 font-mono">${totalMora.toLocaleString('es-CO')}</span>
-                  </div>
-
-                  <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pendiente</span>
-                    <span className="text-base font-extrabold text-slate-200 font-mono">${totalPendiente.toLocaleString('es-CO')}</span>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="overflow-auto max-h-[400px] border border-slate-850 rounded-lg">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-850 bg-slate-900/30 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                    <th className="p-2 md:p-3">Cuota</th>
-                    <th className="p-2 md:p-3">Vencimiento</th>
-                    <th className="p-2 md:p-3 text-right">Monto</th>
-                    <th className="p-2 md:p-3 text-right">Pagado</th>
-                    <th className="p-2 md:p-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-850">
-                  {activeLoan.amortizations.map((am) => (
-                    <tr key={am.id} className="hover:bg-slate-900/20 text-xs md:text-sm">
-                      <td className="p-2 md:p-3 font-mono font-medium text-slate-350">Cuota {am.installmentNumber}</td>
-                      <td className="p-2 md:p-3 text-slate-400 whitespace-nowrap">
-                        {new Date(am.dueDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
-                      </td>
-                      <td className="p-2 md:p-3 text-right font-mono text-slate-200">${am.amount.toLocaleString('es-CO')}</td>
-                      <td className="p-2 md:p-3 text-right font-mono text-emerald-500/80">
-                        {am.amountPaid > 0 ? `$${am.amountPaid.toLocaleString('es-CO')}` : '-'}
-                      </td>
-                      <td className="p-2 md:p-3 whitespace-nowrap">{getAmortizationStatusBadge(am.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-800 bg-slate-900/60 font-bold text-xs">
-                    <td className="p-2 md:p-3 text-slate-300">TOTALES ({activeLoan.amortizations.length} Cuotas)</td>
-                    <td className="p-2 md:p-3"></td>
-                    <td className="p-2 md:p-3 text-right font-mono text-white">${activeLoan.totalAmount.toLocaleString('es-CO')}</td>
-                    <td className="p-2 md:p-3 text-right font-mono text-emerald-400">
-                      ${activeLoan.amortizations.reduce((sum, a) => sum + (a.amountPaid || 0), 0).toLocaleString('es-CO')}
-                    </td>
-                    <td className="p-2 md:p-3 font-mono text-slate-300">
-                      Deuda: ${activeLoan.balance.toLocaleString('es-CO')}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="glass-card p-12 text-center rounded-xl max-w-xl mx-auto">
-          <Coins className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white mb-2">No posee préstamos activos</h3>
-          <p className="text-slate-450 text-sm max-w-md mx-auto mb-6">
-            El deudor no tiene obligaciones vigentes. Puedes asignarle un nuevo producto de crédito seleccionando una de tus plantillas de interés y condiciones de pago.
-          </p>
-          <button
-            onClick={() => setShowAssignModal(true)}
-            className="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-brand-500/10 transition"
-          >
-            Crear Préstamo Comercial
-          </button>
-        </div>
-      )}
-
-      {/* Credit History (Historial) */}
-      <div className="glass-card p-6 rounded-xl">
-        <h3 className="text-lg font-bold text-white mb-4">Historial de Préstamos</h3>
-        {client.loans.length === 0 ? (
-          <p className="text-slate-500 text-sm text-center py-6">Sin historial de créditos anteriores.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs md:text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase">
-                  <th className="pb-2 md:pb-3">Código</th>
-                  <th className="pb-2 md:pb-3">Principal</th>
-                  <th className="pb-2 md:pb-3">Interés</th>
-                  <th className="pb-2 md:pb-3">Frecuencia</th>
-                  <th className="pb-2 md:pb-3">Cuotas</th>
-                  <th className="pb-2 md:pb-3">Estado</th>
-                  <th className="pb-2 md:pb-3 text-right">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850 text-slate-300">
-                {client.loans.map((loan) => (
-                  <tr key={loan.id} className="hover:bg-slate-900/10 text-xs md:text-sm">
-                    <td className="py-2 md:py-3 font-mono font-semibold text-slate-200">{loan.loanNumber}</td>
-                    <td className="py-2 md:py-3 font-mono">${loan.principal.toLocaleString('es-CO')}</td>
-                    <td className="py-2 md:py-3 font-mono">{loan.interestRate}%</td>
-                    <td className="py-2 md:py-3">{translateFrequency(loan.paymentFrequency)}</td>
-                    <td className="py-2 md:py-3">{loan.installments}</td>
-                    <td className="py-2 md:py-3 whitespace-nowrap">
-                      {loan.status === 'PAID' && <span className="text-emerald-400 font-semibold bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10 text-[10px] md:text-xs">PAGADO</span>}
-                      {loan.status === 'ACTIVE' && <span className="text-brand-400 font-semibold bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10 text-[10px] md:text-xs">ACTIVO</span>}
-                      {loan.status === 'RENEWED' && <span className="text-purple-400 font-semibold bg-purple-500/5 px-2 py-0.5 rounded-full border border-purple-500/10 text-[10px] md:text-xs">RENOVADO</span>}
-                      {loan.status === 'OVERDUE' && <span className="text-red-400 font-semibold bg-red-500/5 px-2 py-0.5 rounded-full border border-red-500/10 text-[10px] md:text-xs">EN MORA</span>}
-                    </td>
-                    <td className="py-2 md:py-3 text-right">
-                      <button
-                        onClick={() => setPrintInvoiceData({ client, loan })}
-                        className="text-slate-400 hover:text-white transition p-1"
-                      >
-                        <Printer className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )}
-
-      {/* --- MODAL 1: ASSIGN LOAN --- */}
-      {showAssignModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 grid grid-cols-1 md:grid-cols-5 gap-6 relative animate-zoomIn max-h-[90vh] overflow-y-auto">
-            <div className="md:col-span-3 space-y-4">
-              <h3 className="text-xl font-bold text-white">Asignar Préstamo</h3>
-              {assignError && <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg">{assignError}</div>}
-              
-              <form onSubmit={handleAssignLoanSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Monto Solicitado *</label>
-                    <input
-                      type="number"
-                      value={principal}
-                      onChange={(e) => setPrincipal(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Interés (%) *</label>
-                    <input
-                      type="number"
-                      value={interestRate}
-                      onChange={(e) => setInterestRate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Frecuencia de Pago *</label>
-                    <select
-                      value={frequency}
-                      onChange={(e) => setFrequency(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white"
-                    >
-                      <option value="DAILY">Pago Diario (L-S)</option>
-                      <option value="WEEKLY">Pago Semanal</option>
-                      <option value="BIWEEKLY">Pago Quincenal</option>
-                      <option value="MONTHLY">Pago Mensual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nro de Cuotas *</label>
-                    <input
-                      type="number"
-                      value={installments}
-                      onChange={(e) => setInstallments(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 justify-end pt-4 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setShowAssignModal(false)}
-                    className="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold rounded-lg"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={assignLoading}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-500 disabled:bg-brand-800 text-white font-semibold rounded-lg shadow-lg shadow-brand-500/10"
-                  >
-                    {assignLoading ? 'Asignando...' : 'Confirmar Préstamo'}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Simulation Preview Sidebar */}
-            <div className="md:col-span-2 bg-slate-950 border border-slate-850 rounded-xl p-5 space-y-4">
-              <h4 className="font-bold text-white text-sm flex items-center gap-1.5 text-brand-400">
-                <Sparkles className="w-4 h-4" /> Simulación de Cuotas
-              </h4>
-              {simulation ? (
-                <div className="space-y-4">
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between text-slate-400"><span>Monto principal:</span> <span className="font-mono text-slate-200 font-semibold">${simulation.principal.toLocaleString('es-CO')}</span></div>
-                    <div className="flex justify-between text-slate-400"><span>Interés total ({simulation.interestRate}%):</span> <span className="font-mono text-slate-200 font-semibold">${simulation.interestAmount.toLocaleString('es-CO')}</span></div>
-                    <div className="flex justify-between text-slate-400"><span>Monto total:</span> <span className="font-mono text-white font-bold">${simulation.totalAmount.toLocaleString('es-CO')}</span></div>
-                    <div className="flex justify-between text-slate-400"><span>Valor por cuota:</span> <span className="font-mono text-brand-400 font-bold text-sm">${simulation.installmentAmt.toLocaleString('es-CO')}</span></div>
-                  </div>
-
-                  <div className="border-t border-slate-850 pt-3">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase mb-2">Primeros Vencimientos:</p>
-                    <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
-                      {simulation.dates.slice(0, 5).map((date: Date, idx: number) => (
-                        <div key={idx} className="flex justify-between text-[11px] text-slate-400 font-mono">
-                          <span>Cuota {idx + 1}:</span>
-                          <span>{date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}</span>
-                        </div>
-                      ))}
-                      {simulation.dates.length > 5 && <div className="text-[10px] text-slate-500 text-center pt-1">... y {simulation.dates.length - 5} cuotas más</div>}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-500 text-xs">Ingrese condiciones válidas para generar una simulación.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL 2: REGISTRAR ABONO --- */}
-      {showPayModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 relative animate-zoomIn">
-            <h3 className="text-xl font-bold text-white mb-2">Registrar Pago / Abono</h3>
-            <p className="text-slate-400 text-xs mb-4">Crédito: {activeLoan?.loanNumber} | Saldo: ${activeLoan?.balance.toLocaleString('es-CO')}</p>
-            
-            {/* Late Interest Notice if customer has overdue installments & tenant has late interest enabled */}
-            {(() => {
-              const overdueAmorts = activeLoan?.amortizations?.filter((a: any) => {
-                const isPastDue = new Date(a.dueDate) < new Date();
-                return (a.status === 'OVERDUE' || (isPastDue && (a.status === 'PENDING' || a.status === 'PARTIAL')));
-              }) || [];
-              const overdueBalance = overdueAmorts.reduce((sum: number, a: any) => sum + (a.amount - (a.amountPaid || 0)), 0);
-              const lateRate = Number(tenant?.lateInterestRate || 0);
-              const isEnabled = Boolean(tenant?.lateInterestEnabled);
-              const lateAmount = (isEnabled && overdueBalance > 0 && lateRate > 0)
-                ? Math.round(overdueBalance * (lateRate / 100))
-                : 0;
-
-              if (!isEnabled || overdueBalance <= 0) return null;
-
-              return (
-                <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
-                  <div className="flex justify-between items-center text-amber-400 font-bold">
-                    <span>⚠️ Saldo en Mora Detectado:</span>
-                    <span>${overdueBalance.toLocaleString('es-CO')}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span>Interés de Mora Aplicable ({lateRate}%):</span>
-                    <span className="font-bold text-amber-300">+${lateAmount.toLocaleString('es-CO')}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    * El interés de mora se calcula únicamente sobre el monto vencido.
-                  </p>
-                </div>
-              );
-            })()}
-
-            {payError && <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg mb-4">{payError}</div>}
-
-            <form onSubmit={handlePaySubmit} className="space-y-4">
+        <div className="space-y-8">
+          {client.loans && client.loans.length > 0 ? (
+            client.loans.map(loan => (
+              <AmortizationTable
+                key={loan.id}
+                loan={loan}
+                onPrintContract={() => setPrintInvoiceData({ client, loan })}
+              />
+            ))
+          ) : (
+            <div className="glass-card p-12 text-center space-y-4 rounded-xl">
+              <Coins className="w-12 h-12 text-slate-600 mx-auto" />
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Monto a Abonar (COP) *</label>
-                <input
-                  type="number"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  placeholder={`Valor cuota: $${activeLoan?.installmentAmt.toLocaleString('es-CO')}`}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono text-lg focus:outline-none focus:border-brand-500"
-                  required
-                />
+                <h3 className="text-lg font-bold text-white">Sin Préstamos Asignados</h3>
+                <p className="text-sm text-slate-400 mt-1">Este cliente no posee créditos o historial registrado.</p>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Observaciones</label>
-                <textarea
-                  value={payNotes}
-                  onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="ej: Abono cuota del día, pagó en efectivo"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 h-20 resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-4 border-t border-slate-800 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowPayModal(false)}
-                  className="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={payLoading}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white font-semibold rounded-lg shadow-lg shadow-emerald-500/10"
-                >
-                  {payLoading ? 'Procesando...' : 'Registrar Abono'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL 3: RENEW CREDIT --- */}
-      {showRenewModal && activeLoan && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 grid grid-cols-1 md:grid-cols-5 gap-6 relative animate-zoomIn max-h-[90vh] overflow-y-auto">
-            <div className="md:col-span-3 space-y-4">
-              <div>
-                <h3 className="text-xl font-bold text-white">Renovación de Crédito</h3>
-                <p className="text-slate-400 text-xs mt-0.5">Liquidación de crédito anterior ({activeLoan.loanNumber}) y creación de nuevas condiciones.</p>
-              </div>
-
-              {renewError && <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg">{renewError}</div>}
-              
-              <form onSubmit={handleRenewSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Monto Nuevo Crédito *</label>
-                    <input
-                      type="number"
-                      value={renewPrincipal}
-                      onChange={(e) => setRenewPrincipal(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nuevo Interés (%) *</label>
-                    <input
-                      type="number"
-                      value={renewInterestRate}
-                      onChange={(e) => setRenewInterestRate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nueva Frecuencia *</label>
-                    <select
-                      value={renewFrequency}
-                      onChange={(e) => setRenewFrequency(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white"
-                    >
-                      <option value="DAILY">Pago Diario (L-S)</option>
-                      <option value="WEEKLY">Pago Semanal</option>
-                      <option value="BIWEEKLY">Pago Quincenal</option>
-                      <option value="MONTHLY">Pago Mensual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nro de Cuotas *</label>
-                    <input
-                      type="number"
-                      value={renewInstallments}
-                      onChange={(e) => setRenewInstallments(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 justify-end pt-4 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setShowRenewModal(false)}
-                    className="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold rounded-lg"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={renewLoading || (parseFloat(renewPrincipal) < activeLoan.balance)}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 text-white font-semibold rounded-lg shadow-lg shadow-purple-500/10"
-                  >
-                    {renewLoading ? 'Procesando...' : 'Confirmar Renovación'}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Refinancing calculations visual sidebar */}
-            <div className="md:col-span-2 bg-slate-950 border border-slate-850 rounded-xl p-5 space-y-4">
-              <h4 className="font-bold text-white text-sm text-purple-400 flex items-center gap-1.5">
-                <RefreshCw className="w-4 h-4" /> Cálculo de Liquidación
-              </h4>
-              
-              <div className="space-y-3.5 text-xs">
-                <div className="flex justify-between text-slate-400"><span>Deuda crédito anterior:</span> <span className="font-mono text-red-400 font-semibold">${activeLoan.balance.toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between text-slate-400"><span>Monto nuevo crédito:</span> <span className="font-mono text-slate-200 font-semibold">${(parseFloat(renewPrincipal) || 0).toLocaleString('es-CO')}</span></div>
-                
-                <div className="border-t border-slate-850 pt-2.5 flex justify-between font-bold">
-                  <span className="text-slate-300">Excedente a entregar:</span> 
-                  <span className={`font-mono text-sm ${parseFloat(renewPrincipal) >= activeLoan.balance ? 'text-emerald-400' : 'text-red-400'}`}>
-                    ${(Math.max(0, (parseFloat(renewPrincipal) || 0) - activeLoan.balance)).toLocaleString('es-CO')} COP
-                  </span>
-                </div>
-
-                {parseFloat(renewPrincipal) < activeLoan.balance && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-[10px] text-red-350 p-2.5 rounded-lg flex gap-1.5 items-start">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
-                    <span>El nuevo crédito debe ser igual o mayor al saldo actual para comprar la cartera antigua.</span>
-                  </div>
-                )}
-              </div>
-
-              {parseFloat(renewPrincipal) >= activeLoan.balance && (
-                <div className="border-t border-slate-850 pt-3 text-[10px] text-slate-500 space-y-1.5">
-                  <p className="font-bold text-slate-400 uppercase">Resumen nuevo plan:</p>
-                  <div>
-                    Interés total: ${( (parseFloat(renewPrincipal) || 0) * (parseFloat(renewInterestRate) / 100) ).toLocaleString('es-CO')} COP
-                  </div>
-                  <div>
-                    Cuota estimada: ${Math.round( ((parseFloat(renewPrincipal) || 0) + ( (parseFloat(renewPrincipal) || 0) * (parseFloat(renewInterestRate) / 100) )) / (parseInt(renewInstallments) || 1) ).toLocaleString('es-CO')}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL 4: EDITAR INFORMACIÓN DEL CLIENTE --- */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 relative animate-zoomIn space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-brand-400" />
-                Editar Ficha del Cliente
-              </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-white p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {editError && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-sm p-3 rounded-lg">
-                {editError}
-              </div>
-            )}
-
-            <form onSubmit={handleEditClientSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Cédula / NIT / Documento *
-                  </label>
-                  <input
-                    type="text"
-                    value={editDocumentId}
-                    onChange={(e) => setEditDocumentId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-brand-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Teléfono / Celular *
-                  </label>
-                  <input
-                    type="text"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Correo Electrónico
-                  </label>
-                  <input
-                    type="email"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    placeholder="opcional@email.com"
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Dirección de Residencia / Trabajo *
-                </label>
-                <input
-                  type="text"
-                  value={editAddress}
-                  onChange={(e) => setEditAddress(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold rounded-lg text-sm"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-500 disabled:bg-brand-800 text-white font-semibold rounded-lg shadow-lg shadow-brand-500/10 text-sm flex items-center gap-2"
-                >
-                  {editLoading ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Hidden print container for mobile background PDF generation */}
-      {printInvoiceData && window.innerWidth < 768 && (
-        <div style={{ position: 'fixed', left: '-9999px', top: '0', width: '800px', opacity: 0, pointerEvents: 'none' }} className="no-print">
-          <div id="invoice-print-area" className="p-6 bg-white text-black" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-            <div className="flex justify-between items-start pb-6 mb-6" style={{ borderBottom: '1px solid #d1d5db' }}>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#003bb8' }}>FACTURA Y CONTRATO DE CRÉDITO</h1>
-                <p className="text-sm font-mono mt-1" style={{ color: '#6b7280' }}>Crédito Nro: {printInvoiceData.loan.loanNumber}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs uppercase font-semibold px-2 py-1 rounded" style={{ backgroundColor: '#e0edff', color: '#003bb8' }}>
-                  {printInvoiceData.isRenewal ? 'Renovación de Cartera' : 'Nuevo Préstamo'}
-                </span>
-                <p className="text-xs mt-1" style={{ color: '#6b7280' }}>{new Date(printInvoiceData.loan.startDate).toLocaleDateString('es-CO')}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 text-sm mb-6">
-              <div>
-                <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Datos del Cliente:</h3>
-                <p className="font-bold text-base" style={{ color: '#111827' }}>{printInvoiceData.client.name}</p>
-                <p style={{ color: '#4b5563' }}>CC: {printInvoiceData.client.documentId}</p>
-                <p style={{ color: '#4b5563' }}>Tel: {printInvoiceData.client.phone}</p>
-                <p style={{ color: '#4b5563' }}>Dirección: {printInvoiceData.client.address}</p>
-              </div>
-              <div>
-                <h3 className="font-bold uppercase tracking-wide text-xs mb-2" style={{ color: '#374151' }}>Condiciones del Crédito:</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Capital:</span> <span className="font-semibold" style={{ color: '#111827' }}>${printInvoiceData.loan.principal.toLocaleString('es-CO')}</span></div>
-                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Tasa de Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>{printInvoiceData.loan.interestRate}%</span></div>
-                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Monto Interés:</span> <span className="font-semibold" style={{ color: '#111827' }}>${printInvoiceData.loan.interestAmount.toLocaleString('es-CO')}</span></div>
-                  <div className="flex justify-between pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span className="font-bold" style={{ color: '#1f2937' }}>Total a Pagar:</span> <span className="font-bold" style={{ color: '#003bb8' }}>${printInvoiceData.loan.totalAmount.toLocaleString('es-CO')}</span></div>
-                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Frecuencia de Pago:</span> <span className="font-semibold" style={{ color: '#111827' }}>{translateFrequency(printInvoiceData.loan.paymentFrequency)}</span></div>
-                  <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cuotas:</span> <span className="font-semibold" style={{ color: '#111827' }}>{printInvoiceData.loan.installments} cuotas de ${printInvoiceData.loan.installmentAmt.toLocaleString('es-CO')}</span></div>
-                </div>
-              </div>
-            </div>
-
-            {printInvoiceData.isRenewal && printInvoiceData.debtSettled !== undefined && printInvoiceData.excedente !== undefined && (
-              <div className="rounded p-4 text-sm mb-6" style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', color: '#065f46', borderStyle: 'solid', borderWidth: '1px' }}>
-                <h4 className="font-bold uppercase text-xs mb-1">Liquidación por Refinanciamiento</h4>
-                <div className="flex justify-between"><span>Deuda anterior cancelada:</span> <span>${printInvoiceData.debtSettled.toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #d1fae5' }}><span>Excedente neto entregado al cliente:</span> <span>${printInvoiceData.excedente.toLocaleString('es-CO')}</span></div>
-              </div>
-            )}
-
-            <div className="mb-8">
-              <h3 className="font-bold uppercase tracking-wide text-xs mb-3" style={{ color: '#374151' }}>Cronograma de Amortización (Cuotas)</h3>
-              <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="font-bold" style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #d1d5db', color: '#374151' }}>
-                    <th className="p-2">Nro Cuota</th>
-                    <th className="p-2">Fecha de Vencimiento</th>
-                    <th className="p-2 text-right">Valor Cuota</th>
-                    <th className="p-2">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {printInvoiceData.loan.amortizations.map((am: any) => (
-                    <tr key={am.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td className="p-2 font-mono" style={{ color: '#4b5563' }}>Cuota {am.installmentNumber}</td>
-                      <td className="p-2" style={{ color: '#4b5563' }}>{new Date(am.dueDate).toLocaleDateString('es-CO')}</td>
-                      <td className="p-2 text-right font-mono" style={{ color: '#4b5563' }}>${am.amount.toLocaleString('es-CO')}</td>
-                      <td className="p-2 uppercase text-[10px] font-semibold" style={{ color: '#6b7280' }}>Pendiente</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="pt-16 grid grid-cols-2 gap-12 text-center text-xs mt-16" style={{ borderTop: '1px solid #e5e7eb' }}>
-              <div>
-                <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
-                <p className="font-semibold" style={{ color: '#374151' }}>Firma del Acreedor</p>
-              </div>
-              <div>
-                <div className="mx-auto w-48 mb-2" style={{ borderBottom: '1px solid #9ca3af' }}></div>
-                <p className="font-semibold" style={{ color: '#374151' }}>{printInvoiceData.client.name}</p>
-                <p style={{ color: '#6b7280' }}>C.C. {printInvoiceData.client.documentId}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hidden print container for mobile background Receipt PDF generation */}
-      {printReceiptData && window.innerWidth < 768 && (
-        <div style={{ position: 'fixed', left: '-9999px', top: '0', width: '350px', opacity: 0, pointerEvents: 'none' }} className="no-print">
-          <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
-            <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
-              <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
-              <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{printReceiptData.receiptNumber}</p>
-              <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(printReceiptData.paymentDate).toLocaleString('es-CO')}</p>
-            </div>
-
-            <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{printReceiptData.clientName}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{printReceiptData.documentId}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{printReceiptData.loanNumber}</span></div>
-            </div>
-
-            <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
-              <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
-              <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${printReceiptData.amount.toLocaleString('es-CO')}</h1>
-            </div>
-
-            <div className="space-y-1.5 text-xs mb-8">
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(printReceiptData.remainingBalance + printReceiptData.amount).toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${printReceiptData.amount.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${printReceiptData.remainingBalance.toLocaleString('es-CO')}</span></div>
-              {printReceiptData.notes && (
-                <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
-                  Nota: {printReceiptData.notes}
-                </div>
-              )}
-            </div>
-
-            <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
-              <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
-              <p>Firma del Recaudador</p>
-              <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- CAMERA LIVE CAPTURE MODAL --- */}
-      {showCameraModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Camera className="w-5 h-5 text-brand-400" />
-                Capturar Foto en Vivo — {
-                  cameraTarget === 'idFront' ? 'Cédula Frente (Anverso)' :
-                  cameraTarget === 'idBack' ? 'Cédula Atrás (Reverso)' : 'Foto de Rostro / Selfie'
-                }
-              </h3>
-              <button onClick={stopCamera} className="text-slate-400 hover:text-white p-1">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Live Video Viewport */}
-            <div className="relative rounded-xl overflow-hidden bg-black aspect-video border border-slate-800 mb-4 shadow-inner flex items-center justify-center">
-              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute inset-x-0 bottom-3 text-center pointer-events-none">
-                <span className="text-[10px] text-white/80 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur">
-                  Encuadre el documento o rostro en la pantalla
-                </span>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center gap-3">
               <button
-                type="button"
-                onClick={() => startCamera(cameraTarget!, facingMode === 'user' ? 'environment' : 'user')}
-                className="text-xs text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 transition flex items-center gap-1.5"
+                onClick={() => setShowAssignModal(true)}
+                className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2.5 rounded-lg transition shadow-md"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Cambiar Cámara ({facingMode === 'user' ? 'Frontal' : 'Trasera'})
+                <Plus className="w-4 h-4" /> Asignar Primer Préstamo
               </button>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={stopCamera}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={capturePhotoFromCamera}
-                  className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-brand-600/30 transition flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4" /> Capturar Foto
-                </button>
-              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* --- IMAGE LIGHTBOX PREVIEW MODAL --- */}
-      {previewImage && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn" onClick={() => setPreviewImage(null)}>
-          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl flex flex-col items-center" onClick={e => e.stopPropagation()}>
-            <div className="w-full flex justify-between items-center mb-3 px-2">
-              <h3 className="text-sm font-bold text-white font-mono">{previewImage.title}</h3>
-              <button onClick={() => setPreviewImage(null)} className="text-slate-400 hover:text-white p-1">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            {previewImage.url.startsWith('data:application/pdf') ? (
-              <iframe src={previewImage.url} className="w-full h-[70vh] rounded-lg border border-slate-800" />
-            ) : (
-              <img src={previewImage.url} alt={previewImage.title} className="max-w-full max-h-[75vh] object-contain rounded-lg border border-slate-800 shadow-lg" />
-            )}
-          </div>
-        </div>
-      )}
+      {/* Subcomponent Modals */}
+      <EditClientModal
+        show={showEditModal}
+        client={client}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={fetchClientDetails}
+      />
 
-      {/* --- ADD CUSTOM DOCUMENT MODAL --- */}
-      {showAddCustomDoc && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 relative">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FilePlus className="w-5 h-5 text-brand-400" />
-                Adjuntar Documento Adicional
-              </h3>
-              <button onClick={() => setShowAddCustomDoc(false)} className="text-slate-400 hover:text-white p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <DeleteClientModal
+        show={showDeleteModal}
+        client={client}
+        onClose={() => setShowDeleteModal(false)}
+        onSuccess={onBack}
+      />
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre o Tipo de Documento *</label>
-                <input
-                  type="text"
-                  value={customDocTitle}
-                  onChange={e => setCustomDocTitle(e.target.value)}
-                  placeholder="ej: Recibo de Servicios Públicos / Pagaré Firmado"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500"
-                  required
-                />
-              </div>
+      <CameraModal
+        show={showCameraModal}
+        target={cameraTarget}
+        cameraStream={cameraStream}
+        facingMode={facingMode}
+        onClose={stopCamera}
+        onCapture={capturePhotoFromCamera}
+        onSwitchCamera={() => {
+          if (cameraTarget) {
+            startCamera(cameraTarget, facingMode === 'environment' ? 'user' : 'environment');
+          }
+        }}
+        videoRef={videoRef}
+        canvasRef={canvasRef}
+      />
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Seleccionar Archivo (Imagen o PDF) *</label>
-                <label className="w-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-800 hover:border-brand-500/50 bg-slate-950/40 rounded-xl cursor-pointer transition">
-                  <Upload className="w-8 h-8 text-brand-400 mb-2" />
-                  <span className="text-xs font-semibold text-slate-300">Haz clic aquí para examinar archivos</span>
-                  <span className="text-[10px] text-slate-500 mt-1">PNG, JPG, WEBP o PDF (Máximo 10 MB)</span>
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    disabled={!customDocTitle.trim()}
-                    onChange={handleAddCustomDoc}
-                  />
-                </label>
-                {!customDocTitle.trim() && (
-                  <p className="text-[10px] text-amber-400 mt-1.5">* Ingresa primero un nombre para habilitar la selección del archivo.</p>
-                )}
-              </div>
+      <NewLoanModal
+        show={showAssignModal}
+        client={client}
+        onClose={() => setShowAssignModal(false)}
+        onSuccess={newLoan => {
+          setPrintInvoiceData({ client, loan: newLoan });
+          fetchClientDetails();
+        }}
+      />
 
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddCustomDoc(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <RenewLoanModal
+        show={showRenewModal}
+        client={client}
+        activeLoan={activeLoan}
+        onClose={() => setShowRenewModal(false)}
+        onSuccess={res => {
+          setPrintInvoiceData({
+            client,
+            loan: res.loan,
+            isRenewal: true,
+            excedente: res.excedente,
+            debtSettled: res.debtSettled
+          });
+          fetchClientDetails();
+        }}
+      />
 
-      {/* --- MODAL 5: DELETE CLIENT WARNING --- */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-xl shadow-2xl p-6 relative animate-zoomIn space-y-5">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">¿Eliminar Cliente?</h3>
-                <p className="text-xs text-slate-400">Acción permanente e irreversible</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-xl space-y-2">
-              <p className="text-xs font-semibold text-red-200 leading-relaxed">
-                ⚠️ <strong>Advertencia importante:</strong> Si se elimina el cliente se pierde la trazabilidad de sus créditos, plan de amortización e historial de pagos registrados en el sistema.
-              </p>
-            </div>
-
-            <div className="p-3 bg-slate-950 rounded-lg border border-slate-850 space-y-1">
-              <div className="text-[10px] uppercase font-semibold text-slate-500">Cliente a eliminar:</div>
-              <div className="text-sm font-bold text-white">{client.name}</div>
-              <div className="text-xs text-slate-400 font-mono">CC / NIT: {client.documentId}</div>
-            </div>
-
-            {deleteClientError && (
-              <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg">
-                {deleteClientError}
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-end pt-2 border-t border-slate-850">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteClient}
-                disabled={deletingClient}
-                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800/50 text-white text-xs font-bold rounded-lg shadow-lg shadow-red-600/20 transition flex items-center gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" />
-                {deletingClient ? 'Eliminando...' : 'Sí, Eliminar Cliente'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PaymentModal
+        show={showPayModal}
+        client={client}
+        activeLoan={activeLoan}
+        onClose={() => setShowPayModal(false)}
+        onSuccess={receiptData => {
+          setPrintReceiptData(receiptData);
+          fetchClientDetails();
+        }}
+      />
     </div>
   );
 };

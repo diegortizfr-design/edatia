@@ -83,10 +83,20 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
       });
     }
 
+    // Fetch tenant details for initial capital
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { initialCapital: true }
+    });
+    const initialCapital = tenant?.initialCapital || 0;
+    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected);
+
     return res.json({
       summary: {
         totalCustomers,
         activeLoansCount: totalActiveLoansCount,
+        initialCapital,
+        availableCapital,
         capitalPrestado: totalCapitalPrestado,
         expectedRecuperacion: totalExpectedRecuperacion,
         outstandingBalance: currentOutstandingBalance,

@@ -22,6 +22,7 @@ model Tenant {
   lateInterestEnabled Boolean  @default(false)
   lateInterestRate    Float    @default(0)
   lateInterestPeriod  String   @default("MONTHLY") // DAILY, MONTHLY
+  initialCapital      Float    @default(0) // Capital base inicial dispuesto para prestar
 
   customers Customer[]
   loans     Loan[]
@@ -40,6 +41,7 @@ model Customer {
   address    String
   email      String?
   status     String   @default("ACTIVE") // ACTIVE, INACTIVE
+  defaultFrequency String @default("DAILY") // DAILY, WEEKLY, BIWEEKLY, MONTHLY (Clasificación de frecuencia)
   idFront    String?  // Base64 o URL foto Cédula Anverso
   idBack     String?  // Base64 o URL foto Cédula Reverso
   photo      String?  // Base64 o URL foto Rostro / Perfil

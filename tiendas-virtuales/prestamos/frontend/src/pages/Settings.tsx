@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building, Percent, Users, Save, CheckCircle2, AlertCircle, 
-  ShieldCheck, DollarSign, RefreshCw, Calendar, Phone, MapPin, Mail, CreditCard, Sparkles, Check
+  ShieldCheck, DollarSign, RefreshCw, Calendar, Phone, MapPin, Mail, CreditCard, Sparkles, Check, Coins 
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
@@ -14,7 +14,8 @@ export const Settings: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
-  // Portfolio / Late Interest Settings State
+  // Portfolio / Capital & Late Interest Settings State
+  const [initialCapital, setInitialCapital] = useState<number | string>(0);
   const [lateInterestEnabled, setLateInterestEnabled] = useState(false);
   const [lateInterestRate, setLateInterestRate] = useState<number>(0);
   const [lateInterestPeriod, setLateInterestPeriod] = useState<string>('MONTHLY');
@@ -45,6 +46,7 @@ export const Settings: React.FC = () => {
         setEmail(data.email || '');
         setPhone(data.phone || '');
         setAddress(data.address || '');
+        setInitialCapital(data.initialCapital || 0);
         setLateInterestEnabled(Boolean(data.lateInterestEnabled));
         setLateInterestRate(data.lateInterestRate || 0);
         setLateInterestPeriod(data.lateInterestPeriod || 'MONTHLY');
@@ -75,6 +77,7 @@ export const Settings: React.FC = () => {
           email,
           phone,
           address,
+          initialCapital: Number(initialCapital) || 0,
           lateInterestEnabled,
           lateInterestRate: Number(lateInterestRate),
           lateInterestPeriod
@@ -279,9 +282,53 @@ export const Settings: React.FC = () => {
         <form onSubmit={handleSave} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
           <div>
             <h3 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+              <Coins className="w-4 h-4 text-brand-400" />
+              Capital Base y Configuración de Cartera
+            </h3>
+            <p className="text-xs text-slate-400">
+              Configura el monto de dinero inicial asignado para préstamos y los parámetros de mora
+            </p>
+          </div>
+
+          {/* Capital Base Box */}
+          <div className="p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-brand-600/10 border border-brand-500/20 rounded-xl flex items-center justify-center text-brand-400 shrink-0">
+                <Coins className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-white text-sm block">Capital Inicial / Base para Préstamos ($)</span>
+                <span className="text-xs text-slate-400 block">
+                  Monto total disponible o dispuesto para la rotación y colocación de créditos
+                </span>
+              </div>
+            </div>
+
+            <div className="max-w-md pt-2">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Monto de Capital Inicial ($) *</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-2.5 text-slate-500 font-mono font-bold">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="100000"
+                  value={initialCapital}
+                  onChange={e => setInitialCapital(e.target.value)}
+                  className="w-full pl-8 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white font-mono font-semibold focus:outline-none focus:border-brand-500 transition"
+                  placeholder="Ej: 10000000"
+                />
+              </div>
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Este capital base sirve para calcular la rotación, el disponible y los indicadores financieros de tu cartera.
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800/80 pt-4">
+            <h4 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
               <Percent className="w-4 h-4 text-brand-400" />
               Parámetros de Interés de Mora
-            </h3>
+            </h4>
             <p className="text-xs text-slate-400">
               Define las reglas automáticas para el cálculo de penalizaciones por retraso en el pago de cuotas
             </p>
