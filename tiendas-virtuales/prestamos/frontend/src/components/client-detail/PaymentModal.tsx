@@ -25,9 +25,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   useEffect(() => {
     if (show && activeLoan) {
-      // Suggest installment amount as default pay amount
-      const suggested = Math.min(activeLoan.installmentAmt, activeLoan.balance);
-      setPayAmount(String(suggested));
+      // Suggest installment amount as default pay amount rounded to integer pesos
+      const suggested = Math.round(Math.min(activeLoan.installmentAmt, activeLoan.balance));
+      setPayAmount(suggested > 0 ? suggested.toLocaleString('es-CO') : '');
       setPayNotes('');
       setError('');
     }
@@ -35,18 +35,27 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!show || !activeLoan) return null;
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    if (!raw) {
+      setPayAmount('');
+      return;
+    }
+    setPayAmount(Number(raw).toLocaleString('es-CO'));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const amountNum = parseFloat(payAmount);
-    if (isNaN(amountNum) || amountNum <= 0) {
+    const amountNum = Number(payAmount.replace(/\D/g, ''));
+    if (!amountNum || amountNum <= 0) {
       setError('El monto a abonar debe ser mayor a 0.');
       return;
     }
 
     if (amountNum > activeLoan.balance) {
-      setError(`El monto abonado ($${amountNum.toLocaleString()}) no puede superar el saldo pendiente ($${activeLoan.balance.toLocaleString()}).`);
+      setError(`El monto abonado ($${amountNum.toLocaleString('es-CO')}) no puede superar el saldo pendiente ($${activeLoan.balance.toLocaleString('es-CO')}).`);
       return;
     }
 
@@ -112,11 +121,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-xs">
           <div className="flex justify-between">
             <span className="text-slate-400">Valor de Cuota:</span>
-            <span className="font-mono font-semibold text-slate-200">${activeLoan.installmentAmt.toLocaleString('es-CO')}</span>
+            <span className="font-mono font-semibold text-slate-200">${Math.round(activeLoan.installmentAmt).toLocaleString('es-CO')}</span>
           </div>
           <div className="flex justify-between pt-1 border-t border-slate-800/80">
             <span className="text-slate-400">Saldo Pendiente Deuda:</span>
-            <span className="font-mono font-bold text-emerald-400">${activeLoan.balance.toLocaleString('es-CO')}</span>
+            <span className="font-mono font-bold text-emerald-400">${Math.round(activeLoan.balance).toLocaleString('es-CO')}</span>
           </div>
         </div>
 
@@ -124,13 +133,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">Monto Recibido ($) *</label>
             <input
-              type="number"
+              type="text"
               required
-              min="100"
-              max={activeLoan.balance}
-              step="500"
               value={payAmount}
-              onChange={e => setPayAmount(e.target.value)}
+              onChange={handleAmountChange}
+              placeholder="ej: 50.000"
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-base text-white focus:outline-none focus:border-emerald-500 font-mono transition"
             />
           </div>

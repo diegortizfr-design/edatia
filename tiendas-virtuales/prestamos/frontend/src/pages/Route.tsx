@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
 import { PrintReceiptView } from '../components/client-detail/PrintViews';
-import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Printer, Navigation, Download } from 'lucide-react';
+import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Navigation, Download } from 'lucide-react';
 
 interface RouteItem {
   loanId: string;
@@ -109,69 +109,6 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
     }
   };
 
-  const handleDownloadReceiptPDF = (elementId: string, filename: string) => {
-    try {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        alert('Error: Elemento del recibo no encontrado.');
-        return;
-      }
-
-      // @ts-ignore
-      const html2pdf = window.html2pdf;
-      if (!html2pdf) {
-        alert('Error: La librería de generación de PDF no se ha cargado. Por favor, refresca la página (Ctrl + F5) e intenta nuevamente.');
-        return;
-      }
-
-      const contentHtml = element.innerHTML;
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Recibo de Caja</title>
-            <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-            <style>
-              body {
-                background-color: white !important;
-                color: black !important;
-                font-family: monospace;
-                padding: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div style="width: 280px; margin: 0 auto;">
-              ${contentHtml}
-            </div>
-          </body>
-        </html>
-      `;
-
-      const opt = {
-        margin:       [0.1, 0.1, 0.1, 0.1],
-        filename:     filename,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-          scale: 2.5, 
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF:        { unit: 'in', format: [3.15, 6.0], orientation: 'portrait' }
-      };
-
-      html2pdf().from(fullHtml).set(opt).save()
-        .catch((err: any) => {
-          alert('Error al compilar el ticket: ' + (err.message || err));
-        });
-    } catch (e: any) {
-      alert('Excepción al generar el ticket: ' + e.message);
-    }
-  };
-
   const fetchRouteData = async (dateStr: string) => {
     setLoading(true);
     setError('');
@@ -206,14 +143,31 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
 
   const handlePayClick = (item: RouteItem) => {
     setActiveItem(item);
-    setPayAmount(String(item.totalToCollect)); // default to full amount to collect
+    const suggested = Math.round(item.totalToCollect);
+    setPayAmount(suggested > 0 ? suggested.toLocaleString('es-CO') : '');
     setPayError('');
     setShowPayModal(true);
+  };
+
+  const handlePayAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    if (!raw) {
+      setPayAmount('');
+      return;
+    }
+    setPayAmount(Number(raw).toLocaleString('es-CO'));
   };
 
   const handlePaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPayError('');
+
+    const numericAmount = Number(payAmount.replace(/\D/g, ''));
+    if (!numericAmount || numericAmount <= 0) {
+      setPayError('El monto abonado debe ser un valor entero mayor a 0.');
+      return;
+    }
+
     setPayLoading(true);
 
     try {
@@ -221,7 +175,7 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
         method: 'POST',
         bodyData: {
           loanId: activeItem?.loanId,
-          amount: parseFloat(payAmount),
+          amount: numericAmount,
           notes: payNotes
         }
       });
@@ -433,13 +387,14 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Monto Cobrado (COP) *</label>
                 <input
-                  type="number"
+                  type="text"
                   value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
+                  onChange={handlePayAmountChange}
+                  placeholder="ej: 50.000"
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-lg text-white font-mono text-lg focus:outline-none focus:border-brand-500"
                   required
                 />
-                <span className="text-[10px] text-slate-500 block mt-1">Sugerido para hoy (incluye atrasos): ${activeItem.totalToCollect.toLocaleString('es-CO')}</span>
+                <span className="text-[10px] text-slate-500 block mt-1">Sugerido para hoy (incluye atrasos): ${Math.round(activeItem.totalToCollect).toLocaleString('es-CO')}</span>
               </div>
 
               <div>
