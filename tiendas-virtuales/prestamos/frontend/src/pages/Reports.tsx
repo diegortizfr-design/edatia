@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
 import { 
-  BarChart3, Wallet, TrendingUp, Coins, DollarSign, 
-  Calendar, ChevronRight, RefreshCw, AlertCircle, Phone, ArrowUpRight
+  BarChart3, Wallet, TrendingUp, Coins, 
+  Calendar, ChevronRight, RefreshCw, Phone, ArrowUpRight
 } from 'lucide-react';
 
 interface TreasuryStats {

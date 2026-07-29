@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
 import { 
-  Receipt, Plus, DollarSign, Wallet, RefreshCw, 
-  ArrowDownRight, FileText, AlertCircle, CheckCircle2, X
+  Receipt, Plus, Wallet, RefreshCw, 
+  ArrowDownRight, FileText, CheckCircle2, X
 } from 'lucide-react';
 
 interface ExpenseItem {
