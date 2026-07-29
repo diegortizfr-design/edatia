@@ -8,7 +8,7 @@ import { getDailyRoute, getRouteCheckout } from '../controllers/routeController'
 import { getPortfolioStats, getTreasuryReport, getRecaudoProyeccion } from '../controllers/reportsController';
 import { getTenantSettings, updateTenantSettings } from '../controllers/tenantController';
 
-import { getExpenses, createExpense } from '../controllers/expenseController';
+import { getExpenses, createExpense, getIncomes, createIncome } from '../controllers/expenseController';
 
 const router = Router();
 
@@ -38,9 +38,11 @@ router.get('/payments', authenticateToken as any, getPayments);
 router.post('/payments', authenticateToken as any, createPayment);
 router.get('/payments/:id', authenticateToken as any, getPaymentById);
 
-// --- EXPENSES / CONTABILIDAD ---
+// --- EXPENSES & INCOMES / CONTABILIDAD ---
 router.get('/expenses', authenticateToken as any, getExpenses);
 router.post('/expenses', authenticateToken as any, createExpense);
+router.get('/incomes', authenticateToken as any, getIncomes);
+router.post('/incomes', authenticateToken as any, createIncome);
 
 // --- ROUTE ---
 router.get('/route', authenticateToken as any, getDailyRoute);

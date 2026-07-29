@@ -59,13 +59,19 @@ export const createExpense = async (req: AuthenticatedRequest, res: Response) =>
     });
     const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
+    const existingIncomes = await prisma.income.findMany({
+      where: { tenantId },
+      select: { amount: true }
+    });
+    const totalIncomes = existingIncomes.reduce((sum, i) => sum + i.amount, 0);
+
     const existingExpenses = await prisma.expense.findMany({
       where: { tenantId },
       select: { amount: true }
     });
     const totalExpensesBefore = existingExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected - totalExpensesBefore);
+    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected + totalIncomes - totalExpensesBefore);
 
     if (numericAmount > availableCapital) {
       return res.status(400).json({
@@ -91,5 +97,64 @@ export const createExpense = async (req: AuthenticatedRequest, res: Response) =>
   } catch (error) {
     console.error('Error al registrar egreso:', error);
     return res.status(500).json({ error: 'Error al registrar el egreso.' });
+  }
+};
+
+// Get incomes list and totals for tenant
+export const getIncomes = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+
+  try {
+    const incomes = await prisma.income.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const totalIncomes = incomes.reduce((sum, i) => sum + i.amount, 0);
+
+    return res.json({
+      totalIncomes,
+      count: incomes.length,
+      incomes
+    });
+  } catch (error) {
+    console.error('Error al obtener ingresos:', error);
+    return res.status(500).json({ error: 'Error al listar los ingresos.' });
+  }
+};
+
+// Create a new income (cash injection)
+export const createIncome = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const { amount, description } = req.body;
+
+  if (!amount || !description) {
+    return res.status(400).json({ error: 'Monto u observación son requeridos para registrar el ingreso.' });
+  }
+
+  const numericAmount = parseFloat(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return res.status(400).json({ error: 'El monto del ingreso debe ser un número mayor a cero.' });
+  }
+
+  try {
+    // Auto-generate consecutive ING-0001
+    const count = await prisma.income.count({ where: { tenantId } });
+    const incomeNumber = `ING-${(count + 1).toString().padStart(4, '0')}`;
+
+    const newIncome = await prisma.income.create({
+      data: {
+        tenantId,
+        incomeNumber,
+        amount: numericAmount,
+        description: description.trim(),
+        date: new Date()
+      }
+    });
+
+    return res.status(201).json(newIncome);
+  } catch (error) {
+    console.error('Error al registrar ingreso:', error);
+    return res.status(500).json({ error: 'Error al registrar el ingreso.' });
   }
 };

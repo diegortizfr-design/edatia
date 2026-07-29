@@ -90,12 +90,17 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
     });
     const initialCapital = tenant?.initialCapital || 0;
 
+    const allIncomes = await prisma.income.findMany({
+      where: { tenantId }
+    });
+    const totalIncomes = allIncomes.reduce((sum, i) => sum + i.amount, 0);
+
     const allExpenses = await prisma.expense.findMany({
       where: { tenantId }
     });
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected - totalExpenses);
+    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected + totalIncomes - totalExpenses);
 
     return res.json({
       summary: {
@@ -109,6 +114,7 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
         totalInteresGenerado: totalExpectedInteres,
         totalCollected,
         collectedToday: totalCollectedToday,
+        totalIncomes,
         totalExpenses,
         overdueLoansCount: totalOverdueCount,
         overdueBalance: totalOverdueBalance,
@@ -147,12 +153,17 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
     });
     const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
+    const allIncomes = await prisma.income.findMany({
+      where: { tenantId }
+    });
+    const totalIncomes = allIncomes.reduce((sum, i) => sum + i.amount, 0);
+
     const allExpenses = await prisma.expense.findMany({
       where: { tenantId }
     });
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    const availableCapital = Math.max(0, initialCapital - capitalPrestado + totalCollected - totalExpenses);
+    const availableCapital = Math.max(0, initialCapital - capitalPrestado + totalCollected + totalIncomes - totalExpenses);
 
     const amortizations = await prisma.amortizationSchedule.findMany({
       where: { loan: { tenantId } }
@@ -169,6 +180,7 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
       availableCapital,
       capitalPrestado,
       totalCollected,
+      totalIncomes,
       totalExpenses,
       cajaIntereses: interesesCobrados,
       capitalPorCobrar,

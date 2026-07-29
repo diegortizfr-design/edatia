@@ -29,6 +29,7 @@ model Tenant {
   payments  Payment[]
   products  LoanProduct[]
   expenses  Expense[]
+  incomes   Income[]
 }
 
 // 2. Clientes (Deudores)
@@ -144,6 +145,19 @@ model Expense {
   expenseNumber String   // Consecutivo (ej: EGR-0001)
   amount        Float    // Monto del egreso
   description   String   // Observación / Concepto
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+// 8. Ingresos Adicionales de Contabilidad
+model Income {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  incomeNumber  String   // Consecutivo (ej: ING-0001)
+  amount        Float    // Monto del ingreso
+  description   String   // Observación / Concepto (ej: Inyección de capital)
   date          DateTime @default(now())
   createdAt     DateTime @default(now())
 }
