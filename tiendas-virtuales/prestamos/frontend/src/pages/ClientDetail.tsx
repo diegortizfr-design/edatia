@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiCall } from '../utils/api';
-import { useAuth } from '../context/AuthContext';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
   Coins, RefreshCw, Plus, Edit3, Trash2, ShieldCheck, FolderHeart, Receipt, Printer 
 } from 'lucide-react';
 
-import { 
-  ClientFullDetails, Loan, PrintInvoiceData, PrintReceiptData 
+import type { 
+  ClientFullDetails, PrintInvoiceData, PrintReceiptData 
 } from '../components/client-detail/clientDetailTypes';
 import { EditClientModal } from '../components/client-detail/EditClientModal';
 import { DeleteClientModal } from '../components/client-detail/DeleteClientModal';
@@ -25,7 +24,6 @@ interface ClientDetailProps {
 }
 
 export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) => {
-  const { tenant } = useAuth();
   const [client, setClient] = useState<ClientFullDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

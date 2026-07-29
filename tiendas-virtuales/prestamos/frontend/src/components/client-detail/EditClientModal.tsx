@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
-import { ClientFullDetails } from './clientDetailTypes';
-import { User, Phone, MapPin, Mail, X } from 'lucide-react';
+import type { ClientFullDetails } from './clientDetailTypes';
+import { User, Phone, Mail, X } from 'lucide-react';
 
 interface EditClientModalProps {
   show: boolean;

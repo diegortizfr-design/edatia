@@ -1,5 +1,5 @@
 import React from 'react';
-import { PrintInvoiceData, PrintReceiptData } from './clientDetailTypes';
+import type { PrintInvoiceData, PrintReceiptData } from './clientDetailTypes';
 import { Printer, Download } from 'lucide-react';
 
 interface PrintInvoiceViewProps {

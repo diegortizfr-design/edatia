@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClientFullDetails, CustomDocAttachment } from './clientDetailTypes';
+import type { ClientFullDetails, CustomDocAttachment } from './clientDetailTypes';
 import { 
   Camera, Upload, Eye, Trash2, FileText, CheckCircle, ShieldCheck, FileCheck, FilePlus, X, ImageIcon 
 } from 'lucide-react';

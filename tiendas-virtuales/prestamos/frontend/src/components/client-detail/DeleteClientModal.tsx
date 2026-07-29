@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiCall } from '../../utils/api';
-import { ClientFullDetails } from './clientDetailTypes';
+import type { ClientFullDetails } from './clientDetailTypes';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 interface DeleteClientModalProps {

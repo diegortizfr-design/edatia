@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
-import { ClientFullDetails, Loan } from './clientDetailTypes';
+import type { ClientFullDetails, Loan } from './clientDetailTypes';
 import { Coins, Sparkles, X } from 'lucide-react';
 
 interface NewLoanModalProps {

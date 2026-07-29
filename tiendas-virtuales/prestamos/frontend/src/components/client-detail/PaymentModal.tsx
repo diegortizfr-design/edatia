@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
-import { ClientFullDetails, Loan, PrintReceiptData } from './clientDetailTypes';
+import type { ClientFullDetails, Loan, PrintReceiptData } from './clientDetailTypes';
 import { Coins, X } from 'lucide-react';
 
 interface PaymentModalProps {

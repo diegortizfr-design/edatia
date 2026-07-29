@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
-import { ClientFullDetails, Loan } from './clientDetailTypes';
-import { RefreshCw, Sparkles, AlertTriangle, X } from 'lucide-react';
+import type { ClientFullDetails, Loan } from './clientDetailTypes';
+import { RefreshCw, Sparkles, X } from 'lucide-react';
 
 interface RenewLoanModalProps {
   show: boolean;

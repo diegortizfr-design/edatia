@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { Camera, RefreshCw, X } from 'lucide-react';
 
 interface CameraModalProps {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Loan } from './clientDetailTypes';
-import { Receipt, Calendar, Coins, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import type { Loan } from './clientDetailTypes';
+import { Receipt, Calendar, Coins } from 'lucide-react';
 
 interface AmortizationTableProps {
   loan: Loan;
