@@ -28,6 +28,7 @@ model Tenant {
   loans     Loan[]
   payments  Payment[]
   products  LoanProduct[]
+  expenses  Expense[]
 }
 
 // 2. Clientes (Deudores)
@@ -131,5 +132,18 @@ model Payment {
   lateInterestAmount Float    @default(0) // Interés de mora cobrado
   paymentDate        DateTime @default(now())
   notes         String?
+  createdAt     DateTime @default(now())
+}
+
+// 7. Egresos / Gastos de Contabilidad
+model Expense {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  expenseNumber String   // Consecutivo (ej: EGR-0001)
+  amount        Float    // Monto del egreso
+  description   String   // Observación / Concepto
+  date          DateTime @default(now())
   createdAt     DateTime @default(now())
 }

@@ -89,7 +89,13 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
       select: { initialCapital: true }
     });
     const initialCapital = tenant?.initialCapital || 0;
-    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected);
+
+    const allExpenses = await prisma.expense.findMany({
+      where: { tenantId }
+    });
+    const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected - totalExpenses);
 
     return res.json({
       summary: {
@@ -103,6 +109,7 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
         totalInteresGenerado: totalExpectedInteres,
         totalCollected,
         collectedToday: totalCollectedToday,
+        totalExpenses,
         overdueLoansCount: totalOverdueCount,
         overdueBalance: totalOverdueBalance,
         collectionEfficiency: totalExpectedRecuperacion > 0 
@@ -114,5 +121,142 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
   } catch (error) {
     console.error('Error al generar estadísticas:', error);
     return res.status(500).json({ error: 'Error al generar estadísticas de cartera.' });
+  }
+};
+
+// Detailed Financial Treasury / Reports KPIs
+export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { initialCapital: true }
+    });
+    const initialCapital = tenant?.initialCapital || 0;
+
+    const activeLoans = await prisma.loan.findMany({
+      where: { tenantId, status: { in: ['ACTIVE', 'OVERDUE'] } }
+    });
+
+    const capitalPrestado = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+    const totalInteresProyectado = activeLoans.reduce((sum, l) => sum + l.interestAmount, 0);
+
+    const allPayments = await prisma.payment.findMany({
+      where: { tenantId }
+    });
+    const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    const allExpenses = await prisma.expense.findMany({
+      where: { tenantId }
+    });
+    const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const availableCapital = Math.max(0, initialCapital - capitalPrestado + totalCollected - totalExpenses);
+
+    const amortizations = await prisma.amortizationSchedule.findMany({
+      where: { loan: { tenantId } }
+    });
+
+    const capitalCobrado = amortizations.reduce((sum, a) => sum + a.principalPaid, 0);
+    const interesesCobrados = amortizations.reduce((sum, a) => sum + a.interestPaid, 0);
+    
+    const capitalPorCobrar = Math.max(0, capitalPrestado - capitalCobrado);
+    const interesesPorCobrar = Math.max(0, totalInteresProyectado - interesesCobrados);
+
+    return res.json({
+      initialCapital,
+      availableCapital,
+      capitalPrestado,
+      totalCollected,
+      totalExpenses,
+      cajaIntereses: interesesCobrados,
+      capitalPorCobrar,
+      capitalCobrado,
+      interesesPorCobrar,
+      interesesCobrados
+    });
+  } catch (error) {
+    console.error('Error al obtener reporte financiero:', error);
+    return res.status(500).json({ error: 'Error al obtener reporte financiero.' });
+  }
+};
+
+// Recaudo Proyección (Calendario por Días)
+export const getRecaudoProyeccion = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const { days = '30' } = req.query;
+
+  try {
+    const limitDays = parseInt(days as string) || 30;
+
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate.getTime());
+    endDate.setDate(endDate.getDate() + limitDays);
+    endDate.setHours(23, 59, 59, 999);
+
+    const pendingAmortizations = await prisma.amortizationSchedule.findMany({
+      where: {
+        loan: {
+          tenantId,
+          status: { in: ['ACTIVE', 'OVERDUE'] }
+        },
+        status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+        dueDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        loan: {
+          include: { customer: true }
+        }
+      },
+      orderBy: { dueDate: 'asc' }
+    });
+
+    // Group by YYYY-MM-DD
+    const groupedByDate: Record<string, any> = {};
+
+    pendingAmortizations.forEach(item => {
+      const dateStr = item.dueDate.toISOString().split('T')[0];
+      const pendingAmount = item.amount - item.amountPaid;
+
+      if (!groupedByDate[dateStr]) {
+        groupedByDate[dateStr] = {
+          date: dateStr,
+          rawDate: item.dueDate,
+          installmentsCount: 0,
+          totalExpected: 0,
+          items: []
+        };
+      }
+
+      groupedByDate[dateStr].installmentsCount += 1;
+      groupedByDate[dateStr].totalExpected += pendingAmount;
+      groupedByDate[dateStr].items.push({
+        amortizationId: item.id,
+        installmentNumber: item.installmentNumber,
+        loanNumber: item.loan.loanNumber,
+        customerName: item.loan.customer.name,
+        customerPhone: item.loan.customer.phone,
+        amount: pendingAmount
+      });
+    });
+
+    const projectionList = Object.values(groupedByDate).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    const totalPeriodExpected = projectionList.reduce((sum, p) => sum + p.totalExpected, 0);
+
+    return res.json({
+      days: limitDays,
+      totalPeriodExpected,
+      projections: projectionList
+    });
+  } catch (error) {
+    console.error('Error al calcular proyección de recaudo:', error);
+    return res.status(500).json({ error: 'Error al calcular proyección de recaudo.' });
   }
 };

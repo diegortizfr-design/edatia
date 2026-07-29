@@ -141,8 +141,30 @@ export const createLoan = async (req: AuthenticatedRequest, res: Response) => {
 
     if (activeLoan) {
       return res.status(400).json({
-        error: `El cliente ya posee un préstamo activo (${activeLoan.loanNumber}) con un saldo de $${activeLoan.balance.toLocaleString()}. Debe renovarlo o cancelarlo antes de asignar uno nuevo.`
+        error: `El cliente ya posee un préstamo activo (${activeLoan.loanNumber}) con un saldo de $${activeLoan.balance.toLocaleString('es-CO')}. Debe renovarlo o cancelarlo antes de asignar uno nuevo.`
       });
+    }
+
+    // Verify tenant working capital limit
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { initialCapital: true }
+    });
+
+    if (tenant && tenant.initialCapital > 0) {
+      const activeLoans = await prisma.loan.findMany({
+        where: { tenantId, status: { in: ['ACTIVE', 'OVERDUE'] } },
+        select: { principal: true }
+      });
+
+      const totalPlacedPrincipal = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+      const availableCapital = Math.max(0, tenant.initialCapital - totalPlacedPrincipal);
+
+      if (p > availableCapital) {
+        return res.status(400).json({
+          error: `El monto del préstamo ($${p.toLocaleString('es-CO')}) supera el capital disponible en tu cartera ($${availableCapital.toLocaleString('es-CO')}). Tu Capital Inicial configurado es de $${tenant.initialCapital.toLocaleString('es-CO')}. Para asignar este crédito debes ampliar tu Capital Base en Configuración.`
+        });
+      }
     }
 
     // Calculate details
@@ -244,6 +266,28 @@ export const renewLoan = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const excedente = p - currentBalance; // Excess to be given to the customer
+
+    // Verify tenant working capital limit for renewal
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { initialCapital: true }
+    });
+
+    if (tenant && tenant.initialCapital > 0) {
+      const activeLoans = await prisma.loan.findMany({
+        where: { tenantId, status: { in: ['ACTIVE', 'OVERDUE'] }, id: { not: oldLoanId } },
+        select: { principal: true }
+      });
+
+      const totalPlacedPrincipal = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+      const availableCapital = Math.max(0, tenant.initialCapital - totalPlacedPrincipal);
+
+      if (p > availableCapital) {
+        return res.status(400).json({
+          error: `El monto de la renovación ($${p.toLocaleString('es-CO')}) supera el capital disponible en tu cartera ($${availableCapital.toLocaleString('es-CO')}). Tu Capital Inicial es de $${tenant.initialCapital.toLocaleString('es-CO')}.`
+        });
+      }
+    }
 
     // 3. Calculate new loan values
     const interestAmount = p * (r / 100);

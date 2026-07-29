@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { AdSenseBanner } from './AdSenseBanner';
-import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet, Receipt, Sun, Moon, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Users, FolderHeart, Route, LogOut, Wallet, Receipt, Sun, Moon, Settings as SettingsIcon, BarChart3, Calculator } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
@@ -19,6 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, t
     { id: 'portfolio', name: 'Cartera', icon: FolderHeart },
     { id: 'route', name: 'Ruta del Día', icon: Route },
     { id: 'transactions', name: 'Recibos / Facturas', icon: Receipt },
+    { id: 'reports', name: 'Reportes', icon: BarChart3 },
+    { id: 'accounting', name: 'Contabilidad', icon: Calculator },
     { id: 'settings', name: 'Configuración', icon: SettingsIcon },
   ];
 
