@@ -16,7 +16,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const [principal, setPrincipal] = useState('500000');
+  const [principal, setPrincipal] = useState('500.000');
   const [interestRate, setInterestRate] = useState('20');
   const [frequency, setFrequency] = useState('DAILY');
   const [installments, setInstallments] = useState('24');
@@ -34,7 +34,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
 
   useEffect(() => {
     if (show && principal && interestRate && installments) {
-      const p = parseFloat(principal);
+      const p = parseFloat(principal.replace(/\D/g, ''));
       const r = parseFloat(interestRate);
       const inst = parseInt(installments);
 
@@ -83,7 +83,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
         method: 'POST',
         bodyData: {
           customerId: client.id,
-          principal: parseFloat(principal),
+          principal: parseFloat(principal.replace(/\D/g, '')),
           interestRate: parseFloat(interestRate),
           paymentFrequency: frequency,
           installments: parseInt(installments)
@@ -141,13 +141,12 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Monto a Prestar ($) *</label>
               <input
-                type="number"
+                type="text"
                 required
-                min="10000"
-                step="10000"
                 value={principal}
-                onChange={e => setPrincipal(e.target.value)}
+                onChange={e => setPrincipal(e.target.value ? Number(e.target.value.replace(/\D/g, '')).toLocaleString('es-CO') : '')}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 font-mono transition"
+                placeholder="ej: 1.500.000"
               />
             </div>
             <div>

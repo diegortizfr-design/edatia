@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../utils/api';
 import { 
   Building, Percent, Users, Save, CheckCircle2, AlertCircle, 
   ShieldCheck, DollarSign, RefreshCw, Calendar, Phone, MapPin, Mail, CreditCard, Sparkles, Check, Coins 
@@ -31,69 +32,62 @@ export const Settings: React.FC = () => {
   }, []);
 
   const fetchSettings = async () => {
-    const token = localStorage.getItem('token');
     try {
       setLoading(true);
-      const res = await fetch('/api/tenant/settings', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setName(data.name || '');
-        setNit(data.nit || '');
-        setEmail(data.email || '');
-        setPhone(data.phone || '');
-        setAddress(data.address || '');
-        setInitialCapital(data.initialCapital || 0);
-        setLateInterestEnabled(Boolean(data.lateInterestEnabled));
-        setLateInterestRate(data.lateInterestRate || 0);
-        setLateInterestPeriod(data.lateInterestPeriod || 'MONTHLY');
-      }
-    } catch (err) {
+      const data = await apiCall('/tenant/settings');
+      setName(data.name || '');
+      setNit(data.nit || '');
+      setEmail(data.email || '');
+      setPhone(data.phone || '');
+      setAddress(data.address || '');
+      setInitialCapital(data.initialCapital ? Number(data.initialCapital).toLocaleString('es-CO') : '0');
+      setLateInterestEnabled(Boolean(data.lateInterestEnabled));
+      setLateInterestRate(data.lateInterestRate || 0);
+      setLateInterestPeriod(data.lateInterestPeriod || 'MONTHLY');
+    } catch (err: any) {
       console.error('Error al cargar configuración:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCapitalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    if (!raw) {
+      setInitialCapital('');
+      return;
+    }
+    setInitialCapital(Number(raw).toLocaleString('es-CO'));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     setMessage(null);
     setSaving(true);
 
+    const numericCapital = Number(String(initialCapital).replace(/\D/g, '')) || 0;
+
     try {
-      const res = await fetch('/api/tenant/settings', {
+      await apiCall('/tenant/settings', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
+        bodyData: {
           name,
           nit,
           email,
           phone,
           address,
-          initialCapital: Number(initialCapital) || 0,
+          initialCapital: numericCapital,
           lateInterestEnabled,
           lateInterestRate: Number(lateInterestRate),
           lateInterestPeriod
-        })
+        }
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'Configuración guardada exitosamente.' });
-        setTimeout(() => setMessage(null), 4000);
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Error al guardar la configuración.' });
-      }
-    } catch (err) {
+      setMessage({ type: 'success', text: 'Configuración guardada exitosamente.' });
+      setTimeout(() => setMessage(null), 4000);
+    } catch (err: any) {
       console.error('Error al actualizar configuración:', err);
-      setMessage({ type: 'error', text: 'Ocurrió un error de conexión.' });
+      setMessage({ type: 'error', text: err.message || 'Error al guardar la configuración.' });
     } finally {
       setSaving(false);
     }
@@ -202,7 +196,6 @@ export const Settings: React.FC = () => {
                 onChange={e => setName(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500 transition"
-                placeholder="Ej: Inversiones & Créditos S.A.S."
               />
             </div>
 
@@ -217,7 +210,6 @@ export const Settings: React.FC = () => {
                 onChange={e => setNit(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500 transition"
-                placeholder="Ej: 900.123.456-7"
               />
             </div>
 
@@ -231,7 +223,6 @@ export const Settings: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500 transition"
-                placeholder="contacto@empresa.com"
               />
             </div>
 
@@ -245,7 +236,6 @@ export const Settings: React.FC = () => {
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500 transition"
-                placeholder="Ej: 3001234567"
               />
             </div>
 
@@ -259,7 +249,6 @@ export const Settings: React.FC = () => {
                 value={address}
                 onChange={e => setAddress(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500 transition"
-                placeholder="Ej: Calle 45 # 23-10, Oficina 302"
               />
             </div>
           </div>
@@ -309,13 +298,11 @@ export const Settings: React.FC = () => {
               <div className="relative">
                 <span className="absolute left-3.5 top-2.5 text-slate-500 font-mono font-bold">$</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="100000"
+                  type="text"
                   value={initialCapital}
-                  onChange={e => setInitialCapital(e.target.value)}
+                  onChange={handleCapitalChange}
                   className="w-full pl-8 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white font-mono font-semibold focus:outline-none focus:border-brand-500 transition"
-                  placeholder="Ej: 10000000"
+                  placeholder="ej: 18.000.000"
                 />
               </div>
               <span className="text-[10px] text-slate-500 mt-1 block">
