@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
+import { PrintReceiptView } from '../components/client-detail/PrintViews';
 import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Printer, Navigation, Download } from 'lucide-react';
 
 interface RouteItem {
@@ -188,18 +189,6 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
     fetchRouteData(selectedDate);
   }, [selectedDate]);
 
-  // Auto-download receipt on mobile
-  useEffect(() => {
-    if (printReceiptData && window.innerWidth < 768) {
-      const filename = `Recibo_${printReceiptData.receiptNumber}.pdf`;
-      const timer = setTimeout(() => {
-        handleDownloadReceiptPDF('receipt-print-area', filename);
-        setPrintReceiptData(null);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [printReceiptData]);
-
   // Close route day calculation handler
   const handleCloseDayClick = async () => {
     setCheckoutLoading(true);
@@ -277,69 +266,12 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
   const totalToCollect = routeItems.reduce((sum, item) => sum + item.totalToCollect, 0);
 
   // --- RENDERING THERMAL RECEIPT PRINT OVERLAY ---
-  if (printReceiptData && window.innerWidth >= 768) {
-    const r = printReceiptData;
+  if (printReceiptData) {
     return (
-      <div className="bg-white text-black min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-lg animate-fadeIn">
-        {/* Printable Area */}
-        <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
-          <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
-            <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
-            <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{r.receiptNumber}</p>
-            <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
-          </div>
-
-          <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{r.clientName}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{r.documentId}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{r.loanNumber}</span></div>
-          </div>
-
-          <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
-            <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
-            <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${r.amount.toLocaleString('es-CO')}</h1>
-          </div>
-
-          <div className="space-y-1.5 text-xs mb-8">
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${r.amount.toLocaleString('es-CO')}</span></div>
-            <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
-            {r.notes && (
-              <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
-                Nota: {r.notes}
-              </div>
-            )}
-          </div>
-
-          <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
-            <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
-            <p>Firma del Recaudador</p>
-            <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center mt-12 no-print font-sans">
-          <button
-            onClick={() => setPrintReceiptData(null)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs transition"
-          >
-            Cerrar Recibo
-          </button>
-          <button
-            onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
-            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-          >
-            <Download className="w-4 h-4" /> PDF
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-          >
-            <Printer className="w-4 h-4" /> Imprimir
-          </button>
-        </div>
-      </div>
+      <PrintReceiptView 
+        data={printReceiptData} 
+        onClose={() => setPrintReceiptData(null)} 
+      />
     );
   }
 
@@ -541,46 +473,7 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
         </div>
       )}
 
-      {/* Hidden print container for mobile background Receipt PDF generation */}
-      {printReceiptData && window.innerWidth < 768 && (
-        <div style={{ position: 'fixed', left: '-9999px', top: '0', width: '350px', opacity: 0, pointerEvents: 'none' }} className="no-print">
-          <div id="receipt-print-area" className="p-4 bg-white text-black font-mono">
-            <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
-              <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
-              <p className="text-xs mt-1" style={{ color: '#4b5563' }}>{printReceiptData.receiptNumber}</p>
-              <p className="text-[10px]" style={{ color: '#6b7280' }}>{new Date(printReceiptData.paymentDate).toLocaleString('es-CO')}</p>
-            </div>
 
-            <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{printReceiptData.clientName}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{printReceiptData.documentId}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{printReceiptData.loanNumber}</span></div>
-            </div>
-
-            <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
-              <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
-              <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${printReceiptData.amount.toLocaleString('es-CO')}</h1>
-            </div>
-
-            <div className="space-y-1.5 text-xs mb-8">
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(printReceiptData.remainingBalance + printReceiptData.amount).toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${printReceiptData.amount.toLocaleString('es-CO')}</span></div>
-              <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${printReceiptData.remainingBalance.toLocaleString('es-CO')}</span></div>
-              {printReceiptData.notes && (
-                <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
-                  Nota: {printReceiptData.notes}
-                </div>
-              )}
-            </div>
-
-            <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
-              <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
-              <p>Firma del Recaudador</p>
-              <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* --- MODAL 2: CIERRE / ARQUEO DE CAJA --- */}
       {showCheckoutModal && (

@@ -259,62 +259,64 @@ export const PrintReceiptView: React.FC<PrintReceiptViewProps> = ({ data, onClos
   };
 
   return (
-    <div className="bg-white text-slate-900 min-h-[500px] p-6 max-w-sm mx-auto border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-2xl rounded-xl" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
-      <div id="receipt-print-area" className="p-4 bg-white text-slate-900 font-mono" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
-        <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
-          <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
-          <p className="text-xs mt-1" style={{ color: '#374151' }}>{r.receiptNumber}</p>
-          <p className="text-[10px]" style={{ color: '#4b5563' }}>{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto animate-fadeIn">
+      <div className="bg-white text-slate-900 min-h-[480px] p-5 max-w-sm w-full border border-dashed border-gray-400 font-mono text-sm leading-normal shadow-2xl rounded-2xl relative my-auto max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
+        <div id="receipt-print-area" className="p-4 bg-white text-slate-900 font-mono" style={{ backgroundColor: '#ffffff', color: '#111827' }}>
+          <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af' }}>
+            <h2 className="font-bold text-lg" style={{ color: '#111827' }}>RECIBO DE CAJA</h2>
+            <p className="text-xs mt-1 font-mono font-bold" style={{ color: '#374151' }}>{r.receiptNumber}</p>
+            <p className="text-[10px]" style={{ color: '#4b5563' }}>{new Date(r.paymentDate).toLocaleString('es-CO')}</p>
+          </div>
+
+          <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{r.clientName}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{r.documentId}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{r.loanNumber}</span></div>
+          </div>
+
+          <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
+            <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
+            <h1 className="text-2xl font-bold font-mono" style={{ color: '#111827' }}>${r.amount.toLocaleString('es-CO')}</h1>
+          </div>
+
+          <div className="space-y-1.5 text-xs mb-6">
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${r.amount.toLocaleString('es-CO')}</span></div>
+            <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
+            {r.notes && (
+              <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
+                Nota: {r.notes}
+              </div>
+            )}
+          </div>
+
+          <div className="text-center text-[10px] mt-8" style={{ color: '#6b7280' }}>
+            <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
+            <p>Firma del Recaudador</p>
+            <p className="mt-4 font-bold text-xs" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
+          </div>
         </div>
 
-        <div className="space-y-2 pb-4 mb-4 text-xs" style={{ borderBottom: '1px dashed #9ca3af' }}>
-          <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cliente:</span> <span className="font-bold truncate max-w-[180px]" style={{ color: '#111827' }}>{r.clientName}</span></div>
-          <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Cédula:</span> <span style={{ color: '#111827' }}>{r.documentId}</span></div>
-          <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Crédito Nro:</span> <span style={{ color: '#111827' }}>{r.loanNumber}</span></div>
+        <div className="flex flex-wrap gap-2 justify-center mt-6 no-print font-sans pt-3 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-2 rounded-xl text-xs transition flex-1"
+          >
+            Cerrar
+          </button>
+          <button
+            onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
+            className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-2 rounded-xl text-xs transition shadow-md flex-1"
+          >
+            <Download className="w-4 h-4" /> PDF
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-3 py-2 rounded-xl text-xs transition shadow-md flex-1"
+          >
+            <Printer className="w-4 h-4" /> Imprimir
+          </button>
         </div>
-
-        <div className="text-center py-4 mb-4" style={{ borderBottom: '1px dashed #9ca3af', backgroundColor: '#f9fafb' }}>
-          <p className="text-xs uppercase" style={{ color: '#6b7280' }}>Monto Recibido</p>
-          <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>${r.amount.toLocaleString('es-CO')}</h1>
-        </div>
-
-        <div className="space-y-1.5 text-xs mb-8">
-          <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Saldo anterior:</span> <span style={{ color: '#111827' }}>${(r.remainingBalance + r.amount).toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between"><span style={{ color: '#4b5563' }}>Abono realizado:</span> <span style={{ color: '#111827' }}>-${r.amount.toLocaleString('es-CO')}</span></div>
-          <div className="flex justify-between font-bold pt-1" style={{ borderTop: '1px solid #e5e7eb' }}><span style={{ color: '#111827' }}>Nuevo saldo deuda:</span> <span style={{ color: '#111827' }}>${r.remainingBalance.toLocaleString('es-CO')}</span></div>
-          {r.notes && (
-            <div className="text-left mt-3 pt-2 italic text-[10px]" style={{ borderTop: '1px solid #f3f4f6', color: '#6b7280' }}>
-              Nota: {r.notes}
-            </div>
-          )}
-        </div>
-
-        <div className="text-center text-[10px] mt-12" style={{ color: '#6b7280' }}>
-          <div className="w-32 mx-auto mb-2" style={{ borderBottom: '1px dashed #d1d5db' }}></div>
-          <p>Firma del Recaudador</p>
-          <p className="mt-6 font-bold" style={{ color: '#111827' }}>¡Gracias por su puntualidad!</p>
-        </div>
-      </div>
-
-      <div className="flex gap-4 justify-center mt-12 no-print font-sans">
-        <button
-          onClick={onClose}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-3 py-1.5 rounded-lg text-xs transition"
-        >
-          Cerrar Recibo
-        </button>
-        <button
-          onClick={() => handleDownloadReceiptPDF('receipt-print-area', `Recibo_${r.receiptNumber}.pdf`)}
-          className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-        >
-          <Download className="w-4 h-4" /> PDF
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-md"
-        >
-          <Printer className="w-4 h-4" /> Imprimir
-        </button>
       </div>
     </div>
   );
