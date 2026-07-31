@@ -272,3 +272,92 @@ export const getRecaudoProyeccion = async (req: AuthenticatedRequest, res: Respo
     return res.status(500).json({ error: 'Error al calcular proyección de recaudo.' });
   }
 };
+
+// Reporte de Segmentación de Clientes por Frecuencia (Diario, Semanal, Quincenal, Mensual)
+export const getCustomerSegmentationReport = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+
+  try {
+    const customers = await prisma.customer.findMany({
+      where: { tenantId },
+      include: {
+        loans: {
+          where: { status: { in: ['ACTIVE', 'OVERDUE'] } }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const totalCustomers = customers.length;
+    const activeCustomers = customers.filter(c => c.status === 'ACTIVE').length;
+    const inactiveCustomers = customers.filter(c => c.status === 'INACTIVE').length;
+
+    const frequencies = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY'];
+
+    const byFrequency: Record<string, {
+      count: number;
+      percentage: number;
+      activeLoansCount: number;
+      totalDebt: number;
+      totalPrincipal: number;
+    }> = {
+      DAILY: { count: 0, percentage: 0, activeLoansCount: 0, totalDebt: 0, totalPrincipal: 0 },
+      WEEKLY: { count: 0, percentage: 0, activeLoansCount: 0, totalDebt: 0, totalPrincipal: 0 },
+      BIWEEKLY: { count: 0, percentage: 0, activeLoansCount: 0, totalDebt: 0, totalPrincipal: 0 },
+      MONTHLY: { count: 0, percentage: 0, activeLoansCount: 0, totalDebt: 0, totalPrincipal: 0 }
+    };
+
+    const formattedCustomersList = customers.map(c => {
+      const activeLoans = c.loans;
+      const freq = c.defaultFrequency || (activeLoans[0] ? activeLoans[0].paymentFrequency : 'DAILY');
+
+      const clientActiveLoansCount = activeLoans.length;
+      const clientTotalDebt = activeLoans.reduce((sum, l) => sum + l.balance, 0);
+      const clientTotalPrincipal = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+
+      if (byFrequency[freq]) {
+        byFrequency[freq].count += 1;
+        byFrequency[freq].activeLoansCount += clientActiveLoansCount;
+        byFrequency[freq].totalDebt += clientTotalDebt;
+        byFrequency[freq].totalPrincipal += clientTotalPrincipal;
+      } else {
+        // Fallback for unknown frequencies
+        byFrequency['DAILY'].count += 1;
+        byFrequency['DAILY'].activeLoansCount += clientActiveLoansCount;
+        byFrequency['DAILY'].totalDebt += clientTotalDebt;
+        byFrequency['DAILY'].totalPrincipal += clientTotalPrincipal;
+      }
+
+      return {
+        id: c.id,
+        name: c.name,
+        documentId: c.documentId,
+        phone: c.phone,
+        address: c.address,
+        email: c.email,
+        status: c.status,
+        defaultFrequency: freq,
+        activeLoansCount: clientActiveLoansCount,
+        totalDebt: clientTotalDebt
+      };
+    });
+
+    frequencies.forEach(freq => {
+      if (totalCustomers > 0) {
+        byFrequency[freq].percentage = Math.round((byFrequency[freq].count / totalCustomers) * 1000) / 10;
+      }
+    });
+
+    return res.json({
+      totalCustomers,
+      activeCustomers,
+      inactiveCustomers,
+      byFrequency,
+      customersList: formattedCustomersList
+    });
+  } catch (error) {
+    console.error('Error al generar reporte de segmentación de clientes:', error);
+    return res.status(500).json({ error: 'Error al generar reporte de clientes.' });
+  }
+};
+

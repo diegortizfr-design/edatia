@@ -5,7 +5,7 @@ import { getClients, getClientById, createClient, updateClient, deleteClient } f
 import { simulateLoan, createProduct, getProducts, createLoan, renewLoan, getLoanById, getLoans } from '../controllers/loanController';
 import { createPayment, getPaymentById, getPayments } from '../controllers/paymentController';
 import { getDailyRoute, getRouteCheckout } from '../controllers/routeController';
-import { getPortfolioStats, getTreasuryReport, getRecaudoProyeccion } from '../controllers/reportsController';
+import { getPortfolioStats, getTreasuryReport, getRecaudoProyeccion, getCustomerSegmentationReport } from '../controllers/reportsController';
 import { getTenantSettings, updateTenantSettings } from '../controllers/tenantController';
 
 import { getExpenses, createExpense, getIncomes, createIncome } from '../controllers/expenseController';
@@ -52,6 +52,8 @@ router.get('/route/checkout', authenticateToken as any, getRouteCheckout);
 router.get('/reports/portfolio', authenticateToken as any, getPortfolioStats);
 router.get('/reports/treasury', authenticateToken as any, getTreasuryReport);
 router.get('/reports/recaudo-proyeccion', authenticateToken as any, getRecaudoProyeccion);
+router.get('/reports/customers', authenticateToken as any, getCustomerSegmentationReport);
+
 
 // --- TENANT / SETTINGS ---
 router.get('/tenant/settings', authenticateToken as any, getTenantSettings);
