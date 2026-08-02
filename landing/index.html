@@ -394,14 +394,15 @@
         /* HERO CON VIDEO DE FONDO Y ORBIT DE MÓDULOS        */
         /* -------------------------------------------------- */
         .hero {
-            min-height: 88vh;
+            min-height: 92vh;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             text-align: center;
             overflow: hidden;
-            padding-top: 85px;
+            padding-top: 120px;
+            padding-bottom: 90px;
             background: #090d16;
         }
 
@@ -434,8 +435,9 @@
         .orbit-container {
             position: relative;
             width: 100%;
-            height: 75vh;
-            max-width: 1100px;
+            height: 82vh;
+            min-height: 640px;
+            max-width: 1280px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -449,11 +451,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.2rem;
+            gap: 1.5rem;
         }
 
         .central-title {
-            font-size: clamp(2.8rem, 5vw, 4.5rem);
+            font-size: clamp(3.2rem, 6vw, 5.2rem);
             font-weight: 800;
             color: #ffffff;
             letter-spacing: -1px;
@@ -467,35 +469,9 @@
 
         .central-subtitle {
             color: #cbd5e1;
-            font-size: 1.15rem;
-            max-width: 520px;
+            font-size: 1.25rem;
+            max-width: 620px;
             line-height: 1.6;
-        }
-
-        .central-buttons {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .btn-core-white {
-            background: #ffffff;
-            color: #0f172a;
-            font-weight: 700;
-            padding: 0.8rem 1.8rem;
-            border-radius: 30px;
-            text-decoration: none;
-            transition: var(--transition);
-            box-shadow: 0 4px 20px rgba(255,255,255,0.2);
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .btn-core-white:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255,255,255,0.4);
-            background: #f8fafc;
         }
 
         .module-node {
@@ -503,12 +479,12 @@
             background: rgba(15, 23, 42, 0.78);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.18);
-            padding: 0.9rem 1.4rem;
+            padding: 1rem 1.6rem;
             border-radius: 30px;
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            width: 210px;
+            width: 220px;
             text-decoration: none;
             color: #ffffff;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
@@ -516,11 +492,11 @@
             z-index: 15;
         }
 
-        .module-node.n1 { top: 18%; left: 6%; }
-        .module-node.n2 { top: 18%; right: 6%; }
-        .module-node.n3 { bottom: 32%; left: 4%; }
-        .module-node.n4 { bottom: 32%; right: 4%; }
-        .module-node.n5 { bottom: 8%; left: 50%; transform: translateX(-50%); }
+        .module-node.n1 { top: 12%; left: 8%; }
+        .module-node.n2 { top: 12%; right: 8%; }
+        .module-node.n3 { bottom: 25%; left: 5%; }
+        .module-node.n4 { bottom: 25%; right: 5%; }
+        .module-node.n5 { bottom: 4%; left: 50%; transform: translateX(-50%); }
 
         .module-node i {
             font-size: 1.2rem;
