@@ -10,25 +10,28 @@
     <meta property="og:description" content="Edatia es la plataforma integral de software ERP, contabilidad, inventarios y gestión de cartera para empresas y negocios.">
     <meta property="og:url" content="https://www.edatia.com">
     <meta property="og:type" content="website">
+
     <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9138086731888541"
-     crossorigin="anonymous"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap"
-        rel="stylesheet">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9138086731888541" crossorigin="anonymous"></script>
+
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='50' width='8' height='30' rx='4' fill='%2338bdf8'/%3E%3Crect x='40' y='30' width='8' height='50' rx='4' fill='%2338bdf8'/%3E%3Crect x='60' y='45' width='8' height='35' rx='4' fill='%2338bdf8'/%3E%3Crect x='80' y='20' width='8' height='60' rx='4' fill='%2338bdf8'/%3E%3Ccircle cx='24' cy='45' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='44' cy='25' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='64' cy='40' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='84' cy='15' r='3' fill='%2338bdf8'/%3E%3Cpath d='M24 45L44 25L64 40L84 15' stroke='%2338bdf8' stroke-width='3'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='50' width='8' height='30' rx='4' fill='%2338bdf8'/%3E%3Crect x='40' y='30' width='8' height='50' rx='4' fill='%2338bdf8'/%3E%3Crect x='60' y='45' width='8' height='35' rx='4' fill='%2338bdf8'/%3E%3Crect x='80' y='20' width='8' height='60' rx='4' fill='%2338bdf8'/%3E%3Ccircle cx='24' cy='45' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='44' cy='25' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='64' cy='40' r='3' fill='%2338bdf8'/%3E%3Ccircle cx='84' cy='15' r='3' fill='%2338bdf8'/%3E%3Cpath d='M24 45L44 25L64 40L84 15' stroke='%2338bdf8' stroke-width='3'/%3E%3C/svg%3E">
+
     <style>
         :root {
-            --bg: #050505;
-            --card-bg: #111111;
+            --bg-dark: #030712;
+            --bg-card: #0b0f19;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
             --accent: #38bdf8;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            --border: rgba(255, 255, 255, 0.1);
+            --accent-light: #7dd3fc;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
@@ -38,763 +41,1567 @@
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text-primary);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
+            line-height: 1.6;
         }
 
-        h1,
-        h2,
-        h3 {
+        h1, h2, h3, h4, h5, h6 {
             font-family: 'Space Grotesk', sans-serif;
         }
 
-        /* NAVBAR */
-        nav {
-            padding: 1rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* -------------------------------------------------- */
+        /* NAVBAR CORPORATIVO (ESTILO SIESA CON MEGA-MENU)    */
+        /* -------------------------------------------------- */
+        .navbar-container {
             position: fixed;
-            width: 100%;
-            z-index: 100;
-            background: linear-gradient(to bottom, rgba(5, 5, 5, 1), rgba(5, 5, 5, 0));
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(3, 7, 18, 0.92);
+            backdrop-filter: blur(16px);
+            border-b: 1px solid var(--border-color);
         }
 
-        /* LOGO CLONADO EN CÓDIGO */
-        .coded-logo {
+        .navbar {
+            max-width: 1350px;
+            margin: 0 auto;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-family: 'Space Grotesk', sans-serif;
+            justify-content: space-between;
+            padding: 0.9rem 2rem;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #fff;
         }
 
         .logo-text {
+            font-size: 1.9rem;
             font-weight: 700;
-            font-size: 2.8rem;
-            letter-spacing: 6px;
-            color: #fff;
+            letter-spacing: 4px;
             display: flex;
             align-items: baseline;
         }
 
         .logo-text .lambda {
             color: var(--accent);
-            position: relative;
             margin: 0 2px;
         }
 
-        .logo-icon {
-            width: 50px;
-            height: auto;
-        }
-
-        /* HERO SECTION */
-        .hero {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            background-color: #000;
-        }
-
-        .video-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .video-background video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.4;
-            /* Ajustamos la opacidad para que no distraiga */
-        }
-
-        .video-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(5, 5, 5, 0.2) 0%, rgba(5, 5, 5, 0.9) 100%);
-            z-index: 1;
-        }
-
-        .orbit-wrapper {
-            position: relative;
-            width: 100%;
-            height: 85vh;
-            max-width: 1200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-
-        /* Responsive scaling only for very short viewports */
-        @media (max-height: 700px) {
-            .orbit-wrapper {
-                transform: scale(0.9);
-            }
-        }
-
-        .central-core {
-            text-align: center;
-            z-index: 10;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .central-core p {
+        .logo-badge {
+            font-size: 0.65rem;
+            background: rgba(56, 189, 248, 0.15);
             color: var(--accent);
-            font-weight: 600;
-            letter-spacing: 4px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
-
-        .central-core .subtitle-es {
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            letter-spacing: 3px;
-            opacity: 0.6;
-            margin-top: -8px;
-        }
-
-        /* Proyectos en órbita */
-        .project-node {
-            position: absolute;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 1.4rem 1.8rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 2px 8px;
             border-radius: 20px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            width: 220px;
-            text-align: center;
-            text-decoration: none;
-            color: inherit;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .project-node i {
-            font-size: 1.4rem;
-            color: var(--accent);
-        }
-
-        .project-node span {
-            font-weight: 600;
-            font-size: 0.8rem;
+            font-weight: 700;
             letter-spacing: 1px;
         }
 
-        .project-node:hover {
-            border-color: var(--accent);
-            transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            list-style: none;
         }
 
-        /* Especial para el nodo centrado para que no salte */
-        .node-erp:hover {
-            transform: translateX(-50%) scale(1.05);
+        .nav-item {
+            position: relative;
         }
 
-        /* Posicionamiento Distribuido (Cloud Layout) */
-        .node-erp {
-            top: 5%;
+        .nav-link {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.6rem 0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-item:hover > .nav-link {
+            color: var(--accent);
+        }
+
+        .nav-link i.fa-chevron-down {
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover .nav-link i.fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        /* MEGA MENU DESPLEGABLE SOLUCIONES */
+        .mega-menu {
+            position: absolute;
+            top: 100%;
             left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .node-analytics {
-            top: 25%;
-            right: 2%;
-        }
-
-        .node-web {
-            bottom: 5%;
-            right: 15%;
-        }
-
-        .node-personas {
-            bottom: 5%;
-            left: 15%;
-        }
-
-        .node-tools {
-            top: 25%;
-            left: 2%;
-        }
-
-        /* SECCIÓN QUIÉNES SOMOS */
-        .about {
-            padding: 5rem 5% 6rem 5%;
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-
-        .about-container {
-            max-width: 1200px;
-            margin: 0 auto;
+            transform: translateX(-50%) translateY(10px);
+            width: 820px;
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
             display: grid;
-            grid-template-cols: 1.2fr 1fr;
+            grid-template-cols: 240px 1fr;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .nav-item:hover .mega-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        .mega-sidebar {
+            background: #0d1322;
+            padding: 1.2rem 1rem;
+            border-r: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mega-tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            color: #94a3b8;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            background: transparent;
+            border: none;
+            text-align: left;
+            width: 100%;
+        }
+
+        .mega-tab-btn i {
+            font-size: 1rem;
+            color: #64748b;
+        }
+
+        .mega-tab-btn.active, .mega-tab-btn:hover {
+            background: rgba(37, 99, 235, 0.15);
+            color: #ffffff;
+        }
+
+        .mega-tab-btn.active i, .mega-tab-btn:hover i {
+            color: var(--accent);
+        }
+
+        .mega-content {
+            padding: 1.8rem;
+        }
+
+        .mega-panel {
+            display: none;
+        }
+
+        .mega-panel.active {
+            display: grid;
+            grid-template-cols: repeat(2, 1fr);
+            gap: 1rem 1.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mega-item {
+            text-decoration: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        .mega-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mega-item i {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .mega-item-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .mega-item-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* DROPDOWN MENU NOSOTROS */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 260px;
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            padding: 0.8rem 0;
+            pointer-events: none;
+        }
+
+        .nav-item:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.7rem 1.4rem;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+        }
+
+        /* SUBMENU DE POLÍTICAS EN NOSOTROS */
+        .submenu-policies {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            min-width: 280px;
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(10px);
+            transition: all 0.3s ease;
+            padding: 0.8rem 0;
+            pointer-events: none;
+        }
+
+        .has-submenu:hover .submenu-policies {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        /* NAVBAR ACTION BUTTONS */
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-login {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: var(--transition);
+        }
+
+        .btn-login:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .btn-cta {
+            background: var(--primary);
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 700;
+            padding: 0.65rem 1.4rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-cta:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.6);
+        }
+
+        /* -------------------------------------------------- */
+        /* HERO PRINCIPAL VENDEDOR DE SOFTWARE ERP            */
+        /* -------------------------------------------------- */
+        .hero {
+            padding-top: 10rem;
+            padding-bottom: 6rem;
+            background: radial-gradient(circle at 50% 20%, rgba(37, 99, 235, 0.18) 0%, rgba(3, 7, 18, 1) 70%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-cols: 1fr 1fr;
             gap: 4rem;
             align-items: center;
         }
 
-        .about-text h2 {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-            color: #0f172a;
-        }
-
-        .about-text p {
-            font-size: 1.1rem;
-            color: #334155;
-            line-height: 1.8;
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-bottom: 1.5rem;
         }
 
-        .about-video {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%;
-            background: #e2e8f0;
-            border-radius: 24px;
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-        }
-
-        .video-placeholder {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            gap: 1rem;
-        }
-
-        .video-placeholder i {
-            font-size: 3rem;
-            color: var(--accent);
-            opacity: 0.5;
-        }
-
-        /* SECCIÓN CONTACTO DINÁMICO - AZUL EDATIA */
-        .contact {
-            padding: 8rem 5% 10rem 5%;
-            background: #000;
-            color: #fff;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .contact-video-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .contact-video-bg video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.5;
-        }
-
-        .contact-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.65) 0%, rgba(30, 64, 175, 0.65) 100%);
-            z-index: 1;
-        }
-
-        .contact-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .contact h2 {
-            font-size: 4rem;
-            margin-bottom: 4rem;
-            color: #ffffff;
+        .hero-title {
+            font-size: 3.4rem;
+            line-height: 1.15;
             font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
             letter-spacing: -1px;
         }
 
-        .social-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        .hero-title span {
+            background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .social-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2.5rem;
-            border-radius: 24px;
-            text-decoration: none;
-            color: #fff;
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-buttons {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 1rem;
-            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-            overflow: hidden;
-            animation: float 6s ease-in-out infinite;
+            gap: 1.2rem;
+            flex-wrap: wrap;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 0.95rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .social-card:nth-child(2n) { animation-delay: -1s; }
-        .social-card:nth-child(3n) { animation-delay: -2s; }
-
-        .social-card i {
-            font-size: 2.5rem;
-            transition: transform 0.5s ease;
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.6);
         }
 
-        .social-card span {
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f1f5f9;
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            opacity: 0.8;
+            padding: 0.95rem 1.8rem;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Colores y Glows por plataforma */
-        .card-whatsapp:hover { border-color: #25d366; box-shadow: 0 0 30px rgba(37, 211, 102, 0.2); }
-        .card-whatsapp:hover i { color: #25d366; transform: scale(1.2); }
-
-        .card-instagram:hover { border-color: #e4405f; box-shadow: 0 0 30px rgba(228, 64, 95, 0.2); }
-        .card-instagram:hover i { color: #e4405f; transform: scale(1.2); }
-
-        .card-email:hover { border-color: #38bdf8; box-shadow: 0 0 30px rgba(56, 189, 248, 0.2); }
-        .card-email:hover i { color: #38bdf8; transform: scale(1.2); }
-
-        .card-facebook:hover { border-color: #1877f2; box-shadow: 0 0 30px rgba(24, 119, 242, 0.2); }
-        .card-facebook:hover i { color: #1877f2; transform: scale(1.2); }
-
-        .card-tiktok:hover { border-color: #ff0050; box-shadow: 0 0 30px rgba(255, 0, 80, 0.2); }
-        .card-tiktok:hover i { color: #ff0050; transform: scale(1.2); }
-
-        .card-youtube:hover { border-color: #ff0000; box-shadow: 0 0 30px rgba(255, 0, 0, 0.2); }
-        .card-youtube:hover i { color: #ff0000; transform: scale(1.2); }
-
-        /* SECCIÓN NOTICIAS IA */
-        .news-section {
-            padding: 8rem 5%;
-            background-color: #f8fafc;
-            color: #0f172a;
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        .news-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-
-        .news-slider {
-            width: 100%;
-            padding: 2rem 0 4rem 0;
-        }
-
-        .news-card {
-            background: #fff;
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border: 1px solid rgba(0,0,0,0.05);
-            height: 100%;
+        .hero-stats {
+            margin-top: 3rem;
             display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+            align-items: center;
+            gap: 2.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+        }
+
+        .stat-item h4 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-item p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* PREVIEW MOCKUP DASHBOARD */
+        .hero-preview {
+            position: relative;
+        }
+
+        .preview-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+            transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
             transition: var(--transition);
         }
 
-        .news-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        .preview-card:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
         }
 
-        .news-tag {
-            display: inline-block;
-            padding: 4px 12px;
-            background: rgba(56, 189, 248, 0.1);
-            color: var(--accent);
-            border-radius: 100px;
+        .preview-header {
+            background: #090d16;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-b: 1px solid var(--border-color);
+        }
+
+        .window-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .preview-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .dash-kpis {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .dash-kpi {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1rem;
+            border-radius: 14px;
+        }
+
+        .dash-kpi span {
             font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .dash-kpi h5 {
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-top: 4px;
+        }
+
+        .dash-chart {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.2rem;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chart-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chart-label {
+            font-size: 0.75rem;
+            width: 80px;
+            color: var(--text-muted);
+        }
+
+        .chart-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #38bdf8, #2563eb);
+        }
+
+        /* -------------------------------------------------- */
+        /* SECCIÓN DE PRODUCTOS / MÓDULOS DEL ERP            */
+        /* -------------------------------------------------- */
+        .section-padding {
+            padding: 7rem 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 4rem auto;
+        }
+
+        .section-tag {
+            color: var(--accent);
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
-            width: fit-content;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            display: block;
         }
 
-        .news-card h3 {
-            font-size: 1.2rem;
-            line-height: 1.4;
-            color: #0f172a;
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+            margin-bottom: 1.2rem;
         }
 
-        .news-footer {
-            margin-top: auto;
+        .section-desc {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+        }
+
+        .modules-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 2rem;
+        }
+
+        .module-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 2.2rem;
+            border-radius: 20px;
+            transition: var(--transition);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 1.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .module-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+            display: flex;
             align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .module-card h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .module-card p {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .module-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .module-features li {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-features li i {
+            color: #10b981;
             font-size: 0.8rem;
+        }
+
+        /* -------------------------------------------------- */
+        /* SECCIÓN DE SECTORES ESPECIALIZADOS                 */
+        /* -------------------------------------------------- */
+        .sectors-section {
+            background: #060a12;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sectors-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.8rem;
+        }
+
+        .sector-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        .sector-card:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .sector-card i {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .sector-card h4 {
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+        }
+
+        .sector-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        /* -------------------------------------------------- */
+        /* OTROS PRODUCTOS Y SERVICIOS                        */
+        /* -------------------------------------------------- */
+        .other-products-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .other-card {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(3, 7, 18, 0.9) 100%);
+            border: 1px solid var(--border-color);
+            padding: 2.5rem;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .other-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .other-card .badge {
+            align-self: flex-start;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .other-card h3 {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+
+        .other-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .other-card a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .other-card a:hover {
+            text-decoration: underline;
+        }
+
+        /* -------------------------------------------------- */
+        /* MODAL DE POLÍTICAS Y LEGAL                         */
+        /* -------------------------------------------------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #0b0f19;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 2.5rem;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .modal-body h3 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .modal-body p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        /* -------------------------------------------------- */
+        /* FOOTER CORPORATIVO                                 */
+        /* -------------------------------------------------- */
+        footer {
+            background: #02050c;
+            border-top: 1px solid var(--border-color);
+            padding: 5rem 2rem 2rem 2rem;
+        }
+
+        .footer-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: 2fr repeat(3, 1fr);
+            gap: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            max-width: 320px;
+        }
+
+        .footer-col h5 {
+            color: #ffffff;
+            font-size: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-col a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: var(--transition);
+        }
+
+        .footer-col a:hover {
+            color: var(--accent);
+        }
+
+        .footer-bottom {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             color: #64748b;
+            font-size: 0.8rem;
         }
 
-        .swiper-pagination-bullet-active {
-            background: var(--accent);
-        }
-
-        /* RESPONSIVE */
+        /* RESPONSIVE DESIGN */
         @media (max-width: 1024px) {
-            .hero {
-                height: auto;
-                padding: 150px 0;
-            }
-
-            .orbit-wrapper {
-                width: 95%;
-                height: auto;
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-
-            .project-node {
-                position: static !important;
-                width: 100%;
-                max-width: 400px;
-                transform: none !important;
-            }
-
-            .about-container {
+            .hero-container {
                 grid-template-cols: 1fr;
                 text-align: center;
             }
-
-            .logo-text {
-                font-size: 2.2rem;
+            .hero-buttons {
+                justify-content: center;
             }
+            .hero-stats {
+                justify-content: center;
+            }
+            .other-products-grid {
+                grid-template-cols: 1fr;
+            }
+            .footer-container {
+                grid-template-cols: 1fr 1fr;
+            }
+            .mega-menu {
+                width: 90vw;
+                grid-template-cols: 1fr;
+            }
+            .mega-sidebar {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none; /* Se puede activar menú hamburguesa */
+            }
+            .hero-title {
+                font-size: 2.4rem;
+            }
+            .footer-container {
+                grid-template-cols: 1fr;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 
 <body>
 
-    <nav>
-        <div class="coded-logo" style="transform: scale(0.6); transform-origin: left;">
-            <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 2px;">GRUPO EMPRESARIAL</div>
-    </nav>
-
-    <section class="hero">
-        <div class="video-background">
-            <video autoplay muted loop playsinline preload="auto" class="bg-video">
-                <source src="assets/intro.mp4" type="video/mp4">
-            </video>
-            <div class="video-overlay"></div>
-        </div>
-
-        <div class="orbit-wrapper" style="z-index: 2;">
-            <div class="central-core">
-                <!-- LOGO CLONADO CON SVG + CSS -->
-                <div class="coded-logo">
-                    <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
-                    <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="20" y="50" width="8" height="30" rx="4" fill="url(#grad1)" />
-                        <rect x="40" y="30" width="8" height="50" rx="4" fill="url(#grad1)" />
-                        <rect x="60" y="45" width="8" height="35" rx="4" fill="url(#grad1)" />
-                        <rect x="80" y="20" width="8" height="60" rx="4" fill="url(#grad1)" />
-                        <circle cx="24" cy="45" r="3" fill="#38bdf8" />
-                        <circle cx="44" cy="25" r="3" fill="#38bdf8" />
-                        <circle cx="64" cy="40" r="3" fill="#38bdf8" />
-                        <circle cx="84" cy="15" r="3" fill="#38bdf8" />
-                        <path d="M24 45L44 25L64 40L84 15" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 2" />
-                        <defs>
-                            <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0.2" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <p>Enterprise Data Intelligence Artificial</p>
-                <p class="subtitle-es">Inteligencia de Datos Empresariales</p>
-            </div>
-
-            <a href="erp.html" class="project-node node-erp">
-                <i class="fa-solid fa-server"></i>
-                <span>EDATIA ERP</span>
+    <!-- ================================================== -->
+    <!-- NAVBAR CORPORATIVO CON MEGA-MENU (INSPIRADO EN SIESA) -->
+    <!-- ================================================== -->
+    <header class="navbar-container">
+        <nav class="navbar">
+            <!-- LOGO -->
+            <a href="index.html" class="brand-logo">
+                <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
+                <span class="logo-badge">ERP SAAS</span>
             </a>
 
-            <a href="https://binarias.edatia.com" class="project-node node-analytics">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>EDATIA TRADING</span>
-            </a>
+            <!-- MENÚ PRINCIPAL -->
+            <ul class="nav-links">
+                <!-- MEGA MENU: SOLUCIONES -->
+                <li class="nav-item">
+                    <span class="nav-link">
+                        Soluciones <i class="fa-solid fa-chevron-down"></i>
+                    </span>
+                    <div class="mega-menu">
+                        <!-- TABS IZQUIERDA -->
+                        <div class="mega-sidebar">
+                            <button class="mega-tab-btn active" onclick="switchMegaTab(event, 'tab-sectores')">
+                                <i class="fa-solid fa-building-user"></i> Sectores
+                            </button>
+                            <button class="mega-tab-btn" onclick="switchMegaTab(event, 'tab-productos')">
+                                <i class="fa-solid fa-cubes"></i> Productos (ERP)
+                            </button>
+                            <button class="mega-tab-btn" onclick="switchMegaTab(event, 'tab-otros')">
+                                <i class="fa-solid fa-rocket"></i> Otros Productos
+                            </button>
+                        </div>
 
-            <a href="developers.html" class="project-node node-web">
-                <i class="fa-solid fa-code"></i>
-                <span>DESARROLLO WEB</span>
-            </a>
+                        <!-- CONTENIDO DERECHA -->
+                        <div class="mega-content">
+                            <!-- TAB SECTORES -->
+                            <div id="tab-sectores" class="mega-panel active">
+                                <a href="#sectores" class="mega-item">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <div>
+                                        <div class="mega-item-title">Retail & Comercio</div>
+                                        <div class="mega-item-desc">Control de almacén, POS y ventas</div>
+                                    </div>
+                                </a>
+                                <a href="https://prestamos.edatia.com" target="_blank" class="mega-item">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <div>
+                                        <div class="mega-item-title">Gestión de Préstamos</div>
+                                        <div class="mega-item-desc">Control de cartera, rutas y abonos</div>
+                                    </div>
+                                </a>
+                                <a href="#sectores" class="mega-item">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <div>
+                                        <div class="mega-item-title">Servicios & Asistencia</div>
+                                        <div class="mega-item-desc">Gestión de casos, tickets y clientes</div>
+                                    </div>
+                                </a>
+                                <a href="#sectores" class="mega-item">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <div>
+                                        <div class="mega-item-title">Mayoristas & Distribución</div>
+                                        <div class="mega-item-desc">Multi-bodega y lista de precios</div>
+                                    </div>
+                                </a>
+                            </div>
 
-            <a href="https://prestamos.edatia.com" class="project-node node-personas">
-                <i class="fa-solid fa-wallet"></i>
-                <span>CARTERA PRESTAMISTAS</span>
-            </a>
+                            <!-- TAB PRODUCTOS (ERP MODULOS) -->
+                            <div id="tab-productos" class="mega-panel">
+                                <a href="#modulos" class="mega-item">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                    <div>
+                                        <div class="mega-item-title">Inventarios & Almacén</div>
+                                        <div class="mega-item-desc">Kardex, stock y código de barras</div>
+                                    </div>
+                                </a>
+                                <a href="#modulos" class="mega-item">
+                                    <i class="fa-solid fa-address-book"></i>
+                                    <div>
+                                        <div class="mega-item-title">Módulo de Terceros</div>
+                                        <div class="mega-item-desc">Clientes, proveedores y historial</div>
+                                    </div>
+                                </a>
+                                <a href="#modulos" class="mega-item">
+                                    <i class="fa-solid fa-cash-register"></i>
+                                    <div>
+                                        <div class="mega-item-title">Facturación & POS</div>
+                                        <div class="mega-item-desc">Ventas rápidas e impresión</div>
+                                    </div>
+                                </a>
+                                <a href="#modulos" class="mega-item">
+                                    <i class="fa-solid fa-calculator"></i>
+                                    <div>
+                                        <div class="mega-item-title">Contabilidad & Tesorería</div>
+                                        <div class="mega-item-desc">Flujo de caja, ingresos y egresos</div>
+                                    </div>
+                                </a>
+                                <a href="#modulos" class="mega-item">
+                                    <i class="fa-solid fa-headset"></i>
+                                    <div>
+                                        <div class="mega-item-title">Módulo de Soporte</div>
+                                        <div class="mega-item-desc">Mesa de ayuda y tickets de servicio</div>
+                                    </div>
+                                </a>
+                                <a href="https://prestamos.edatia.com" target="_blank" class="mega-item">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                                    <div>
+                                        <div class="mega-item-title">Control de Préstamos</div>
+                                        <div class="mega-item-desc">Amortización, arqueos y cobros</div>
+                                    </div>
+                                </a>
+                            </div>
 
-            <a href="https://herramientas.edatia.com" class="project-node node-tools">
-                <i class="fa-solid fa-toolbox"></i>
-                <span>HERRAMIENTAS</span>
-            </a>
-        </div>
-    </section>
-
-    <section class="about">
-        <div class="about-container">
-            <div class="about-video">
-                <iframe 
-                    src="https://www.youtube.com/embed/W3tvVa7eI6o?rel=0&modestbranding=1" 
-                    title="Video Corporativo EDATIA" 
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 24px;"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen>
-                </iframe>
-            </div>
-            <div class="about-text">
-                <p
-                    style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-size: 0.8rem;">
-                    Innovación sin límites</p>
-                <h2 style="font-size: 2.5rem; line-height: 1.2; margin-bottom: 2rem;">Transformamos tu visión en <span
-                        style="color: var(--accent);">realidad digital</span>.</h2>
-                <p>
-                    <strong>Edatia</strong> es un grupo empresarial dedicado a brindar soluciones tecnológicas y
-                    empresariales de alto impacto.
-                    Creemos que el único límite es la imaginación; por eso, nos especializamos en materializar tus ideas
-                    a través de un ecosistema integral de servicios.
-                </p>
-                <p>
-                    Desde potentes sistemas <strong>ERP</strong> y <strong>análisis de datos</strong>, hasta
-                    <strong>automatizaciones con n8n</strong> y desarrollo de <strong>software a medida</strong>,
-                    proporcionamos las herramientas inteligentes necesarias para simplificar tus procesos y escalar tu
-                    potencial al máximo.
-                </p>
-            </div>
-        </div>
-    </section>
-    <section class="contact">
-        <!-- VIDEO BACKGROUND CONTACTO -->
-        <div class="contact-video-bg">
-            <video autoplay muted loop playsinline preload="auto" class="bg-video">
-                <source src="assets/intro2.mp4" type="video/mp4">
-            </video>
-            <div class="contact-overlay"></div>
-        </div>
-
-        <div class="contact-content">
-            <div class="reveal">
-                <p
-                    style="color: rgba(255,255,255,0.9); font-weight: 700; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 1rem; font-size: 0.8rem;">
-                    Hablemos</p>
-                <h2>Llevemos tu negocio al <span
-                        style="color: #ffffff; text-decoration: underline; text-underline-offset: 8px;">siguiente
-                        nivel</span>.</h2>
-            </div>
-
-            <div class="social-grid">
-                <a href="https://wa.me/573205704262" target="_blank" rel="noopener" class="social-card card-whatsapp reveal">
-                    <i class="fa-brands fa-whatsapp"></i>
-                    <span>WHATSAPP</span>
-                </a>
-                <a href="https://www.instagram.com/edatia.co?igsh=eWVqeHhxdWQydmp4&utm_source=qr" target="_blank" rel="noopener" class="social-card card-instagram reveal">
-                    <i class="fa-brands fa-instagram"></i>
-                    <span>INSTAGRAM</span>
-                </a>
-                <a href="mailto:comercial@edatia.com" class="social-card card-email reveal">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>EMAIL</span>
-                </a>
-                <a href="https://www.facebook.com/share/19BFSQ8qca/?mibextid=wwXIfr" target="_blank" rel="noopener" class="social-card card-facebook reveal">
-                    <i class="fa-brands fa-facebook-f"></i>
-                    <span>FACEBOOK</span>
-                </a>
-                <a href="https://www.tiktok.com/@edatia.co?_r=1&_t=ZS-98GByNdChNa" target="_blank" rel="noopener" class="social-card card-tiktok reveal">
-                    <i class="fa-brands fa-tiktok"></i>
-                    <span>TIKTOK</span>
-                </a>
-                <a href="https://youtube.com/@edatiaco" target="_blank" rel="noopener" class="social-card card-youtube reveal">
-                    <i class="fa-brands fa-youtube"></i>
-                    <span>YOUTUBE</span>
-                </a>
-            </div>
-
-            <div style="margin-top: 8rem; opacity: 0.5; font-size: 0.7rem; letter-spacing: 2px;">
-                © 2026 EDATIA GRUPO EMPRESARIAL. TODOS LOS DERECHOS RESERVADOS.
-            </div>
-        </div>
-    </section>
-
-    <section class="news-section">
-        <div class="reveal">
-            <p
-                style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; font-size: 0.8rem; text-align: center;">
-                Comunidad</p>
-            <h2>Actualizaciones y <span style="color: var(--accent);">Recomendaciones Edatia</span></h2>
-        </div>
-
-        <div class="swiper news-slider reveal">
-            <div class="swiper-wrapper" id="news-container">
-                <!-- Las noticias se cargarán aquí vía JS -->
-            </div>
-            <div class="swiper-pagination"></div>
-        </div>
-    </section>
-
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script>
-        // Mock de actualizaciones y columnas editoriales Edatia Insights
-        const mockNews = [
-            {
-                slug: "pos-dian",
-                title: "El fin del punto de venta tradicional: Por qué facturar en Excel es un riesgo fiscal y operativo desastroso",
-                source: "Ventas & POS",
-                date: "5 min de lectura",
-                image: "assets/blog_pos.jpg"
-            },
-            {
-                slug: "contabilidad-autonoma",
-                title: "La muerte de la doble digitación: Por qué la contabilidad autónoma en tiempo real es el nuevo estándar",
-                source: "Contabilidad Automatizada",
-                date: "6 min de lectura",
-                image: "assets/blog_contabilidad.jpg"
-            },
-            {
-                slug: "inventario-multibodega",
-                title: "Adiós al caos de inventarios en hojas de cálculo: La guía estratégica para dominar existencias multi-bodega",
-                source: "Inventario Inteligente",
-                date: "5 min de lectura",
-                image: "assets/blog_inventario.jpg"
-            },
-            {
-                slug: "ecommerce-omnicanal",
-                title: "El mito de vender por internet y gestionar por WhatsApp: Omnicanalidad nativa sin sobreventas",
-                source: "E-Commerce Nativo",
-                date: "4 min de lectura",
-                image: "assets/blog_ecommerce.jpg"
-            },
-            {
-                slug: "talento-humano-nomina",
-                title: "Más allá del salario: La revolución del talento humano, nómina electrónica DIAN y clima laboral",
-                source: "Administrativo y RH",
-                date: "5 min de lectura",
-                image: "assets/blog_rh.jpg"
-            }
-        ];
-
-        function loadNews() {
-            const container = document.getElementById('news-container');
-            mockNews.forEach(news => {
-                const slide = document.createElement('div');
-                slide.className = 'swiper-slide';
-                slide.innerHTML = `
-                    <a href="blog.html?art=${news.slug}" style="text-decoration: none; color: inherit; display: block; height: 100%;">
-                        <div class="news-card" style="cursor: pointer; overflow: hidden;">
-                            <img src="${news.image}" alt="${news.title}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 14px; margin-bottom: -0.5rem;">
-                            <span class="news-tag">${news.source}</span>
-                            <h3 style="font-size: 1.05rem; font-weight: 700; line-height: 1.4; color: #0f172a;">${news.title}</h3>
-                            <div class="news-footer" style="margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 0.8rem;">
-                                <span style="font-weight: 600; color: #0284c7;">Edatia Insights <i class="fa-solid fa-arrow-right ml-1"></i></span>
-                                <span>${news.date}</span>
+                            <!-- TAB OTROS PRODUCTOS -->
+                            <div id="tab-otros" class="mega-panel">
+                                <a href="https://binarias.edatia.com" target="_blank" class="mega-item">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                    <div>
+                                        <div class="mega-item-title">Edatia Trading</div>
+                                        <div class="mega-item-desc">Bot & automatización de mercados</div>
+                                    </div>
+                                </a>
+                                <a href="developers.html" class="mega-item">
+                                    <i class="fa-solid fa-laptop-code"></i>
+                                    <div>
+                                        <div class="mega-item-title">Creación Páginas Web</div>
+                                        <div class="mega-item-desc">Diseño web a medida e IA</div>
+                                    </div>
+                                </a>
+                                <a href="developers.html" class="mega-item">
+                                    <i class="fa-solid fa-cart-shopping"></i>
+                                    <div>
+                                        <div class="mega-item-title">Tiendas Virtuales</div>
+                                        <div class="mega-item-desc">E-commerce con carrito y pagos</div>
+                                    </div>
+                                </a>
                             </div>
                         </div>
-                    </a>
-                `;
-                container.appendChild(slide);
-            });
+                    </div>
+                </li>
 
-            // Inicializar Swiper
-            new Swiper(".news-slider", {
-                slidesPerView: 1,
-                spaceBetween: 30,
-                pagination: {
-                    el: ".swiper-pagination",
-                    clickable: true,
-                },
-                autoplay: {
-                    delay: 4000,
-                    disableOnInteraction: false,
-                },
-                breakpoints: {
-                    768: { slidesPerView: 2 },
-                    1024: { slidesPerView: 3 }
-                }
-            });
+                <!-- DROPDOWN: NOSOTROS -->
+                <li class="nav-item">
+                    <span class="nav-link">
+                        Nosotros <i class="fa-solid fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-menu">
+                        <a href="#quienes-somos" class="dropdown-item">¿Quiénes Somos?</a>
+                        <a href="#casos-exito" class="dropdown-item">Casos de Éxito</a>
+                        <div class="dropdown-item has-submenu">
+                            <span>Políticas <i class="fa-solid fa-chevron-right ml-2 text-xs"></i></span>
+                            <div class="submenu-policies">
+                                <a href="javascript:void(0)" onclick="openPolicyModal('seguridad')" class="dropdown-item">Política de Seguridad de la Información</a>
+                                <a href="javascript:void(0)" onclick="openPolicyModal('ciberseguridad')" class="dropdown-item">Política de Ciberseguridad & Datos</a>
+                                <a href="javascript:void(0)" onclick="openPolicyModal('cookies')" class="dropdown-item">Política de Cookies</a>
+                                <a href="javascript:void(0)" onclick="openPolicyModal('privacidad')" class="dropdown-item">Aviso de Privacidad & Términos</a>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- BLOG -->
+                <li class="nav-item">
+                    <a href="blog.html" class="nav-link">Blog</a>
+                </li>
+            </ul>
+
+            <!-- ACCIONES: INICIAR SESIÓN Y CONTÁCTANOS -->
+            <div class="nav-actions">
+                <a href="https://app.edatia.com" target="_blank" class="btn-login">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> Inicia Sesión
+                </a>
+                <button onclick="openDemoModal()" class="btn-cta">
+                    Contáctanos <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ================================================== -->
+    <!-- HERO SECTION PRINCIPAL DE VENTA DEL ERP            -->
+    <!-- ================================================== -->
+    <section class="hero">
+        <div class="hero-container">
+            <div>
+                <div class="hero-badge">
+                    <i class="fa-solid fa-shield-halved"></i> Software ERP & Contable 100% en la Nube
+                </div>
+                <h1 class="hero-title">
+                    El Software ERP que <span>transforma y escala</span> tu negocio
+                </h1>
+                <p class="hero-subtitle">
+                    Centraliza tu inventario, ventas POS, contabilidad en tiempo real, cartera de clientes y control de préstamos en una plataforma integrada e inteligente.
+                </p>
+                <div class="hero-buttons">
+                    <button onclick="openDemoModal()" class="btn-hero-primary">
+                        <i class="fa-solid fa-rocket"></i> Solicitar Demo Gratis
+                    </button>
+                    <a href="https://app.edatia.com" target="_blank" class="btn-hero-secondary">
+                        <i class="fa-solid fa-circle-play"></i> Probar ERP Ahora
+                    </a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <h4>+99.9%</h4>
+                        <p>Disponibilidad Cloud</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>100%</h4>
+                        <p>Multitenant Seguro</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>24/7</h4>
+                        <p>Monitoreo & Soporte</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREVIEW VISUAL DEL DASHBOARD -->
+            <div class="hero-preview">
+                <div class="preview-card">
+                    <div class="preview-header">
+                        <div class="window-dots">
+                            <div class="dot dot-red"></div>
+                            <div class="dot dot-yellow"></div>
+                            <div class="dot dot-green"></div>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #94a3b8; font-family: monospace;">app.edatia.com/dashboard</span>
+                    </div>
+                    <div class="preview-body">
+                        <div class="dash-kpis">
+                            <div class="dash-kpi">
+                                <span>Ventas Hoy</span>
+                                <h5 style="color: #38bdf8;">$4,850,000</h5>
+                            </div>
+                            <div class="dash-kpi">
+                                <span>Stock Disponible</span>
+                                <h5 style="color: #10b981;">1,240 Unid</h5>
+                            </div>
+                            <div class="dash-kpi">
+                                <span>Cartera Recaudada</span>
+                                <h5 style="color: #f59e0b;">$12,300,000</h5>
+                            </div>
+                        </div>
+
+                        <div class="dash-chart">
+                            <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 600;">Resumen Financiero & Módulos</span>
+                            <div class="chart-bar-wrap">
+                                <div class="chart-label">Inventario</div>
+                                <div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 85%;"></div></div>
+                            </div>
+                            <div class="chart-bar-wrap">
+                                <div class="chart-label">Contabilidad</div>
+                                <div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 92%;"></div></div>
+                            </div>
+                            <div class="chart-bar-wrap">
+                                <div class="chart-label">Préstamos</div>
+                                <div class="chart-bar-bg"><div class="chart-bar-fill" style="width: 78%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- SECCIÓN MÓDULOS DEL SOFTWARE (PRODUCTOS)          -->
+    <!-- ================================================== -->
+    <section id="modulos" class="section-padding">
+        <div class="section-header">
+            <span class="section-tag">Nuestros Productos & Módulos</span>
+            <h2 class="section-title">Todo lo que tu empresa necesita en un solo ERP</h2>
+            <p class="section-desc">Diseñado para simplificar procesos operativos, eliminar la doble digitación y garantizar el control total de tu negocio.</p>
+        </div>
+
+        <div class="modules-grid">
+            <!-- MÓDULO INVENTARIO -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                <h3>Inventarios & Almacén</h3>
+                <p>Gestión multi-bodega en tiempo real con control de entradas, salidas, transferencias y alertas automáticas de stock mínimo.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Código de barras y categorías</li>
+                    <li><i class="fa-solid fa-check"></i> Valoración Kardex de inventario</li>
+                    <li><i class="fa-solid fa-check"></i> Ajustes y conteos físicos rápidos</li>
+                </ul>
+            </div>
+
+            <!-- MÓDULO TERCEROS -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-address-book"></i></div>
+                <h3>Gestión de Terceros</h3>
+                <p>Base de datos unificada de clientes y proveedores con historial completo de compras, facturas, documentos y cartera.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Registro por NIT o Cédula</li>
+                    <li><i class="fa-solid fa-check"></i> Historial comercial consolidado</li>
+                    <li><i class="fa-solid fa-check"></i> Adjunto de contratos y cédulas</li>
+                </ul>
+            </div>
+
+            <!-- MÓDULO POS / VENTAS -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-cash-register"></i></div>
+                <h3>Facturación & Ventas POS</h3>
+                <p>Punto de venta intuitivo de alta velocidad con facturación rápida, manejo de múltiples medios de pago e impresión de recibos.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Facturación en caja e impresión</li>
+                    <li><i class="fa-solid fa-check"></i> Descuentos e impuestos automáticos</li>
+                    <li><i class="fa-solid fa-check"></i> Cierre e informe diario de caja</li>
+                </ul>
+            </div>
+
+            <!-- MÓDULO CONTABILIDAD -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-calculator"></i></div>
+                <h3>Contabilidad & Tesorería</h3>
+                <p>Control de ingresos, egresos, flujo de caja y balance financiero en tiempo real sin requerir procesos contables complejos.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Registro consecutivo de egresos e ingresos</li>
+                    <li><i class="fa-solid fa-check"></i> Caja disponible en tiempo real</li>
+                    <li><i class="fa-solid fa-check"></i> Reportes y métricas financieras</li>
+                </ul>
+            </div>
+
+            <!-- MÓDULO SOPORTE -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-headset"></i></div>
+                <h3>Mesa de Soporte & Casos</h3>
+                <p>Gestión de tickets de atención al cliente, reclamos y soporte técnico con seguimiento de estados y asignación a agentes.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Registro y seguimiento de tickets</li>
+                    <li><i class="fa-solid fa-check"></i> Historial de solución por cliente</li>
+                    <li><i class="fa-solid fa-check"></i> Métricas de atención y satisfacción</li>
+                </ul>
+            </div>
+
+            <!-- MÓDULO PRÉSTAMOS & CARTERA -->
+            <div class="module-card">
+                <div class="module-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <h3>Control de Préstamos & Rutas</h3>
+                <p>Plataforma especializada para prestamistas y cobradores con cálculo de amortización, rutas diarias y arqueos de cobro.</p>
+                <ul class="module-features">
+                    <li><i class="fa-solid fa-check"></i> Amortizaciones diarias, semanales, quincenales</li>
+                    <li><i class="fa-solid fa-check"></i> Ruta diaria de cobro y arqueos</li>
+                    <li><i class="fa-solid fa-check"></i> Recibos de caja y renovaciones de créditos</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- SECCIÓN DE SECTORES ATENDIDOS                      -->
+    <!-- ================================================== -->
+    <section id="sectores" class="section-padding sectors-section">
+        <div class="section-header">
+            <span class="section-tag">Soluciones por Sector</span>
+            <h2 class="section-title">Adaptado a la dinámica de tu industria</h2>
+            <p class="section-desc">Optimiza tus operaciones diarias con flujos de trabajo configurados para tu modelo de negocio.</p>
+        </div>
+
+        <div class="sectors-grid">
+            <div class="sector-card">
+                <i class="fa-solid fa-store"></i>
+                <h4>Retail & Comercio</h4>
+                <p>Puntos de venta, tiendas de ropa, supermercados y ferreterías con control estricto de inventarios y caja.</p>
+            </div>
+
+            <div class="sector-card">
+                <i class="fa-solid fa-wallet"></i>
+                <h4>Gestión de Préstamos</h4>
+                <p>Empresas de microcrédito y cobradores de ruta que requieren control de cuotas, mora y liquidaciones diarias.</p>
+            </div>
+
+            <div class="sector-card">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+                <h4>Servicios & Asistencia</h4>
+                <p>Empresas de soporte técnico, talleres y consultoras que gestionan órdenes de servicio y tickets de clientes.</p>
+            </div>
+
+            <div class="sector-card">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+                <h4>Mayoristas & Distribución</h4>
+                <p>Comercializadoras que operan múltiples bodegas, listas de precios diferenciadas y venta por volumen.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- OTROS PRODUCTOS Y SERVICIOS DIGITALES              -->
+    <!-- ================================================== -->
+    <section class="section-padding">
+        <div class="section-header">
+            <span class="section-tag">Ecosistema Edatia</span>
+            <h2 class="section-title">Otros Productos & Soluciones Tecnológicas</h2>
+            <p class="section-desc">Complementa la gestión de tu empresa con nuestros desarrollos de software especializado y servicios digitales.</p>
+        </div>
+
+        <div class="other-products-grid">
+            <div class="other-card">
+                <span class="badge">FINTECH & TRADING</span>
+                <h3>Edatia Trading</h3>
+                <p>Plataforma y bots de automatización para análisis de mercados financieros con algoritmos inteligentes.</p>
+                <a href="https://binarias.edatia.com" target="_blank">Ir a Edatia Trading <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <div class="other-card">
+                <span class="badge">DESARROLLO WEB</span>
+                <h3>Creación de Páginas Web</h3>
+                <p>Diseño y desarrollo de portales corporativos de alto rendimiento, optimizados para conversión y SEO en Google.</p>
+                <a href="developers.html">Ver Servicios Web <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <div class="other-card">
+                <span class="badge">E-COMMERCE</span>
+                <h3>Creación Tiendas Virtuales</h3>
+                <p>Plataformas de comercio electrónico completas con carrito de compras, catálogo digital y pasarelas de pago.</p>
+                <a href="developers.html">Ver Tiendas Virtuales <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- NOSOTROS & CASOS DE ÉXITO                          -->
+    <!-- ================================================== -->
+    <section id="quienes-somos" class="section-padding" style="background: #060a12; border-top: 1px solid var(--border-color);">
+        <div class="section-header">
+            <span class="section-tag">¿Quiénes Somos?</span>
+            <h2 class="section-title">Impulsamos la transformación digital empresarial</h2>
+            <p class="section-desc">En Edatia combinamos ingeniería de software, arquitectura cloud y diseño intuitivo para entregar soluciones de software ágiles y seguras.</p>
+        </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- MODAL DE POLÍTICAS Y LEGAL                         -->
+    <!-- ================================================== -->
+    <div id="policy-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button onclick="closePolicyModal()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body" id="policy-modal-body">
+                <!-- Contenido dinámico inyectado por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- MODAL DE SOLICITUD DE DEMO                         -->
+    <!-- ================================================== -->
+    <div id="demo-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 540px;">
+            <button onclick="closeDemoModal()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h3 style="color: #fff; font-size: 1.8rem; margin-bottom: 0.5rem;">Solicita tu Demo Gratis</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Déjanos tus datos y un especialista te guiará en la demostración del Software ERP Edatia.</p>
+
+                <form onsubmit="handleDemoSubmit(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <input type="text" id="demo-name" placeholder="Nombre completo o Empresa" required style="padding: 0.8rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 0.9rem;">
+                    <input type="tel" id="demo-phone" placeholder="Número de Celular / WhatsApp" required style="padding: 0.8rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 0.9rem;">
+                    <input type="email" id="demo-email" placeholder="Correo electrónico corporativo" required style="padding: 0.8rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-size: 0.9rem;">
+                    <button type="submit" class="btn-cta" style="justify-content: center; width: 100%; padding: 0.9rem; margin-top: 0.5rem;">
+                        Enviar y Contactar por WhatsApp <i class="fa-brands fa-whatsapp ml-2"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- FOOTER CORPORATIVO                                 -->
+    <!-- ================================================== -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
+                <p>Plataforma de Software ERP & Contable integral para la automatización y crecimiento de empresas en la nube.</p>
+            </div>
+
+            <div class="footer-col">
+                <h5>Soluciones</h5>
+                <ul>
+                    <li><a href="#modulos">Inventarios & Almacén</a></li>
+                    <li><a href="#modulos">Facturación & POS</a></li>
+                    <li><a href="#modulos">Contabilidad & Tesorería</a></li>
+                    <li><a href="#modulos">Módulo de Terceros</a></li>
+                    <li><a href="https://prestamos.edatia.com" target="_blank">Control de Préstamos</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>Nosotros</h5>
+                <ul>
+                    <li><a href="#quienes-somos">¿Quiénes Somos?</a></li>
+                    <li><a href="blog.html">Blog & Insights</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('seguridad')">Seguridad de la Información</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('privacidad')">Aviso de Privacidad</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>Contacto</h5>
+                <ul>
+                    <li><a href="https://wa.me/573205704262" target="_blank"><i class="fa-brands fa-whatsapp mr-2 text-emerald-400"></i> WhatsApp Oficial</a></li>
+                    <li><a href="mailto:comercial@edatia.com"><i class="fa-solid fa-envelope mr-2 text-sky-400"></i> comercial@edatia.com</a></li>
+                    <li><a href="https://app.edatia.com" target="_blank"><i class="fa-solid fa-right-to-bracket mr-2 text-blue-400"></i> Acceso ERP Clientes</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div>© 2026 EDATIA SOFTWARE ERP. Todos los derechos reservados.</div>
+            <div>Diseñado para máxima eficiencia y seguridad empresarial.</div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LÓGICA DE INTERACCIÓN -->
+    <script>
+        // Cambiar pestañas del Mega-Menu Soluciones
+        function switchMegaTab(event, tabId) {
+            event.stopPropagation();
+            const btns = document.querySelectorAll('.mega-tab-btn');
+            const panels = document.querySelectorAll('.mega-panel');
+
+            btns.forEach(btn => btn.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
 
-        window.addEventListener('load', loadNews);
-
-        // Intersection Observer para el efecto de entrada
-        const observerOptions = {
-            threshold: 0.1
+        // Abrir y Cerrar Modales de Políticas
+        const policyTexts = {
+            seguridad: {
+                title: "Política de Seguridad de la Información",
+                content: "Edatia implementa los más altos estándares de protección de datos de infraestructura en la nube. La información procesada en la plataforma ERP está cifrada mediante HTTPS/TLS en tránsito y en reposo con PostgreSQL Multitenant. Se garantizan respaldos periódicos y aislamiento estricto por cliente (Tenant ID)."
+            },
+            ciberseguridad: {
+                title: "Política de Ciberseguridad & Datos",
+                content: "Nuestros sistemas cuentan con arquitecturas de contenedores Docker aislados, monitoreo activo de tráfico y protocolos anti fuerza bruta. Edatia cumple con las normativas de ciberseguridad corporativa para prevenir accesos no autorizados y proteger la integridad operacional de nuestros clientes."
+            },
+            cookies: {
+                title: "Política de Cookies",
+                content: "Este sitio web utiliza cookies técnicas indispensables para mantener la sesión de usuario activa y analizar el tráfico de forma anónima con el fin de optimizar la velocidad de carga y experiencia de usuario."
+            },
+            privacidad: {
+                title: "Aviso de Privacidad & Términos de Servicio",
+                content: "De conformidad con las leyes de protección de datos personales, Edatia no comercializa ni comparte la información de sus clientes con terceros. Toda la información registrada es utilizada exclusivamente para la prestación del servicio de Software ERP y facturación."
+            }
         };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
-            });
-        }, observerOptions);
+        function openPolicyModal(type) {
+            const modal = document.getElementById('policy-modal');
+            const body = document.getElementById('policy-modal-body');
 
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            if (policyTexts[type]) {
+                body.innerHTML = `
+                    <h3>${policyTexts[type].title}</h3>
+                    <p>${policyTexts[type].content}</p>
+                `;
+                modal.classList.add('active');
+            }
+        }
 
-        // Refuerzo de Autoplay para videos
-        window.addEventListener('load', () => {
-            const videos = document.querySelectorAll('.bg-video');
-            videos.forEach(video => {
-                video.play().catch(error => {
-                    console.log("Autoplay preventivo activado:", error);
-                });
-            });
-        });
+        function closePolicyModal() {
+            document.getElementById('policy-modal').classList.remove('active');
+        }
+
+        // Abrir y Cerrar Modal de Demo
+        function openDemoModal() {
+            document.getElementById('demo-modal').classList.add('active');
+        }
+
+        function closeDemoModal() {
+            document.getElementById('demo-modal').classList.remove('active');
+        }
+
+        function handleDemoSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('demo-name').value;
+            const phone = document.getElementById('demo-phone').value;
+            const email = document.getElementById('demo-email').value;
+
+            const text = encodeURIComponent(`Hola Edatia, deseo solicitar una Demo Gratis del Software ERP. Mis datos:\n- Nombre/Empresa: ${name}\n- Celular: ${phone}\n- Email: ${email}`);
+            window.open(`https://wa.me/573205704262?text=${text}`, '_blank');
+            closeDemoModal();
+        }
     </script>
 </body>
 
