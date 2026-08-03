@@ -561,15 +561,22 @@
             color: var(--text-body);
         }
 
-        .modules-grid {
+        /* SWIPER SLIDER DE MÓDULOS DEL SOFTWARE */
+        .modules-swiper {
             max-width: 1280px;
             margin: 0 auto;
-            display: grid;
-            grid-template-cols: repeat(auto-fit, minmax(360px, 1fr));
-            gap: 2rem;
+            padding: 1rem 1rem 4rem 1rem !important;
+            position: relative;
         }
 
-        .module-card {
+        .modules-swiper .swiper-slide {
+            height: auto;
+            display: flex;
+        }
+
+        .modules-swiper .module-card {
+            width: 100%;
+            height: 100%;
             background: #ffffff;
             border: 1px solid var(--border-color);
             padding: 2.2rem;
@@ -582,10 +589,40 @@
             position: relative;
         }
 
-        .module-card:hover {
+        .modules-swiper .module-card:hover {
             border-color: rgba(37, 99, 235, 0.4);
             transform: translateY(-6px);
             box-shadow: var(--shadow-hover);
+        }
+
+        .modules-swiper .swiper-pagination-bullet-active {
+            background: var(--primary) !important;
+            width: 24px;
+            border-radius: 6px;
+        }
+
+        .modules-swiper .swiper-button-next,
+        .modules-swiper .swiper-button-prev {
+            color: var(--primary);
+            background: #ffffff;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
+            border: 1px solid var(--border-color);
+            top: 45%;
+        }
+
+        .modules-swiper .swiper-button-next::after,
+        .modules-swiper .swiper-button-prev::after {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .modules-swiper .swiper-button-next:hover,
+        .modules-swiper .swiper-button-prev:hover {
+            background: var(--primary);
+            color: #ffffff;
         }
 
         .module-icon {
@@ -1135,78 +1172,128 @@
             <p class="section-desc">Diseñado para simplificar procesos operativos, eliminar la doble digitación y garantizar el control total de tu negocio.</p>
         </div>
 
-        <div class="modules-grid">
-            <!-- MÓDULO INVENTARIO -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
-                <h3>Inventarios & Almacén</h3>
-                <p>Gestión multi-bodega en tiempo real con control de entradas, salidas, transferencias y alertas automáticas de stock mínimo.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Código de barras y categorías</li>
-                    <li><i class="fa-solid fa-check"></i> Valoración Kardex de inventario</li>
-                    <li><i class="fa-solid fa-check"></i> Ajustes y conteos físicos rápidos</li>
-                </ul>
+        <!-- CARROUSEL INTERACTIVO SWIPER DE MÓDULOS -->
+        <div class="swiper modules-swiper">
+            <div class="swiper-wrapper">
+
+                <!-- 1. CONFIGURACIÓN & PARÁMETROS -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-gears"></i></div>
+                        <h3>Configuración & Parámetros</h3>
+                        <p>Módulo inicial para adaptar y personalizar el software según las reglas, impuestos, consecutivas y estructura operacional de tu empresa.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Datos de empresa, logo y sedes</li>
+                            <li><i class="fa-solid fa-check"></i> Roles y permisos de usuarios</li>
+                            <li><i class="fa-solid fa-check"></i> Parámetros contables e impuestos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 2. INVENTARIOS & ALMACÉN -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        <h3>Inventarios & Almacén</h3>
+                        <p>Gestión multi-bodega en tiempo real con control de entradas, salidas, transferencias y alertas automáticas de stock mínimo.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Código de barras y categorías</li>
+                            <li><i class="fa-solid fa-check"></i> Valoración Kardex de inventario</li>
+                            <li><i class="fa-solid fa-check"></i> Ajustes y conteos físicos rápidos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 3. FACTURACIÓN & VENTAS POS -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-cash-register"></i></div>
+                        <h3>Facturación & Ventas POS</h3>
+                        <p>Punto de venta intuitivo de alta velocidad con facturación rápida, manejo de múltiples medios de pago e impresión de recibos.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Facturación en caja e impresión</li>
+                            <li><i class="fa-solid fa-check"></i> Descuentos e impuestos automáticos</li>
+                            <li><i class="fa-solid fa-check"></i> Cierre e informe diario de caja</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 4. CONTABILIDAD & TESORERÍA -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-calculator"></i></div>
+                        <h3>Contabilidad & Tesorería</h3>
+                        <p>Control de ingresos, egresos, flujo de caja y balance financiero en tiempo real sin requerir procesos contables complejos.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Registro consecutivo de egresos e ingresos</li>
+                            <li><i class="fa-solid fa-check"></i> Caja disponible en tiempo real</li>
+                            <li><i class="fa-solid fa-check"></i> Reportes y métricas financieras</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 5. E-COMMERCE & TIENDA VIRTUAL -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-globe"></i></div>
+                        <h3>E-Commerce & Tienda Virtual</h3>
+                        <p>Venta en línea totalmente sincronizada con tu inventario, precios y cartera centralizada en tiempo real.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Catálogo web de productos automático</li>
+                            <li><i class="fa-solid fa-check"></i> Carrito de compras y pasarela de pago</li>
+                            <li><i class="fa-solid fa-check"></i> Sincronización de pedidos con el ERP</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 6. GESTIÓN DE TERCEROS -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-address-book"></i></div>
+                        <h3>Gestión de Terceros</h3>
+                        <p>Base de datos unificada de clientes y proveedores con historial completo de compras, facturas, documentos y cartera.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Registro por NIT o Cédula</li>
+                            <li><i class="fa-solid fa-check"></i> Historial comercial consolidado</li>
+                            <li><i class="fa-solid fa-check"></i> Adjunto de contratos y cédulas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 7. CONTROL DE PRÉSTAMOS & RUTAS -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                        <h3>Control de Préstamos & Rutas</h3>
+                        <p>Plataforma especializada para prestamistas y cobradores con cálculo de amortización, rutas diarias y arqueos de cobro.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Amortizaciones diarias, semanales, quincenales</li>
+                            <li><i class="fa-solid fa-check"></i> Ruta diaria de cobro y arqueos</li>
+                            <li><i class="fa-solid fa-check"></i> Recibos de caja y renovaciones de créditos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 8. MESA DE SOPORTE & CASOS -->
+                <div class="swiper-slide">
+                    <div class="module-card">
+                        <div class="module-icon"><i class="fa-solid fa-headset"></i></div>
+                        <h3>Mesa de Soporte & Casos</h3>
+                        <p>Gestión de tickets de atención al cliente, reclamos y soporte técnico con seguimiento de estados y asignación a agentes.</p>
+                        <ul class="module-features">
+                            <li><i class="fa-solid fa-check"></i> Registro y seguimiento de tickets</li>
+                            <li><i class="fa-solid fa-check"></i> Historial de solución por cliente</li>
+                            <li><i class="fa-solid fa-check"></i> Métricas de atención y satisfacción</li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- MÓDULO TERCEROS -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-address-book"></i></div>
-                <h3>Gestión de Terceros</h3>
-                <p>Base de datos unificada de clientes y proveedores con historial completo de compras, facturas, documentos y cartera.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Registro por NIT o Cédula</li>
-                    <li><i class="fa-solid fa-check"></i> Historial comercial consolidado</li>
-                    <li><i class="fa-solid fa-check"></i> Adjunto de contratos y cédulas</li>
-                </ul>
-            </div>
-
-            <!-- MÓDULO POS / VENTAS -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-cash-register"></i></div>
-                <h3>Facturación & Ventas POS</h3>
-                <p>Punto de venta intuitivo de alta velocidad con facturación rápida, manejo de múltiples medios de pago e impresión de recibos.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Facturación en caja e impresión</li>
-                    <li><i class="fa-solid fa-check"></i> Descuentos e impuestos automáticos</li>
-                    <li><i class="fa-solid fa-check"></i> Cierre e informe diario de caja</li>
-                </ul>
-            </div>
-
-            <!-- MÓDULO CONTABILIDAD -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-calculator"></i></div>
-                <h3>Contabilidad & Tesorería</h3>
-                <p>Control de ingresos, egresos, flujo de caja y balance financiero en tiempo real sin requerir procesos contables complejos.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Registro consecutivo de egresos e ingresos</li>
-                    <li><i class="fa-solid fa-check"></i> Caja disponible en tiempo real</li>
-                    <li><i class="fa-solid fa-check"></i> Reportes y métricas financieras</li>
-                </ul>
-            </div>
-
-            <!-- MÓDULO SOPORTE -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-headset"></i></div>
-                <h3>Mesa de Soporte & Casos</h3>
-                <p>Gestión de tickets de atención al cliente, reclamos y soporte técnico con seguimiento de estados y asignación a agentes.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Registro y seguimiento de tickets</li>
-                    <li><i class="fa-solid fa-check"></i> Historial de solución por cliente</li>
-                    <li><i class="fa-solid fa-check"></i> Métricas de atención y satisfacción</li>
-                </ul>
-            </div>
-
-            <!-- MÓDULO PRÉSTAMOS & CARTERA -->
-            <div class="module-card">
-                <div class="module-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-                <h3>Control de Préstamos & Rutas</h3>
-                <p>Plataforma especializada para prestamistas y cobradores con cálculo de amortización, rutas diarias y arqueos de cobro.</p>
-                <ul class="module-features">
-                    <li><i class="fa-solid fa-check"></i> Amortizaciones diarias, semanales, quincenales</li>
-                    <li><i class="fa-solid fa-check"></i> Ruta diaria de cobro y arqueos</li>
-                    <li><i class="fa-solid fa-check"></i> Recibos de caja y renovaciones de créditos</li>
-                </ul>
-            </div>
+            <!-- CONTROLES NAVEGACIÓN SLIDER -->
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
         </div>
     </section>
 
@@ -1372,8 +1459,30 @@
         </div>
     </footer>
 
-    <!-- JAVASCRIPT LÓGICA DE INTERACCIÓN -->
+    <!-- SWIPER JS LIBRARY & INICIALIZACIÓN -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modulesSwiper = new Swiper('.modules-swiper', {
+                slidesPerView: 1,
+                spaceBetween: 24,
+                loop: false,
+                grabCursor: true,
+                pagination: {
+                    el: '.modules-swiper .swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.modules-swiper .swiper-button-next',
+                    prevEl: '.modules-swiper .swiper-button-prev',
+                },
+                breakpoints: {
+                    640: { slidesPerView: 2, spaceBetween: 20 },
+                    1024: { slidesPerView: 3, spaceBetween: 24 }
+                }
+            });
+        });
+
         function switchMegaTab(event, tabId) {
             event.stopPropagation();
             const btns = document.querySelectorAll('.mega-tab-btn');
@@ -1399,7 +1508,7 @@
             },
             ciberseguridad: {
                 title: "Política de Ciberseguridad & Datos",
-                content: "Nuestros sistemas cuentan con arquitecturas de contenedores Docker aislados, monitoreo activo de tráfico y protocolos anti fuerza bruta. Edatia cumple con las normativas de ciberseguridad corporativa para prevenir accesos no autorizados y proteger la integridad operacional de nuestros clientes."
+                content: "Nuestros sistemas cuentan me arquitecturas de contenedores Docker aislados, monitoreo activo de tráfico y protocolos anti fuerza bruta. Edatia cumple con las normativas de ciberseguridad corporativa para prevenir accesos no autorizados y proteger la integridad operacional de nuestros clientes."
             },
             cookies: {
                 title: "Política de Cookies",
