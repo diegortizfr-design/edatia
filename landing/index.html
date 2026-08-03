@@ -2115,7 +2115,6 @@
         }
 
         @media (max-width: 768px) {
-            .nav-links { display: none; }
             .module-node { width: 170px; padding: 0.6rem 1rem; font-size: 0.75rem; }
             .module-node.n1 { top: 10%; left: 2%; }
             .module-node.n2 { top: 10%; right: 2%; }
@@ -2332,21 +2331,23 @@
             }
 
             .nav-links {
+                display: flex;
+                flex-direction: column;
                 position: fixed;
-                top: 72px;
+                top: 68px;
                 left: 0;
                 right: 0;
                 background: #ffffff;
-                flex-direction: column;
                 padding: 1.5rem;
-                gap: 1.2rem;
+                gap: 1rem;
                 border-bottom: 1px solid #e2e8f0;
-                box-shadow: 0 15px 30px rgba(15, 23, 42, 0.1);
+                box-shadow: 0 15px 30px rgba(15, 23, 42, 0.12);
+                z-index: 999;
                 opacity: 0;
                 visibility: hidden;
-                transform: translateY(-10px);
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 pointer-events: none;
+                transform: translateY(-8px);
+                transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
                 max-height: 80vh;
                 overflow-y: auto;
             }
@@ -2354,8 +2355,8 @@
             .nav-links.mobile-active {
                 opacity: 1;
                 visibility: visible;
-                transform: translateY(0);
                 pointer-events: auto;
+                transform: translateY(0);
             }
 
             .mega-menu {
@@ -2368,6 +2369,7 @@
                 opacity: 1 !important;
                 visibility: visible !important;
                 display: none !important;
+                left: auto !important;
             }
 
             .nav-item.mobile-expand .mega-menu {
@@ -2380,6 +2382,8 @@
                 border-right: none !important;
                 border-bottom: 1px solid #e2e8f0 !important;
                 padding-bottom: 0.8rem !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
             }
 
             .nav-actions {
@@ -3419,10 +3423,35 @@
 
         function toggleMobileMenu() {
             const navLinks = document.querySelector('.nav-links');
-            if (navLinks) {
-                navLinks.classList.toggle('mobile-active');
+            const toggleBtn = document.querySelector('.mobile-toggle-btn i');
+            if (!navLinks) return;
+
+            const isOpen = navLinks.classList.toggle('mobile-active');
+            if (toggleBtn) {
+                toggleBtn.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
             }
         }
+
+        // Cerrar menú móvil al hacer clic fuera de él
+        document.addEventListener('click', function(e) {
+            const navLinks = document.querySelector('.nav-links');
+            const toggleBtn = document.querySelector('.mobile-toggle-btn');
+            const toggleIcon = document.querySelector('.mobile-toggle-btn i');
+            if (navLinks && toggleBtn && !navLinks.contains(e.target) && !toggleBtn.contains(e.target)) {
+                navLinks.classList.remove('mobile-active');
+                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
+            }
+        });
+
+        // Cerrar menú al hacer clic en un enlace del menú móvil
+        document.querySelectorAll('.nav-links a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                const navLinks = document.querySelector('.nav-links');
+                const toggleIcon = document.querySelector('.mobile-toggle-btn i');
+                if (navLinks) navLinks.classList.remove('mobile-active');
+                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
+            });
+        });
     </script>
 </body>
 
