@@ -59,6 +59,79 @@
             line-height: 1.6;
         }
 
+        /* -------------------------------------------------- */
+        /* BACKGROUND ANIMADO SUTIL & ENFOCADO AL MERCADO ERP */
+        /* -------------------------------------------------- */
+        .ambient-bg-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .ambient-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.18;
+            animation: floatGlow 18s ease-in-out infinite alternate;
+        }
+
+        .glow-1 {
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, #8b5cf6 0%, rgba(139, 92, 246, 0) 70%);
+            top: -100px;
+            left: -100px;
+            animation-duration: 22s;
+        }
+
+        .glow-2 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #0284c7 0%, rgba(2, 132, 199, 0) 70%);
+            bottom: -150px;
+            right: -100px;
+            animation-duration: 26s;
+            animation-delay: -5s;
+        }
+
+        .glow-3 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, #10b981 0%, rgba(16, 185, 129, 0) 70%);
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-duration: 20s;
+            animation-delay: -10s;
+        }
+
+        @keyframes floatGlow {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(60px, 40px) scale(1.15);
+            }
+            100% {
+                transform: translate(-40px, 80px) scale(0.9);
+            }
+        }
+
+        #bg-data-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.35;
+        }
+
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Space Grotesk', sans-serif;
             color: var(--text-heading);
@@ -542,17 +615,11 @@
         /* -------------------------------------------------- */
         /* SECCIÓN DE PRODUCTOS / MÓDULOS DEL ERP            */
         /* -------------------------------------------------- */
-        .section-padding {
-            padding: 7rem 2rem;
-        }
-
-        .section-header {
-        /* SECCIÓN DE PRODUCTOS / MÓDULOS DEL SOFTWARE */
+        /* -------------------------------------------------- */
+        /* SECCIÓN MÓDULOS DEL SOFTWARE (#modulos)            */
+        /* -------------------------------------------------- */
         #modulos {
-            background-color: #f8fafc !important;
-            background-image: 
-                radial-gradient(at 10% 10%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
-                radial-gradient(at 90% 90%, rgba(37, 99, 235, 0.06) 0px, transparent 50%);
+            background-color: #fafbfd;
             position: relative;
             overflow: hidden;
             border-top: 1px solid #e2e8f0;
@@ -560,6 +627,7 @@
             padding: 6rem 2rem;
         }
 
+        /* LÍNEA DE ACENTO SUPERIOR MORADA/AZUL */
         #modulos::before {
             content: '';
             position: absolute;
@@ -567,7 +635,30 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #2563eb, #8b5cf6, #2563eb);
+            background: linear-gradient(90deg, #2563eb, #8b5cf6, #a855f7, #2563eb);
+        }
+
+        /* DECORATIVOS DE FONDO: CÍRCULOS Y DESTELLOS MORADOS SUBTILES */
+        .purple-decor-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .purple-decor-circle.circle-1 {
+            width: 340px;
+            height: 340px;
+            top: -60px;
+            right: -60px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.07) 0%, transparent 70%);
+        }
+        .purple-decor-circle.circle-2 {
+            width: 260px;
+            height: 260px;
+            bottom: -40px;
+            left: -40px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.07) 0%, transparent 70%);
         }
 
         .section-padding {
@@ -579,7 +670,7 @@
             max-width: 800px;
             margin: 0 auto 4rem auto;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
 
         .section-tag {
@@ -592,7 +683,7 @@
             display: inline-block;
             background: #f5f3ff;
             border: 1px solid #e9d5ff;
-            padding: 5px 16px;
+            padding: 6px 18px;
             border-radius: 20px;
         }
 
@@ -609,13 +700,13 @@
             color: var(--text-body);
         }
 
-        /* SWIPER SLIDER DE MÓDULOS DEL SOFTWARE */
+        /* SWIPER SLIDER DE MÓDULOS DEL SOFTWARE (TARJETAS LADO A LADO) */
         .modules-swiper {
             max-width: 1280px;
             margin: 0 auto;
             padding: 1rem 1rem 4rem 1rem !important;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
 
         .modules-swiper .swiper-slide {
@@ -626,7 +717,7 @@
         .modules-swiper .module-card {
             width: 100% !important;
             height: 100% !important;
-            background-color: #ffffff !important;
+            background: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 20px !important;
             padding: 2.2rem !important;
@@ -659,7 +750,7 @@
             height: 48px;
             border-radius: 50%;
             box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
-            border: 1px solid var(--border-color);
+            border: 1px solid #cbd5e1;
             top: 45%;
         }
 
@@ -699,6 +790,39 @@
 
         .module-card p {
             font-size: 0.92rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .module-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .module-features li {
+            font-size: 0.88rem;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-features li i {
+            color: #8b5cf6;
+            font-size: 0.85rem;
+        }
+
+        .module-card h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .module-card p {
+            font-size: 0.92rem;
             color: var(--text-body);
             line-height: 1.6;
         }
@@ -724,52 +848,168 @@
             font-size: 0.85rem;
         }
 
-        /* SECTORES & OTROS PRODUCTOS */
+        /* -------------------------------------------------- */
+        /* SECCIÓN 3: ACCESOS DIRECTOS DEL ECOSISTEMA EDATIA  */
+        /* -------------------------------------------------- */
         .sectors-section {
-            background: var(--bg-subtle);
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6rem 2rem;
         }
 
-        .sectors-grid {
+        /* SWIPER SLIDER DE ACCESOS DIRECTOS */
+        .access-swiper {
             max-width: 1280px;
             margin: 0 auto;
-            display: grid;
-            grid-template-cols: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.8rem;
+            padding: 1rem 1rem 4rem 1rem !important;
+            position: relative;
+            z-index: 2;
         }
 
-        .sector-card {
+        .access-swiper .swiper-slide {
+            height: auto;
+            display: flex;
+        }
+
+        .access-swiper .access-card {
+            width: 100% !important;
+            height: 100% !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 24px !important;
+            padding: 2.5rem !important;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.2rem !important;
+            position: relative !important;
+            box-sizing: border-box !important;
+        }
+
+        .access-swiper .access-card:hover {
+            border-color: #8b5cf6 !important;
+            transform: translateY(-6px) !important;
+            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.18) !important;
+        }
+
+        .access-swiper .swiper-pagination-bullet-active {
+            background: #8b5cf6 !important;
+            width: 26px;
+            border-radius: 6px;
+        }
+
+        .access-swiper .swiper-button-next,
+        .access-swiper .swiper-button-prev {
+            color: #8b5cf6;
             background: #ffffff;
-            border: 1px solid var(--border-color);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
+            border: 1px solid #cbd5e1;
+            top: 45%;
+        }
+
+        .access-swiper .swiper-button-next::after,
+        .access-swiper .swiper-button-prev::after {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .access-swiper .swiper-button-next:hover,
+        .access-swiper .swiper-button-prev:hover {
+            background: linear-gradient(135deg, #a855f7 0%, #2563eb 100%);
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        .access-card .access-badge {
+            align-self: flex-start;
+            background: #f5f3ff;
+            color: #8b5cf6;
+            border: 1px solid #e9d5ff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 14px;
             border-radius: 20px;
-            padding: 2rem;
-            box-shadow: var(--shadow-subtle);
-            transition: var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .sector-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-hover);
+        .access-card .access-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #edf5ff 100%);
+            border: 1px solid #ddd6fe;
+            color: #8b5cf6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
         }
 
-        .sector-card i {
-            font-size: 2rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .sector-card h4 {
-            font-size: 1.2rem;
+        .access-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
             color: #0f172a;
-            margin-bottom: 0.6rem;
         }
 
-        .sector-card p {
-            font-size: 0.88rem;
-            color: var(--text-body);
+        .access-card p {
+            font-size: 0.92rem;
+            color: #475569;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .btn-access {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0.85rem 1.4rem;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .btn-access-erp {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+        }
+        .btn-access-erp:hover {
+            background: #1d4ed8;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-access-manager {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+        }
+        .btn-access-manager:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
+        }
+
+        .btn-access-cartera {
+            background: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.25);
+        }
+        .btn-access-cartera:hover {
+            background: #0369a1;
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.35);
         }
 
         .other-products-grid {
@@ -778,34 +1018,47 @@
             display: grid;
             grid-template-cols: repeat(3, 1fr);
             gap: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 992px) {
+            .other-products-grid {
+                grid-template-cols: 1fr;
+            }
         }
 
         .other-card {
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: var(--shadow-subtle);
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-            transition: var(--transition);
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 24px !important;
+            padding: 2.5rem !important;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.2rem !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
 
         .other-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-hover);
+            border-color: #8b5cf6 !important;
+            transform: translateY(-6px) !important;
+            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.16) !important;
         }
 
         .other-card .badge {
             align-self: flex-start;
-            background: rgba(37, 99, 235, 0.08);
-            color: var(--primary);
-            font-size: 0.75rem;
+            background: #f5f3ff;
+            color: #8b5cf6;
+            border: 1px solid #e9d5ff;
+            font-size: 0.78rem;
             font-weight: 700;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .other-card h3 {
@@ -831,6 +1084,575 @@
 
         .other-card a:hover {
             text-decoration: underline;
+        }
+
+        /* PLANES Y PRECIOS ESTILO EDATIA CON OVERLAPPING CIRCLE BADGES */
+        .pricing-section {
+            padding: 5rem 2rem;
+            background: #fafbfd;
+            position: relative;
+        }
+
+        .pricing-top-bar {
+            max-width: 1280px;
+            margin: 2rem auto 3rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pricing-extra-info {
+            font-size: 0.86rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .pib-divider {
+            color: #cbd5e1;
+            font-weight: bold;
+        }
+
+        .pib-link {
+            color: #0284c7;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pib-link:hover {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .pricing-billing-toggle {
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pricing-toggle-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 25px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: #64748b;
+            background: transparent;
+        }
+
+        .pricing-toggle-btn.active {
+            background: linear-gradient(135deg, #8b5cf6 0%, #2563eb 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .discount-badge {
+            background: #22c55e;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+
+        /* PRICING SWIPER CAROUSEL */
+        .pricing-swiper {
+            max-width: 1350px;
+            margin: 0 auto;
+            padding-top: 65px !important;
+            padding-bottom: 50px !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        .pricing-swiper .swiper-wrapper {
+            align-items: stretch;
+        }
+
+        .pricing-swiper .swiper-slide {
+            height: auto;
+            display: flex;
+            box-sizing: border-box;
+        }
+
+        .pricing-swiper .swiper-slide .edatia-price-card {
+            width: 100%;
+            margin-top: 0;
+            min-height: 100%;
+        }
+
+        .pricing-swiper .swiper-slide .edatia-price-card.pro-card {
+            margin-top: 0;
+            transform: none;
+        }
+
+        .pricing-swiper .swiper-slide .edatia-price-card.pro-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .pricing-swiper .swiper-pagination-bullet-active {
+            background: #8b5cf6 !important;
+            width: 26px;
+            border-radius: 6px;
+        }
+
+        .pricing-swiper .swiper-button-next,
+        .pricing-swiper .swiper-button-prev {
+            color: #8b5cf6;
+            background: #ffffff;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.12);
+            border: 1px solid #cbd5e1;
+            top: 50%;
+            z-index: 25;
+        }
+
+        .pricing-swiper .swiper-button-prev {
+            left: -20px;
+        }
+        .pricing-swiper .swiper-button-next {
+            right: -20px;
+        }
+
+        @media (max-width: 1400px) {
+            .pricing-swiper .swiper-button-prev { left: 5px; }
+            .pricing-swiper .swiper-button-next { right: 5px; }
+        }
+
+        .pricing-swiper .swiper-button-next::after,
+        .pricing-swiper .swiper-button-prev::after {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .pricing-swiper .swiper-button-next:hover,
+        .pricing-swiper .swiper-button-prev:hover {
+            background: linear-gradient(135deg, #a855f7 0%, #2563eb 100%);
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        .edatia-price-card {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            overflow: visible !important;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 50px;
+        }
+
+        .edatia-price-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+        }
+
+        /* OVERLAPPING CIRCLE PRICE BADGE */
+        .circle-price-badge {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #2563eb 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+            border: 4px solid #ffffff;
+            z-index: 20;
+            text-align: center;
+        }
+
+        .circle-price-badge .amount {
+            font-size: 0.95rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .circle-price-badge .unit {
+            font-size: 0.65rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .card-header-banner {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            padding: 3.5rem 1rem 1.5rem 1rem;
+            text-align: center;
+            border-top-left-radius: 23px;
+            border-top-right-radius: 23px;
+        }
+
+        .card-header-banner h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+
+        .card-body-content {
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: center;
+            flex-grow: 1;
+            background: #ffffff;
+            border-bottom-left-radius: 23px;
+            border-bottom-right-radius: 23px;
+        }
+
+        .card-feature-item {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px dashed #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-feature-item.highlight-text {
+            color: #8b5cf6;
+            font-weight: 800;
+        }
+
+        .card-feature-item:last-child {
+            border-bottom: none;
+        }
+
+        /* ESTILOS DE BOTONES DE PLANES */
+        .btn-plan {
+            width: 100% !important;
+            padding: 0.9rem 1.4rem !important;
+            border-radius: 14px !important;
+            font-size: 0.92rem !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            transition: all 0.25s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            margin-top: auto !important;
+            text-decoration: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .btn-plan-outline {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+            color: #0f172a !important;
+            border: 2px solid #cbd5e1 !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+        }
+
+        .btn-plan-outline:hover {
+            border-color: #8b5cf6 !important;
+            color: #8b5cf6 !important;
+            background: #f5f3ff !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.2) !important;
+        }
+
+        .btn-plan-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+        }
+
+        .btn-plan-primary:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%) !important;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* DESTACADO PRO CARD (ESTILO DARK EDATIA) */
+        .edatia-price-card.pro-card {
+            border: 2px solid #8b5cf6;
+            transform: scale(1.04);
+            margin-top: 40px;
+            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.25);
+            z-index: 5;
+        }
+
+        .edatia-price-card.pro-card:hover {
+            transform: scale(1.04) translateY(-8px);
+            box-shadow: 0 25px 55px rgba(139, 92, 246, 0.35);
+        }
+
+        .edatia-price-card.pro-card .card-header-banner {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        }
+
+        .edatia-price-card.pro-card .card-body-content {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .edatia-price-card.pro-card .card-feature-item {
+            color: #f1f5f9;
+            border-bottom-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .edatia-price-card.pro-card .card-feature-item.highlight-text {
+            color: #c084fc;
+        }
+
+        /* BOTTOM CTA BANNER */
+        .pricing-cta-banner {
+            max-width: 700px;
+            margin: 3.5rem auto 0 auto;
+            text-align: center;
+        }
+
+        .btn-whatsapp-banner {
+            background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.05rem;
+            padding: 1rem 2.2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .btn-whatsapp-banner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.45);
+        }
+
+        /* SECCIÓN HABLEMOS & SOCIOS TECNOLÓGICOS (REDES + SOCIOS) */
+        .social-partners-section {
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            padding: 5.5rem 2rem;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        .social-partners-container {
+            max-width: 1350px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: 1.15fr 0.85fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .social-partners-container {
+                grid-template-cols: 1fr;
+                gap: 3.5rem;
+            }
+        }
+
+        .sub-tag-pill {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            margin-bottom: 1.2rem;
+        }
+
+        .partner-pill {
+            background: rgba(37, 99, 235, 0.15);
+            color: #60a5fa;
+            border-color: rgba(37, 99, 235, 0.3);
+        }
+
+        .side-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .side-title .highlight-line {
+            position: relative;
+            color: #ffffff;
+            text-decoration: underline;
+            text-decoration-color: #8b5cf6;
+            text-underline-offset: 6px;
+            text-decoration-thickness: 3px;
+        }
+
+        .side-desc {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 2.2rem;
+        }
+
+        /* GRID REDES SOCIALES EN TARJETAS GLASS */
+        .social-cards-grid {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 1.2rem;
+        }
+
+        @media (max-width: 640px) {
+            .social-cards-grid {
+                grid-template-cols: repeat(2, 1fr);
+            }
+        }
+
+        .social-glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 1.8rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none !important;
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .social-glass-card i {
+            font-size: 2rem;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+
+        .social-glass-card span {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .social-glass-card:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(37, 99, 235, 0.3) 100%);
+            border-color: rgba(139, 92, 246, 0.6);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.25);
+        }
+
+        .social-glass-card:hover i {
+            transform: scale(1.15);
+            color: #c084fc;
+        }
+
+        /* COLUMNA DERECHA SOCIOS */
+        .partners-block {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .partners-subtitle {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .partners-cards-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .partner-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .partner-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .partner-logo-box {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .partner-logo-box i {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .partner-brand-text strong {
+            display: block;
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .partner-brand-text span {
+            display: block;
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-top: 2px;
         }
 
         /* MODALES */
@@ -906,77 +1728,394 @@
             margin-bottom: 1rem;
         }
 
-        /* FOOTER */
+        /* FOOTER CORPORATIVO HORIZONTAL A LO ANCHO (ESTILO SIESA / BLUE-PURPLE) */
         footer {
-            background: #0f172a;
-            color: #f8fafc;
-            padding: 5rem 2rem 2rem 2rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+            color: #ffffff;
+            padding: 4.5rem 4rem 2.5rem 4rem;
+            position: relative;
+            border-top: 4px solid #8b5cf6;
+            width: 100%;
         }
 
         .footer-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-cols: 2fr repeat(3, 1fr);
-            gap: 3rem;
-            margin-bottom: 4rem;
+            max-width: 1440px !important;
+            margin: 0 auto !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: flex-start !important;
+            justify-content: space-between !important;
+            gap: 2.5rem !important;
+            width: 100% !important;
+        }
+
+        .footer-brand {
+            width: 32% !important;
+            flex-shrink: 0 !important;
+        }
+
+        .footer-col {
+            width: 21% !important;
+            flex-shrink: 0 !important;
+        }
+
+        @media (max-width: 900px) {
+            .footer-container {
+                flex-wrap: wrap !important;
+            }
+            .footer-brand {
+                width: 100% !important;
+            }
+            .footer-col {
+                width: 48% !important;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .footer-col {
+                width: 100% !important;
+            }
         }
 
         .footer-brand .logo-text {
             color: #ffffff;
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            margin-bottom: 1.2rem;
         }
 
         .footer-brand p {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            max-width: 320px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            line-height: 1.75;
+            margin-bottom: 1.6rem;
+            max-width: 400px;
+        }
+
+        .btn-know-us {
+            background: #ffffff !important;
+            color: #1e3a8a !important;
+            font-size: 0.92rem !important;
+            font-weight: 800 !important;
+            padding: 0.75rem 1.8rem !important;
+            border-radius: 12px !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            transition: all 0.25s ease !important;
+        }
+
+        .btn-know-us:hover {
+            background: #f8fafc !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+            color: #2563eb !important;
         }
 
         .footer-col h5 {
             color: #ffffff;
-            font-size: 1rem;
-            margin-bottom: 1.2rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1.4rem;
+            position: relative;
         }
 
         .footer-col ul {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
+            transition: all 0.3s ease;
+        }
+
+        .btn-whatsapp-banner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.45);
+        }
+
+        /* SECCIÓN HABLEMOS & SOCIO TECNOLÓGICO */
+        .hablemos-socios-section {
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e1b4b 100%);
+            padding: 5.5rem 2rem;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hablemos-socios-section::before {
+            content: '';
+            position: absolute;
+            top: -150px;
+            left: -150px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hablemos-socios-section::after {
+            content: '';
+            position: absolute;
+            bottom: -150px;
+            right: -150px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hablemos-socios-container {
+            max-width: 1350px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (max-width: 1024px) {
+            .hablemos-socios-container {
+                grid-template-cols: 1fr;
+                gap: 3.5rem;
+            }
+        }
+
+        .dark-section-tag {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #a855f7;
+            text-transform: uppercase;
+            margin-bottom: 0.8rem;
+        }
+
+        .hablemos-title, .socios-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #ffffff;
+            margin-bottom: 1.2rem;
+        }
+
+        .text-underline-gradient {
+            background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: underline;
+            text-decoration-color: #8b5cf6;
+            text-underline-offset: 6px;
+        }
+
+        /* GRID DE REDES SOCIALES ESTILO GLASSMORPHISM */
+        .social-grid {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 1.2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .social-grid {
+                grid-template-cols: repeat(2, 1fr);
+            }
+        }
+
+        .social-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            padding: 1.6rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none !important;
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .social-card i {
+            font-size: 2.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .social-card span {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .social-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #8b5cf6;
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.3);
+        }
+
+        .social-card:hover i {
+            transform: scale(1.15);
+        }
+
+        .card-whatsapp:hover i { color: #25d366; }
+        .card-instagram:hover i { color: #e1306c; }
+        .card-email:hover i { color: #38bdf8; }
+        .card-facebook:hover i { color: #1877f2; }
+        .card-tiktok:hover i { color: #25f4ee; }
+        .card-youtube:hover i { color: #ff0000; }
+
+        /* SOCIO TECNOLÓGICO */
+        .socios-badge-desc {
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .socios-text {
+            color: #cbd5e1;
+            font-size: 0.98rem;
+            line-height: 1.7;
+            margin-bottom: 2.2rem;
+        }
+
+        .partner-logos-container {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .partner-logo-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s ease;
+            min-width: 200px;
+            max-width: 280px;
+        }
+
+        .partner-logo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.3);
+        }
+
+        .partner-logo-img {
+            max-height: 55px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .partner-logo-text {
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .partner-logo-text small {
+            font-size: 0.72rem;
+            color: #2563eb;
+            font-weight: 600;
+            display: block;
+            margin-top: 4px;
         }
 
         .footer-col a {
-            color: #cbd5e1;
+            color: rgba(255, 255, 255, 0.88);
             text-decoration: none;
-            font-size: 0.88rem;
-            transition: var(--transition);
+            font-size: 0.93rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .footer-col a:hover {
-            color: var(--accent-light);
+            color: #ffffff;
+            transform: translateX(4px);
+            text-decoration: underline;
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.93rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .footer-contact-item i {
+            color: #ffffff;
+            font-size: 1.2rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .footer-location-link {
+            text-decoration: none !important;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 2px 4px;
+            margin-left: -4px;
+        }
+
+        .footer-location-link:hover {
+            transform: translateX(4px);
+        }
+
+        .footer-location-link:hover i.fa-location-dot {
+            color: #ef4444;
+        }
+
+        .footer-location-link:hover span {
+            color: #38bdf8;
+            text-decoration: underline;
         }
 
         .footer-bottom {
-            max-width: 1280px;
+            max-width: 1440px;
             margin: 0 auto;
             padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            color: #94a3b8;
-            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.88rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         @media (max-width: 1024px) {
             .other-products-grid { grid-template-cols: 1fr; }
-            .footer-container { grid-template-cols: 1fr 1fr; }
         }
 
         @media (max-width: 768px) {
             .nav-links { display: none; }
-            .footer-container { grid-template-cols: 1fr; }
             .module-node { width: 170px; padding: 0.6rem 1rem; font-size: 0.75rem; }
             .module-node.n1 { top: 10%; left: 2%; }
             .module-node.n2 { top: 10%; right: 2%; }
@@ -984,14 +2123,361 @@
             .module-node.n4 { bottom: 25%; right: 2%; }
         }
 
+        /* SECCIÓN COMBINADA: REDES SOCIALES & SOCIOS TECNOLÓGICOS */
+        .social-partners-section {
+            background: linear-gradient(135deg, #0b1329 0%, #1e1b4b 50%, #0f172a 100%);
+            padding: 5rem 2rem;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-partners-container {
+            max-width: 1350px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .social-partners-container {
+                grid-template-cols: 1fr;
+                gap: 3.5rem;
+            }
+        }
+
+        .social-col, .partner-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .social-partners-section .sub-tag {
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: #c084fc;
+            margin-bottom: 0.8rem;
+            display: inline-block;
+        }
+
+        .social-partners-section .col-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+        }
+
+        .underlined-text {
+            text-decoration: underline;
+            text-decoration-color: #8b5cf6;
+            text-underline-offset: 6px;
+            text-decoration-thickness: 3px;
+        }
+
+        /* GRID DE REDES SOCIALES (IZQUIERDA) */
+        .social-grid {
+            display: grid;
+            grid-template-cols: repeat(3, 1fr);
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .social-grid {
+                grid-template-cols: repeat(2, 1fr);
+            }
+        }
+
+        .social-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(8px);
+        }
+
+        .social-card:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(37, 99, 235, 0.3) 100%);
+            border-color: #8b5cf6;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.25);
+        }
+
+        .social-card i {
+            font-size: 2.2rem;
+            color: #ffffff;
+        }
+
+        .social-card span {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* PARTE DERECHA: SOCIO TECNOLÓGICO */
+        .partner-desc {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 2rem;
+        }
+
+        .partner-card-box {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+        }
+
+        .partner-box-tag {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 1.2rem;
+        }
+
+        .partner-brand-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .partner-icon-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0284c7 0%, #16a34a 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        }
+
+        .partner-brand-text {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .partner-brand-text .brand-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+        }
+
+        .partner-brand-text .brand-sub {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #16a34a;
+            letter-spacing: 1px;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* -------------------------------------------------- */
+        /* RESPONSIVE DESIGN & ADAPTACIÓN MÓVIL (< 992px)     */
+        /* -------------------------------------------------- */
+        .mobile-toggle-btn {
+            display: none;
+            background: #f1f5f9;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            color: #0f172a;
+            font-size: 1.3rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-toggle-btn:hover {
+            background: #e2e8f0;
+            color: #8b5cf6;
+        }
+
+        @media (max-width: 992px) {
+            .mobile-toggle-btn {
+                display: flex;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                left: 0;
+                right: 0;
+                background: #ffffff;
+                flex-direction: column;
+                padding: 1.5rem;
+                gap: 1.2rem;
+                border-bottom: 1px solid #e2e8f0;
+                box-shadow: 0 15px 30px rgba(15, 23, 42, 0.1);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                pointer-events: none;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+
+            .nav-links.mobile-active {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+
+            .mega-menu {
+                position: static !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                border: 1px solid #f1f5f9 !important;
+                flex-direction: column !important;
+                padding: 0.8rem !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: none !important;
+            }
+
+            .nav-item.mobile-expand .mega-menu {
+                display: flex !important;
+            }
+
+            .mega-sidebar {
+                width: 100% !important;
+                min-width: 100% !important;
+                border-right: none !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                padding-bottom: 0.8rem !important;
+            }
+
+            .nav-actions {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                min-height: auto;
+                padding: 7rem 1.5rem 4rem 1.5rem;
+            }
+
+            .central-title {
+                font-size: 2.5rem;
+            }
+
+            .central-subtitle {
+                font-size: 1rem;
+            }
+
+            .orbit-container {
+                height: auto;
+                min-height: 400px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.2rem;
+            }
+
+            .central-core {
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
+                margin-bottom: 1.5rem;
+            }
+
+            .module-node {
+                position: relative !important;
+                top: auto !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                transform: none !important;
+                width: 90% !important;
+                max-width: 320px;
+                justify-content: center;
+            }
+
+            .pricing-top-bar {
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1.2rem;
+                padding: 1.2rem 1.5rem;
+                border-radius: 25px;
+            }
+
+            .pricing-extra-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+
+            .pib-divider {
+                display: none;
+            }
+
+            footer {
+                padding: 3rem 1.5rem 2rem 1.5rem;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr !important;
+                gap: 2.5rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+            }
         }
     </style>
 </head>
 
 <body>
+
+    <!-- ================================================== -->
+    <!-- BACKGROUND ANIMADO: AMBIENT GLOW & DATA MESH CANVAS-->
+    <!-- ================================================== -->
+    <div class="ambient-bg-wrapper">
+        <div class="ambient-glow glow-1"></div>
+        <div class="ambient-glow glow-2"></div>
+        <div class="ambient-glow glow-3"></div>
+        <canvas id="bg-data-canvas"></canvas>
+    </div>
 
     <!-- ================================================== -->
     <!-- NAVBAR CORPORATIVO                                 -->
@@ -1012,53 +2498,18 @@
                     <div class="mega-menu" style="display: flex !important; flex-direction: row !important; width: 780px !important;">
                         <!-- TABS IZQUIERDA -->
                         <div class="mega-sidebar" style="display: flex !important; flex-direction: column !important; width: 230px !important; min-width: 230px !important; flex-shrink: 0 !important;">
-                            <button class="mega-tab-btn active" onclick="switchMegaTab(event, 'tab-sectores')">
-                                <i class="fa-solid fa-building-user"></i> Sectores
-                            </button>
-                            <button class="mega-tab-btn" onclick="switchMegaTab(event, 'tab-productos')">
-                                <i class="fa-solid fa-cubes"></i> Productos (ERP)
+                            <button class="mega-tab-btn active" onclick="switchMegaTab(event, 'tab-modulos')">
+                                <i class="fa-solid fa-cubes"></i> Módulos (ERP)
                             </button>
                             <button class="mega-tab-btn" onclick="switchMegaTab(event, 'tab-otros')">
-                                <i class="fa-solid fa-rocket"></i> Otros Productos
+                                <i class="fa-solid fa-rocket"></i> Otros Productos & Servicios
                             </button>
                         </div>
 
                         <!-- CONTENIDO DERECHA CON 2 COLUMNAS -->
                         <div class="mega-content">
-                            <!-- TAB SECTORES -->
-                            <div id="tab-sectores" class="mega-panel active" style="display: grid !important; grid-template-cols: repeat(2, 1fr) !important;">
-                                <a href="#sectores" class="mega-item">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <div>
-                                        <div class="mega-item-title">Retail & Comercio</div>
-                                        <div class="mega-item-desc">Control de almacén, POS y ventas</div>
-                                    </div>
-                                </a>
-                                <a href="https://prestamos.edatia.com" target="_blank" class="mega-item">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <div>
-                                        <div class="mega-item-title">Gestión de Préstamos</div>
-                                        <div class="mega-item-desc">Control de cartera, rutas y abonos</div>
-                                    </div>
-                                </a>
-                                <a href="#sectores" class="mega-item">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <div>
-                                        <div class="mega-item-title">Servicios & Asistencia</div>
-                                        <div class="mega-item-desc">Gestión de casos, tickets y clientes</div>
-                                    </div>
-                                </a>
-                                <a href="#sectores" class="mega-item">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <div>
-                                        <div class="mega-item-title">Mayoristas & Distribución</div>
-                                        <div class="mega-item-desc">Multi-bodega y lista de precios</div>
-                                    </div>
-                                </a>
-                            </div>
-
-                            <!-- TAB PRODUCTOS (ERP MODULOS) -->
-                            <div id="tab-productos" class="mega-panel" style="display: grid !important; grid-template-cols: repeat(2, 1fr) !important;">
+                            <!-- TAB MÓDULOS ERP (ACTIVO POR DEFECTO) -->
+                            <div id="tab-modulos" class="mega-panel active" style="display: grid !important; grid-template-cols: repeat(2, 1fr) !important;">
                                 <a href="#modulos" class="mega-item">
                                     <i class="fa-solid fa-boxes-stacked"></i>
                                     <div>
@@ -1094,17 +2545,17 @@
                                         <div class="mega-item-desc">Mesa de ayuda y tickets de servicio</div>
                                     </div>
                                 </a>
+                            </div>
+
+                            <!-- TAB OTROS PRODUCTOS & SERVICIOS (OCULTO POR DEFECTO) -->
+                            <div id="tab-otros" class="mega-panel" style="display: none !important; grid-template-cols: repeat(2, 1fr) !important;">
                                 <a href="https://prestamos.edatia.com" target="_blank" class="mega-item">
                                     <i class="fa-solid fa-hand-holding-dollar"></i>
                                     <div>
-                                        <div class="mega-item-title">Control de Préstamos</div>
-                                        <div class="mega-item-desc">Amortización, arqueos y cobros</div>
+                                        <div class="mega-item-title">Gestión de Préstamos</div>
+                                        <div class="mega-item-desc">Software de cartera, rutas y abonos</div>
                                     </div>
                                 </a>
-                            </div>
-
-                            <!-- TAB OTROS PRODUCTOS -->
-                            <div id="tab-otros" class="mega-panel" style="display: grid !important; grid-template-cols: repeat(2, 1fr) !important;">
                                 <a href="https://binarias.edatia.com" target="_blank" class="mega-item">
                                     <i class="fa-solid fa-chart-line"></i>
                                     <div>
@@ -1151,6 +2602,11 @@
                     </div>
                 </li>
 
+                <!-- PLANES & PRECIOS -->
+                <li class="nav-item">
+                    <a href="#planes" class="nav-link">Precios</a>
+                </li>
+
                 <!-- BLOG -->
                 <li class="nav-item">
                     <a href="blog.html" class="nav-link">Blog</a>
@@ -1159,13 +2615,18 @@
 
             <!-- ACCIONES: INICIAR SESIÓN Y CONTÁCTANOS -->
             <div class="nav-actions">
-                <a href="https://app.edatia.com" target="_blank" class="btn-login">
+                <a href="https://app.edatia.com/login" target="_blank" class="btn-login">
                     <i class="fa-solid fa-right-to-bracket mr-1"></i> Inicia Sesión
                 </a>
                 <button onclick="openDemoModal()" class="btn-cta">
                     Contáctanos <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
+
+            <!-- BOTÓN MENÚ HAMBURGUESA MÓVIL -->
+            <button class="mobile-toggle-btn" onclick="toggleMobileMenu()" aria-label="Abrir menú">
+                <i class="fa-solid fa-bars"></i>
+            </button>
         </nav>
     </header>
 
@@ -1219,10 +2680,12 @@
     <!-- SECCIÓN MÓDULOS DEL SOFTWARE (PRODUCTOS)          -->
     <!-- ================================================== -->
     <section id="modulos" class="section-padding">
-        <div class="section-bg-glow glow-purple"></div>
-        <div class="section-bg-glow glow-blue"></div>
+        <!-- CÍRCULOS DECORATIVOS MORADOS EN EL FONDO -->
+        <div class="purple-decor-circle circle-1"></div>
+        <div class="purple-decor-circle circle-2"></div>
+
         <div class="section-header">
-            <span class="section-tag">Nuestros Productos & Módulos</span>
+            <span class="section-tag"><i class="fa-solid fa-layer-group mr-1"></i> Nuestros Productos & Módulos</span>
             <h2 class="section-title">Todo lo que tu empresa necesita en un solo ERP</h2>
             <p class="section-desc">Diseñado para simplificar procesos operativos, eliminar la doble digitación y garantizar el control total de tu negocio.</p>
         </div>
@@ -1353,84 +2816,254 @@
     </section>
 
     <!-- ================================================== -->
-    <!-- SECCIÓN DE SECTORES ESPECIALIZADOS                 -->
+    <!-- SECCIÓN 3: ACCESOS DIRECTOS & SERVICIOS EDATIA     -->
     <!-- ================================================== -->
     <section id="sectores" class="section-padding sectors-section">
         <div class="section-header">
-            <span class="section-tag">Soluciones por Sector</span>
-            <h2 class="section-title">Adaptado a la dinámica de tu industria</h2>
-            <p class="section-desc">Optimiza tus operaciones diarias con flujos de trabajo configurados para tu modelo de negocio.</p>
+            <span class="section-tag"><i class="fa-solid fa-rocket mr-1"></i> Ecosistema & Servicios Edatia</span>
+            <h2 class="section-title">Soluciones Específicas para tu Negocio</h2>
+            <p class="section-desc">Accede a nuestras plataformas cloud ERP, mesa de soporte, software de cartera, asesorías contables y desarrollo tecnológico.</p>
         </div>
 
-        <div class="sectors-grid">
-            <div class="sector-card">
-                <i class="fa-solid fa-store"></i>
-                <h4>Retail & Comercio</h4>
-                <p>Puntos de venta, tiendas de ropa, supermercados y ferreterías con control estricto de inventarios y caja.</p>
+        <!-- CARROUSEL INTERACTIVO SWIPER CON LOS 6 PRODUCTOS Y SERVICIOS -->
+        <div class="swiper access-swiper">
+            <div class="swiper-wrapper">
+
+                <!-- 1. ACCESO EDATIA ERP -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">ERP & POS Central</span>
+                        <div class="access-icon"><i class="fa-solid fa-cash-register"></i></div>
+                        <h3>EDATIA ERP</h3>
+                        <p>La solución integral para empresas, tiendas retail, mayoristas y distribuidoras. Opera inventarios multi-bodega, facturación rápida POS, caja y contabilidad automática en tiempo real.</p>
+                        <a href="https://app.edatia.com/login" target="_blank" class="btn-access btn-access-erp">
+                            Inicia Sesión ERP <i class="fa-solid fa-right-to-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 2. ACCESO SOPORTE EDATIA ERP -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">Mesa de Soporte</span>
+                        <div class="access-icon"><i class="fa-solid fa-headset"></i></div>
+                        <h3>Soporte EDATIA ERP</h3>
+                        <p>Plataforma de atención al cliente y gestión de tickets de soporte técnico. Registra casos, realiza seguimiento en tiempo real y recibe asistencia técnica especializada.</p>
+                        <a href="https://manager.edatia.com" target="_blank" class="btn-access btn-access-manager">
+                            Inicia Sesión Soporte <i class="fa-solid fa-right-to-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 3. ACCESO SOFTWARE DE CARTERA -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">Crédito & Recaudo</span>
+                        <div class="access-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                        <h3>Software de Cartera</h3>
+                        <p>Plataforma especializada para microcrédito, prestamistas y cobradores de campo. Administra tablas de amortización, rutas diarias de cobro, arqueos de recaudo e indicadores de mora.</p>
+                        <a href="https://prestamos.edatia.com" target="_blank" class="btn-access btn-access-cartera">
+                            Inicia Sesión Cartera <i class="fa-solid fa-right-to-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 4. ASESORÍAS CONTABLES -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">ASESORÍA & DIAN</span>
+                        <div class="access-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <h3>Asesorías Contables</h3>
+                        <p>Acompañamiento contable y tributario: declaración de renta, planeación tributaria, capacitación de impuestos, normatividad DIAN y estructuración financiera.</p>
+                        <a href="#" onclick="openDemoModal(); return false;" class="btn-access btn-access-erp">
+                            Solicitar Asesoría <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 5. CREACIÓN PÁGINAS WEB Y TIENDAS VIRTUALES -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">DESARROLLO & E-COMMERCE</span>
+                        <div class="access-icon"><i class="fa-solid fa-laptop-code"></i></div>
+                        <h3>Páginas Web & Tiendas</h3>
+                        <p>Diseño y desarrollo de sitios web corporativos y tiendas virtuales a medida. Integración con pasarelas de pago, catálogo digital y optimización en Google.</p>
+                        <a href="developers.html" class="btn-access btn-access-manager">
+                            Ver Desarrollos Web <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 6. EDATIA TRADING -->
+                <div class="swiper-slide">
+                    <div class="access-card">
+                        <span class="access-badge">TRADING & BOT</span>
+                        <div class="access-icon"><i class="fa-solid fa-robot"></i></div>
+                        <h3>Edatia Trading</h3>
+                        <p>Bot automatizado para operaciones de trading en mercados financieros. Algoritmos inteligentes para análisis de tendencias, gestión de riesgo y ejecución ágil.</p>
+                        <a href="https://binarias.edatia.com" target="_blank" class="btn-access btn-access-cartera">
+                            Conocer Trading Bot <i class="fa-solid fa-right-to-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="sector-card">
-                <i class="fa-solid fa-wallet"></i>
-                <h4>Gestión de Préstamos</h4>
-                <p>Empresas de microcrédito y cobradores de ruta que requieren control de cuotas, mora y liquidaciones diarias.</p>
-            </div>
-
-            <div class="sector-card">
-                <i class="fa-solid fa-screwdriver-wrench"></i>
-                <h4>Servicios & Asistencia</h4>
-                <p>Empresas de soporte técnico, talleres y consultoras que gestionan órdenes de servicio y tickets de clientes.</p>
-            </div>
-
-            <div class="sector-card">
-                <i class="fa-solid fa-truck-ramp-box"></i>
-                <h4>Mayoristas & Distribución</h4>
-                <p>Comercializadoras que operan múltiples bodegas, listas de precios diferenciadas y venta por volumen.</p>
-            </div>
+            <!-- CONTROLES NAVEGACIÓN SLIDER -->
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
         </div>
     </section>
 
     <!-- ================================================== -->
-    <!-- OTROS PRODUCTOS Y SERVICIOS DIGITALES              -->
+    <!-- SECCIÓN PLANES & PRECIOS EDATIA                    -->
     <!-- ================================================== -->
-    <section class="section-padding">
+    <!-- ================================================== -->
+    <!-- SECCIÓN PLANES & PRECIOS ESTILO EDATIA             -->
+    <!-- ================================================== -->
+    <section id="planes" class="pricing-section">
         <div class="section-header">
-            <span class="section-tag">Ecosistema Edatia</span>
-            <h2 class="section-title">Otros Productos & Soluciones Tecnológicas</h2>
-            <p class="section-desc">Complementa la gestión de tu empresa con nuestros desarrollos de software especializado y servicios digitales.</p>
+            <span class="section-tag"><i class="fa-solid fa-tags mr-1"></i> Planes & Precios</span>
+            <h2 class="section-title">Elige el plan ideal para tu negocio</h2>
+            <p class="section-desc">Soluciones escalables para empresas en Colombia con facturación electrónica, punto de venta y control total en la nube.</p>
         </div>
 
-        <div class="other-products-grid">
-            <div class="other-card">
-                <span class="badge">FINTECH & TRADING</span>
-                <h3>Edatia Trading</h3>
-                <p>Plataforma y bots de automatización para análisis de mercados financieros con algoritmos inteligentes.</p>
-                <a href="https://binarias.edatia.com" target="_blank">Ir a Edatia Trading <i class="fa-solid fa-arrow-right"></i></a>
+        <!-- BARRA SUPERIOR UNIFICADA DE INFORMACIÓN Y TOGGLE -->
+        <div class="pricing-top-bar">
+            <!-- TEXTO DE FOLIOS Y USUARIOS ADICIONALES -->
+            <div class="pricing-extra-info">
+                <span>👥 Usuario adicional: <strong>$35.000 COP</strong></span>
+                <span class="pib-divider">•</span>
+                <a href="https://wa.me/573205704262?text=Hola%20Edatia,%20deseo%20consultar%20por%20paquetes%20adicionales%20de%20emisión%20de%20documentos%20electrónicos" target="_blank" class="pib-link">
+                    ⚡ Paquetes adicionales de emisión electrónica: <u>consulta aquí</u> <i class="fa-brands fa-whatsapp ml-1"></i>
+                </a>
             </div>
 
-            <div class="other-card">
-                <span class="badge">DESARROLLO WEB</span>
-                <h3>Creación de Páginas Web</h3>
-                <p>Diseño y desarrollo de portales corporativos de alto rendimiento, optimizados para conversión y SEO en Google.</p>
-                <a href="developers.html">Ver Servicios Web <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-
-            <div class="other-card">
-                <span class="badge">E-COMMERCE</span>
-                <h3>Creación Tiendas Virtuales</h3>
-                <p>Plataformas de comercio electrónico completas con carrito de compras, catálogo digital y pasarelas de pago.</p>
-                <a href="developers.html">Ver Tiendas Virtuales <i class="fa-solid fa-arrow-right"></i></a>
+            <!-- CONMUTADOR MENSUAL / ANUAL -->
+            <div class="pricing-billing-toggle">
+                <button id="btn-mensual" onclick="toggleBilling('mensual')" class="pricing-toggle-btn active">Mensual</button>
+                <button id="btn-anual" onclick="toggleBilling('anual')" class="pricing-toggle-btn">Anual <span class="discount-badge">-20%</span></button>
             </div>
         </div>
-    </section>
 
-    <!-- ================================================== -->
-    <!-- NOSOTROS                                           -->
-    <!-- ================================================== -->
-    <section id="quienes-somos" class="section-padding" style="background: var(--bg-subtle); border-top: 1px solid var(--border-color);">
-        <div class="section-header">
-            <span class="section-tag">¿Quiénes Somos?</span>
-            <h2 class="section-title">Impulsamos la transformación digital empresarial</h2>
-            <p class="section-desc">En Edatia combinamos ingeniería de software, arquitectura cloud y diseño intuitivo para entregar soluciones de software ágiles y seguras.</p>
+        <!-- CARROUSEL INTERACTIVO SWIPER DE PLANES Y PRECIOS -->
+        <div class="swiper pricing-swiper">
+            <div class="swiper-wrapper">
+
+                <!-- 1. PLAN PYME -->
+                <div class="swiper-slide">
+                    <div class="edatia-price-card">
+                        <div class="circle-price-badge">
+                            <span class="amount" id="price-val-1">$59,000</span>
+                            <span class="unit" id="price-unit-1">COP / mes</span>
+                        </div>
+                        <div class="card-header-banner">
+                            <h3>PLAN PYME</h3>
+                        </div>
+                        <div class="card-body-content">
+                            <div class="card-feature-item">🏢 <strong>1 SUCURSAL / SEDE</strong></div>
+                            <div class="card-feature-item">👥 <strong>2 USUARIOS ACCESO</strong></div>
+                            <div class="card-feature-item highlight-text">📦 INVENTARIOS & POS ILIMITADO</div>
+                            <div class="card-feature-item">📊 <strong>CONTROL CAJA Y REPORTES</strong></div>
+                            <div class="card-feature-item">🎧 SOPORTE PERMANENTE</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PLAN MI NEGOCIO (DESTACADO / MÁS POPULAR) -->
+                <div class="swiper-slide">
+                    <div class="edatia-price-card pro-card">
+                        <div class="circle-price-badge">
+                            <span class="amount" id="price-val-2">$110,000</span>
+                            <span class="unit" id="price-unit-2">COP / mes</span>
+                        </div>
+                        <div class="card-header-banner">
+                            <h3>PLAN MI NEGOCIO</h3>
+                        </div>
+                        <div class="card-body-content">
+                            <div class="card-feature-item">🏢 <strong>2 SUCURSALES / SEDES</strong></div>
+                            <div class="card-feature-item">👥 <strong>4 USUARIOS ACCESO</strong></div>
+                            <div class="card-feature-item">🧾 <strong>200 DOCS ELECTRÓNICOS / MES</strong></div>
+                            <div class="card-feature-item highlight-text">📦 INVENTARIOS & POS ILIMITADO</div>
+                            <div class="card-feature-item">🎧 SOPORTE PERMANENTE VIP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PLAN EMPRESA -->
+                <div class="swiper-slide">
+                    <div class="edatia-price-card">
+                        <div class="circle-price-badge">
+                            <span class="amount" id="price-val-3">$190,000</span>
+                            <span class="unit" id="price-unit-3">COP / mes</span>
+                        </div>
+                        <div class="card-header-banner">
+                            <h3>PLAN EMPRESA</h3>
+                        </div>
+                        <div class="card-body-content">
+                            <div class="card-feature-item">🏢 <strong>3 SUCURSALES / SEDES</strong></div>
+                            <div class="card-feature-item">👥 <strong>6 USUARIOS ACCESO</strong></div>
+                            <div class="card-feature-item">🧾 <strong>700 DOCS ELECTRÓNICOS / MES</strong></div>
+                            <div class="card-feature-item highlight-text">📦 INVENTARIOS & POS ILIMITADO</div>
+                            <div class="card-feature-item">🎧 SOPORTE PERMANENTE VIP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PLAN PREMIUM -->
+                <div class="swiper-slide">
+                    <div class="edatia-price-card">
+                        <div class="circle-price-badge">
+                            <span class="amount" id="price-val-4">$330,000</span>
+                            <span class="unit" id="price-unit-4">COP / mes</span>
+                        </div>
+                        <div class="card-header-banner">
+                            <h3>PLAN PREMIUM</h3>
+                        </div>
+                        <div class="card-body-content">
+                            <div class="card-feature-item">🏢 <strong>4 SUCURSALES / SEDES</strong></div>
+                            <div class="card-feature-item">👥 <strong>8 USUARIOS ACCESO</strong></div>
+                            <div class="card-feature-item">🧾 <strong>1,800 DOCS ELECTRÓNICOS / MES</strong></div>
+                            <div class="card-feature-item highlight-text">📦 INVENTARIOS & POS ILIMITADO</div>
+                            <div class="card-feature-item">🎧 SOPORTE PERMANENTE VIP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. PLAN ENTERPRISE -->
+                <div class="swiper-slide">
+                    <div class="edatia-price-card">
+                        <div class="circle-price-badge">
+                            <span class="amount" id="price-val-5">$500,000</span>
+                            <span class="unit" id="price-unit-5">COP / mes</span>
+                        </div>
+                        <div class="card-header-banner">
+                            <h3>PLAN ENTERPRISE</h3>
+                        </div>
+                        <div class="card-body-content">
+                            <div class="card-feature-item">🏢 <strong>6 SUCURSALES / SEDES</strong></div>
+                            <div class="card-feature-item">👥 <strong>10 USUARIOS ACCESO</strong></div>
+                            <div class="card-feature-item">🧾 <strong>5,000 DOCS ELECTRÓNICOS / MES</strong></div>
+                            <div class="card-feature-item highlight-text">📦 INVENTARIOS & POS ILIMITADO</div>
+                            <div class="card-feature-item">🎧 SOPORTE PERMANENTE VIP</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CONTROLES NAVEGACIÓN SLIDER PRECIOS -->
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+        </div>
+
+        <!-- BANNER DE ASESORÍA GRATUITA AL PIE -->
+        <div class="pricing-cta-banner">
+            <a href="https://wa.me/573205704262" target="_blank" class="btn-whatsapp-banner">
+                <i class="fa-brands fa-whatsapp"></i> ¡Solicita asesoría gratuita: +57 320 570 4262!
+            </a>
         </div>
     </section>
 
@@ -1468,49 +3101,75 @@
     </div>
 
     <!-- ================================================== -->
-    <!-- FOOTER CORPORATIVO                                 -->
+    <!-- FOOTER CORPORATIVO HORIZONTAL A LO ANCHO          -->
     <!-- ================================================== -->
     <footer>
         <div class="footer-container">
+            <!-- COLUMNA 1: MARCA Y BOTÓN BLANCO CONÓCENOS -->
             <div class="footer-brand">
                 <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
-                <p>Plataforma de Software ERP & Contable integral para la automatización y crecimiento de empresas en la nube.</p>
+                <p>Startup enfocada en soluciones tecnológicas empresariales fáciles, ágiles y confiables. Impulsamos la automatización y el crecimiento sostenible de comercios, mayoristas e industrias con software ERP en la nube.</p>
+                <button onclick="openDemoModal()" class="btn-know-us">
+                    Conócenos <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </div>
 
+            <!-- COLUMNA 2: CONTÁCTANOS CON DATOS Y MAPA -->
             <div class="footer-col">
-                <h5>Soluciones</h5>
+                <h5>Contáctanos</h5>
+                <div class="footer-contact-item">
+                    <i class="fa-solid fa-phone"></i>
+                    <div>
+                        <strong>Línea Comercial & WhatsApp:</strong><br>
+                        <a href="https://wa.me/573205704262" target="_blank">(+57) 320 570 4262</a>
+                    </div>
+                </div>
+
+                <div class="footer-contact-item">
+                    <i class="fa-solid fa-envelope"></i>
+                    <div>
+                        <strong>Correo Electrónico:</strong><br>
+                        <a href="mailto:comercial@edatia.com">comercial@edatia.com</a>
+                    </div>
+                </div>
+
+                <a href="https://www.google.com/maps/search/?api=1&query=Parque+La+Victoria+Villagorgona+Candelaria+Valle" target="_blank" rel="noopener" class="footer-contact-item footer-location-link" title="Abrir ubicación en Google Maps">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <div>
+                        <strong>Sede Principal:</strong><br>
+                        <span>Candelaria, Villagorgona, Colombia <i class="fa-solid fa-arrow-up-right-from-square ml-1" style="font-size: 0.72rem; color: #38bdf8;"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- COLUMNA 3: POLÍTICAS -->
+            <div class="footer-col">
+                <h5>Políticas</h5>
                 <ul>
-                    <li><a href="#modulos">Inventarios & Almacén</a></li>
-                    <li><a href="#modulos">Facturación & POS</a></li>
-                    <li><a href="#modulos">Contabilidad & Tesorería</a></li>
-                    <li><a href="#modulos">Módulo de Terceros</a></li>
-                    <li><a href="https://prestamos.edatia.com" target="_blank">Control de Préstamos</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('seguridad')">Política de Seguridad de la Información</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('ciberseguridad')">Política de Ciberseguridad & Datos</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('cookies')">Política de Cookies</a></li>
+                    <li><a href="javascript:void(0)" onclick="openPolicyModal('privacidad')">Aviso de Privacidad & Términos</a></li>
                 </ul>
             </div>
 
+            <!-- COLUMNA 4: SERVICIOS & ECOSISTEMA -->
             <div class="footer-col">
-                <h5>Nosotros</h5>
+                <h5>Ecosistema & Servicios</h5>
                 <ul>
-                    <li><a href="#quienes-somos">¿Quiénes Somos?</a></li>
-                    <li><a href="blog.html">Blog & Insights</a></li>
-                    <li><a href="javascript:void(0)" onclick="openPolicyModal('seguridad')">Seguridad de la Información</a></li>
-                    <li><a href="javascript:void(0)" onclick="openPolicyModal('privacidad')">Aviso de Privacidad</a></li>
-                </ul>
-            </div>
-
-            <div class="footer-col">
-                <h5>Contacto</h5>
-                <ul>
-                    <li><a href="https://wa.me/573205704262" target="_blank"><i class="fa-brands fa-whatsapp mr-2 text-emerald-400"></i> WhatsApp Oficial</a></li>
-                    <li><a href="mailto:comercial@edatia.com"><i class="fa-solid fa-envelope mr-2 text-sky-400"></i> comercial@edatia.com</a></li>
-                    <li><a href="https://app.edatia.com" target="_blank"><i class="fa-solid fa-right-to-bracket mr-2 text-blue-400"></i> Acceso ERP Clientes</a></li>
+                    <li><a href="https://app.edatia.com/login" target="_blank">EDATIA ERP Enterprise</a></li>
+                    <li><a href="https://prestamos.edatia.com" target="_blank">Software de Cartera</a></li>
+                    <li><a href="https://manager.edatia.com" target="_blank">Soporte EDATIA ERP</a></li>
+                    <li><a href="#" onclick="openDemoModal(); return false;">Asesorías Contables & DIAN</a></li>
+                    <li><a href="developers.html">Páginas Web & Tiendas</a></li>
+                    <li><a href="https://binarias.edatia.com" target="_blank">Edatia Trading Bot</a></li>
                 </ul>
             </div>
         </div>
 
         <div class="footer-bottom">
             <div>© 2026 EDATIA SOFTWARE ERP. Todos los derechos reservados.</div>
-            <div>Diseñado para máxima eficiencia y seguridad empresarial.</div>
+            <div>Impulsando la transformación digital de las empresas en Colombia y Latinoamérica.</div>
         </div>
     </footer>
 
@@ -1534,6 +3193,44 @@
                 breakpoints: {
                     640: { slidesPerView: 2, spaceBetween: 20 },
                     1024: { slidesPerView: 3, spaceBetween: 24 }
+                }
+            });
+
+            const accessSwiper = new Swiper('.access-swiper', {
+                slidesPerView: 1,
+                spaceBetween: 24,
+                loop: false,
+                grabCursor: true,
+                pagination: {
+                    el: '.access-swiper .swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.access-swiper .swiper-button-next',
+                    prevEl: '.access-swiper .swiper-button-prev',
+                },
+                breakpoints: {
+                    640: { slidesPerView: 2, spaceBetween: 20 },
+                    1024: { slidesPerView: 3, spaceBetween: 24 }
+                }
+            });
+            const pricingSwiper = new Swiper('.pricing-swiper', {
+                slidesPerView: 1,
+                spaceBetween: 24,
+                loop: false,
+                grabCursor: true,
+                pagination: {
+                    el: '.pricing-swiper .swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.pricing-swiper .swiper-button-next',
+                    prevEl: '.pricing-swiper .swiper-button-prev',
+                },
+                breakpoints: {
+                    640: { slidesPerView: 2, spaceBetween: 20 },
+                    1024: { slidesPerView: 3, spaceBetween: 24 },
+                    1280: { slidesPerView: 4, spaceBetween: 24 }
                 }
             });
         });
@@ -1609,6 +3306,122 @@
             const text = encodeURIComponent(`Hola Edatia, deseo solicitar una Demo Gratis del Software ERP. Mis datos:\n- Nombre/Empresa: ${name}\n- Celular: ${phone}\n- Email: ${email}`);
             window.open(`https://wa.me/573205704262?text=${text}`, '_blank');
             closeDemoModal();
+        }
+
+        function toggleBilling(period) {
+            const btnMensual = document.getElementById('btn-mensual');
+            const btnAnual = document.getElementById('btn-anual');
+            
+            const prices = {
+                mensual: ['$59,000', '$110,000', '$190,000', '$330,000', '$500,000'],
+                anual: ['$47,200', '$88,000', '$152,000', '$264,000', '$400,000']
+            };
+
+            if (period === 'anual') {
+                btnAnual.classList.add('active');
+                btnMensual.classList.remove('active');
+                for (let i = 1; i <= 5; i++) {
+                    const elVal = document.getElementById(`price-val-${i}`);
+                    const elUnit = document.getElementById(`price-unit-${i}`);
+                    if (elVal) elVal.innerText = prices.anual[i - 1];
+                    if (elUnit) elUnit.innerText = 'COP / mes (-20%)';
+                }
+            } else {
+                btnMensual.classList.add('active');
+                btnAnual.classList.remove('active');
+                for (let i = 1; i <= 5; i++) {
+                    const elVal = document.getElementById(`price-val-${i}`);
+                    const elUnit = document.getElementById(`price-unit-${i}`);
+                    if (elVal) elVal.innerText = prices.mensual[i - 1];
+                    if (elUnit) elUnit.innerText = 'COP / mes';
+                }
+            }
+        }
+
+        // ANIMACIÓN DE RED NODAL ENFOCADA EN SOFTWARE ERP & DATOS EN TIEMPO REAL
+        (function initDataMeshBackground() {
+            const canvas = document.getElementById('bg-data-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let particles = [];
+            const particleCount = 40; // Conexiones ligeras y sutiles
+            const maxDistance = 140;
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = Math.random() * 2 + 1.2;
+                    this.color = Math.random() > 0.5 ? '139, 92, 246' : '2, 132, 199'; // Morado o Azul ERP
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${this.color}, 0.7)`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < maxDistance) {
+                            const alpha = (1 - dist / maxDistance) * 0.3;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
+                            ctx.lineWidth = 0.75;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        })();
+
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            if (navLinks) {
+                navLinks.classList.toggle('mobile-active');
+            }
         }
     </script>
 </body>
