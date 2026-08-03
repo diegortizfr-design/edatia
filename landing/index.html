@@ -2325,6 +2325,172 @@
             color: #8b5cf6;
         }
 
+        /* ---- MOBILE DRAWER ---- */
+        #mobile-drawer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(3px);
+            z-index: 1099;
+        }
+
+        #mobile-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 300px;
+            max-width: 90vw;
+            background: #ffffff;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -8px 0 40px rgba(15, 23, 42, 0.12);
+        }
+
+        #mobile-drawer.drawer-open {
+            transform: translateX(0);
+        }
+
+        .mobile-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.2rem 1.4rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mobile-drawer-close {
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            color: #64748b;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-drawer-close:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .mobile-drawer-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .mobile-nav-group {
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        .mobile-nav-group-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: none;
+            border: none;
+            padding: 0.9rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .mobile-nav-group-btn:hover {
+            background: #f8fafc;
+        }
+
+        .mobile-chevron {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            transition: transform 0.25s ease;
+        }
+
+        .mobile-nav-group-btn.open .mobile-chevron {
+            transform: rotate(180deg);
+        }
+
+        .mobile-nav-accordion {
+            display: none;
+            flex-direction: column;
+            padding: 0.3rem 0 0.8rem 0;
+            background: #fafbfd;
+        }
+
+        .mobile-nav-accordion.open {
+            display: flex;
+        }
+
+        .mobile-nav-sub-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #8b5cf6;
+            padding: 0.5rem 1.4rem 0.3rem 1.4rem;
+        }
+
+        .mobile-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.65rem 1.6rem;
+            font-size: 0.88rem;
+            color: #334155;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .mobile-nav-link i {
+            color: #8b5cf6;
+            font-size: 0.85rem;
+            width: 16px;
+        }
+
+        .mobile-nav-link:hover {
+            background: #f1f5f9;
+            color: #8b5cf6;
+            padding-left: 2rem;
+        }
+
+        .mobile-nav-direct {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+            text-decoration: none;
+            border-bottom: 1px solid #f8fafc;
+            transition: background 0.15s ease;
+        }
+
+        .mobile-nav-direct:hover {
+            background: #f8fafc;
+            color: #8b5cf6;
+        }
+
+        .mobile-drawer-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1.2rem 1.4rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
         @media (max-width: 992px) {
             .mobile-toggle-btn {
                 display: flex;
@@ -2492,7 +2658,7 @@
                 <div class="logo-text">ED<span class="lambda">Λ</span>TIA</div>
             </a>
 
-            <!-- MENÚ PRINCIPAL -->
+            <!-- MENÚ PRINCIPAL (ESCRITORIO) -->
             <ul class="nav-links">
                 <!-- MEGA MENU: SOLUCIONES CON INLINE ESTILO H-GRID -->
                 <li class="nav-item">
@@ -2506,7 +2672,7 @@
                                 <i class="fa-solid fa-cubes"></i> Módulos (ERP)
                             </button>
                             <button class="mega-tab-btn" onclick="switchMegaTab(event, 'tab-otros')">
-                                <i class="fa-solid fa-rocket"></i> Otros Productos & Servicios
+                                <i class="fa-solid fa-rocket"></i> Otros Productos &amp; Servicios
                             </button>
                         </div>
 
@@ -2517,7 +2683,7 @@
                                 <a href="#modulos" class="mega-item">
                                     <i class="fa-solid fa-boxes-stacked"></i>
                                     <div>
-                                        <div class="mega-item-title">Inventarios & Almacén</div>
+                                        <div class="mega-item-title">Inventarios &amp; Almacén</div>
                                         <div class="mega-item-desc">Kardex, stock y código de barras</div>
                                     </div>
                                 </a>
@@ -2531,14 +2697,14 @@
                                 <a href="#modulos" class="mega-item">
                                     <i class="fa-solid fa-cash-register"></i>
                                     <div>
-                                        <div class="mega-item-title">Facturación & POS</div>
+                                        <div class="mega-item-title">Facturación &amp; POS</div>
                                         <div class="mega-item-desc">Ventas rápidas e impresión</div>
                                     </div>
                                 </a>
                                 <a href="#modulos" class="mega-item">
                                     <i class="fa-solid fa-calculator"></i>
                                     <div>
-                                        <div class="mega-item-title">Contabilidad & Tesorería</div>
+                                        <div class="mega-item-title">Contabilidad &amp; Tesorería</div>
                                         <div class="mega-item-desc">Flujo de caja, ingresos y egresos</div>
                                     </div>
                                 </a>
@@ -2564,7 +2730,7 @@
                                     <i class="fa-solid fa-chart-line"></i>
                                     <div>
                                         <div class="mega-item-title">Edatia Trading</div>
-                                        <div class="mega-item-desc">Bot & automatización de mercados</div>
+                                        <div class="mega-item-desc">Bot &amp; automatización de mercados</div>
                                     </div>
                                 </a>
                                 <a href="developers.html" class="mega-item">
@@ -2598,9 +2764,9 @@
                             <span>Políticas <i class="fa-solid fa-chevron-right ml-2 text-xs"></i></span>
                             <div class="submenu-policies">
                                 <a href="javascript:void(0)" onclick="openPolicyModal('seguridad')" class="dropdown-item">Política de Seguridad de la Información</a>
-                                <a href="javascript:void(0)" onclick="openPolicyModal('ciberseguridad')" class="dropdown-item">Política de Ciberseguridad & Datos</a>
+                                <a href="javascript:void(0)" onclick="openPolicyModal('ciberseguridad')" class="dropdown-item">Política de Ciberseguridad &amp; Datos</a>
                                 <a href="javascript:void(0)" onclick="openPolicyModal('cookies')" class="dropdown-item">Política de Cookies</a>
-                                <a href="javascript:void(0)" onclick="openPolicyModal('privacidad')" class="dropdown-item">Aviso de Privacidad & Términos</a>
+                                <a href="javascript:void(0)" onclick="openPolicyModal('privacidad')" class="dropdown-item">Aviso de Privacidad &amp; Términos</a>
                             </div>
                         </div>
                     </div>
@@ -2628,11 +2794,96 @@
             </div>
 
             <!-- BOTÓN MENÚ HAMBURGUESA MÓVIL -->
-            <button class="mobile-toggle-btn" onclick="toggleMobileMenu()" aria-label="Abrir menú">
+            <button class="mobile-toggle-btn" id="mobile-toggle-btn" onclick="toggleMobileMenu()" aria-label="Abrir menú">
                 <i class="fa-solid fa-bars"></i>
             </button>
         </nav>
     </header>
+
+    <!-- ================================================== -->
+    <!-- MOBILE DRAWER MENU (INDEPENDIENTE DEL MEGA-MENÚ)  -->
+    <!-- ================================================== -->
+    <div id="mobile-drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <aside id="mobile-drawer">
+        <div class="mobile-drawer-header">
+            <div class="logo-text" style="font-size:1.6rem; letter-spacing:3px;">ED<span class="lambda">Λ</span>TIA</div>
+            <button onclick="closeMobileDrawer()" class="mobile-drawer-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <nav class="mobile-drawer-nav">
+            <!-- SOLUCIONES ACORDEÓN -->
+            <div class="mobile-nav-group">
+                <button class="mobile-nav-group-btn" onclick="toggleMobileAccordion(this)">
+                    <span><i class="fa-solid fa-cubes mr-2"></i> Soluciones</span>
+                    <i class="fa-solid fa-chevron-down mobile-chevron"></i>
+                </button>
+                <div class="mobile-nav-accordion">
+                    <div class="mobile-nav-sub-label">Módulos ERP</div>
+                    <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-boxes-stacked"></i> Inventarios &amp; Almacén
+                    </a>
+                    <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-cash-register"></i> Facturación &amp; POS
+                    </a>
+                    <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-calculator"></i> Contabilidad &amp; Tesorería
+                    </a>
+                    <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-address-book"></i> Módulo de Terceros
+                    </a>
+                    <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-headset"></i> Módulo de Soporte
+                    </a>
+                    <div class="mobile-nav-sub-label" style="margin-top:0.6rem;">Otros Productos</div>
+                    <a href="https://prestamos.edatia.com" target="_blank" class="mobile-nav-link">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Gestión de Préstamos
+                    </a>
+                    <a href="developers.html" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-laptop-code"></i> Creación Páginas Web
+                    </a>
+                </div>
+            </div>
+
+            <!-- NOSOTROS ACORDEÓN -->
+            <div class="mobile-nav-group">
+                <button class="mobile-nav-group-btn" onclick="toggleMobileAccordion(this)">
+                    <span><i class="fa-solid fa-building mr-2"></i> Nosotros</span>
+                    <i class="fa-solid fa-chevron-down mobile-chevron"></i>
+                </button>
+                <div class="mobile-nav-accordion">
+                    <a href="#quienes-somos" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-users"></i> ¿Quiénes Somos?
+                    </a>
+                    <a href="#casos-exito" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-star"></i> Casos de Éxito
+                    </a>
+                    <a href="javascript:void(0)" onclick="openPolicyModal('privacidad');closeMobileDrawer();" class="mobile-nav-link">
+                        <i class="fa-solid fa-shield-halved"></i> Políticas de Privacidad
+                    </a>
+                </div>
+            </div>
+
+            <!-- ENLACES DIRECTOS -->
+            <a href="#planes" class="mobile-nav-direct" onclick="closeMobileDrawer()">
+                <i class="fa-solid fa-tags mr-2"></i> Precios
+            </a>
+            <a href="blog.html" class="mobile-nav-direct" onclick="closeMobileDrawer()">
+                <i class="fa-solid fa-newspaper mr-2"></i> Blog
+            </a>
+        </nav>
+
+        <!-- BOTONES CTA MÓVIL -->
+        <div class="mobile-drawer-actions">
+            <a href="https://app.edatia.com/login" target="_blank" class="btn-login" style="display:flex; align-items:center; justify-content:center; gap:6px; width:100%;">
+                <i class="fa-solid fa-right-to-bracket"></i> Inicia Sesión
+            </a>
+            <button onclick="openDemoModal();closeMobileDrawer();" class="btn-cta" style="width:100%; justify-content:center;">
+                Solicitar Demo Gratis <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </aside>
 
     <!-- ================================================== -->
     <!-- HERO SECTION EDATIA CORE CON VIDEO DE FONDO       -->
@@ -3421,37 +3672,29 @@
             animate();
         })();
 
+        // ---- MOBILE DRAWER ----
         function toggleMobileMenu() {
-            const navLinks = document.querySelector('.nav-links');
-            const toggleBtn = document.querySelector('.mobile-toggle-btn i');
-            if (!navLinks) return;
-
-            const isOpen = navLinks.classList.toggle('mobile-active');
-            if (toggleBtn) {
-                toggleBtn.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
-            }
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (!drawer) return;
+            drawer.classList.toggle('drawer-open');
+            if (overlay) overlay.style.display = drawer.classList.contains('drawer-open') ? 'block' : 'none';
         }
 
-        // Cerrar menú móvil al hacer clic fuera de él
-        document.addEventListener('click', function(e) {
-            const navLinks = document.querySelector('.nav-links');
-            const toggleBtn = document.querySelector('.mobile-toggle-btn');
-            const toggleIcon = document.querySelector('.mobile-toggle-btn i');
-            if (navLinks && toggleBtn && !navLinks.contains(e.target) && !toggleBtn.contains(e.target)) {
-                navLinks.classList.remove('mobile-active');
-                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
-            }
-        });
+        function closeMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (drawer) drawer.classList.remove('drawer-open');
+            if (overlay) overlay.style.display = 'none';
+        }
 
-        // Cerrar menú al hacer clic en un enlace del menú móvil
-        document.querySelectorAll('.nav-links a').forEach(function(link) {
-            link.addEventListener('click', function() {
-                const navLinks = document.querySelector('.nav-links');
-                const toggleIcon = document.querySelector('.mobile-toggle-btn i');
-                if (navLinks) navLinks.classList.remove('mobile-active');
-                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
-            });
-        });
+        function toggleMobileAccordion(btn) {
+            const accordion = btn.nextElementSibling;
+            const isOpen = btn.classList.toggle('open');
+            if (accordion) {
+                accordion.classList.toggle('open', isOpen);
+            }
+        }
     </script>
 </body>
 
