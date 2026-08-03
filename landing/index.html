@@ -547,19 +547,78 @@
         }
 
         .section-header {
+        /* SECCIÓN MÓDULOS CON FONDO DE REJILLA Y DESTELLOS SUTILES */
+        #modulos {
+            background-color: #fafbfc;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
+                linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #modulos::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8b5cf6, #2563eb, transparent);
+            opacity: 0.7;
+        }
+
+        .section-bg-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-purple {
+            top: 5%;
+            left: -5%;
+            width: 420px;
+            height: 420px;
+            background: rgba(139, 92, 246, 0.09);
+        }
+        .glow-blue {
+            bottom: 5%;
+            right: -5%;
+            width: 450px;
+            height: 450px;
+            background: rgba(37, 99, 235, 0.09);
+        }
+
+        .section-padding {
+            padding: 7rem 2rem;
+        }
+
+        .section-header {
             text-align: center;
             max-width: 800px;
             margin: 0 auto 4rem auto;
+            position: relative;
+            z-index: 1;
         }
 
         .section-tag {
-            color: var(--primary);
+            color: #8b5cf6;
             font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 0.8rem;
-            display: block;
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 5px 16px;
+            border-radius: 20px;
         }
 
         .section-title {
@@ -581,6 +640,7 @@
             margin: 0 auto;
             padding: 1rem 1rem 4rem 1rem !important;
             position: relative;
+            z-index: 1;
         }
 
         .modules-swiper .swiper-slide {
@@ -591,11 +651,13 @@
         .modules-swiper .module-card {
             width: 100%;
             height: 100%;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-top: 3px solid #8b5cf6;
             padding: 2.2rem;
             border-radius: 20px;
-            box-shadow: var(--shadow-subtle);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
             transition: var(--transition);
             display: flex;
             flex-direction: column;
@@ -604,20 +666,21 @@
         }
 
         .modules-swiper .module-card:hover {
-            border-color: rgba(37, 99, 235, 0.4);
+            border-color: rgba(139, 92, 246, 0.35);
+            border-top-color: #2563eb;
             transform: translateY(-6px);
-            box-shadow: var(--shadow-hover);
+            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.15);
         }
 
         .modules-swiper .swiper-pagination-bullet-active {
-            background: var(--primary) !important;
-            width: 24px;
+            background: #8b5cf6 !important;
+            width: 26px;
             border-radius: 6px;
         }
 
         .modules-swiper .swiper-button-next,
         .modules-swiper .swiper-button-prev {
-            color: var(--primary);
+            color: #8b5cf6;
             background: #ffffff;
             width: 48px;
             height: 48px;
@@ -635,17 +698,18 @@
 
         .modules-swiper .swiper-button-next:hover,
         .modules-swiper .swiper-button-prev:hover {
-            background: var(--primary);
+            background: linear-gradient(135deg, #a855f7 0%, #2563eb 100%);
             color: #ffffff;
+            border-color: transparent;
         }
 
         .module-icon {
             width: 56px;
             height: 56px;
             border-radius: 16px;
-            background: rgba(37, 99, 235, 0.08);
-            border: 1px solid rgba(37, 99, 235, 0.18);
-            color: var(--primary);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(37, 99, 235, 0.12) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #8b5cf6;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1180,6 +1244,8 @@
     <!-- SECCIÓN MÓDULOS DEL SOFTWARE (PRODUCTOS)          -->
     <!-- ================================================== -->
     <section id="modulos" class="section-padding">
+        <div class="section-bg-glow glow-purple"></div>
+        <div class="section-bg-glow glow-blue"></div>
         <div class="section-header">
             <span class="section-tag">Nuestros Productos & Módulos</span>
             <h2 class="section-title">Todo lo que tu empresa necesita en un solo ERP</h2>
