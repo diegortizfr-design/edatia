@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tropical Sun by Paola Botero — Bronceado Brasilero & Estética</title>
+    <meta name="description" content="Descubre tu glow perfecto en Tropical Sun. Bronceado brasilero con técnica y productos de Brasil, Bikini en cintas MARQUINHA y Baño de Luna. Agenda tu cita en línea.">
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root {
+            --gold: #d97706;
+            --gold-light: #fef3c7;
+            --gold-glow: #f59e0b;
+            --rose: #f43f5e;
+            --sand: #faf8f5;
+            --dark: #1c1917;
+            --dark-card: #262626;
+            --cream: #fffbeb;
+            --text-dark: #292524;
+            --text-muted: #78716c;
+            --border: #e7e5e4;
+            --white: #ffffff;
+            --whatsapp: #25d366;
+            --radius: 18px;
+            --transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--sand);
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* HEADER / NAVBAR */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(255, 251, 235, 0.94);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(217, 119, 6, 0.15);
+            padding: 0.85rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .brand-logo {
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+
+        .brand-text h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem; font-weight: 800; color: var(--dark);
+            letter-spacing: 0.5px; line-height: 1.1;
+        }
+
+        .brand-text span {
+            font-size: 0.72rem; font-weight: 600; color: var(--gold);
+            letter-spacing: 1.5px; text-transform: uppercase;
+        }
+
+        .btn-ws-nav {
+            background: linear-gradient(135deg, #25d366 0%, #16a34a 100%);
+            color: #fff; padding: 0.5rem 1.1rem; border-radius: 30px;
+            font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform var(--transition);
+        }
+        .btn-ws-nav:hover { transform: scale(1.04); }
+
+        /* HERO SLIDER SECTION */
+        .hero-slider-container {
+            position: relative;
+            background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 60%, var(--sand) 100%);
+            padding: 2.5rem 1.5rem 3.5rem;
+            text-align: center;
+        }
+
+        .hero-slider {
+            max-width: 900px; margin: 0 auto; position: relative;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 24px; padding: 2.5rem 2rem 2rem;
+            box-shadow: 0 10px 35px rgba(217, 119, 6, 0.08);
+        }
+
+        .slide-content {
+            display: none; animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--gold); padding: 0.35rem 1rem; border-radius: 30px;
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .hero h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.3rem; font-weight: 800; color: var(--dark);
+            line-height: 1.15; margin-bottom: 0.8rem;
+        }
+
+        .hero h2 span {
+            background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 0.98rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 1.6rem;
+        }
+
+        .btn-hero-cta {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff; padding: 0.8rem 2rem; border-radius: 30px;
+            font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 800;
+            display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); transition: all var(--transition);
+        }
+
+        .btn-hero-cta:hover { transform: scale(1.05); }
+
+        /* SLIDER CONTROLS / DOTS */
+        .slider-controls {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 1.5rem;
+        }
+
+        .dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #d6d3d1;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 28px; border-radius: 12px; background: var(--gold);
+        }
+
+        /* CALENDAR AGENDADOR SECTION */
+        .booking-section {
+            max-width: 900px; margin: -1.5rem auto 3rem; padding: 0 1.5rem;
+            position: relative; z-index: 10;
+        }
+
+        .booking-card {
+            background: #ffffff; border: 1px solid var(--border);
+            border-radius: 24px; padding: 2.2rem 2rem;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+        }
+
+        .booking-header {
+            text-align: center; margin-bottom: 1.8rem;
+        }
+
+        .booking-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem; font-weight: 800; color: var(--dark);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .booking-header p {
+            font-size: 0.88rem; color: var(--text-muted); margin-top: 0.2rem;
+        }
+
+        .booking-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .booking-grid { grid-template-columns: 1fr; }
+        }
+
+        .booking-group label {
+            display: block; font-size: 0.82rem; font-weight: 700; color: var(--dark);
+            margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .booking-select, .booking-input {
+            width: 100%; padding: 0.75rem 1rem; border-radius: 12px;
+            border: 1px solid var(--border); background: var(--sand);
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem;
+            color: var(--text-dark); outline: none; transition: border-color var(--transition);
+        }
+
+        .booking-select:focus, .booking-input:focus {
+            border-color: var(--gold); background: #ffffff;
+        }
+
+        /* DATES PICKER CHIPS */
+        .date-chips {
+            display: flex; gap: 0.6rem; overflow-x: auto; padding-bottom: 0.4rem;
+        }
+
+        .date-chip {
+            flex: 0 0 auto; text-align: center; padding: 0.6rem 0.9rem;
+            border-radius: 14px; border: 1px solid var(--border); background: var(--sand);
+            cursor: pointer; transition: all var(--transition);
+        }
+
+        .date-chip .day-name { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .date-chip .day-num { font-size: 1.1rem; font-weight: 800; color: var(--dark); line-height: 1.1; }
+
+        .date-chip.active, .date-chip:hover {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-color: var(--gold); color: #ffffff;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .date-chip.active .day-name { color: #fef3c7; }
+        .date-chip.active .day-num { color: #ffffff; }
+
+        /* TIME SLOTS CHIPS */
+        .time-chips {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+
+        .time-chip {
+            padding: 0.45rem 0.85rem; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--sand); font-size: 0.8rem; font-weight: 700; color: var(--text-dark);
+            cursor: pointer; transition: all var(--transition);
+        }
+
+        .time-chip.active, .time-chip:hover {
+            background: var(--dark); color: #fef3c7; border-color: var(--dark);
+        }
+
+        .btn-confirm-booking {
+            width: 100%; margin-top: 1.5rem; padding: 0.9rem; border-radius: 14px;
+            background: linear-gradient(135deg, #25d366 0%, #16a34a 100%);
+            color: #ffffff; border: none; font-family: 'Outfit', sans-serif;
+            font-size: 1rem; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3); transition: transform var(--transition);
+        }
+
+        .btn-confirm-booking:hover { transform: scale(1.02); }
+
+        /* GALERÍA / INSTALACIONES */
+        .venue-section {
+            max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem;
+        }
+
+        .venue-header {
+            text-align: center; margin-bottom: 2rem;
+        }
+
+        .venue-header h3 {
+            font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--dark);
+        }
+
+        .venue-header p {
+            font-size: 0.9rem; color: var(--text-muted); margin-top: 0.3rem;
+        }
+
+        .gallery-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem;
+        }
+
+        .gallery-card {
+            position: relative; border-radius: var(--radius); overflow: hidden;
+            height: 280px; border: 1px solid var(--border);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04); transition: all var(--transition);
+        }
+
+        .gallery-card img {
+            width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition);
+        }
+
+        .gallery-card:hover {
+            transform: translateY(-4px); box-shadow: 0 12px 30px rgba(217, 119, 6, 0.2);
+        }
+
+        .gallery-card:hover img { transform: scale(1.06); }
+
+        .gallery-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(28, 25, 23, 0.85) 0%, rgba(28, 25, 23, 0.1) 60%);
+            display: flex; flex-direction: column; justify-content: flex-end; padding: 1.2rem;
+            color: #ffffff;
+        }
+
+        .gallery-overlay h4 {
+            font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; color: #fef3c7;
+        }
+
+        .gallery-overlay p {
+            font-size: 0.78rem; color: #e7e5e4; opacity: 0.9;
+        }
+
+        /* CATALOG SECTION */
+        .catalog-container {
+            max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 5rem;
+        }
+
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h3 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--dark); }
+        .section-header p { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+        .categories-filter { display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+
+        .filter-btn {
+            background: #ffffff; border: 1px solid var(--border);
+            padding: 0.45rem 1.1rem; border-radius: 25px;
+            font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
+            cursor: pointer; transition: all var(--transition);
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--gold); color: #ffffff; border-color: var(--gold);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+        }
+
+        /* PRODUCT GRID */
+        .products-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.8rem;
+        }
+
+        .product-card {
+            background: #ffffff; border-radius: var(--radius);
+            border: 1px solid var(--border); overflow: hidden;
+            display: flex; flex-direction: column; transition: all var(--transition);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px); box-shadow: 0 12px 30px rgba(217, 119, 6, 0.15);
+            border-color: #fde68a;
+        }
+
+        .product-img-box {
+            position: relative; height: 220px; background: #fafaf9;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+
+        .product-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition); }
+        .product-card:hover .product-img-box img { transform: scale(1.05); }
+
+        .product-badge {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(28, 25, 23, 0.85); backdrop-filter: blur(4px);
+            color: #fef3c7; font-size: 0.7rem; font-weight: 700;
+            padding: 0.25rem 0.65rem; border-radius: 20px; letter-spacing: 0.5px;
+        }
+
+        .product-info { padding: 1.25rem; display: flex; flex-direction: column; flex: 1; gap: 0.6rem; }
+        .product-title { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--dark); line-height: 1.3; }
+        .product-desc { font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; flex: 1; }
+
+        .product-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 0.6rem; padding-top: 0.8rem; border-top: 1px dashed var(--border);
+        }
+
+        .product-price { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--gold); }
+
+        .btn-order-ws {
+            background: linear-gradient(135deg, #25d366 0%, #16a34a 100%);
+            color: #ffffff; border: none; padding: 0.55rem 1rem; border-radius: 25px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25); transition: all var(--transition);
+        }
+
+        .btn-order-ws:hover { opacity: 0.92; transform: scale(1.03); }
+
+        /* PROPOSAL BANNER FOR PAOLA */
+        .proposal-banner {
+            background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+            border-radius: 20px; padding: 2.5rem 2rem; color: #ffffff;
+            margin-top: 4rem; text-align: center; border: 1px solid rgba(245, 158, 11, 0.3);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .proposal-banner h4 { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; color: #fef3c7; margin-bottom: 0.6rem; }
+        .proposal-banner p { font-size: 0.92rem; color: #d6d3d1; max-width: 600px; margin: 0 auto 1.5rem; }
+
+        .btn-demo-edatia {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff; padding: 0.75rem 1.8rem; border-radius: 30px;
+            font-size: 0.9rem; font-weight: 800; display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4); transition: transform var(--transition);
+        }
+
+        .btn-demo-edatia:hover { transform: scale(1.05); }
+
+        /* RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 600px) {
+            .navbar { padding: 0.75rem 1rem; }
+            .brand-text h1 { font-size: 1.1rem; }
+            .brand-text span { font-size: 0.65rem; }
+            .btn-ws-nav { padding: 0.45rem 0.85rem; font-size: 0.75rem; }
+
+            .hero-slider { padding: 1.8rem 1rem 1.4rem; border-radius: 18px; }
+            .hero h2 { font-size: 1.7rem; }
+            .hero p { font-size: 0.88rem; }
+            .btn-hero-cta { width: 100%; justify-content: center; padding: 0.75rem 1.2rem; font-size: 0.88rem; }
+
+            .booking-card { padding: 1.5rem 1.2rem; border-radius: 18px; }
+            .booking-header h3 { font-size: 1.3rem; flex-direction: column; gap: 4px; }
+            .time-chips { justify-content: center; }
+
+            .gallery-grid { grid-template-columns: 1fr; }
+            .gallery-card { height: 230px; }
+
+            .products-grid { grid-template-columns: 1fr; }
+            .proposal-banner { padding: 1.8rem 1.2rem; }
+            .btn-demo-edatia { width: 100%; justify-content: center; }
+        }
+
+        /* FOOTER */
+        footer {
+            background: #ffffff; border-top: 1px solid var(--border);
+            padding: 2rem 1.5rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);
+        }
+
+        footer span { color: var(--gold); font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="brand-logo">
+            <img src="assets/tropicalsun_logo.jpg" alt="Tropical Sun by Paola Botero Logo" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #d97706; box-shadow:0 4px 12px rgba(217,119,6,0.25);">
+            <div class="brand-text">
+                <h1>Tropical Sun</h1>
+                <span>by Paola Botero</span>
+            </div>
+        </div>
+        <a href="#agendador" class="btn-ws-nav">
+            <i class="fa-solid fa-calendar-check"></i> Agenda tu Cita
+        </a>
+    </header>
+
+    <!-- HERO SLIDER PROMOCIONAL -->
+    <section class="hero-slider-container">
+        <div class="hero-slider">
+            
+            <!-- SLIDE 1 -->
+            <div class="slide-content active" id="slide-0">
+                <div class="hero-badge"><i class="fa-solid fa-fire-flame-curved"></i> ¿Qué esperas para brillar?</div>
+                <div class="hero">
+                    <h2>¿Qué esperas? <span>Agenda tu cita ya</span> ☀️</h2>
+                    <p>Obtén esa marca perfecta de bikini y un tono dorado canela envidiable con nuestra técnica y productos exclusivos traídos de Brasil.</p>
+                    <a href="#agendador" class="btn-hero-cta">
+                        <i class="fa-solid fa-calendar-days"></i> Agendar Mi Bronceado Ahora
+                    </a>
+                </div>
+            </div>
+
+            <!-- SLIDE 2 -->
+            <div class="slide-content" id="slide-1">
+                <div class="hero-badge"><i class="fa-solid fa-crown"></i> Marquinha Perfecta</div>
+                <div class="hero">
+                    <h2>Bikini en Cintas <span>MARQUINHA</span> 👙</h2>
+                    <p>Diseño de cintas personalizado según la forma de tu cuerpo para una marca limpia, simétrica e hiper definida.</p>
+                    <a href="#agendador" class="btn-hero-cta">
+                        <i class="fa-solid fa-calendar-days"></i> Reservar Sesión Marquinha
+                    </a>
+                </div>
+            </div>
+
+            <!-- SLIDE 3 -->
+            <div class="slide-content" id="slide-2">
+                <div class="hero-badge"><i class="fa-solid fa-moon"></i> Piel de Seda &amp; Glow</div>
+                <div class="hero">
+                    <h2>Tratamiento <span>Baño de Luna</span> 🌙</h2>
+                    <p>Aclarado de vellos dorados, exfoliación corporal intensiva e hidratación de coco para recuperar la suavidad de tu piel.</p>
+                    <a href="#agendador" class="btn-hero-cta">
+                        <i class="fa-solid fa-calendar-days"></i> Agendar Baño de Luna
+                    </a>
+                </div>
+            </div>
+
+            <!-- DOTS -->
+            <div class="slider-controls">
+                <div class="dot active" onclick="goToSlide(0)"></div>
+                <div class="dot" onclick="goToSlide(1)"></div>
+                <div class="dot" onclick="goToSlide(2)"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CALENDARIO AGENDADOR DE CITAS -->
+    <section class="booking-section" id="agendador">
+        <div class="booking-card">
+            <div class="booking-header">
+                <h3><i class="fa-solid fa-calendar-days" style="color:var(--gold);"></i> Agendador de Citas en Línea</h3>
+                <p>Selecciona tu servicio, fecha y hora disponible. Te confirmaremos al instante por WhatsApp.</p>
+            </div>
+
+            <form id="bookingForm" onsubmit="submitBooking(event)">
+                <div class="booking-grid">
+                    
+                    <!-- SERVICIO -->
+                    <div class="booking-group">
+                        <label><i class="fa-solid fa-spa"></i> Selecciona el Servicio</label>
+                        <select class="booking-select" id="book-service" required>
+                            <option value="Bronceado Brasilero Marquinha ($80,000 COP)">Bronceado Brasilero Marquinha — $80,000 COP</option>
+                            <option value="Tratamiento Baño de Luna ($65,000 COP)">Tratamiento Baño de Luna — $65,000 COP</option>
+                            <option value="Combo Glow Brasilero + Baño de Luna ($130,000 COP)">Combo Glow Brasilero + Baño de Luna — $130,000 COP</option>
+                            <option value="Acelerador & Prolongador Brasilero ($45,000 COP)">Acelerador & Prolongador Brasilero — $45,000 COP</option>
+                        </select>
+                    </div>
+
+                    <!-- NOMBRE -->
+                    <div class="booking-group">
+                        <label><i class="fa-solid fa-user"></i> Tu Nombre Completo</label>
+                        <input type="text" class="booking-input" id="book-name" placeholder="Ej: María Paula Pérez" required>
+                    </div>
+
+                </div>
+
+                <!-- FECHAS -->
+                <div class="booking-group" style="margin-top:1.2rem;">
+                    <label><i class="fa-solid fa-calendar-day"></i> Selecciona la Fecha</label>
+                    <div class="date-chips" id="dateChips">
+                        <!-- Generados por JS -->
+                    </div>
+                    <input type="hidden" id="book-date" required>
+                </div>
+
+                <!-- HORAS -->
+                <div class="booking-group" style="margin-top:1.2rem;">
+                    <label><i class="fa-solid fa-clock"></i> Hora Disponible</label>
+                    <div class="time-chips" id="timeChips">
+                        <div class="time-chip" onclick="selectTime(this, '09:00 AM')">09:00 AM</div>
+                        <div class="time-chip" onclick="selectTime(this, '10:30 AM')">10:30 AM</div>
+                        <div class="time-chip active" onclick="selectTime(this, '02:00 PM')">02:00 PM</div>
+                        <div class="time-chip" onclick="selectTime(this, '03:30 PM')">03:30 PM</div>
+                        <div class="time-chip" onclick="selectTime(this, '05:00 PM')">05:00 PM</div>
+                    </div>
+                    <input type="hidden" id="book-time" value="02:00 PM" required>
+                </div>
+
+                <button type="submit" class="btn-confirm-booking">
+                    <i class="fa-brands fa-whatsapp"></i> Confirmar Cita por WhatsApp
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- GALERÍA DE NUESTRO ESPACIO -->
+    <section class="venue-section">
+        <div class="venue-header">
+            <h3><i class="fa-solid fa-camera-retro" style="color:var(--gold);"></i> Conoce Nuestras Instalaciones</h3>
+            <p>Un espacio exclusivo, privado y pensado para tu máxima comodidad y relajación al aire libre.</p>
+        </div>
+
+        <div class="gallery-grid">
+            
+            <!-- TERRAZA / CAMILLAS -->
+            <div class="gallery-card">
+                <img src="assets/lugar_terraza.png" alt="Terraza de bronceado al aire libre Tropical Sun">
+                <div class="gallery-overlay">
+                    <h4><i class="fa-solid fa-sun"></i> Terraza Solárium</h4>
+                    <p>Camillas acondicionadas y ambiente natural al aire libre</p>
+                </div>
+            </div>
+
+            <!-- RECEPCIÓN MARMOL & LOGO -->
+            <div class="gallery-card">
+                <img src="assets/lugar_logo_marmol.png" alt="Mural mármol dorado Tropical Sun">
+                <div class="gallery-overlay">
+                    <h4><i class="fa-solid fa-gem"></i> Acabados de Lujo</h4>
+                    <p>Mural en mármol dorado distintivo de nuestra marca</p>
+                </div>
+            </div>
+
+            <!-- BARRA & REFRESH -->
+            <div class="gallery-card">
+                <img src="assets/lugar_barra.png" alt="Barra de hidratación y bebidas">
+                <div class="gallery-overlay">
+                    <h4><i class="fa-solid fa-glass-water"></i> Zona de Relajación &amp; Refresh</h4>
+                    <p>Bebidas e hidratación refrescante durante tu sesión</p>
+                </div>
+            </div>
+
+            <!-- DUCHA EXTERIOR MARMOL -->
+            <div class="gallery-card">
+                <img src="assets/lugar_ducha.png" alt="Ducha exterior acabado mármol">
+                <div class="gallery-overlay">
+                    <h4><i class="fa-solid fa-shower"></i> Ducha de Enjuague Premium</h4>
+                    <p>Espacio privado con regadera tipo lluvia e hidratación</p>
+                </div>
+            </div>
+
+            <!-- FACHADA EDIFICIO -->
+            <div class="gallery-card">
+                <img src="assets/lugar_fachada.png" alt="Fachada sede Tropical Sun">
+                <div class="gallery-overlay">
+                    <h4><i class="fa-solid fa-location-dot"></i> Sede Principal</h4>
+                    <p>Ubicación segura y de fácil acceso</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CATALOGO -->
+    <main class="catalog-container">
+        <div class="section-header">
+            <h3>Catálogo de Servicios &amp; Productos</h3>
+            <p>Conoce los detalles de nuestras técnicas exclusivas traídas de Brasil.</p>
+        </div>
+
+        <div class="categories-filter">
+            <button class="filter-btn active" onclick="filterCategory('todos', this)">Todos</button>
+            <button class="filter-btn" onclick="filterCategory('bronceado', this)">Bronceado</button>
+            <button class="filter-btn" onclick="filterCategory('tratamientos', this)">Tratamientos</button>
+            <button class="filter-btn" onclick="filterCategory('productos', this)">Productos</button>
+        </div>
+
+        <div class="products-grid">
+
+            <!-- PRODUCTO 1 -->
+            <div class="product-card" data-category="bronceado">
+                <div class="product-img-box">
+                    <span class="product-badge">Técnica Brasil</span>
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="Bronceado Brasilero">
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Bronceado Brasilero Marquinha</div>
+                    <div class="product-desc">Técnica exclusiva con bikini en cintas adhesivas personalizadas. Logra una marca limpia, dorada e hiper definida.</div>
+                    <div class="product-footer">
+                        <div class="product-price">$80,000 COP</div>
+                        <button class="btn-order-ws" onclick="quickBook('Bronceado Brasilero Marquinha ($80,000 COP)')">
+                            <i class="fa-solid fa-calendar-plus"></i> Agendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRODUCTO 2 -->
+            <div class="product-card" data-category="tratamientos">
+                <div class="product-img-box">
+                    <span class="product-badge">Piel Sedosa</span>
+                    <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80" alt="Baño de Luna">
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Tratamiento Baño de Luna</div>
+                    <div class="product-desc">Aclarado de vellos, exfoliación profunda e hidratación corporal completa. Deja tu piel radiante, dorada y suave.</div>
+                    <div class="product-footer">
+                        <div class="product-price">$65,000 COP</div>
+                        <button class="btn-order-ws" onclick="quickBook('Tratamiento Baño de Luna ($65,000 COP)')">
+                            <i class="fa-solid fa-calendar-plus"></i> Agendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRODUCTO 3 -->
+            <div class="product-card" data-category="bronceado">
+                <div class="product-img-box">
+                    <span class="product-badge">Combo VIP</span>
+                    <img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=600&q=80" alt="Combo Glow Total">
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Combo Glow Brasilero + Baño de Luna</div>
+                    <div class="product-desc">Sesión completa de bronceado en cintas + exfoliación previa e hidratación de coco posterior para máxima duración.</div>
+                    <div class="product-footer">
+                        <div class="product-price">$130,000 COP</div>
+                        <button class="btn-order-ws" onclick="quickBook('Combo Glow Brasilero + Baño de Luna ($130,000 COP)')">
+                            <i class="fa-solid fa-calendar-plus"></i> Agendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRODUCTO 4 -->
+            <div class="product-card" data-category="productos">
+                <div class="product-img-box">
+                    <span class="product-badge">Uso en Casa</span>
+                    <img src="https://images.unsplash.com/photo-1608248597266-c89050df9c15?auto=format&fit=crop&w=600&q=80" alt="Acelerador de Bronceado">
+                </div>
+                <div class="product-info">
+                    <div class="product-title">Acelerador &amp; Prolongador Brasilero</div>
+                    <div class="product-desc">Crema aceleradora importada de Brasil con aceites naturales de urucum y coco. Mantiene tu color por semanas.</div>
+                    <div class="product-footer">
+                        <div class="product-price">$45,000 COP</div>
+                        <button class="btn-order-ws" onclick="orderWhatsApp('Acelerador & Prolongador Brasilero', '$45,000 COP')">
+                            <i class="fa-brands fa-whatsapp"></i> Pedir
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BANNER DE PROPUESTA (DEMO PARA PAOLA BOTERO) -->
+        <div class="proposal-banner">
+            <h4>¿Te gusta cómo funciona esta Web Agendadora para Tropical Sun? ☀️</h4>
+            <p>Con este sistema, tus clientas eligen su servicio, fecha y hora directamente desde su celular sin que tengas que atender llamadas o responder los mismos chats.</p>
+            <a href="https://wa.me/573205704262?text=Hola%20Edatia,%20vi%20la%20propuesta%20de%20la%20web%20agendadora%20para%20Tropical%20Sun" target="_blank" class="btn-demo-edatia">
+                <i class="fa-brands fa-whatsapp"></i> Hablar con EDATIA para activar esta Web
+            </a>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 <strong>Tropical Sun</strong> by Paola Botero — Propuesta desarrollada por <span>EDATIA</span></p>
+    </footer>
+
+    <script>
+        // SLIDER AUTOMÁTICO
+        let currentSlide = 0;
+        const totalSlides = 3;
+
+        function goToSlide(n) {
+            currentSlide = n;
+            document.querySelectorAll('.slide-content').forEach((s, idx) => {
+                s.classList.toggle('active', idx === n);
+            });
+            document.querySelectorAll('.dot').forEach((d, idx) => {
+                d.classList.toggle('active', idx === n);
+            });
+        }
+
+        setInterval(() => {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            goToSlide(currentSlide);
+        }, 5000);
+
+        // GENERAR CHIPS DE FECHAS PRÓXIMAS (HOY Y 6 DÍAS)
+        function initDateChips() {
+            const dateContainer = document.getElementById('dateChips');
+            dateContainer.innerHTML = '';
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            const today = new Date();
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+
+                const dayName = days[d.getDay()];
+                const dayNum = d.getDate();
+                const monthName = months[d.getMonth()];
+                const fullDateStr = `${dayName} ${dayNum} ${monthName}`;
+
+                const chip = document.createElement('div');
+                chip.className = `date-chip ${i === 0 ? 'active' : ''}`;
+                chip.onclick = function() {
+                    document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    document.getElementById('book-date').value = fullDateStr;
+                };
+
+                chip.innerHTML = `
+                    <div class="day-name">${dayName}</div>
+                    <div class="day-num">${dayNum}</div>
+                `;
+                dateContainer.appendChild(chip);
+
+                if (i === 0) {
+                    document.getElementById('book-date').value = fullDateStr;
+                }
+            }
+        }
+        initDateChips();
+
+        function selectTime(el, timeVal) {
+            document.querySelectorAll('.time-chip').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('book-time').value = timeVal;
+        }
+
+        // CONFIRMAR CITA POR WHATSAPP
+        function submitBooking(e) {
+            e.preventDefault();
+            const service = document.getElementById('book-service').value;
+            const name = document.getElementById('book-name').value.trim();
+            const date = document.getElementById('book-date').value;
+            const time = document.getElementById('book-time').value;
+
+            const phone = "573169029865";
+            const text = encodeURIComponent(`Hola Tropical Sun ☀️, quisiera agendar la siguiente cita:\n\n👤 *Cliente:* ${name}\n✨ *Servicio:* ${service}\n📅 *Fecha:* ${date}\n⏰ *Hora:* ${time}\n\n¿Me confirman la disponibilidad por favor?`);
+
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        }
+
+        function quickBook(serviceName) {
+            document.getElementById('book-service').value = serviceName;
+            document.getElementById('agendador').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function orderWhatsApp(productName, price) {
+            const phone = "573169029865";
+            const text = encodeURIComponent(`Hola Tropical Sun ☀️, vi su catálogo web y me interesa adquirir: *${productName}* (${price}). ¿Tienen disponibilidad?`);
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        }
+
+        function filterCategory(cat, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                if (cat === 'todos' || card.dataset.category === cat) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

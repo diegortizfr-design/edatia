@@ -4,6 +4,13 @@
 
 :80 {
 	root * /usr/share/caddy
+
+	# Mapeo de subdominio Tropical Sun
+	@tropicalsun host tropicalsun.edatia.com
+	handle @tropicalsun {
+		rewrite * /tropicalsun.html
+	}
+
 	file_server
 
 	# Seguridad
