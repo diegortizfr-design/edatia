@@ -8,7 +8,7 @@
 	# Mapeo específico para el subdominio Tropical Sun
 	@tropicalsun host tropicalsun.edatia.com
 	handle @tropicalsun {
-		try_files /tropicalsun.html /index.html
+		try_files {path} /tropicalsun.html /index.html
 	}
 
 	# Manejo por defecto para edatia.com y www.edatia.com
