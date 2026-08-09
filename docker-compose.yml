@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.edatia-landing.rule=Host(`edatia.com`) || Host(`www.edatia.com`)"
+      - "traefik.http.routers.edatia-landing.rule=Host(`edatia.com`) || Host(`www.edatia.com`) || Host(`tropicalsun.edatia.com`)"
       - "traefik.http.routers.edatia-landing.entrypoints=websecure"
       - "traefik.http.routers.edatia-landing.tls=true"
       - "traefik.http.routers.edatia-landing.tls.certresolver=letsencrypt"
