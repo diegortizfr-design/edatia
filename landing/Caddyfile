@@ -2,18 +2,20 @@
 	admin off
 }
 
-:80 {
+# Dominio principal y subdominios con SSL automático habilitado
+edatia.com, www.edatia.com, tropicalsun.edatia.com {
 	root * /usr/share/caddy
 
-	# Mapeo de subdominio Tropical Sun
+	# Mapeo específico para Tropical Sun
 	@tropicalsun host tropicalsun.edatia.com
 	handle @tropicalsun {
-		rewrite * /tropicalsun.html
+		try_files /tropicalsun.html /index.html
 	}
 
+	# Servir archivos estáticos por defecto
 	file_server
 
-	# Seguridad
+	# Cabeceras de seguridad
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Frame-Options "SAMEORIGIN"
@@ -22,11 +24,16 @@
 		-Server
 	}
 
-	# Compresión
+	# Compresión gzip
 	encode gzip
 
-	# Clean URLs for .html files
-	try_files {path} {path}.html /index.html
+	# Clean URLs para archivos HTML del dominio principal edatia.com
+	@notTropical {
+		not host tropicalsun.edatia.com
+	}
+	handle @notTropical {
+		try_files {path} {path}.html /index.html
+	}
 
 	log {
 		output stdout
