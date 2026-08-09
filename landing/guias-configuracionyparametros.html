@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración & Parámetros — Guías Edatia ERP</title>
+    <meta name="description" content="Guía técnica del módulo de Configuración y Parámetros de Edatia ERP. Aprende a personalizar tu empresa, roles, impuestos y estructura operacional paso a paso.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root {
+            --purple:       #8b5cf6;
+            --purple-dark:  #7c3aed;
+            --purple-light: #ede9fe;
+            --blue:         #2563eb;
+            --dark:         #0f172a;
+            --slate:        #334155;
+            --muted:        #64748b;
+            --border:       #e2e8f0;
+            --bg:           #f8fafc;
+            --white:        #ffffff;
+            --sidebar-w:    280px;
+            --header-h:     64px;
+            --radius:       12px;
+            --transition:   0.2s ease;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--slate); line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+
+        /* TOP NAV */
+        .topnav {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: var(--header-h);
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 1.5rem; z-index: 200; gap: 1rem;
+        }
+        .topnav-left { display: flex; align-items: center; gap: 1.2rem; }
+        .logo-text { font-size: 1.45rem; font-weight: 900; letter-spacing: 4px; color: var(--dark); }
+        .logo-text .lambda { color: var(--purple); }
+        .topnav-divider { width: 1px; height: 24px; background: var(--border); }
+        .topnav-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+        .topnav-label span { color: var(--purple); font-weight: 700; }
+        .topnav-right { display: flex; align-items: center; gap: 0.8rem; }
+
+        .btn-back {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.83rem; font-weight: 600; color: var(--muted);
+            padding: 0.45rem 0.9rem; border-radius: 8px;
+            border: 1px solid var(--border); transition: all var(--transition);
+        }
+        .btn-back:hover { color: var(--purple); border-color: var(--purple); background: var(--purple-light); }
+
+        .btn-login-nav {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.83rem; font-weight: 700; color: var(--white);
+            background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+            padding: 0.45rem 1.1rem; border-radius: 8px; border: none; cursor: pointer;
+            transition: opacity var(--transition);
+        }
+        .btn-login-nav:hover { opacity: 0.88; }
+
+        .topnav-search { flex: 1; max-width: 400px; position: relative; }
+        .topnav-search input {
+            width: 100%; padding: 0.5rem 0.9rem 0.5rem 2.4rem;
+            border: 1px solid var(--border); border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 0.84rem;
+            color: var(--dark); background: var(--bg); outline: none;
+            transition: border-color var(--transition);
+        }
+        .topnav-search input:focus { border-color: var(--purple); }
+        .topnav-search i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.8rem; }
+
+        /* LAYOUT */
+        .layout { display: flex; padding-top: var(--header-h); min-height: 100vh; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-w); min-width: var(--sidebar-w);
+            background: var(--white); border-right: 1px solid var(--border);
+            position: fixed; top: var(--header-h); left: 0; bottom: 0;
+            overflow-y: auto; padding: 1.4rem 0; z-index: 100;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .sidebar-section-label {
+            font-size: 0.65rem; font-weight: 800; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--muted);
+            padding: 0.5rem 1.4rem 0.4rem; margin-top: 0.8rem;
+        }
+
+        .sidebar-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0.65rem 1.4rem; font-size: 0.84rem; font-weight: 500;
+            color: var(--slate); cursor: pointer; transition: all var(--transition);
+            border-left: 3px solid transparent;
+        }
+        .sidebar-item i { font-size: 0.78rem; width: 16px; color: var(--muted); flex-shrink: 0; }
+        .sidebar-item:hover { background: var(--bg); color: var(--purple); }
+        .sidebar-item:hover i { color: var(--purple); }
+        .sidebar-item.active { background: var(--purple-light); color: var(--purple-dark); font-weight: 700; border-left-color: var(--purple); }
+        .sidebar-item.active i { color: var(--purple-dark); }
+
+        .sidebar-badge {
+            margin-left: auto; font-size: 0.6rem; font-weight: 700;
+            background: var(--purple-light); color: var(--purple);
+            padding: 2px 6px; border-radius: 20px;
+        }
+        .sidebar-item.active .sidebar-badge { background: var(--purple-dark); color: var(--white); }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; margin-left: var(--sidebar-w); padding: 2.5rem 3rem 4rem; min-width: 0; }
+
+        .content-inner { max-width: 860px; }
+
+        .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); margin-bottom: 1.8rem; }
+        .breadcrumb a { color: var(--muted); transition: color var(--transition); }
+        .breadcrumb a:hover { color: var(--purple); }
+        .breadcrumb .sep { color: var(--border); }
+        .breadcrumb .current { color: var(--purple); font-weight: 600; }
+
+        /* GUIDE HEADER */
+        .guide-header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            border-radius: 20px; padding: 2.5rem 2.8rem; margin-bottom: 2.5rem;
+            color: var(--white); position: relative; overflow: hidden;
+        }
+        .guide-header::before {
+            content: ''; position: absolute; top: -60px; right: -60px;
+            width: 200px; height: 200px; background: rgba(139,92,246,.25); border-radius: 50%;
+        }
+        .guide-header::after {
+            content: ''; position: absolute; bottom: -40px; left: 40%;
+            width: 140px; height: 140px; background: rgba(99,102,241,.2); border-radius: 50%;
+        }
+        .guide-header-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 20px; padding: .3rem .9rem;
+            font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1rem;
+        }
+        .guide-header h1 { font-size: 2rem; font-weight: 800; line-height: 1.2; margin-bottom: .75rem; position: relative; z-index: 1; }
+        .guide-header p { font-size: .95rem; color: rgba(255,255,255,.78); max-width: 560px; position: relative; z-index: 1; }
+        .guide-header-meta { display: flex; align-items: center; gap: 1.2rem; margin-top: 1.5rem; flex-wrap: wrap; position: relative; z-index: 1; }
+        .meta-chip { display: flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; color: rgba(255,255,255,.75); }
+        .meta-chip i { font-size: .7rem; }
+
+        /* SECTION TITLE */
+        .section-title-guide {
+            font-size: 1.15rem; font-weight: 800; color: var(--dark);
+            margin-bottom: 1rem; margin-top: 2.5rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title-guide i { color: var(--purple); font-size: 1rem; }
+
+        /* INTRO BOX */
+        .intro-box {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.5rem 1.8rem;
+            font-size: .93rem; line-height: 1.75; color: var(--slate); margin-bottom: 1.5rem;
+        }
+        .intro-box p + p { margin-top: .8rem; }
+
+        /* STEPS */
+        .steps-list { display: flex; flex-direction: column; gap: 1.2rem; }
+        .step-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: box-shadow var(--transition); }
+        .step-card:hover { box-shadow: 0 6px 24px rgba(139,92,246,.08); }
+        .step-header { display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); background: #fafbff; }
+        .step-number {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+            color: var(--white); font-size: .85rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .step-title { font-size: .95rem; font-weight: 700; color: var(--dark); }
+        .step-body { padding: 1.2rem 1.4rem; font-size: .88rem; color: var(--slate); line-height: 1.7; }
+
+        /* IMG PLACEHOLDER */
+        .step-img-placeholder {
+            width: 100%; height: 220px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0e7ff 100%);
+            border-radius: 10px; margin-top: 1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: .5rem; border: 2px dashed #c4b5fd; color: #a78bfa;
+        }
+        .step-img-placeholder i { font-size: 2rem; }
+        .step-img-placeholder span { font-size: .78rem; font-weight: 600; }
+
+        /* TIPS */
+        .tip-box { display: flex; gap: .9rem; padding: 1rem 1.3rem; border-radius: var(--radius); font-size: .87rem; margin-top: 1rem; }
+        .tip-box i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+        .tip-box.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .tip-box.info i  { color: #3b82f6; }
+        .tip-box.warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .tip-box.warning i { color: #f59e0b; }
+        .tip-box.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .tip-box.success i { color: #22c55e; }
+
+        /* TOC */
+        .toc-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.3rem 1.6rem; margin-bottom: 2rem; }
+        .toc-card h4 { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: .9rem; display: flex; align-items: center; gap: 6px; }
+        .toc-list { list-style: none; display: flex; flex-direction: column; gap: .4rem; }
+        .toc-list li a { font-size: .87rem; color: var(--slate); display: flex; align-items: center; gap: 8px; transition: color var(--transition); }
+        .toc-list li a:hover { color: var(--purple); }
+        .toc-list li a::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--purple); flex-shrink: 0; }
+
+        /* DIVIDER */
+        .guide-divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+        /* ARTICLE NAV */
+        .article-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; }
+        .article-nav-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: .9rem 1.3rem; border: 1px solid var(--border);
+            border-radius: var(--radius); font-size: .84rem; font-weight: 600;
+            color: var(--slate); background: var(--white); transition: all var(--transition); flex: 1;
+        }
+        .article-nav-btn.next { justify-content: flex-end; text-align: right; }
+        .article-nav-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-light); }
+        .article-nav-btn .nav-sub { display: block; font-size: .7rem; font-weight: 400; color: var(--muted); }
+
+        /* FEEDBACK */
+        .feedback-row { display: flex; align-items: center; gap: 1rem; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.5rem; margin-top: 2rem; font-size: .86rem; }
+        .feedback-row p { color: var(--muted); flex: 1; }
+        .feedback-btn { display: flex; align-items: center; gap: 5px; padding: .4rem .9rem; border-radius: 8px; border: 1px solid var(--border); font-size: .8rem; font-weight: 600; background: none; cursor: pointer; transition: all var(--transition); }
+        .feedback-btn.yes:hover { background: #f0fdf4; border-color: #22c55e; color: #166534; }
+        .feedback-btn.no:hover  { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .main-content { margin-left: 0; padding: 1.5rem 1.2rem 3rem; }
+            .sidebar { transform: translateX(-100%); transition: transform .3s ease; z-index: 300; }
+            .sidebar.open { transform: translateX(0); }
+            .guide-header h1 { font-size: 1.5rem; }
+            .guide-header { padding: 2rem 1.6rem; }
+        }
+        @media (max-width: 600px) {
+            .topnav-search, .topnav-label, .topnav-divider { display: none; }
+            .article-nav, .feedback-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAV -->
+    <header class="topnav">
+        <div class="topnav-left">
+            <a href="index.html" class="logo-text">ED<span class="lambda">&#923;</span>TIA</a>
+            <div class="topnav-divider"></div>
+            <span class="topnav-label">Centro de <span>Guias</span></span>
+        </div>
+        <div class="topnav-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Buscar en las guias...">
+        </div>
+        <div class="topnav-right">
+            <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Volver al inicio</a>
+            <a href="https://app.edatia.com/login" target="_blank" class="btn-login-nav"><i class="fa-solid fa-right-to-bracket"></i> Ingresar al ERP</a>
+        </div>
+    </header>
+
+    <div class="layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section-label">Modulos ERP</div>
+
+            <a href="guias-configuracionyparametros.html" class="sidebar-item active">
+                <i class="fa-solid fa-gears"></i>
+                Configuracion &amp; Parametros
+                <span class="sidebar-badge">Activo</span>
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                Inventarios &amp; Almacen
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-box-open"></i>
+                Gestion Productos
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-address-book"></i>
+                Modulo de Terceros
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-cash-register"></i>
+                Facturacion &amp; POS
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-calculator"></i>
+                Contabilidad &amp; Tesoreria
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-headset"></i>
+                Mesa de Soporte &amp; Casos
+            </a>
+
+            <div class="sidebar-section-label">Otros Productos</div>
+            <a href="https://prestamos.edatia.com" target="_blank" class="sidebar-item">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+                Gestion de Prestamos
+            </a>
+            <a href="#" class="sidebar-item">
+                <i class="fa-solid fa-laptop-code"></i>
+                Creacion Paginas Web
+            </a>
+
+            <div class="sidebar-section-label">Soporte</div>
+            <a href="https://wa.me/573001234567" target="_blank" class="sidebar-item">
+                <i class="fa-brands fa-whatsapp"></i>
+                WhatsApp Soporte
+            </a>
+            <a href="index.html#planes" class="sidebar-item">
+                <i class="fa-solid fa-tags"></i>
+                Ver Planes &amp; Precios
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+        <div class="content-inner">
+
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb">
+                <a href="index.html"><i class="fa-solid fa-house"></i></a>
+                <span class="sep">/</span>
+                <a href="#">Guias</a>
+                <span class="sep">/</span>
+                <a href="#">Modulos ERP</a>
+                <span class="sep">/</span>
+                <span class="current">Configuracion &amp; Parametros</span>
+            </nav>
+
+            <!-- Guide Header -->
+            <div class="guide-header">
+                <div class="guide-header-tag"><i class="fa-solid fa-book-open"></i> Guia Tecnica</div>
+                <h1>Configuracion &amp; Parametros</h1>
+                <p>Aprende a configurar tu empresa desde cero: datos generales, sedes, roles de usuario, impuestos, consecutivos y toda la estructura base del ERP.</p>
+                <div class="guide-header-meta">
+                    <span class="meta-chip"><i class="fa-solid fa-clock"></i> Lectura: ~10 min</span>
+                    <span class="meta-chip"><i class="fa-solid fa-layer-group"></i> Nivel: Basico</span>
+                    <span class="meta-chip"><i class="fa-solid fa-calendar"></i> Actualizado: Agosto 2025</span>
+                </div>
+            </div>
+
+            <!-- TOC -->
+            <div class="toc-card">
+                <h4><i class="fa-solid fa-list"></i> Contenido de esta guia</h4>
+                <ul class="toc-list">
+                    <li><a href="#intro">Que es el modulo de Configuracion</a></li>
+                    <li><a href="#paso-1">Paso 1 - Datos de la empresa y logo</a></li>
+                    <li><a href="#paso-2">Paso 2 - Registro de sedes / sucursales</a></li>
+                    <li><a href="#paso-3">Paso 3 - Creacion de roles y usuarios</a></li>
+                    <li><a href="#paso-4">Paso 4 - Configuracion de impuestos</a></li>
+                    <li><a href="#paso-5">Paso 5 - Consecutivos de documentos</a></li>
+                    <li><a href="#paso-6">Paso 6 - Verificacion final</a></li>
+                </ul>
+            </div>
+
+            <!-- Intro -->
+            <div id="intro" class="intro-box">
+                <p>El modulo de <strong>Configuracion &amp; Parametros</strong> es el punto de partida de todo el sistema Edatia ERP. Antes de comenzar a facturar, registrar inventario o gestionar terceros, es indispensable completar correctamente la configuracion inicial de tu empresa.</p>
+                <p>Siguiendo esta guia paso a paso, podras dejar tu empresa lista en menos de 30 minutos para operar con todos los modulos habilitados.</p>
+            </div>
+
+            <div class="tip-box info">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Si ya tienes acceso a Edatia ERP, ingresa con tus credenciales y dirigete al menu lateral izquierdo &rarr; <strong>Configuracion</strong>.</span>
+            </div>
+
+            <!-- PASO 1 -->
+            <h2 class="section-title-guide" id="paso-1"><i class="fa-solid fa-building"></i> Paso 1 &mdash; Datos de la empresa y logo</h2>
+            <div class="steps-list">
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Ingresa a Configuracion &rarr; Empresa</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso cuando el usuario proporcione el contenido desde Word.</p>
+                        <div class="step-img-placeholder">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Paso 1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Completa el formulario con los datos del negocio</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso cuando el usuario proporcione el contenido desde Word.</p>
+                        <div class="step-img-placeholder">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Paso 2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 2 -->
+            <h2 class="section-title-guide" id="paso-2"><i class="fa-solid fa-map-marker-alt"></i> Paso 2 &mdash; Registro de sedes / sucursales</h2>
+            <div class="steps-list">
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Navega a Configuracion &rarr; Sedes</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso.</p>
+                        <div class="step-img-placeholder">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Sedes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 3 -->
+            <h2 class="section-title-guide" id="paso-3"><i class="fa-solid fa-users-gear"></i> Paso 3 &mdash; Creacion de roles y usuarios</h2>
+            <div class="steps-list">
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Ir a Configuracion &rarr; Usuarios y Roles</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso.</p>
+                        <div class="step-img-placeholder">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Usuarios y Roles</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 4 -->
+            <h2 class="section-title-guide" id="paso-4"><i class="fa-solid fa-percent"></i> Paso 4 &mdash; Configuracion de impuestos</h2>
+            <div class="steps-list">
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Registra los impuestos segun tu regimen tributario</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso.</p>
+                        <div class="tip-box warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Configura correctamente los impuestos antes de emitir cualquier documento electronico.</span>
+                        </div>
+                        <div class="step-img-placeholder" style="margin-top:1rem;">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Impuestos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 5 -->
+            <h2 class="section-title-guide" id="paso-5"><i class="fa-solid fa-hashtag"></i> Paso 5 &mdash; Consecutivos de documentos</h2>
+            <div class="steps-list">
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Configura las series y numeracion de documentos</div>
+                    </div>
+                    <div class="step-body">
+                        <p>Aqui ira la descripcion de este paso.</p>
+                        <div class="step-img-placeholder">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Captura de pantalla &mdash; Consecutivos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 6 -->
+            <h2 class="section-title-guide" id="paso-6"><i class="fa-solid fa-circle-check"></i> Paso 6 &mdash; Verificacion final</h2>
+            <div class="intro-box" style="margin-top:.8rem;">
+                <p>Aqui ira el contenido de verificacion final de la configuracion.</p>
+            </div>
+            <div class="tip-box success">
+                <i class="fa-solid fa-check-circle"></i>
+                <span><strong>Listo!</strong> Con estos pasos tu empresa quedara completamente configurada y lista para operar en todos los modulos de Edatia ERP.</span>
+            </div>
+
+            <hr class="guide-divider">
+
+            <!-- Article Nav -->
+            <div class="article-nav">
+                <a href="index.html" class="article-nav-btn">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <div><span class="nav-sub">Anterior</span>Volver al inicio</div>
+                </a>
+                <a href="#" class="article-nav-btn next">
+                    <div><span class="nav-sub">Siguiente</span>Inventarios &amp; Almacen</div>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Feedback -->
+            <div class="feedback-row">
+                <p>Te fue util esta guia?</p>
+                <button class="feedback-btn yes" onclick="sendFeedback()"><i class="fa-regular fa-thumbs-up"></i> Si</button>
+                <button class="feedback-btn no" onclick="sendFeedback()"><i class="fa-regular fa-thumbs-down"></i> No</button>
+            </div>
+
+        </div><!-- /content-inner -->
+        </main>
+    </div>
+
+    <script>
+        function sendFeedback() {
+            document.querySelector('.feedback-row').innerHTML =
+                '<p>Gracias por tu respuesta! <strong>Tienes alguna duda?</strong> <a href="https://wa.me/573001234567" target="_blank" style="color:#8b5cf6; font-weight:700;">Escribenos por WhatsApp</a>.</p>';
+        }
+    </script>
+
+</body>
+</html>

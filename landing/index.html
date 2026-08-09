@@ -736,6 +736,33 @@
             box-shadow: 0 20px 45px rgba(139, 92, 246, 0.18) !important;
         }
 
+        /* Tarjeta con foto de módulo (foto al final) */
+        .module-card-photo {
+            padding: 2.2rem 2.2rem 0 2.2rem !important;
+            overflow: hidden !important;
+        }
+
+        .module-photo-slot {
+            width: calc(100% + 4.4rem);
+            margin-left: -2.2rem;
+            margin-top: 1.4rem;
+            height: 210px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        /* Cuando se inserte la imagen real */
+        .module-photo-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
         .modules-swiper .swiper-pagination-bullet-active {
             background: #8b5cf6 !important;
             width: 26px;
@@ -1202,14 +1229,9 @@
             min-height: 100%;
         }
 
-        .pricing-swiper .swiper-slide .edatia-price-card.pro-card {
-            margin-top: 0;
-            transform: none;
-        }
 
-        .pricing-swiper .swiper-slide .edatia-price-card.pro-card:hover {
-            transform: translateY(-8px);
-        }
+
+
 
         .pricing-swiper .swiper-pagination-bullet-active {
             background: #8b5cf6 !important;
@@ -1401,37 +1423,7 @@
             transform: translateY(-2px) !important;
         }
 
-        /* DESTACADO PRO CARD (ESTILO DARK EDATIA) */
-        .edatia-price-card.pro-card {
-            border: 2px solid #8b5cf6;
-            transform: scale(1.04);
-            margin-top: 40px;
-            box-shadow: 0 20px 45px rgba(139, 92, 246, 0.25);
-            z-index: 5;
-        }
-
-        .edatia-price-card.pro-card:hover {
-            transform: scale(1.04) translateY(-8px);
-            box-shadow: 0 25px 55px rgba(139, 92, 246, 0.35);
-        }
-
-        .edatia-price-card.pro-card .card-header-banner {
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-        }
-
-        .edatia-price-card.pro-card .card-body-content {
-            background: #0f172a;
-            color: #ffffff;
-        }
-
-        .edatia-price-card.pro-card .card-feature-item {
-            color: #f1f5f9;
-            border-bottom-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .edatia-price-card.pro-card .card-feature-item.highlight-text {
-            color: #c084fc;
-        }
+        /* (pro-card eliminado - Plan Mi Negocio igual a los demas) */
 
         /* BOTTOM CTA BANNER */
         .pricing-cta-banner {
@@ -2680,6 +2672,13 @@
                         <div class="mega-content">
                             <!-- TAB MÓDULOS ERP (ACTIVO POR DEFECTO) -->
                             <div id="tab-modulos" class="mega-panel active" style="display: grid !important; grid-template-cols: repeat(2, 1fr) !important;">
+                                <a href="https://edatia.com/guias-configuracionyparametros" class="mega-item">
+                                    <i class="fa-solid fa-gears"></i>
+                                    <div>
+                                        <div class="mega-item-title">Configuración &amp; Parámetros</div>
+                                        <div class="mega-item-desc">Guía técnica del módulo base</div>
+                                    </div>
+                                </a>
                                 <a href="#modulos" class="mega-item">
                                     <i class="fa-solid fa-boxes-stacked"></i>
                                     <div>
@@ -2779,7 +2778,7 @@
 
                 <!-- BLOG -->
                 <li class="nav-item">
-                    <a href="blog.html" class="nav-link">Blog</a>
+                    <a href="blogs.html" class="nav-link">Blog</a>
                 </li>
             </ul>
 
@@ -2821,6 +2820,9 @@
                 </button>
                 <div class="mobile-nav-accordion">
                     <div class="mobile-nav-sub-label">Módulos ERP</div>
+                    <a href="https://edatia.com/guias-configuracionyparametros" class="mobile-nav-link" onclick="closeMobileDrawer()">
+                        <i class="fa-solid fa-gears"></i> Configuración &amp; Parámetros
+                    </a>
                     <a href="#modulos" class="mobile-nav-link" onclick="closeMobileDrawer()">
                         <i class="fa-solid fa-boxes-stacked"></i> Inventarios &amp; Almacén
                     </a>
@@ -2869,7 +2871,7 @@
             <a href="#planes" class="mobile-nav-direct" onclick="closeMobileDrawer()">
                 <i class="fa-solid fa-tags mr-2"></i> Precios
             </a>
-            <a href="blog.html" class="mobile-nav-direct" onclick="closeMobileDrawer()">
+            <a href="blogs.html" class="mobile-nav-direct" onclick="closeMobileDrawer()">
                 <i class="fa-solid fa-newspaper mr-2"></i> Blog
             </a>
         </nav>
@@ -2940,7 +2942,7 @@
         <div class="purple-decor-circle circle-2"></div>
 
         <div class="section-header">
-            <span class="section-tag"><i class="fa-solid fa-layer-group mr-1"></i> Nuestros Productos & Módulos</span>
+            <span class="section-tag"><i class="fa-solid fa-cubes mr-1"></i> Nuestros Módulos</span>
             <h2 class="section-title">Todo lo que tu empresa necesita en un solo ERP</h2>
             <p class="section-desc">Diseñado para simplificar procesos operativos, eliminar la doble digitación y garantizar el control total de tu negocio.</p>
         </div>
@@ -3033,16 +3035,16 @@
                     </div>
                 </div>
 
-                <!-- 7. CONTROL DE PRÉSTAMOS & RUTAS -->
+                <!-- 7. GESTIÓN PRODUCTOS -->
                 <div class="swiper-slide">
                     <div class="module-card">
-                        <div class="module-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-                        <h3>Control de Préstamos & Rutas</h3>
-                        <p>Plataforma especializada para prestamistas y cobradores con cálculo de amortización, rutas diarias y arqueos de cobro.</p>
+                        <div class="module-icon"><i class="fa-solid fa-box-open"></i></div>
+                        <h3>Gestión Productos</h3>
+                        <p>Control completo del catálogo de productos: creación, categorías, precios, variantes y sincronización automática con inventario y POS.</p>
                         <ul class="module-features">
-                            <li><i class="fa-solid fa-check"></i> Amortizaciones diarias, semanales, quincenales</li>
-                            <li><i class="fa-solid fa-check"></i> Ruta diaria de cobro y arqueos</li>
-                            <li><i class="fa-solid fa-check"></i> Recibos de caja y renovaciones de créditos</li>
+                            <li><i class="fa-solid fa-check"></i> Catálogo de productos con imágenes</li>
+                            <li><i class="fa-solid fa-check"></i> Precios, descuentos y variantes</li>
+                            <li><i class="fa-solid fa-check"></i> Sincronización con inventario y POS</li>
                         </ul>
                     </div>
                 </div>
@@ -3228,7 +3230,7 @@
 
                 <!-- 2. PLAN MI NEGOCIO (DESTACADO / MÁS POPULAR) -->
                 <div class="swiper-slide">
-                    <div class="edatia-price-card pro-card">
+                    <div class="edatia-price-card">
                         <div class="circle-price-badge">
                             <span class="amount" id="price-val-2">$110,000</span>
                             <span class="unit" id="price-unit-2">COP / mes</span>

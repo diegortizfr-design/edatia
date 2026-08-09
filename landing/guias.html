@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Guias — Edatia ERP</title>
+    <meta name="description" content="Centro de guias tecnicas de Edatia ERP. Encuentra paso a paso como usar cada modulo del sistema.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        :root {
+            --purple:       #8b5cf6;
+            --purple-dark:  #7c3aed;
+            --purple-light: #ede9fe;
+            --blue:         #2563eb;
+            --dark:         #0f172a;
+            --slate:        #334155;
+            --muted:        #64748b;
+            --border:       #e2e8f0;
+            --bg:           #f8fafc;
+            --white:        #ffffff;
+            --radius:       14px;
+            --transition:   0.22s ease;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--slate); line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+
+        /* =============================================
+           TOP NAV
+        ============================================= */
+        .topnav {
+            position: sticky; top: 0;
+            height: 64px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2rem; z-index: 100; gap: 1.5rem;
+        }
+        .topnav-left { display: flex; align-items: center; gap: 1.2rem; }
+        .logo-text { font-size: 1.45rem; font-weight: 900; letter-spacing: 4px; color: var(--dark); }
+        .logo-text .lambda { color: var(--purple); }
+        .topnav-divider { width: 1px; height: 24px; background: var(--border); }
+        .topnav-label { font-size: 0.83rem; font-weight: 700; color: var(--muted); }
+        .topnav-label span { color: var(--purple); }
+
+        .topnav-search { flex: 1; max-width: 440px; position: relative; }
+        .topnav-search input {
+            width: 100%; padding: 0.52rem 1rem 0.52rem 2.5rem;
+            border: 1px solid var(--border); border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 0.85rem;
+            background: var(--bg); color: var(--dark); outline: none;
+            transition: border-color var(--transition);
+        }
+        .topnav-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,.12); }
+        .topnav-search i { position: absolute; left: .85rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .82rem; }
+
+        .topnav-right { display: flex; align-items: center; gap: .8rem; }
+        .btn-home {
+            display: flex; align-items: center; gap: 6px;
+            font-size: .82rem; font-weight: 600; color: var(--muted);
+            padding: .42rem .9rem; border-radius: 8px;
+            border: 1px solid var(--border); transition: all var(--transition);
+        }
+        .btn-home:hover { color: var(--purple); border-color: var(--purple); background: var(--purple-light); }
+        .btn-erp {
+            display: flex; align-items: center; gap: 6px;
+            font-size: .82rem; font-weight: 700; color: var(--white);
+            background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+            padding: .42rem 1.1rem; border-radius: 8px; transition: opacity var(--transition);
+        }
+        .btn-erp:hover { opacity: .88; }
+
+        /* =============================================
+           HERO
+        ============================================= */
+        .hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #1d4ed8 100%);
+            padding: 4rem 2rem 3.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(139,92,246,.3) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 30%, rgba(37,99,235,.25) 0%, transparent 55%);
+        }
+        .hero-inner { position: relative; z-index: 1; }
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 20px; padding: .3rem 1rem;
+            font-size: .72rem; font-weight: 700; letter-spacing: 1.5px;
+            text-transform: uppercase; color: rgba(255,255,255,.85); margin-bottom: 1.2rem;
+        }
+        .hero h1 { font-size: 2.6rem; font-weight: 900; color: var(--white); margin-bottom: .9rem; line-height: 1.15; }
+        .hero h1 span { color: #a5b4fc; }
+        .hero p { font-size: 1rem; color: rgba(255,255,255,.72); max-width: 540px; margin: 0 auto 2rem; }
+
+        /* Quick filter chips */
+        .hero-filters {
+            display: flex; align-items: center; justify-content: center;
+            gap: .6rem; flex-wrap: wrap;
+        }
+        .filter-chip {
+            padding: .38rem .95rem; border-radius: 20px;
+            font-size: .78rem; font-weight: 600;
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+            color: rgba(255,255,255,.8); cursor: pointer; transition: all var(--transition);
+        }
+        .filter-chip:hover, .filter-chip.active {
+            background: var(--purple); border-color: var(--purple); color: var(--white);
+        }
+
+        /* =============================================
+           MAIN WRAPPER
+        ============================================= */
+        .page-wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+        /* SECTION HEADER */
+        .section-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.4rem;
+        }
+        .section-head h2 {
+            font-size: 1.1rem; font-weight: 800; color: var(--dark);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-head h2 i { color: var(--purple); font-size: .95rem; }
+        .section-head span { font-size: .78rem; color: var(--muted); font-weight: 500; }
+
+        /* =============================================
+           MODULE CARDS GRID
+        ============================================= */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        .module-guide-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: all var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .module-guide-card::after {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--purple) 0%, var(--blue) 100%);
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        .module-guide-card:hover {
+            border-color: var(--purple);
+            box-shadow: 0 8px 30px rgba(139,92,246,.12);
+            transform: translateY(-2px);
+        }
+        .module-guide-card:hover::after { opacity: 1; }
+
+        .card-top {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem;
+        }
+        .card-icon {
+            width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+        .card-icon.purple { background: #f5f3ff; color: var(--purple); }
+        .card-icon.blue   { background: #eff6ff; color: var(--blue); }
+        .card-icon.green  { background: #f0fdf4; color: #16a34a; }
+        .card-icon.orange { background: #fff7ed; color: #ea580c; }
+
+        .card-status {
+            font-size: .65rem; font-weight: 700; padding: 3px 8px;
+            border-radius: 20px; white-space: nowrap; letter-spacing: .4px; flex-shrink: 0;
+        }
+        .card-status.available { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .card-status.soon      { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+        .card-title { font-size: .98rem; font-weight: 800; color: var(--dark); }
+        .card-desc  { font-size: .83rem; color: var(--muted); line-height: 1.55; }
+
+        .card-topics {
+            display: flex; flex-wrap: wrap; gap: .4rem;
+        }
+        .card-topic {
+            font-size: .7rem; font-weight: 600;
+            background: var(--bg); border: 1px solid var(--border);
+            color: var(--muted); padding: 2px 8px; border-radius: 6px;
+        }
+
+        .card-cta {
+            display: flex; align-items: center; gap: 5px;
+            font-size: .81rem; font-weight: 700; color: var(--purple);
+            margin-top: auto;
+            transition: gap var(--transition);
+        }
+        .module-guide-card:hover .card-cta { gap: 8px; }
+        .card-cta.disabled { color: var(--muted); pointer-events: none; }
+
+        /* =============================================
+           FEATURED CARD (FIRST ONE BIG)
+        ============================================= */
+        .featured-card {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: none;
+            color: var(--white);
+        }
+        .featured-card:hover {
+            box-shadow: 0 12px 40px rgba(67,56,202,.3);
+        }
+        .featured-card::after { background: #a5b4fc; }
+        .featured-card .card-title { color: var(--white); font-size: 1.1rem; }
+        .featured-card .card-desc  { color: rgba(255,255,255,.72); }
+        .featured-card .card-topic { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.15); color: rgba(255,255,255,.8); }
+        .featured-card .card-cta   { color: #a5b4fc; }
+        .featured-card .card-icon  { background: rgba(255,255,255,.15); color: var(--white); }
+        .featured-card .card-status.available { background: rgba(255,255,255,.15); color: #a5b4fc; border-color: rgba(255,255,255,.2); }
+
+        /* =============================================
+           POPULAR ARTICLES STRIP
+        ============================================= */
+        .articles-strip {
+            display: flex; flex-direction: column; gap: .7rem;
+            margin-bottom: 3rem;
+        }
+        .article-row {
+            display: flex; align-items: center; gap: 1rem;
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 10px; padding: .9rem 1.2rem;
+            transition: all var(--transition); cursor: pointer;
+        }
+        .article-row:hover { border-color: var(--purple); box-shadow: 0 4px 16px rgba(139,92,246,.08); }
+        .article-row-icon {
+            width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--purple-light); color: var(--purple); font-size: .82rem;
+        }
+        .article-row-info { flex: 1; }
+        .article-row-title { font-size: .87rem; font-weight: 700; color: var(--dark); }
+        .article-row-meta  { font-size: .74rem; color: var(--muted); margin-top: 1px; }
+        .article-row-arrow { color: var(--muted); font-size: .82rem; transition: transform var(--transition); }
+        .article-row:hover .article-row-arrow { transform: translateX(4px); color: var(--purple); }
+
+        /* =============================================
+           SUPPORT BANNER
+        ============================================= */
+        .support-banner {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 16px; padding: 2rem 2.2rem;
+            display: flex; align-items: center; gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .support-banner-icon {
+            width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: var(--white); font-size: 1.5rem;
+        }
+        .support-banner-text { flex: 1; }
+        .support-banner-text h3 { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: .25rem; }
+        .support-banner-text p  { font-size: .85rem; color: var(--muted); }
+        .btn-whatsapp {
+            display: flex; align-items: center; gap: 7px;
+            font-size: .85rem; font-weight: 700; color: var(--white);
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            padding: .6rem 1.3rem; border-radius: 10px;
+            transition: opacity var(--transition); white-space: nowrap;
+        }
+        .btn-whatsapp:hover { opacity: .88; }
+
+        /* =============================================
+           RESPONSIVE
+        ============================================= */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .page-wrap { padding: 2rem 1.2rem 4rem; }
+            .modules-grid { grid-template-columns: 1fr; }
+            .topnav-search { display: none; }
+            .support-banner { flex-direction: column; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .topnav-label, .topnav-divider { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP NAV -->
+    <header class="topnav">
+        <div class="topnav-left">
+            <a href="index.html" class="logo-text">ED<span class="lambda">&#923;</span>TIA</a>
+            <div class="topnav-divider"></div>
+            <span class="topnav-label">Centro de <span>Guias</span></span>
+        </div>
+
+        <div class="topnav-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-input" placeholder="Buscar una guia, modulo o tema..." oninput="filterGuides(this.value)">
+        </div>
+
+        <div class="topnav-right">
+            <a href="index.html" class="btn-home"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="https://app.edatia.com/login" target="_blank" class="btn-erp"><i class="fa-solid fa-right-to-bracket"></i> Ingresar al ERP</a>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-tag"><i class="fa-solid fa-book-open"></i> Centro de Guias Tecnicas</div>
+            <h1>Todo lo que necesitas saber<br>sobre <span>Edatia ERP</span></h1>
+            <p>Guias paso a paso para cada modulo del sistema. Aprende a configurar, facturar, gestionar inventario y mucho mas.</p>
+            <div class="hero-filters">
+                <div class="filter-chip active" onclick="filterChip(this, 'all')">Todos</div>
+                <div class="filter-chip" onclick="filterChip(this, 'erp')">Modulos ERP</div>
+                <div class="filter-chip" onclick="filterChip(this, 'otros')">Otros Productos</div>
+                <div class="filter-chip" onclick="filterChip(this, 'config')">Configuracion</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN -->
+    <div class="page-wrap">
+
+        <!-- MODULOS ERP -->
+        <div class="section-head">
+            <h2><i class="fa-solid fa-cubes"></i> Modulos ERP</h2>
+            <span>7 guias disponibles</span>
+        </div>
+
+        <div class="modules-grid" id="guides-grid">
+
+            <!-- CONFIGURACION (FEATURED) -->
+            <div class="module-guide-card featured-card" data-cat="erp config" onclick="window.location='guias-configuracionyparametros.html'">
+                <div class="card-top">
+                    <div class="card-icon purple"><i class="fa-solid fa-gears"></i></div>
+                    <span class="card-status available">Disponible</span>
+                </div>
+                <div class="card-title">Configuracion &amp; Parametros</div>
+                <div class="card-desc">El punto de partida. Configura tu empresa, sedes, roles, impuestos y consecutivos antes de operar cualquier modulo.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Datos empresa</span>
+                    <span class="card-topic">Sedes</span>
+                    <span class="card-topic">Usuarios &amp; Roles</span>
+                    <span class="card-topic">Impuestos</span>
+                    <span class="card-topic">Consecutivos</span>
+                </div>
+                <div class="card-cta"><i class="fa-solid fa-arrow-right"></i> Leer guia</div>
+            </div>
+
+            <!-- INVENTARIOS -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Inventarios &amp; Almacen</div>
+                <div class="card-desc">Controla entradas, salidas, kardex, codigos de barras y niveles de stock en tiempo real.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Kardex</span>
+                    <span class="card-topic">Stock</span>
+                    <span class="card-topic">Cod. Barras</span>
+                    <span class="card-topic">Traslados</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+            <!-- GESTION PRODUCTOS -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon orange"><i class="fa-solid fa-box-open"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Gestion Productos</div>
+                <div class="card-desc">Catalogo completo de productos: categorias, precios, variantes y sincronizacion con inventario y POS.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Catalogo</span>
+                    <span class="card-topic">Precios</span>
+                    <span class="card-topic">Variantes</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+            <!-- TERCEROS -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon purple"><i class="fa-solid fa-address-book"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Modulo de Terceros</div>
+                <div class="card-desc">Base de datos de clientes y proveedores con historial de compras, facturas, documentos y cartera.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Clientes</span>
+                    <span class="card-topic">Proveedores</span>
+                    <span class="card-topic">Historial</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+            <!-- FACTURACION -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon green"><i class="fa-solid fa-cash-register"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Facturacion &amp; POS</div>
+                <div class="card-desc">Emite facturas electronicas DIAN, ventas rapidas en punto de venta e impresion de recibos.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Factura electronica</span>
+                    <span class="card-topic">POS</span>
+                    <span class="card-topic">DIAN</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+            <!-- CONTABILIDAD -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon blue"><i class="fa-solid fa-calculator"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Contabilidad &amp; Tesoreria</div>
+                <div class="card-desc">Flujo de caja, cuentas por pagar y cobrar, conciliacion bancaria e informes financieros.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Caja</span>
+                    <span class="card-topic">Cuentas</span>
+                    <span class="card-topic">Bancos</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+            <!-- SOPORTE -->
+            <div class="module-guide-card" data-cat="erp" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon purple"><i class="fa-solid fa-headset"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Mesa de Soporte &amp; Casos</div>
+                <div class="card-desc">Gestion de tickets de atencion, reclamos y soporte tecnico con seguimiento de estados y agentes.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Tickets</span>
+                    <span class="card-topic">Reclamos</span>
+                    <span class="card-topic">SLA</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+
+        </div>
+
+        <!-- OTROS PRODUCTOS -->
+        <div class="section-head">
+            <h2><i class="fa-solid fa-rocket"></i> Otros Productos</h2>
+            <span>Proximamente</span>
+        </div>
+
+        <div class="modules-grid" style="margin-bottom:3rem;">
+            <div class="module-guide-card" data-cat="otros" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon green"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Gestion de Prestamos</div>
+                <div class="card-desc">Software de cartera, rutas diarias de cobro, amortizaciones y arqueos para prestamistas.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Cartera</span>
+                    <span class="card-topic">Rutas</span>
+                    <span class="card-topic">Amortizacion</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+            <div class="module-guide-card" data-cat="otros" onclick="void(0)">
+                <div class="card-top">
+                    <div class="card-icon blue"><i class="fa-solid fa-laptop-code"></i></div>
+                    <span class="card-status soon">Proximamente</span>
+                </div>
+                <div class="card-title">Creacion Paginas Web</div>
+                <div class="card-desc">Guia de diseno web, tiendas virtuales e integraciones con Edatia ERP para vender en linea.</div>
+                <div class="card-topics">
+                    <span class="card-topic">Diseno</span>
+                    <span class="card-topic">E-commerce</span>
+                    <span class="card-topic">Integracion</span>
+                </div>
+                <div class="card-cta disabled"><i class="fa-solid fa-lock"></i> En construccion</div>
+            </div>
+        </div>
+
+        <!-- ARTICULOS RECIENTES / POPULARES -->
+        <div class="section-head">
+            <h2><i class="fa-solid fa-fire"></i> Guías destacadas &amp; Documentación</h2>
+        </div>
+
+        <div class="articles-strip">
+            <a href="guia-general-edatia.html" class="article-row" style="background:#f4f0ff; border-color:#c4b5fd;">
+                <div class="article-row-icon" style="background:#8b5cf6; color:#fff;"><i class="fa-solid fa-book"></i></div>
+                <div class="article-row-info">
+                    <div class="article-row-title">Guía General de EDATIA ERP (Alcance, Módulos &amp; Beneficios)</div>
+                    <div class="article-row-meta">Documentación Pública &bull; Lectura: 7 min &bull; Visión General del Software</div>
+                </div>
+                <i class="fa-solid fa-chevron-right article-row-arrow" style="color:#8b5cf6;"></i>
+            </a>
+            <a href="guias-configuracionyparametros.html" class="article-row">
+                <div class="article-row-icon"><i class="fa-solid fa-gears"></i></div>
+                <div class="article-row-info">
+                    <div class="article-row-title">Como configurar los datos de tu empresa en Edatia ERP</div>
+                    <div class="article-row-meta">Configuracion &amp; Parametros &bull; Lectura: 5 min &bull; Nivel: Basico</div>
+                </div>
+                <i class="fa-solid fa-chevron-right article-row-arrow"></i>
+            </a>
+            <a href="guias-configuracionyparametros.html#paso-3" class="article-row">
+                <div class="article-row-icon"><i class="fa-solid fa-users-gear"></i></div>
+                <div class="article-row-info">
+                    <div class="article-row-title">Como crear roles y usuarios con permisos personalizados</div>
+                    <div class="article-row-meta">Configuracion &amp; Parametros &bull; Lectura: 4 min &bull; Nivel: Basico</div>
+                </div>
+                <i class="fa-solid fa-chevron-right article-row-arrow"></i>
+            </a>
+            <a href="guias-configuracionyparametros.html#paso-4" class="article-row">
+                <div class="article-row-icon"><i class="fa-solid fa-percent"></i></div>
+                <div class="article-row-info">
+                    <div class="article-row-title">Configuracion de impuestos para facturacion electronica DIAN</div>
+                    <div class="article-row-meta">Configuracion &amp; Parametros &bull; Lectura: 6 min &bull; Nivel: Intermedio</div>
+                </div>
+                <i class="fa-solid fa-chevron-right article-row-arrow"></i>
+            </a>
+        </div>
+
+        <!-- SUPPORT BANNER -->
+        <div class="support-banner">
+            <div class="support-banner-icon"><i class="fa-brands fa-whatsapp"></i></div>
+            <div class="support-banner-text">
+                <h3>No encontraste lo que buscabas?</h3>
+                <p>Nuestro equipo de soporte esta disponible para ayudarte directamente por WhatsApp.</p>
+            </div>
+            <a href="https://wa.me/573001234567" target="_blank" class="btn-whatsapp">
+                <i class="fa-brands fa-whatsapp"></i> Escribir al soporte
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        function filterGuides(val) {
+            const q = val.toLowerCase().trim();
+            document.querySelectorAll('.module-guide-card').forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        }
+
+        function filterChip(el, cat) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.module-guide-card').forEach(card => {
+                if (cat === 'all') { card.style.display = ''; return; }
+                const cats = (card.dataset.cat || '').split(' ');
+                card.style.display = cats.includes(cat) ? '' : 'none';
+            });
+        }
+    </script>
+
+</body>
+</html>
