@@ -5,10 +5,10 @@
 :80 {
 	root * /usr/share/caddy
 
-	# Mapeo específico para el subdominio Tropical Sun
-	@tropicalsun host tropicalsun.edatia.com
-	handle @tropicalsun {
-		try_files {path} /tropicalsun.html /index.html
+	# Mapeo específico para el subdominio Fundación DLW
+	@fundaciondlw host fundaciondlw.edatia.com
+	handle @fundaciondlw {
+		try_files {path} /fundaciondlw.html /index.html
 	}
 
 	# Manejo por defecto para edatia.com y www.edatia.com

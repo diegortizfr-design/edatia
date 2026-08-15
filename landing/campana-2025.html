@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrega de Donaciones 2025 | Fundación D.L.W.</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="icon" type="image/png" href="assets/fundacion_dlw_favicon.png">
+
+    <style>
+        :root {
+            --primary: #1a2b4c;
+            --primary-light: #2c4373;
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-hover: #b89628;
+            --dark: #0f172a;
+            --dark-muted: #1e293b;
+            --light-bg: #f8fafc;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.15);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            text-decoration: none;
+        }
+
+        .logo-img-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--gold);
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.25);
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: 50% 12%;
+            transform: scale(1.52);
+            border-radius: 50%;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-text .title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--dark);
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .brand-text .subtitle {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--dark);
+            position: relative;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--gold);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gold);
+            transition: var(--transition);
+            border-radius: 2px;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .btn-nav-dona {
+            background: linear-gradient(135deg, var(--dark) 0%, #1e293b 100%);
+            color: var(--gold) !important;
+            padding: 0.6rem 1.4rem;
+            border-radius: 30px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--gold);
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+            transition: var(--transition) !important;
+        }
+
+        .btn-nav-dona:hover {
+            background: var(--gold);
+            color: var(--dark) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-nav-dona::after {
+            display: none !important;
+        }
+
+        .mobile-toggle {
+            display: none;
+            font-size: 1.4rem;
+            color: var(--dark);
+            cursor: pointer;
+        }
+
+        /* HERO PAGE HEADER */
+        .page-hero {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-muted) 100%);
+            color: var(--white);
+            padding: 4rem 5% 3rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 4px solid var(--gold);
+        }
+
+        .page-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1.2rem;
+        }
+
+        .page-hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 1rem;
+        }
+
+        .page-hero h1 span {
+            color: var(--gold);
+        }
+
+        .page-hero p {
+            max-width: 800px;
+            margin: 0 auto;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* MAIN CONTENT */
+        .content-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 5%;
+        }
+
+        /* DESCRIPTION BOX */
+        .story-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            margin-bottom: 3.5rem;
+            position: relative;
+        }
+
+        .story-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: var(--gold);
+            border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+        }
+
+        .story-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .story-title i {
+            color: var(--gold);
+        }
+
+        .story-text {
+            font-size: 1.15rem;
+            color: #334155;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .quote-box {
+            background: rgba(212, 175, 55, 0.08);
+            border-left: 4px solid var(--gold);
+            padding: 1.2rem 1.8rem;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            font-style: italic;
+            color: var(--dark);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* VIDEOS SECTION */
+        .videos-heading {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .videos-heading h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            color: var(--dark);
+        }
+
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .video-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+        }
+
+        .video-info h3 {
+            font-size: 1.2rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .video-info p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* PARTNERS SECTION */
+        .partners-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            text-align: center;
+        }
+
+        .partners-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .partners-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+        }
+
+        .partners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .partner-card {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 2rem 1.5rem;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .partner-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .partner-icon-wrap {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--dark);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            border: 2px solid var(--gold);
+        }
+
+        .partner-card h4 {
+            font-size: 1.25rem;
+            color: var(--dark);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .partner-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .partner-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            justify-content: center;
+        }
+
+        .btn-partner-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            color: var(--dark);
+            padding: 0.45rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .btn-partner-link:hover {
+            background: var(--gold);
+            color: var(--dark);
+            border-color: var(--gold);
+        }
+
+        .btn-partner-yt {
+            background: #ff0000;
+            color: #ffffff;
+            border-color: #ff0000;
+        }
+
+        .btn-partner-yt:hover {
+            background: #cc0000;
+            color: #ffffff;
+            border-color: #cc0000;
+        }
+
+        /* FOOTER */
+        footer {
+            background: var(--dark);
+            color: var(--white);
+            padding: 3rem 5% 1.5rem;
+            border-top: 3px solid var(--gold);
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        footer p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-hero h1 { font-size: 2.1rem; }
+            .story-card { padding: 1.8rem; }
+            .nav-links { display: none; }
+            .mobile-toggle { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR HEADER -->
+    <header class="navbar">
+        <a href="fundaciondlw.html#inicio" class="brand-logo">
+            <div class="logo-img-wrapper">
+                <img src="assets/fundacion_dlw_logo.png" alt="Fundación D.L.W. León">
+            </div>
+            <div class="brand-text">
+                <span class="title">D.L.W</span>
+                <span class="subtitle">FUNDACIÓN</span>
+            </div>
+        </a>
+
+        <nav class="nav-links" id="navLinks">
+            <a href="fundaciondlw.html#inicio">Inicio</a>
+            <a href="fundaciondlw.html#campanas">Campañas</a>
+            <a href="fundaciondlw.html#contactanos">Contáctanos</a>
+            <a href="fundaciondlw.html#dona" class="btn-nav-dona"><i class="fa-solid fa-heart"></i> Dona</a>
+        </nav>
+
+        <div class="mobile-toggle" id="mobileToggle">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+    </header>
+
+    <!-- HERO HEADER DE LA CAMPAÑA -->
+    <section class="page-hero">
+        <div class="page-hero-badge">
+            <i class="fa-solid fa-calendar-check"></i> Campaña Realizada - Diciembre 2025
+        </div>
+        <h1>Entrega de Donaciones <span>Año 2025</span></h1>
+        <p>Un recorrido lleno de amor, esperanza y solidaridad en el resguardo indígena y la comunidad de Meléndez en Cali, Valle del Cauca.</p>
+    </section>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="content-container">
+
+        <!-- HISTORIA / DESCRIPCIÓN EMOTIVA -->
+        <article class="story-card">
+            <h2 class="story-title">
+                <i class="fa-solid fa-heart-circle-check"></i>
+                Llevando Alegría y Esperanza
+            </h2>
+            <p class="story-text">
+                En diciembre del año 2025, la <strong>Fundación D.L.W.</strong> unió voluntades, corazones y esfuerzos para llevar a cabo una emotiva jornada de entrega de donaciones. Llegamos al territorio ancestral de un <strong>resguardo indígena</strong> y a los niños y familias vulnerables del <strong>Barrio Meléndez en la ciudad de Cali, Valle del Cauca</strong>.
+            </p>
+            <p class="story-text">
+                Entre sonrisas, abrazos sinceros y miradas llenas de gratitud, entregamos alimentos, regalos y suministros esenciales. Esta experiencia nos recordó que no hay gesto pequeño cuando se hace con amor: <strong>cada acción, por más humilde que parezca, tiene el poder transformador de sembrar felicidad</strong> y reconstruir la esperanza en quienes más lo necesitan.
+            </p>
+            <div class="quote-box">
+                "Cada acción cuenta para llevar felicidad a las personas que más lo necesitan. Pequeños gestos unidos construyen grandes transformaciones."
+            </div>
+        </article>
+
+        <!-- VIDEOS DE LA JORNADA -->
+        <section class="videos-heading">
+            <h2>Memorias en Video de la Jornada</h2>
+            <p style="color: var(--text-muted);">Revive los momentos más especiales de nuestras entregas de donaciones en diciembre de 2025</p>
+        </section>
+
+        <div class="videos-grid">
+            <!-- Video 1 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/3PtFoUFpg9I" title="Entrega de Donaciones Diciembre 2025 - Resguardo Indígena y Meléndez" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="video-info">
+                    <h3>Jornada de Donaciones - Parte 1</h3>
+                    <p>Momentos de compartir y entrega de insumos en el resguardo indígena y familias vulnerables.</p>
+                </div>
+            </div>
+
+            <!-- Video 2 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/0_X4VhL9N0g" title="Sonrisas y Esperanza - Donaciones Barrio Meléndez Cali" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="video-info">
+                    <h3>Jornada de Donaciones - Parte 2</h3>
+                    <p>Alegría con los niños y comunidades del barrio Meléndez en Cali, Valle del Cauca.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE PARTNERS -->
+        <section class="partners-section">
+            <h2 class="partners-title"><i class="fa-solid fa-handshake"></i> Nuestros Partners</h2>
+            <p class="partners-subtitle">Organizaciones y aliados estratégicos que hacen posible nuestra misión comunitaria.</p>
+
+            <div class="partners-grid">
+                
+                <!-- Partner 1: Terapéutica Salud y Bienestar -->
+                <div class="partner-card">
+                    <div class="partner-icon-wrap">
+                        <i class="fa-solid fa-notes-medical"></i>
+                    </div>
+                    <h4>Terapéutica Salud y Bienestar</h4>
+                    <p>Aliado fundamental en el desarrollo de jornadas comunitarias de bienestar integral y salud.</p>
+                    <div class="partner-links">
+                        <a href="https://www.youtube.com/@terapeuticasaludybienestar" target="_blank" class="btn-partner-link btn-partner-yt">
+                            <i class="fa-brands fa-youtube"></i> Canal de YouTube
+                        </a>
+                        <a href="https://www.terapeuticasaludybienestar.com" target="_blank" class="btn-partner-link">
+                            <i class="fa-solid fa-globe"></i> Sitio Web
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Partner 2: EDATIA -->
+                <div class="partner-card">
+                    <div class="partner-icon-wrap" style="color: #60a5fa;">
+                        <i class="fa-solid fa-laptop-code"></i>
+                    </div>
+                    <h4>EDATIA</h4>
+                    <p>Soluciones tecnológicas y presencia digital al servicio del desarrollo social y la comunidad.</p>
+                    <div class="partner-links">
+                        <a href="https://edatia.com" target="_blank" class="btn-partner-link">
+                            <i class="fa-solid fa-globe"></i> Visitar EDATIA
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        <!-- SECCIÓN FINAL: QUIERO DONAR -->
+        <section style="margin-top: 4rem; text-align: center; background: linear-gradient(135deg, var(--dark) 0%, var(--dark-muted) 100%); padding: 3.5rem 2rem; border-radius: var(--radius-lg); border: 1px solid var(--gold); box-shadow: var(--shadow-lg); color: var(--white);">
+            <span style="display: inline-block; background: rgba(212, 175, 55, 0.2); color: var(--gold); padding: 0.4rem 1.2rem; border-radius: 30px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1rem;">
+                <i class="fa-solid fa-heart"></i> Tu Aporte Hace la Diferencia
+            </span>
+            <h2 style="font-family: 'Cinzel', serif; font-size: 2.2rem; color: var(--white); margin-bottom: 1rem;">¿Deseas apoyar nuestras causas sociales?</h2>
+            <p style="max-width: 650px; margin: 0 auto 2rem; color: #94a3b8; font-size: 1.05rem;">Cada contribución nos ayuda a llevar alimentos, insumos y sonrisas a familias que lo necesitan.</p>
+            <a href="fundaciondlw.html#dona" class="btn-nav-dona" style="display: inline-flex; font-size: 1.1rem; padding: 0.8rem 2.2rem; border-radius: 30px; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);">
+                <i class="fa-solid fa-hand-holding-heart"></i> Quiero Donar
+            </a>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>&copy; 2026 Fundación D.L.W. Todos los derechos reservados. | Cali, Colombia</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+            Sitio web diseñado y desarrollado por <a href="https://edatia.com" target="_blank" style="color: var(--gold); text-decoration: none; font-weight: 700;">EDATIA (edatia.com)</a>
+        </p>
+    </footer>
+
+    <script>
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navLinks = document.getElementById('navLinks');
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('show');
+            });
+        }
+    </script>
+
+</body>
+</html>
