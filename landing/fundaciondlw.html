@@ -1260,6 +1260,21 @@
         </div>
     </footer>
 
+    <!-- AVISO / BANNER DE COOKIES -->
+    <div id="cookieBanner" style="display: none; position: fixed; bottom: 20px; left: 20px; right: 20px; max-width: 520px; z-index: 9999; background: #0f172a; border: 1px solid #d4af37; color: #ffffff; padding: 1.2rem 1.5rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 0.9rem; line-height: 1.5; backdrop-filter: blur(10px);">
+        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 0.8rem;">
+            <i class="fa-solid fa-cookie-bite" style="color: #d4af37; font-size: 1.5rem; margin-top: 2px;"></i>
+            <div>
+                <strong style="color: #ffffff; display: block; font-size: 0.98rem; font-family: 'Cinzel', serif;">Uso de Cookies y Privacidad</strong>
+                <span style="color: #94a3b8; font-size: 0.85rem;">Utilizamos cookies esenciales para mejorar tu experiencia de navegación y optimizar el rendimiento del sitio.</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 0.8rem;">
+            <button onclick="openLegalModal('Política de Cookies')" style="background: transparent; color: #94a3b8; border: none; font-size: 0.82rem; cursor: pointer; text-decoration: underline;">Más info</button>
+            <button onclick="acceptCookies()" style="background: #d4af37; color: #0f172a; border: none; padding: 0.45rem 1.2rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease;">Aceptar todo</button>
+        </div>
+    </div>
+
     <!-- MODAL POLÍTICAS Y TÉRMINOS EN CONSTRUCCIÓN -->
     <div id="legalModal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 1.5rem;">
         <div style="background: #ffffff; border-radius: 18px; max-width: 480px; width: 100%; padding: 2.5rem; text-align: center; border: 2px solid #d4af37; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); position: relative; animation: modalFadeIn 0.3s ease;">
@@ -1391,13 +1406,26 @@
             }
         }
 
-        // Cargar eventos para cerrar al hacer clic en el backdrop
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('legalModal');
-            if (e.target === modal) {
-                closeLegalModal();
+        // Lógica de Banner de Cookies
+        function checkCookieConsent() {
+            const consent = localStorage.getItem('dlw_cookie_consent');
+            const banner = document.getElementById('cookieBanner');
+            if (!consent && banner) {
+                setTimeout(() => {
+                    banner.style.display = 'block';
+                }, 1000);
             }
-        });
+        }
+
+        function acceptCookies() {
+            localStorage.setItem('dlw_cookie_consent', 'accepted');
+            const banner = document.getElementById('cookieBanner');
+            if (banner) {
+                banner.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkCookieConsent);
     </script>
 </body>
 </html>
