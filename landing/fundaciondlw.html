@@ -983,22 +983,25 @@
         }
 
         @media (max-width: 768px) {
-            .navbar { padding: 0.8rem 1rem; }
+            .navbar { padding: 0.8rem 1.2rem; }
             .nav-links {
                 position: fixed;
-                top: 66px;
+                top: 70px;
                 left: 0;
                 right: 0;
-                background: var(--white);
+                background: #ffffff;
                 flex-direction: column;
-                padding: 2rem;
-                gap: 1.2rem;
-                border-bottom: 1px solid var(--border);
-                box-shadow: var(--shadow-md);
+                padding: 2.5rem 1.5rem;
+                gap: 1.5rem;
+                border-bottom: 2px solid var(--gold);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.2);
                 display: none;
+                z-index: 99999;
+                text-align: center;
             }
-            .nav-links.show { display: flex; }
-            .mobile-toggle { display: block; }
+            .nav-links.show { display: flex !important; }
+            .nav-links a { font-size: 1.1rem; }
+            .mobile-toggle { display: block; cursor: pointer; padding: 0.5rem; font-size: 1.6rem; color: var(--dark); }
             .slide-title { font-size: 1.8rem; }
             .footer-container { grid-template-columns: 1fr; }
             .footer-bottom { flex-direction: column; text-align: center; }
@@ -1320,8 +1323,23 @@
             const navLinks = document.getElementById('navLinks');
 
             if (mobileToggle && navLinks) {
-                mobileToggle.addEventListener('click', () => {
+                mobileToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     navLinks.classList.toggle('show');
+                });
+
+                // Cerrar el menú desplegable al hacer clic en cualquier opción
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('show');
+                    });
+                });
+
+                // Cerrar al hacer clic fuera del menú
+                document.addEventListener('click', (e) => {
+                    if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                        navLinks.classList.remove('show');
+                    }
                 });
             }
 

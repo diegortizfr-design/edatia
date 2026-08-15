@@ -496,8 +496,25 @@
         @media (max-width: 768px) {
             .page-hero h1 { font-size: 2.1rem; }
             .story-card { padding: 1.8rem; }
-            .nav-links { display: none; }
-            .mobile-toggle { display: block; }
+            .navbar { padding: 0.8rem 1.2rem; }
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                right: 0;
+                background: #ffffff;
+                flex-direction: column;
+                padding: 2.5rem 1.5rem;
+                gap: 1.5rem;
+                border-bottom: 2px solid var(--gold);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+                display: none;
+                z-index: 99999;
+                text-align: center;
+            }
+            .nav-links.show { display: flex !important; }
+            .nav-links a { font-size: 1.1rem; }
+            .mobile-toggle { display: block; cursor: pointer; padding: 0.5rem; font-size: 1.6rem; color: var(--dark); }
         }
     </style>
 </head>
@@ -652,13 +669,29 @@
     </footer>
 
     <script>
-        const mobileToggle = document.getElementById('mobileToggle');
-        const navLinks = document.getElementById('navLinks');
-        if (mobileToggle) {
-            mobileToggle.addEventListener('click', () => {
-                navLinks.classList.toggle('show');
-            });
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileToggle = document.getElementById('mobileToggle');
+            const navLinks = document.getElementById('navLinks');
+
+            if (mobileToggle && navLinks) {
+                mobileToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    navLinks.classList.toggle('show');
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('show');
+                    });
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                        navLinks.classList.remove('show');
+                    }
+                });
+            }
+        });
     </script>
 
 </body>
