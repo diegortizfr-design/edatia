@@ -70,8 +70,10 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, ctx: RequestCtx = {}) {
-    // 1. Verificar que la empresa con ese NIT existe
-    const nitLimpio = dto.nit.trim();
+    // 1. Limpiar NIT (Remover guión, dígito de verificación, puntos y espacios)
+    // Ej: "1143875756-3" -> "1143875756"
+    const rawNit = dto.nit.trim();
+    const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '');
     
     const includeQuery = {
       clienteManager: {
@@ -82,20 +84,18 @@ export class AuthService {
       },
     };
 
-    let empresa = await this.prisma.empresa.findUnique({
-      where: { nit: nitLimpio },
+    let empresa = await this.prisma.empresa.findFirst({
+      where: {
+        OR: [
+          { nit: nitLimpio },
+          { nit: { startsWith: nitLimpio } }
+        ]
+      },
       include: includeQuery,
     });
 
     if (!empresa) {
-      empresa = await this.prisma.empresa.findFirst({
-        where: { nit: { startsWith: nitLimpio } },
-        include: includeQuery,
-      });
-    }
-
-    if (!empresa) {
-      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { nit: nitLimpio, motivo: 'empresa_no_existe' } });
+      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { nit: rawNit, nitLimpio, motivo: 'empresa_no_existe' } });
       throw new UnauthorizedException('La empresa con este NIT no existe');
     }
 

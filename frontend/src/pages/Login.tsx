@@ -25,7 +25,7 @@ export function Login() {
       return
     }
     if (!identifier.trim() || !password) {
-      setError('Ingresa tu usuario/email y contraseña.')
+      setError('Ingresa tu usuario y contraseña.')
       return
     }
 
@@ -141,13 +141,13 @@ export function Login() {
 
             <div>
               <label htmlFor="identifier" className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                Email o usuario
+                Usuario
               </label>
               <input
                 id="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="tu@correo.com o tu usuario"
+                placeholder="Ingresa tu usuario"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={isLoading}
