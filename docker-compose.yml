@@ -142,7 +142,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.edatia-glowxir.rule=Host(`glowxir.edatia.com`)"
+      - "traefik.http.routers.edatia-glowxir.rule=Host(`distribuidorababyworld.edatia.com`) || Host(`glowxir.edatia.com`)"
       - "traefik.http.routers.edatia-glowxir.entrypoints=websecure"
       - "traefik.http.routers.edatia-glowxir.tls=true"
       - "traefik.http.routers.edatia-glowxir.tls.certresolver=letsencrypt"

@@ -76,112 +76,113 @@ export class DigitalService {
 
   // 🌐 Métodos Públicos para la Tienda Virtual (Aislada / SaaS)
 
-  private async autoInitializeGlowxir(slug: string) {
-    if (slug !== 'glowxir') return;
+  private async autoInitializeBabyWorld(slug: string) {
+    if (slug !== 'distribuidorababyworld' && slug !== 'glowxir') return;
+
+    const targetSlug = slug === 'glowxir' ? 'glowxir' : 'distribuidorababyworld';
 
     // 1. Validar si ya existe la configuración de la tienda
     let storeConfig = await this.prisma.configuracionTienda.findFirst({
-      where: { slugTienda: 'glowxir' }
+      where: { slugTienda: targetSlug }
     });
 
     if (!storeConfig) {
-      // Buscar primera empresa (la de Diego o Demo)
       const firstEmpresa = await this.prisma.empresa.findFirst() || { id: 1 };
       
       storeConfig = await this.prisma.configuracionTienda.create({
         data: {
           empresaId: firstEmpresa.id,
-          slugTienda: 'glowxir',
-          nombreTienda: 'Glowxir Tienda Virtual',
-          colorPrimario: '#9466e0',
+          slugTienda: targetSlug,
+          nombreTienda: 'Distribuidora Baby World',
+          colorPrimario: '#0ea5e9',
           costoEnvioBase: 9500,
           activo: true
         }
       });
-      console.log(`🌱 Autoinicializada tienda virtual glowxir para empresaId ${firstEmpresa.id}`);
+      console.log(`🌱 Autoinicializada tienda virtual Distribuidora Baby World (${targetSlug}) para empresaId ${firstEmpresa.id}`);
       
-      // 2. Sembrar productos cosméticos si la empresa no tiene ninguno publicado en la web
+      // 2. Sembrar productos para bebés si la empresa no tiene productos publicados en web
       const webProductsCount = await this.prisma.producto.count({
         where: { empresaId: firstEmpresa.id, publicadoWeb: true }
       });
 
       if (webProductsCount === 0) {
-        const seedProducts = [
+        const seedBabyProducts = [
           {
-            sku: "LIP-VELVET",
-            nombre: "Labial Líquido Mate Velvet",
-            descripcion: "Labial mate de alta pigmentación y larga duración sin resecar.",
-            descripcionWeb: "Fórmula ultrapigmentada que se desliza como un gloss y se seca dejando un acabado mate aterciopelado impecable. Enriquecido con vitamina E y aceite de aguacate para mantener tus labios hidratados hasta por 12 horas.",
-            precioBase: 45000,
-            precioWeb: 45000,
+            sku: "GEND-HUMO-01",
+            nombre: "Kit Cañones de Humo Revelación de Género (Dúo Rosa / Azul)",
+            descripcion: "Efecto de humo continuo de alta densidad y colores ultrabrillantes para revelación de género.",
+            descripcionWeb: "Cañones de humo formulados con polvos de color 100% orgánicos, biodegradables y no tóxicos. El tubo viene con empaque neutro que oculta el color con código secreto.",
+            precioBase: 55000,
+            precioWeb: 55000,
             publicadoWeb: true,
-            slug: "labial-velvet",
-            imagen: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=600&auto=format&fit=crop&q=80",
+            slug: "canones-humo-revelacion",
+            imagen: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=700&auto=format&fit=crop&q=80",
             esDestacado: true
           },
           {
-            sku: "BASE-SILK",
-            nombre: "Base Hidratante Silk Glow",
-            descripcion: "Base fluida con cobertura media y acabado luminoso y natural.",
-            descripcionWeb: "Consigue una piel radiante y uniforme al instante. Su fórmula ligera se funde con la piel, hidratando y difuminando imperfecciones para un acabado satinado que dura todo el día.",
-            precioBase: 78000,
-            precioWeb: 78000,
+            sku: "SHOW-TORTA-01",
+            nombre: "Torta de Pañales Temática 'Oso Soñador' 3 Pisos",
+            descripcion: "Espectacular centro de mesa y regalo útil para Baby Shower con 60 pañales y accesorios.",
+            descripcionWeb: "Creación artesanal premium elaborada con 60 pañales Huggies/Pampers Etapa 1, decorada con cintas de raso, peluche de apego hipoalergénico y manta térmica.",
+            precioBase: 145000,
+            precioWeb: 145000,
             publicadoWeb: true,
-            slug: "base-silk",
-            imagen: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80",
+            slug: "torta-panales-baby-shower",
+            imagen: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700&auto=format&fit=crop&q=80",
             esDestacado: true
           },
           {
-            sku: "PAL-SUNSET",
-            nombre: "Paleta de Sombras Sunset Bloom",
-            descripcion: "Paleta con 12 tonos cálidos altamente mezclables en acabados mate y shimmer.",
-            descripcionWeb: "Inspirada en los atardeceres mágicos, esta paleta ofrece 12 sombras de alta calidad que van desde tonos tierra neutros hasta corales vibrantes y brillos dorados deslumbrantes.",
-            precioBase: 95000,
-            precioWeb: 95000,
+            sku: "PAN-HUGGIES-120",
+            nombre: "Bulto Pañales Huggies Natural Care x120 Unidades",
+            descripcion: "Pañal con tecnología de máxima absorción y suavidad tipo algodón con indicador de humedad.",
+            descripcionWeb: "Pañales con absorción reforzada de hasta 12 horas de protección continua. Cuentan con indicador de humedad inteligente y barreras antifugas.",
+            precioBase: 94000,
+            precioWeb: 94000,
             publicadoWeb: true,
-            slug: "paleta-sunset",
-            imagen: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&auto=format&fit=crop&q=80",
+            slug: "bulto-panales-huggies-120",
+            imagen: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=700&auto=format&fit=crop&q=80",
             esDestacado: true
           },
           {
-            sku: "BLUSH-PETAL",
-            nombre: "Rubor en Crema Dewy Petal",
-            descripcion: "Rubor en crema sedoso que aporta un rubor natural y jugoso a las mejillas.",
-            descripcionWeb: "Fórmula innovadora que se transforma de crema a polvo al contacto con la piel. Su textura ligera y traslúcida se aplica de forma uniforme, dejando un aspecto saludable y fresco en el rostro.",
-            precioBase: 38000,
-            precioWeb: 38000,
+            sku: "JUG-PIANO-01",
+            nombre: "Gimnasio Sensorial Piano Musical Kick & Play",
+            descripcion: "Manta acolchada con arco de estimulación visual y piano musical interactivo.",
+            descripcionWeb: "Estimula el desarrollo motriz y sensorial del bebé desde los primeros meses con 5 juguetes colgantes desmontables y piano de 4 teclas luminosas.",
+            precioBase: 135000,
+            precioWeb: 135000,
             publicadoWeb: true,
-            slug: "rubor-petal",
-            imagen: "https://images.unsplash.com/photo-1590156546746-c2240b5287bc?w=600&auto=format&fit=crop&q=80",
-            esDestacado: false
+            slug: "gimnasio-piano-sensorial",
+            imagen: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=700&auto=format&fit=crop&q=80",
+            esDestacado: true
           },
           {
-            sku: "MASC-LASH",
-            nombre: "Pestañina Volumen Infinito Lash Up",
-            descripcion: "Máscara de pestañas para un volumen dramático y definición extrema sin grumos.",
-            descripcionWeb: "Consigue pestañas visiblemente más largas y gruesas. Su cepillo de elastómero abraza cada pestaña desde la raíz hasta la punta, peinándolas y levantándolas al instante.",
-            precioBase: 42000,
-            precioWeb: 42000,
+            sku: "ROP-AJUAR-PIMA",
+            nombre: "Ajuar Completo Primera Puesta 100% Algodón Pima (5 Piezas)",
+            descripcion: "Set de bienvenida para la clínica con algodón Pima hipoalergénico ultrasuave.",
+            descripcionWeb: "Confeccionado con el algodón Pima más suave del mundo, transpirable y sin costuras que rocen la delicada piel del recién nacido.",
+            precioBase: 89000,
+            precioWeb: 89000,
             publicadoWeb: true,
-            slug: "pestanina-lash",
-            imagen: "https://images.unsplash.com/photo-1631730359575-38e4755d772b?w=600&auto=format&fit=crop&q=80",
-            esDestacado: false
+            slug: "ajuar-primera-puesta-pima",
+            imagen: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=700&auto=format&fit=crop&q=80",
+            esDestacado: true
           },
           {
-            sku: "KIT-BRUSH",
-            nombre: "Kit de Brochas Profesionales Velvet Touch",
-            descripcion: "Set de 8 brochas de fibra sintética extrasuave con estuche de viaje.",
-            descripcionWeb: "El kit definitivo para un maquillaje profesional en casa. Incluye brochas para base, polvos, rubor y difuminadores de sombras, elaboradas con cerdas de alta densidad que no absorben producto de más.",
-            precioBase: 120000,
-            precioWeb: 120000,
+            sku: "PAS-COCHE-COMPACT",
+            nombre: "Coche Paseador Ultracompacto Plegado Automático",
+            descripcion: "Coche ligero de aluminio aeroespacial apto desde recién nacido hasta los 22kg.",
+            descripcionWeb: "Máxima comodidad y practicidad para los padres. Se pliega de forma autónoma con presionar un botón en el manillar.",
+            precioBase: 490000,
+            precioWeb: 490000,
             publicadoWeb: true,
-            slug: "kit-brochas",
-            imagen: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
-            esDestacado: false
+            slug: "coche-paseador-ultracompacto",
+            imagen: "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=700&auto=format&fit=crop&q=80",
+            esDestacado: true
           }
         ];
 
-        for (const p of seedProducts) {
+        for (const p of seedBabyProducts) {
           await this.prisma.producto.create({
             data: {
               empresaId: firstEmpresa.id,
@@ -189,13 +190,13 @@ export class DigitalService {
             }
           });
         }
-        console.log(`🌱 Sembrados 6 productos Glowxir para la empresaId ${firstEmpresa.id}`);
+        console.log(`🌱 Sembrados productos Distribuidora Baby World para la empresaId ${firstEmpresa.id}`);
       }
     }
   }
 
   async getProductosWebPublic(slug: string) {
-    await this.autoInitializeGlowxir(slug);
+    await this.autoInitializeBabyWorld(slug);
 
     const config = await this.prisma.configuracionTienda.findFirst({
       where: {

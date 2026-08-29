@@ -31,7 +31,7 @@ export function CatalogoDigital() {
 
   const handlePreview = (p: ProductoWeb) => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    const storeUrl = isLocal ? 'http://localhost:5173' : 'https://glowxir.edatia.com'
+    const storeUrl = isLocal ? 'http://localhost:5173' : 'https://distribuidorababyworld.edatia.com'
     window.open(storeUrl, '_blank')
   }
 
