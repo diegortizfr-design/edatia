@@ -231,6 +231,27 @@ export class ClientesManagerService {
     }
 
     const clienteActualizado = await (this.prisma as any).clienteManager.update({ where: { id }, data });
+
+    // Sincronizar automáticamente con la Empresa del ERP si ya está enlazada
+    const empresaId = clienteActualizado.empresaId;
+    if (empresaId && (dto.nit || dto.nombre || dto.digitoVerificacion || dto.email || dto.telefono || dto.direccion)) {
+      const rawNit = dto.nit ? dto.nit.trim() : undefined;
+      const nitLimpio = rawNit ? (rawNit.split('-')[0].replace(/\D/g, '') || rawNit) : undefined;
+
+      await this.prisma.empresa.update({
+        where: { id: empresaId },
+        data: {
+          ...(nitLimpio ? { nit: nitLimpio } : {}),
+          ...(dto.nombre ? { nombre: dto.nombre } : {}),
+          ...(dto.digitoVerificacion !== undefined ? { digitoVerificacion: dto.digitoVerificacion } : {}),
+          ...(dto.email !== undefined ? { email: dto.email } : {}),
+          ...(dto.telefono !== undefined ? { telefono: dto.telefono } : {}),
+          ...(dto.direccion !== undefined ? { direccion: dto.direccion } : {}),
+        },
+      }).catch(err => {
+        console.warn('Advertencia al sincronizar con Empresa:', err?.message);
+      });
+    }
     
     return clienteActualizado;
   }
@@ -342,92 +363,122 @@ export class ClientesManagerService {
     const rawNit = cliente.nit.trim();
     const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '') || rawNit;
 
-    // 1. Verificar o crear la Empresa en el ERP
-    let empresa: any = null;
-    if (cliente.empresaId) {
-      empresa = await this.prisma.empresa.findUnique({ where: { id: cliente.empresaId } });
-    }
+    try {
+      // 1. Verificar o crear la Empresa en el ERP
+      let empresa: any = null;
+      if (cliente.empresaId) {
+        empresa = await this.prisma.empresa.findUnique({ where: { id: cliente.empresaId } });
+      }
 
-    if (!empresa) {
-      empresa = await this.prisma.empresa.findFirst({
+      if (!empresa) {
+        // Buscar empresas que coincidan con este NIT
+        const existingEmpresas = await this.prisma.empresa.findMany({
+          where: {
+            OR: [
+              { nit: cliente.nit },
+              { nit: nitLimpio },
+              { nit: { startsWith: nitLimpio } },
+            ],
+          },
+          include: { clienteManager: true },
+        });
+
+        // Seleccionar una que no esté enlazada a otro clienteManager o que ya pertenezca a este cliente
+        const libreOPropia = existingEmpresas.find(e => !e.clienteManager || e.clienteManager.id === clienteId);
+        if (libreOPropia) {
+          empresa = libreOPropia;
+        }
+      }
+
+      if (!empresa) {
+        // Generar un NIT único para la empresa si ya estuviese ocupado
+        let nitParaEmpresa = nitLimpio;
+        const nitOcupado = await this.prisma.empresa.findUnique({ where: { nit: nitParaEmpresa } });
+        if (nitOcupado) {
+          nitParaEmpresa = `${nitLimpio}-${clienteId}`;
+        }
+
+        empresa = await this.prisma.empresa.create({
+          data: {
+            nit: nitParaEmpresa,
+            digitoVerificacion: cliente.digitoVerificacion || undefined,
+            nombre: cliente.nombre,
+            direccion: cliente.direccion || undefined,
+            telefono: cliente.telefono || undefined,
+            email: cliente.email || undefined,
+          },
+        });
+      }
+
+      // 2. Enlazar la Empresa al ClienteManager de forma segura
+      if (cliente.empresaId !== empresa.id) {
+        await (this.prisma as any).clienteManager.update({
+          where: { id: clienteId },
+          data: { empresaId: empresa.id },
+        });
+      }
+
+      // 3. Crear o actualizar el Usuario principal dentro de ESTA empresa
+      const usuarioClean = dto.usuario.trim();
+      const isEmail = usuarioClean.includes('@');
+      const fallbackEmail = isEmail ? usuarioClean : (cliente.email || `${usuarioClean}@${nitLimpio}.edatia.com`);
+
+      let existingUser = await this.prisma.user.findFirst({
         where: {
+          empresaId: empresa.id,
           OR: [
-            { nit: cliente.nit },
-            { nit: nitLimpio },
-            { nit: { startsWith: nitLimpio } },
+            { usuario: usuarioClean },
+            { email: usuarioClean },
+            { email: fallbackEmail },
           ],
         },
       });
-    }
 
-    if (!empresa) {
-      empresa = await this.prisma.empresa.create({
-        data: {
-          nit: nitLimpio,
-          digitoVerificacion: cliente.digitoVerificacion || undefined,
-          nombre: cliente.nombre,
-          direccion: cliente.direccion || undefined,
-          telefono: cliente.telefono || undefined,
-          email: cliente.email || undefined,
-        },
-      });
-    }
+      const hash = await bcrypt.hash(dto.password, 12);
 
-    // 2. Enlazar la Empresa al ClienteManager si no lo estaba
-    if (cliente.empresaId !== empresa.id) {
-      await (this.prisma as any).clienteManager.update({
-        where: { id: clienteId },
-        data: { empresaId: empresa.id },
-      });
-    }
+      if (existingUser) {
+        // Actualizar password y desbloquear por si estaba bloqueado
+        await this.prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            usuario: usuarioClean,
+            password: hash,
+            activo: true,
+            loginFallidosConsecutivos: 0,
+            loginBloqueadoHasta: null,
+            ...(fallbackEmail ? { email: fallbackEmail } : {}),
+          },
+        });
 
-    // 3. Crear o actualizar el Usuario principal dentro de ESTA empresa
-    const usuarioClean = dto.usuario.trim();
-    const isEmail = usuarioClean.includes('@');
+        return { message: 'Credenciales del usuario actualizadas correctamente' };
+      } else {
+        // Garantizar que el email no colisione con el esquema legacy
+        let emailFinal = fallbackEmail;
+        const emailGlobalUsado = await this.prisma.user.findFirst({ where: { email: emailFinal } });
+        if (emailGlobalUsado && emailGlobalUsado.empresaId !== empresa.id) {
+          emailFinal = `${usuarioClean}-${empresa.id}@${nitLimpio}.edatia.com`;
+        }
 
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        empresaId: empresa.id,
-        OR: [
-          { usuario: usuarioClean },
-          ...(isEmail ? [{ email: usuarioClean }] : []),
-        ],
-      },
-    });
+        // Crear nuevo usuario admin dentro de la empresa
+        await this.prisma.user.create({
+          data: {
+            usuario: usuarioClean,
+            email: emailFinal,
+            nombre: 'Admin ' + cliente.nombre,
+            password: hash,
+            rol: 'admin',
+            empresaId: empresa.id,
+            activo: true,
+            loginFallidosConsecutivos: 0,
+            loginBloqueadoHasta: null,
+          },
+        });
 
-    const hash = await bcrypt.hash(dto.password, 12);
-
-    if (existingUser) {
-      // Actualizar password y desbloquear por si estaba bloqueado
-      await this.prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          password: hash,
-          activo: true,
-          loginFallidosConsecutivos: 0,
-          loginBloqueadoHasta: null,
-          ...(isEmail && !existingUser.email ? { email: usuarioClean } : {}),
-        },
-      });
-
-      return { message: 'Credenciales del usuario actualizadas correctamente' };
-    } else {
-      // Crear nuevo usuario admin dentro de la empresa
-      await this.prisma.user.create({
-        data: {
-          usuario: usuarioClean,
-          email: isEmail ? usuarioClean : null,
-          nombre: 'Admin ' + cliente.nombre,
-          password: hash,
-          rol: 'admin',
-          empresaId: empresa.id,
-          activo: true,
-          loginFallidosConsecutivos: 0,
-          loginBloqueadoHasta: null,
-        },
-      });
-
-      return { message: 'Inquilino ERP y credenciales creadas correctamente' };
+        return { message: 'Inquilino ERP y credenciales creadas correctamente' };
+      }
+    } catch (err: any) {
+      console.error('Error en provisionarErp:', err);
+      throw new BadRequestException(err?.message || 'Error al aprovisionar inquilino en el ERP');
     }
   }
 
