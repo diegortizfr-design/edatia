@@ -3,14 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
     color: #1e293b;
     background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, .font-display {
-    font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
   }
 }
 
@@ -36,5 +43,5 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

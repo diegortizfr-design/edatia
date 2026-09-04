@@ -1,5 +1,5 @@
 import React from 'react'
-import { Star, Plus, Eye, Sparkles, Heart } from 'lucide-react'
+import { Star, Plus, Eye } from 'lucide-react'
 import { Product } from '../data/productos'
 
 interface ProductCardProps {
@@ -19,12 +19,21 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
     ? Math.round(((product.precioAnterior - product.precio) / product.precioAnterior) * 100)
     : null
 
+  const getCategoryBadgeColor = (cat: string) => {
+    switch (cat) {
+      case 'Pañalera': return 'bg-sky-50 text-sky-600 border-sky-100'
+      case 'Juguetería': return 'bg-amber-50 text-amber-600 border-amber-100'
+      case 'Variedades': return 'bg-pink-50 text-pink-600 border-pink-100'
+      default: return 'bg-slate-50 text-slate-600 border-slate-100'
+    }
+  }
+
   return (
-    <div className="group bg-white rounded-3xl border border-slate-100/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-sky-200/80 transition-all duration-300 flex flex-col h-full relative">
+    <div className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative">
       {/* Product Image Box */}
       <div 
         onClick={() => onViewDetails(product)}
-        className="relative overflow-hidden aspect-[4/5] bg-slate-50 cursor-pointer"
+        className="relative overflow-hidden aspect-square bg-slate-50 cursor-pointer select-none"
       >
         <img
           src={product.imagen}
@@ -34,82 +43,74 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
         />
 
         {/* Top Badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-1 pointer-events-none">
-          <div className="flex flex-col gap-1 items-start">
-            {discountPercent && (
-              <span className="bg-pink-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-md">
-                -{discountPercent}% OFF
-              </span>
-            )}
-            {product.esMayorista && (
-              <span className="bg-sky-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider">
-                Mayorista
-              </span>
-            )}
-          </div>
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-none">
+          {discountPercent ? (
+            <span className="bg-rose-500 text-white font-extrabold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-sm">
+              -{discountPercent}%
+            </span>
+          ) : <span />}
 
           {product.etapa && (
-            <span className="bg-white/90 backdrop-blur-sm text-slate-700 border border-slate-200/60 font-bold text-[9px] px-2 py-0.5 rounded-full shadow-sm">
+            <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100">
               {product.etapa}
             </span>
           )}
         </div>
-
-        {/* Hover Quick View overlay */}
-        <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-          <span className="bg-white/95 text-slate-800 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            <Eye size={14} /> Ver Detalle
-          </span>
-        </div>
       </div>
 
       {/* Info Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            <span className="truncate max-w-[150px] text-sky-600 font-extrabold">{product.categoria}</span>
-            <div className="flex items-center gap-0.5 text-amber-500 font-bold flex-shrink-0">
-              <Star size={12} fill="currentColor" />
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-2">
+        <div className="space-y-1">
+          {/* Category Tag */}
+          <div className="flex items-center justify-between gap-1">
+            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border ${getCategoryBadgeColor(product.categoria)}`}>
+              {product.categoria}
+            </span>
+            <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold">
+              <Star size={11} fill="currentColor" />
               <span>{product.rating}</span>
-              {product.reviewsCount && (
-                <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
-              )}
             </div>
           </div>
           
+          {/* Title */}
           <h3 
             onClick={() => onViewDetails(product)}
-            className="font-bold text-slate-800 text-xs sm:text-sm hover:text-sky-600 transition-colors line-clamp-2 leading-snug cursor-pointer"
+            className="font-bold text-slate-800 text-xs sm:text-sm hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer pt-0.5"
             title={product.nombre}
           >
             {product.nombre}
           </h3>
           
-          <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+          {/* Short description for larger screens */}
+          <p className="text-[11px] text-slate-500 line-clamp-1 hidden sm:block">
             {product.descripcion}
           </p>
         </div>
 
         {/* Pricing & Add to Cart button */}
-        <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2">
-          <div>
+        <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
             {product.precioAnterior && (
-              <span className="text-[10px] text-slate-400 line-through block font-medium">
+              <span className="text-[9px] sm:text-[10px] text-slate-400 line-through block font-medium leading-none mb-0.5">
                 {fmtPrice(product.precioAnterior)}
               </span>
             )}
-            <span className="font-black text-slate-900 text-sm sm:text-base font-display">
+            <span className="font-extrabold text-slate-900 text-xs sm:text-base truncate block">
               {fmtPrice(product.precio)}
             </span>
           </div>
 
           <button
-            onClick={() => onAddToCart(product)}
-            className="p-2.5 sm:px-3 sm:py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl transition-all flex items-center justify-center gap-1 shadow-md hover:shadow-lg active:scale-95 text-xs font-bold"
-            title="Agregar al Carrito"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAddToCart(product)
+            }}
+            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm active:scale-90 flex-shrink-0"
+            title="Agregar a la bolsa"
+            aria-label={`Agregar ${product.nombre} al carrito`}
           >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Agregar</span>
+            <Plus size={15} />
+            <span className="hidden sm:inline text-xs font-bold">Añadir</span>
           </button>
         </div>
       </div>

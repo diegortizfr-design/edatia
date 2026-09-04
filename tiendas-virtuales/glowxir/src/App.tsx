@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Sparkles, ArrowRight, Instagram, HelpCircle, Shield, MessageCircle, Heart, Phone, MapPin, Mail, PartyPopper, Calculator, Filter, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2 } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
-import { GenderRevealSection } from './components/GenderRevealSection'
-import { DiaperCalculatorModal } from './components/DiaperCalculatorModal'
-import { WholesaleBanner } from './components/WholesaleBanner'
+import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
 import { CartDrawer, CartItem } from './components/CartDrawer'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
-import { PRODUCTOS_BABY_WORLD, Product } from './data/productos'
+import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS } from './data/productos'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
@@ -31,18 +29,16 @@ const STORE_SLUG = getStoreSlug()
 
 export function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
-  const [selectedGender, setSelectedGender] = useState('Todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
   
   const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Fetch backend catalog if available, fallback to rich local catalog
+  // Fetch backend catalog if available, fallback to rich local Baby-World catalog
   useEffect(() => {
     fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`)
       .then(r => {
@@ -51,54 +47,64 @@ export function App() {
       })
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((p: any) => ({
-            id: p.id,
-            nombre: p.nombre,
-            descripcion: p.descripcion || 'Sin descripción',
-            descripcionLarga: p.descripcionWeb || p.descripcion || '',
-            precio: Number(p.precioWeb || p.precioBase || 0),
-            categoria: (
-              p.sku?.startsWith('PAN') ? 'Pañalera & Cuidado' :
-              p.sku?.startsWith('JUG') ? 'Juguetería' :
-              p.sku?.startsWith('ROP') ? 'Ropa & Ajuares' :
-              p.sku?.startsWith('GEND') ? 'Revelación de Género' :
-              p.sku?.startsWith('SHOW') ? 'Baby Shower' :
-              p.sku?.startsWith('PAS') ? 'Paseo & Habitación' : 'Pañalera & Cuidado'
-            ) as any,
-            genero: 'Unisex' as any,
-            imagen: p.imagen
-              ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE}${p.imagen}`)
-              : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
-            rating: p.esDestacado ? 5.0 : 4.8,
-            reviewsCount: 30 + (p.id * 5),
-            stock: p.stock || 40,
-            esDestacado: !!p.esDestacado,
-            esMayorista: p.sku?.includes('BULTO') || false,
-            detalles: p.esDestacado 
-              ? ["100% Calidad Garantizada", "Hipoalergénico y seguro", "Envío inmediato"]
-              : ["Materiales de alta durabilidad", "Recomendado para bebés"]
-          }))
+          const mapped: Product[] = data.map((p: any) => {
+            let cat: 'Pañalera' | 'Juguetería' | 'Variedades' = 'Pañalera'
+            const sku = (p.sku || '').toUpperCase()
+            const nombre = (p.nombre || '').toLowerCase()
+
+            if (sku.startsWith('JUG') || nombre.includes('juguete') || nombre.includes('gimnasio') || nombre.includes('peluche') || nombre.includes('sonajero')) {
+              cat = 'Juguetería'
+            } else if (sku.startsWith('VAR') || sku.startsWith('ROP') || nombre.includes('ajuar') || nombre.includes('cobija') || nombre.includes('babero') || nombre.includes('kit')) {
+              cat = 'Variedades'
+            } else {
+              cat = 'Pañalera'
+            }
+
+            return {
+              id: p.id,
+              nombre: p.nombre,
+              descripcion: p.descripcion || 'Producto de alta calidad para bebés.',
+              descripcionLarga: p.descripcionWeb || p.descripcion || '',
+              precio: Number(p.precioWeb || p.precioBase || 0),
+              precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : undefined,
+              categoria: cat,
+              subcategoria: p.categoria || cat,
+              genero: 'Unisex',
+              imagen: p.imagen
+                ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE}${p.imagen}`)
+                : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
+              rating: p.esDestacado ? 5.0 : 4.8,
+              reviewsCount: 25 + (p.id * 3),
+              stock: p.stock || 30,
+              esDestacado: !!p.esDestacado,
+              detalles: [
+                "100% Calidad y seguridad comprobada",
+                "Hipoalergénico y recomendado para bebés",
+                "Despacho y entrega rápida garantizada"
+              ]
+            }
+          })
           setProducts(mapped)
         }
       })
       .catch(err => {
-        // Use default high quality baby catalog
-        console.log('Usando catálogo nativo de Distribuidora Baby World:', err.message)
+        console.log('Usando catálogo nativo optimizado de Baby-World:', err.message)
       })
       .finally(() => {
         setIsLoading(false)
       })
   }, [])
 
-  // Filter products by category, gender and search query
+  // Filter products by category and search query
   const filteredProducts = products.filter(p => {
     const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory
-    const matchesGender = selectedGender === 'Todos' || !p.genero || p.genero === 'Unisex' || p.genero === selectedGender
-    const matchesSearch = searchQuery.trim() === '' || 
-      p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.categoria.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesGender && matchesSearch
+    const q = searchQuery.toLowerCase().trim()
+    const matchesSearch = q === '' || 
+      p.nombre.toLowerCase().includes(q) ||
+      p.descripcion.toLowerCase().includes(q) ||
+      p.categoria.toLowerCase().includes(q) ||
+      (p.subcategoria && p.subcategoria.toLowerCase().includes(q))
+    return matchesCategory && matchesSearch
   })
 
   const handleAddToCart = (product: Product, quantity = 1) => {
@@ -107,7 +113,7 @@ export function App() {
       if (existing) {
         toast.success(`Aumentaste ${quantity}x "${product.nombre}"`, {
           icon: '🍼',
-          style: { borderRadius: '1rem', background: '#0c4a6e', color: '#fff' }
+          style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
         })
         return prev.map(item =>
           item.product.id === product.id
@@ -117,7 +123,7 @@ export function App() {
       }
       toast.success(`Agregado a la bolsa: ${product.nombre}`, {
         icon: '🛍️',
-        style: { borderRadius: '1rem', background: '#0c4a6e', color: '#fff' }
+        style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
       })
       return [...prev, { product, quantity }]
     })
@@ -149,127 +155,111 @@ export function App() {
 
   const handleCheckoutSuccess = () => {
     setCart([])
-    toast.success('¡Pedido procesado con éxito en Baby World!', {
+    toast.success('¡Pedido procesado con éxito en Baby-World!', {
       duration: 5000,
       icon: '🎉',
       style: { borderRadius: '1rem', background: '#047857', color: '#fff' }
     })
   }
 
-  const diaperProduct = products.find(p => p.categoria === 'Pañalera & Cuidado' && p.nombre.toLowerCase().includes('huggies')) || products[5]
+  const handleCategorySelect = (category: string) => {
+    setActiveCategory(category)
+    const el = document.getElementById('catalogo-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 pb-20 md:pb-0">
       {/* Toast notifications */}
       <Toaster position="bottom-right" toastOptions={{ className: 'text-xs font-bold' }} />
 
-      {/* Navigation */}
+      {/* Navigation Bar */}
       <Navbar
-        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        cartCount={totalCartCount}
         onCartClick={() => setIsCartOpen(true)}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onOpenCalculator={() => setIsCalculatorOpen(true)}
-        selectedGender={selectedGender}
-        setSelectedGender={setSelectedGender}
       />
 
-      {/* Hero Banner Section (Shown when on Home / All and no search) */}
+      {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
       {activeCategory === 'Todos' && !searchQuery && (
-        <>
-          <HeroBanner
-            onExploreClick={() => {
-              const el = document.getElementById('productos-grid')
-              el?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            onGenderRevealClick={() => {
-              setActiveCategory('Revelación de Género')
-              const el = document.getElementById('productos-grid')
-              el?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            onOpenCalculator={() => setIsCalculatorOpen(true)}
-          />
-
-          {/* Interactive Gender Reveal & Baby Shower Spotlight */}
-          <GenderRevealSection
-            products={products}
-            onAddToCart={handleAddToCart}
-            onViewDetails={p => setSelectedProduct(p)}
-          />
-        </>
+        <HeroBanner onSelectCategory={handleCategorySelect} />
       )}
 
-      {/* Main Grid Catalog */}
-      <main id="productos-grid" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-        {/* Header & Filter Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* Main Catalog Section */}
+      <main id="catalogo-section" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 flex-1 w-full">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-sky-600">
-                Catálogo Oficial
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
+                Catálogo Baby-World
               </span>
-              <span className="h-1 w-1 rounded-full bg-slate-300"></span>
-              <span className="text-xs font-bold text-slate-400">
-                {activeCategory}
+              <span className="h-1 w-1 rounded-full bg-slate-300" />
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400">
+                {activeCategory} ({filteredProducts.length})
               </span>
             </div>
             
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-display mt-1">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
               {searchQuery
                 ? `Resultados para "${searchQuery}"`
-                : activeCategory === 'Todos' ? 'Todos los Productos para Bebé' : activeCategory}
+                : activeCategory === 'Todos' 
+                  ? 'Lo mejor para tu bebé' 
+                  : activeCategory === 'Pañalera'
+                    ? '🍼 Pañalera & Cuidado Infantil'
+                    : activeCategory === 'Juguetería'
+                      ? '🧸 Juguetería & Estimulación Temprana'
+                      : '🎀 Variedades, Ropa & Accesorios'}
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Precios directos de distribuidora con garantía de calidad y envíos a toda Colombia.
-            </p>
           </div>
 
-          {/* Gender Filter Chips */}
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-sm self-start sm:self-auto">
-            <span className="text-[11px] font-bold text-slate-400 pl-2 hidden sm:inline">Filtrar:</span>
-            {['Todos', 'Niño', 'Niña', 'Unisex'].map((g) => (
+          {/* Category Filter Pills on larger screens */}
+          <div className="hidden sm:flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm">
+            {CATEGORIAS_PRODUCTOS.map((cat) => (
               <button
-                key={g}
-                onClick={() => setSelectedGender(g)}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                  selectedGender === g
-                    ? g === 'Niño' ? 'bg-sky-500 text-white shadow-sm'
-                    : g === 'Niña' ? 'bg-pink-500 text-white shadow-sm'
-                    : 'bg-slate-900 text-white shadow-sm'
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeCategory === cat
+                    ? 'bg-slate-900 text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                {g === 'Niño' ? '👦 Niño' : g === 'Niña' ? '👧 Niña' : g === 'Unisex' ? '💛 Neutro' : '✨ Todos'}
+                {cat === 'Pañalera' ? '🍼 Pañalera' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
         {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm space-y-4 max-w-lg mx-auto my-8">
+          <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
             <div className="text-4xl">🍼</div>
             <div>
-              <h3 className="text-base font-black text-slate-800 font-display">No encontramos productos</h3>
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
               <p className="text-xs text-slate-400 mt-1">
-                Prueba ajustando tu búsqueda o cambiando de categoría.
+                Prueba ajustando tu búsqueda o seleccionando otra sección.
               </p>
             </div>
             <button
               onClick={() => {
                 setActiveCategory('Todos')
-                setSelectedGender('Todos')
                 setSearchQuery('')
               }}
-              className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all"
+              className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
             >
               Ver Todo el Catálogo
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {filteredProducts.map(product => (
               <ProductCard
                 key={product.id}
@@ -282,104 +272,92 @@ export function App() {
         )}
       </main>
 
-      {/* Wholesale Banner Section */}
-      <WholesaleBanner />
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12">
+      {/* Clean Minimalist Footer */}
+      <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-12 border-b border-slate-100">
-            {/* Col 1: Brand Info */}
-            <div className="lg:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-slate-100">
+            {/* Brand */}
+            <div className="space-y-3">
               <BabyWorldLogo />
               <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-                <b>Distribuidora Baby World</b> es tu aliado de confianza en productos para bebés. Especialistas en pañalera al por mayor y detal, juguetes de estimulación temprana, ajuares de primera puesta, y kits mágicos para fiestas de revelación de género y baby shower.
+                <b>Baby-World</b>: Distribuidora líder de pañales, juguetes de estimulación y variedades para consentir y cuidar el crecimiento de tu bebé.
               </p>
-              <div className="flex items-center gap-3 text-slate-500 pt-1">
-                <a 
-                  href="https://wa.me/573001234567" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-2xl transition-all border border-emerald-100"
-                  title="WhatsApp"
-                >
-                  <MessageCircle size={18} />
-                </a>
-                <a 
-                  href="https://instagram.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="p-2.5 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-2xl transition-all border border-pink-100"
-                  title="Instagram"
-                >
-                  <Instagram size={18} />
-                </a>
-              </div>
             </div>
 
-            {/* Col 2: Categories */}
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-900 font-display">
-                Categorías
+            {/* Quick Categories */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                Categorías Principales
               </p>
               <ul className="space-y-2 text-xs text-slate-500 font-medium">
-                <li><button onClick={() => setActiveCategory('Pañalera & Cuidado')} className="hover:text-sky-600 transition-colors">🍼 Pañalera & Cuidado</button></li>
-                <li><button onClick={() => setActiveCategory('Juguetería')} className="hover:text-sky-600 transition-colors">🧸 Juguetería Sensorial</button></li>
-                <li><button onClick={() => setActiveCategory('Ropa & Ajuares')} className="hover:text-sky-600 transition-colors">👶 Ropa Algodón Pima</button></li>
-                <li><button onClick={() => setActiveCategory('Baby Shower')} className="hover:text-sky-600 transition-colors">🎉 Baby Shower & Regalos</button></li>
-                <li><button onClick={() => setActiveCategory('Revelación de Género')} className="hover:text-sky-600 transition-colors">🎀 Revelación de Género</button></li>
+                <li>
+                  <button onClick={() => handleCategorySelect('Pañalera')} className="hover:text-sky-600 transition-colors">
+                    🍼 Pañalera & Cuidado (Huggies, Winny, Pampers)
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleCategorySelect('Juguetería')} className="hover:text-sky-600 transition-colors">
+                    🧸 Juguetería Sensorial & Gimnasios
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleCategorySelect('Variedades')} className="hover:text-sky-600 transition-colors">
+                    🎀 Variedades, Ajuares & Accesorios
+                  </button>
+                </li>
               </ul>
             </div>
 
-            {/* Col 3: Tools & Services */}
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-900 font-display">
-                Servicios & Ayuda
-              </p>
-              <ul className="space-y-2 text-xs text-slate-500 font-medium">
-                <li><button onClick={() => setIsCalculatorOpen(true)} className="hover:text-sky-600 transition-colors flex items-center gap-1.5"><Calculator size={13} /> Calculadora de Pañales</button></li>
-                <li><a href="https://wa.me/573001234567?text=Quiero%20solicitar%20precios%20mayoristas" target="_blank" rel="noopener noreferrer" className="hover:text-sky-600 transition-colors">📦 Catálogo Mayorista</a></li>
-                <li><a href="#" className="hover:text-sky-600 transition-colors">🚚 Envíos y Tiempos de Entrega</a></li>
-                <li><a href="#" className="hover:text-sky-600 transition-colors">💵 Política de Pago Contra Entrega</a></li>
-              </ul>
-            </div>
-
-            {/* Col 4: Contact info */}
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-wider text-slate-900 font-display">
-                Atención al Cliente
+            {/* Contact & WhatsApp */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                Atención & Asesoría
               </p>
               <div className="space-y-2 text-xs text-slate-500">
+                <a
+                  href="https://wa.me/573205704262?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-emerald-600 font-bold hover:underline"
+                >
+                  <MessageCircle size={15} />
+                  <span>+57 320 570 4262 (WhatsApp Directo)</span>
+                </a>
                 <p className="flex items-center gap-2">
-                  <Phone size={14} className="text-sky-500 flex-shrink-0" />
-                  <span>+57 (300) 123-4567</span>
+                  <MapPin size={14} className="text-slate-400" />
+                  <span>Candelaria / Cali - Envíos Nacionales</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Mail size={14} className="text-pink-500 flex-shrink-0" />
-                  <span>contacto@babyworld.edatia.com</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin size={14} className="text-emerald-500 flex-shrink-0" />
-                  <span>Bogotá, Colombia (Envíos Nacionales)</span>
+                  <Truck size={14} className="text-slate-400" />
+                  <span>Pago Contra Entrega disponible</span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Copyright bar */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-xs text-slate-400">
+          {/* Copyright */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-400">
             <p>
-              © {new Date().getFullYear()} <b>Distribuidora Baby World</b>. Todos los derechos reservados. Tienda Virtual por <b>Edatia</b>.
+              © {new Date().getFullYear()} <b>Baby-World</b>. Todos los derechos reservados. Tienda Virtual por <b>Edatia</b>.
             </p>
-            <div className="flex items-center gap-4 text-[11px]">
-              <span className="flex items-center gap-1"><Shield size={12} className="text-emerald-500" /> Sitio Seguro SSL</span>
-              <span className="flex items-center gap-1">🇨🇴 Envíos a toda Colombia</span>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1"><Shield size={12} className="text-emerald-500" /> Compra Segura</span>
+              <span>🇨🇴 Envíos a toda Colombia</span>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Slide Drawer & Modals */}
+      {/* Sticky Mobile Bottom Navigation (Only visible on smartphones) */}
+      <MobileBottomNav
+        activeCategory={activeCategory}
+        onSelectCategory={handleCategorySelect}
+        cartCount={totalCartCount}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenWhatsApp={() => window.open('https://wa.me/573205704262?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
+      />
+
+      {/* Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -392,6 +370,7 @@ export function App() {
         }}
       />
 
+      {/* Product Detail Modal (Bottom-Sheet on Mobile) */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -401,13 +380,7 @@ export function App() {
         }}
       />
 
-      <DiaperCalculatorModal
-        isOpen={isCalculatorOpen}
-        onClose={() => setIsCalculatorOpen(false)}
-        onAddDiaperPack={(p, q) => handleAddToCart(p, q)}
-        diaperProduct={diaperProduct}
-      />
-
+      {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}

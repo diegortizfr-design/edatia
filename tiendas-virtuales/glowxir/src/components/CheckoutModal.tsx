@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, CheckCircle, Truck, ShieldCheck, CreditCard, MessageCircle, ArrowRight } from 'lucide-react'
+import { X, CheckCircle, Truck, ShieldCheck, MessageCircle, ArrowRight } from 'lucide-react'
 import { Product } from '../data/productos'
 
 interface CartItem {
@@ -26,10 +26,8 @@ export function CheckoutModal({
 }: CheckoutModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
-    email: '',
     telefono: '',
-    departamento: 'Bogotá D.C.',
-    ciudad: 'Bogotá',
+    ciudad: 'Candelaria',
     direccion: '',
     barrio: '',
     medioPago: 'Contra Entrega',
@@ -42,7 +40,7 @@ export function CheckoutModal({
   if (!isOpen) return null
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
-  const shipping = subtotal >= 150000 ? 0 : 9500
+  const shipping = subtotal >= 150000 ? 0 : 8000
   const total = subtotal + shipping
 
   const fmtPrice = (val: number) => {
@@ -57,9 +55,9 @@ export function CheckoutModal({
 
     const payload = {
       nombre: formData.nombre,
-      email: formData.email || `${formData.telefono}@cliente.babyworld.com`,
+      email: `${formData.telefono}@cliente.babyworld.com`,
       telefono: formData.telefono,
-      direccion: `${formData.direccion}, Barrio: ${formData.barrio || 'N/A'}, ${formData.ciudad} (${formData.departamento}). Notas: ${formData.notas || 'Ninguna'}`,
+      direccion: `${formData.direccion}, Barrio: ${formData.barrio || 'N/A'}, ${formData.ciudad}. Notas: ${formData.notas || 'Ninguna'}`,
       ciudad: formData.ciudad,
       medioPago: formData.medioPago,
       items: cartItems.map(item => ({
@@ -77,16 +75,9 @@ export function CheckoutModal({
         body: JSON.stringify(payload)
       })
       const data = await res.json()
-      if (data && (data.success || data.numero)) {
-        setOrderNumber(data.numero || `BW-${Math.floor(100000 + Math.random() * 900000)}`)
-        setIsSuccess(true)
-      } else {
-        // Fallback to local order number if API responded with warning
-        setOrderNumber(`BW-${Math.floor(100000 + Math.random() * 900000)}`)
-        setIsSuccess(true)
-      }
+      setOrderNumber(data.numero || `BW-${Math.floor(100000 + Math.random() * 900000)}`)
+      setIsSuccess(true)
     } catch (err) {
-      console.warn('API error during checkout, using local fallback:', err)
       setOrderNumber(`BW-${Math.floor(100000 + Math.random() * 900000)}`)
       setIsSuccess(true)
     } finally {
@@ -100,99 +91,85 @@ export function CheckoutModal({
   }
 
   const handleSendWhatsAppConfirmation = () => {
-    let msg = `👶 *CONFIRMACIÓN DE PEDIDO - DISTRIBUIDORA BABY WORLD*\n\n`
-    msg += `*Nº Pedido:* ${orderNumber}\n`
+    let msg = `🍼 *PEDIDO CONFIRMADO - BABY-WORLD*\n\n`
+    msg += `*Nº Orden:* ${orderNumber}\n`
     msg += `*Cliente:* ${formData.nombre}\n`
     msg += `*Teléfono:* ${formData.telefono}\n`
-    msg += `*Dirección:* ${formData.direccion}, ${formData.barrio ? `Barrio: ${formData.barrio}, ` : ''}${formData.ciudad}\n`
-    msg += `*Método de Pago:* ${formData.medioPago}\n\n`
-    msg += `*Items del Pedido:*\n`
+    msg += `*Dirección:* ${formData.direccion}, ${formData.ciudad}\n`
+    msg += `*Pago:* ${formData.medioPago}\n\n`
+    msg += `*Productos:*\n`
     cartItems.forEach(i => {
       msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
     })
     msg += `\n*Total a Pagar:* ${fmtPrice(total)}`
     if (shipping === 0) msg += ` (Envío Gratis 🎉)`
     
-    window.open(`https://wa.me/573001234567?text=${encodeURIComponent(msg)}`, '_blank')
+    window.open(`https://wa.me/573205704262?text=${encodeURIComponent(msg)}`, '_blank')
     handleFinish()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div 
         onClick={isSuccess ? undefined : onClose}
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-5 sm:p-7 border border-slate-100 animate-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200">
         {!isSuccess && (
           <button 
             onClick={onClose} 
-            className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full bg-slate-100/80 transition-colors"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
 
         {!isSuccess ? (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-black uppercase text-sky-600 tracking-wider">
-                <span>Distribuidora Baby World</span>
-              </div>
-              <h2 className="text-xl font-black text-slate-900 font-display mt-0.5">Finalizar Pedido</h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Ingresa los datos para la entrega de tus productos de bebé.
+              <span className="text-[10px] font-extrabold uppercase text-sky-600 tracking-wider">
+                Baby-World
+              </span>
+              <h2 className="text-xl font-black text-slate-900 leading-snug">Datos de Entrega</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Diligencia tus datos para coordinar el envío y pago de tu pedido.
               </p>
             </div>
 
             {/* Form Fields */}
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Nombre y Apellidos *
+                  Nombre Completo *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.nombre}
                   onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="Ej. Carolina Gómez"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
+                  placeholder="Ej. María Pérez"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Celular / WhatsApp *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.telefono}
-                    onChange={e => setFormData({ ...formData, telefono: e.target.value })}
-                    placeholder="300 123 4567"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Correo Electrónico (Opcional)
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="carolina@correo.com"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
-                  />
-                </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  Celular / WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.telefono}
+                  onChange={e => setFormData({ ...formData, telefono: e.target.value })}
+                  placeholder="320 123 4567"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                     Ciudad / Municipio *
@@ -202,138 +179,109 @@ export function CheckoutModal({
                     required
                     value={formData.ciudad}
                     onChange={e => setFormData({ ...formData, ciudad: e.target.value })}
-                    placeholder="Bogotá, Medellín, Cali..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
+                    placeholder="Candelaria, Cali..."
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Barrio / Sector
+                    Barrio
                   </label>
                   <input
                     type="text"
                     value={formData.barrio}
                     onChange={e => setFormData({ ...formData, barrio: e.target.value })}
-                    placeholder="Ej. Cedritos / Laureles"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
+                    placeholder="Ej. Centro"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Dirección de Entrega Exacta *
+                  Dirección de Entrega *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.direccion}
                   onChange={e => setFormData({ ...formData, direccion: e.target.value })}
-                  placeholder="Calle 123 # 45 - 67 Torre 2 Apto 501"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all shadow-inner"
+                  placeholder="Calle, Carrera o Casa #"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                  Método de Pago *
+                  Forma de Pago *
                 </label>
                 <select
                   value={formData.medioPago}
                   onChange={e => setFormData({ ...formData, medioPago: e.target.value })}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all font-semibold"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white font-medium"
                 >
-                  <option value="Contra Entrega">💵 Pago Contra Entrega en Efectivo (Al recibir)</option>
-                  <option value="Transferencia">📱 Transferencia Anticipada (Nequi / Daviplata / Bancolombia)</option>
+                  <option value="Contra Entrega">💵 Pago Contra Entrega (Efectivo al recibir)</option>
+                  <option value="Transferencia">📱 Transferencia (Nequi / Bancolombia / Daviplata)</option>
                 </select>
               </div>
             </div>
 
             {/* Price breakdown */}
-            <div className="bg-sky-50/70 p-4 rounded-2xl border border-sky-100 text-xs space-y-2">
-              <div className="flex justify-between text-slate-600 font-medium">
-                <span>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} productos)</span>
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs space-y-1.5">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
                 <span>{fmtPrice(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate-600 font-medium">
-                <span>Costo de Envío</span>
+              <div className="flex justify-between text-slate-600">
+                <span>Envío</span>
                 <span className={shipping === 0 ? "text-emerald-600 font-bold" : ""}>
-                  {shipping === 0 ? "¡Envío Gratis!" : fmtPrice(shipping)}
+                  {shipping === 0 ? "¡Gratis!" : fmtPrice(shipping)}
                 </span>
               </div>
-              <hr className="border-sky-200/60" />
-              <div className="flex justify-between font-black text-slate-900 text-base font-display">
+              <div className="flex justify-between font-black text-slate-900 text-sm pt-1 border-t border-slate-200">
                 <span>Total a Pagar</span>
-                <span className="text-sky-700">{fmtPrice(total)}</span>
+                <span className="text-sky-600">{fmtPrice(total)}</span>
               </div>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold pt-2">
-              <div className="flex items-center gap-1"><Truck size={13} className="text-sky-500" /> Despacho 24-48h</div>
-              <div className="flex items-center gap-1"><ShieldCheck size={13} className="text-emerald-500" /> Compra Garantizada</div>
-              <div className="flex items-center gap-1"><CreditCard size={13} className="text-pink-500" /> Sin Recargos</div>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
-              {isSubmitting ? 'Procesando tu pedido...' : 'Confirmar Pedido'}
+              {isSubmitting ? 'Procesando...' : 'Confirmar y Enviar Pedido'}
             </button>
           </form>
         ) : (
-          <div className="text-center py-6 space-y-5">
-            <div className="mx-auto h-20 w-20 bg-emerald-50 border-2 border-emerald-100 rounded-3xl flex items-center justify-center text-emerald-600 shadow-lg">
-              <CheckCircle size={40} />
+          <div className="text-center py-4 space-y-4">
+            <div className="mx-auto h-16 w-16 bg-emerald-50 border-2 border-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+              <CheckCircle size={32} />
             </div>
             
-            <div className="space-y-1.5">
+            <div>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
-                ¡Pedido Registrado con Éxito!
+                ¡Pedido Recibido con Éxito!
               </span>
-              <h2 className="text-2xl font-black text-slate-900 font-display">
+              <h2 className="text-xl font-black text-slate-900 mt-0.5">
                 ¡Gracias por tu compra, {formData.nombre}!
               </h2>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Hemos recibido tu pedido en <b>Distribuidora Baby World</b>. Un asesor se comunicará contigo vía WhatsApp o llamada para confirmar el despacho.
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Hemos registrado tu orden <b>#{orderNumber}</b>. Te contactaremos por WhatsApp para coordinar el despacho inmediato.
               </p>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 max-w-sm mx-auto text-left space-y-2.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Número de Orden</span>
-                <span className="font-mono font-bold text-sky-700">{orderNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Destino</span>
-                <span className="font-semibold text-slate-700 text-right truncate max-w-[180px]">
-                  {formData.direccion}, {formData.ciudad}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Método</span>
-                <span className="font-semibold text-slate-700">{formData.medioPago}</span>
-              </div>
-              <div className="flex justify-between font-black text-slate-900 border-t border-slate-200/80 pt-2 text-sm">
-                <span>Total</span>
-                <span className="text-sky-700">{fmtPrice(total)}</span>
-              </div>
             </div>
 
             <div className="space-y-2 pt-2">
               <button
                 onClick={handleSendWhatsAppConfirmation}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 active:scale-95"
               >
-                <MessageCircle size={18} />
-                <span>Confirmar Inmediato por WhatsApp</span>
+                <MessageCircle size={17} />
+                <span>Confirmar por WhatsApp</span>
               </button>
 
               <button
                 onClick={handleFinish}
-                className="w-full py-2.5 text-slate-500 hover:text-slate-800 text-xs font-bold transition-colors"
+                className="w-full py-2 text-slate-500 hover:text-slate-800 text-xs font-bold transition-colors"
               >
                 Volver a la Tienda
               </button>
