@@ -30,19 +30,25 @@ export function Login() {
     }
 
     try {
-      await login({ nit: nit.trim(), identifier, password })
+      await login({ nit: nit.trim(), identifier: identifier.trim(), password })
       navigate(from, { replace: true })
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: { error?: string } | string } } })
-          ?.response?.data?.message
-      if (typeof msg === 'object' && msg?.error) {
-        setError(msg.error)
-      } else if (typeof msg === 'string') {
-        setError(msg)
-      } else {
-        setError('Error al iniciar sesión. Verifica tus credenciales.')
+      const data = (err as { response?: { data?: { message?: any } } })?.response?.data
+      const rawMsg = data?.message
+
+      let finalMsg = 'Error al iniciar sesión. Verifica tus credenciales.'
+
+      if (typeof rawMsg === 'string') {
+        finalMsg = rawMsg
+      } else if (rawMsg && typeof rawMsg === 'object') {
+        // En NestJS AllExceptionsFilter, rawMsg puede ser { statusCode, message: "...", error: "..." }
+        finalMsg = rawMsg.message || rawMsg.error || finalMsg
+        if (Array.isArray(finalMsg)) {
+          finalMsg = finalMsg[0]
+        }
       }
+
+      setError(finalMsg)
     }
   }
 
@@ -147,7 +153,7 @@ export function Login() {
                 id="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="Ingresa tu usuario"
+                placeholder="Ingresa tu usuario (ej. admin)"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={isLoading}

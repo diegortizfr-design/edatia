@@ -28,26 +28,30 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateUserDto, empresaId: number) {
-    // Verificar si el email o el usuario ya existe en cualquier empresa
+    const usuarioClean = dto.usuario.trim();
+    const emailClean = dto.email ? dto.email.trim() : null;
+
+    // Verificar si el usuario ya existe en esta empresa
     const exists = await this.prisma.user.findFirst({
       where: {
+        empresaId,
         OR: [
-          { email: dto.email },
-          { usuario: dto.usuario },
+          { usuario: usuarioClean },
+          ...(emailClean ? [{ email: emailClean }] : []),
         ],
       },
     });
 
     if (exists) {
-      throw new BadRequestException('El correo electrónico o nombre de usuario ya está en uso');
+      throw new BadRequestException('El nombre de usuario o correo ya está en uso en esta empresa');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
     return this.prisma.user.create({
       data: {
-        email: dto.email,
-        usuario: dto.usuario,
+        email: emailClean,
+        usuario: usuarioClean,
         nombre: dto.nombre,
         password: hashedPassword,
         rol: dto.rol || 'user',

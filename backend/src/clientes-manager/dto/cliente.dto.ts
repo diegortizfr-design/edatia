@@ -359,12 +359,13 @@ export class AsignarModuloDto {
 }
 
 export class ProvisionarErpDto {
-  @ApiProperty()
-  @IsEmail()
+  @ApiProperty({ example: 'admin', description: 'Nombre de usuario o email' })
+  @IsString()
+  @MinLength(3, { message: 'El nombre de usuario debe tener mínimo 3 caracteres' })
   usuario!: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Password123!' })
   @IsString()
-  @MinLength(6)
+  @MinLength(6, { message: 'La contraseña debe tener mínimo 6 caracteres' })
   password!: string;
 }

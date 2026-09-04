@@ -330,7 +330,7 @@ export class ClientesManagerService {
   }
 
   /**
-   * Crea las credenciales manuales para el cliente en el ERP
+   * Crea o actualiza las credenciales de administrador para el cliente en el ERP
    */
   async provisionarErp(clienteId: number, dto: ProvisionarErpDto) {
     const cliente = await this.findOne(clienteId);
@@ -339,13 +339,32 @@ export class ClientesManagerService {
       throw new ConflictException('El cliente debe tener NIT para provisionar en el ERP');
     }
 
+    const rawNit = cliente.nit.trim();
+    const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '') || rawNit;
+
     // 1. Verificar o crear la Empresa en el ERP
-    let empresa = await this.prisma.empresa.findUnique({ where: { nit: cliente.nit } });
+    let empresa: any = null;
+    if (cliente.empresaId) {
+      empresa = await this.prisma.empresa.findUnique({ where: { id: cliente.empresaId } });
+    }
+
+    if (!empresa) {
+      empresa = await this.prisma.empresa.findFirst({
+        where: {
+          OR: [
+            { nit: cliente.nit },
+            { nit: nitLimpio },
+            { nit: { startsWith: nitLimpio } },
+          ],
+        },
+      });
+    }
 
     if (!empresa) {
       empresa = await this.prisma.empresa.create({
         data: {
-          nit: cliente.nit,
+          nit: nitLimpio,
+          digitoVerificacion: cliente.digitoVerificacion || undefined,
           nombre: cliente.nombre,
           direccion: cliente.direccion || undefined,
           telefono: cliente.telefono || undefined,
@@ -362,38 +381,49 @@ export class ClientesManagerService {
       });
     }
 
-    // 3. Crear o actualizar el Usuario principal
+    // 3. Crear o actualizar el Usuario principal dentro de ESTA empresa
+    const usuarioClean = dto.usuario.trim();
+    const isEmail = usuarioClean.includes('@');
+
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: dto.usuario }, { usuario: dto.usuario }]
-      }
+        empresaId: empresa.id,
+        OR: [
+          { usuario: usuarioClean },
+          ...(isEmail ? [{ email: usuarioClean }] : []),
+        ],
+      },
     });
 
     const hash = await bcrypt.hash(dto.password, 12);
 
     if (existingUser) {
-      // Si el usuario existe y pertenece a otra empresa, es un error
-      if (existingUser.empresaId !== empresa.id) {
-        throw new ConflictException('El usuario/email ya pertenece a otra empresa en el ERP');
-      }
-
-      // Actualizar password
+      // Actualizar password y desbloquear por si estaba bloqueado
       await this.prisma.user.update({
         where: { id: existingUser.id },
-        data: { password: hash },
+        data: {
+          password: hash,
+          activo: true,
+          loginFallidosConsecutivos: 0,
+          loginBloqueadoHasta: null,
+          ...(isEmail && !existingUser.email ? { email: usuarioClean } : {}),
+        },
       });
 
-      return { message: 'Credenciales actualizadas correctamente' };
+      return { message: 'Credenciales del usuario actualizadas correctamente' };
     } else {
-      // Crear nuevo usuario admin
+      // Crear nuevo usuario admin dentro de la empresa
       await this.prisma.user.create({
         data: {
-          email: dto.usuario,
-          usuario: dto.usuario, // Usamos el email como username
+          usuario: usuarioClean,
+          email: isEmail ? usuarioClean : null,
           nombre: 'Admin ' + cliente.nombre,
           password: hash,
           rol: 'admin',
           empresaId: empresa.id,
+          activo: true,
+          loginFallidosConsecutivos: 0,
+          loginBloqueadoHasta: null,
         },
       });
 

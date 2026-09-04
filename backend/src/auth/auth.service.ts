@@ -73,7 +73,7 @@ export class AuthService {
     // 1. Limpiar NIT (Remover guión, dígito de verificación, puntos y espacios)
     // Ej: "1143875756-3" -> "1143875756"
     const rawNit = dto.nit.trim();
-    const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '');
+    const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '') || rawNit;
     
     const includeQuery = {
       clienteManager: {
@@ -84,65 +84,80 @@ export class AuthService {
       },
     };
 
-    let empresa = await this.prisma.empresa.findFirst({
+    const empresa = await this.prisma.empresa.findFirst({
       where: {
         OR: [
+          { nit: rawNit },
           { nit: nitLimpio },
-          { nit: { startsWith: nitLimpio } }
-        ]
+          { nit: { startsWith: nitLimpio } },
+        ],
       },
       include: includeQuery,
     });
 
     if (!empresa) {
       void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { nit: rawNit, nitLimpio, motivo: 'empresa_no_existe' } });
-      throw new UnauthorizedException('La empresa con este NIT no existe');
+      throw new UnauthorizedException('No se encontró ninguna empresa registrada con este NIT.');
     }
 
-    // 2. Buscar el usuario
+    // 2. Buscar el usuario dentro de ESTA empresa
+    const identifierClean = dto.identifier.trim();
+    const isEmail = identifierClean.includes('@');
+
     const user = await this.prisma.user.findFirst({
       where: {
         empresaId: empresa.id,
-        OR: [{ email: dto.identifier }, { usuario: dto.identifier }],
+        OR: [
+          { usuario: identifierClean },
+          ...(isEmail ? [{ email: identifierClean }] : []),
+        ],
       },
     });
 
-    // 3. Validaciones de seguridad (Bloqueo y Estado)
-    if (user?.loginBloqueadoHasta && user.loginBloqueadoHasta > new Date()) {
-      const min = Math.ceil((user.loginBloqueadoHasta.getTime() - Date.now()) / 60000);
-      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email, detalles: { motivo: 'bloqueado', minutos: min } });
-      throw new UnauthorizedException(`Cuenta bloqueateda. Intenta en ${min} min.`);
+    if (!user) {
+      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { identifier: identifierClean, motivo: 'usuario_no_existe_en_empresa' } });
+      throw new UnauthorizedException('El usuario no existe en esta empresa.');
     }
 
-    if (user && !user.activo) {
-      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email, detalles: { motivo: 'inactivo' } });
-      throw new UnauthorizedException('Usuario inactivo');
+    // 3. Validaciones de seguridad (Bloqueo temporal por intentos)
+    if (user.loginBloqueadoHasta && user.loginBloqueadoHasta > new Date()) {
+      const min = Math.max(1, Math.ceil((user.loginBloqueadoHasta.getTime() - Date.now()) / 60000));
+      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email ?? user.usuario, detalles: { motivo: 'bloqueado', minutos: min } });
+      throw new UnauthorizedException(`Cuenta bloqueada temporalmente por seguridad. Podrás intentar nuevamente en ${min} minuto(s).`);
     }
 
-    // 4. Validar contraseña
-    const hashToCompare = user?.password ?? DUMMY_HASH;
-    const passwordValid = await bcrypt.compare(dto.password, hashToCompare);
+    // 4. Validación de usuario activo
+    if (!user.activo) {
+      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email ?? user.usuario, detalles: { motivo: 'inactivo' } });
+      throw new UnauthorizedException('Este usuario se encuentra inactivo. Contacta al administrador de tu empresa.');
+    }
 
-    if (!user || !passwordValid) {
-      if (user) {
-        const fallos = (user.loginFallidosConsecutivos ?? 0) + 1;
-        const bloquear = fallos >= MAX_FALLOS;
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            loginFallidosConsecutivos: bloquear ? 0 : fallos,
-            loginBloqueadoHasta: bloquear ? new Date(Date.now() + BLOQUEO_TTL) : null,
-          }
-        });
-        if (bloquear) {
-          void this.auditLog.log({ accion: 'CUENTA_BLOQUEADA', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email, detalles: { motivo: 'fuerza_bruta' } });
-        }
+    // 5. Validar contraseña
+    const passwordValid = await bcrypt.compare(dto.password, user.password);
+
+    if (!passwordValid) {
+      const fallos = (user.loginFallidosConsecutivos ?? 0) + 1;
+      const bloquear = fallos >= MAX_FALLOS;
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          loginFallidosConsecutivos: bloquear ? 0 : fallos,
+          loginBloqueadoHasta: bloquear ? new Date(Date.now() + BLOQUEO_TTL) : null,
+        },
+      });
+
+      if (bloquear) {
+        void this.auditLog.log({ accion: 'CUENTA_BLOQUEADA', ip: ctx.ip, userAgent: ctx.ua, colaboradorEmail: user.email ?? user.usuario, detalles: { motivo: 'fuerza_bruta' } });
+        throw new UnauthorizedException('Has superado los 5 intentos permitidos. Tu acceso ha sido bloqueado temporalmente por 15 minutos.');
+      } else {
+        const intentosRestantes = MAX_FALLOS - fallos;
+        void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { identifier: identifierClean, motivo: 'password_invalido', intentosRestantes } });
+        throw new UnauthorizedException(`Contraseña incorrecta. Te quedan ${intentosRestantes} intento(s) antes del bloqueo temporal de 15 minutos.`);
       }
-      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { identifier: dto.identifier, motivo: 'credenciales_invalidas' } });
-      throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // 5. Extraer módulos permitidos
+    // 6. Extraer módulos permitidos
     const modulosPermitidos = new Set<string>();
     
     // Core (siempre disponibles)
@@ -170,18 +185,18 @@ export class AuthService {
 
     const modulosArray = Array.from(modulosPermitidos);
 
-    // 6. Login exitoso
+    // 7. Login exitoso — resetear contador de fallos
     const token = this.signToken(user.id, user.email, user.usuario, user.rol, modulosArray);
     
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { loginFallidosConsecutivos: 0, loginBloqueadoHasta: null }
+      data: { loginFallidosConsecutivos: 0, loginBloqueadoHasta: null },
     });
 
     void this.auditLog.log({
       accion: 'LOGIN_OK',
       colaboradorId: user.id,
-      colaboradorEmail: user.email,
+      colaboradorEmail: user.email ?? user.usuario,
       ip: ctx.ip,
       userAgent: ctx.ua,
     });
@@ -222,7 +237,7 @@ export class AuthService {
     });
   }
 
-  private signToken(id: number, email: string, usuario: string, rol: string, modulosPermitidos: string[] = []) {
-    return this.jwtService.sign({ sub: id, email, usuario, rol, modulosPermitidos });
+  private signToken(id: number, email: string | null | undefined, usuario: string, rol: string, modulosPermitidos: string[] = []) {
+    return this.jwtService.sign({ sub: id, email: email ?? undefined, usuario, rol, modulosPermitidos });
   }
 }

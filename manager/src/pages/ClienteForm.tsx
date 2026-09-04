@@ -308,8 +308,9 @@ export function ClienteForm() {
         observaciones: cliente.observaciones ?? '',
       });
 
-      if (cliente.email && !erpUsuario) {
-        setErpUsuario(cliente.email);
+      if (!erpUsuario) {
+        const existingUsuario = cliente?.empresa?.usuarios?.[0]?.usuario;
+        setErpUsuario(existingUsuario || 'admin');
       }
 
       // Deserializar observaciones si contienen formato JSON
@@ -1195,16 +1196,16 @@ export function ClienteForm() {
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                     Crea o actualiza las credenciales del inquilino ERP para este cliente. 
-                    Al activarlo, se provisionará su base de datos con NIT <strong>{form.nit}</strong> asignándole este usuario administrador raíz.
+                    El usuario es único para el NIT <strong>{form.nit}</strong> (ej. <em>admin</em>, <em>gerencia</em>) y no requiere ser un correo electrónico.
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
                 <Input
-                  label="Usuario Admin (Email)"
-                  type="email"
-                  placeholder="admin@empresa.com"
+                  label="Nombre de Usuario Admin"
+                  type="text"
+                  placeholder="ej. admin, gerencia, diego..."
                   value={erpUsuario}
                   onChange={(e) => setErpUsuario(e.target.value)}
                 />
@@ -1251,16 +1252,16 @@ export function ClienteForm() {
                             <User size={14} />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                              {u.nombre || u.usuario}
+                            <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                              Usuario: <span className="font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded text-xs">{u.usuario}</span>
                             </p>
-                            <p className="text-xs text-slate-500">{u.email}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{u.nombre || 'Administrador'} {u.email ? `• ${u.email}` : ''}</p>
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            if (window.confirm(`¿Estás seguro de eliminar el usuario ${u.email} del ERP?`)) {
+                            if (window.confirm(`¿Estás seguro de eliminar el usuario ${u.usuario} del ERP?`)) {
                               eliminarUsuarioErpMutation.mutate(u.id);
                             }
                           }}
