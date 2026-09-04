@@ -24,7 +24,7 @@
 ## 3. 🛡️ Arquitectura y Separación de Bases de Datos
 Se organizaron y aislaron las bases de datos dentro de PostgreSQL (Puerto `5432`):
 
-1. **`edatia_erp`**: Base de datos principal para el ERP (`app.edatia.com` / `erp.edatia.com`) y el Portal de Control Manager (`manager.edatia.com`).
+1. **`edatia_erp`**: Base de datos principal para el ERP (`erp.edatia.com`) y el Portal de Control Manager (`manager.edatia.com`).
 2. **`prestamos_edatia`**: Base de datos dedicada para el módulo de Préstamos (`prestamos.edatia.com`).
 3. **`herramientas_edatia`**: Base de datos aislada para datos/reportes de cartera creados por clientes desde el sitio público (`herramientas.edatia.com`).
    * *Configuración:* Se actualizó la variable `HERRAMIENTAS_DATABASE_URL` en [backend/.env](file:///c:/Users/diego/Desktop/edatia/backend/.env) para garantizar que los datos de prueba de Herramientas jamás toquen la base del ERP.

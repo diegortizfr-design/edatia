@@ -52,7 +52,7 @@ async function main() {
   console.log(`👤 Usuario:   ${user.email}`);
   console.log(`🆔 Login:     ${user.usuario}`);
   console.log(`🔑 Password:  ${passwordUser}`);
-  console.log(`🌐 ERP URL:   https://app.edatia.com`);
+  console.log(`🌐 ERP URL:   https://erp.edatia.com`);
   console.log(`────────────────────────────────────────`);
 }
 

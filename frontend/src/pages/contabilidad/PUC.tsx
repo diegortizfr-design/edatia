@@ -165,14 +165,65 @@ export function PUC() {
   )
 }
 
+function extractError(err: any): string {
+  if (!err) return 'Error al procesar la solicitud'
+  const msg = err.response?.data?.message ?? err.response?.data?.error ?? err.message
+  if (typeof msg === 'string') return msg
+  if (typeof msg === 'object') return msg.error || msg.message || JSON.stringify(msg)
+  return String(msg)
+}
+
 function NuevaCuentaModal({ onClose, onSuccess }: any) {
   const [form, setForm] = useState({
-    codigo: '', nombre: '', nivel: '3', codigoPadre: '',
-    naturaleza: 'DEBITO', tipo: 'ACTIVO',
+    codigo: '',
+    nombre: '',
+    nivel: '5',
+    codigoPadre: '',
+    naturaleza: 'DEBITO',
+    tipo: 'ACTIVO',
   })
-  const set = (k: string) => (e: any) => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const set = (k: string) => (e: any) => {
+    const val = e.target.value
+    setForm(f => {
+      const next = { ...f, [k]: val }
+      // Auto-completar nivel y código padre según longitud de dígitos ingresados si el usuario escribe el código
+      if (k === 'codigo') {
+        const clean = val.replace(/\D/g, '')
+        if (clean.length === 1) {
+          next.nivel = '1'
+          next.codigoPadre = ''
+        } else if (clean.length === 2) {
+          next.nivel = '2'
+          next.codigoPadre = clean.substring(0, 1)
+        } else if (clean.length === 4) {
+          next.nivel = '3'
+          next.codigoPadre = clean.substring(0, 2)
+        } else if (clean.length === 6) {
+          next.nivel = '4'
+          next.codigoPadre = clean.substring(0, 4)
+        } else if (clean.length >= 8) {
+          next.nivel = '5'
+          next.codigoPadre = clean.substring(0, 6)
+        }
+      }
+      return next
+    })
+  }
 
   const mut = useMutation({ mutationFn: createCuentaPUC, onSuccess })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    mut.mutate({
+      codigo: form.codigo.trim(),
+      nombre: form.nombre.trim(),
+      nivel: Number(form.nivel),
+      codigoPadre: form.codigoPadre.trim() || undefined,
+      naturaleza: form.naturaleza,
+      tipo: form.tipo,
+    })
+  }
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -181,22 +232,22 @@ function NuevaCuentaModal({ onClose, onSuccess }: any) {
           <h2 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen size={16} />Nueva Cuenta PUC</h2>
           <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
         </div>
-        <form onSubmit={e => { e.preventDefault(); mut.mutate(form) }} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Código *</label>
-              <input required value={form.codigo} onChange={set('codigo')} placeholder="ej: 110505"
+              <input required value={form.codigo} onChange={set('codigo')} placeholder="ej: 11100505"
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-200" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Código padre</label>
-              <input value={form.codigoPadre} onChange={set('codigoPadre')} placeholder="ej: 1105"
+              <input value={form.codigoPadre} onChange={set('codigoPadre')} placeholder="ej: 111005"
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-200" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Nombre *</label>
-            <input required value={form.nombre} onChange={set('nombre')}
+            <input required value={form.nombre} onChange={set('nombre')} placeholder="ej: Nequi"
               className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -225,8 +276,12 @@ function NuevaCuentaModal({ onClose, onSuccess }: any) {
               </select>
             </div>
           </div>
-          {mut.isError && <p className="text-red-600 text-sm">{(mut.error as any)?.response?.data?.message ?? 'Error'}</p>}
-          <div className="flex gap-3 justify-end">
+          {mut.isError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs font-medium">
+              {extractError(mut.error)}
+            </div>
+          )}
+          <div className="flex gap-3 justify-end pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancelar</button>
             <button type="submit" disabled={mut.isPending}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">

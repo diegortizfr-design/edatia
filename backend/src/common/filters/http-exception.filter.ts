@@ -22,17 +22,35 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
+    const rawResponse =
       exception instanceof HttpException
         ? exception.getResponse()
         : 'Error interno del servidor';
+
+    let message: string;
+    if (typeof rawResponse === 'string') {
+      message = rawResponse;
+    } else if (rawResponse && typeof rawResponse === 'object') {
+      const obj = rawResponse as any;
+      if (Array.isArray(obj.message)) {
+        message = obj.message.join(', ');
+      } else if (typeof obj.message === 'string') {
+        message = obj.message;
+      } else if (typeof obj.error === 'string') {
+        message = obj.error;
+      } else {
+        message = JSON.stringify(rawResponse);
+      }
+    } else {
+      message = 'Error inesperado';
+    }
 
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message: typeof message === 'object' ? message : { error: message },
+      message,
     };
 
     if (status >= 500) {
