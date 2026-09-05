@@ -74,6 +74,7 @@ export class AuthService {
     // Ej: "1143875756-3" -> "1143875756"
     const rawNit = dto.nit.trim();
     const nitLimpio = rawNit.split('-')[0].replace(/\D/g, '') || rawNit;
+    const identifierClean = dto.identifier.trim();
     
     const includeQuery = {
       clienteManager: {
@@ -84,40 +85,49 @@ export class AuthService {
       },
     };
 
-    const empresa = await this.prisma.empresa.findFirst({
-      where: {
-        OR: [
-          { nit: rawNit },
-          { nit: nitLimpio },
-          { nit: { startsWith: nitLimpio } },
-        ],
-      },
-      include: includeQuery,
-    });
-
-    if (!empresa) {
-      void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { nit: rawNit, nitLimpio, motivo: 'empresa_no_existe' } });
-      throw new UnauthorizedException('No se encontró ninguna empresa registrada con este NIT.');
-    }
-
-    // 2. Buscar el usuario dentro de ESTA empresa
-    const identifierClean = dto.identifier.trim();
-    const isEmail = identifierClean.includes('@');
-
+    // 2. Buscar el usuario directamente enlazado a la empresa que coincida con el NIT
     const user = await this.prisma.user.findFirst({
       where: {
-        empresaId: empresa.id,
+        empresa: {
+          OR: [
+            { nit: rawNit },
+            { nit: nitLimpio },
+            { nit: { startsWith: nitLimpio } },
+          ],
+        },
         OR: [
           { usuario: { equals: identifierClean, mode: 'insensitive' as const } },
-          ...(isEmail ? [{ email: { equals: identifierClean, mode: 'insensitive' as const } }] : []),
+          { email: { equals: identifierClean, mode: 'insensitive' as const } },
         ],
+      },
+      include: {
+        empresa: {
+          include: includeQuery,
+        },
       },
     });
 
-    if (!user) {
+    if (!user || !user.empresa) {
+      const empresaExiste = await this.prisma.empresa.findFirst({
+        where: {
+          OR: [
+            { nit: rawNit },
+            { nit: nitLimpio },
+            { nit: { startsWith: nitLimpio } },
+          ],
+        },
+      });
+
+      if (!empresaExiste) {
+        void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { nit: rawNit, nitLimpio, motivo: 'empresa_no_existe' } });
+        throw new UnauthorizedException('No se encontró ninguna empresa registrada con este NIT.');
+      }
+
       void this.auditLog.log({ accion: 'LOGIN_FAIL', ip: ctx.ip, userAgent: ctx.ua, detalles: { identifier: identifierClean, motivo: 'usuario_no_existe_en_empresa' } });
       throw new UnauthorizedException('El usuario no existe en esta empresa.');
     }
+
+    const empresa = user.empresa;
 
     // 3. Validaciones de seguridad (Bloqueo temporal por intentos)
     if (user.loginBloqueadoHasta && user.loginBloqueadoHasta > new Date()) {
