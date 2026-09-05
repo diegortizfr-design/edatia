@@ -52,7 +52,9 @@ function processRefreshQueue(token: string) {
 function clearSession() {
   localStorage.removeItem('edatia_token')
   localStorage.removeItem('edatia_user')
-  window.location.href = '/login'
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
 }
 
 api.interceptors.response.use(
@@ -67,7 +69,10 @@ api.interceptors.response.use(
 
     // No intentar refresh si la ruta es auth/login o auth/refresh
     const url: string = originalRequest.url ?? ''
-    if (url.includes('/auth/login') || url.includes('/auth/refresh')) {
+    if (url.includes('/auth/login')) {
+      return Promise.reject(err)
+    }
+    if (url.includes('/auth/refresh')) {
       clearSession()
       return Promise.reject(err)
     }
