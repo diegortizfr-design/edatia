@@ -108,8 +108,8 @@ export class AuthService {
       where: {
         empresaId: empresa.id,
         OR: [
-          { usuario: { equals: identifierClean, mode: 'insensitive' } },
-          ...(isEmail ? [{ email: { equals: identifierClean, mode: 'insensitive' } }] : []),
+          { usuario: { equals: identifierClean, mode: 'insensitive' as const } },
+          ...(isEmail ? [{ email: { equals: identifierClean, mode: 'insensitive' as const } }] : []),
         ],
       },
     });
