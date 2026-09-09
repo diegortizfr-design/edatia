@@ -21,7 +21,17 @@ export function getApiError(err: unknown, fallback = 'Ocurrió un error'): strin
   return fallback
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.edatia.com'
+export function getMediaUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url
+  }
+  const baseUrl = (import.meta.env.VITE_API_URL || 'https://api.edatia.com').replace(/\/$/, '')
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`
+  return `${baseUrl}${cleanUrl}`
+}
+
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.edatia.com'
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api/v1`,

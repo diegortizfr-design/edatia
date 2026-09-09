@@ -456,7 +456,12 @@ export class PosService {
 
     const itemsCalculados = await Promise.all(dto.items.map(async (item) => {
       const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
-      const tipoIva = item.tipoIva ?? prod?.tipoIva ?? 'GRAVADO_19'
+      let tipoIva = item.tipoIva ?? prod?.tipoIva ?? 'GRAVADO_19'
+      if (prod?.productoExentoIva) {
+        tipoIva = 'EXENTO'
+      } else if (prod?.liquidarIva === false || (Array.isArray(prod?.appliedTaxIds) && prod?.appliedTaxIds.length === 0)) {
+        tipoIva = 'EXCLUIDO'
+      }
       const descPct = item.descuentoPct ?? 0
       const bruto = item.cantidad * item.precioUnitario
       const descVal = bruto * descPct / 100
@@ -696,17 +701,29 @@ export class PosService {
       take: 50,
     })
 
-    return productos.map(p => ({
-      id: p.id,
-      nombre: p.nombre,
-      sku: p.sku,
-      codigoBarras: p.codigoBarras,
-      precioBase: Number(p.precioBase),
-      tipoIva: p.tipoIva,
-      imagen: p.imagen,
-      claseAbc: p.claseAbc,
-      stock: p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada) : 0,
-    }))
+    return productos.map(p => {
+      let effectiveTipoIva = p.tipoIva || 'GRAVADO_19';
+      if (p.productoExentoIva) {
+        effectiveTipoIva = 'EXENTO';
+      } else if (p.liquidarIva === false || (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length === 0)) {
+        effectiveTipoIva = 'EXCLUIDO';
+      }
+
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        sku: p.sku,
+        codigoBarras: p.codigoBarras,
+        precioBase: Number(p.precioBase),
+        tipoIva: effectiveTipoIva,
+        liquidarIva: p.liquidarIva,
+        productoExentoIva: p.productoExentoIva,
+        appliedTaxIds: p.appliedTaxIds,
+        imagen: p.imagen,
+        claseAbc: p.claseAbc,
+        stock: p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada) : 0,
+      };
+    })
   }
 
   // ─── Integración Contable ───────────────────────────────────────────────────

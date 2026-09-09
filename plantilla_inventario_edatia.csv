@@ -1,0 +1,7 @@
+SKU;Nombre;Codigo_Barras;Referencia;Categoria;Marca;Unidad_Medida;Costo_Unitario;Precio_Venta;Precio_2;Tipo_IVA;Stock_Inicial;Bodega;Stock_Minimo;Punto_Reorden;Ubicacion;Maneja_Lotes;Numero_Lote;Fecha_Vencimiento;Descripcion
+WIN-E5-50;Pañal Winny Etapa 5 x 50 Und Sec;7701021117908;WIN-005;Pañales;Winny;UND;55000;75000;70000;EXCLUIDO;25;Bodega Principal;5;10;Pasillo 1 - Estante A;NO;;;Pañal desechable para bebé etapa 5
+WIN-E2-50;Pañal Winny Etapa 2 x 50 Und Sec;7701021116581;WIN-002;Pañales;Winny;UND;38000;50000;47000;EXCLUIDO;15;Bodega Principal;4;8;Pasillo 1 - Estante A;NO;;;Pañal desechable etapa 2 suave
+SHAMP-JOH-400;Shampoo Johnson Manzanilla 400ml;7702031002345;JOH-SH-400;Cuidado Infantil;Johnson & Johnson;UND;12000;18500;17000;IVA_19;30;Bodega Principal;6;12;Pasillo 2 - Estante C;SI;LT-8842;2027-08-30;Shampoo suave para niños con extracto natural
+LECHE-NID-800;Leche en Polvo Nido 800g;7703042008891;NES-NID-800;Alimentos;Nestlé;UND;28000;36000;34000;IVA_5;40;Bodega Principal;10;15;Pasillo 3 - Estante B;SI;LT-2026A;2027-05-15;Alimento lácteo en polvo
+TOALL-WIN-80;Toallitas Húmedas Winny x 80 Und;7701021119995;WIN-TH-80;Aseo Infantil;Winny;PQTE;6500;9500;8800;IVA_19;50;Bodega Principal;10;20;Pasillo 1 - Estante B;NO;;;Toallas húmedas hipoalergénicas
+PROD-EJEMPLO-1;Producto de Prueba Gravado;7709499812776;REF-001;General;Generica;UND;1200;2000;1800;IVA_19;10;Bodega Principal;2;5;Pasillo 4;NO;;;Ejemplo de producto con IVA 19%

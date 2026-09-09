@@ -4,9 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
-  Scale, Tag, AlertTriangle, FileText, Eye
+  Scale, Tag, AlertTriangle, FileText, Eye,
+  Upload, Download, FileSpreadsheet, Loader2, X
 } from 'lucide-react'
-import { getProductos, createProducto, updateProducto, deleteProducto } from '../../services/inventario.service'
+import { getProductos, createProducto, updateProducto, deleteProducto, importarProductosMasivo } from '../../services/inventario.service'
+import { getMediaUrl } from '../../services/api'
 import {
   getCategorias,
   getMarcas,
@@ -258,6 +260,14 @@ export function ConfigProductos() {
   const [showBarcodeModal, setShowBarcodeModal] = useState(false)
   const [barcodeInput, setBarcodeInput] = useState('')
 
+  // Bulk Excel Import modal states
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importPreviewRows, setImportPreviewRows] = useState<any[]>([])
+  const [importResult, setImportResult] = useState<{ creados: number; actualizados: number; fallidos: number; errores: string[] } | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+
   // Cost taxes state
   const [costTaxIds, setCostTaxIds] = useState<string[]>(['iva_19'])
 
@@ -411,6 +421,287 @@ export function ConfigProductos() {
     setTimeout(() => setSuccessMsg(null), 3000)
   }
 
+  // --- Bulk Import Helpers ---
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'SKU',
+      'Codigo_Barras',
+      'Nombre',
+      'Referencia',
+      'Categoria',
+      'Marca',
+      'Unidad_Medida',
+      'Bodega',
+      'Costo_Unitario',
+      'Precio_Venta',
+      'Precio_2',
+      'Tipo_IVA',
+      'Stock_Inicial',
+      'Stock_Minimo',
+      'Punto_Reorden',
+      'Ubicacion',
+      'Maneja_Lotes',
+      'Numero_Lote',
+      'Fecha_Vencimiento',
+      'Descripcion'
+    ]
+
+    const sampleRows = [
+      [
+        'P-001',
+        '7701234567890',
+        'Pañal Winny Gold Etapa 4 x 30',
+        'REF-WIN-G4',
+        'Bebés & Maternidad',
+        'Winny',
+        'PAQ',
+        'Bodega Principal',
+        '24500',
+        '32000',
+        '29900',
+        'EXENTO',
+        '50',
+        '10',
+        '15',
+        'Pasillo 1 - Estante A',
+        'NO',
+        '',
+        '',
+        'Pañales desechables etapa 4 con velcro y barreras antifugas'
+      ],
+      [
+        'P-002',
+        '7709876543210',
+        'Shampoo Johnson Manzanilla 400ml',
+        'REF-JHN-400',
+        'Cuidado Personal',
+        "Johnson's",
+        'UND',
+        'Bodega Principal',
+        '12800',
+        '18500',
+        '17200',
+        'GRAVADO_19',
+        '30',
+        '5',
+        '10',
+        'Pasillo 2 - Estante B',
+        'SI',
+        'LOT-2026-08',
+        '2027-12-31',
+        'Shampoo suave para niños con extracto natural de manzanilla'
+      ],
+      [
+        'P-003',
+        '7703344556677',
+        'Leche Nido Crecimiento 1+ 800g',
+        'REF-NID-800',
+        'Alimentos & Nutrición',
+        'Nestlé',
+        'LATA',
+        'Bodega Principal',
+        '31000',
+        '39900',
+        '38000',
+        'EXENTO',
+        '40',
+        '8',
+        '12',
+        'Pasillo 3 - Estante C',
+        'SI',
+        'LOT-2026-N1',
+        '2027-06-30',
+        'Alimento lácteo en polvo para niños en etapa de crecimiento'
+      ],
+      [
+        'P-004',
+        '7705566778899',
+        'Crema Dental Colgate Total 12 100g',
+        'REF-COL-100',
+        'Cuidado Oral',
+        'Colgate',
+        'UND',
+        'Bodega Principal',
+        '6200',
+        '9500',
+        '8900',
+        'GRAVADO_19',
+        '60',
+        '15',
+        '20',
+        'Pasillo 2 - Estante A',
+        'SI',
+        'LOT-2026-C3',
+        '2028-03-31',
+        'Crema dental antibacteriana con flúor'
+      ],
+      [
+        'P-005',
+        '7701122334455',
+        'Arroz Diana Premium 1000g',
+        'REF-DIA-1K',
+        'Granos & Despensa',
+        'Diana',
+        'BOLSA',
+        'Bodega Principal',
+        '3800',
+        '5200',
+        '4900',
+        'EXCLUIDO',
+        '100',
+        '20',
+        '30',
+        'Pasillo 4 - Estante A',
+        'NO',
+        '',
+        '',
+        'Arroz blanco seleccionado tipo premium'
+      ]
+    ]
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...sampleRows.map(r => r.join(';'))].join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'plantilla_inventario_edatia.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const parseCsvText = (text: string) => {
+    let cleanText = text.replace(/^\uFEFF/, '')
+    const lines = cleanText.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0)
+    if (lines.length < 2) return []
+
+    const headerLine = lines[0]
+    const semiCount = (headerLine.match(/;/g) || []).length
+    const commaCount = (headerLine.match(/,/g) || []).length
+    const delimiter = semiCount >= commaCount ? ';' : ','
+
+    const parseLine = (line: string): string[] => {
+      const values: string[] = []
+      let current = ''
+      let insideQuotes = false
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          if (insideQuotes && line[i + 1] === '"') {
+            current += '"'
+            i++
+          } else {
+            insideQuotes = !insideQuotes
+          }
+        } else if (char === delimiter && !insideQuotes) {
+          values.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      values.push(current.trim())
+      return values
+    }
+
+    const rawHeaders = parseLine(lines[0])
+    const headers = rawHeaders.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''))
+
+    const items: any[] = []
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseLine(lines[i])
+      if (cols.length === 0 || cols.every(c => c === '')) continue
+
+      const rowObj: any = {}
+      headers.forEach((h, idx) => {
+        const val = cols[idx] !== undefined ? cols[idx] : ''
+        if (h.includes('sku') || h === 'codigo') rowObj.sku = val
+        else if (h.includes('barras') || h === 'ean' || h === 'codigobarras') rowObj.codigoBarras = val
+        else if (h.includes('nombre') || h.includes('descripcion') || h === 'producto') {
+          if (!rowObj.nombre) rowObj.nombre = val
+          else rowObj.descripcion = val
+        }
+        else if (h.includes('referencia') || h === 'ref') rowObj.referencia = val
+        else if (h.includes('categoria') || h === 'cat') rowObj.categoria = val
+        else if (h.includes('marca')) rowObj.marca = val
+        else if (h.includes('unidad') || h === 'medida' || h === 'und') rowObj.unidadMedida = val
+        else if (h.includes('bodega')) rowObj.bodega = val
+        else if (h.includes('costo')) rowObj.costoUnitario = val
+        else if (h.includes('precio2')) rowObj.precio2 = val
+        else if (h.includes('precio') || h.includes('venta')) rowObj.precioVenta = val
+        else if (h.includes('iva') || h.includes('impuesto')) rowObj.tipoIva = val
+        else if (h.includes('stockinicial') || h === 'stock' || h === 'cantidad') rowObj.stockInicial = val
+        else if (h.includes('stockmin') || h === 'minimo') rowObj.stockMinimo = val
+        else if (h.includes('reorden') || h === 'puntoreorden') rowObj.puntoReorden = val
+        else if (h.includes('ubicacion')) rowObj.ubicacion = val
+        else if (h.includes('manejalote') || h === 'lotes') rowObj.manejaLotes = val
+        else if (h.includes('numerolote') || h === 'lote') rowObj.numeroLote = val
+        else if (h.includes('vencimiento') || h === 'fechavencimiento' || h === 'expiracion') rowObj.fechaVencimiento = val
+        else if (h.includes('desc') || h === 'detalle') rowObj.descripcion = val
+      })
+
+      if (rowObj.sku || rowObj.nombre) {
+        items.push(rowObj)
+      }
+    }
+
+    return items
+  }
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError(null)
+    setImportResult(null)
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImportFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = String(event.target?.result || '')
+        const parsed = parseCsvText(text)
+        if (parsed.length === 0) {
+          setImportError('No se encontraron registros válidos en el archivo. Verifica el encabezado y contenido.')
+          setImportPreviewRows([])
+          return
+        }
+        setImportPreviewRows(parsed)
+      } catch (err: any) {
+        setImportError(`Error al leer el archivo CSV: ${err.message}`)
+      }
+    }
+    reader.onerror = () => {
+      setImportError('No se pudo leer el archivo seleccionado.')
+    }
+    reader.readAsText(file)
+  }
+
+  const handleExecuteImport = async () => {
+    if (importPreviewRows.length === 0) return
+    setIsImporting(true)
+    setImportError(null)
+
+    try {
+      const res = await importarProductosMasivo(importPreviewRows)
+      setImportResult(res)
+      qc.invalidateQueries({ queryKey: ['config_productos'] })
+      showNotification(`Carga completada: ${res.creados} creados, ${res.actualizados} actualizados.`)
+    } catch (err: any) {
+      setImportError(getErrorMessage(err, 'Ocurrió un error durante la importación masiva.'))
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  const resetImportModal = () => {
+    setShowImportModal(false)
+    setIsImporting(false)
+    setImportFileName('')
+    setImportPreviewRows([])
+    setImportResult(null)
+    setImportError(null)
+  }
+
   const handleOpenNew = () => {
     setEditingId(null)
     setFormData({
@@ -523,6 +814,13 @@ export function ConfigProductos() {
       liquidarIva: !!formData.liquidarIva,
       productoExentoIva: !!formData.productoExentoIva,
       appliedTaxIds: formData.appliedTaxIds || [],
+      tipoIva: formData.productoExentoIva 
+        ? 'EXENTO' 
+        : (!formData.liquidarIva || !formData.appliedTaxIds || formData.appliedTaxIds.length === 0) 
+          ? 'EXCLUIDO' 
+          : (formData.appliedTaxIds.includes('iva_5') || formData.appliedTaxIds.some((t: string) => t.toLowerCase().includes('5'))) 
+            ? 'GRAVADO_5' 
+            : 'GRAVADO_19',
     }
 
     if (!editingId && formData.sku) {
@@ -630,13 +928,41 @@ export function ConfigProductos() {
               </p>
             </div>
 
-            <button
-              onClick={handleOpenNew}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all"
-            >
-              <Plus size={16} />
-              Nuevo Producto
-            </button>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                title="Descarga la plantilla de Excel (.csv) con el formato y ejemplos listos para llenar"
+              >
+                <FileSpreadsheet size={16} className="text-emerald-600" />
+                Descargar Plantilla Excel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setImportResult(null)
+                  setImportError(null)
+                  setImportFileName('')
+                  setImportPreviewRows([])
+                  setShowImportModal(true)
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all active:scale-[0.98]"
+              >
+                <Upload size={16} className="text-indigo-600" />
+                Carga Masiva Excel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenNew}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all"
+              >
+                <Plus size={16} />
+                Nuevo Producto
+              </button>
+            </div>
           </div>
 
           {/* Advanced Filter Panel */}
@@ -821,8 +1147,17 @@ export function ConfigProductos() {
                           </td>
                           <td className="p-4 font-mono font-bold text-slate-700">{p.sku}</td>
                           <td className="p-4">
-                            <div className="font-bold text-slate-800">{p.nombre}</div>
-                            {p.referencia && <div className="text-[10px] text-slate-400">Ref: {p.referencia}</div>}
+                            <div className="flex items-center gap-3">
+                              {p.imagen && (
+                                <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                  <img src={getMediaUrl(p.imagen)} alt={p.nombre} className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-bold text-slate-800">{p.nombre}</div>
+                                {p.referencia && <div className="text-[10px] text-slate-400">Ref: {p.referencia}</div>}
+                              </div>
+                            </div>
                           </td>
                           <td className="p-4 text-right font-mono font-semibold text-slate-700">
                             ${p1Iva.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -1758,6 +2093,243 @@ export function ConfigProductos() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Excel / CSV Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-100 p-6 md:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-150 my-8">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 tracking-tight">
+                    Carga Masiva de Productos e Inventario
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Importa catálogo masivo, precios, costos, impuestos y saldos iniciales de inventario desde Excel / CSV.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={resetImportModal}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Instruction Steps */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-black">1</span>
+                  Descarga la Plantilla
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Usa el formato CSV delimitado por punto y coma (;) compatible con Excel en español.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-black">2</span>
+                  Llena tus Productos
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Ingresa SKU, Nombre, Costo, Precios, Categoría, Marca, IVA (EXENTO/EXCLUIDO/GRAVADO_19) y Stock Inicial.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-black">3</span>
+                  Sube y Procesa
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  El sistema crea categorías, marcas, productos y genera las entradas a Kardex automáticamente.
+                </p>
+              </div>
+            </div>
+
+            {/* Import Result Feedback */}
+            {importResult && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 text-sm font-black text-emerald-900">
+                  <CheckCircle2 size={18} className="text-emerald-600" />
+                  ¡Proceso de importación finalizado con éxito!
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-sm">
+                    <span className="block text-xl font-black text-emerald-700">{importResult.creados}</span>
+                    <span className="text-[10px] uppercase font-bold text-emerald-800">Productos Creados</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-sm">
+                    <span className="block text-xl font-black text-blue-700">{importResult.actualizados}</span>
+                    <span className="text-[10px] uppercase font-bold text-blue-800">Productos Actualizados</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-rose-100 shadow-sm">
+                    <span className="block text-xl font-black text-rose-700">{importResult.fallidos}</span>
+                    <span className="text-[10px] uppercase font-bold text-rose-800">Filas con Error</span>
+                  </div>
+                </div>
+
+                {importResult.errores && importResult.errores.length > 0 && (
+                  <div className="mt-2 text-xs text-rose-800 bg-rose-50/80 p-3 rounded-xl border border-rose-200 max-h-36 overflow-y-auto">
+                    <p className="font-bold mb-1">Detalle de incidencias:</p>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                      {importResult.errores.map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error message */}
+            {importError && (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Error en la carga</p>
+                  <p>{importError}</p>
+                </div>
+              </div>
+            )}
+
+            {/* File Upload Dropzone */}
+            {!importResult && (
+              <div className="space-y-4">
+                <label className="block border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/60 hover:bg-indigo-50/20 rounded-2xl p-8 text-center cursor-pointer transition-all group">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv,text/plain"
+                    onChange={handleFileSelected}
+                    className="hidden"
+                  />
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-indigo-50 group-hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors">
+                    <Upload size={28} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">
+                    {importFileName ? `Archivo seleccionado: ${importFileName}` : 'Haz clic aquí para seleccionar tu archivo CSV / Excel'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Archivos soportados: .csv delimitado por punto y coma (;) o comas
+                  </p>
+                </label>
+
+                {/* Rows Preview */}
+                {importPreviewRows.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase text-slate-600 tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-600" />
+                        Vista previa ({importPreviewRows.length} productos detectados)
+                      </span>
+                      <span className="text-[11px] text-slate-400">Mostrando los primeros registros</span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl overflow-x-auto max-h-48 overflow-y-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                          <tr>
+                            <th className="p-2.5">SKU</th>
+                            <th className="p-2.5">Nombre</th>
+                            <th className="p-2.5">Categoría</th>
+                            <th className="p-2.5 text-right">Costo</th>
+                            <th className="p-2.5 text-right">Precio Venta</th>
+                            <th className="p-2.5">IVA</th>
+                            <th className="p-2.5 text-center">Stock Inicial</th>
+                            <th className="p-2.5">Bodega</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-[11px]">
+                          {importPreviewRows.slice(0, 5).map((row, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="p-2.5 font-mono font-bold text-indigo-600">{row.sku || '—'}</td>
+                              <td className="p-2.5 font-medium text-slate-800 max-w-[200px] truncate">{row.nombre || '—'}</td>
+                              <td className="p-2.5 text-slate-600">{row.categoria || '—'}</td>
+                              <td className="p-2.5 text-right font-mono text-slate-600">${formatCOP(row.costoUnitario || 0)}</td>
+                              <td className="p-2.5 text-right font-mono font-bold text-emerald-600">${formatCOP(row.precioVenta || 0)}</td>
+                              <td className="p-2.5">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                  (row.tipoIva || '').includes('EXENTO') 
+                                    ? 'bg-emerald-50 text-emerald-700' 
+                                    : (row.tipoIva || '').includes('5') 
+                                      ? 'bg-blue-50 text-blue-700' 
+                                      : 'bg-amber-50 text-amber-700'
+                                }`}>
+                                  {row.tipoIva || 'GRAVADO_19'}
+                                </span>
+                              </td>
+                              <td className="p-2.5 text-center font-bold text-slate-700">{row.stockInicial || 0}</td>
+                              <td className="p-2.5 text-slate-500">{row.bodega || 'Principal'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {importPreviewRows.length > 5 && (
+                      <p className="text-[11px] text-slate-400 text-center italic">
+                        ... y {importPreviewRows.length - 5} productos adicionales listos para procesar.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all"
+              >
+                <Download size={14} className="text-emerald-600" />
+                Descargar Plantilla CSV
+              </button>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={resetImportModal}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
+                >
+                  {importResult ? 'Cerrar y Ver Productos' : 'Cancelar'}
+                </button>
+
+                {!importResult && (
+                  <button
+                    type="button"
+                    disabled={importPreviewRows.length === 0 || isImporting}
+                    onClick={handleExecuteImport}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-100 hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isImporting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Procesando Importación...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        Procesar Carga Masiva ({importPreviewRows.length})
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       )}

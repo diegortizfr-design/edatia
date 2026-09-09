@@ -32,6 +32,8 @@ services:
         condition: service_healthy
     env_file:
       - ./backend/.env
+    volumes:
+      - uploads-data:/app/uploads
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.edatia-api.rule=Host(`api.edatia.com`)"
@@ -181,4 +183,6 @@ networks:
 
 volumes:
   db-data:
+    driver: local
+  uploads-data:
     driver: local

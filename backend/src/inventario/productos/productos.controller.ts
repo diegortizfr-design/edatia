@@ -40,6 +40,11 @@ export class ProductosController {
     return this.svc.findOne(id, user.empresaId!);
   }
 
+  @Post('importar-masivo')
+  importarMasivo(@Body() body: { items: any[] }, @GetUser() user: JwtPayload) {
+    return this.svc.importarMasivo(body.items || body, user.empresaId!, user.sub);
+  }
+
   @Post()
   create(@Body() dto: CreateProductoDto, @GetUser() user: JwtPayload) {
     return this.svc.create(dto, user.empresaId!);

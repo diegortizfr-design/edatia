@@ -101,6 +101,7 @@ export const buscarProductos = (q: string) => api.get<Producto[]>('/inventario/p
 export const createProducto = (data: any) => api.post('/inventario/productos', data).then(r => r.data)
 export const updateProducto = (id: number, data: any) => api.patch(`/inventario/productos/${id}`, data).then(r => r.data)
 export const deleteProducto = (id: number) => api.delete(`/inventario/productos/${id}`).then(r => r.data)
+export const importarProductosMasivo = (items: any[]) => api.post('/inventario/productos/importar-masivo', { items }).then(r => r.data)
 
 // Stock
 export const getStock = (params?: { bodegaId?: number; soloAlertas?: boolean }) =>

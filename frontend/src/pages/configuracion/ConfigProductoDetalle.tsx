@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import api from '../../services/api'
+import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart,
@@ -75,6 +75,22 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [newImagen, setNewImagen] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
 
+  useEffect(() => {
+    setData({
+      publicadoWeb: producto.publicadoWeb || false,
+      esDigital: producto.esDigital || false,
+      nombreWeb: producto.nombreWeb || '',
+      slug: producto.slug || '',
+      descripcionWeb: producto.descripcionWeb || '',
+      imagenes: Array.isArray(producto.imagenes) ? producto.imagenes : [],
+      etiquetaSeo: producto.etiquetaSeo || '',
+      metaDescripcion: producto.metaDescripcion || '',
+      ordenMostrar: producto.ordenMostrar || 0,
+      esDestacado: producto.esDestacado || false,
+      urlDescarga: producto.urlDescarga || '',
+    })
+  }, [producto])
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -87,12 +103,17 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       const { url } = response.data
-      setData(p => ({ ...p, imagenes: [...p.imagenes, url] }))
-      toast.success('Imagen subida exitosamente ✓')
+      const updatedImgs = [...data.imagenes, url]
+      const nextData = { ...data, imagenes: updatedImgs }
+      setData(nextData)
+      await updateProducto(producto.id, nextData)
+      refetch()
+      toast.success('Imagen subida y guardada exitosamente ✓')
     } catch (err: any) {
       toast.error('Error al subir la imagen')
     } finally {
       setUploadingImg(false)
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -101,6 +122,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       await updateProducto(producto.id, data)
       setSaved(true)
       refetch()
+      toast.success('Configuración web guardada ✓')
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
       alert('Error al guardar configuración web')
@@ -110,10 +132,32 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const autoSlug = (nombre: string) =>
     nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-  const addImagen = () => {
+  const addImagen = async () => {
     if (!newImagen.trim()) return
-    setData(p => ({ ...p, imagenes: [...p.imagenes, newImagen.trim()] }))
+    const updatedImgs = [...data.imagenes, newImagen.trim()]
+    const nextData = { ...data, imagenes: updatedImgs }
+    setData(nextData)
     setNewImagen('')
+    try {
+      await updateProducto(producto.id, nextData)
+      refetch()
+      toast.success('Imagen agregada y guardada ✓')
+    } catch (err) {
+      toast.error('Error al guardar imagen')
+    }
+  }
+
+  const removeImagen = async (i: number) => {
+    const updatedImgs = data.imagenes.filter((_, j) => j !== i)
+    const nextData = { ...data, imagenes: updatedImgs }
+    setData(nextData)
+    try {
+      await updateProducto(producto.id, nextData)
+      refetch()
+      toast.success('Imagen eliminada ✓')
+    } catch (err) {
+      toast.error('Error al eliminar imagen')
+    }
   }
 
   return (
@@ -222,11 +266,11 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
             {data.imagenes.map((img, i) => (
               <div key={i} className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
                 <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-                  <img src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL || 'https://api.edatia.com'}${img}`} alt="Preview" className="w-full h-full object-contain" / >
+                  <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
                 </div>
                 <span className="truncate max-w-[150px] font-mono">{img}</span>
-                <button type="button" onClick={() => setData(p => ({ ...p, imagenes: p.imagenes.filter((_, j) => j !== i) }))}
-                  className="text-slate-300 hover:text-rose-500 transition-colors"><X size={12} /></button>
+                <button type="button" onClick={() => removeImagen(i)}
+                  className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
               </div>
             ))}
           </div>

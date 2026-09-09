@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
+import { getMediaUrl } from '../../services/api'
 
 const IVA_RATES: Record<string, number> = {
   IVA_19: 0.19, GRAVADO_19: 0.19,
@@ -61,6 +62,7 @@ export function PosScreen() {
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({})
   const isDark = theme === 'dark'
 
   const sesId = parseInt(sesionId ?? '0')
@@ -189,6 +191,12 @@ export function PosScreen() {
   const cambio = Math.max(0, pago.efectivo - totales.total)
 
   const addToCart = useCallback((prod: any) => {
+    const resolvedTipoIva = prod.productoExentoIva
+      ? 'EXENTO'
+      : (prod.liquidarIva === false || (Array.isArray(prod.appliedTaxIds) && prod.appliedTaxIds.length === 0))
+        ? 'EXCLUIDO'
+        : (prod.tipoIva ?? 'IVA_19')
+
     setCart(prev => {
       const idx = prev.findIndex(i => i.productoId === prod.id)
       if (idx >= 0) {
@@ -205,7 +213,7 @@ export function PosScreen() {
         precio: prod.precioBase,
         cantidad: 1,
         descuentoPct: 0,
-        tipoIva: prod.tipoIva ?? 'IVA_19',
+        tipoIva: resolvedTipoIva,
         stock: prod.stock ?? 999,
       }]
     })
@@ -435,8 +443,13 @@ export function PosScreen() {
                     >
                       <div>
                         <div className={`w-full aspect-square rounded-lg mb-2 flex items-center justify-center overflow-hidden transition-colors duration-200 ${isDark ? 'bg-slate-600' : 'bg-slate-100'}`}>
-                          {prod.imagen ? (
-                            <img src={prod.imagen} alt={prod.nombre} className="w-full h-full object-cover rounded-lg" />
+                          {prod.imagen && !imgErrors[prod.id] ? (
+                            <img
+                              src={getMediaUrl(prod.imagen)}
+                              alt={prod.nombre}
+                              onError={() => setImgErrors(prev => ({ ...prev, [prod.id]: true }))}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
                           ) : (
                             <Tag size={24} className={isDark ? 'text-slate-400' : 'text-slate-300'} />
                           )}

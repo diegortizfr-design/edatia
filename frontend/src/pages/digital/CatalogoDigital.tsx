@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Search, Globe, Eye, Loader2, Save } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import api from '../../services/api'
+import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 
 interface ProductoWeb {
@@ -14,13 +14,6 @@ interface ProductoWeb {
   slug: string | null;
   imagen: string | null;
 }
-
-const getImageUrl = (url: string | null) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.edatia.com';
-  return `${BASE_URL}${url}`;
-};
 
 export function CatalogoDigital() {
   const navigate = useNavigate()
@@ -142,7 +135,7 @@ export function CatalogoDigital() {
                         <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
                           {p.imagen ? (
                             <img 
-                              src={getImageUrl(p.imagen)} 
+                              src={getMediaUrl(p.imagen)} 
                               alt={p.nombre} 
                               className="w-full h-full object-contain p-0.5" 
                               onError={(e) => {
