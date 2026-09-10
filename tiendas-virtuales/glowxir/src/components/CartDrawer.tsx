@@ -49,7 +49,7 @@ export function CartDrawer({
     message += `\n📍 Por favor indíquenme disponibilidad para coordinar el envío. ¡Gracias!`
 
     const encoded = encodeURIComponent(message)
-    window.open(`https://wa.me/573205704262?text=${encoded}`, '_blank')
+    window.open(`https://wa.me/573023863380?text=${encoded}`, '_blank')
   }
 
   return (

@@ -5,8 +5,9 @@ import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
+import { ProductDetailPage } from './components/ProductDetailPage'
+import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
 import { CartDrawer, CartItem } from './components/CartDrawer'
-import { ProductDetailModal } from './components/ProductDetailModal'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
@@ -191,6 +192,7 @@ export function App() {
   }
 
   const handleCategorySelect = (category: string) => {
+    setSelectedProduct(null)
     setActiveCategory(category)
     setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
@@ -217,115 +219,131 @@ export function App() {
         setSearchQuery={setSearchQuery}
       />
 
-      {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
-      {activeCategory === 'Todos' && !searchQuery && (
-        <HeroBanner onSelectCategory={handleCategorySelect} />
-      )}
+      {/* If a product is selected, display the full Dedicated Product View Page */}
+      {selectedProduct ? (
+        <ProductDetailPage
+          product={selectedProduct}
+          allProducts={products}
+          onBack={() => setSelectedProduct(null)}
+          onSelectProduct={(p) => {
+            setSelectedProduct(p)
+          }}
+          onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsCartOpen(true)}
+        />
+      ) : (
+        <>
+          {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
+          {activeCategory === 'Todos' && !searchQuery && (
+            <HeroBanner onSelectCategory={handleCategorySelect} />
+          )}
 
-      {/* Main Catalog Section */}
-      <main id="catalogo-section" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 flex-1 w-full">
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
-                Catálogo Baby-World
-              </span>
-              <span className="h-1 w-1 rounded-full bg-slate-300" />
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400">
-                {activeCategory} ({filteredProducts.length})
-              </span>
+          {/* Main Catalog Section */}
+          <main id="catalogo-section" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 flex-1 w-full">
+            {/* Section Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
+                    Catálogo Baby-World
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-slate-300" />
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-400">
+                    {activeCategory} ({filteredProducts.length})
+                  </span>
+                </div>
+                
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
+                  {searchQuery
+                    ? `Resultados para "${searchQuery}"`
+                    : activeCategory === 'Todos' 
+                      ? 'Lo mejor para tu bebé' 
+                      : isCareSection
+                        ? '🍼 Pañales y Cuidado para Bebés'
+                        : activeCategory === 'Juguetería'
+                          ? '🧸 Juguetería & Estimulación Temprana'
+                          : '🎀 Variedades, Ropa & Accesorios'}
+                </h2>
+              </div>
+
+              {/* Category Filter Pills on larger screens */}
+              <div className="hidden sm:flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm">
+                {CATEGORIAS_PRODUCTOS.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategorySelect(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      activeCategory === cat || (cat === 'Pañales y Cuidado' && isCareSection)
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {cat === 'Pañales y Cuidado' ? '🍼 Pañales & Cuidado' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
+                  </button>
+                ))}
+              </div>
             </div>
-            
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-              {searchQuery
-                ? `Resultados para "${searchQuery}"`
-                : activeCategory === 'Todos' 
-                  ? 'Lo mejor para tu bebé' 
-                  : isCareSection
-                    ? '🍼 Pañales y Cuidado para Bebés'
-                    : activeCategory === 'Juguetería'
-                      ? '🧸 Juguetería & Estimulación Temprana'
-                      : '🎀 Variedades, Ropa & Accesorios'}
-            </h2>
-          </div>
 
-          {/* Category Filter Pills on larger screens */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm">
-            {CATEGORIAS_PRODUCTOS.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategorySelect(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  activeCategory === cat || (cat === 'Pañales y Cuidado' && isCareSection)
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {cat === 'Pañales y Cuidado' ? '🍼 Pañales & Cuidado' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
-              </button>
-            ))}
-          </div>
-        </div>
+            {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
+            {isCareSection && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
+                  Filtrar:
+                </span>
+                {SUBCATEGORIAS_CUIDADO.map((sub) => {
+                  const isSelected = activeSubcategory === sub
+                  return (
+                    <button
+                      key={sub}
+                      onClick={() => setActiveSubcategory(sub)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                        isSelected
+                          ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
+                          : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
-        {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
-        {isCareSection && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
-              Filtrar:
-            </span>
-            {SUBCATEGORIAS_CUIDADO.map((sub) => {
-              const isSelected = activeSubcategory === sub
-              return (
+            {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
+                <div className="text-4xl">🍼</div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Prueba ajustando tu búsqueda o seleccionando otra sección.
+                  </p>
+                </div>
                 <button
-                  key={sub}
-                  onClick={() => setActiveSubcategory(sub)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    isSelected
-                      ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
-                      : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                  }`}
+                  onClick={() => {
+                    setActiveCategory('Todos')
+                    setSearchQuery('')
+                  }}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
                 >
-                  {sub}
+                  Ver Todo el Catálogo
                 </button>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
-        {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
-            <div className="text-4xl">🍼</div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Prueba ajustando tu búsqueda o seleccionando otra sección.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setActiveCategory('Todos')
-                setSearchQuery('')
-              }}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-            >
-              Ver Todo el Catálogo
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            {filteredProducts.map(product => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onViewDetails={p => setSelectedProduct(p)}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                {filteredProducts.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    onViewDetails={p => setSelectedProduct(p)}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
+        </>
+      )}
 
       {/* Clean Minimalist Footer */}
       <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 mt-12">
@@ -370,13 +388,13 @@ export function App() {
               </p>
               <div className="space-y-2 text-xs text-slate-500">
                 <a
-                  href="https://wa.me/573205704262?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
+                  href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-emerald-600 font-bold hover:underline"
                 >
                   <MessageCircle size={15} />
-                  <span>+57 320 570 4262 (WhatsApp Directo)</span>
+                  <span>+57 302 386 3380 (WhatsApp Directo)</span>
                 </a>
                 <p className="flex items-center gap-2">
                   <MapPin size={14} className="text-slate-400" />
@@ -403,13 +421,16 @@ export function App() {
         </div>
       </footer>
 
+      {/* Floating WhatsApp Button */}
+      <FloatingWhatsAppButton phone="573023863380" />
+
       {/* Sticky Mobile Bottom Navigation (Only visible on smartphones) */}
       <MobileBottomNav
         activeCategory={activeCategory}
         onSelectCategory={handleCategorySelect}
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenWhatsApp={() => window.open('https://wa.me/573205704262?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
+        onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
       />
 
       {/* Cart Drawer */}
@@ -425,16 +446,6 @@ export function App() {
         }}
       />
 
-      {/* Product Detail Modal (Bottom-Sheet on Mobile) */}
-      <ProductDetailModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAddToCart={(p, q) => {
-          handleAddToCart(p, q)
-          setSelectedProduct(null)
-        }}
-      />
-
       {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
@@ -447,3 +458,4 @@ export function App() {
     </div>
   )
 }
+

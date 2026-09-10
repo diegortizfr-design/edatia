@@ -121,6 +121,18 @@ export class DigitalService {
             esDestacado: true
           },
           {
+            sku: "PAN-WINNY-PANTS-E5-50",
+            nombre: "Pañal Winny Pants Etapa 5 (XXG) x 50 Unidades",
+            descripcion: "Pañal tipo calzoncito ultra absorbente con fibra natural, fácil de poner y quitar.",
+            descripcionWeb: "Pañal Winny Pants Etapa 5 (XXG) diseñado como ropita interior para bebés de más de 14 Kg (más de 30 lbs). Ofrece máxima absorción con fibra natural, cintura elástica 360° ultra suave que se adapta a cada movimiento del bebé y laterales fáciles de rasgar para un cambio rápido y cómodo.",
+            precioBase: 75000,
+            precioWeb: 75000,
+            publicadoWeb: true,
+            slug: "panal-winny-pants-etapa-5-50",
+            imagen: "/productos/winny-pants-etapa-5-50.jpg",
+            esDestacado: true
+          },
+          {
             sku: "GEND-HUMO-01",
             nombre: "Kit Cañones de Humo Revelación de Género (Dúo Rosa / Azul)",
             descripcion: "Efecto de humo continuo de alta densidad y colores ultrabrillantes para revelación de género.",

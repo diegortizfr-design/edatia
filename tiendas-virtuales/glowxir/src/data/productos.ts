@@ -47,7 +47,6 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     descripcion: "Cuidado superior con indicador de humedad y tela supersuavecita para recién nacido.",
     descripcionLarga: "Pañal Winny Sensitive Etapa 0 (RN) especialmente diseñado para la piel ultrasensible del recién nacido (hasta 4.5 Kg / 10 lbs). Cuenta con indicador de humedad que cambia de color cuando es momento del cambio, tela supersuavecita, diseño anatómico y corte especial para el cuidado del cordón umbilical.",
     precio: 41000,
-    precioAnterior: 47000,
     categoria: "Pañales y Cuidado",
     subcategoria: "Pañales",
     etapa: "Etapa 0 (Hasta 4.5 Kg)",
@@ -57,7 +56,6 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     reviewsCount: 168,
     stock: 50,
     esDestacado: true,
-    esOferta: true,
     esNovedad: true,
     detalles: [
       "Indicador de humedad inteligente que avisa el cambio",
@@ -72,6 +70,37 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
       "Peso recomendado": "Hasta 4.5 Kg / Hasta 10 lbs",
       "Presentación": "Paquete x 50 Pañales Desechables",
       "Características": "Indicador de humedad y tela supersuavecita"
+    }
+  },
+  {
+    id: 1005,
+    nombre: "Pañal Winny Pants Etapa 5 (XXG) x 50 Unidades",
+    descripcion: "Pañal tipo calzoncito ultra absorbente con fibra natural, fácil de poner y quitar.",
+    descripcionLarga: "Pañal Winny Pants Etapa 5 (XXG) diseñado como ropita interior para bebés de más de 14 Kg (más de 30 lbs). Ofrece máxima absorción con fibra natural, cintura elástica 360° ultra suave que se adapta a cada movimiento del bebé y laterales fáciles de rasgar para un cambio rápido y cómodo.",
+    precio: 75000,
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Pañales",
+    etapa: "Etapa 5 - XXG (Más de 14 Kg)",
+    genero: "Unisex",
+    imagen: "/productos/winny-pants-etapa-5-50.jpg",
+    rating: 5.0,
+    reviewsCount: 154,
+    stock: 45,
+    esDestacado: true,
+    esNovedad: true,
+    detalles: [
+      "Fácil de subir como ropita interior y fácil de retirar rasgando los lados",
+      "Tecnología Ultra Absorbente para máxima protección día y noche",
+      "Con fibra natural delicada con la piel del bebé",
+      "Ajuste elástico 360° anatómico que no aprieta ni deja marcas",
+      "Ideal para la etapa activa de gateo, caminata y juego"
+    ],
+    especificaciones: {
+      "Marca": "Winny Pants (Tecnoquímicas)",
+      "Etapa": "Etapa 5 / XXG (Extra Extra Grande)",
+      "Peso recomendado": "Más de 14 Kg / Más de 30 lbs",
+      "Presentación": "Paquete x 50 Pañales Tipo Calzoncito (Pants)",
+      "Características": "Ultra Absorbente con fibra natural"
     }
   },
   {

@@ -104,7 +104,7 @@ export function CheckoutModal({
     msg += `\n*Total a Pagar:* ${fmtPrice(total)}`
     if (shipping === 0) msg += ` (Envío Gratis 🎉)`
     
-    window.open(`https://wa.me/573205704262?text=${encodeURIComponent(msg)}`, '_blank')
+    window.open(`https://wa.me/573023863380?text=${encodeURIComponent(msg)}`, '_blank')
     handleFinish()
   }
 

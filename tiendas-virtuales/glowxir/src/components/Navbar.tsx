@@ -43,7 +43,7 @@ export function Navbar({
           </div>
 
           <a
-            href="https://wa.me/573205704262?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
+            href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold text-[11px] transition-colors"
