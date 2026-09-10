@@ -12,8 +12,8 @@ import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS } from './data/productos'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000'
-  : 'https://api.edatia.com'
+  ? 'http://localhost:4000/api/v1'
+  : 'https://api.edatia.com/api/v1'
 
 const getStoreSlug = () => {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -21,6 +21,9 @@ const getStoreSlug = () => {
   const host = window.location.hostname.replace('www.', '')
   if (host.endsWith('.edatia.com')) {
     return host.replace('.edatia.com', '')
+  }
+  if (host.includes('distribuidorababyworld')) {
+    return 'distribuidorababyworld'
   }
   return 'distribuidorababyworld'
 }
@@ -71,7 +74,7 @@ export function App() {
               subcategoria: p.categoria || cat,
               genero: 'Unisex',
               imagen: p.imagen
-                ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE}${p.imagen}`)
+                ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE.replace('/api/v1', '')}${p.imagen}`)
                 : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
