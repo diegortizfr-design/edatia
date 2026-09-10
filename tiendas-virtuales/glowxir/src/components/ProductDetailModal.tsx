@@ -67,7 +67,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
           <div className="space-y-2.5">
             <div>
               <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-100 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {product.categoria}
+                {product.subcategoria ? `${product.categoria} • ${product.subcategoria}` : product.categoria}
               </span>
 
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-2 leading-snug">

@@ -24,6 +24,7 @@ export function Navbar({
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
+      case 'Pañales y Cuidado':
       case 'Pañalera': return '🍼'
       case 'Juguetería': return '🧸'
       case 'Variedades': return '🎀'

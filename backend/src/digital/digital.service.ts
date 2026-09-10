@@ -109,6 +109,18 @@ export class DigitalService {
       if (webProductsCount === 0) {
         const seedBabyProducts = [
           {
+            sku: "PAN-WINNY-E0-50",
+            nombre: "Pañal Winny Sensitive Etapa 0 (RN) x 50 Unidades",
+            descripcion: "Cuidado superior con indicador de humedad y tela supersuavecita para recién nacido.",
+            descripcionWeb: "Pañal Winny Sensitive Etapa 0 (RN) especialmente diseñado para la piel ultrasensible del recién nacido (hasta 4.5 Kg / 10 lbs). Cuenta con indicador de humedad que cambia de color cuando es momento del cambio, tela supersuavecita, diseño anatómico y corte especial para el cuidado del cordón umbilical.",
+            precioBase: 41000,
+            precioWeb: 41000,
+            publicadoWeb: true,
+            slug: "panal-winny-sensitive-etapa-0-50",
+            imagen: "/productos/winny-sensitive-etapa-0-50.jpg",
+            esDestacado: true
+          },
+          {
             sku: "GEND-HUMO-01",
             nombre: "Kit Cañones de Humo Revelación de Género (Dúo Rosa / Azul)",
             descripcion: "Efecto de humo continuo de alta densidad y colores ultrabrillantes para revelación de género.",

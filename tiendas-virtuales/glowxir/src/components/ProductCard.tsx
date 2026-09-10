@@ -21,6 +21,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
 
   const getCategoryBadgeColor = (cat: string) => {
     switch (cat) {
+      case 'Pañales y Cuidado':
       case 'Pañalera': return 'bg-sky-50 text-sky-600 border-sky-100'
       case 'Juguetería': return 'bg-amber-50 text-amber-600 border-amber-100'
       case 'Variedades': return 'bg-pink-50 text-pink-600 border-pink-100'
@@ -64,7 +65,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
           {/* Category Tag */}
           <div className="flex items-center justify-between gap-1">
             <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border ${getCategoryBadgeColor(product.categoria)}`}>
-              {product.categoria}
+              {product.subcategoria || product.categoria}
             </span>
             <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold">
               <Star size={11} fill="currentColor" />

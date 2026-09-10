@@ -5,7 +5,7 @@ export interface Product {
   descripcionLarga: string
   precio: number
   precioAnterior?: number
-  categoria: 'Pañalera' | 'Juguetería' | 'Variedades'
+  categoria: 'Pañales y Cuidado' | 'Juguetería' | 'Variedades'
   subcategoria?: string
   genero?: 'Niño' | 'Niña' | 'Unisex'
   etapa?: string
@@ -23,15 +23,57 @@ export interface Product {
 
 export const CATEGORIAS_PRODUCTOS = [
   'Todos',
-  'Pañalera',
+  'Pañales y Cuidado',
   'Juguetería',
   'Variedades'
 ] as const
 
+export const SUBCATEGORIAS_CUIDADO = [
+  'Todos',
+  'Pañales',
+  'Cremas & Pomadas',
+  'Toallitas & Pañitos',
+  'Aseo & Baño',
+  'Alimentación & Chupos'
+] as const
+
 export const PRODUCTOS_BABY_WORLD: Product[] = [
   // ══════════════════════════════════════════════════════════════════════════
-  // 1. PAÑALERA & CUIDADO INFANTIL
+  // 1. PAÑALES Y CUIDADO PARA BEBÉS (Pañales, Cremas, Toallitas, Aseo)
   // ══════════════════════════════════════════════════════════════════════════
+  {
+    id: 100,
+    nombre: "Pañal Winny Sensitive Etapa 0 (RN) x 50 Unidades",
+    descripcion: "Cuidado superior con indicador de humedad y tela supersuavecita para recién nacido.",
+    descripcionLarga: "Pañal Winny Sensitive Etapa 0 (RN) especialmente diseñado para la piel ultrasensible del recién nacido (hasta 4.5 Kg / 10 lbs). Cuenta con indicador de humedad que cambia de color cuando es momento del cambio, tela supersuavecita, diseño anatómico y corte especial para el cuidado del cordón umbilical.",
+    precio: 41000,
+    precioAnterior: 47000,
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Pañales",
+    etapa: "Etapa 0 (Hasta 4.5 Kg)",
+    genero: "Unisex",
+    imagen: "/productos/winny-sensitive-etapa-0-50.jpg",
+    rating: 5.0,
+    reviewsCount: 168,
+    stock: 50,
+    esDestacado: true,
+    esOferta: true,
+    esNovedad: true,
+    detalles: [
+      "Indicador de humedad inteligente que avisa el cambio",
+      "Tela supersuavecita para máxima protección y caricia",
+      "Corte especial para proteger el cordón umbilical",
+      "Cuidado Superior para bebés de hasta 4.5 kg (10 lbs)",
+      "Barreras altas y cómodas anti-filtraciones"
+    ],
+    especificaciones: {
+      "Marca": "Winny Sensitive (Tecnoquímicas)",
+      "Etapa": "Etapa 0 / Recién Nacido (RN)",
+      "Peso recomendado": "Hasta 4.5 Kg / Hasta 10 lbs",
+      "Presentación": "Paquete x 50 Pañales Desechables",
+      "Características": "Indicador de humedad y tela supersuavecita"
+    }
+  },
   {
     id: 101,
     nombre: "Pañales Huggies Natural Care Prematuro / RN (Pack x 60)",
@@ -39,7 +81,7 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     descripcionLarga: "Diseñado especialmente para la piel más sensible del bebé en sus primeros meses. Cuenta con tecnología de absorción 3D que encapsula líquidos al instante, corte especial para el cordón umbilical e indicador de humedad inteligente.",
     precio: 48900,
     precioAnterior: 56000,
-    categoria: "Pañalera",
+    categoria: "Pañales y Cuidado",
     subcategoria: "Pañales",
     etapa: "Recién Nacido (RN)",
     genero: "Unisex",
@@ -47,7 +89,7 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     rating: 4.9,
     reviewsCount: 142,
     stock: 45,
-    esDestacado: true,
+    esDestacado: false,
     esOferta: true,
     detalles: [
       "Fibras naturales libres de fragancias y parabenos",
@@ -68,7 +110,7 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     descripcionLarga: "El pañal preferido de las mamás en Colombia. Con capa súper absorbente Dual Sec que mantiene la piel seca y fresca, cintas elásticas reposicionables y extracto de aloe vera que previene irritaciones y pañalitis.",
     precio: 64500,
     precioAnterior: 72000,
-    categoria: "Pañalera",
+    categoria: "Pañales y Cuidado",
     subcategoria: "Pañales",
     etapa: "Etapa 1 (3.5 a 6 kg)",
     genero: "Unisex",
@@ -96,7 +138,7 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     descripcionLarga: "Protección 5 estrellas para la piel del bebé. Contiene micro-perlas absorbentes que atrapan la humedad al fondo del pañal y loción hipoalergénica que ayuda a prevenir rozaduras graves.",
     precio: 68000,
     precioAnterior: 76500,
-    categoria: "Pañalera",
+    categoria: "Pañales y Cuidado",
     subcategoria: "Pañales",
     etapa: "Etapa 2 (5 a 8 kg)",
     genero: "Unisex",
@@ -120,13 +162,13 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
   },
   {
     id: 104,
-    nombre: "Toallitas Húmedas Winny Aloe Vera y Manzanilla (Pack x 3 x 80 und)",
+    nombre: "Toallitas Húmedas Winny Aloe Vera y Manzanilla (Tripack x 240 und)",
     descripcion: "Toallitas extra gruesas sin alcohol con aroma calmante y fórmula hipoalergénica.",
     descripcionLarga: "Pack ahorro de 240 toallitas húmedas con tela suave y acolchada. Enriquecidas con agua pura, extracto de manzanilla relajante y aloe vera para una limpieza profunda sin frotar agresivamente.",
     precio: 29900,
     precioAnterior: 36000,
-    categoria: "Pañalera",
-    subcategoria: "Aseo & Cuidado",
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Toallitas & Pañitos",
     genero: "Unisex",
     imagen: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
     rating: 4.9,
@@ -152,8 +194,8 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
     descripcionLarga: "Crea una barrera protectora espesa e impenetrable que aísla la humedad del pañal desde la primera aplicación. Calma el enrojecimiento, ardor y repara la barrera cutánea de forma clínicamente comprobada.",
     precio: 52000,
     precioAnterior: 59000,
-    categoria: "Pañalera",
-    subcategoria: "Aseo & Cuidado",
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Cremas & Pomadas",
     genero: "Unisex",
     imagen: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=700&auto=format&fit=crop&q=80",
     rating: 5.0,
@@ -174,13 +216,66 @@ export const PRODUCTOS_BABY_WORLD: Product[] = [
   },
   {
     id: 106,
+    nombre: "Crema Antipañalitis Natusan / Almipro Protección Diaria 200g",
+    descripcion: "Pomada regeneradora con aceite de caléndula, vitamina E y óxido de zinc para uso diario.",
+    descripcionLarga: "Protección suave pero efectiva contra la humedad y el roce continuo del pañal. Mantiene la piel del bebé hidratada, elástica y libre de enrojecimientos.",
+    precio: 28500,
+    precioAnterior: 34000,
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Cremas & Pomadas",
+    genero: "Unisex",
+    imagen: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=700&auto=format&fit=crop&q=80",
+    rating: 4.9,
+    reviewsCount: 120,
+    stock: 50,
+    esDestacado: true,
+    detalles: [
+      "Con extracto calmante de Caléndula y Vitamina E",
+      "Fórmula hipoalergénica de fácil aplicación y remoción",
+      "Ideal para cada cambio preventivo de pañal",
+      "Recomendado por pediatras"
+    ],
+    especificaciones: {
+      "Presentación": "Tubo de 200 gramos",
+      "Ingredientes clave": "Óxido de Zinc, Caléndula, Vitamina E",
+      "Uso": "Diario y preventivo"
+    }
+  },
+  {
+    id: 107,
+    nombre: "Shampoo & Baño Líquido de la Cabeza a los Pies 400ml",
+    descripcion: "Fórmula No Más Lágrimas con pH neutro para limpiar delicadamente cabello y cuerpo.",
+    descripcionLarga: "Limpia suavemente sin resecar la piel ni irritar los ojitos del bebé. Deja el cabello suave, brillante y con un delicioso aroma fresco a bebé.",
+    precio: 26500,
+    precioAnterior: 31000,
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Aseo & Baño",
+    genero: "Unisex",
+    imagen: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
+    rating: 4.8,
+    reviewsCount: 95,
+    stock: 35,
+    esDestacado: false,
+    detalles: [
+      "Fórmula 100% libre de lágrimas",
+      "Libre de sulfatos, colorantes y parabenos",
+      "Dermatológicamente testeado para piel sensible",
+      "Dosificador cómodo con válvula pump"
+    ],
+    especificaciones: {
+      "Contenido": "400 ml",
+      "Uso": "Baño diario corporal y capilar"
+    }
+  },
+  {
+    id: 108,
     nombre: "Biberón Anticólicos Philips Avent Natural 260ml / 9oz",
     descripcion: "Tetina ergonómica en espiral con válvula anticólicos para alimentación natural y sin gases.",
     descripcionLarga: "Facilita la transición natural entre el pecho materno y el biberón. Su tetina ancha y ultra suave imita la forma y sensación del seno materno, reduciendo el cólico y reflujo en un 80%.",
     precio: 44000,
     precioAnterior: 51000,
-    categoria: "Pañalera",
-    subcategoria: "Alimentación",
+    categoria: "Pañales y Cuidado",
+    subcategoria: "Alimentación & Chupos",
     genero: "Unisex",
     imagen: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=700&auto=format&fit=crop&q=80",
     rating: 4.8,

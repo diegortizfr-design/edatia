@@ -35,21 +35,21 @@ export function MobileBottomNav({
           <span className="text-[10px] tracking-tight mt-0.5">Inicio</span>
         </button>
 
-        {/* 2. Pañalera */}
+        {/* 2. Pañales & Cuidado */}
         <button
           onClick={() => {
-            onSelectCategory('Pañalera')
+            onSelectCategory('Pañales y Cuidado')
             const el = document.getElementById('catalogo-section')
             if (el) el.scrollIntoView({ behavior: 'smooth' })
           }}
           className={`flex flex-col items-center justify-center w-full py-1 rounded-xl transition-all ${
-            activeCategory === 'Pañalera' ? 'text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-800'
+            activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera' ? 'text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeCategory === 'Pañalera' ? 'bg-sky-50' : ''}`}>
-            <Baby size={20} className={activeCategory === 'Pañalera' ? 'stroke-[2.5]' : 'stroke-2'} />
+          <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera' ? 'bg-sky-50' : ''}`}>
+            <Baby size={20} className={activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera' ? 'stroke-[2.5]' : 'stroke-2'} />
           </div>
-          <span className="text-[10px] tracking-tight mt-0.5">Pañalera</span>
+          <span className="text-[10px] tracking-tight mt-0.5">Pañales</span>
         </button>
 
         {/* 3. Juguetería */}

@@ -24,18 +24,18 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
 
         {/* 3 Quick Category Access Cards (Touch-Friendly on Mobile) */}
         <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-3xl mx-auto">
-          {/* 1. Pañalera */}
+          {/* 1. Pañales y Cuidado */}
           <button
-            onClick={() => onSelectCategory('Pañalera')}
+            onClick={() => onSelectCategory('Pañales y Cuidado')}
             className="group p-3 sm:p-4 bg-white rounded-2xl border border-sky-100 shadow-sm hover:shadow-md hover:border-sky-300 transition-all flex flex-col items-center text-center active:scale-95"
           >
             <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-xl sm:text-2xl mb-2 group-hover:scale-110 transition-transform">
               🍼
             </div>
             <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-sky-600 transition-colors">
-              Pañalera
+              Pañales & Cuidado
             </span>
-            <span className="text-[10px] text-slate-400 hidden sm:inline-block">Pañales & Cuidado</span>
+            <span className="text-[10px] text-slate-400 hidden sm:inline-block">Pañales, Cremas & Aseo</span>
           </button>
 
           {/* 2. Juguetería */}

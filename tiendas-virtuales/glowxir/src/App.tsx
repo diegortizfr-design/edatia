@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2, Filter } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -9,7 +9,7 @@ import { CartDrawer, CartItem } from './components/CartDrawer'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
-import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS } from './data/productos'
+import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:4000/api/v1'
@@ -32,6 +32,7 @@ const STORE_SLUG = getStoreSlug()
 
 export function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
+  const [activeSubcategory, setActiveSubcategory] = useState('Todos')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -40,6 +41,11 @@ export function App() {
   
   const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Reset subcategory when switching main category
+  useEffect(() => {
+    setActiveSubcategory('Todos')
+  }, [activeCategory])
 
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
   useEffect(() => {
@@ -51,7 +57,7 @@ export function App() {
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
           const mapped: Product[] = data.map((p: any) => {
-            let cat: 'Pañalera' | 'Juguetería' | 'Variedades' = 'Pañalera'
+            let cat: 'Pañales y Cuidado' | 'Juguetería' | 'Variedades' = 'Pañales y Cuidado'
             const sku = (p.sku || '').toUpperCase()
             const nombre = (p.nombre || '').toLowerCase()
 
@@ -60,7 +66,18 @@ export function App() {
             } else if (sku.startsWith('VAR') || sku.startsWith('ROP') || nombre.includes('ajuar') || nombre.includes('cobija') || nombre.includes('babero') || nombre.includes('kit')) {
               cat = 'Variedades'
             } else {
-              cat = 'Pañalera'
+              cat = 'Pañales y Cuidado'
+            }
+
+            // Derive subcategory
+            let subcat = p.categoria || ''
+            if (!subcat) {
+              if (nombre.includes('pañal') || sku.startsWith('PAN')) subcat = 'Pañales'
+              else if (nombre.includes('crema') || nombre.includes('desitin') || nombre.includes('natusan') || nombre.includes('pomada')) subcat = 'Cremas & Pomadas'
+              else if (nombre.includes('toall') || nombre.includes('pañito')) subcat = 'Toallitas & Pañitos'
+              else if (nombre.includes('shampoo') || nombre.includes('jabon') || nombre.includes('baño') || nombre.includes('locion')) subcat = 'Aseo & Baño'
+              else if (nombre.includes('biberon') || nombre.includes('chupo') || nombre.includes('tetero')) subcat = 'Alimentación & Chupos'
+              else subcat = cat
             }
 
             return {
@@ -71,10 +88,10 @@ export function App() {
               precio: Number(p.precioWeb || p.precioBase || 0),
               precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : undefined,
               categoria: cat,
-              subcategoria: p.categoria || cat,
+              subcategoria: subcat,
               genero: 'Unisex',
               imagen: p.imagen
-                ? (p.imagen.startsWith('http') ? p.imagen : `${API_BASE.replace('/api/v1', '')}${p.imagen}`)
+                ? (p.imagen.startsWith('http') || p.imagen.startsWith('/productos') ? p.imagen : `${API_BASE.replace('/api/v1', '')}${p.imagen}`)
                 : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
@@ -98,16 +115,24 @@ export function App() {
       })
   }, [])
 
-  // Filter products by category and search query
+  // Filter products by category, subcategory and search query
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory
+    const isCare = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
+    const productIsCare = p.categoria === 'Pañales y Cuidado' || (p.categoria as any) === 'Pañalera'
+
+    const matchesCategory = activeCategory === 'Todos' || 
+      (isCare ? productIsCare : p.categoria === activeCategory)
+
+    const matchesSubcategory = activeSubcategory === 'Todos' ||
+      (p.subcategoria && p.subcategoria.toLowerCase() === activeSubcategory.toLowerCase())
+
     const q = searchQuery.toLowerCase().trim()
     const matchesSearch = q === '' || 
       p.nombre.toLowerCase().includes(q) ||
       p.descripcion.toLowerCase().includes(q) ||
       p.categoria.toLowerCase().includes(q) ||
       (p.subcategoria && p.subcategoria.toLowerCase().includes(q))
-    return matchesCategory && matchesSearch
+    return matchesCategory && matchesSubcategory && matchesSearch
   })
 
   const handleAddToCart = (product: Product, quantity = 1) => {
@@ -167,6 +192,7 @@ export function App() {
 
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category)
+    setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' })
@@ -174,6 +200,7 @@ export function App() {
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const isCareSection = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 pb-20 md:pb-0">
@@ -185,7 +212,7 @@ export function App() {
         cartCount={totalCartCount}
         onCartClick={() => setIsCartOpen(true)}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={handleCategorySelect}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
@@ -198,7 +225,7 @@ export function App() {
       {/* Main Catalog Section */}
       <main id="catalogo-section" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 flex-1 w-full">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
@@ -215,8 +242,8 @@ export function App() {
                 ? `Resultados para "${searchQuery}"`
                 : activeCategory === 'Todos' 
                   ? 'Lo mejor para tu bebé' 
-                  : activeCategory === 'Pañalera'
-                    ? '🍼 Pañalera & Cuidado Infantil'
+                  : isCareSection
+                    ? '🍼 Pañales y Cuidado para Bebés'
                     : activeCategory === 'Juguetería'
                       ? '🧸 Juguetería & Estimulación Temprana'
                       : '🎀 Variedades, Ropa & Accesorios'}
@@ -228,18 +255,43 @@ export function App() {
             {CATEGORIAS_PRODUCTOS.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => handleCategorySelect(cat)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  activeCategory === cat
+                  activeCategory === cat || (cat === 'Pañales y Cuidado' && isCareSection)
                     ? 'bg-slate-900 text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                {cat === 'Pañalera' ? '🍼 Pañalera' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
+                {cat === 'Pañales y Cuidado' ? '🍼 Pañales & Cuidado' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
+        {isCareSection && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
+              Filtrar:
+            </span>
+            {SUBCATEGORIAS_CUIDADO.map((sub) => {
+              const isSelected = activeSubcategory === sub
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setActiveSubcategory(sub)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    isSelected
+                      ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
+                      : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {sub}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
         {filteredProducts.length === 0 ? (
@@ -294,8 +346,8 @@ export function App() {
               </p>
               <ul className="space-y-2 text-xs text-slate-500 font-medium">
                 <li>
-                  <button onClick={() => handleCategorySelect('Pañalera')} className="hover:text-sky-600 transition-colors">
-                    🍼 Pañalera & Cuidado (Huggies, Winny, Pampers)
+                  <button onClick={() => handleCategorySelect('Pañales y Cuidado')} className="hover:text-sky-600 transition-colors">
+                    🍼 Pañales & Cuidado (Huggies, Winny, Desitin, Cremas)
                   </button>
                 </li>
                 <li>
