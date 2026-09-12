@@ -958,16 +958,25 @@ export function PosScreen() {
           }`}>
             <CheckCircle2 size={56} className="text-green-400 mx-auto mb-4" />
             <h2 className="font-bold text-xl mb-1">¡Venta completada!</h2>
-            <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-555'}`}>{ventaOk.numero}</p>
+            <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ventaOk.numero}</p>
             <p className={`font-bold text-2xl mb-1 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(ventaOk.total))}</p>
             {cambio > 0 && <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600 font-medium'}`}>Cambio: {fmt(cambio)}</p>}
             <div className="flex gap-3 mt-6">
               <button onClick={() => imprimirTirilla(ventaOk)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                  isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                  isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                 }`}>
                 <Printer size={16} /> Imprimir
               </button>
+              <button onClick={() => setVentaOk(null)}
+                className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
+                Nueva venta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Modal Creación Rápida de Producto (Express POS) ───────────────── */}
       {showQuickCreate && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">

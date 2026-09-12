@@ -432,8 +432,8 @@ export function ConfigProductos() {
   const handleDownloadTemplate = () => {
     const headers = [
       'SKU',
-      'Codigo_Barras',
       'Nombre',
+      'Codigo_Barras',
       'Referencia',
       'Categoria',
       'Marca',
@@ -453,120 +453,7 @@ export function ConfigProductos() {
       'Descripcion'
     ]
 
-    const sampleRows = [
-      [
-        'P-001',
-        '7701234567890',
-        'Pañal Winny Gold Etapa 4 x 30',
-        'REF-WIN-G4',
-        'Bebés & Maternidad',
-        'Winny',
-        'PAQ',
-        'Bodega Principal',
-        '24500',
-        '32000',
-        '29900',
-        'EXENTO',
-        '50',
-        '10',
-        '15',
-        'Pasillo 1 - Estante A',
-        'NO',
-        '',
-        '',
-        'Pañales desechables etapa 4 con velcro y barreras antifugas'
-      ],
-      [
-        'P-002',
-        '7709876543210',
-        'Shampoo Johnson Manzanilla 400ml',
-        'REF-JHN-400',
-        'Cuidado Personal',
-        "Johnson's",
-        'UND',
-        'Bodega Principal',
-        '12800',
-        '18500',
-        '17200',
-        'GRAVADO_19',
-        '30',
-        '5',
-        '10',
-        'Pasillo 2 - Estante B',
-        'SI',
-        'LOT-2026-08',
-        '2027-12-31',
-        'Shampoo suave para niños con extracto natural de manzanilla'
-      ],
-      [
-        'P-003',
-        '7703344556677',
-        'Leche Nido Crecimiento 1+ 800g',
-        'REF-NID-800',
-        'Alimentos & Nutrición',
-        'Nestlé',
-        'LATA',
-        'Bodega Principal',
-        '31000',
-        '39900',
-        '38000',
-        'EXENTO',
-        '40',
-        '8',
-        '12',
-        'Pasillo 3 - Estante C',
-        'SI',
-        'LOT-2026-N1',
-        '2027-06-30',
-        'Alimento lácteo en polvo para niños en etapa de crecimiento'
-      ],
-      [
-        'P-004',
-        '7705566778899',
-        'Crema Dental Colgate Total 12 100g',
-        'REF-COL-100',
-        'Cuidado Oral',
-        'Colgate',
-        'UND',
-        'Bodega Principal',
-        '6200',
-        '9500',
-        '8900',
-        'GRAVADO_19',
-        '60',
-        '15',
-        '20',
-        'Pasillo 2 - Estante A',
-        'SI',
-        'LOT-2026-C3',
-        '2028-03-31',
-        'Crema dental antibacteriana con flúor'
-      ],
-      [
-        'P-005',
-        '7701122334455',
-        'Arroz Diana Premium 1000g',
-        'REF-DIA-1K',
-        'Granos & Despensa',
-        'Diana',
-        'BOLSA',
-        'Bodega Principal',
-        '3800',
-        '5200',
-        '4900',
-        'EXCLUIDO',
-        '100',
-        '20',
-        '30',
-        'Pasillo 4 - Estante A',
-        'NO',
-        '',
-        '',
-        'Arroz blanco seleccionado tipo premium'
-      ]
-    ]
-
-    const csvContent = '\uFEFF' + [headers.join(';'), ...sampleRows.map(r => r.join(';'))].join('\r\n')
+    const csvContent = '\uFEFF' + headers.join(';') + '\r\n'
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
