@@ -281,6 +281,7 @@ export function ConfigProductos() {
   const [filterSubgrupo, setFilterSubgrupo] = useState('')
   const [filterMarca, setFilterMarca] = useState('')
   const [filterClasificacion, setFilterClasificacion] = useState('')
+  const [filterSinCosto, setFilterSinCosto] = useState<boolean>(false)
 
   // Form State
   const [formData, setFormData] = useState(DEFAULT_FORM)
@@ -353,6 +354,8 @@ export function ConfigProductos() {
     }
   })
 
+  const pendingCostCount = products.filter(p => (Number(p.extData.costo) || Number(p.costoPromedio) || Number(p.extData.costoUltimo) || 0) === 0).length
+
   // Pre-load edit if editParam is present
   useEffect(() => {
     if (editParam && products.length > 0) {
@@ -369,6 +372,10 @@ export function ConfigProductos() {
 
   // Filter products locally
   const filteredProducts = products.filter(p => {
+    if (filterSinCosto) {
+      const c = Number(p.extData.costo) || Number(p.costoPromedio) || Number(p.extData.costoUltimo) || 0
+      if (c > 0) return false
+    }
     if (filterSku && !p.sku.toLowerCase().includes(filterSku.toLowerCase())) return false
     if (filterReferencia && !(p.referencia || '').toLowerCase().includes(filterReferencia.toLowerCase())) return false
     if (filterNombre && !p.nombre.toLowerCase().includes(filterNombre.toLowerCase())) return false
@@ -1062,7 +1069,21 @@ export function ConfigProductos() {
               </div>
             </div>
             
-            <div className="flex justify-end pt-2">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFilterSinCosto(prev => !prev)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                  filterSinCosto
+                    ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30 ring-2 ring-amber-400'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80'
+                }`}
+                title="Filtrar productos creados al vuelo en el POS o sin costo asignado"
+              >
+                <AlertTriangle size={13} className={filterSinCosto ? 'text-white' : 'text-amber-600'} />
+                <span>⚠️ Pendientes de Costo ({pendingCostCount})</span>
+              </button>
+
               <button 
                 onClick={() => {
                   setFilterSku('')
@@ -1074,6 +1095,7 @@ export function ConfigProductos() {
                   setFilterSubgrupo('')
                   setFilterMarca('')
                   setFilterClasificacion('')
+                  setFilterSinCosto(false)
                 }}
                 className="px-4 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all active:scale-[0.98]"
               >
@@ -1117,6 +1139,7 @@ export function ConfigProductos() {
                       
                       const catName = categorias.find(c => c.id === p.extData.categoriaId)?.nombre || p.categoria?.nombre || '—'
                       const grpName = grupos.find(g => g.id === p.extData.grupoId)?.nombre || '—'
+                      const costVal = Number(p.extData.costoUltimo) || Number(p.costoPromedio) || Number(p.extData.costo) || 0
 
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
@@ -1167,7 +1190,16 @@ export function ConfigProductos() {
                           </td>
                           <td className="p-4 text-slate-600 font-medium">{p.extData.tipoProducto || 'Inventario'}</td>
                           <td className="p-4 text-right font-mono text-slate-600">
-                            ${(Number(p.extData.costoUltimo) || Number(p.costoPromedio) || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            {costVal === 0 ? (
+                              <div className="flex flex-col items-end">
+                                <span className="text-slate-400 font-mono">$0</span>
+                                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                  ⚠️ Sin costo
+                                </span>
+                              </div>
+                            ) : (
+                              `$${costVal.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                            )}
                           </td>
                           <td className="p-4 font-medium text-slate-600">{catName}</td>
                           <td className="p-4 font-medium text-slate-600">{grpName}</td>

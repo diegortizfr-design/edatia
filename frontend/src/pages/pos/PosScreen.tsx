@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   getSesion, buscarProductosPos, crearVentaPos, anularVentaPos,
 } from '../../services/pos.service'
+import { createProducto } from '../../services/inventario.service'
 import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Scan, Users, Sun, Moon,
+  Tag, Scan, Users, Sun, Moon, Zap, PackagePlus,
 } from 'lucide-react'
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
@@ -48,6 +49,7 @@ const mapCodeToKey = (code: string): keyof PayMethod => {
 export function PosScreen() {
   const { sesionId } = useParams<{ sesionId: string }>()
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const searchRef = useRef<HTMLInputElement>(null)
   const barcodeBuffer = useRef('')
   const barcodeTimer = useRef<ReturnType<typeof setTimeout>>()
@@ -64,6 +66,15 @@ export function PosScreen() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({})
   const isDark = theme === 'dark'
+
+  // Quick Product Creation state
+  const [showQuickCreate, setShowQuickCreate] = useState(false)
+  const [quickSku, setQuickSku] = useState('')
+  const [quickNombre, setQuickNombre] = useState('')
+  const [quickPrecio, setQuickPrecio] = useState('')
+  const [quickIva, setQuickIva] = useState('EXCLUIDO')
+  const [quickCreating, setQuickCreating] = useState(false)
+  const [quickError, setQuickError] = useState<string | null>(null)
 
   const sesId = parseInt(sesionId ?? '0')
 
@@ -123,12 +134,22 @@ export function PosScreen() {
     onSuccess: () => setShowAnular(null),
   })
 
-  // Lector de código de barras (teclado rápido)
+  // Lector de código de barras (teclado rápido y atajo F2)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === 'F2') {
+        e.preventDefault()
+        setQuickSku(q.trim())
+        setQuickNombre('')
+        setQuickPrecio('')
+        setQuickIva('EXCLUIDO')
+        setQuickError(null)
+        setShowQuickCreate(true)
+        return
+      }
       if (document.activeElement === searchRef.current) return
-      if (e.key === 'Enter' && barcodeBuffer.current.length > 3) {
-        setQ(barcodeBuffer.current)
+      if (e.key === 'Enter' && barcodeBuffer.current.length > 2) {
+        setQ(barcodeBuffer.current.trim())
         barcodeBuffer.current = ''
         return
       }
@@ -140,7 +161,7 @@ export function PosScreen() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [q])
 
   useEffect(() => {
     if (q) refetchProductos()
@@ -229,6 +250,83 @@ export function PosScreen() {
   const updateDescuento = (productoId: number, pct: number) => setCart(prev =>
     prev.map(i => i.productoId === productoId ? { ...i, descuentoPct: Math.max(0, Math.min(100, pct)) } : i)
   )
+
+  const handleSaveQuickProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!quickSku.trim() || !quickNombre.trim()) {
+      setQuickError('El código/SKU y el nombre son obligatorios.')
+      return
+    }
+    const cleanPrice = String(quickPrecio).replace(/\./g, '').replace(/,/g, '')
+    const precio = Number(cleanPrice) || 0
+    if (precio < 0) {
+      setQuickError('El precio de venta no puede ser negativo.')
+      return
+    }
+
+    setQuickCreating(true)
+    setQuickError(null)
+    try {
+      const isExempt = quickIva === 'EXENTO'
+      const isExcluded = quickIva === 'EXCLUIDO'
+      const appliedTaxes = isExcluded || isExempt ? [] : (quickIva === 'GRAVADO_5' ? ['iva_5'] : ['iva_19'])
+
+      const payload: any = {
+        sku: quickSku.trim(),
+        codigoBarras: quickSku.trim(),
+        nombre: quickNombre.trim(),
+        precioBase: precio,
+        costo: 0,
+        costoPromedio: 0,
+        costoUltimo: 0,
+        costoI: 0,
+        tipoIva: quickIva,
+        liquidarIva: !isExcluded && !isExempt,
+        productoExentoIva: isExempt,
+        appliedTaxIds: appliedTaxes,
+        precios: [precio, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        manejaBodega: true,
+        activo: true,
+        codigos: [
+          {
+            codigo: quickSku.trim(),
+            tipo: 'EAN13',
+            descripcion: 'Código creado en POS',
+            esPrincipal: true,
+          }
+        ]
+      }
+
+      const created = await createProducto(payload)
+      await qc.invalidateQueries({ queryKey: ['pos-productos'] })
+      qc.invalidateQueries({ queryKey: ['config_productos'] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+
+      // Agregar inmediatamente al carrito
+      addToCart({
+        id: created.id,
+        nombre: created.nombre,
+        sku: created.sku,
+        codigoBarras: created.codigoBarras,
+        precioBase: Number(created.precioBase) || precio,
+        tipoIva: created.tipoIva || quickIva,
+        liquidarIva: created.liquidarIva,
+        productoExentoIva: created.productoExentoIva,
+        appliedTaxIds: created.appliedTaxIds,
+        stock: 999,
+      })
+
+      setShowQuickCreate(false)
+      setQ('')
+      setQuickSku('')
+      setQuickNombre('')
+      setQuickPrecio('')
+    } catch (err: any) {
+      setQuickError(err?.response?.data?.message || err?.message || 'Error al guardar el producto rápido')
+    } finally {
+      setQuickCreating(false)
+    }
+  }
 
   const handleFinalizarVenta = () => {
     if (cart.length === 0) return
@@ -383,19 +481,46 @@ export function PosScreen() {
         {/* Panel izquierdo: productos */}
         <div className={`flex flex-col flex-1 overflow-hidden border-r transition-colors duration-200 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
           {/* Búsqueda */}
-          <div className={`p-3 shrink-0 transition-colors duration-200 ${isDark ? 'bg-slate-800' : 'bg-white border-b border-slate-200'}`}>
-            <div className="relative">
+          <div className={`p-3 shrink-0 flex gap-2 transition-colors duration-200 ${isDark ? 'bg-slate-800' : 'bg-white border-b border-slate-200'}`}>
+            <div className="relative flex-1">
               <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
               <Scan size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               <input
                 ref={searchRef}
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                placeholder="Buscar por nombre, SKU o escanear código de barras..."
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && filteredProducts.length === 0 && q.trim().length > 0) {
+                    e.preventDefault()
+                    setQuickSku(q.trim())
+                    setQuickNombre('')
+                    setQuickPrecio('')
+                    setQuickIva('EXCLUIDO')
+                    setQuickError(null)
+                    setShowQuickCreate(true)
+                  }
+                }}
+                placeholder="Buscar por nombre, SKU o escanear código de barras (F2: Crear Rápido)..."
                 className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white placeholder-slate-400' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-200'}`}
                 autoFocus
               />
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setQuickSku(q.trim())
+                setQuickNombre('')
+                setQuickPrecio('')
+                setQuickIva('EXCLUIDO')
+                setQuickError(null)
+                setShowQuickCreate(true)
+              }}
+              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+              title="Crear producto rápido (Atajo: F2)"
+            >
+              <Zap size={15} className="text-amber-300" />
+              <span className="hidden sm:inline">Nuevo Rápido</span>
+            </button>
           </div>
 
           {/* Grid de productos */}
@@ -427,9 +552,33 @@ export function PosScreen() {
 
             <div className="flex-1 overflow-y-auto p-3">
               {filteredProducts.length === 0 ? (
-                <div className={`text-center py-16 transition-colors duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  <Search size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>{q.length > 0 ? `Sin resultados para "${q}"` : 'No hay productos en esta categoría'}</p>
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-3">
+                    <Scan size={28} />
+                  </div>
+                  <p className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    {q.length > 0 ? `No se encontró "${q}"` : 'No hay productos disponibles'}
+                  </p>
+                  <p className={`text-xs max-w-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {q.length > 0
+                      ? '¿El cliente lo tiene en el mostrador? Créalo en 2 segundos para venderlo ya.'
+                      : 'Puedes crear un producto rápido para agregarlo al carrito.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickSku(q.trim())
+                      setQuickNombre('')
+                      setQuickPrecio('')
+                      setQuickIva('EXCLUIDO')
+                      setQuickError(null)
+                      setShowQuickCreate(true)
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-indigo-600/25 active:scale-95 transition-all"
+                  >
+                    <Plus size={16} />
+                    Crear Producto Rápido {q.length > 0 ? `("${q.trim()}")` : ''}
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -819,11 +968,147 @@ export function PosScreen() {
                 }`}>
                 <Printer size={16} /> Imprimir
               </button>
-              <button onClick={() => setVentaOk(null)}
-                className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
-                Nueva venta
+      {/* ── Modal Creación Rápida de Producto (Express POS) ───────────────── */}
+      {showQuickCreate && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`rounded-3xl w-full max-w-md border overflow-hidden shadow-2xl p-6 space-y-5 transition-colors duration-200 animate-in fade-in zoom-in-95 ${
+            isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3 border-slate-700/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                  <Zap size={22} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base">Creación Rápida de Producto</h3>
+                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Ingresa los datos para venderlo de inmediato
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickCreate(false)}
+                className={`p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+              >
+                <X size={18} />
               </button>
             </div>
+
+            {quickError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{quickError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveQuickProduct} className="space-y-4">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Código de Barras / SKU *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={quickSku}
+                  onChange={e => setQuickSku(e.target.value)}
+                  placeholder="Escanea o escribe el código"
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Nombre del Producto *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={quickNombre}
+                  onChange={e => setQuickNombre(e.target.value)}
+                  placeholder="Ej. Colonia Arrurrú x 220ml"
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Precio de Venta ($) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="100"
+                    value={quickPrecio}
+                    onChange={e => setQuickPrecio(e.target.value)}
+                    placeholder="35000"
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Tipo de IVA
+                  </label>
+                  <select
+                    value={quickIva}
+                    onChange={e => setQuickIva(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${
+                      isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  >
+                    <option value="EXCLUIDO">EXCLUIDO (0%)</option>
+                    <option value="GRAVADO_19">IVA 19%</option>
+                    <option value="GRAVADO_5">IVA 5%</option>
+                    <option value="EXENTO">EXENTO</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className={`p-3 rounded-xl text-[11px] flex items-start gap-2 ${
+                isDark ? 'bg-slate-700/40 text-slate-400' : 'bg-slate-50 text-slate-500 border border-slate-200'
+              }`}>
+                <AlertCircle size={15} className="text-amber-500 shrink-0 mt-0.5" />
+                <span>
+                  El producto se guardará con <strong>costo $0</strong> y podrás asignarle costo, categoría y proveedor más tarde en <strong>Configuración &gt; Productos</strong>.
+                </span>
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickCreate(false)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickCreating}
+                  className="flex-2 flex-grow py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  {quickCreating ? (
+                    <span>Guardando...</span>
+                  ) : (
+                    <>
+                      <Zap size={14} className="text-amber-300" />
+                      Guardar y Agregar a la Venta
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
