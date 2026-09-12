@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -101,7 +101,7 @@ async function main() {
       tipoPersona: 'NATURAL',
     },
   });
-  console.log(✅ Empresa Diego Ortiz registrada (NIT:  + empresaDiego.nit + ));
+  console.log('✅ Empresa Diego Ortiz registrada (NIT: ' + empresaDiego.nit + ')');
 
   const empresaDemo = await prisma.empresa.upsert({
     where: { nit: '900000000-0' },
@@ -113,7 +113,7 @@ async function main() {
       telefono: '+57 300 000 0000',
     },
   });
-  console.log(✅ Empresa Demo registrada (NIT:  + empresaDemo.nit + ));
+  console.log('✅ Empresa Demo registrada (NIT: ' + empresaDemo.nit + ')');
 
   // 4b. Crear tipos de identificación por defecto para cada empresa
   const tiposIdDef = [
@@ -194,7 +194,7 @@ async function main() {
       empresaId: empresaDiego.id,
     },
   });
-  console.log(✅ Usuario Diego registrado (admin@diegortiz.site / Admin123));
+  console.log('✅ Usuario Diego registrado (admin@diegortiz.site / Admin123)');
 
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123!';
   const hashDemo = await bcrypt.hash(adminPassword, 12);
@@ -210,7 +210,7 @@ async function main() {
       empresaId: empresaDemo.id,
     },
   });
-  console.log(✅ Usuario Demo registrado (admin@edatia.com /  + adminPassword + ));
+  console.log('✅ Usuario Demo registrado (admin@edatia.com / ' + adminPassword + ')');
 }
 
 main()
@@ -218,4 +218,4 @@ main()
     console.error('❌ Error en seed:', e);
     process.exit(1);
   })
-  .finally(() => prisma.());
+  .finally(() => prisma.$disconnect());
