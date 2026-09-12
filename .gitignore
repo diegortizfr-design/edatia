@@ -41,3 +41,10 @@ logs/
 *.log
 
 docker-compose.override.yml
+
+# Backups
+*.sql
+backups/
+
+# Traefik local data
+traefik/acme.json
