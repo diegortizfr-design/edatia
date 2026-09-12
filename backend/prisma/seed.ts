@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -19,14 +19,14 @@ async function main() {
       nombre: 'Ventas / Comercial',
       slug: 'ventas',
       descripcion: 'Gestión de pedidos, cotizaciones, clientes, facturación y cartera.',
-      icono: '💼',
+      icono: '💰',
       precioAnual: 1500000,
     },
     {
       nombre: 'Administrativo',
       slug: 'administrativo',
       descripcion: 'Gestión de recursos humanos, nómina, contratos y activos fijos.',
-      icono: '🏢',
+      icono: '👥',
       precioAnual: 1800000,
     },
     {
@@ -101,7 +101,7 @@ async function main() {
       tipoPersona: 'NATURAL',
     },
   });
-  console.log(`✅ Empresa Diego Ortiz registrada (NIT: ${empresaDiego.nit})`);
+  console.log(✅ Empresa Diego Ortiz registrada (NIT:  + empresaDiego.nit + ));
 
   const empresaDemo = await prisma.empresa.upsert({
     where: { nit: '900000000-0' },
@@ -113,7 +113,7 @@ async function main() {
       telefono: '+57 300 000 0000',
     },
   });
-  console.log(`✅ Empresa Demo registrada (NIT: ${empresaDemo.nit})`);
+  console.log(✅ Empresa Demo registrada (NIT:  + empresaDemo.nit + ));
 
   // 4b. Crear tipos de identificación por defecto para cada empresa
   const tiposIdDef = [
@@ -183,7 +183,7 @@ async function main() {
   // 6. Crear usuarios de administrador
   const hashDiego = await bcrypt.hash('Admin123', 12);
   const adminDiego = await prisma.user.upsert({
-    where: { email: 'admin@diegortiz.site' },
+    where: { empresaId_usuario: { empresaId: empresaDiego.id, usuario: 'admin_diego' } },
     update: {},
     create: {
       email: 'admin@diegortiz.site',
@@ -194,12 +194,12 @@ async function main() {
       empresaId: empresaDiego.id,
     },
   });
-  console.log(`✅ Usuario Diego registrado (admin@diegortiz.site / Admin123)`);
+  console.log(✅ Usuario Diego registrado (admin@diegortiz.site / Admin123));
 
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'Admin123!';
   const hashDemo = await bcrypt.hash(adminPassword, 12);
   const adminDemo = await prisma.user.upsert({
-    where: { email: 'admin@edatia.com' },
+    where: { empresaId_usuario: { empresaId: empresaDemo.id, usuario: 'admin' } },
     update: {},
     create: {
       email: 'admin@edatia.com',
@@ -210,7 +210,7 @@ async function main() {
       empresaId: empresaDemo.id,
     },
   });
-  console.log(`✅ Usuario Demo registrado (admin@edatia.com / ${adminPassword})`);
+  console.log(✅ Usuario Demo registrado (admin@edatia.com /  + adminPassword + ));
 }
 
 main()
@@ -218,4 +218,4 @@ main()
     console.error('❌ Error en seed:', e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => prisma.());
