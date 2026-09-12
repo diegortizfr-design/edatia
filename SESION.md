@@ -216,3 +216,13 @@ VITE_API_URL=https://api.edatia.com
 - `binaryTargets = ["native", "linux-musl-openssl-3.0.x"]` en schema.prisma (Alpine Docker)
 - Red Docker: `n8n_default` (debe existir antes del deploy)
 - CORS backend incluye `https://manager.edatia.com` y `http://localhost:5174`
+
+## Sesión 2026-09-12 - Arreglo Entorno Local y Bug Refinanciación
+
+**Configuración Local:**
+- Se corrigió el archivo backend/prisma/seed.ts para que la búsqueda/creación de usuarios utilice la llave compuesta correcta (empresaId_usuario).
+- Se configuró el docker-compose.override.yml local exponiendo puertos que concuerden con la lista de CORS autorizados (ej. 5173, 5174).
+- Se inyectaron variables locales (.env) para Manager y Frontend apuntando a http://localhost:4000.
+
+**Módulo Préstamos (Control de Cartera):**
+- Bug Fix: Se arregló un bloqueo nativo de validación HTML5 en la refinanciación (RenewLoanModal.tsx) causado por step="10000". Se redujo a step="1" para permitir cifras exactas.

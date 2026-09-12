@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
 import type { ClientFullDetails, Loan } from './clientDetailTypes';
 import { RefreshCw, Sparkles, X } from 'lucide-react';
@@ -123,7 +123,7 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
                 type="number"
                 required
                 min={currentBalance}
-                step="10000"
+                step="1"
                 value={renewPrincipal}
                 onChange={e => setRenewPrincipal(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono transition"
@@ -213,3 +213,4 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
     </div>
   );
 };
+
