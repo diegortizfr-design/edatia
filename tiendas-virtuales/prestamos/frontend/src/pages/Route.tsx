@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
 import { PrintReceiptView } from '../components/client-detail/PrintViews';
 import { Route as RouteIcon, Search, Coins, Phone, MapPin, CheckCircle, AlertTriangle, Navigation, Download } from 'lucide-react';
@@ -577,3 +577,5 @@ export const Route: React.FC<RouteProps> = ({ setCurrentPage, setSelectedClientI
     </div>
   );
 };
+
+

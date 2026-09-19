@@ -1,4 +1,4 @@
-export interface Amortization {
+﻿export interface Amortization {
   id: string;
   installmentNumber: number;
   dueDate: string;
@@ -77,3 +77,4 @@ export interface PrintReceiptData {
   notes?: string | null;
   remainingBalance: number;
 }
+

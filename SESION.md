@@ -226,3 +226,13 @@ VITE_API_URL=https://api.edatia.com
 
 **Módulo Préstamos (Control de Cartera):**
 - Bug Fix: Se arregló un bloqueo nativo de validación HTML5 en la refinanciación (RenewLoanModal.tsx) causado por step="10000". Se redujo a step="1" para permitir cifras exactas.
+
+## [2026-09-19] Implementacin Control Manual de Mora
+- **Feature (Mora Separada)**: Se agreg un campo especfico de 'Mora Cobrada' en el \PaymentModal.tsx\ y en el \Route.tsx\ para separar la penalidad de la cuota principal.
+- **Frontend / UX**: 
+  - Se modificaron \Route.tsx\ y \Portfolio.tsx\ para etiquetar con **EN MORA** a los clientes atrasados.
+  - Se actualiz \PrintViews.tsx\ para desglosar la Mora Cobrada en el recibo impreso.
+  - Se modific \clientDetailTypes.ts\ para aadir \lateInterestAmount\.
+- **Backend / DB**: Se valid que el \paymentController\ est consumiendo correctamente el valor \lateInterestAmount\ guardndolo en la base de datos PostgreSQL independiente (\edatia-prestamos\).
+- **Commits / Ramas**: Estos cambios se desarrollaron dentro de la rama \eature/mora-separada\.
+
