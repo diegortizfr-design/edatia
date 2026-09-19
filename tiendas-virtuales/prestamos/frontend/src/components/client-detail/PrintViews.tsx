@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { PrintInvoiceData, PrintReceiptData } from './clientDetailTypes';
 import { Printer, Download } from 'lucide-react';
 
@@ -321,3 +321,4 @@ export const PrintReceiptView: React.FC<PrintReceiptViewProps> = ({ data, onClos
     </div>
   );
 };
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
 import type { ClientFullDetails, Loan, PrintReceiptData } from './clientDetailTypes';
 import { Coins, X } from 'lucide-react';
@@ -174,3 +174,4 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     </div>
   );
 };
+
