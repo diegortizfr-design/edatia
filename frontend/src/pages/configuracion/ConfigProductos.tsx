@@ -428,7 +428,106 @@ export function ConfigProductos() {
     setTimeout(() => setSuccessMsg(null), 3000)
   }
 
-  // --- Bulk Import Helpers ---
+  // --- Export & Bulk Import Helpers ---
+  const escapeCsv = (val: any): string => {
+    if (val === null || val === undefined) return ''
+    const str = String(val).trim()
+    if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+  }
+
+  const handleExportProductsExcel = () => {
+    if (filteredProducts.length === 0) {
+      setError('No hay productos para exportar con los filtros actuales.')
+      return
+    }
+
+    const headers = [
+      'SKU',
+      'Nombre',
+      'Codigo_Barras',
+      'Referencia',
+      'Categoria',
+      'Marca',
+      'Grupo',
+      'Subgrupo',
+      'Unidad_Medida',
+      'Bodega',
+      'Costo_Unitario',
+      'Precio_Venta',
+      'Precio_2',
+      'Tipo_IVA',
+      'Stock_Actual',
+      'Stock_Minimo',
+      'Punto_Reorden',
+      'Ubicacion',
+      'Maneja_Lotes',
+      'Numero_Lote',
+      'Fecha_Vencimiento',
+      'Clase_ABC',
+      'Estado',
+      'Descripcion'
+    ]
+
+    const rows = filteredProducts.map(p => {
+      const totalStock = p.stock && Array.isArray(p.stock)
+        ? p.stock.reduce((acc: number, s: any) => acc + parseFloat(s.cantidad ?? 0), 0)
+        : 0
+      const bodegaNombre = p.stock?.[0]?.bodega?.nombre || 'Bodega Principal'
+      const catNombre = p.categoria?.nombre || categorias.find(c => String(c.id) === String(p.extData?.categoriaId || p.categoriaId))?.nombre || ''
+      const marcaNombre = p.marca?.nombre || marcas.find(m => String(m.id) === String(p.extData?.marcaId || p.marcaId))?.nombre || ''
+      const grupoNombre = p.grupo?.nombre || grupos.find(g => String(g.id) === String(p.extData?.grupoId || p.grupoId))?.nombre || ''
+      const subgrupoNombre = p.subgrupo?.nombre || subgrupos.find(sg => String(sg.id) === String(p.extData?.subgrupoId || p.subgrupoId))?.nombre || ''
+      const unidadMedida = p.unidadMedida?.abreviatura || p.unidadMedida?.nombre || unidades.find(u => String(u.id) === String(p.extData?.unidadMedidaId || p.unidadMedidaId))?.extra || 'UND'
+      const costo = Number(p.extData?.costo || p.costo || p.costoPromedio || 0)
+      const precio1 = Number(p.extData?.precioBase || p.precioBase || (Array.isArray(p.precios) ? p.precios[0] : 0) || 0)
+      const precio2 = Number(Array.isArray(p.precios) ? p.precios[1] : (Array.isArray(p.extData?.precios) ? p.extData.precios[1] : 0) || 0)
+
+      return [
+        escapeCsv(p.sku),
+        escapeCsv(p.nombre),
+        escapeCsv(p.codigoBarras || ''),
+        escapeCsv(p.referencia || ''),
+        escapeCsv(catNombre),
+        escapeCsv(marcaNombre),
+        escapeCsv(grupoNombre),
+        escapeCsv(subgrupoNombre),
+        escapeCsv(unidadMedida),
+        escapeCsv(bodegaNombre),
+        costo,
+        precio1,
+        precio2,
+        escapeCsv(p.tipoIva || 'GRAVADO_19'),
+        totalStock,
+        Number(p.stockMinimo || 0),
+        Number(p.puntoReorden || 0),
+        escapeCsv(p.ubicacion1 || p.ubicacion || ''),
+        p.manejaLotes ? 'SI' : 'NO',
+        escapeCsv(p.lotes?.[0]?.numero || ''),
+        escapeCsv(p.lotes?.[0]?.fechaVencimiento ? String(p.lotes[0].fechaVencimiento).split('T')[0] : ''),
+        escapeCsv(p.claseAbc || ''),
+        p.activo ? 'ACTIVO' : 'INACTIVO',
+        escapeCsv(p.descripcion || '')
+      ].join(';')
+    })
+
+    const csvContent = '\uFEFF' + headers.join(';') + '\r\n' + rows.join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const dateStr = new Date().toISOString().split('T')[0]
+    link.setAttribute('href', url)
+    link.setAttribute('download', `Productos_Edatia_${dateStr}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    showNotification(`Excel generado exitosamente con ${filteredProducts.length} productos.`)
+  }
+
   const handleDownloadTemplate = () => {
     const headers = [
       'SKU',
@@ -825,12 +924,25 @@ export function ConfigProductos() {
             <div className="flex items-center gap-2.5 flex-wrap">
               <button
                 type="button"
+                onClick={handleExportProductsExcel}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-100 hover:shadow-lg transition-all active:scale-[0.98]"
+                title={`Descarga los ${filteredProducts.length} productos en formato Excel (.csv compatible)`}
+              >
+                <Download size={16} />
+                Descargar Excel Productos
+                <span className="bg-emerald-700/80 text-emerald-100 text-xs px-2 py-0.5 rounded-full font-bold ml-0.5">
+                  {filteredProducts.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleDownloadTemplate}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all active:scale-[0.98]"
-                title="Descarga la plantilla de Excel (.csv) con el formato y ejemplos listos para llenar"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl text-sm font-bold shadow-sm hover:shadow transition-all active:scale-[0.98]"
+                title="Descarga la plantilla vacía de Excel (.csv) con el formato y ejemplos listos para diligenciar"
               >
                 <FileSpreadsheet size={16} className="text-emerald-600" />
-                Descargar Plantilla Excel
+                Plantilla Vacía
               </button>
 
               <button
