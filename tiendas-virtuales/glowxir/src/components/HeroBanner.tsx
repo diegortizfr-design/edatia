@@ -1,5 +1,5 @@
 import React from 'react'
-import { ShieldCheck, Truck, Heart, MessageCircle } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle } from 'lucide-react'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
@@ -10,10 +10,15 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
     <div className="relative bg-gradient-to-b from-pink-50/40 via-white to-amber-50/30 border-b border-slate-100 pt-8 pb-16 sm:pt-14 sm:pb-24 overflow-hidden">
       
       {/* Decoración Izquierda (Estrella) */}
-      <div className="absolute left-[-2rem] md:left-4 lg:left-12 top-1/3 text-amber-200/60 hidden md:block animate-[pulse_4s_ease-in-out_infinite]">
-        <svg width="180" height="180" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="rotate-12">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-        </svg>
+      {/* Decoraciones Flotantes Izquierda (Sutiles) */}
+      <div className="absolute left-[5%] top-[20%] hidden lg:block opacity-30 animate-float" style={{ animationDelay: '0s' }}>
+        <Sparkles size={40} className="text-butter-400" />
+      </div>
+      <div className="absolute left-[15%] top-[60%] hidden lg:block opacity-40 animate-float" style={{ animationDelay: '1.5s' }}>
+        <Star size={30} className="text-blush-400 fill-blush-400" />
+      </div>
+      <div className="absolute left-[8%] top-[80%] hidden lg:block opacity-30 animate-float" style={{ animationDelay: '0.7s' }}>
+        <Heart size={24} className="text-sky-400 fill-sky-400" />
       </div>
 
       {/* Decoración Derecha (Mascota como marca de agua) */}
@@ -23,7 +28,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
         {/* Main Content */}
-        <div className="text-center max-w-2xl mx-auto space-y-4 mb-10">
+        <div className="text-center max-w-2xl mx-auto space-y-4 mb-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-blush-400 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider border border-blush-100 shadow-sm">
             <span>✨ Todo para tu bebé en un solo lugar</span>

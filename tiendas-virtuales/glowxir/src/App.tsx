@@ -10,6 +10,8 @@ import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
 import { CartDrawer, CartItem } from './components/CartDrawer'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
+import { FeaturedCarousel } from './components/FeaturedCarousel'
+import { ProductSkeleton } from './components/ProductSkeleton'
 import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -41,7 +43,7 @@ export function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
   const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Reset subcategory when switching main category
   useEffect(() => {
@@ -235,11 +237,18 @@ export function App() {
         <>
           {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
           {activeCategory === 'Todos' && !searchQuery && (
-            <HeroBanner onSelectCategory={handleCategorySelect} />
+            <>
+              <HeroBanner onSelectCategory={handleCategorySelect} />
+              <FeaturedCarousel 
+                products={products} 
+                onAddToCart={handleAddToCart} 
+                onViewDetails={p => setSelectedProduct(p)} 
+              />
+            </>
           )}
 
           {/* Main Catalog Section */}
-          <div className="bg-white rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30">
+          <div className="bg-white rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full relative z-20">
               {/* Section Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -294,8 +303,14 @@ export function App() {
               )}
 
               {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
-              {filteredProducts.length === 0 ? (
-                <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
+              {isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                  {[...Array(8)].map((_, i) => (
+                    <ProductSkeleton key={i} />
+                  ))}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8 animate-fade-in-up">
                   <div className="text-4xl">🍼</div>
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>

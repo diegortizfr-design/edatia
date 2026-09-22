@@ -38,8 +38,8 @@ export function Navbar({
       <div className="bg-slate-900 text-white text-[11px] font-medium py-1 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-1.5 truncate">
-            <span className="text-sky-400 font-bold">🚚 Envíos a todo el país</span>
-            <span className="text-slate-400 hidden sm:inline">• Atención personalizada por WhatsApp</span>
+            <span className="text-sky-400 font-bold animate-pulse">🚀 Envío GRATIS en compras superiores a $150.000 COP</span>
+            <span className="text-slate-400 hidden sm:inline">• Atención personalizada</span>
           </div>
 
           <a
