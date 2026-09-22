@@ -247,5 +247,11 @@ VITE_API_URL=https://api.edatia.com
   - Se añadieron tarjetas descriptivas grandes y limpias para las 3 categorías principales (Pañales, Juguetería, Variedades).
 - Se agregó la mascota corporativa (`mascotas.png`) como una marca de agua decorativa sutil con opacidad del 25% para evitar sobrecargar la interfaz.
 
+**Mejoras UX/UI (feature/mejoras-ux-ui):**
+- **Animaciones:** Se añadieron keyframes personalizados en Tailwind (`fade-in-up`, `float`, `fade-in`) para lograr entradas suaves de los elementos (Hero y ProductCards) y una decoración flotante sutil (estrellas y corazones) en el HeroBanner.
+- **Carrusel Destacado:** Se creó el componente `FeaturedCarousel.tsx` insertado en `App.tsx` para mostrar exclusivamente los productos marcados como `esDestacado: true`.
+- **Skeletons de Carga:** Se creó `ProductSkeleton.tsx` que se muestra condicionalmente en `App.tsx` mientras el catálogo carga (`isLoading`), evitando saltos visuales o pantallas en blanco.
+- **Micro-interacciones:** Se actualizó la barra superior de envíos en `Navbar.tsx` para promocionar el envío gratis con la clase `animate-pulse`.
+
 **Infraestructura (Docker):**
 - Se actualizó el archivo `Caddyfile` del proyecto `glowxir` para enviar cabeceras estrictas de `Cache-Control: no-cache` en archivos HTML, asegurando que los cambios se reflejen inmediatamente en entornos locales sin quedarse atrapados en la caché del navegador.
