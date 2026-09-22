@@ -39,7 +39,7 @@ export function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  
+
   const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -121,14 +121,14 @@ export function App() {
     const isCare = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
     const productIsCare = p.categoria === 'Pañales y Cuidado' || (p.categoria as any) === 'Pañalera'
 
-    const matchesCategory = activeCategory === 'Todos' || 
+    const matchesCategory = activeCategory === 'Todos' ||
       (isCare ? productIsCare : p.categoria === activeCategory)
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
       (p.subcategoria && p.subcategoria.toLowerCase() === activeSubcategory.toLowerCase())
 
     const q = searchQuery.toLowerCase().trim()
-    const matchesSearch = q === '' || 
+    const matchesSearch = q === '' ||
       p.nombre.toLowerCase().includes(q) ||
       p.descripcion.toLowerCase().includes(q) ||
       p.categoria.toLowerCase().includes(q) ||
@@ -239,109 +239,94 @@ export function App() {
           )}
 
           {/* Main Catalog Section */}
-          <main id="catalogo-section" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 flex-1 w-full">
-            {/* Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
-                    Catálogo Baby-World
-                  </span>
-                  <span className="h-1 w-1 rounded-full bg-slate-300" />
-                  <span className="text-[10px] sm:text-xs font-bold text-slate-400">
-                    {activeCategory} ({filteredProducts.length})
-                  </span>
-                </div>
-                
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-                  {searchQuery
-                    ? `Resultados para "${searchQuery}"`
-                    : activeCategory === 'Todos' 
-                      ? 'Lo mejor para tu bebé' 
-                      : isCareSection
-                        ? '🍼 Pañales y Cuidado para Bebés'
-                        : activeCategory === 'Juguetería'
-                          ? '🧸 Juguetería & Estimulación Temprana'
-                          : '🎀 Variedades, Ropa & Accesorios'}
-                </h2>
-              </div>
-
-              {/* Category Filter Pills on larger screens */}
-              <div className="hidden sm:flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-sm">
-                {CATEGORIAS_PRODUCTOS.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => handleCategorySelect(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      activeCategory === cat || (cat === 'Pañales y Cuidado' && isCareSection)
-                        ? 'bg-slate-900 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {cat === 'Pañales y Cuidado' ? '🍼 Pañales & Cuidado' : cat === 'Juguetería' ? '🧸 Juguetería' : cat === 'Variedades' ? '🎀 Variedades' : '✨ Todos'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
-            {isCareSection && (
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
-                  Filtrar:
-                </span>
-                {SUBCATEGORIAS_CUIDADO.map((sub) => {
-                  const isSelected = activeSubcategory === sub
-                  return (
-                    <button
-                      key={sub}
-                      onClick={() => setActiveSubcategory(sub)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                        isSelected
-                          ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
-                          : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      {sub}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
-            {filteredProducts.length === 0 ? (
-              <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
-                <div className="text-4xl">🍼</div>
+          <div className="bg-white rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30">
+            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full relative z-20">
+              {/* Section Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Prueba ajustando tu búsqueda o seleccionando otra sección.
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
+                      Catálogo Baby-World
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-400">
+                      {activeCategory} ({filteredProducts.length})
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
+                    {searchQuery
+                      ? `Resultados para "${searchQuery}"`
+                      : activeCategory === 'Todos'
+                        ? 'Lo mejor para tu bebé'
+                        : isCareSection
+                          ? '🍼 Pañales y Cuidado para Bebés'
+                          : activeCategory === 'Juguetería'
+                            ? '🧸 Juguetería & Estimulación Temprana'
+                            : '🎀 Variedades, Ropa & Accesorios'}
+                  </h2>
                 </div>
-                <button
-                  onClick={() => {
-                    setActiveCategory('Todos')
-                    setSearchQuery('')
-                  }}
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-                >
-                  Ver Todo el Catálogo
-                </button>
+
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-                {filteredProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                    onViewDetails={p => setSelectedProduct(p)}
-                  />
-                ))}
-              </div>
-            )}
-          </main>
+
+              {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
+              {isCareSection && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
+                    Filtrar:
+                  </span>
+                  {SUBCATEGORIAS_CUIDADO.map((sub) => {
+                    const isSelected = activeSubcategory === sub
+                    return (
+                      <button
+                        key={sub}
+                        onClick={() => setActiveSubcategory(sub)}
+                        className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected
+                            ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
+                            : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+                          }`}
+                      >
+                        {sub}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
+              {filteredProducts.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8">
+                  <div className="text-4xl">🍼</div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Prueba ajustando tu búsqueda o seleccionando otra sección.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveCategory('Todos')
+                      setSearchQuery('')
+                    }}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+                  >
+                    Ver Todo el Catálogo
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                  {filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      onViewDetails={p => setSelectedProduct(p)}
+                    />
+                  ))}
+                </div>
+              )}
+            </main>
+          </div>
         </>
       )}
 

@@ -60,7 +60,7 @@ export function Navbar({
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Logo */}
           <div
-            className="cursor-pointer select-none"
+            className="cursor-pointer select-none flex items-center gap-2"
             onClick={() => {
               setActiveCategory('Todos')
               setSearchQuery('')
@@ -68,6 +68,12 @@ export function Navbar({
             }}
           >
             <BabyWorldLogo />
+            <div className="hidden sm:flex flex-col justify-center">
+              <span className="font-baby font-normal text-2xl tracking-tight leading-none mt-1">
+                <span className="text-blush-300">Baby</span> <span className="text-baby-300">World</span>
+              </span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 ml-0.5">Pañalera Baby World</span>
+            </div>
           </div>
 
           {/* Search Bar (Desktop) */}
@@ -156,11 +162,10 @@ export function Navbar({
                   const el = document.getElementById('catalogo-section')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                  isActive
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${isActive
                     ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10 scale-105'
-                    : 'bg-slate-100 hover:bg-slate-200/70 text-slate-600 hover:text-slate-900'
-                }`}
+                    : 'bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 <span>{getCategoryIcon(cat)}</span>
                 <span>{cat}</span>

@@ -30,7 +30,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
   }
 
   return (
-    <div className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative">
+    <div className="group bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative">
       {/* Product Image Box */}
       <div 
         onClick={() => onViewDetails(product)}

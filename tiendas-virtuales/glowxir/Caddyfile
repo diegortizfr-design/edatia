@@ -1,5 +1,14 @@
 :80 {
     root * /usr/share/caddy
     file_server
+
+    @html {
+        path *.html
+        path /
+    }
+    header @html Cache-Control "no-cache, no-store, must-revalidate"
+    header @html Pragma "no-cache"
+    header @html Expires "0"
+
     try_files {path} /index.html
 }
