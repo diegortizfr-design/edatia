@@ -10,6 +10,7 @@ export default {
         sans: ['Outfit', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'Outfit', 'sans-serif'],
         friendly: ['Quicksand', 'Outfit', 'sans-serif'],
+        baby: ['Chewy', 'cursive', 'system-ui'],
       },
       colors: {
         baby: {

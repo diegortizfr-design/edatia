@@ -40,7 +40,7 @@ export function FloatingWhatsAppButton({
       {/* Main Floating Button */}
       <button
         onClick={handleOpenWhatsApp}
-        className="relative h-13 w-13 sm:h-14 sm:w-14 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_24px_rgba(37,211,102,0.55)] active:scale-90 transition-all duration-300"
+        className="relative h-13 w-13 sm:h-14 sm:w-14 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_24px_rgba(37,211,102,0.55)] active:scale-90 transition-all duration-300 animate-bounce hover:animate-none"
         aria-label="Contactar por WhatsApp"
       >
         {/* Subtle Radar Wave */}

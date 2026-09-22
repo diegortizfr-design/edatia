@@ -226,3 +226,17 @@ VITE_API_URL=https://api.edatia.com
 
 **Módulo Préstamos (Control de Cartera):**
 - Bug Fix: Se arregló un bloqueo nativo de validación HTML5 en la refinanciación (RenewLoanModal.tsx) causado por step="10000". Se redujo a step="1" para permitir cifras exactas.
+
+## Sesión 2026-09-22 - Rediseño Tienda Virtual Baby-World (glowxir)
+
+**Diseño y UI:**
+- Se implementó un estilo "pastel" utilizando los tonos `blush-300` y `baby-300` definidos en `tailwind.config.js`.
+- Se incorporó la tipografía "Chewy" para darle un toque infantil al título "Baby World".
+- Se rediseñó por completo el `HeroBanner.tsx`:
+  - Se agregaron botones de "Ver catálogo" y "Pedir por WhatsApp".
+  - Se integraron *trust badges* (Envíos rápidos, Pago contra entrega, 100% Garantizado).
+  - Se añadieron tarjetas descriptivas grandes y limpias para las 3 categorías principales (Pañales, Juguetería, Variedades).
+- Se agregó la mascota corporativa (`mascotas.png`) como una marca de agua decorativa sutil con opacidad del 25% para evitar sobrecargar la interfaz.
+
+**Infraestructura (Docker):**
+- Se actualizó el archivo `Caddyfile` del proyecto `glowxir` para enviar cabeceras estrictas de `Cache-Control: no-cache` en archivos HTML, asegurando que los cambios se reflejen inmediatamente en entornos locales sin quedarse atrapados en la caché del navegador.
