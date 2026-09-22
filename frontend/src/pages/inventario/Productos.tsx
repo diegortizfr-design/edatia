@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getProductos, updateProducto } from '../../services/inventario.service'
-import { Plus, Search, Package, ChevronRight } from 'lucide-react'
+import { Plus, Search, Package, ChevronRight, Download } from 'lucide-react'
 
 const IVA_LABELS: Record<string, string> = {
   EXENTO: 'Exento', EXCLUIDO: 'Excluido',
@@ -43,13 +43,80 @@ export function Productos() {
     (p.codigoBarras ?? '').includes(q)
   )
 
+  const escapeCsv = (val: any): string => {
+    if (val === null || val === undefined) return ''
+    const str = String(val).trim()
+    if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+  }
+
+  const handleExportExcel = () => {
+    if (filteredData.length === 0) return
+
+    const headers = [
+      'SKU', 'Nombre', 'Codigo_Barras', 'Referencia', 'Categoria', 'Marca',
+      'Unidad_Medida', 'Bodega', 'Costo_Promedio', 'Precio_Venta',
+      'Tipo_IVA', 'Stock_Actual', 'Stock_Minimo', 'Punto_Reorden',
+      'Clase_ABC', 'Estado', 'Descripcion'
+    ]
+
+    const rows = filteredData.map(p => {
+      const totalStock = p.stock && Array.isArray(p.stock)
+        ? p.stock.reduce((acc, s) => acc + parseFloat(s.cantidad ?? 0), 0)
+        : 0
+      const bodegaNombre = p.stock?.[0]?.bodega?.nombre || 'Bodega Principal'
+      return [
+        escapeCsv(p.sku),
+        escapeCsv(p.nombre),
+        escapeCsv(p.codigoBarras || ''),
+        escapeCsv(p.referencia || ''),
+        escapeCsv(p.categoria?.nombre || ''),
+        escapeCsv(p.marca?.nombre || ''),
+        escapeCsv(p.unidadMedida?.abreviatura || p.unidadMedida?.nombre || 'UND'),
+        escapeCsv(bodegaNombre),
+        Number(p.costoPromedio || 0),
+        Number(p.precioBase || 0),
+        escapeCsv(p.tipoIva || 'GRAVADO_19'),
+        totalStock,
+        Number(p.stockMinimo || 0),
+        Number(p.puntoReorden || 0),
+        escapeCsv(p.claseAbc || ''),
+        p.activo ? 'ACTIVO' : 'INACTIVO',
+        escapeCsv(p.descripcion || '')
+      ].join(';')
+    })
+
+    const csvContent = '\uFEFF' + headers.join(';') + '\r\n' + rows.join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const dateStr = new Date().toISOString().split('T')[0]
+    link.setAttribute('href', url)
+    link.setAttribute('download', `Productos_Edatia_${dateStr}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Productos</h1>
-          <p className="text-slate-500 text-sm">{data.length} productos</p>
+          <p className="text-slate-500 text-sm">{data.length} productos registrados</p>
         </div>
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          disabled={filteredData.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold shadow-sm transition-all"
+        >
+          <Download size={16} />
+          Descargar Excel ({filteredData.length})
+        </button>
       </div>
 
       {/* Filtros */}
