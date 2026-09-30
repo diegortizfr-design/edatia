@@ -14,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import * as fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../common/decorators/get-user.decorator';
 import { Response } from 'express';
@@ -65,18 +66,40 @@ export class ConfiguracionArchivoController {
       },
     }),
   )
-  uploadFile(@UploadedFile() file: any, @GetUser() u: JwtPayload) {
+  async uploadFile(@UploadedFile() file: any, @GetUser() u: JwtPayload) {
     if (!file) {
       throw new BadRequestException('No se recibió ningún archivo.');
     }
     const empresaId = u.empresaId!;
-    return {
-      nombre: file.originalname,
-      filename: file.filename,
-      url: `/api/v1/configuracion/archivo/ver/${empresaId}/${file.filename}`,
-      size: file.size,
-      tipo: this.detectFileType(file.originalname),
-    };
+
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    try {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: `edatia_erp/empresa_${empresaId}`,
+        resource_type: 'auto',
+      });
+
+      // Eliminar el archivo temporal del disco duro local
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+
+      return {
+        nombre: file.originalname,
+        filename: file.filename,
+        url: result.secure_url,
+        size: result.bytes,
+        tipo: this.detectFileType(file.originalname),
+      };
+    } catch (error) {
+      console.error("Cloudinary error:", error);
+      throw new BadRequestException('Error subiendo archivo a la nube.');
+    }
   }
 
   @Get('ver/:empresaId/:filename')

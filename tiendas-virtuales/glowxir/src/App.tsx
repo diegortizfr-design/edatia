@@ -12,7 +12,7 @@ import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
-import { PRODUCTOS_BABY_WORLD, Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
+import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:4000/api/v1'
@@ -20,7 +20,7 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 
 const getStoreSlug = () => {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  if (isLocal) return 'distribuidorababyworld'
+  if (isLocal) return 'glowxir'
   const host = window.location.hostname.replace('www.', '')
   if (host.endsWith('.edatia.com')) {
     return host.replace('.edatia.com', '')
@@ -28,7 +28,7 @@ const getStoreSlug = () => {
   if (host.includes('distribuidorababyworld')) {
     return 'distribuidorababyworld'
   }
-  return 'distribuidorababyworld'
+  return 'glowxir'
 }
 
 const STORE_SLUG = getStoreSlug()
@@ -42,7 +42,7 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
-  const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
+  const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Reset subcategory when switching main category
@@ -94,7 +94,7 @@ export function App() {
               subcategoria: subcat,
               genero: 'Unisex',
               imagen: p.imagen
-                ? (p.imagen.startsWith('http') || p.imagen.startsWith('/productos') ? p.imagen : `${API_BASE.replace('/api/v1', '')}${p.imagen}`)
+                ? p.imagen
                 : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
@@ -111,7 +111,7 @@ export function App() {
         }
       })
       .catch(err => {
-        console.log('Usando catálogo nativo optimizado de Baby-World:', err.message)
+        console.error('Error cargando catálogo desde el backend:', err.message)
       })
       .finally(() => {
         setIsLoading(false)
