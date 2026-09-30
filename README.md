@@ -5,6 +5,7 @@ Este proyecto es la versión SaaS moderna y escalable de Edatia ERP, estructurad
 ## 🏗️ Estructura del Proyecto
 - `/backend`: API REST construida con **NestJS**, **TypeScript** y **Prisma ORM**.
 - `/frontend`: SPA construida con **React**, **Vite** y **shadcn/ui**, servida por **Caddy**.
+- `/tiendas-virtuales/glowxir`: Storefront (Headless Commerce) conectado en tiempo real al ERP.
 - `/traefik`: Configuración del proxy inverso y almacenamiento de certificados SSL.
 - `docker-compose.yml`: Orquestador de todos los servicios.
 
@@ -34,8 +35,9 @@ nano backend/.env
 - **Traefik Dashboard**: (Configurado pero no expuesto públicamente por defecto).
 
 ## 🛠️ Tecnologías Utilizadas
-- **Backend**: NestJS, PostgreSQL, Prisma, JWT.
-- **Frontend**: React 18, Tailwind CSS, shadcn/ui.
+- **Backend**: NestJS, PostgreSQL, Prisma, JWT, Cloudinary (Almacenamiento de imágenes).
+- **Frontend / ERP**: React 18, Tailwind CSS, shadcn/ui.
+- **Tiendas Virtuales**: React 18, Tailwind CSS, Headless API.
 - **Infraestructura**: Docker, Traefik v2.10, Caddy, Let's Encrypt.
 
 ---
