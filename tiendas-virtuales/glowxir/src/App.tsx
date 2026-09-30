@@ -26,7 +26,7 @@ const getStoreSlug = () => {
     return host.replace('.edatia.com', '')
   }
   if (host.includes('distribuidorababyworld')) {
-    return 'distribuidorababyworld'
+    return 'glowxir'
   }
   return 'glowxir'
 }
