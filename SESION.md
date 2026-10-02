@@ -255,3 +255,18 @@ VITE_API_URL=https://api.edatia.com
 
 **Infraestructura (Docker):**
 - Se actualizó el archivo `Caddyfile` del proyecto `glowxir` para enviar cabeceras estrictas de `Cache-Control: no-cache` en archivos HTML, asegurando que los cambios se reflejen inmediatamente en entornos locales sin quedarse atrapados en la caché del navegador.
+
+## Sesión 2026-10-02 - Preparación a Producción Baby-World y Seguridad
+
+**Limpieza y Refactorización de BD:**
+- Se realizó una limpieza quirúrgica de transacciones de prueba en la base de datos `edatia_erp`, borrando las empresas 1, 3, y 4 (generadas por los scripts de seed de demostración).
+- Se protegió y respetó completamente la base de datos `herramientas_edatia` (Módulo Préstamos), ya que está operando en producción real.
+- Se renombró la Empresa 2 (demo) a "Distribuidora Baby World" para utilizarse como entorno limpio en producción. Se actualizó el usuario principal a `admin@babyworld.com`.
+- Se generaron backups de todas las bases de datos en `/home/diego/edatia/backups`.
+
+**Seguridad (Vulnerabilidad Crítica):**
+- Se detectó y eliminó un endpoint público `POST /auth/register` en `auth.controller.ts` que permitía a cualquier atacante externo crear usuarios administradores libremente, evadiendo el pago y registro del SaaS.
+- Se recompiló el contenedor `api` (`docker compose build api` y `docker compose restart api`) para inyectar este parche crítico de seguridad en producción.
+
+**Sincronización Multi-Tenant:**
+- Se sincronizó la tabla `ClienteManager` para reflejar correctamente "Distribuidora Baby World" en el panel interno del propietario del SaaS (`manager.edatia.com`).

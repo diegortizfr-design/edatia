@@ -12,13 +12,7 @@ import { GetUser, JwtPayload } from '../common/decorators/get-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')
-  @ApiOperation({ summary: 'Registrar nuevo usuario' })
-  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
-  @ApiResponse({ status: 409, description: 'Email o usuario ya existen' })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
-  }
+
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
