@@ -5,7 +5,7 @@ export interface Product {
   descripcionLarga: string
   precio: number
   precioAnterior?: number
-  categoria: 'Pañales y Cuidado' | 'Juguetería' | 'Variedades'
+  categoria: string
   subcategoria?: string
   genero?: 'Niño' | 'Niña' | 'Unisex'
   etapa?: string
@@ -23,8 +23,10 @@ export interface Product {
 
 export const CATEGORIAS_PRODUCTOS = [
   'Todos',
-  'Pañales y Cuidado',
   'Juguetería',
+  'Ropa',
+  'Alimentación',
+  'Pañales y Cuidado',
   'Variedades'
 ] as const
 
