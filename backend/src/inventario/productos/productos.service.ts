@@ -26,6 +26,19 @@ const PRODUCTO_INCLUDE = {
 export class ProductosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  generarEan13Interno(productoId: number): string {
+    const prefijo = '20';
+    const idStr = productoId.toString().padStart(10, '0');
+    const base = prefijo + idStr;
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(base[i], 10);
+      sum += (i % 2 === 0) ? digit : digit * 3;
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+    return base + checkDigit.toString();
+  }
+
   async findAll(empresaId: number, query?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean }) {
     const where: any = { empresaId };
     if (query?.activo !== undefined) where.activo = query.activo;
@@ -137,6 +150,17 @@ export class ProductosService {
       },
       include: PRODUCTO_INCLUDE,
     });
+
+    if (!p.codigoBarras && (!codigos || codigos.length === 0)) {
+      const autoEan = this.generarEan13Interno(p.id);
+      await (this.prisma as any).producto.update({
+        where: { id: p.id },
+        data: { codigoBarras: autoEan }
+      });
+      await (this.prisma as any).codigoBarras.create({
+        data: { empresaId, productoId: p.id, codigo: autoEan, tipo: 'EAN13', esPrincipal: true }
+      });
+    }
 
     // Sync suppliers if any
     if (proveedores && Array.isArray(proveedores)) {
@@ -498,6 +522,9 @@ export class ProductosService {
         precios[0] = precioBase;
         if (precio2 > 0) precios[1] = precio2;
 
+        const imagenesStr = String(row.imagenes || row.Imagenes || '').trim();
+        const imagenesArray = imagenesStr ? imagenesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+
         // 7. Upsert Producto
         const existing = await (this.prisma as any).producto.findFirst({
           where: { empresaId, sku },
@@ -528,6 +555,13 @@ export class ProductosService {
               puntoReorden: puntoReorden > 0 ? puntoReorden : existing.puntoReorden,
               ubicacion1: ubicacion1 ?? existing.ubicacion1,
               manejaLotes: manejaLotes ?? existing.manejaLotes,
+              ...(imagenesArray.length > 0 && {
+                imagen: imagenesArray[0],
+                metadataWeb: {
+                  ...((existing.metadataWeb as Record<string, any>) || {}),
+                  imagenes: imagenesArray
+                }
+              })
             },
           });
           productoId = updated.id;
@@ -559,14 +593,44 @@ export class ProductosService {
               manejaBodega: true,
               manejaLotes,
               activo: true,
+              ...(imagenesArray.length > 0 && {
+                imagen: imagenesArray[0],
+                metadataWeb: { imagenes: imagenesArray }
+              })
             },
           });
           productoId = created.id;
           resultados.creados++;
         }
 
-        // 8. Stock Inicial y Movimiento de Entrada
-        if (stockInicial > 0) {
+        // Auto-generar código de barras si no tiene
+        if (!codigoBarras) {
+          const autoEan = this.generarEan13Interno(productoId);
+          await (this.prisma as any).producto.update({
+            where: { id: productoId },
+            data: { codigoBarras: autoEan }
+          });
+          const cbExists = await (this.prisma as any).codigoBarras.findFirst({
+            where: { empresaId, codigo: autoEan }
+          });
+          if (!cbExists) {
+            await (this.prisma as any).codigoBarras.create({
+              data: { empresaId, productoId, codigo: autoEan, tipo: 'EAN13', esPrincipal: true }
+            });
+          }
+        } else if (!existing || existing.codigoBarras !== codigoBarras) {
+          const cbExists = await (this.prisma as any).codigoBarras.findFirst({
+            where: { empresaId, codigo: codigoBarras }
+          });
+          if (!cbExists) {
+            await (this.prisma as any).codigoBarras.create({
+              data: { empresaId, productoId, codigo: codigoBarras, tipo: 'EAN13', esPrincipal: true }
+            });
+          }
+        }
+
+        // 8. Stock Inicial y Movimiento de Entrada (SOLO SI EL PRODUCTO ES NUEVO)
+        if (stockInicial > 0 && !existing) {
           const existingStock = await (this.prisma as any).stock.findFirst({
             where: { productoId, bodegaId: targetBodegaId },
           });

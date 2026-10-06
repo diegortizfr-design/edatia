@@ -1,0 +1,70 @@
+﻿SKU;Nombre;Codigo_Barras;Referencia;Categoria;Marca;Unidad_Medida;Bodega;Costo_Unitario;Precio_Venta;Precio_2;Tipo_IVA;Stock_Inicial;Stock_Minimo;Punto_Reorden;Ubicacion;Maneja_Lotes;Numero_Lote;Fecha_Vencimiento;Descripcion;Imagenes
+RPA-001-SU-0;Conjunto Primer Día Niña;;ANT-001;Ropa Niña;;UND;;;45000;;GRAVADO_19;4;;;;NO;;;Color: Surtido. Talla: 0.
+RPN-001-SU-0;Conjunto Primer Día Niño;;ANT-002;Ropa Niño;;UND;;;45000;;GRAVADO_19;5;;;;NO;;;Color: Surtido. Talla: 0.
+RPN-002-SU-2;Conjunto Pantalón Camisa;;ANT-003;Ropa Niño;;UND;;;60000;;GRAVADO_19;5;;;;NO;;;Color: Surtido. Talla: 2.
+RPN-003-VD-2;Conjunto Elegante Chikis Verde;;ANT-004;Ropa Niño;;UND;;;70000;;GRAVADO_19;1;;;;NO;;;Color: Verde. Talla: 2.
+RPN-004-CF-2;Conjunto Pantalón Camisa Gradi Monster Café;;ANT-005;Ropa Niño;;UND;;;55000;;GRAVADO_19;1;;;;NO;;;Color: Café. Talla: 2.
+RPN-005-AZ-1;Conjunto Saco Camisa Pantalón Azul;;ANT-006;Ropa Niño;;UND;;;55000;;GRAVADO_19;1;;;;NO;;;Color: Azul. Talla: 1.
+RPN-006-CQ-1;Conjunto Camisa Mameluco Pantalón Caqui;;ANT-007;Ropa Niño;;UND;;;65000;;GRAVADO_19;1;;;;NO;;;Color: Caqui. Talla: 1.
+RPN-007-RJ-1;Conjunto Económico Mickey Camisa Pantalón Rojo;;ANT-008;Ropa Niño;;UND;;;20000;;GRAVADO_19;1;;;;NO;;;Color: Rojo. Talla: 1.
+RPN-008-AZ-3;Conjunto Camisa Pantalón Guapitos Azul;;ANT-009;Ropa Niño;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Azul. Talla: 3.
+RPA-002-SU;Conjunto Niña Modelo A;;ANT-010;Ropa Niña;;UND;;;55000;;GRAVADO_19;8;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPA-003-RS-1;Conjunto Blusa Short Rosa;;ANT-011;Ropa Niña;;UND;;;60000;;GRAVADO_19;1;;;;NO;;;Color: Rosa. Talla: 1.
+RPA-003-BL-1;Conjunto Blusa Short Blanco;;ANT-012;Ropa Niña;;UND;;;50000;;GRAVADO_19;1;;;;NO;;;Color: Blanco. Talla: 1.
+RPA-004-PL-1;Conjunto Chikis Blusa Short Piel;;ANT-013;Ropa Niña;;UND;;;65000;;GRAVADO_19;1;;;;NO;;;Color: Piel. Talla: 1.
+RPN-009-PL-0;Conjunto Mameluco Camisilla Short Piel;;ANT-014;Ropa Niño;;UND;;;62000;;GRAVADO_19;1;;;;NO;;;Color: Piel. Talla: 0.
+RPU-001-SU-0;Conjunto Mamelucos x7 con Sonajero;;ANT-015;Ropa Unisex;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Surtido. Talla: 0.
+RPU-002-SU-0;Conjunto Mamelucos x3;;ANT-016;Ropa Unisex;;UND;;;35000;;GRAVADO_19;1;;;;NO;;;Color: Surtido. Talla: 0.
+RPU-003-AZ-0;Conjunto Bebé con Gorro Azul;;ANT-017;Ropa Unisex;;UND;;;25000;;GRAVADO_19;1;;;;NO;;;Color: Azul. Talla: 0.
+RPN-010-VD-0;Conjunto Bebé Completo Camisilla Verde;;ANT-018;Ropa Niño;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Verde. Talla: 0.
+RPU-003-BL-0;Conjunto Bebé con Gorro Blanco;;ANT-019;Ropa Unisex;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Blanco. Talla: 0.
+RPN-011-AZ-0;Conjunto Mameluco Camisilla Azul;;ANT-020;Ropa Niño;;UND;;;20000;;GRAVADO_19;1;;;;NO;;;Color: Azul. Talla: 0.
+RPN-012-AZ-0;Conjunto Bobito Yoyita Azul;;ANT-021;Ropa Niño;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Azul. Talla: 0.
+RPU-004-BL-0;Conjunto Completo Mameluco Cobija Blanco;;ANT-022;Ropa Unisex;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Blanco. Talla: 0.
+RPU-005-VD-0;Salida de Baño Toalla Verde;;ANT-023;Ropa Unisex;;UND;;;32000;;GRAVADO_19;1;;;;NO;;;Color: Verde. Talla: 0.
+RPU-005-BL-0;Salida de Baño Toalla Blanco;;ANT-024;Ropa Unisex;;UND;;;32000;;GRAVADO_19;1;;;;NO;;;Color: Blanco. Talla: 0.
+RPA-005-RS-0;Vestido con Interior Rosa;;ANT-025;Ropa Niña;;UND;;;25000;;GRAVADO_19;1;;;;NO;;;Color: Rosa. Talla: 0.
+RPA-006-SU-0;Conjunto Mamelucos x4 Fabi;;ANT-026;Ropa Niña;;UND;;;35000;;GRAVADO_19;1;;;;NO;;;Color: Surtido. Talla: 0.
+RPA-007-SU-0;Vestido Bebé;;ANT-027;Ropa Niña;;UND;;;25000;;GRAVADO_19;2;;;;NO;;;Color: Surtido. Talla: 0.
+RPN-013-VD-0;Mameluco x2 Verde;;ANT-028;Ropa Niño;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Verde. Talla: 0.
+RPA-008-FL-0;Conjunto Blusa Pantalón Yoyita Flores;;ANT-029;Ropa Niña;;UND;;;30000;;GRAVADO_19;1;;;;NO;;;Color: Flores. Talla: 0.
+RPA-009-VD-0;Conjunto Blusa Pantalón Gorro Yami Verde;;ANT-030;Ropa Niña;;UND;;;20000;;GRAVADO_19;1;;;;NO;;;Color: Verde. Talla: 0.
+RPU-006-SU-0;Semanarios;;ANT-031;Ropa Unisex;;UND;;;60000;;GRAVADO_19;6;;;;NO;;;Color: Surtido. Talla: 0.
+RPA-010-SU;Vestido Niña Económico;;ANT-032;Ropa Niña;;UND;;;60000;;GRAVADO_19;4;;;;NO;;;Color: Surtido.
+RPA-011-SU;Vestido Niña Elegante;;ANT-033;Ropa Niña;;UND;;;95000;;GRAVADO_19;2;;;;NO;;;Color: Surtido.
+RPA-012-SU;Conjunto Blusa Pantalón Económico Mic;;ANT-034;Ropa Niña;;UND;;;12000;;GRAVADO_19;6;;;;NO;;;Color: Surtido.
+RPA-013-SU;Conjunto Niña Modelo B;;ANT-035;Ropa Niña;;UND;;;75000;;GRAVADO_19;24;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPA-014-SU;Conjunto Niña Modelo C;;ANT-036;Ropa Niña;;UND;;;65000;;GRAVADO_19;20;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPA-015-SU;Conjunto Niña Modelo D;;ANT-037;Ropa Niña;;UND;;;60000;;GRAVADO_19;5;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPN-014-SU;Conjunto Niño;;ANT-038;Ropa Niño;;UND;;;65000;;GRAVADO_19;31;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPN-015-SU;Conjunto Niño Elegante;;ANT-039;Ropa Niño;;UND;;;70000;;GRAVADO_19;4;;;;NO;;;Color: Surtido. Tallas surtidas.
+RPA-016-SU;Pijamas Niña;;ANT-040;Ropa Niña;;UND;;;25000;;GRAVADO_19;5;;;;NO;;;Color: Surtido. Tallas surtidas.
+PAN-001-AZ;Maletín Pañalera Azul;;ANT-041;Pañaleras;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+PAN-001-BL;Maletín Pañalera Blanco;;ANT-042;Pañaleras;;UND;;;90000;;GRAVADO_19;1;;;;NO;;;Color: Blanco.
+PAN-002-RS;Maletín Pañalera Oso Rosa;;ANT-043;Pañaleras;;UND;;;;;GRAVADO_19;1;;;;NO;;;Color: Rosa.
+PAN-003-AZ;Maletín Pañalera Mickey Azul;;ANT-044;Pañaleras;;UND;;;;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+BAN-001-SU;Bañera Sencilla;;ANT-045;Bañeras;;UND;;;45000;;GRAVADO_19;7;;;;NO;;;Color: Surtido.
+BAN-002-BL;Bañera Plegable Blanco;;ANT-046;Bañeras;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Blanco.
+BAC-001-AZ;Bacinilla Mica Sencilla Azul;;ANT-047;Bacinillas;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+BAC-002-AZ;Bacinilla Mica 2 en 1 Azul;;ANT-048;Bacinillas;;UND;;;48000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+BAC-002-RS;Bacinilla Mica 2 en 1 Rosa;;ANT-049;Bacinillas;;UND;;;48000;;GRAVADO_19;1;;;;NO;;;Color: Rosa.
+BAC-003-AZ;Bacinilla Mica 3 en 1 Azul;;ANT-050;Bacinillas;;UND;;;50000;;GRAVADO_19;2;;;;NO;;;Color: Azul.
+COM-001-AZ;Comedor Sencillo Azul;;ANT-051;Comedores;;UND;;;45000;;GRAVADO_19;2;;;;NO;;;Color: Azul.
+COM-001-RS;Comedor Sencillo Rosa;;ANT-052;Comedores;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Rosa.
+CAM-001-AZ;Caminador Graduable sin Guía Azul;;ANT-053;Caminadores;;UND;;;125000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+CAM-002-RS;Caminador Graduable con Guía Rosa;;ANT-054;Caminadores;;UND;;;135000;;GRAVADO_19;1;;;;NO;;;Color: Rosa.
+CAM-003-AZ;Caminador Sencillo sin Guía Azul;;ANT-055;Caminadores;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+CAM-003-RS;Caminador Sencillo sin Guía Rosa;;ANT-056;Caminadores;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Rosa.
+BAC-004-AZ;Bacinilla Pingüino Azul;;ANT-057;Bacinillas;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+BAC-004-NG;Bacinilla Pingüino Negro;;ANT-058;Bacinillas;;UND;;;45000;;GRAVADO_19;1;;;;NO;;;Color: Negro.
+NID-001-SU;Nido para Bebé;;ANT-059;Nidos;;UND;;;75000;;GRAVADO_19;3;;;;NO;;;Color: Surtido.
+CMP-001-SU;Camping Pequeño;;ANT-060;Campings;;UND;;;48000;;GRAVADO_19;2;;;;NO;;;Color: Surtido.
+DON-001-SU;Dona para Amamantar;;ANT-061;Donas de Lactancia;;UND;;;58000;;GRAVADO_19;2;;;;NO;;;Color: Surtido.
+COL-001-SU;Colchoneta Antireflujo Sencilla;;ANT-062;Colchonetas;;UND;;;65000;;GRAVADO_19;1;;;;NO;;;Color: Surtido.
+NID-002-AZ;Nido Trenzado Azul;;ANT-063;Nidos;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+MEC-001-SU;Mecedor;;ANT-064;Mecedores;;UND;;;138000;;GRAVADO_19;2;;;;NO;;;Color: Surtido.
+NID-003-AZ;Nido con Toldillo Azul;;ANT-065;Nidos;;UND;;;100000;;GRAVADO_19;1;;;;NO;;;Color: Azul.
+CMP-002-SU;Camping Grande;;ANT-066;Campings;;UND;;;58000;;GRAVADO_19;1;;;;NO;;;Color: Surtido.
+LEC-001-900G;Leche NAN 1 900 g;;ANT-067;Leches y Fórmulas;Nestlé;UND;;97000;118000;;EXCLUIDO;1;;;;SI;;;Presentación: lata 900 g.
+LEC-002-800G;Baby Klim 2 800 g;;ANT-068;Leches y Fórmulas;Nestlé;UND;;52600;62000;;EXCLUIDO;1;;;;SI;;;Presentación: 800 g.
+LEC-003;Baby Klim 1;;ANT-069;Leches y Fórmulas;Nestlé;UND;;48700;;;EXCLUIDO;0;;;;SI;;;

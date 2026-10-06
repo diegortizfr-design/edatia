@@ -11,10 +11,10 @@ const PORT = 8080;
 
 // Endpoint principal de impresión
 app.post('/print', (req, res) => {
-  const { texto, anchoPapel, cortarPapel = true } = req.body;
+  const { texto, barcode, barcodeFormat = 'EAN13', anchoPapel, cortarPapel = true } = req.body;
 
-  if (!texto) {
-    return res.status(400).json({ error: 'No se envió texto para imprimir' });
+  if (!texto && !barcode) {
+    return res.status(400).json({ error: 'No se envió contenido para imprimir' });
   }
 
   try {
@@ -34,10 +34,19 @@ app.post('/print', (req, res) => {
 
       const paperSize = anchoPapel === 58 ? 32 : 48; // Caracteres por línea aprox.
       
-      printer
-        .align('ct')
-        .text(texto)
-        .feed(2); // Avanzar papel
+      printer.align('ct');
+      
+      if (texto) {
+        printer.text(texto);
+      }
+      
+      if (barcode) {
+        // Imprimir código de barras. 
+        // options: width (2-6), height (1-255), position (OFF, ABOVE, BELOW, BOTH), font (A, B)
+        printer.barcode(barcode, barcodeFormat, { width: 2, height: 60, position: 'BELOW', font: 'A' });
+      }
+
+      printer.feed(2); // Avanzar papel
 
       if (cortarPapel) {
         printer.cut();

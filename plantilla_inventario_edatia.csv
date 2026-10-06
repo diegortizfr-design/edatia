@@ -1,1 +1,1 @@
-SKU;Nombre;Codigo_Barras;Referencia;Categoria;Marca;Unidad_Medida;Bodega;Costo_Unitario;Precio_Venta;Precio_2;Tipo_IVA;Stock_Inicial;Stock_Minimo;Punto_Reorden;Ubicacion;Maneja_Lotes;Numero_Lote;Fecha_Vencimiento;Descripcion
+SKU;Nombre;Codigo_Barras;Referencia;Categoria;Marca;Unidad_Medida;Bodega;Costo_Unitario;Precio_Venta;Precio_2;Tipo_IVA;Stock_Inicial;Stock_Minimo;Punto_Reorden;Ubicacion;Maneja_Lotes;Numero_Lote;Fecha_Vencimiento;Descripcion;Imagenes

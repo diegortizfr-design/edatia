@@ -5,7 +5,7 @@ import {
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
   Scale, Tag, AlertTriangle, FileText, Eye,
-  Upload, Download, FileSpreadsheet, Loader2, X
+  Upload, Download, FileSpreadsheet, Loader2, X, Printer
 } from 'lucide-react'
 import { getProductos, createProducto, updateProducto, deleteProducto, importarProductosMasivo } from '../../services/inventario.service'
 import { getMediaUrl } from '../../services/api'
@@ -651,7 +651,17 @@ export function ConfigProductos() {
     const reader = new FileReader()
     reader.onload = (event) => {
       try {
-        const text = String(event.target?.result || '')
+        // Detección de codificación: Excel guarda "CSV UTF-8" en UTF-8, pero
+        // "CSV (delimitado por comas)" en Windows-1252 (ANSI). Intentamos UTF-8
+        // estricto y, si hay bytes inválidos, re-decodificamos como Windows-1252
+        // para no corromper Ñ, tildes, etc.
+        const buffer = event.target?.result as ArrayBuffer
+        let text: string
+        try {
+          text = new TextDecoder('utf-8', { fatal: true }).decode(buffer)
+        } catch {
+          text = new TextDecoder('windows-1252').decode(buffer)
+        }
         const parsed = parseCsvText(text)
         if (parsed.length === 0) {
           setImportError('No se encontraron registros válidos en el archivo. Verifica el encabezado y contenido.')
@@ -666,7 +676,7 @@ export function ConfigProductos() {
     reader.onerror = () => {
       setImportError('No se pudo leer el archivo seleccionado.')
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const handleExecuteImport = async () => {
@@ -880,6 +890,32 @@ export function ConfigProductos() {
       ...prev,
       selectedTags: updated
     }))
+  }
+
+  const handlePrintLabel = async (p: any) => {
+    try {
+      const taxRate = getAppliedTaxRate(p.extData)
+      const p1Iva = (Number(p.extData.precios?.[0]) || Number(p.precioBase) || 0) * (1 + taxRate / 100)
+      const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(p1Iva)
+      
+      const res = await fetch('http://localhost:8080/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texto: `${p.nombre.substring(0, 25)}\nPrecio: ${formattedPrice}\nSKU: ${p.sku}\n`,
+          barcode: p.codigoBarras || '',
+          barcodeFormat: 'EAN13',
+          anchoPapel: 58,
+          cortarPapel: false
+        })
+      })
+      if (!res.ok) throw new Error('Error en el agente de impresión')
+      setSuccessMsg('Etiqueta enviada a la impresora')
+      setTimeout(() => setSuccessMsg(null), 3000)
+    } catch (err: any) {
+      setError('No se pudo imprimir. Verifica que edatia-print-agent esté ejecutándose.')
+      setTimeout(() => setError(null), 5000)
+    }
   }
 
   return (
@@ -1157,6 +1193,13 @@ export function ConfigProductos() {
                                 title="Editar ficha técnica completa"
                               >
                                 <Edit3 size={15} />
+                              </button>
+                              <button
+                                onClick={() => handlePrintLabel(p)}
+                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                title="Imprimir etiqueta"
+                              >
+                                <Printer size={15} />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(p)}

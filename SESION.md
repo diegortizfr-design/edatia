@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-04-11 (sesión 2)
+> Última actualización: 2026-10-06 (sesión 3)
 
 ---
 
@@ -28,6 +28,22 @@ manager  → Manager React (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+---
+
+## Estado resuelto (sesión 3)
+
+✅ **Mejoras Importador Masivo (CSV):**
+  - Soporte automático para codificaciones ANSI/Windows-1252 y UTF-8 (reparación de tildes y eñes).
+  - Prevención de duplicación de inventario: `Stock_Inicial` ahora solo se suma si el producto es nuevo.
+  - Soporte para la nueva columna `Imagenes` (separada por comas) mapeada automáticamente a `metadataWeb.imagenes` para uso futuro en la tienda virtual, asignando la primera como imagen principal.
+✅ **Códigos de Barras Internos:**
+  - Auto-generación de EAN-13 (prefijo `20` + padding de ID + Check Digit) desde el backend al crear o importar productos sin código de barras.
+✅ **Agente de Impresión Local (`edatia-print-agent`):**
+  - Modificación del servidor local Node/escpos para soportar impresión de códigos de barras.
+  - Añadido botón "Imprimir Etiqueta" en el frontend `ConfigProductos.tsx` que envía nombre, precio formateado y código de barras directamente al agente USB.
+✅ **Actualización Plantilla:** 
+  - `plantilla_inventario_edatia.csv` enriquecida con BOM UTF-8 nativo y nueva columna `Imagenes`.
 
 ---
 
