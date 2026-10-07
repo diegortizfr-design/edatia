@@ -8,9 +8,9 @@
     "precio": 149900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/glowxir/jugueter_a/JUG-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/distribuidorababyworld/jugueter_a/JUG-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/glowxir/jugueter_a/JUG-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/distribuidorababyworld/jugueter_a/JUG-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -29,9 +29,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/glowxir/jugueter_a/JUG-002-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/distribuidorababyworld/jugueter_a/JUG-002-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/glowxir/jugueter_a/JUG-002-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/distribuidorababyworld/jugueter_a/JUG-002-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -51,9 +51,9 @@
     "precio": 185000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/glowxir/jugueter_a/CAM-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/distribuidorababyworld/jugueter_a/CAM-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/glowxir/jugueter_a/CAM-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/distribuidorababyworld/jugueter_a/CAM-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -73,9 +73,9 @@
     "precio": 185000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/glowxir/variedades/CAM-002-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/distribuidorababyworld/variedades/CAM-002-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/glowxir/variedades/CAM-002-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/distribuidorababyworld/variedades/CAM-002-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -95,9 +95,9 @@
     "precio": 129900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/glowxir/pa_ales_y_cuidado/NID-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/distribuidorababyworld/pa_ales_y_cuidado/NID-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/glowxir/pa_ales_y_cuidado/NID-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/distribuidorababyworld/pa_ales_y_cuidado/NID-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -116,9 +116,9 @@
     "precio": 85000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/glowxir/variedades/CMP-001-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/distribuidorababyworld/variedades/CMP-001-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/glowxir/variedades/CMP-001-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/distribuidorababyworld/variedades/CMP-001-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -138,9 +138,9 @@
     "precio": 85000,
     "categoria": "Pañales y Cuidado",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/glowxir/pa_ales_y_cuidado/NID-002-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/distribuidorababyworld/pa_ales_y_cuidado/NID-002-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/glowxir/pa_ales_y_cuidado/NID-002-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/distribuidorababyworld/pa_ales_y_cuidado/NID-002-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -159,9 +159,9 @@
     "precio": 95000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/glowxir/variedades/CMP-002-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/distribuidorababyworld/variedades/CMP-002-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/glowxir/variedades/CMP-002-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/distribuidorababyworld/variedades/CMP-002-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -181,9 +181,9 @@
     "precio": 129900,
     "categoria": "Pañales y Cuidado",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/glowxir/pa_ales_y_cuidado/NID-003-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/distribuidorababyworld/pa_ales_y_cuidado/NID-003-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/glowxir/pa_ales_y_cuidado/NID-003-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/distribuidorababyworld/pa_ales_y_cuidado/NID-003-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -202,9 +202,9 @@
     "precio": 79900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/glowxir/jugueter_a/JUG-003-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/distribuidorababyworld/jugueter_a/JUG-003-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/glowxir/jugueter_a/JUG-003-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/distribuidorababyworld/jugueter_a/JUG-003-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -223,9 +223,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/glowxir/jugueter_a/JUG-004-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/distribuidorababyworld/jugueter_a/JUG-004-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/glowxir/jugueter_a/JUG-004-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/distribuidorababyworld/jugueter_a/JUG-004-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -244,9 +244,9 @@
     "precio": 65000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/glowxir/jugueter_a/JUG-005-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/distribuidorababyworld/jugueter_a/JUG-005-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/glowxir/jugueter_a/JUG-005-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/distribuidorababyworld/jugueter_a/JUG-005-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -265,9 +265,9 @@
     "precio": 129900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/glowxir/jugueter_a/JUG-006-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/distribuidorababyworld/jugueter_a/JUG-006-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/glowxir/jugueter_a/JUG-006-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/distribuidorababyworld/jugueter_a/JUG-006-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -286,9 +286,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/glowxir/jugueter_a/JUG-007-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/distribuidorababyworld/jugueter_a/JUG-007-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/glowxir/jugueter_a/JUG-007-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/distribuidorababyworld/jugueter_a/JUG-007-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -308,10 +308,10 @@
     "precio": 125000,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/glowxir/jugueter_a/CAM-003-SU-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/distribuidorababyworld/jugueter_a/CAM-003-SU-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/glowxir/jugueter_a/CAM-003-SU-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259770/glowxir/jugueter_a/CAM-003-SU-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/distribuidorababyworld/jugueter_a/CAM-003-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259770/distribuidorababyworld/jugueter_a/CAM-003-SU-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -330,9 +330,9 @@
     "precio": 189000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/glowxir/jugueter_a/CAM-004-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/distribuidorababyworld/jugueter_a/CAM-004-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/glowxir/jugueter_a/CAM-004-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/distribuidorababyworld/jugueter_a/CAM-004-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -352,10 +352,10 @@
     "precio": 120000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/glowxir/jugueter_a/JUG-008-NG-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/distribuidorababyworld/jugueter_a/JUG-008-NG-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/glowxir/jugueter_a/JUG-008-NG-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259865/glowxir/jugueter_a/JUG-008-NG-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/distribuidorababyworld/jugueter_a/JUG-008-NG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259865/distribuidorababyworld/jugueter_a/JUG-008-NG-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -374,9 +374,9 @@
     "precio": 125000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/glowxir/jugueter_a/JUG-009-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/distribuidorababyworld/jugueter_a/JUG-009-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/glowxir/jugueter_a/JUG-009-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/distribuidorababyworld/jugueter_a/JUG-009-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -396,9 +396,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/glowxir/jugueter_a/JUG-010-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/distribuidorababyworld/jugueter_a/JUG-010-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/glowxir/jugueter_a/JUG-010-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/distribuidorababyworld/jugueter_a/JUG-010-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -417,9 +417,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/glowxir/pa_ales_y_cuidado/VAR-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/distribuidorababyworld/pa_ales_y_cuidado/VAR-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/glowxir/pa_ales_y_cuidado/VAR-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/distribuidorababyworld/pa_ales_y_cuidado/VAR-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -438,9 +438,9 @@
     "precio": 38000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/glowxir/pa_ales_y_cuidado/PAN-001-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/distribuidorababyworld/pa_ales_y_cuidado/PAN-001-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/glowxir/pa_ales_y_cuidado/PAN-001-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/distribuidorababyworld/pa_ales_y_cuidado/PAN-001-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -460,9 +460,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/glowxir/pa_ales_y_cuidado/VAR-002-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/distribuidorababyworld/pa_ales_y_cuidado/VAR-002-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/glowxir/pa_ales_y_cuidado/VAR-002-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/distribuidorababyworld/pa_ales_y_cuidado/VAR-002-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -482,9 +482,9 @@
     "precio": 32000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/glowxir/pa_ales_y_cuidado/VAR-003-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/distribuidorababyworld/pa_ales_y_cuidado/VAR-003-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/glowxir/pa_ales_y_cuidado/VAR-003-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/distribuidorababyworld/pa_ales_y_cuidado/VAR-003-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -503,9 +503,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/glowxir/pa_ales_y_cuidado/VAR-004-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/distribuidorababyworld/pa_ales_y_cuidado/VAR-004-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/glowxir/pa_ales_y_cuidado/VAR-004-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/distribuidorababyworld/pa_ales_y_cuidado/VAR-004-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -525,9 +525,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/glowxir/pa_ales_y_cuidado/VAR-005-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/distribuidorababyworld/pa_ales_y_cuidado/VAR-005-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/glowxir/pa_ales_y_cuidado/VAR-005-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/distribuidorababyworld/pa_ales_y_cuidado/VAR-005-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -547,9 +547,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/glowxir/pa_ales_y_cuidado/VAR-006-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/distribuidorababyworld/pa_ales_y_cuidado/VAR-006-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/glowxir/pa_ales_y_cuidado/VAR-006-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/distribuidorababyworld/pa_ales_y_cuidado/VAR-006-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -568,9 +568,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/glowxir/pa_ales_y_cuidado/VAR-007-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/distribuidorababyworld/pa_ales_y_cuidado/VAR-007-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/glowxir/pa_ales_y_cuidado/VAR-007-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/distribuidorababyworld/pa_ales_y_cuidado/VAR-007-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -589,9 +589,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/glowxir/pa_ales_y_cuidado/COM-001-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/distribuidorababyworld/pa_ales_y_cuidado/COM-001-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/glowxir/pa_ales_y_cuidado/COM-001-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/distribuidorababyworld/pa_ales_y_cuidado/COM-001-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -610,9 +610,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/glowxir/pa_ales_y_cuidado/VAR-008-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/distribuidorababyworld/pa_ales_y_cuidado/VAR-008-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/glowxir/pa_ales_y_cuidado/VAR-008-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/distribuidorababyworld/pa_ales_y_cuidado/VAR-008-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -631,9 +631,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/glowxir/pa_ales_y_cuidado/VAR-009-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/distribuidorababyworld/pa_ales_y_cuidado/VAR-009-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/glowxir/pa_ales_y_cuidado/VAR-009-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/distribuidorababyworld/pa_ales_y_cuidado/VAR-009-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -652,9 +652,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/glowxir/pa_ales_y_cuidado/VAR-010-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/distribuidorababyworld/pa_ales_y_cuidado/VAR-010-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/glowxir/pa_ales_y_cuidado/VAR-010-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/distribuidorababyworld/pa_ales_y_cuidado/VAR-010-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -673,9 +673,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/glowxir/pa_ales_y_cuidado/VAR-011-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/distribuidorababyworld/pa_ales_y_cuidado/VAR-011-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/glowxir/pa_ales_y_cuidado/VAR-011-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/distribuidorababyworld/pa_ales_y_cuidado/VAR-011-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -694,9 +694,9 @@
     "precio": 65000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/glowxir/pa_ales_y_cuidado/RPU-001-NG.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/distribuidorababyworld/pa_ales_y_cuidado/RPU-001-NG.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/glowxir/pa_ales_y_cuidado/RPU-001-NG.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/distribuidorababyworld/pa_ales_y_cuidado/RPU-001-NG.png"
     ],
     "stock": 10,
     "detalles": [
@@ -715,9 +715,9 @@
     "precio": 25000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/glowxir/pa_ales_y_cuidado/PAN-002-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/distribuidorababyworld/pa_ales_y_cuidado/PAN-002-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/glowxir/pa_ales_y_cuidado/PAN-002-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/distribuidorababyworld/pa_ales_y_cuidado/PAN-002-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -736,10 +736,10 @@
     "precio": 12500,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/glowxir/pa_ales_y_cuidado/PAN-003-RS-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/glowxir/pa_ales_y_cuidado/PAN-003-RS-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260544/glowxir/pa_ales_y_cuidado/PAN-003-RS-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260544/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -759,9 +759,9 @@
     "precio": 45000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/glowxir/pa_ales_y_cuidado/PAN-004-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/distribuidorababyworld/pa_ales_y_cuidado/PAN-004-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/glowxir/pa_ales_y_cuidado/PAN-004-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/distribuidorababyworld/pa_ales_y_cuidado/PAN-004-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -780,9 +780,9 @@
     "precio": 38500,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/glowxir/pa_ales_y_cuidado/PAN-005-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/distribuidorababyworld/pa_ales_y_cuidado/PAN-005-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/glowxir/pa_ales_y_cuidado/PAN-005-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/distribuidorababyworld/pa_ales_y_cuidado/PAN-005-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -801,9 +801,9 @@
     "precio": 45000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/glowxir/pa_ales_y_cuidado/PAN-006-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/distribuidorababyworld/pa_ales_y_cuidado/PAN-006-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/glowxir/pa_ales_y_cuidado/PAN-006-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/distribuidorababyworld/pa_ales_y_cuidado/PAN-006-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -823,9 +823,9 @@
     "precio": 55000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/glowxir/pa_ales_y_cuidado/PAN-007-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/distribuidorababyworld/pa_ales_y_cuidado/PAN-007-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/glowxir/pa_ales_y_cuidado/PAN-007-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/distribuidorababyworld/pa_ales_y_cuidado/PAN-007-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -844,9 +844,9 @@
     "precio": 85000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/glowxir/variedades/COM-002-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/distribuidorababyworld/variedades/COM-002-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/glowxir/variedades/COM-002-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/distribuidorababyworld/variedades/COM-002-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -865,9 +865,9 @@
     "precio": 450000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/glowxir/variedades/VAR-012-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/distribuidorababyworld/variedades/VAR-012-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/glowxir/variedades/VAR-012-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/distribuidorababyworld/variedades/VAR-012-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -887,9 +887,9 @@
     "precio": 350000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/glowxir/variedades/CAM-005-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/distribuidorababyworld/variedades/CAM-005-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/glowxir/variedades/CAM-005-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/distribuidorababyworld/variedades/CAM-005-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -908,10 +908,10 @@
     "precio": 59900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/glowxir/pa_ales_y_cuidado/PAN-008-AZ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/glowxir/pa_ales_y_cuidado/PAN-008-AZ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261050/glowxir/pa_ales_y_cuidado/PAN-008-AZ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261050/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -930,9 +930,9 @@
     "precio": 22500,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/glowxir/pa_ales_y_cuidado/BAN-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/distribuidorababyworld/pa_ales_y_cuidado/BAN-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/glowxir/pa_ales_y_cuidado/BAN-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/distribuidorababyworld/pa_ales_y_cuidado/BAN-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -952,9 +952,9 @@
     "precio": 32000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/glowxir/pa_ales_y_cuidado/VAR-013-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/distribuidorababyworld/pa_ales_y_cuidado/VAR-013-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/glowxir/pa_ales_y_cuidado/VAR-013-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/distribuidorababyworld/pa_ales_y_cuidado/VAR-013-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -974,9 +974,9 @@
     "precio": 22900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/glowxir/pa_ales_y_cuidado/PAN-009-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/distribuidorababyworld/pa_ales_y_cuidado/PAN-009-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/glowxir/pa_ales_y_cuidado/PAN-009-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/distribuidorababyworld/pa_ales_y_cuidado/PAN-009-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -996,9 +996,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/glowxir/variedades/VAR-014-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/distribuidorababyworld/variedades/VAR-014-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/glowxir/variedades/VAR-014-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/distribuidorababyworld/variedades/VAR-014-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1017,9 +1017,9 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/glowxir/variedades/VAR-015-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/distribuidorababyworld/variedades/VAR-015-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/glowxir/variedades/VAR-015-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/distribuidorababyworld/variedades/VAR-015-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1039,9 +1039,9 @@
     "precio": 8500,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/glowxir/pa_ales_y_cuidado/VAR-016-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/distribuidorababyworld/pa_ales_y_cuidado/VAR-016-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/glowxir/pa_ales_y_cuidado/VAR-016-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/distribuidorababyworld/pa_ales_y_cuidado/VAR-016-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1060,9 +1060,9 @@
     "precio": 12000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/glowxir/pa_ales_y_cuidado/VAR-017-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/distribuidorababyworld/pa_ales_y_cuidado/VAR-017-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/glowxir/pa_ales_y_cuidado/VAR-017-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/distribuidorababyworld/pa_ales_y_cuidado/VAR-017-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1081,9 +1081,9 @@
     "precio": 55000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/glowxir/pa_ales_y_cuidado/VAR-018-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/distribuidorababyworld/pa_ales_y_cuidado/VAR-018-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/glowxir/pa_ales_y_cuidado/VAR-018-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/distribuidorababyworld/pa_ales_y_cuidado/VAR-018-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1103,9 +1103,9 @@
     "precio": 52000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/glowxir/pa_ales_y_cuidado/PAN-010-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/distribuidorababyworld/pa_ales_y_cuidado/PAN-010-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/glowxir/pa_ales_y_cuidado/PAN-010-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/distribuidorababyworld/pa_ales_y_cuidado/PAN-010-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1124,9 +1124,9 @@
     "precio": 48900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/glowxir/pa_ales_y_cuidado/PAN-011-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/distribuidorababyworld/pa_ales_y_cuidado/PAN-011-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/glowxir/pa_ales_y_cuidado/PAN-011-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/distribuidorababyworld/pa_ales_y_cuidado/PAN-011-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1145,9 +1145,9 @@
     "precio": 48900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/glowxir/pa_ales_y_cuidado/VAR-019-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/distribuidorababyworld/pa_ales_y_cuidado/VAR-019-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/glowxir/pa_ales_y_cuidado/VAR-019-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/distribuidorababyworld/pa_ales_y_cuidado/VAR-019-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1166,9 +1166,9 @@
     "precio": 35000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/glowxir/pa_ales_y_cuidado/VAR-020-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/distribuidorababyworld/pa_ales_y_cuidado/VAR-020-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/glowxir/pa_ales_y_cuidado/VAR-020-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/distribuidorababyworld/pa_ales_y_cuidado/VAR-020-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1188,9 +1188,9 @@
     "precio": 65000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/glowxir/pa_ales_y_cuidado/VAR-021-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/distribuidorababyworld/pa_ales_y_cuidado/VAR-021-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/glowxir/pa_ales_y_cuidado/VAR-021-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/distribuidorababyworld/pa_ales_y_cuidado/VAR-021-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1210,9 +1210,9 @@
     "precio": 28900,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/glowxir/pa_ales_y_cuidado/VAR-022-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/distribuidorababyworld/pa_ales_y_cuidado/VAR-022-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/glowxir/pa_ales_y_cuidado/VAR-022-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/distribuidorababyworld/pa_ales_y_cuidado/VAR-022-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1231,9 +1231,9 @@
     "precio": 32000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/glowxir/pa_ales_y_cuidado/PAN-012-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/distribuidorababyworld/pa_ales_y_cuidado/PAN-012-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/glowxir/pa_ales_y_cuidado/PAN-012-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/distribuidorababyworld/pa_ales_y_cuidado/PAN-012-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1252,9 +1252,9 @@
     "precio": 18500,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/glowxir/pa_ales_y_cuidado/PAN-013-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/distribuidorababyworld/pa_ales_y_cuidado/PAN-013-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/glowxir/pa_ales_y_cuidado/PAN-013-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/distribuidorababyworld/pa_ales_y_cuidado/PAN-013-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1274,9 +1274,9 @@
     "precio": 65000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/glowxir/jugueter_a/JUG-011-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/distribuidorababyworld/jugueter_a/JUG-011-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/glowxir/jugueter_a/JUG-011-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/distribuidorababyworld/jugueter_a/JUG-011-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1295,9 +1295,9 @@
     "precio": 89000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/glowxir/jugueter_a/JUG-012-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/distribuidorababyworld/jugueter_a/JUG-012-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/glowxir/jugueter_a/JUG-012-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/distribuidorababyworld/jugueter_a/JUG-012-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1316,10 +1316,10 @@
     "precio": 79000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/glowxir/jugueter_a/JUG-013-RS-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/distribuidorababyworld/jugueter_a/JUG-013-RS-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/glowxir/jugueter_a/JUG-013-RS-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261843/glowxir/jugueter_a/JUG-013-RS-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/distribuidorababyworld/jugueter_a/JUG-013-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261843/distribuidorababyworld/jugueter_a/JUG-013-RS-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1338,10 +1338,10 @@
     "precio": 79900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/glowxir/jugueter_a/JUG-014-RJ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/distribuidorababyworld/jugueter_a/JUG-014-RJ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/glowxir/jugueter_a/JUG-014-RJ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261865/glowxir/jugueter_a/JUG-014-RJ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/distribuidorababyworld/jugueter_a/JUG-014-RJ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261865/distribuidorababyworld/jugueter_a/JUG-014-RJ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1360,10 +1360,10 @@
     "precio": 55000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/glowxir/jugueter_a/JUG-015-SU-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/distribuidorababyworld/jugueter_a/JUG-015-SU-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/glowxir/jugueter_a/JUG-015-SU-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261887/glowxir/jugueter_a/JUG-015-SU-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/distribuidorababyworld/jugueter_a/JUG-015-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261887/distribuidorababyworld/jugueter_a/JUG-015-SU-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1383,9 +1383,9 @@
     "precio": 98000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/glowxir/jugueter_a/JUG-016-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/distribuidorababyworld/jugueter_a/JUG-016-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/glowxir/jugueter_a/JUG-016-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/distribuidorababyworld/jugueter_a/JUG-016-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1405,10 +1405,10 @@
     "precio": 65000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/glowxir/jugueter_a/JUG-017-AZ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/distribuidorababyworld/jugueter_a/JUG-017-AZ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/glowxir/jugueter_a/JUG-017-AZ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261968/glowxir/jugueter_a/JUG-017-AZ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/distribuidorababyworld/jugueter_a/JUG-017-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261968/distribuidorababyworld/jugueter_a/JUG-017-AZ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1427,9 +1427,9 @@
     "precio": 89000,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/glowxir/jugueter_a/JUG-018-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/distribuidorababyworld/jugueter_a/JUG-018-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/glowxir/jugueter_a/JUG-018-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/distribuidorababyworld/jugueter_a/JUG-018-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1448,9 +1448,9 @@
     "precio": 89000,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/glowxir/jugueter_a/JUG-019-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/distribuidorababyworld/jugueter_a/JUG-019-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/glowxir/jugueter_a/JUG-019-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/distribuidorababyworld/jugueter_a/JUG-019-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1470,9 +1470,9 @@
     "precio": 125000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/glowxir/jugueter_a/JUG-020-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/distribuidorababyworld/jugueter_a/JUG-020-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/glowxir/jugueter_a/JUG-020-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/distribuidorababyworld/jugueter_a/JUG-020-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1491,9 +1491,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/glowxir/jugueter_a/JUG-021-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/distribuidorababyworld/jugueter_a/JUG-021-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/glowxir/jugueter_a/JUG-021-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/distribuidorababyworld/jugueter_a/JUG-021-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1513,9 +1513,9 @@
     "precio": 65000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/glowxir/jugueter_a/JUG-022-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/distribuidorababyworld/jugueter_a/JUG-022-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/glowxir/jugueter_a/JUG-022-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/distribuidorababyworld/jugueter_a/JUG-022-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1535,9 +1535,9 @@
     "precio": 45000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/glowxir/jugueter_a/JUG-023-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/distribuidorababyworld/jugueter_a/JUG-023-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/glowxir/jugueter_a/JUG-023-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/distribuidorababyworld/jugueter_a/JUG-023-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1557,9 +1557,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/glowxir/jugueter_a/JUG-024-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/distribuidorababyworld/jugueter_a/JUG-024-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/glowxir/jugueter_a/JUG-024-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/distribuidorababyworld/jugueter_a/JUG-024-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1578,9 +1578,9 @@
     "precio": 45000,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/glowxir/jugueter_a/JUG-025-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/distribuidorababyworld/jugueter_a/JUG-025-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/glowxir/jugueter_a/JUG-025-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/distribuidorababyworld/jugueter_a/JUG-025-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1599,9 +1599,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/glowxir/jugueter_a/JUG-026-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/distribuidorababyworld/jugueter_a/JUG-026-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/glowxir/jugueter_a/JUG-026-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/distribuidorababyworld/jugueter_a/JUG-026-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1620,9 +1620,9 @@
     "precio": 45000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/glowxir/pa_ales_y_cuidado/COM-003-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/distribuidorababyworld/pa_ales_y_cuidado/COM-003-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/glowxir/pa_ales_y_cuidado/COM-003-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/distribuidorababyworld/pa_ales_y_cuidado/COM-003-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1642,10 +1642,10 @@
     "precio": 55000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/glowxir/jugueter_a/JUG-027-RJ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/distribuidorababyworld/jugueter_a/JUG-027-RJ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/glowxir/jugueter_a/JUG-027-RJ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262249/glowxir/jugueter_a/JUG-027-RJ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/distribuidorababyworld/jugueter_a/JUG-027-RJ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262249/distribuidorababyworld/jugueter_a/JUG-027-RJ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1665,9 +1665,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/glowxir/variedades/RPN-001-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/distribuidorababyworld/variedades/RPN-001-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/glowxir/variedades/RPN-001-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/distribuidorababyworld/variedades/RPN-001-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1686,10 +1686,10 @@
     "precio": 65000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/glowxir/variedades/RPA-001-RS-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/distribuidorababyworld/variedades/RPA-001-RS-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/glowxir/variedades/RPA-001-RS-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262524/glowxir/variedades/RPA-001-RS-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/distribuidorababyworld/variedades/RPA-001-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262524/distribuidorababyworld/variedades/RPA-001-RS-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1708,9 +1708,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/glowxir/variedades/RPA-002-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/distribuidorababyworld/variedades/RPA-002-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/glowxir/variedades/RPA-002-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/distribuidorababyworld/variedades/RPA-002-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1729,9 +1729,9 @@
     "precio": 49900,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/glowxir/variedades/RPA-003-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/distribuidorababyworld/variedades/RPA-003-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/glowxir/variedades/RPA-003-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/distribuidorababyworld/variedades/RPA-003-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1750,9 +1750,9 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/glowxir/variedades/RPA-004-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/distribuidorababyworld/variedades/RPA-004-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/glowxir/variedades/RPA-004-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/distribuidorababyworld/variedades/RPA-004-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1772,9 +1772,9 @@
     "precio": 55000,
     "categoria": "Pañales y Cuidado",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/glowxir/pa_ales_y_cuidado/RPU-002-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/distribuidorababyworld/pa_ales_y_cuidado/RPU-002-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/glowxir/pa_ales_y_cuidado/RPU-002-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/distribuidorababyworld/pa_ales_y_cuidado/RPU-002-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1793,9 +1793,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/glowxir/variedades/RPA-005-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/distribuidorababyworld/variedades/RPA-005-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/glowxir/variedades/RPA-005-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/distribuidorababyworld/variedades/RPA-005-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1814,9 +1814,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/glowxir/variedades/RPA-006-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/distribuidorababyworld/variedades/RPA-006-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/glowxir/variedades/RPA-006-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/distribuidorababyworld/variedades/RPA-006-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1835,10 +1835,10 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/glowxir/variedades/RPU-003-SU-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/distribuidorababyworld/variedades/RPU-003-SU-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/glowxir/variedades/RPU-003-SU-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262704/glowxir/variedades/RPU-003-SU-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/distribuidorababyworld/variedades/RPU-003-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262704/distribuidorababyworld/variedades/RPU-003-SU-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1857,9 +1857,9 @@
     "precio": 65000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/glowxir/variedades/RPN-002-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/distribuidorababyworld/variedades/RPN-002-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/glowxir/variedades/RPN-002-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/distribuidorababyworld/variedades/RPN-002-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1878,9 +1878,9 @@
     "precio": 65000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/glowxir/variedades/RPN-003-BL.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/distribuidorababyworld/variedades/RPN-003-BL.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/glowxir/variedades/RPN-003-BL.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/distribuidorababyworld/variedades/RPN-003-BL.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1899,9 +1899,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/glowxir/variedades/RPN-004-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/distribuidorababyworld/variedades/RPN-004-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/glowxir/variedades/RPN-004-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/distribuidorababyworld/variedades/RPN-004-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1920,9 +1920,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/glowxir/variedades/RPN-005-RJ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/distribuidorababyworld/variedades/RPN-005-RJ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/glowxir/variedades/RPN-005-RJ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/distribuidorababyworld/variedades/RPN-005-RJ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1941,9 +1941,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/glowxir/variedades/RPN-006-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/distribuidorababyworld/variedades/RPN-006-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/glowxir/variedades/RPN-006-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/distribuidorababyworld/variedades/RPN-006-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1962,9 +1962,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/glowxir/variedades/RPN-007-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/distribuidorababyworld/variedades/RPN-007-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/glowxir/variedades/RPN-007-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/distribuidorababyworld/variedades/RPN-007-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -1983,9 +1983,9 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/glowxir/variedades/RPN-008-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/distribuidorababyworld/variedades/RPN-008-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/glowxir/variedades/RPN-008-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/distribuidorababyworld/variedades/RPN-008-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2004,9 +2004,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/glowxir/variedades/RPN-009-CF.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/distribuidorababyworld/variedades/RPN-009-CF.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/glowxir/variedades/RPN-009-CF.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/distribuidorababyworld/variedades/RPN-009-CF.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2025,9 +2025,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/glowxir/variedades/RPN-010-CF.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/distribuidorababyworld/variedades/RPN-010-CF.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/glowxir/variedades/RPN-010-CF.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/distribuidorababyworld/variedades/RPN-010-CF.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2046,10 +2046,10 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/glowxir/variedades/RPN-011-CQ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/distribuidorababyworld/variedades/RPN-011-CQ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/glowxir/variedades/RPN-011-CQ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263362/glowxir/variedades/RPN-011-CQ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/distribuidorababyworld/variedades/RPN-011-CQ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263362/distribuidorababyworld/variedades/RPN-011-CQ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2069,9 +2069,9 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/glowxir/variedades/RPA-007-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/distribuidorababyworld/variedades/RPA-007-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/glowxir/variedades/RPA-007-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/distribuidorababyworld/variedades/RPA-007-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2090,9 +2090,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/glowxir/variedades/RPA-008-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/distribuidorababyworld/variedades/RPA-008-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/glowxir/variedades/RPA-008-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/distribuidorababyworld/variedades/RPA-008-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2112,9 +2112,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/glowxir/variedades/RPA-009-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/distribuidorababyworld/variedades/RPA-009-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/glowxir/variedades/RPA-009-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/distribuidorababyworld/variedades/RPA-009-VD.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2134,10 +2134,10 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/glowxir/variedades/RPA-010-AZ-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/distribuidorababyworld/variedades/RPA-010-AZ-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/glowxir/variedades/RPA-010-AZ-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263485/glowxir/variedades/RPA-010-AZ-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/distribuidorababyworld/variedades/RPA-010-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263485/distribuidorababyworld/variedades/RPA-010-AZ-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2156,9 +2156,9 @@
     "precio": 45000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/glowxir/variedades/RPA-011-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/distribuidorababyworld/variedades/RPA-011-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/glowxir/variedades/RPA-011-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/distribuidorababyworld/variedades/RPA-011-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2178,10 +2178,10 @@
     "precio": 42000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/glowxir/variedades/RPA-012-VD-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/distribuidorababyworld/variedades/RPA-012-VD-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/glowxir/variedades/RPA-012-VD-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263545/glowxir/variedades/RPA-012-VD-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/distribuidorababyworld/variedades/RPA-012-VD-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263545/distribuidorababyworld/variedades/RPA-012-VD-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2200,9 +2200,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/glowxir/variedades/RPA-013-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/distribuidorababyworld/variedades/RPA-013-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/glowxir/variedades/RPA-013-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/distribuidorababyworld/variedades/RPA-013-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2221,10 +2221,10 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/glowxir/variedades/RPA-014-SU-1.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/distribuidorababyworld/variedades/RPA-014-SU-1.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/glowxir/variedades/RPA-014-SU-1.png",
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263592/glowxir/variedades/RPA-014-SU-2.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/distribuidorababyworld/variedades/RPA-014-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263592/distribuidorababyworld/variedades/RPA-014-SU-2.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2243,9 +2243,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/glowxir/variedades/RPA-015-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/distribuidorababyworld/variedades/RPA-015-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/glowxir/variedades/RPA-015-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/distribuidorababyworld/variedades/RPA-015-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2264,9 +2264,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/glowxir/variedades/RPA-016-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/distribuidorababyworld/variedades/RPA-016-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/glowxir/variedades/RPA-016-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/distribuidorababyworld/variedades/RPA-016-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2286,9 +2286,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/glowxir/variedades/RPA-017-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/distribuidorababyworld/variedades/RPA-017-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/glowxir/variedades/RPA-017-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/distribuidorababyworld/variedades/RPA-017-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2307,9 +2307,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/glowxir/variedades/RPA-018-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/distribuidorababyworld/variedades/RPA-018-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/glowxir/variedades/RPA-018-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/distribuidorababyworld/variedades/RPA-018-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2328,9 +2328,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/glowxir/variedades/RPA-019-CQ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/distribuidorababyworld/variedades/RPA-019-CQ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/glowxir/variedades/RPA-019-CQ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/distribuidorababyworld/variedades/RPA-019-CQ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2350,9 +2350,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/glowxir/variedades/RPA-020-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/distribuidorababyworld/variedades/RPA-020-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/glowxir/variedades/RPA-020-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/distribuidorababyworld/variedades/RPA-020-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2371,9 +2371,9 @@
     "precio": 42000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/glowxir/variedades/RPA-021-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/distribuidorababyworld/variedades/RPA-021-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/glowxir/variedades/RPA-021-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/distribuidorababyworld/variedades/RPA-021-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2392,9 +2392,9 @@
     "precio": 55000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/glowxir/variedades/RPA-022-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/distribuidorababyworld/variedades/RPA-022-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/glowxir/variedades/RPA-022-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/distribuidorababyworld/variedades/RPA-022-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2413,9 +2413,9 @@
     "precio": 59900,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/glowxir/variedades/RPA-023-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/distribuidorababyworld/variedades/RPA-023-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/glowxir/variedades/RPA-023-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/distribuidorababyworld/variedades/RPA-023-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2434,9 +2434,9 @@
     "precio": 85000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/glowxir/variedades/RPA-024-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/distribuidorababyworld/variedades/RPA-024-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/glowxir/variedades/RPA-024-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/distribuidorababyworld/variedades/RPA-024-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2455,9 +2455,9 @@
     "precio": 65000,
     "categoria": "Variedades",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/glowxir/variedades/RPA-025-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/distribuidorababyworld/variedades/RPA-025-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/glowxir/variedades/RPA-025-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/distribuidorababyworld/variedades/RPA-025-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2477,9 +2477,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/glowxir/jugueter_a/JUG-028-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/distribuidorababyworld/jugueter_a/JUG-028-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/glowxir/jugueter_a/JUG-028-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/distribuidorababyworld/jugueter_a/JUG-028-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2499,9 +2499,9 @@
     "precio": 79900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/glowxir/jugueter_a/JUG-029-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/distribuidorababyworld/jugueter_a/JUG-029-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/glowxir/jugueter_a/JUG-029-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/distribuidorababyworld/jugueter_a/JUG-029-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2520,9 +2520,9 @@
     "precio": 89000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/glowxir/jugueter_a/JUG-030-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/distribuidorababyworld/jugueter_a/JUG-030-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/glowxir/jugueter_a/JUG-030-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/distribuidorababyworld/jugueter_a/JUG-030-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2541,9 +2541,9 @@
     "precio": 49900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/glowxir/jugueter_a/JUG-031-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/distribuidorababyworld/jugueter_a/JUG-031-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/glowxir/jugueter_a/JUG-031-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/distribuidorababyworld/jugueter_a/JUG-031-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2562,9 +2562,9 @@
     "precio": 65000,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/glowxir/jugueter_a/JUG-032-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/distribuidorababyworld/jugueter_a/JUG-032-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/glowxir/jugueter_a/JUG-032-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/distribuidorababyworld/jugueter_a/JUG-032-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2583,9 +2583,9 @@
     "precio": 79900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/glowxir/jugueter_a/JUG-033-AZ.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/distribuidorababyworld/jugueter_a/JUG-033-AZ.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/glowxir/jugueter_a/JUG-033-AZ.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/distribuidorababyworld/jugueter_a/JUG-033-AZ.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2605,9 +2605,9 @@
     "precio": 95000,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/glowxir/jugueter_a/JUG-034-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/distribuidorababyworld/jugueter_a/JUG-034-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/glowxir/jugueter_a/JUG-034-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/distribuidorababyworld/jugueter_a/JUG-034-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2626,9 +2626,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niña",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/glowxir/jugueter_a/JUG-035-RS.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/distribuidorababyworld/jugueter_a/JUG-035-RS.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/glowxir/jugueter_a/JUG-035-RS.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/distribuidorababyworld/jugueter_a/JUG-035-RS.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2648,9 +2648,9 @@
     "precio": 89900,
     "categoria": "Juguetería",
     "genero": "Niño",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/glowxir/jugueter_a/JUG-036-SU.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/distribuidorababyworld/jugueter_a/JUG-036-SU.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/glowxir/jugueter_a/JUG-036-SU.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/distribuidorababyworld/jugueter_a/JUG-036-SU.png"
     ],
     "stock": 10,
     "detalles": [
@@ -2669,9 +2669,9 @@
     "precio": 79900,
     "categoria": "Juguetería",
     "genero": "Unisex",
-    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/glowxir/jugueter_a/JUG-037-VD.png",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/distribuidorababyworld/jugueter_a/JUG-037-VD.png",
     "imagenes": [
-      "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/glowxir/jugueter_a/JUG-037-VD.png"
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/distribuidorababyworld/jugueter_a/JUG-037-VD.png"
     ],
     "stock": 10,
     "detalles": [

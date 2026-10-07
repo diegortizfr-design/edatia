@@ -247,6 +247,16 @@ export class DigitalService {
         descripcion: true,
         descripcionWeb: true,
         esDestacado: true,
+        categoria: {
+          select: {
+            nombre: true,
+            parent: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        },
       }
     });
   }
