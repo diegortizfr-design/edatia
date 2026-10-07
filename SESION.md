@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-06 (sesión 3)
+> Última actualización: 2026-10-06 (sesión 4)
 
 ---
 
@@ -28,6 +28,22 @@ manager  → Manager React (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+---
+
+## Estado resuelto (sesión 4)
+
+✅ **Tienda Virtual (Baby World):**
+  - Refactorización de `App.tsx` y `HeroBanner.tsx` para categorizar los productos dinámicamente usando las relaciones de categoría padre (`p.categoria.parent`) e hija (`p.categoria`).
+  - Añadidas secciones de "Ropa" y "Alimentación" a la navegación.
+✅ **Migración y Fix de Imágenes (Cloudinary):**
+  - Las imágenes en Cloudinary cambiaron de carpeta (de `glowxir` a `distribuidorababyworld`), rompiendo los enlaces en la BD.
+  - Se construyó el script `fix_images.js` para buscar todas las imágenes en Cloudinary por prefijo de SKU y actualizar automáticamente 125 URLs en la base de datos de producción.
+✅ **Recuperación de Accesos (ERP):**
+  - Se extrajo el usuario `admin@diegortiz.site` y el NIT `1143875756-0` desde PostgreSQL (`edatia_erp`).
+  - Se forzó el reseteo de contraseña a `123456` usando el script `fix_password.js` (bcrypt, 12 rounds) desbloqueando el usuario en el proceso (`loginFallidosConsecutivos = 0`).
+✅ **CORS y Redirecciones locales:**
+  - El contenedor frontend (`edatia-glowxir`) fue restaurado al puerto original `3005` para pasar la seguridad CORS estricta del backend en desarrollo local, y se instruyó usar ventana de Incógnito para evadir la caché de redirección 301 de navegadores.
 
 ---
 

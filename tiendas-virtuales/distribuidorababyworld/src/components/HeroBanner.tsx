@@ -84,7 +84,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
         </div>
 
         {/* Quick Categories (Estilo más amplio y separado) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto">
           {/* 1. Pañales y Cuidado */}
           <button
             onClick={() => onSelectCategory('Pañales y Cuidado')}
@@ -113,10 +113,38 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
             <span className="text-[11px] text-slate-400 mt-1">Estimulación temprana</span>
           </button>
 
-          {/* 3. Variedades */}
+          {/* 3. Ropa */}
+          <button
+            onClick={() => onSelectCategory('Ropa')}
+            className="group p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-indigo-100/50 hover:border-indigo-200 transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center active:scale-95"
+          >
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-indigo-50 flex items-center justify-center text-2xl sm:text-3xl mb-3 group-hover:scale-110 transition-transform shadow-inner">
+              👕
+            </div>
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 group-hover:text-indigo-500 transition-colors">
+              Ropa
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1">Ajuar & pijamas</span>
+          </button>
+
+          {/* 4. Alimentación */}
+          <button
+            onClick={() => onSelectCategory('Alimentación')}
+            className="group p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-emerald-100/50 hover:border-emerald-200 transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center active:scale-95"
+          >
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-emerald-50 flex items-center justify-center text-2xl sm:text-3xl mb-3 group-hover:scale-110 transition-transform shadow-inner">
+              🍼
+            </div>
+            <span className="text-sm sm:text-base font-extrabold text-slate-800 group-hover:text-emerald-500 transition-colors">
+              Alimentación
+            </span>
+            <span className="text-[11px] text-slate-400 mt-1">Biberones & vajillas</span>
+          </button>
+
+          {/* 5. Variedades */}
           <button
             onClick={() => onSelectCategory('Variedades')}
-            className="group p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-pink-100/50 hover:border-pink-200 transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center active:scale-95"
+            className="group p-5 sm:p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-pink-100/50 hover:border-pink-200 transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center active:scale-95 col-span-2 md:col-span-1 lg:col-span-1 mx-auto w-full md:w-auto"
           >
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-pink-50 flex items-center justify-center text-2xl sm:text-3xl mb-3 group-hover:scale-110 transition-transform shadow-inner">
               🎀
@@ -124,7 +152,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
             <span className="text-sm sm:text-base font-extrabold text-slate-800 group-hover:text-pink-500 transition-colors">
               Variedades
             </span>
-            <span className="text-[11px] text-slate-400 mt-1">Ropa & accesorios</span>
+            <span className="text-[11px] text-slate-400 mt-1">Otros accesorios</span>
           </button>
         </div>
       </div>

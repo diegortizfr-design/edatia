@@ -1,0 +1,627 @@
+[
+  {
+    "id": 61,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 63,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 65,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 67,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 68,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 69,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 151,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 71,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 72,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 73,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 74,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 75,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 76,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 77,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 78,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 80,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 81,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 82,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 83,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 84,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 85,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 86,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 87,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 89,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 90,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 91,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 92,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 93,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 94,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Accesorios"
+  },
+  {
+    "id": 95,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Accesorios"
+  },
+  {
+    "id": 96,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 98,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 99,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Pa├▒ales"
+  },
+  {
+    "id": 100,
+    "categoria": "Variedades",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 101,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 102,
+    "categoria": "Variedades",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 103,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 104,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 105,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 107,
+    "categoria": "Variedades",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 108,
+    "categoria": "Variedades",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 109,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 110,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 111,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Accesorios"
+  },
+  {
+    "id": 112,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 113,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 114,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 116,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 117,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 118,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 119,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 120,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 121,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 122,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 123,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 125,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 126,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 127,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 128,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 129,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 130,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 131,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 132,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 134,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 135,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 136,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 137,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 138,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 139,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 140,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 141,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 143,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 144,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 145,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 146,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 147,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 148,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 149,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 150,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 153,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 154,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 155,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 156,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 157,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 158,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 159,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 160,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 162,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 163,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 164,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 165,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 166,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 167,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 168,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 169,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 171,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 172,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 173,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 174,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 175,
+    "categoria": "Variedades",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 176,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 177,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 178,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 62,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 64,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Paseo"
+  },
+  {
+    "id": 180,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 181,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 182,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 183,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 184,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 185,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 66,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Lencer├¡a"
+  },
+  {
+    "id": 70,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 79,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 88,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Alimentaci├│n"
+  },
+  {
+    "id": 97,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Aseo"
+  },
+  {
+    "id": 106,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Cremas"
+  },
+  {
+    "id": 115,
+    "categoria": "Variedades",
+    "subcategoria": "Accesorios"
+  },
+  {
+    "id": 124,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 133,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  },
+  {
+    "id": 142,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 152,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 161,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 170,
+    "categoria": "Pa├▒ales y Cuidado",
+    "subcategoria": "Ropa"
+  },
+  {
+    "id": 179,
+    "categoria": "Jugueter├¡a",
+    "subcategoria": "Estimulaci├│n"
+  }
+]

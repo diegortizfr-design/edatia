@@ -20,15 +20,15 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
 
 const getStoreSlug = () => {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  if (isLocal) return 'glowxir'
+  if (isLocal) return 'distribuidorababyworld'
   const host = window.location.hostname.replace('www.', '')
   if (host.endsWith('.edatia.com')) {
     return host.replace('.edatia.com', '')
   }
   if (host.includes('distribuidorababyworld')) {
-    return 'glowxir'
+    return 'distribuidorababyworld'
   }
-  return 'glowxir'
+  return 'distribuidorababyworld'
 }
 
 const STORE_SLUG = getStoreSlug()
@@ -60,27 +60,17 @@ export function App() {
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
           const mapped: Product[] = data.map((p: any) => {
-            let cat: 'Pañales y Cuidado' | 'Juguetería' | 'Variedades' = 'Pañales y Cuidado'
-            const sku = (p.sku || '').toUpperCase()
-            const nombre = (p.nombre || '').toLowerCase()
-
-            if (sku.startsWith('JUG') || nombre.includes('juguete') || nombre.includes('gimnasio') || nombre.includes('peluche') || nombre.includes('sonajero')) {
-              cat = 'Juguetería'
-            } else if (sku.startsWith('VAR') || sku.startsWith('ROP') || nombre.includes('ajuar') || nombre.includes('cobija') || nombre.includes('babero') || nombre.includes('kit')) {
-              cat = 'Variedades'
-            } else {
-              cat = 'Pañales y Cuidado'
-            }
-
-            // Derive subcategory
-            let subcat = p.categoria || ''
-            if (!subcat) {
-              if (nombre.includes('pañal') || sku.startsWith('PAN')) subcat = 'Pañales'
-              else if (nombre.includes('crema') || nombre.includes('desitin') || nombre.includes('natusan') || nombre.includes('pomada')) subcat = 'Cremas & Pomadas'
-              else if (nombre.includes('toall') || nombre.includes('pañito')) subcat = 'Toallitas & Pañitos'
-              else if (nombre.includes('shampoo') || nombre.includes('jabon') || nombre.includes('baño') || nombre.includes('locion')) subcat = 'Aseo & Baño'
-              else if (nombre.includes('biberon') || nombre.includes('chupo') || nombre.includes('tetero')) subcat = 'Alimentación & Chupos'
-              else subcat = cat
+            let cat = 'Variedades'
+            let subcat = 'Otros'
+            
+            if (p.categoria) {
+              if (p.categoria.parent) {
+                cat = p.categoria.parent.nombre;
+                subcat = p.categoria.nombre;
+              } else {
+                cat = p.categoria.nombre;
+                subcat = '';
+              }
             }
 
             return {

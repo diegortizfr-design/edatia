@@ -1,0 +1,2684 @@
+[
+  {
+    "id": 1,
+    "sku": "JUG-001-AZ",
+    "nombre": "Pista De Carreras Slot Track Racing JJ Slot",
+    "descripcion": "Emocionante pista de carreras de autos a escala 1:64 con dos controles de velocidad y divertidos loopings.",
+    "descripcionLarga": "Vive la máxima emoción de la velocidad con la Pista de Carreras Slot Track Racing JJ Slot. Este increíble set incluye dos carros a escala 1:64 y dos controles de velocidad manuales ecológicos sin baterías. Su diseño cuenta con un perímetro de 506 cm y desafiantes loopings que garantizan horas de diversión y entretenimiento seguro para niños mayores de 6 años.",
+    "precio": 149900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/distribuidorababyworld/jugueter_a/JUG-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791258983/distribuidorababyworld/jugueter_a/JUG-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye dos carros a escala 1:64",
+      "Dos controles de velocidad manuales ecológicos",
+      "Perímetro total de 506 cm con loopings",
+      "Recomendado para niños mayores de 6 años"
+    ]
+  },
+  {
+    "id": 2,
+    "sku": "JUG-002-VD",
+    "nombre": "Camión de Basura RC 1:32 con Control de Volante",
+    "descripcion": "Divertido camión de recolección de basura a control remoto con diseño realista y volante interactivo.",
+    "descripcionLarga": "Sorprende a los más pequeños con este increíble camión de basura a control remoto en escala 1:32. Incluye un control con diseño de volante para una experiencia de conducción más divertida e inmersiva. Fabricado con materiales seguros y duraderos, es ideal para estimular la imaginación, la coordinación y el juego de rol en niños mayores de 3 años.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/distribuidorababyworld/jugueter_a/JUG-002-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259039/distribuidorababyworld/jugueter_a/JUG-002-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Escala 1:32 con detalles realistas de camión de saneamiento",
+      "Control remoto inalámbrico con forma de volante",
+      "Frecuencia de 2.7 MHz para control estable",
+      "Recomendado para niños mayores de 3 años",
+      "Estimula la creatividad y la coordinación motriz"
+    ]
+  },
+  {
+    "id": 3,
+    "sku": "CAM-001-AZ",
+    "nombre": "Caminador Infantil Nobily Azul",
+    "descripcion": "Caminador didáctico para bebés con juguetes colgantes, asiento acolchado y base segura.",
+    "descripcionLarga": "Este caminador infantil de la marca Nobily está diseñado para acompañar los primeros pasos de tu bebé con total seguridad y diversión. Cuenta con un asiento acolchado sumamente cómodo, una estructura resistente de color azul, un arco superior con juguetes didácticos colgantes y un panel frontal con esferas de colores para estimular la motricidad fina y la coordinación visual.",
+    "precio": 185000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/distribuidorababyworld/jugueter_a/CAM-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259060/distribuidorababyworld/jugueter_a/CAM-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Asiento acolchado y cómodo para el bebé",
+      "Arco superior con juguetes colgantes estimulantes",
+      "Panel frontal con esferas giratorias de colores",
+      "Ruedas multidireccionales para un desplazamiento suave",
+      "Estructura plegable, resistente y fácil de limpiar"
+    ]
+  },
+  {
+    "id": 4,
+    "sku": "CAM-002-AZ",
+    "nombre": "Caminador Asistente Infantil Azul con Juguetes",
+    "descripcion": "Caminador para bebés con soporte ajustable, base amplia, ruedas multidireccionales y barra de juguetes colgantes.",
+    "descripcionLarga": "Brinda a tu bebé la mejor experiencia en sus primeros pasos con este caminador infantil diseñado para ofrecer máxima seguridad y diversión. Cuenta con una estructura robusta de base amplia, múltiples ruedas multidireccionales para un desplazamiento suave, un asiento acolchado y cómodo con un tierno estampado de animales, y una barra superior con juguetes colgantes interactivos que estimulan sus sentidos y habilidades motoras mientras explora el entorno.",
+    "precio": 185000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/distribuidorababyworld/variedades/CAM-002-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259135/distribuidorababyworld/variedades/CAM-002-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Estructura resistente con amplia base de apoyo para mayor estabilidad",
+      "Ruedas multidireccionales para un desplazamiento suave y seguro",
+      "Asiento acolchado y cómodo con diseño estampado de animales",
+      "Barra frontal con juguetes colgantes para estimulación temprana",
+      "Diseño plegable y fácil de almacenar"
+    ]
+  },
+  {
+    "id": 5,
+    "sku": "NID-001-AZ",
+    "nombre": "Nido Reductor Cuna Bebé Zorro Azul",
+    "descripcion": "Nido reductor de cuna acolchado con diseño de zorritos y estrellas sobre fondo azul, incluye almohada y accesorios.",
+    "descripcionLarga": "Brinda a tu bebé un espacio seguro, cómodo y acogedor con este hermoso nido reductor de cuna. Diseñado especialmente para los primeros meses de vida, simula la suavidad y protección del vientre materno. Confeccionado con telas suaves y transpirables, incluye una linda almohada temática de zorrito, cojín de apoyo y detalles acolchados que garantizan un descanso placentero. Su color azul con diseño de zorros y estrellas lo hace ideal para cualquier habitación infantil.",
+    "precio": 129900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/distribuidorababyworld/pa_ales_y_cuidado/NID-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259236/distribuidorababyworld/pa_ales_y_cuidado/NID-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño ergonómico que simula el vientre materno",
+      "Incluye almohada y cojín de apoyo a juego",
+      "Materiales suaves, hipoalergénicos y transpirables",
+      "Fácil de transportar y lavar"
+    ]
+  },
+  {
+    "id": 6,
+    "sku": "CMP-001-SU",
+    "nombre": "Colchoneta Camping con Toldillo Ref. 1029",
+    "descripcion": "Colchoneta camping plegable para bebé con toldillo anti-mosquito y diseño estampado. Ideal para descansar en cualquier lugar.",
+    "descripcionLarga": "Esta práctica colchoneta camping para bebé es perfecta para garantizar la comodidad y seguridad de tu pequeño durante los viajes o días de descanso al aire libre. Cuenta con un diseño plegable fácil de transportar, sistema anti-mosquito con toldillo integrado y un encantador estampado infantil. Incluye almohada y ofrece unas dimensiones óptimas para bebés de 0 a 18 meses, brindando un espacio cómodo y protegido en todo momento.",
+    "precio": 85000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/distribuidorababyworld/variedades/CMP-001-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259290/distribuidorababyworld/variedades/CMP-001-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye toldillo anti-mosquito para mayor protección",
+      "Diseño plegable de fácil transporte y almacenamiento",
+      "Apto para bebés de 0 a 18 meses",
+      "Medidas aproximadas: 100 x 50 x 46 cm",
+      "Incluye almohada suave y cómoda"
+    ]
+  },
+  {
+    "id": 7,
+    "sku": "NID-002-RS",
+    "nombre": "Nido Reductor Cuna Bebé Minky Con Almohada Oso",
+    "descripcion": "Nido reductor de cuna con textura minky color rosa y adorable cojín de osito. Ideal para el descanso seguro del bebé.",
+    "descripcionLarga": "Brinda a tu bebé el máximo confort y seguridad con este hermoso nido reductor de cuna fabricado en suave tela minky con relieves de burbujas. Diseñado especialmente para simular la sensación del vientre materno, ayuda a que el recién nacido duerma plácidamente. Incluye una linda almohada decorativa con diseño de osito. Es portátil, fácil de lavar y perfecto para los primeros meses de vida.",
+    "precio": 85000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/distribuidorababyworld/pa_ales_y_cuidado/NID-002-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259323/distribuidorababyworld/pa_ales_y_cuidado/NID-002-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Tela minky ultrasuave con textura de burbujas estimulantes",
+      "Incluye almohada ergonómica con diseño de osito tierno",
+      "Diseño portátil y ligero para llevar a todas partes",
+      "Ayuda a delimitar espacios seguros para el sueño del bebé"
+    ]
+  },
+  {
+    "id": 8,
+    "sku": "CMP-002-AZ",
+    "nombre": "Colchoneta Camping para Bebé con Toldillo",
+    "descripcion": "Colchoneta portatil tipo camping para bebe con toldillo anti-mosquito y almohada incluida. Ideal para viajes.",
+    "descripcionLarga": "Brinda a tu bebe un espacio seguro, comodo y protegido en cualquier lugar con nuestra Colchoneta Camping Portatil. Diseñada especialmente para recien nacidos hasta los 18 meses, cuenta con un toldillo integrado anti-mosquitos para proteger a tu pequeno de picaduras mientras duerme o descansa al aire libre o en casa. Es completamente plegable, ligera y facil de transportar en su estuche. Incluye una almohada suave y medidas perfectas de 100x50x46 cm.",
+    "precio": 95000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/distribuidorababyworld/variedades/CMP-002-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259348/distribuidorababyworld/variedades/CMP-002-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye toldillo protector anti-mosquitos",
+      "Diseño plegable facil de transportar",
+      "Incluye almohada suave y comoda",
+      "Apta para bebes de 0 a 18 meses",
+      "Medidas: 100 x 50 x 46 cm"
+    ]
+  },
+  {
+    "id": 9,
+    "sku": "NID-003-RS",
+    "nombre": "Nido Reductor Cuna Bebé Tiernos Animales",
+    "descripcion": "Nido reductor para cuna acolchado con diseño de tiernos animalitos, ideal para el descanso seguro del bebé.",
+    "descripcionLarga": "Brinda a tu bebé el máximo confort y seguridad con este hermoso nido reductor para cuna. Cuenta con un diseño encantador de animalitos en tonos morados, e incluye almohada y accesorios suaves al tacto. Es perfecto para simular la sensación del vientre materno, ayudando a que tu pequeño duerma plácidamente.",
+    "precio": 129900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/distribuidorababyworld/pa_ales_y_cuidado/NID-003-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259370/distribuidorababyworld/pa_ales_y_cuidado/NID-003-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño ergonómico que simula el vientre materno",
+      "Incluye almohada a juego y soportes acolchados",
+      "Materiales suaves y Hipoalergénicos",
+      "Fácil de transportar y lavar"
+    ]
+  },
+  {
+    "id": 10,
+    "sku": "JUG-003-RS",
+    "nombre": "Set de Muñecas Gimnasta Fenbo Lucy",
+    "descripcion": "Set de juego de muñecas gimnastas con accesorios de entrenamiento para horas de diversión.",
+    "descripcionLarga": "Estimula la imaginación y la pasión por el deporte con este hermoso set de muñecas gimnastas Fenbo Lucy. Incluye una muñeca grande entrenadora y una pequeña gimnasta articulada lista para realizar acrobacias en la barra fija, además de accesorios como aros, trofeo y bolso. Fabricado con materiales seguros y duraderos, es el regalo perfecto para niñas mayores de 3 años.",
+    "precio": 79900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/distribuidorababyworld/jugueter_a/JUG-003-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259539/distribuidorababyworld/jugueter_a/JUG-003-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye dos muñecas: entrenadora y gimnasta pequeña",
+      "Accesorios temáticos de gimnasia y trofeo de campeonato",
+      "Muñeca pequeña con función de giro en la barra",
+      "Recomendado para niñas mayores de 3 años"
+    ]
+  },
+  {
+    "id": 11,
+    "sku": "JUG-004-SU",
+    "nombre": "Muñeca Doctora Oftalmóloga con Paciente",
+    "descripcion": "Set de juego de doctora oftalmóloga con muñeca grande, pequeña, accesorios de examen visual y anteojos intercambiables.",
+    "descripcionLarga": "Estimula la imaginación y el juego de roles con este increíble set de Fenbo Eye Doctor. Incluye una muñeca doctora con su bata de laboratorio, una tierna muñequita paciente, un tablero de agudeza visual, silla de examen y cuatro pares de anteojos intercambiables para divertirse creando historias profesionales.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/distribuidorababyworld/jugueter_a/JUG-004-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259573/distribuidorababyworld/jugueter_a/JUG-004-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca doctora y mini paciente",
+      "Tabla de optometría y silla de examen",
+      "Cuatro pares de gafas intercambiables",
+      "Ideal para estimular el juego de roles"
+    ]
+  },
+  {
+    "id": 12,
+    "sku": "JUG-005-RS",
+    "nombre": "Muñeca Fenbo Lucy Gimnasta con Accesorios",
+    "descripcion": "Set de juego de muñeca Fenbo Lucy gimnasta con barra de ejercicios y muñeca pequeña.",
+    "descripcionLarga": "Disfruta de horas de diversión y creatividad con el set de juego Fenbo Lucy Gimnasta. Incluye una muñeca grande entrenadora, una muñeca pequeña que realiza acrobacias reales en la barra, accesorios deportivos como trofeos y aros, estimulando la imaginación y el juego de roles en las niñas.",
+    "precio": 65000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/distribuidorababyworld/jugueter_a/JUG-005-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259612/distribuidorababyworld/jugueter_a/JUG-005-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca grande y muñeca pequeña",
+      "Barra de ejercicios con función de voltereta real",
+      "Accesorios temáticos como trofeo, medallas y aros",
+      "Recomendado para niñas mayores de 3 años"
+    ]
+  },
+  {
+    "id": 13,
+    "sku": "JUG-006-RS",
+    "nombre": "Barbie Newborn Pups Muñeca con Perrita y Cachorros",
+    "descripcion": "Set de muñeca Barbie con perrita mamá que espera cachorros, accesorios y función sorpresa de cambio de color.",
+    "descripcionLarga": "Sorpréndete con este increíble set de Barbie Newborn Pups. Ayuda a la perrita mamá a dar a luz a sus tres adorables cachorros presionando su lomo. Incluye una bañera con forma de huella, una mantita y divertidos accesorios con función de cambio de color al contacto con el agua para descubrir si son niños o niñas. Ideal para fomentar la imaginación y el juego de roles en los niños.",
+    "precio": 129900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/distribuidorababyworld/jugueter_a/JUG-006-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259636/distribuidorababyworld/jugueter_a/JUG-006-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca Barbie y perrita mamá",
+      "Tres cachorros sorpresa para descubrir",
+      "Accesorios con función de cambio de color en agua",
+      "Bañera con forma de huella y toalla incluida"
+    ]
+  },
+  {
+    "id": 14,
+    "sku": "JUG-007-RS",
+    "nombre": "Muñeca Fenbo Lucy Zoo Doctor con Accesorios",
+    "descripcion": "Divertido set de juego de veterinaria con muñeca Lucy, animalitos y consultorio médico completo.",
+    "descripcionLarga": "Deja volar la imaginación de los más pequeños con el set Fenbo Lucy Zoo Doctor. Incluye una hermosa muñeca articulada, una estación de veterinaria equipada con instrumentos médicos, báscula y adorables mascotas para cuidar. Perfecto para fomentar el juego de roles y el amor por los animales en niñas a partir de 3 años.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/distribuidorababyworld/jugueter_a/JUG-007-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259696/distribuidorababyworld/jugueter_a/JUG-007-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca Lucy articulada",
+      "Estación de veterinaria con accesorios",
+      "Incluye figuras de mascotas",
+      "Fomenta el juego de roles y la creatividad",
+      "Recomendado para mayores de 3 años"
+    ]
+  },
+  {
+    "id": 15,
+    "sku": "CAM-003-SU",
+    "nombre": "Carro Caminador Didáctico 3 en 1",
+    "descripcion": "Carro caminador y montable infantil con diseño colorido y barra de empuje para acompañar las primeras etapas.",
+    "descripcionLarga": "Este maravilloso carro caminador didáctico 3 en 1 está diseñado para acompañar a tu pequeño en su crecimiento. Funciona como caminador de apoyo, carro montable y juguete de paseo con barra de empuje para los padres. Su diseño colorido estimula los sentidos, mientras que su estructura segura y ergonómica favorece el desarrollo de la motricidad gruesa y el equilibrio.",
+    "precio": 125000,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/distribuidorababyworld/jugueter_a/CAM-003-SU-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259769/distribuidorababyworld/jugueter_a/CAM-003-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259770/distribuidorababyworld/jugueter_a/CAM-003-SU-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño multifuncional 3 en 1 para etapas de crecimiento",
+      "Barra de empuje parental ajustable y segura",
+      "Volante interactivo con diseño amigable",
+      "Estructura plástica resistente con colores llamativos"
+    ]
+  },
+  {
+    "id": 16,
+    "sku": "CAM-004-RS",
+    "nombre": "Caminador Infantil Dulces Sueños",
+    "descripcion": "Caminador didáctico para bebés con diseño de dulces, juguetes colgantes y base estable.",
+    "descripcionLarga": "Ayuda a tu pequeño a dar sus primeros pasos de manera segura y divertida con este encantador caminador. Cuenta con una estructura firme, asiento cómodo y acolchado con un hermoso estampado de dulces y postres. Incorpora una bandeja interactiva con juguetes colgantes y elementos móviles que estimulan los sentidos y la coordinación del bebé mientras explora su entorno.",
+    "precio": 189000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/distribuidorababyworld/jugueter_a/CAM-004-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259842/distribuidorababyworld/jugueter_a/CAM-004-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño ergonómico y seguro para los primeros pasos",
+      "Asiento acolchado y cómodo con divertido estampado de postres",
+      "Bandeja frontal con juguetes colgantes interactivos",
+      "Ruedas multidireccionales para un fácil desplazamiento",
+      "Estructura plegable y fácil de almacenar"
+    ]
+  },
+  {
+    "id": 17,
+    "sku": "JUG-008-NG",
+    "nombre": "Carro Monster Truck Drift 4WD",
+    "descripcion": "Increible carro de control remoto todoterreno con traccion 4WD y capacidad de drift horizontal.",
+    "descripcionLarga": "Disfruta de la maxima emocion con este carro Monster Truck Drift 4WD. Diseñado para superar cualquier obstaculo gracias a su sistema de suspension y traccion en las cuatro ruedas. Capaz de realizar movimientos horizontales y drift avanzado, garantiza horas de diversion extrema para los mas pequeños.",
+    "precio": 120000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/distribuidorababyworld/jugueter_a/JUG-008-NG-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259863/distribuidorababyworld/jugueter_a/JUG-008-NG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259865/distribuidorababyworld/jugueter_a/JUG-008-NG-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Traccion 4WD para todo terreno",
+      "Sistema de suspension avanzado",
+      "Movimiento horizontal y drift",
+      "Neumaticos respetuosos con el medio ambiente"
+    ]
+  },
+  {
+    "id": 18,
+    "sku": "JUG-009-SU",
+    "nombre": "Carro Monster RC Tiburón Top Racer",
+    "descripcion": "Increíble vehículo a control remoto con diseño de tiburón, luces, sonidos y función de atomización.",
+    "descripcionLarga": "Sorprende a los más pequeños con el Carro Monster RC Tiburón Top Racer. Este potente vehículo todoterreno a control remoto cuenta con tecnología de 2.4 GHz, diseño agresivo de tiburón, efectos de luces, sonidos realistas y función de atomización de vapor en la parte trasera. Sus llantas de vacío de gran agarre permiten superar cualquier obstáculo para horas de diversión extrema.",
+    "precio": 125000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/distribuidorababyworld/jugueter_a/JUG-009-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259890/distribuidorababyworld/jugueter_a/JUG-009-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Control remoto inalámbrico de fácil manejo",
+      "Efectos de luces y sonidos emocionantes",
+      "Función de atomización en la parte posterior",
+      "Llantas de vacío para mayor tracción en todo terreno",
+      "Tecnología 2.4 GHz libre de interferencias"
+    ]
+  },
+  {
+    "id": 19,
+    "sku": "JUG-010-AZ",
+    "nombre": "Camión Excavadora Radio Control Builders",
+    "descripcion": "Excavadora de juguete a radio control con 5 canales, diseño realista y funciones de movimiento completo para niños.",
+    "descripcionLarga": "Haz que la hora de juego de los más pequeños sea una auténtica obra de construcción con esta increíble excavadora Builders a radio control. Diseñada con 5 canales para realizar movimientos hacia adelante, atrás, giros y operaciones de ingeniería simuladas, este camión ofrece horas de diversión interactiva mientras estimula la creatividad y coordinación motriz.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/distribuidorababyworld/jugueter_a/JUG-010-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259913/distribuidorababyworld/jugueter_a/JUG-010-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Sistema de radio control de 5 canales",
+      "Funciones de avance, retroceso y giros",
+      "Diseño de ingeniería realista tipo Super Truck",
+      "Recomendado para niños a partir de 3 años"
+    ]
+  },
+  {
+    "id": 20,
+    "sku": "VAR-001-AZ",
+    "nombre": "Biberón de Entrenamiento Babools",
+    "descripcion": "Biberón de entrenamiento con asas y diseño ergonómico, libre de BPA para la seguridad del bebé.",
+    "descripcionLarga": "El biberón de entrenamiento Babools está diseñado para facilitar la transición del bebé al vaso. Cuenta con asas ergonómicas fáciles de sostener por manos pequeñas, tetina de alta calidad y material 100% libre de BPA y BPS. Su diseño divertido y seguro acompaña cada etapa de crecimiento de tu pequeño.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/distribuidorababyworld/pa_ales_y_cuidado/VAR-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259956/distribuidorababyworld/pa_ales_y_cuidado/VAR-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de BPA y BPS para mayor seguridad",
+      "Asas ergonómicas ideales para facilitar el agarre",
+      "Diseño divertido con ilustraciones infantiles",
+      "Ideal para la etapa de transición"
+    ]
+  },
+  {
+    "id": 21,
+    "sku": "PAN-001-SU",
+    "nombre": "Biberón Babools Animales con Manija y Hélice",
+    "descripcion": "Biberón infantil 0% BPA con diseño de animales, manija ergonómica y divertido detalle de hélice superior.",
+    "descripcionLarga": "Descubre el biberón Babools diseñado especialmente para hacer la hora de la comida más divertida y cómoda para tu bebé. Cuenta con un diseño encantador de animales de la selva en el cuerpo, manija de agarre ergonómico ideal para sus pequeñas manos y un original detalle de hélice en la parte superior. Fabricado con materiales 100% libres de BPA y BPS, garantiza total seguridad. Su flujo controlado ayuda a prevenir cólicos y facilita la transición a la alimentación independiente.",
+    "precio": 38000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/distribuidorababyworld/pa_ales_y_cuidado/PAN-001-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791259995/distribuidorababyworld/pa_ales_y_cuidado/PAN-001-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de BPA y BPS para mayor seguridad",
+      "Manija ergonómica para fácil agarre",
+      "Diseño con tiernos animalitos de la selva",
+      "Incluye tapa decorativa con hélice",
+      "Capacidad ideal para lasTomas diarias"
+    ]
+  },
+  {
+    "id": 22,
+    "sku": "VAR-002-AZ",
+    "nombre": "Tetero Only Baby Natural 260ml",
+    "descripcion": "Tetero ergonómico con diseño natural de 260ml, libre de BPA, ideal para combinar con la lactancia materna.",
+    "descripcionLarga": "El tetero Only Baby Natural de 260ml ha sido diseñado para ofrecer la forma más natural de alimentar con biberón. Cuenta con una tetina de tacto suave y diseño espiral flexible que simula el pecho materno, facilitando la combinación entre la lactancia natural y el biberón. Es completamente libre de BPA, seguro para el bebé y apto desde los 0 meses en adelante.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/distribuidorababyworld/pa_ales_y_cuidado/VAR-002-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260031/distribuidorababyworld/pa_ales_y_cuidado/VAR-002-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Capacidad de 260 ml / 8 oz",
+      "Tetina de tacto suave y diseño espiral flexible",
+      "Libre de BPA para mayor seguridad",
+      "Apto para uso desde los 0 meses (0m+)",
+      "Incluye asas ergonómicas para fácil agarre"
+    ]
+  },
+  {
+    "id": 23,
+    "sku": "VAR-003-AZ",
+    "nombre": "Tetero Natural Only Baby 4oz 125ml",
+    "descripcion": "Tetero natural con tetina suave diseño espiral flexible, ideal para combinar con la lactancia materna. Capacidad de 4oz.",
+    "descripcionLarga": "El tetero Only Baby Natural de 4oz/125ml está diseñado para ofrecer la forma más natural de alimentar a tu bebé. Cuenta con una tetina ultrasuave y flexible con diseño en espiral que imita la sensación del pecho materno, facilitando la combinación entre lactancia y tetero. Es libre de BPA y fabricado en polipropileno seguro para recién nacidos desde los 0 meses en adelante.",
+    "precio": 32000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/distribuidorababyworld/pa_ales_y_cuidado/VAR-003-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260065/distribuidorababyworld/pa_ales_y_cuidado/VAR-003-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Capacidad de 4oz / 125ml ideal para recién nacidos 0m+",
+      "Tetina ultra suave con diseño espiral flexible",
+      "Facilita la combinación con la lactancia materna",
+      "Material 100% libre de BPA y seguro para tu bebé"
+    ]
+  },
+  {
+    "id": 24,
+    "sku": "VAR-004-RS",
+    "nombre": "Tetero Only Baby Natural 11oz",
+    "descripcion": "Tetero de 330ml con chupo skin-soft, libre de BPA, ideal para combinar con la lactancia materna desde los 0 meses.",
+    "descripcionLarga": "El tetero Only Baby Natural de 11 oz (330 ml) ofrece la forma más natural de alimentar a tu bebé. Su diseño incluye una tetina de tacto suave con un diseño espiral flexible que imita el pecho materno, facilitando la combinación entre la lactancia y el biberón. Es completamente libre de BPA, seguro para la salud de tu pequeño y cuenta con un diseño ergonómico que facilita el agarre.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/distribuidorababyworld/pa_ales_y_cuidado/VAR-004-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260102/distribuidorababyworld/pa_ales_y_cuidado/VAR-004-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Capacidad de 11 oz / 330 ml",
+      "Tetina skin-soft con diseño espiral flexible",
+      "Libre de BPA (100% seguro)",
+      "Ideal para bebés desde los 0 meses (0m+)",
+      "Fácil de combinar con la lactancia materna"
+    ]
+  },
+  {
+    "id": 25,
+    "sku": "VAR-005-RS",
+    "nombre": "Tetero Entrenador Boogy 12oz Rosado",
+    "descripcion": "Tetero entrenador con asas y boquilla de 12oz/330ml, libre de BPA, ideal para bebés de más de 6 meses.",
+    "descripcionLarga": "Facilita la transición de tu bebé al uso de vaso con este hermoso tetero entrenador de la marca Boogy. Cuenta con una capacidad de 12oz (330ml), asas ergonómicas perfectas para sus pequeñas manos y un diseño tierno de animales. Totalmente libre de BPA para garantizar la seguridad en cada sorbo. Recomendado para bebés a partir de los 6 meses.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/distribuidorababyworld/pa_ales_y_cuidado/VAR-005-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260127/distribuidorababyworld/pa_ales_y_cuidado/VAR-005-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Capacidad de 12oz / 330ml",
+      "Asas ergonómicas laterales para fácil agarre",
+      "Libre de BPA (BPA Free)",
+      "Recomendado para mayores de 6 meses",
+      "Diseño colorido y divertido con temática de animales"
+    ]
+  },
+  {
+    "id": 26,
+    "sku": "VAR-006-AZ",
+    "nombre": "Biberón Antiderrrames con Manijas",
+    "descripcion": "Biberón ergonómico de 0% BPA con manijas laterales y mordedor, diseñado para facilitar la transición del bebé.",
+    "descripcionLarga": "Este innovador biberón de Babools combina seguridad, comodidad y estimulación para tu pequeño. Cuenta con un diseño 0% BPA/BPS, flujo controlado automático y una alta resistencia a la temperatura. Sus prácticas manijas ergonómicas permiten que el bebé lo sostenga fácilmente por sí mismo, fomentando su autonomía, mientras que el accesorio inferior tipo mordedor alivia las encías durante la etapa de dentición.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/distribuidorababyworld/pa_ales_y_cuidado/VAR-006-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260149/distribuidorababyworld/pa_ales_y_cuidado/VAR-006-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de BPA y BPS para mayor seguridad",
+      "Manijas ergonómicas ideales para las manitos del bebé",
+      "Incluye mordedor incorporado para calmar las encías",
+      "Sistema de flujo controlado para una alimentación cómoda"
+    ]
+  },
+  {
+    "id": 27,
+    "sku": "VAR-007-AZ",
+    "nombre": "Tetero Entrenador Anti-Cólicos Babools",
+    "descripcion": "Tetero entrenador con asas, sistema anti-cólicos y control de flujo para bebés.",
+    "descripcionLarga": "El tetero entrenador Babools Superhero está diseñado para facilitar la transición del bebé a la alimentación independiente. Cuenta con asas ergonómicas fáciles de agarrar, un avanzado sistema anti-cólicos y control automático de flujo. Libre de BPA y BPS, garantiza la máxima seguridad y comodidad para tu pequeño durante cada toma.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/distribuidorababyworld/pa_ales_y_cuidado/VAR-007-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260271/distribuidorababyworld/pa_ales_y_cuidado/VAR-007-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de BPA y BPS para mayor seguridad",
+      "Asas ergonómicas ideales para las manos del bebé",
+      "Sistema avanzado anti-cólicos",
+      "Control automático de flujo de temperatura"
+    ]
+  },
+  {
+    "id": 28,
+    "sku": "COM-001-SU",
+    "nombre": "Biberón PP para Bebés Babools 0 Meses+",
+    "descripcion": "Biberón de polipropileno libre de BPA con asas y diseño ergonómico, ideal para bebés desde los 0 meses.",
+    "descripcionLarga": "El biberón Babools de PP está diseñado para ofrecer la forma más natural de alimentar a tu bebé. Cuenta con una tetina de silicona de grado alimenticio, es totalmente libre de BPA y su diseño con asas laterales facilita el agarre independiente para los más pequeños. Con alegres diseños y colores llamativos, estimula los sentidos de tu bebé mientras garantiza una alimentación segura y cómoda desde el primer día.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/distribuidorababyworld/pa_ales_y_cuidado/COM-001-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260291/distribuidorababyworld/pa_ales_y_cuidado/COM-001-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Apto para bebés desde los 0 meses",
+      "Libre de BPA para mayor seguridad",
+      "Tetina de silicona de grado alimenticio",
+      "Asas ergonómicas ideales para un fácil agarre"
+    ]
+  },
+  {
+    "id": 29,
+    "sku": "VAR-008-VD",
+    "nombre": "Biberón Infantil Babools con Asas y Oso",
+    "descripcion": "Biberón de entrenamiento con asas, diseño de oso y control de temperatura. Libre de BPA.",
+    "descripcionLarga": "Facilita la transición de tu bebé al biberón con este tierno diseño de oso. Cuenta con asas ergonómicas ideales para sus manitas, sistema de control de temperatura y flujo controlado. Fabricado con materiales 100% libres de BPA y BPS para la total seguridad de tu pequeño.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/distribuidorababyworld/pa_ales_y_cuidado/VAR-008-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260326/distribuidorababyworld/pa_ales_y_cuidado/VAR-008-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño ergonómico con asas laterales para fácil agarre",
+      "Control de temperatura de flujo automático",
+      "Libre de BPA y BPS",
+      "Hermoso diseño estampado con osito y paisaje"
+    ]
+  },
+  {
+    "id": 30,
+    "sku": "VAR-009-AZ",
+    "nombre": "Biberón con Asas y Control de Flujo Baby Tools",
+    "descripcion": "Biberón infantil con asas ergonómicas, libre de BPA y control de flujo para mayor comodidad.",
+    "descripcionLarga": "Este tierno biberón de la marca Baby Tools está diseñado pensando en el desarrollo y la autonomía de tu bebé. Cuenta con unas prácticas asas ergonómicas que facilitan su agarre por las manos pequeñas. Su sistema incluye control de flujo para una alimentación más segura y natural, y está fabricado con materiales 100% libres de BPA y BPS, garantizando la salud del infante. Su diseño con alegres ilustraciones de búhos y tonos suaves lo hace visualmente atractivo para los más pequeños.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/distribuidorababyworld/pa_ales_y_cuidado/VAR-009-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260347/distribuidorababyworld/pa_ales_y_cuidado/VAR-009-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Asas ergonómicas fáciles de sostener",
+      "Libre de BPA y BPS",
+      "Sistema de control de flujo",
+      "Diseño divertido con búhos"
+    ]
+  },
+  {
+    "id": 31,
+    "sku": "VAR-010-AZ",
+    "nombre": "Biberón Antiderrames con Manijas Babools",
+    "descripcion": "Biberón ergonómico con asas y diseño seguro 0% BPA para la alimentación diaria del bebé.",
+    "descripcionLarga": "El biberón Babools está diseñado para brindar la máxima comodidad y seguridad a tu bebé durante su etapa de alimentación. Cuenta con prácticas asas laterales ideales para que el pequeño aprenda a sostenerlo por sí mismo, fomentando su autonomía. Su estructura libre de BPA y BPS protege la salud del infante, mientras que su sistema anti-cólicos y flujo regulado aseguran una digestión tranquila y placentera.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/distribuidorababyworld/pa_ales_y_cuidado/VAR-010-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260367/distribuidorababyworld/pa_ales_y_cuidado/VAR-010-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño con manijas ergonómicas para fácil agarre",
+      "Material 0% BPA y BPS totalmente seguro",
+      "Capacidad graduada para un control exacto de las porciones",
+      "Tetina de flujo natural que previene cólicos"
+    ]
+  },
+  {
+    "id": 32,
+    "sku": "VAR-011-SU",
+    "nombre": "Biberón Antiderrrames con Manijas",
+    "descripcion": "Biberón de entrenamiento con asas y diseño de jirafa, libre de BPA, ideal para bebés en etapa de crecimiento.",
+    "descripcionLarga": "Este tierno y funcional biberón está diseñado para facilitar la transición del bebé hacia el uso de vasos independientes. Cuenta con manijas ergonómicas fáciles de agarrar por las pequeñas manos, válvula de control de flujo automático y un divertido diseño con temática de selva con una jirafa. Totalmente libre de BPA y BPS, garantiza la máxima seguridad y salud para tu pequeño mientras disfruta de sus bebidas favoritas.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/distribuidorababyworld/pa_ales_y_cuidado/VAR-011-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260409/distribuidorababyworld/pa_ales_y_cuidado/VAR-011-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de BPA y BPS",
+      "Manijas ergonómicas para fácil agarre",
+      "Sistema de flujo controlado",
+      "Diseño divertido de animales de la selva"
+    ]
+  },
+  {
+    "id": 33,
+    "sku": "RPU-001-NG",
+    "nombre": "Fular de Portreo Ergonmico Color Negro",
+    "descripcion": "Fular elstico de porteo ergonmico para beb, color negro, ideal para fortalecer el vnculo y dar comodidad.",
+    "descripcionLarga": "Disfruta de la cercana con tu beb utilizando este fular de porteo ergonmico en color negro. Diseado para distribuir uniformemente el peso en tu espalda y hombros, ofrece mxima comodidad y seguridad. Promueve el vnculo afectivo, favorece la lactancia materna y ayuda a que tu pequeo duerma placidamente sintiendo el latido de tu corazn.",
+    "precio": 65000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/distribuidorababyworld/pa_ales_y_cuidado/RPU-001-NG.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260501/distribuidorababyworld/pa_ales_y_cuidado/RPU-001-NG.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseo ergonmico que distribuye el peso equitativamente",
+      "Tela suave, transpirable y segura para la piel del beb",
+      "Promueve el vnculo afectivo y reduce el llanto",
+      "Facilita la lactancia materna discreta sobre la marcha"
+    ]
+  },
+  {
+    "id": 34,
+    "sku": "PAN-002-RS",
+    "nombre": "Protectores de Lactancia Nosotras x 40",
+    "descripcion": "Protectores de lactancia Nosotras con 40 unidades, brindan comodidad, seguridad y alta absorción para la mamá.",
+    "descripcionLarga": "Los protectores de lactancia Nosotras están diseñados para ofrecer la máxima comodidad y seguridad durante la etapa de lactancia. Su tecnología absorbente retiene la humedad de forma eficaz, mientras que su diseño respirable y ergonómico se adapta perfectamente al seno, evitando filtraciones y manteniendo la piel seca y protegida todo el día.",
+    "precio": 25000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/distribuidorababyworld/pa_ales_y_cuidado/PAN-002-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260522/distribuidorababyworld/pa_ales_y_cuidado/PAN-002-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contiene 40 unidades",
+      "Alta absorción y seguridad",
+      "Diseño respirable",
+      "Se adapta perfectamente al seno"
+    ]
+  },
+  {
+    "id": 35,
+    "sku": "PAN-003-RS",
+    "nombre": "Protectores de Lactancia Nosotras x 12",
+    "descripcion": "Protectores de lactancia Nosotras con suave cubierta tipo tela, alta absorción, diseño respirable y ajuste perfecto al seno.",
+    "descripcionLarga": "Disfruta de la máxima comodidad y seguridad durante la etapa de lactancia con los protectores Nosotras. Su suave cubierta tipo tela ayuda a mantener la piel seca y previene olores desagradables. Cuentan con un diseño altamente absorbente, respirable y que se adapta de forma anatómica al seno para brindarte discreción y protección todo el día.",
+    "precio": 12500,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260543/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260544/distribuidorababyworld/pa_ales_y_cuidado/PAN-003-RS-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Suave cubierta tipo tela que cuida tu piel",
+      "Ayuda a prevenir olores desagradables",
+      "Alta capacidad de absorción",
+      "Diseño respirable",
+      "Se adapta perfectamente al seno"
+    ]
+  },
+  {
+    "id": 36,
+    "sku": "PAN-004-SU",
+    "nombre": "Kit Viajero Arrunru Cuidado Completo",
+    "descripcion": "Set de viaje Arrrurú con shampoo, colonia, crema hidratante y toallitas para el cuidado diario del bebé.",
+    "descripcionLarga": "El Kit Viajero Arrrurú es el set perfecto para mantener la piel y el cabello de tu bebé protegidos, hidratados y con un aroma fresco en cualquier lugar. Incluye productos esenciales en tamaño ideal para viajes, dermatológicamente probados, hipoalergénicos y aprobados por pediatras.",
+    "precio": 45000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/distribuidorababyworld/pa_ales_y_cuidado/PAN-004-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260565/distribuidorababyworld/pa_ales_y_cuidado/PAN-004-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye shampoo, colonia, crema hidratante y toallitas húmedas",
+      "Fórmulas hipoalergénicas y dermatológicamente probadas",
+      "Aprobado y recomendado por pediatras",
+      "Ideal para llevar en la pañalera o de viaje"
+    ]
+  },
+  {
+    "id": 37,
+    "sku": "PAN-005-BL",
+    "nombre": "Toallitas Húmedas Winny Pack 324 Unidades",
+    "descripcion": "Paquete ahorro de toallitas húmedas Winny con Aloe Vera y Vitamina E. Hipoalergénicas y sin alcohol.",
+    "descripcionLarga": "Cuida la piel delicada de tu bebé con el pack ahorro de 324 toallitas húmedas Winny. Su fórmula con Aloe Vera y Vitamina E limpia, hidrata y refresca en cada uso. Son completamente hipoalergénicas, libres de alcohol y dermatológicamente probadas para garantizar la máxima protección y suavidad en el cambio de pañal.",
+    "precio": 38500,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/distribuidorababyworld/pa_ales_y_cuidado/PAN-005-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260638/distribuidorababyworld/pa_ales_y_cuidado/PAN-005-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contiene 324 toallitas húmedas en total (3 paquetes de 100 y 1 de 24)",
+      "Fórmula enriquecida con Aloe Vera y Vitamina E",
+      "Hipoalergénicas y 0% alcohol para proteger la piel sensible",
+      "Ideales para la limpieza diaria y cambio de pañal"
+    ]
+  },
+  {
+    "id": 38,
+    "sku": "PAN-006-BL",
+    "nombre": "Ungüento Almipro 300g",
+    "descripcion": "Ungüento protector eficaz para el tratamiento y prevención de la pañalitis en bebés con óxido de zinc al 25%.",
+    "descripcionLarga": "El ungüento Almipro en presentación de 300g está formulado especialmente para el cuidado de la delicada piel del bebé. Contiene óxido de zinc al 25%, creando una barrera protectora contra la humedad que previene y alivia rápidamente la pañalitis, irritaciones y rozaduras, manteniendo la piel suave y protegida.",
+    "precio": 45000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/distribuidorababyworld/pa_ales_y_cuidado/PAN-006-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260750/distribuidorababyworld/pa_ales_y_cuidado/PAN-006-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contiene óxido de zinc al 25%",
+      "Eficaz tratamiento contra la pañalitis",
+      "Crea una barrera protectora contra la humedad",
+      "Presentación económica de 300g",
+      "Ideal para el uso diario en cada cambio de pañal"
+    ]
+  },
+  {
+    "id": 39,
+    "sku": "PAN-007-AZ",
+    "nombre": "Kit de Bienvenida Winny Sensitive",
+    "descripcion": "Completo kit con pañales, toallitas, crema y pañalera práctica ideal para recién nacidos.",
+    "descripcionLarga": "El Kit de Bienvenida Winny Sensitive es el regalo perfecto o la compra esencial para los primeros días del bebé. Incluye un paquete de pañales etapa 0, toallitas húmedas hipoalergénicas, crema protectora y una práctica pañalera reutilizable. Diseñado especialmente para cuidar la piel sensible de tu recién nacido con la máxima suavidad y protección.",
+    "precio": 55000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/distribuidorababyworld/pa_ales_y_cuidado/PAN-007-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260770/distribuidorababyworld/pa_ales_y_cuidado/PAN-007-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye pañales Winny Sensitive etapa 0 x 30 unidades",
+      "Paquete de toallitas húmedas hipoalergénicas x 80 unidades",
+      "Crema No. 4 de 20g para la protección contra irritaciones",
+      "Práctica pañalera reutilizable y guía de cuidado"
+    ]
+  },
+  {
+    "id": 40,
+    "sku": "COM-002-AZ",
+    "nombre": "Silla Comedor Infantil Conejito Azul",
+    "descripcion": "Divertida y segura silla comedor para bebé con diseño de orejas de conejo y bandeja didáctica.",
+    "descripcionLarga": "Haz que la hora de la comida sea un momento divertido y seguro para tu pequeño con esta hermosa silla comedor con diseño de conejito. Cuenta con un respaldo ergonómico en forma de orejas de conejo, una bandeja amplia con ilustraciones coloridas y portavasos integrado, ideal para estimular al bebé mientras se alimenta o juega. Su estructura robusta y estable garantiza la máxima seguridad.",
+    "precio": 85000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/distribuidorababyworld/variedades/COM-002-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791260964/distribuidorababyworld/variedades/COM-002-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño ergonómico con respaldo en forma de orejas de conejo",
+      "Bandera amplia con ilustraciones infantiles y portavasos",
+      "Estructura plástica resistente, segura y fácil de limpiar",
+      "Ideal para la hora de la comida o juegos"
+    ]
+  },
+  {
+    "id": 41,
+    "sku": "VAR-012-CQ",
+    "nombre": "Coche Paseador Confort de Lujo",
+    "descripcion": "Coche paseador ergonómico y acolchado con capota y mosquitero integrado para máxima protección.",
+    "descripcionLarga": "Brinda a tu bebé el máximo confort y seguridad durante sus paseos con este coche paseador de diseño elegante en tonos caqui y marrón. Cuenta con una estructura robusta pero ligera, llantas todoterreno de gran estabilidad, un asiento acolchado ultra cómodo y una capota con mosquitero protector y juguetes colgantes para entretener al pequeño en todo momento.",
+    "precio": 450000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/distribuidorababyworld/variedades/VAR-012-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261003/distribuidorababyworld/variedades/VAR-012-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye capota protectora con mosquitero integrado",
+      "Asiento ergonómico altamente acolchado para mayor confort",
+      "Estructura resistente con manillar ajustable",
+      "Juguetes colgantes incluidos para estimulación temprana",
+      "Llantas duraderas con excelente absorción de impactos"
+    ]
+  },
+  {
+    "id": 42,
+    "sku": "CAM-005-CQ",
+    "nombre": "Coche Paseador Multifuncional para Bebé",
+    "descripcion": "Coche paseador multifuncional con capota, mosquitero y diseño ergonómico para la máxima comodidad de tu bebé.",
+    "descripcionLarga": "Brinda a tu pequeño el máximo confort y seguridad con este coche paseador multifuncional. Cuenta con una estructura robusta en color amarillo, una cómoda cesta acolchada con detalles en tono caqui y lunares, y una práctica capota con mosquitero integrado para proteger a tu bebé de insectos y del sol durante los paseos al aire libre. Sus ruedas de alta resistencia aseguran un desplazamiento suave y seguro.",
+    "precio": 350000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/distribuidorababyworld/variedades/CAM-005-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261026/distribuidorababyworld/variedades/CAM-005-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye capota protectora con mosquitero integrado",
+      "Estructura resistente y duradera de alta calidad",
+      "Cesta acolchada y cómoda para el descanso del bebé",
+      "Ruedas grandes y estables para todo terreno"
+    ]
+  },
+  {
+    "id": 43,
+    "sku": "PAN-008-AZ",
+    "nombre": "Maleta de Aseo Completo Arrurrú para Bebé",
+    "descripcion": "Kit completo de aseo y cuidado diario para bebé en práctica pañalera plástica con shampoo, baño líquido, crema y colonia.",
+    "descripcionLarga": "Brinda a tu bebé el cuidado especializado que su piel delicada necesita con la completa maleta de aseo Arrurrú. Este set incluye shampoo para cabello claro, baño líquido, crema hidratante, colonia refrescante y crema protectora para la colita. Todos los productos están dermatológicamente probados, son hipoalergénicos y vienen organizados en una hermosa y práctica pañalera transparente con detalles azules, perfecta para llevar a todas partes.",
+    "precio": 59900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261049/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261050/distribuidorababyworld/pa_ales_y_cuidado/PAN-008-AZ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye 5 productos esenciales para el cuidado del bebé",
+      "Práctica pañalera plástica transparente reutilizable",
+      "Fórmulas hipoalergénicas y dermatológicamente probadas",
+      "Contiene shampoo, baño líquido, crema hidratante, colonia y crema protectora"
+    ]
+  },
+  {
+    "id": 44,
+    "sku": "BAN-001-AZ",
+    "nombre": "Baño Líquido Arrúrrú Original 220ml",
+    "descripcion": "Jabón líquido corporal para bebés, libre de parabenos y sulfatos, cuida y protege la piel delicada.",
+    "descripcionLarga": "El Baño Líquido Arrúrrú Original limpia y protege la piel delicada de tu bebé durante el baño diario. Su fórmula especial está libre de parabenos, siliconas, sal, sulfatos y colorantes, evitando irritaciones y cuidando el equilibrio natural de la piel. Enriquecido con Hidrosense para una hidratación profunda y extracto de jojoba, ofrece una experiencia suave y segura recomendada por pediatras.",
+    "precio": 22500,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/distribuidorababyworld/pa_ales_y_cuidado/BAN-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261075/distribuidorababyworld/pa_ales_y_cuidado/BAN-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Libre de parabenos, siliconas, sal, sulfatos y colorantes",
+      "Con Hidrosense que hidrata y protege",
+      "No irrita los ojos",
+      "Aprobado y recomendado por pediatras",
+      "Contenido de 7.43 fl oz (220 ml)"
+    ]
+  },
+  {
+    "id": 45,
+    "sku": "VAR-013-SU",
+    "nombre": "Colonia Arrulú Original 220 ml",
+    "descripcion": "Colonia suave para bebé con fórmula Hidrosense que hidrata y protege, libre de parabenos y colorantes.",
+    "descripcionLarga": "Disfruta del tierno olor a bebé con la Colonia Arrulú Original. Su fórmula exclusiva con Hidrosense hidrata y protege la delicada piel de tu pequeño, brindando una fragancia suave y natural a jojoba. Está dermatológicamente probada y aprobada por pediatras, garantizando un cuidado seguro sin parabenos ni colorantes.",
+    "precio": 32000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/distribuidorababyworld/pa_ales_y_cuidado/VAR-013-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261172/distribuidorababyworld/pa_ales_y_cuidado/VAR-013-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 7.43 fl.oz (220 ml)",
+      "Fórmula Hidrosense que hidrata y protege",
+      "Libre de parabenos y colorantes",
+      "Aprobada por pediatras y dermatológicamente comprobada",
+      "Suave fragancia natural con jojoba"
+    ]
+  },
+  {
+    "id": 46,
+    "sku": "PAN-009-RS",
+    "nombre": "Aceite Corporal Arrorró para Bebé 200ml",
+    "descripcion": "Aceite corporal hidratante con jojoba natural y sistema Hidrosense para la suave piel de tu bebé.",
+    "descripcionLarga": "El aceite corporal Arrorrú de 200 ml está especialmente formulado para cuidar y proteger la delicada piel de tu bebé. Enriquecido con jojoba natural y componentes hidratantes del sistema Hidrosense, es ideal para realizar masajes relajantes después del baño. Su fórmula dermatológicamente comprobada y aprobada por pediatras garantiza una hidratación profunda sin dejar sensación grasosa.",
+    "precio": 22900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/distribuidorababyworld/pa_ales_y_cuidado/PAN-009-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261205/distribuidorababyworld/pa_ales_y_cuidado/PAN-009-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contiene jojoba natural",
+      "Fórmula con sistema Hidrosense que hidrata y protege",
+      "Ideal para masajes relajantes",
+      "Dermatológicamente comprobado y aprobado por pediatras",
+      "Presentación de 6.76 fl. oz. (200 ml)"
+    ]
+  },
+  {
+    "id": 47,
+    "sku": "VAR-014-RJ",
+    "nombre": "Manta Suave Infantil Roja",
+    "descripcion": "Manta suave y abrigadora para bebé presentada en caja decorada ideal para obsequio.",
+    "descripcionLarga": "Envuelve a tu bebé en la máxima comodidad con esta hermosa manta roja de textura ultra suave, diseñada para cuidar su delicada piel. Viene en una elegante caja ilustrada con ventana transparente y listón de regalo, perfecta para sorprender en cualquier ocasión especial.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/distribuidorababyworld/variedades/VAR-014-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261251/distribuidorababyworld/variedades/VAR-014-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Material suave y delicado con la piel del bebé",
+      "Incluye caja de regalo decorada con ilustraciones",
+      "Ideal para uso en cuna, coche o viajes",
+      "Fácil de lavar y mantener"
+    ]
+  },
+  {
+    "id": 48,
+    "sku": "VAR-015-AZ",
+    "nombre": "Termo Infantil Multiusos Baby World",
+    "descripcion": "Termo portátil con diseño infantil de animales, ideal para mantener la temperatura de líquidos para tu bebé.",
+    "descripcionLarga": "Mantén las bebidas de tu bebé a la temperatura perfecta en cualquier lugar con este termo infantil de alta calidad. Su diseño exterior presenta divertidos animales de la selva en colores atractivos, mientras que su construcción interior asegura una excelente retención térmica. Cuenta con un asa ergonómica y una tapa tipo taza para mayor comodidad al servir, siendo el accesorio indispensable para paseos y viajes.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/distribuidorababyworld/variedades/VAR-015-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261277/distribuidorababyworld/variedades/VAR-015-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño exterior con alegres motivos de animales.",
+      "Excelente capacidad de aislamiento térmico.",
+      "Incluye práctica asa lateral para un agarre seguro.",
+      "Tapa superior funcional que sirve como taza.",
+      "Materiales seguros y libres de BPA para el cuidado del bebé."
+    ]
+  },
+  {
+    "id": 49,
+    "sku": "VAR-016-BL",
+    "nombre": "Copitos de Algodón Yoky x 100",
+    "descripcion": "Copitos de algodón 100% natural, suaves y delicados para la higiene diaria de tu bebé y toda la familia.",
+    "descripcionLarga": "Los copitos de algodón Yoky ofrecen la máxima suavidad y seguridad para el cuidado diario de la piel sensible de tu bebé. Elaborados con algodón 100% natural, son ideales para la limpieza delicada de orejas, nariz y la aplicación de cremas o medicamentos. Su presentación en práctico tarro transparente con tapa protectora mantiene los copitos limpios y libres de humedad en todo momento. Cada envase contiene 100 unidades diseñadas con puntas firmes que no se desprenden fácilmente, garantizando un uso seguro y confiable.",
+    "precio": 8500,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/distribuidorababyworld/pa_ales_y_cuidado/VAR-016-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261311/distribuidorababyworld/pa_ales_y_cuidado/VAR-016-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Algodón 100% natural ultra suave",
+      "Práctico envase protector de 100 unidades",
+      "Ideales para la higiene y cuidado diario",
+      "Puntas firmes que no se desprenden"
+    ]
+  },
+  {
+    "id": 50,
+    "sku": "VAR-017-BL",
+    "nombre": "Copitos de Algodón Yoky 100% Natural",
+    "descripcion": "Copitos suaves y delicados de algodón 100% natural, ideales para el cuidado diario y la higiene de tu bebé.",
+    "descripcionLarga": "Mantén la higiene de tu bebé con total seguridad gracias a los copitos de algodón Yoky. Elaborados con algodón 100% natural, son extremadamente suaves y delicados con la piel sensible. Su práctico estuche cilíndrico transparente permite mantenerlos limpios, protegidos y listos para usar en cualquier momento de la rutina de aseo.",
+    "precio": 12000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/distribuidorababyworld/pa_ales_y_cuidado/VAR-017-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261343/distribuidorababyworld/pa_ales_y_cuidado/VAR-017-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Algodón 100% natural y biodegradable",
+      "Suaves y delicados con la piel del bebé",
+      "Práctico estuche dispensador transparente",
+      "Ideales para la higiene diaria y cuidado personal"
+    ]
+  },
+  {
+    "id": 51,
+    "sku": "VAR-018-AZ",
+    "nombre": "Cortauñas Eléctrico Ergonómico para Bebé",
+    "descripcion": "Cortauñas eléctrico seguro y silencioso para el cuidado de las uñas del bebé con múltiples cabezales.",
+    "descripcionLarga": "Cierra la brecha entre el miedo y la seguridad al cortar las uñas de tu bebé con este cortauñas eléctrico de diseño ergonómico. Cuenta con luz LED integrada, funcionamiento ultrasilencioso de 60 decibeles y 4 modos de trabajo con 6 cabezales intercambiables para adaptarse a cada etapa del crecimiento sin lastimar su delicada piel.",
+    "precio": 55000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/distribuidorababyworld/pa_ales_y_cuidado/VAR-018-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261363/distribuidorababyworld/pa_ales_y_cuidado/VAR-018-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "6 cabezales intercambiables para diferentes funciones",
+      "Luz LED integrada para mayor precisión en la oscuridad",
+      "Funcionamiento ultrasilencioso de 60 decibeles",
+      "Diseño ergonómico y compacto con estuche de almacenamiento",
+      "Funciona con 2 baterías AA"
+    ]
+  },
+  {
+    "id": 52,
+    "sku": "PAN-010-AZ",
+    "nombre": "Set de Baño y Cuidado Arrurú Suavidad",
+    "descripcion": "Kit completo Arrurú con shampoo, baño líquido, toallitas húmedas y jabón para el cuidado diario del bebé.",
+    "descripcionLarga": "Brinda a tu bebé el cuidado más tierno y seguro con este set completo de la marca Arrurú. Incluye shampoo, baño líquido, toallitas húmedas y jabón, todos formulados con ingredientes naturales para proteger y humectar la piel delicada. Aprobado por pediatras y dermatológicamente comprobado para la tranquilidad de los padres.",
+    "precio": 52000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/distribuidorababyworld/pa_ales_y_cuidado/PAN-010-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261383/distribuidorababyworld/pa_ales_y_cuidado/PAN-010-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye shampoo, baño líquido, toallitas y jabón",
+      "Fórmula hipoalergénica con extractos naturales",
+      "Dermatológicamente comprobado y recomendado por pediatras",
+      "Ideal para la higiene y humectación diaria del bebé"
+    ]
+  },
+  {
+    "id": 53,
+    "sku": "PAN-011-SU",
+    "nombre": "Crema Hidratante Johnson's Baby 800ml",
+    "descripcion": "Crema hidratante para bebé en presentación de 800ml, ideal para cuidar y proteger la piel delicada diariamente.",
+    "descripcionLarga": "Disfruta de la máxima suavidad y protección para la piel de tu pequeño con la crema hidratante Johnson's Baby en presentación grande de 800ml. Su fórmula avanzada con ingredientes seleccionados hidrata profundamente durante todo el día, previniendo la resequedad y dejando una sensación tersa y agradable. Es dermatológicamente probada, hipoalergénica y libre de parabenos, asegurando el cuidado más seguro y delicado desde el primer día de vida.",
+    "precio": 48900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/distribuidorababyworld/pa_ales_y_cuidado/PAN-011-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261497/distribuidorababyworld/pa_ales_y_cuidado/PAN-011-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido generoso de 800 ml con práctica bomba dispensadora",
+      "Fórmula hipoalergénica probada por dermatólogos",
+      "Hidratación prolongada que protege contra la resequedad",
+      "Libre de colorantes, parabenos y ftalatos"
+    ]
+  },
+  {
+    "id": 54,
+    "sku": "VAR-019-AZ",
+    "nombre": "Shampoo Johnson's Glicerina 1000ml",
+    "descripcion": "Shampoo infantil Johnson's con glicerina y vitamina B5, fórmula no más lágrimas de 1000 ml.",
+    "descripcionLarga": "El shampoo Johnson's con glicerina y vitamina B5 está diseñado especialmente para limpiar suavemente el cabello y cuero cabelludo del bebé. Su fórmula hipoalergénica 'no más lágrimas' es tan suave para los ojos como el agua pura. Contenido generoso de 1000 ml con práctico dispensador.",
+    "precio": 48900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/distribuidorababyworld/pa_ales_y_cuidado/VAR-019-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261517/distribuidorababyworld/pa_ales_y_cuidado/VAR-019-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 1000 ml con dispensador",
+      "Fórmula No Más Lágrimas",
+      "Enriquecido con glicerina y vitamina B5",
+      "Hipoalergénico y dermatológicamente probado"
+    ]
+  },
+  {
+    "id": 55,
+    "sku": "VAR-020-VD",
+    "nombre": "Loción Repelente Yoky Kids Eucalipto",
+    "descripcion": "Loción repelente refrescante y antibacterial con eucalipto y mentol, ideal para el cuidado de los niños.",
+    "descripcionLarga": "Protege a tus pequeños de los insectos con la Loción Repelente Yoky Kids de 120 ml. Su fórmula avanzada con eucalipto y mentol ofrece un efecto refrescante y antibacterial de secado rápido, sin sensación grasosa. Apta para todo tipo de piel y diseñada especialmente para brindar un cuidado seguro en bebés y niños durante sus actividades diarias.",
+    "precio": 35000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/distribuidorababyworld/pa_ales_y_cuidado/VAR-020-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261563/distribuidorababyworld/pa_ales_y_cuidado/VAR-020-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 120 ml con atomizador",
+      "Fórmula no grasosa de secado rápido",
+      "Con extracto de eucalipto y mentol",
+      "Acción refrescante y antibacterial",
+      "Apto para todo tipo de piel infantil"
+    ]
+  },
+  {
+    "id": 56,
+    "sku": "VAR-021-SU",
+    "nombre": "Trío Acondicionadores Johnson's Baby 400ml",
+    "descripcion": "Set de tres acondicionadores Johnson's Baby de 400ml para diferentes necesidades del cabello infantil.",
+    "descripcionLarga": "Cierra la rutina de baño de tu pequeño con este completo set de acondicionadores Johnson's Baby de 400ml cada uno. Incluye fórmulas especializadas para hidratación intensa, realce de cabello claro con manzanilla y fuerza con vitamina E. Dermatológicamente probados, libres de parabenos y con fórmula No Más Lágrimas para un cuidado seguro y delicado.",
+    "precio": 65000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/distribuidorababyworld/pa_ales_y_cuidado/VAR-021-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261610/distribuidorababyworld/pa_ales_y_cuidado/VAR-021-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido: 3 botellas de 400ml cada una",
+      "Fórmula No Más Lágrimas que no irrita los ojos",
+      "Libre de parabenos, sulfatos y colorantes",
+      "Dermatológicamente probado para uso diario",
+      "Incluye variedades para hidratación, cabello claro y fuerza"
+    ]
+  },
+  {
+    "id": 57,
+    "sku": "VAR-022-VD",
+    "nombre": "Loción Repelente Antimosquito Johnson's 200 ml",
+    "descripcion": "Loción repelente antimosquitos para bebés, suave y segura, dermatológicamente probada, 200 ml.",
+    "descripcionLarga": "Protege la delicada piel de tu pequeño contra las picaduras de insectos con la loción repelente antimosquito Johnson's de 200 ml. Su fórmula avanzada ofrece una protección suave y segura, libre de parabenos, colorantes y alcohol. Está dermatológicamente probada para garantizar el cuidado ideal en la piel del bebé, brindando tranquilidad a los padres en cada aplicación.",
+    "precio": 28900,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/distribuidorababyworld/pa_ales_y_cuidado/VAR-022-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261694/distribuidorababyworld/pa_ales_y_cuidado/VAR-022-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 200 ml",
+      "Fórmula hipoalergénica y dermatológicamente probada",
+      "Libre de parabenos, colorantes y alcohol",
+      "Protección suave y segura contra mosquitos"
+    ]
+  },
+  {
+    "id": 58,
+    "sku": "PAN-012-BL",
+    "nombre": "Crema N.4 Original Protectora 110g",
+    "descripcion": "Crema protectora original Crema N.4 de 110g que protege y alivia la piel del bebé con capa ligera.",
+    "descripcionLarga": "La Crema N.4 Original en su presentación de 110g está diseñada para proteger y aliviar día tras día la delicada piel de tu bebé. Su fórmula con capa ligera y suave fragancia a bebé previene irritaciones y rojeces, manteniendo la piel hidratada, fresca y protegida en cada cambio de pañal.",
+    "precio": 32000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/distribuidorababyworld/pa_ales_y_cuidado/PAN-012-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261714/distribuidorababyworld/pa_ales_y_cuidado/PAN-012-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 110g",
+      "Fórmula con capa ligera",
+      "Protege y alivia día tras día",
+      "Agradable fragancia a bebé"
+    ]
+  },
+  {
+    "id": 59,
+    "sku": "PAN-013-AZ",
+    "nombre": "Crema Protectora N.4 Original 20g",
+    "descripcion": "Crema protectora original para la piel del bebé, con capa ligera y fragancia delicada.",
+    "descripcionLarga": "La Crema N.4 Original en presentación de 20g protege y alivia día tras día la delicada piel de tu bebé. Su fórmula con capa ligera ayuda a prevenir irritaciones y pañalitis, brindando un cuidado suave y una agradable fragancia a bebé para mantener su piel fresca y protegida.",
+    "precio": 18500,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/distribuidorababyworld/pa_ales_y_cuidado/PAN-013-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261740/distribuidorababyworld/pa_ales_y_cuidado/PAN-013-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Contenido de 20 gramos",
+      "Fórmula original que protege y alivia",
+      "Textura con capa ligera de fácil aplicación",
+      "Deliciosa fragancia a bebé",
+      "Ideal para prevenir la pañalitis"
+    ]
+  },
+  {
+    "id": 60,
+    "sku": "JUG-011-RJ",
+    "nombre": "Set de Rescate Bomberos con Camión y Helicóptero",
+    "descripcion": "Divertido set de juguetes de bomberos con camión, helicóptero, figura y accesorios para horas de juego.",
+    "descripcionLarga": "Estimula la imaginación y la creatividad de los más pequeños con este increíble set de rescate Rescue Team. Incluye un camión de bomberos con escalera extensible, un helicóptero de rescate con piloto, herramientas y accesorios temáticos. Fabricado con materiales seguros y duraderos, es ideal para niños mayores de 3 años que disfrutan de las aventuras heroicas.",
+    "precio": 65000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/distribuidorababyworld/jugueter_a/JUG-011-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261762/distribuidorababyworld/jugueter_a/JUG-011-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camión de bomberos con escalera móvil",
+      "Helicóptero de rescate con figura de bombero",
+      "Accesorios variados como herramientas y hidrante",
+      "Recomendado para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 61,
+    "sku": "JUG-012-RJ",
+    "nombre": "Set de Bomberos Rescue con Camión y Accesorios",
+    "descripcion": "Emocionante set de juego de bomberos con camión de fricción, vehículo de rescate y figuras de acción detalladas.",
+    "descripcionLarga": "Estimula la imaginación y la creatividad de los más pequeños con este completo set de rescate de bomberos. Incluye un gran camión de bomberos con escalera extensible y mecanismo de fricción, un vehículo todoterreno de apoyo, figuras de bomberos articuladas y accesorios realistas para recrear divertidas misiones de rescate. Fabricado con materiales seguros y duraderos, es el regalo perfecto para horas de entretenimiento activo.",
+    "precio": 89000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/distribuidorababyworld/jugueter_a/JUG-012-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261782/distribuidorababyworld/jugueter_a/JUG-012-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camión de bomberos con sistema de fricción",
+      "Incluye vehículo todoterreno y figuras articuladas",
+      "Escalera extensible para mayor diversión",
+      "Diseñado para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 62,
+    "sku": "JUG-013-RS",
+    "nombre": "Pistola De Juguete Shooting Elite",
+    "descripcion": "Pistola de juguete con capacidad para disparar proyectiles de agua y dardos de espuma suaves seguros.",
+    "descripcionLarga": "Disfruta de la máxima diversión y acción segura con la pistola de juguete Shooting Elite. Diseñada con un estilo moderno en color rosa y azul, permite una experiencia de juego interactiva utilizando tanto balas de agua como dardos de espuma blandos. Cuenta con un sistema motorizado de alta velocidad, batería integrada y múltiples accesorios desmontables para una combinación totalmente personalizable.",
+    "precio": 79000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/distribuidorababyworld/jugueter_a/JUG-013-RS-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261841/distribuidorababyworld/jugueter_a/JUG-013-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261843/distribuidorababyworld/jugueter_a/JUG-013-RS-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Compatible con balas de agua seguras y dardos de espuma suaves",
+      "Sistema motorizado de alta velocidad",
+      "Diseño ergonómico y personalizable estilo DIY",
+      "Incluye batería recargable integrada"
+    ]
+  },
+  {
+    "id": 63,
+    "sku": "JUG-014-RJ",
+    "nombre": "Set de Rescate Bomberos con Camión y Helicóptero",
+    "descripcion": "Divertido set de juguetes de bomberos con camión de escala, helicóptero, figura y accesorios para horas de juego.",
+    "descripcionLarga": "Estimula la imaginación y el heroísmo de los más pequeños con este completo Set de Rescate de Bomberos. Incluye un detallado camión de bomberos con escalera extensible, un helicóptero de rescate con su piloto, y múltiples accesorios temáticos. Fabricado con materiales seguros y duraderos, es ideal para niños mayores de 3 años que disfrutan de las aventuras y la acción.",
+    "precio": 79900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/distribuidorababyworld/jugueter_a/JUG-014-RJ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261864/distribuidorababyworld/jugueter_a/JUG-014-RJ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261865/distribuidorababyworld/jugueter_a/JUG-014-RJ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camión de bomberos con escalera ajustable",
+      "Helicóptero de rescate con figura incluida",
+      "Accesorios de herramientas de rescate",
+      "Recomendado para mayores de 3 años"
+    ]
+  },
+  {
+    "id": 64,
+    "sku": "JUG-015-SU",
+    "nombre": "Kit DIY Beautiful de Trenzas y Abalorios",
+    "descripcion": "Completo set de belleza infantil con extensiones de cabello de colores, cuentas y accesorios para crear peinados únicos.",
+    "descripcionLarga": "Estimula la creatividad y la imaginación de las más pequeñas con este fabuloso kit DIY Beautiful. Incluye múltiples extensiones de cabello sintético en colores vibrantes, gran variedad de cuentas y abalorios para abalorios, ligas, un peine y accesorios de diseño. Es perfecto para desarrollar la motricidad fina mientras se divierten creando peinados y estilos personalizados llenos de color y moda.",
+    "precio": 55000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/distribuidorababyworld/jugueter_a/JUG-015-SU-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261885/distribuidorababyworld/jugueter_a/JUG-015-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261887/distribuidorababyworld/jugueter_a/JUG-015-SU-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye 5 extensiones de cabello de colores vibrantes",
+      "Gran variedad de cuentas y abalorios decorativos",
+      "Incluye peine y accesorios para facilitar el peinado",
+      "Ideal para estimular la creatividad y motricidad fina",
+      "Presentación en caja lista para regalo"
+    ]
+  },
+  {
+    "id": 65,
+    "sku": "JUG-016-RJ",
+    "nombre": "Carro RC Bloques Construcción 448 Pzas",
+    "descripcion": "Increíble vehículo todo terreno a control remoto para armar con 448 piezas de bloques.",
+    "descripcionLarga": "Estimula la creatividad y la habilidad motriz con este fabuloso set de bloques de construcción para armar un carro todoterreno 4x4 a control remoto. Cuenta con 448 piezas de alta calidad, escala 1:16, luces simuladas y motor potente. Ideal para niños mayores de 6 años que aman los retos y la velocidad.",
+    "precio": 98000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/distribuidorababyworld/jugueter_a/JUG-016-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261945/distribuidorababyworld/jugueter_a/JUG-016-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye 448 piezas compatibles para armar",
+      "Control remoto inalámbrico de 2.4 GHz",
+      "Escala 1:16 con diseño detallado todoterreno",
+      "Motor potente y luces simuladas incorporadas",
+      "Recomendado para mayores de 6 años"
+    ]
+  },
+  {
+    "id": 66,
+    "sku": "JUG-017-AZ",
+    "nombre": "Cargadora Bulldozer Super Power",
+    "descripcion": "Divertido camión de juguete tipo cargadora bulldozer con diseño resistente para horas de juego e imaginación.",
+    "descripcionLarga": "Sorprende a los más pequeños con la increíble Cargadora Bulldozer Super Power de Campioni Toys. Diseñada con plástico de alta resistencia y detalles realistas, este vehículo de construcción estimula la creatividad y las habilidades motoras de los niños. Cuenta con grandes ruedas todoterreno y una pala frontal articulada para cargar arena o juguetes, garantizando máxima diversión y seguridad.",
+    "precio": 65000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/distribuidorababyworld/jugueter_a/JUG-017-AZ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261967/distribuidorababyworld/jugueter_a/JUG-017-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261968/distribuidorababyworld/jugueter_a/JUG-017-AZ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño realista de cargadora bulldozer",
+      "Pala frontal móvil y articulada",
+      "Fabricado en plástico resistente y seguro",
+      "Ideal para estimular la creatividad y motricidad"
+    ]
+  },
+  {
+    "id": 67,
+    "sku": "JUG-018-VD",
+    "nombre": "Carro Todoterreno RC 360",
+    "descripcion": "Carro a control remoto todoterreno con giros de 360 grados y diseño inspirado en patrulla.",
+    "descripcionLarga": "Sorprende a los más pequeños con este increíble carro a control remoto todoterreno. Diseñado para realizar acrobacias extremas, giros de 360 grados y movimientos dinámicos en cualquier superficie. Cuenta con frecuencia de 2.4 GHz para una conexión estable y un diseño llamativo que encantará a los fanáticos de la velocidad y la aventura.",
+    "precio": 89000,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/distribuidorababyworld/jugueter_a/JUG-018-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791261990/distribuidorababyworld/jugueter_a/JUG-018-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Control remoto con frecuencia de 2.4 GHz",
+      "Giros y acrobacias de 360 grados",
+      "Diseño todoterreno con ruedas grandes",
+      "Ideal para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 68,
+    "sku": "JUG-019-AZ",
+    "nombre": "Juego de Blanco Flotante Air Gun",
+    "descripcion": "Divertido juego de destreza con objetivos flotantes por corriente de aire y pistola de dardos de espuma.",
+    "descripcionLarga": "Pon a prueba tu puntería con este increíble juego de tiro al blanco flotante. Utiliza corrientes de aire para mantener las esferas levitando, creando un desafío dinámico y emocionante. Incluye una pistola de aire y dardos de espuma seguros para niños mayores de 8 años, ideal para competencias familiares y mejorar la concentración.",
+    "precio": 89000,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/distribuidorababyworld/jugueter_a/JUG-019-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262014/distribuidorababyworld/jugueter_a/JUG-019-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye base con sistema de flujo de aire para levitación",
+      "Pistola de aire y dardos de espuma seguros",
+      "Ayuda a mejorar la coordinación ojo-mano",
+      "Funciona con pilas o conexión USB",
+      "Recomendado para mayores de 8 años"
+    ]
+  },
+  {
+    "id": 69,
+    "sku": "JUG-020-RS",
+    "nombre": "Cocina de Juguete Western Kitchen Interactiva",
+    "descripcion": "Cocina de juguete con funciones de simulación real, spray de vapor y salida de agua.",
+    "descripcionLarga": "Sorprende a los más pequeños con esta maravillosa cocina de juguete Western Kitchen. Diseñada para ofrecer una experiencia de simulación realista, cuenta con funciones interactivas como spray de vapor, sonido y un sistema de agua real que fluye. Ideal para estimular la creatividad, el juego de roles y la motricidad fina en niños mayores de 3 años.",
+    "precio": 125000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/distribuidorababyworld/jugueter_a/JUG-020-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262034/distribuidorababyworld/jugueter_a/JUG-020-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Efectos de spray de vapor simulado para mayor realismo",
+      "Grifo con sistema de agua real que fluye",
+      "Incluye accesorios de cocina y utensilios",
+      "Recomendado para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 70,
+    "sku": "JUG-021-SU",
+    "nombre": "Monster Truck Dinosaurio RC",
+    "descripcion": "Camioneta a control remoto diseño de dinosaurio con luces, sonidos y función de vapor.",
+    "descripcionLarga": "Sorprende a los más pequeños con este increíble Monster Truck a control remoto con diseño de dinosaurio. Equipado con tecnología de 2.4 GHz, luces llamativas, efectos de sonido y función de atomización (vapor), ofrece horas de diversión extrema. Sus grandes llantas todo terreno y fácil control lo hacen ideal para niños mayores de 3 años.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/distribuidorababyworld/jugueter_a/JUG-021-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262076/distribuidorababyworld/jugueter_a/JUG-021-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Control remoto inalámbrico 2.4 GHz",
+      "Efectos de luces y sonido integrados",
+      "Función de atomización de vapor",
+      "Llantas todoterreno de gran tamaño",
+      "Recomendado para mayores de 3 años"
+    ]
+  },
+  {
+    "id": 71,
+    "sku": "JUG-022-RS",
+    "nombre": "Muñeca en Carro Convertible Fashion Car",
+    "descripcion": "Set de juguete con muñeca rubia y carro convertible rosa diseñado para horas de diversión creativa.",
+    "descripcionLarga": "Sorprende a las pequeñas con este maravilloso set de juego My Sweet Car. Incluye una hermosa muñeca articulada con cabello rubio y un llamativo carro convertible de color rosa con detalles florales, volante y asientos. Perfecto para estimular la imaginación, crear historias de viajes y aventuras con estilo. Fabricado con materiales seguros y duraderos, es el regalo ideal para niñas mayores de 3 años.",
+    "precio": 65000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/distribuidorababyworld/jugueter_a/JUG-022-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262116/distribuidorababyworld/jugueter_a/JUG-022-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca articulada y carro convertible",
+      "Diseño moderno con detalles florales y colores llamativos",
+      "Estimula la imaginación y el juego de roles",
+      "Materiales seguros y de alta calidad para niños",
+      "Recomendado para mayores de 3 años"
+    ]
+  },
+  {
+    "id": 72,
+    "sku": "JUG-023-SU",
+    "nombre": "Set de Joyería y Abalorios Fashion Beautiful",
+    "descripcion": "Kit creativo de cuentas y abalorios para diseñar pulseras y collares personalizados.",
+    "descripcionLarga": "Estimula la imaginación y la habilidad práctica de los niños con este completo set de manualidades Fashion Beautiful. Incluye una gran variedad de coloridas cuentas, dijes y hilos organizados en un estuche con diseño brillante, permitiendo crear múltiples combinaciones de accesorios únicos de moda.",
+    "precio": 45000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/distribuidorababyworld/jugueter_a/JUG-023-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262137/distribuidorababyworld/jugueter_a/JUG-023-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Gran variedad de cuentas de diferentes formas y colores.",
+      "Fomenta la creatividad, la paciencia y la motricidad fina.",
+      "Incluye hilos y accesorios para crear collares y pulseras.",
+      "Presentación en caja de regalo llamativa con detalles brillantes.",
+      "Recomendado para niños mayores de 5 años."
+    ]
+  },
+  {
+    "id": 73,
+    "sku": "JUG-024-AZ",
+    "nombre": "Lanzador Max Attack 2 en 1",
+    "descripcion": "Increíble set de juguete lanzador 2 en 1 con balas de agua y dardos de espuma EVA, incluye blancos para práctica.",
+    "descripcionLarga": "Disfruta de horas de diversión segura y emocionante con el lanzador Max Attack 2 en 1. Este completo set incluye un lanzador principal de diseño futurista, dardos de espuma EVA seguros, munición de hidrogel de agua, tres tarros de práctica con objetivos y un recipiente para preparación. Diseñado para niños mayores de 8 años, estimula la puntería, la coordinación y el juego al aire libre o en interiores.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/distribuidorababyworld/jugueter_a/JUG-024-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262159/distribuidorababyworld/jugueter_a/JUG-024-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Sistema dual 2 en 1: compatible con balas de agua y dardos EVA.",
+      "Incluye 3 blancos de práctica para mejorar la puntería.",
+      "Alcance de disparo de hasta 15 metros.",
+      "Recomendado para niños mayores de 8 años."
+    ]
+  },
+  {
+    "id": 74,
+    "sku": "JUG-025-VD",
+    "nombre": "Pistola de Agua Cocodrilo Water War",
+    "descripcion": "Divertida pistola de agua con diseño de cocodrilo ideal para juegos al aire libre y piscinas.",
+    "descripcionLarga": "Prepárate para las batallas más emocionantes bajo el sol con la Pistola de Agua Cocodrilo Water War. Su diseño único inspirado en un cocodrilo no solo es llamativo sino que garantiza horas de diversión refrescante para los niños. Es ligera, fácil de usar y perfecta para compartir en la piscina, el parque o el jardín durante los días calurosos.",
+    "precio": 45000,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/distribuidorababyworld/jugueter_a/JUG-025-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262181/distribuidorababyworld/jugueter_a/JUG-025-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño divertido en forma de cocodrilo",
+      "Ideal para juegos al aire libre y piscinas",
+      "Fácil de llenar y accionar para los niños",
+      "Material plástico resistente y seguro"
+    ]
+  },
+  {
+    "id": 75,
+    "sku": "JUG-026-AZ",
+    "nombre": "Lanzador Blaze Storm Motorizado",
+    "descripcion": "Divertido lanzador de dardos de espuma motorizado con cargador circular para horas de juego.",
+    "descripcionLarga": "Prepárate para la acción con el lanzador Blaze Storm Battery Operated Soft Bullet Gun. Este juguete operado por baterías ofrece un diseño moderno en color azul con detalles en rosa y blanco, un cargador circular de gran capacidad para 20 dardos de espuma suaves y seguros. Diseñado para garantizar diversión y emoción en cada disparo, ayudando a desarrollar la coordinación y puntería de los niños.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/distribuidorababyworld/jugueter_a/JUG-026-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262205/distribuidorababyworld/jugueter_a/JUG-026-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye cargador con capacidad para 20 dardos de espuma",
+      "Funciona con 5 baterías AA",
+      "Diseño ergonómico y fácil de operar",
+      "Dardos de espuma seguros para niños"
+    ]
+  },
+  {
+    "id": 76,
+    "sku": "COM-003-AZ",
+    "nombre": "Conjunto de Alimentación Infantil Elefante Azul",
+    "descripcion": "Set de alimentación infantil libre de BPA con diseño de elefante, incluye plato, vaso, cuchara y tenedor.",
+    "descripcionLarga": "Haz que la hora de la comida sea divertida y segura para tu pequeño con este hermoso conjunto de alimentación con diseño de elefante. Fabricado con materiales 100% libres de BPA y de alta calidad, este set incluye todo lo necesario para las comidas diarias: un plato hondo, un vaso resistente y cubiertos ergonómicos adaptados para las pequeñas manos de tu bebé. Su divertido diseño estimula la imaginación mientras garantiza una experiencia de alimentación segura y agradable.",
+    "precio": 45000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/distribuidorababyworld/pa_ales_y_cuidado/COM-003-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262225/distribuidorababyworld/pa_ales_y_cuidado/COM-003-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Materiales 100% libres de BPA seguros para la salud",
+      "Diseño divertido de elefante para incentivar la hora de comer",
+      "Incluye plato, vaso, cuchara y tenedor",
+      "Cubiertos ergonómicos ideales para las manos del bebé",
+      "Fácil de lavar y apto para el uso diario"
+    ]
+  },
+  {
+    "id": 77,
+    "sku": "JUG-027-RJ",
+    "nombre": "Camión de Bomberos Multifunción con Escalera",
+    "descripcion": "Divertido camión de bomberos de juguete con función de aspersión de agua, fricción y alta resistencia a impactos.",
+    "descripcionLarga": "Estimula la imaginación y el juego de roles con este increíble camión de bomberos multifunción. Cuenta con un diseño realista en color rojo, escalera extensible y función para rociar agua, ofreciendo horas de diversión asegurada para los más pequeños. Fabricado con materiales resistentes a golpes y con sistema de tracción por inercia.",
+    "precio": 55000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/distribuidorababyworld/jugueter_a/JUG-027-RJ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262245/distribuidorababyworld/jugueter_a/JUG-027-RJ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262249/distribuidorababyworld/jugueter_a/JUG-027-RJ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Función real de aspersión de agua",
+      "Sistema de motivación por inercia",
+      "Alta resistencia a choques y caídas",
+      "Escalera extensible de gran tamaño",
+      "Recomendado para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 78,
+    "sku": "RPN-001-AZ",
+    "nombre": "Conjunto Bebé 'Honey Day' Azul",
+    "descripcion": "Hermoso conjunto de ropa para bebé con estampado divertido, incluye blusa, pantalón y babero.",
+    "descripcionLarga": "Viste a tu pequeño con la máxima comodidad y estilo con este adorable conjunto de ropa para bebé 'Honey Day'. Fabricado con materiales suaves y transpirables, es ideal para la piel delicada del bebé. Incluye una blusa de manga larga, un pantalón cómodo y un babero a juego, perfecto para el uso diario o para regalar.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/distribuidorababyworld/variedades/RPN-001-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262502/distribuidorababyworld/variedades/RPN-001-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Material suave y delicado para la piel del bebé",
+      "Incluye blusa, pantalón y babero a juego",
+      "Diseño divertido con estampado 'Honey Day'",
+      "Fácil de lavar y de gran durabilidad"
+    ]
+  },
+  {
+    "id": 79,
+    "sku": "RPA-001-RS",
+    "nombre": "Set de Ropa y Accesorios Oso Rosa",
+    "descripcion": "Hermoso conjunto de ropa infantil en color rosa con diseño de osito y almohada decorativa incluida.",
+    "descripcionLarga": "Este adorable set completo para bebé niña incluye un tierno enterizo de manga larga con estampado de ositos y estrellas, una toalla o cobijita suave, y un cojín decorativo con diseño de osito y fruta. Confeccionado con materiales hipoalergénicos suaves y seguros para la delicada piel del bebé. Viene en un práctico empaque transparente tipo tula con gancho, ideal para regalar.",
+    "precio": 65000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/distribuidorababyworld/variedades/RPA-001-RS-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262522/distribuidorababyworld/variedades/RPA-001-RS-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262524/distribuidorababyworld/variedades/RPA-001-RS-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye enterizo, cobija/toalla y cojín decorativo",
+      "Textil suave y seguro para la piel del bebé",
+      "Diseño tierno con estampado de ositos en tonos rosados",
+      "Empaque tipo tula con gancho ideal para obsequio"
+    ]
+  },
+  {
+    "id": 80,
+    "sku": "RPA-002-RS",
+    "nombre": "Set de Ropa Bebé Niña Dinosaurio Rosado",
+    "descripcion": "Hermoso set de ropa de varias piezas para niña con diseño de dinosaurio y detalles en color rosado.",
+    "descripcionLarga": "Viste a tu pequeña con la mayor comodidad y estilo gracias a este encantador set de ropa para niña. Incluye body, camiseta y pantalón con un tierno diseño estampado de dinosaurio y alegres tonos rosados y blancos. Confeccionado en telas suaves y delicadas ideales para el cuidado de la piel del bebé. Viene en un práctico empaque listo para regalar.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/distribuidorababyworld/variedades/RPA-002-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262545/distribuidorababyworld/variedades/RPA-002-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye varias piezas combinables",
+      "Diseño tierno con estampado de dinosaurio",
+      "Material suave y transpirable para la piel del bebé",
+      "Práctico empaque protector ideal para obsequio"
+    ]
+  },
+  {
+    "id": 81,
+    "sku": "RPA-003-RS",
+    "nombre": "Set Ropa Bebé Cute Monkey Rosa",
+    "descripcion": "Encantador set de ropa para bebé niña con diseño de mono y banano, incluye gorro y babero.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima comodidad y ternura con este set de ropa para bebé niña de la marca Cute Monkey. Confeccionado en materiales suaves y delicados para la piel del recién nacido, este conjunto incluye un tierno enterizo con estampado de monito, un gorro ajustable a juego y un babero protector. Su diseño en tonos rosados y blancos es perfecto para regalar o consentir a tu bebé en sus primeros meses.",
+    "precio": 49900,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/distribuidorababyworld/variedades/RPA-003-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262567/distribuidorababyworld/variedades/RPA-003-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye enterizo, gorro y babero a juego",
+      "Estampado frontal de tierno mono y bananos",
+      "Materiales suaves y transpirables para la piel sensible",
+      "Ideal para uso diario o como regalo de baby shower"
+    ]
+  },
+  {
+    "id": 82,
+    "sku": "RPA-004-RS",
+    "nombre": "Conjunto Ropa Bebé Cute Monkey Rosa",
+    "descripcion": "Adorable conjunto de body y pantalón con diseño de mono para niña, suave y cómodo.",
+    "descripcionLarga": "Viste a tu pequeña con este tierno conjunto de dos piezas que incluye un body blanco con estampado de monito y la frase 'Cute Monkey' acompañado de ribetes rosas, y un pantalón largo con estampado de bananas sobre fondo rosa. Confeccionado en algodón suave y transpirable, ideal para el cuidado de la delicada piel del bebé. Viene en un práctico empaque transparente con gancho.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/distribuidorababyworld/variedades/RPA-004-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262588/distribuidorababyworld/variedades/RPA-004-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye body de manga corta y pantalón largo",
+      "Estampado frontal de monito y texto 'Cute Monkey'",
+      "Pantalón con divertido diseño de bananas",
+      "Material de algodón suave y fresco para el bebé",
+      "Presentación en práctico estuche transparente con gancho"
+    ]
+  },
+  {
+    "id": 83,
+    "sku": "RPU-002-BL",
+    "nombre": "Kit Ropa Recién Nacido Diseño Gaticos",
+    "descripcion": "Hermoso conjunto de ropa para bebé con almohada y gorro, diseño tierno de gatitos y colores suaves.",
+    "descripcionLarga": "Sorprende a tu bebé con este encantador kit completo de ropa para recién nacido. Incluye una prenda superior delicada, un gorro cómodo a juego y una almohada anatómica suave, todos decorados con un adorable diseño de gatitos jugueticios. Confeccionado con materiales hipoalergénicos de alta calidad que cuidan la piel sensible de tu pequeño, garantizando máxima comodidad y suavidad durante todo el día.",
+    "precio": 55000,
+    "categoria": "Pañales y Cuidado",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/distribuidorababyworld/pa_ales_y_cuidado/RPU-002-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262608/distribuidorababyworld/pa_ales_y_cuidado/RPU-002-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye prenda superior, gorro y almohada anatómica",
+      "Tela suave e hipoalergénica ideal para recién nacidos",
+      "Adorable diseño estampado de gatitos",
+      "Presentación en práctico estuche organizador con gancho"
+    ]
+  },
+  {
+    "id": 84,
+    "sku": "RPA-005-BL",
+    "nombre": "Set de Ropa Gatita para Bebé",
+    "descripcion": "Hermoso conjunto de body y accesorios para bebé con diseño tierno de gatita en tonos suaves.",
+    "descripcionLarga": "Este adorable set de ropa para bebé incluye un body con orejitas decorativas y estampado frontal, acompañado de prendas complementarias con hermosos detalles de gatitos. Confeccionado en algodón suave y transpirable, es perfecto para cuidar la delicada piel de tu pequeña mientras luce encantadora todos los días.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/distribuidorababyworld/variedades/RPA-005-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262639/distribuidorababyworld/variedades/RPA-005-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye body manga corta y prendas adicionales",
+      "Estampado de gatita con detalles en relieve y orejitas",
+      "Material 100% algodón suave y antialérgico",
+      "Broches de presión para facilitar el cambio de pañal"
+    ]
+  },
+  {
+    "id": 85,
+    "sku": "RPA-006-RS",
+    "nombre": "Conjunto Ropa Bebé Niña Dinosaurio con Cojín",
+    "descripcion": "Encantador conjunto de ropa para bebé niña con diseño de dinosaurio, incluye gorro y cojín decorativo a juego.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima ternura y comodidad usando este hermoso conjunto diseñado especialmente para ella. Incluye una blusa manga larga con un tierno estampado de dinosaurio, pantalón, un gorro ajustable a juego y un adorable cojín decorativo con diseño sonriente. Fabricado con materiales suaves y delicados ideales para la piel sensible del bebé. Viene en un práctico empaque transparente perfecto para regalo.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/distribuidorababyworld/variedades/RPA-006-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262660/distribuidorababyworld/variedades/RPA-006-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye blusa, pantalón, gorro y cojín a juego",
+      "Diseño tierno con estampado de dinosaurio",
+      "Material suave y transpirable para la piel del bebé",
+      "Ideal para uso diario o como obsequio especial"
+    ]
+  },
+  {
+    "id": 86,
+    "sku": "RPU-003-SU",
+    "nombre": "Conjunto Bebé Panda Sonríe Mamá",
+    "descripcion": "Encantador conjunto de varias piezas con diseño de panda y frase tierna, ideal para la comodidad del bebé.",
+    "descripcionLarga": "Viste a tu pequeño con este adorable y fresco conjunto diseñado especialmente para su comodidad y bienestar. Incluye una camiseta manga larga y un short en tonos alegres, con un tierno estampado de panda y la frase Sonríe mamá! He llegado. Elaborado con materiales suaves y transpirables que cuidan la delicada piel del bebé, es perfecto para el uso diario.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/distribuidorababyworld/variedades/RPU-003-SU-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262702/distribuidorababyworld/variedades/RPU-003-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262704/distribuidorababyworld/variedades/RPU-003-SU-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camiseta manga larga y short",
+      "Diseño tierno con estampado de panda",
+      "Tela suave y transpirable para la piel del bebé",
+      "Ideal para uso diario y climas templados"
+    ]
+  },
+  {
+    "id": 87,
+    "sku": "RPN-002-AZ",
+    "nombre": "Conjunto Estilo Universitario para Niño",
+    "descripcion": "Conjunto de chaqueta estilo universitario azul oscuro con pantalón caqui y detalles bordados para bebé.",
+    "descripcionLarga": "Viste a tu pequeño con este adorable y moderno conjunto de estilo universitario. Incluye una chaqueta tipo bomber en color azul oscuro con ribetes grises, botones a presión frontales y un tierno parche bordado con la letra U y silueta de ratón. Se complementa perfectamente con un pantalón caqui cómodo y suave, ideal para mantener a tu bebé abrigado y con un estilo único en cualquier ocasión.",
+    "precio": 65000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/distribuidorababyworld/variedades/RPN-002-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262800/distribuidorababyworld/variedades/RPN-002-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño estilo universitario moderno y tierno",
+      "Chaqueta con botones a presión para fácil vestidor",
+      "Pantalón cómodo en tono caqui",
+      "Materiales suaves y amigables con la piel del bebé"
+    ]
+  },
+  {
+    "id": 88,
+    "sku": "RPN-003-BL",
+    "nombre": "Conjunto Formal Elegante Niño",
+    "descripcion": "Conjunto formal de tres piezas para niño, incluye camisa, chaleco y pantalón cómodo.",
+    "descripcionLarga": "Viste a tu pequeño con la máxima elegancia en sus ocasiones más especiales. Este hermoso conjunto formal para niño consta de una camisa blanca de manga corta, un chaleco texturizado en tono gris y un pantalón a juego con cintura elástica para garantizar la comodidad y facilitar el cambio. Fabricado con materiales suaves y transpirables, es perfecto para bautizos, bodas o cualquier evento formal.",
+    "precio": 65000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/distribuidorababyworld/variedades/RPN-003-BL.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262821/distribuidorababyworld/variedades/RPN-003-BL.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camisa, chaleco y pantalón",
+      "Material suave y transpirable para la piel del bebé",
+      "Cintura elástica en el pantalón para mayor comodidad",
+      "Diseño formal ideal para eventos y ocasiones especiales"
+    ]
+  },
+  {
+    "id": 89,
+    "sku": "RPN-004-RJ",
+    "nombre": "Conjunto Casual Rojo para Niño",
+    "descripcion": "Elegante conjunto de camisa con cuello y short con bolsillos para niño.",
+    "descripcionLarga": "Viste a tu pequeño con estilo y comodidad con este encantador conjunto en color rojo. Incluye una camisa de manga corta con textura y elegante cuello, acompañada de un short con cordón ajustable, prácticos bolsillos frontales y detalles de botones en los costados. Ideal para cualquier ocasión especial o un paseo familiar.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/distribuidorababyworld/variedades/RPN-004-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791262931/distribuidorababyworld/variedades/RPN-004-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camisa de manga corta con textura y cuello clásico",
+      "Short con cintura elástica y cordón ajustable",
+      "Bolsillos frontales funcionales",
+      "Tela suave y fresca ideal para la piel del bebé"
+    ]
+  },
+  {
+    "id": 90,
+    "sku": "RPN-005-RJ",
+    "nombre": "Conjunto Polo Oso Lentes Vino",
+    "descripcion": "Conjunto elegante para niño en color vino con camisa tipo polo y short a juego.",
+    "descripcionLarga": "Viste a tu pequeño con estilo y comodidad con este encantador conjunto en color vino. Incluye una camisa tipo polo de manga corta con cuello y un tierno bordado de osito con lentes, además de un short cómodo con bolsillos y cordón ajustable. Ideal para cualquier ocasión casual o especial.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/distribuidorababyworld/variedades/RPN-005-RJ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263060/distribuidorababyworld/variedades/RPN-005-RJ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camisa tipo polo con botones frontales",
+      "Diseño bordado de osito con gafas",
+      "Short con bolsillos y cordón decorativo",
+      "Tela suave y fresca para la piel del bebé"
+    ]
+  },
+  {
+    "id": 91,
+    "sku": "RPN-006-CQ",
+    "nombre": "Conjunto Casual Caqui y Verde Niño",
+    "descripcion": "Conjunto fresco para niño con camiseta verde militar y bermuda caqui.",
+    "descripcionLarga": "Disfruta de la comodidad y estilo con este hermoso conjunto para niño. Incluye una camiseta manga corta en color verde militar y una bermuda tipo cargo en tono caqui con cordón ajustable. Elaborado con telas suaves y transpirables, ideal para el uso diario y mantener a tu pequeño fresco en cualquier ocasión.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/distribuidorababyworld/variedades/RPN-006-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263151/distribuidorababyworld/variedades/RPN-006-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta manga corta en algodón suave",
+      "Bermuda con pretina elástica y cordón ajustable",
+      "Bolsillos funcionales en el short",
+      "Diseño moderno y fresco para clima cálido"
+    ]
+  },
+  {
+    "id": 92,
+    "sku": "RPN-007-CQ",
+    "nombre": "Conjunto Infantil Pato Lucas",
+    "descripcion": "Conjunto de camiseta verde oliva con estampado del Pato Lucas y short caqui con cordón ajustable.",
+    "descripcionLarga": "Haz que tu pequeño luzca genial y se sienta cómodo todo el día con este divertido conjunto inspirado en el Pato Lucas. Incluye una camiseta de manga corta en color verde oliva con un diseño moderno y urbano, combinada con un short caqui que cuenta con cintura elástica y cordón ajustable para un ajuste perfecto.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/distribuidorababyworld/variedades/RPN-007-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263193/distribuidorababyworld/variedades/RPN-007-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta de manga corta con estampado frontal de alta calidad",
+      "Short con pretina elástica y cordón decorativo",
+      "Tela suave y transpirable ideal para la piel del niño",
+      "Diseño urbano y moderno con el personaje del Pato Lucas"
+    ]
+  },
+  {
+    "id": 93,
+    "sku": "RPN-008-AZ",
+    "nombre": "Conjunto Camiseta y Short Carros",
+    "descripcion": "Conjunto de dos piezas para niño con camiseta azul oscura y short estampado de vehículos.",
+    "descripcionLarga": "Viste a tu pequeño con la máxima comodidad y estilo gracias a este encantador conjunto. Incluye una camiseta de manga corta en color azul oscuro de tacto suave y un short gris con un divertido estampado lineal de camiones y maquinaria pesada. Ideal para el uso diario, este conjunto garantiza frescura y libertad de movimiento en cada aventura.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/distribuidorababyworld/variedades/RPN-008-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263282/distribuidorababyworld/variedades/RPN-008-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta de manga corta en color azul oscuro",
+      "Short con estampado divertido de carros y camiones",
+      "Tela suave y transpirable para la piel del bebé",
+      "Cintura elástica cómoda en el short"
+    ]
+  },
+  {
+    "id": 94,
+    "sku": "RPN-009-CF",
+    "nombre": "Conjunto Infantil Deportivo Café y Caqui",
+    "descripcion": "Conjunto moderno para niño con camiseta de rayas y bermuda cargo caqui. Fresco y cómodo.",
+    "descripcionLarga": "Viste a tu pequeño con estilo y comodidad gracias a este hermoso conjunto diseñado especialmente para niños. Incluye una camiseta de manga corta con un atractivo diseño de rayas en tonos café, blanco y azul, cuello acanalado y detalles en parche. Se complementa perfectamente con una bermuda estilo cargo en color caqui con prácticos bolsillos laterales. Elaborado con telas suaves y transpirables ideales para el cuidado de la piel infantil.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/distribuidorababyworld/variedades/RPN-009-CF.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263315/distribuidorababyworld/variedades/RPN-009-CF.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta manga corta con diseño de rayas y cuello acanalado",
+      "Bermuda estilo cargo con bolsillos laterales funcionales",
+      "Tela de alta calidad suave con la piel del bebé",
+      "Ideal para uso diario y ocasiones casuales"
+    ]
+  },
+  {
+    "id": 95,
+    "sku": "RPN-010-CF",
+    "nombre": "Conjunto Casual Café y Caqui para Niño",
+    "descripcion": "Conjunto infantil de camiseta café y bermuda caqui tipo cargo. Fresco, cómodo y perfecto para cualquier ocasión.",
+    "descripcionLarga": "Viste a tu pequeño con estilo y comodidad gracias a este hermoso conjunto de dos piezas. Incluye una camiseta marrón de algodón suave con detalles de franjas en el cuello y una bermuda caqui tipo cargo con prácticos bolsillos laterales y cordón ajustable. Ideal para días soleados, salidas familiares y uso diario.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/distribuidorababyworld/variedades/RPN-010-CF.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263339/distribuidorababyworld/variedades/RPN-010-CF.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta manga corta 100% algodón suave",
+      "Bermuda estilo cargo con bolsillos laterales",
+      "Cintura elástica con cordón decorativo ajustable",
+      "Diseño moderno en tonos tierra fáciles de combinar"
+    ]
+  },
+  {
+    "id": 96,
+    "sku": "RPN-011-CQ",
+    "nombre": "Conjunto Polo Caqui con Short y Body para Bebé",
+    "descripcion": "Elegante conjunto de 3 piezas para bebé niño con camisa tipo polo, short estampado y body cómodo.",
+    "descripcionLarga": "Viste a tu pequeño con estilo y comodidad gracias a este hermoso conjunto de tres piezas. Incluye una camisa tipo polo en color caqui con detalles contrastantes en el cuello y un tierno parche decorativo, un body interior blanco de algodón suave con broches prácticos, y un short gris con estampado divertido. Ideal para cualquier ocasión especial o uso diario, garantizando suavidad y frescura para la piel delicada de tu bebé.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/distribuidorababyworld/variedades/RPN-011-CQ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263360/distribuidorababyworld/variedades/RPN-011-CQ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263362/distribuidorababyworld/variedades/RPN-011-CQ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camisa tipo polo, short y body interior",
+      "Elaborado en materiales suaves y transpirables",
+      "Diseño moderno y elegante para bebé",
+      "Broches metálicos en el body para fácil cambio de pañal",
+      "Prenda versátil para cualquier ocasión"
+    ]
+  },
+  {
+    "id": 97,
+    "sku": "RPA-007-AZ",
+    "nombre": "Conjunto Love Mariposa para Niña",
+    "descripcion": "Hermoso conjunto de blusa blanca con estampado y short de denim con cinturón y hebilla de mariposa.",
+    "descripcionLarga": "Viste a tu pequeña con este adorable y moderno conjunto diseñado para ofrecer máxima comodidad y estilo. Incluye una blusa blanca de manga corta con volantes y un tierno estampado con la palabra LOVE y corazones. Se complementa perfectamente con un short de mezclilla azul oscuro que cuenta con un delicado cinturón rosa y una hermosa hebilla en forma de mariposa, ideal para cualquier ocasión especial o casual.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/distribuidorababyworld/variedades/RPA-007-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263400/distribuidorababyworld/variedades/RPA-007-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Blusa blanca con volantes en las mangas",
+      "Estampado frontal de corazones y la palabra LOVE",
+      "Short de mezclilla azul oscuro de alta calidad",
+      "Incluye cinturón decorativo con hebilla de mariposa"
+    ]
+  },
+  {
+    "id": 98,
+    "sku": "RPA-008-AZ",
+    "nombre": "Conjunto Short Denim y Blusa Volantes",
+    "descripcion": "Hermoso conjunto para niña compuesto por blusa blanca con volantes y short de mezclilla con cinturón decorativo.",
+    "descripcionLarga": "Viste a tu pequeña con este encantador conjunto diseñado especialmente para brindar comodidad y estilo en los días cálidos. Incluye una blusa blanca de mangas cortos con delicados volantes en los hombros y un short de mezclilla azul con detalles de pedrería y un tierno cinturón rosa con hebilla en forma de mariposa. Ideal para cualquier ocasión casual.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/distribuidorababyworld/variedades/RPA-008-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263428/distribuidorababyworld/variedades/RPA-008-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Blusa blanca con volantes en los hombros",
+      "Short de mezclilla con detalle de corazón en pedrería",
+      "Incluye cinturón rosa con hebilla de mariposa",
+      "Materiales suaves y frescos para la piel del bebé",
+      "Cintura elastizada para mayor comodidad"
+    ]
+  },
+  {
+    "id": 99,
+    "sku": "RPA-009-VD",
+    "nombre": "Vestido Dos Piezas Estampado Corazones",
+    "descripcion": "Hermoso vestido infantil de dos piezas con blusa estampada de corazones y falda en mezclilla.",
+    "descripcionLarga": "Viste a tu pequeña con este encantador conjunto de dos piezas. Incluye una blusa sin mangas en tono verde menta con un tierno estampado de corazones flotantes y un delicado volante inferior con lazo frontal. Se complementa perfectamente con una falda de mezclilla azul oscura plisada, ideal para brindar comodidad, frescura y estilo en cualquier ocasión especial o salida diaria.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/distribuidorababyworld/variedades/RPA-009-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263463/distribuidorababyworld/variedades/RPA-009-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño de dos piezas fácil de combinar",
+      "Blusa sin mangas con estampado de corazones",
+      "Detalle de lazo frontal decorativo",
+      "Falda de mezclilla azul con pliegues",
+      "Tela suave y fresca para la piel de la bebé"
+    ]
+  },
+  {
+    "id": 100,
+    "sku": "RPA-010-AZ",
+    "nombre": "Conjunto Fresco Blusa y Falda Denim",
+    "descripcion": "Hermoso conjunto para niña compuesto por blusa estampada de tirantes y falda de mezclilla.",
+    "descripcionLarga": "Viste a tu pequeña con este encantador conjunto diseñado para brindar máxima comodidad y estilo en los días cálidos. Incluye una blusa verde menta con tierno estampado de corazones, tirantes fruncidos y detalle de nudo al frente, acompañada de una falda de mezclilla azul con botones decorativos y pretina elástica para un ajuste perfecto.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/distribuidorababyworld/variedades/RPA-010-AZ-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263483/distribuidorababyworld/variedades/RPA-010-AZ-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263485/distribuidorababyworld/variedades/RPA-010-AZ-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Blusa ligera en tono verde menta con estampado de corazones",
+      "Falda de mezclilla azul con botones frontales",
+      "Pretina elástica cómoda para la cintura de la bebé",
+      "Materiales suaves y transpirables ideales para piel delicada"
+    ]
+  },
+  {
+    "id": 101,
+    "sku": "RPA-011-RS",
+    "nombre": "Conjunto de Blusa y Short con Lazo para Niña",
+    "descripcion": "Hermoso conjunto de blusa con mangas con vuelo y short con lazo frontal, ideal para los días cálidos de tu bebé.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima comodidad y estilo con este tierno conjunto de dos piezas. Incluye una blusa de textura suave con delicados volantes en las mangas y un short a juego con una hermosa pretina elástica y un tierno lazo frontal decorativo. Confeccionado con materiales transpirables y suaves para la delicada piel del bebé.",
+    "precio": 45000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/distribuidorababyworld/variedades/RPA-011-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263508/distribuidorababyworld/variedades/RPA-011-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye blusa y short",
+      "Mangas con volantes delicados",
+      "Short con pretina elástica y lazo decorativo",
+      "Tela suave y transpirable para mayor comodidad",
+      "Diseño fresco ideal para climas cálidos"
+    ]
+  },
+  {
+    "id": 102,
+    "sku": "RPA-012-VD",
+    "nombre": "Conjunto Infantil Stay Cool",
+    "descripcion": "Conjunto de camiseta blanca con estampado divertido y short verde menta con cordón decorativo para niña.",
+    "descripcionLarga": "Haz que tu pequeña luzca adorable y fresca con este tierno conjunto. Incluye una camiseta blanca de manga corta con un divertido gráfico estilo boba tea y la frase Stay Cool, acompañada de un short verde menta con bolsillos y un delicado lazo en la cintura. Confeccionado en telas suaves y transpirables, es ideal para mantenerla cómoda durante todo el día en climas cálidos.",
+    "precio": 42000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/distribuidorababyworld/variedades/RPA-012-VD-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263543/distribuidorababyworld/variedades/RPA-012-VD-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263545/distribuidorababyworld/variedades/RPA-012-VD-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta 100% algodón suave de manga corta",
+      "Short con cintura elástica y lazo decorativo",
+      "Estampado frontal moderno y duradero",
+      "Diseño fresco y cómodo para uso diario"
+    ]
+  },
+  {
+    "id": 103,
+    "sku": "RPA-013-CQ",
+    "nombre": "Vestido Bebé Bordado Floral Marfil",
+    "descripcion": "Hermoso vestido para niña en color marfil con delicados bordados florales y detalle de lazo frontal.",
+    "descripcionLarga": "Encantador vestido de diseño clásico y elegante para niña, confeccionado en tela suave y fresca ideal para la piel delicada del bebé. Presenta hermosos bordados florales artesanales en el frente, mangas con volantes delicados, una elegante franja central con detalles entrelazados y un tierno lazo decorativo en la cintura. Perfecto para ocasiones especiales, paseos o sesiones de fotos inolvidables.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/distribuidorababyworld/variedades/RPA-013-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263569/distribuidorababyworld/variedades/RPA-013-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño elegante con delicados bordados florales",
+      "Mangas con volantes y lazo frontal decorativo",
+      "Tela suave, fresca y amable con la piel del bebé",
+      "Corte cómodo que facilita el movimiento"
+    ]
+  },
+  {
+    "id": 104,
+    "sku": "RPA-014-SU",
+    "nombre": "Conjunto Floral con Vestido y Short para Niña",
+    "descripcion": "Encantador conjunto de vestido y short en tonos suaves con delicados bordados florales.",
+    "descripcionLarga": "Viste a tu pequeña con este hermoso conjunto diseñado especialmente para brindar comodidad y estilo. Incluye un vestido sin mangas con adorables volantes, detalles de encaje y bordados florales artesanales, acompañado de un tierno short rosa a juego con cintura elástica. Confeccionado con telas suaves y frescas, es perfecto para los días cálidos o cualquier ocasión especial.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/distribuidorababyworld/variedades/RPA-014-SU-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263591/distribuidorababyworld/variedades/RPA-014-SU-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263592/distribuidorababyworld/variedades/RPA-014-SU-2.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye vestido sin mangas y short con cintura elástica",
+      "Delicado bordado floral y detalles de encaje",
+      "Telas suaves y transpirables ideales para la piel del bebé",
+      "Diseño cómodo y fresco para climas cálidos"
+    ]
+  },
+  {
+    "id": 105,
+    "sku": "RPA-015-RS",
+    "nombre": "Conjunto Rosa con Short Denim Niña",
+    "descripcion": "Hermoso conjunto para niña compuesto por camiseta rosa de mangas abullonadas y short en mezclilla con lazo decorativo.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima comodidad y estilo usando este encantador conjunto. La camiseta en suave tono rosa cuenta con delicados detalles fruncidos en las mangas, mientras que el short de mezclilla incluye una cintura elástica ajustable con un tierno lazo decorativo y sutiles detalles desgastados. Ideal para cualquier ocasión casual, garantizando frescura y libertad de movimiento.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/distribuidorababyworld/variedades/RPA-015-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263612/distribuidorababyworld/variedades/RPA-015-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camiseta de algodón suave en color rosa",
+      "Mangas con detalles fruncidos y abullonados",
+      "Short de mezclilla con cintura elástica cómoda",
+      "Incluye lazo decorativo frontal"
+    ]
+  },
+  {
+    "id": 106,
+    "sku": "RPA-016-RS",
+    "nombre": "Conjunto Elegante con Blusa y Pantalón Rosa",
+    "descripcion": "Hermoso conjunto de dos piezas para bebé niña con detalles de volantes y estampado sutil.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima elegancia y comodidad con este encantador conjunto. Incluye una blusa con delicados volantes en los hombros, pechera fruncida y un tierno tono rosa, acompañada de un pantalón a juego con rayas sutiles. Elaborado con telas suaves y transpirables ideales para la delicada piel de tu bebé, perfecto para cualquier ocasión especial o salida casual.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/distribuidorababyworld/variedades/RPA-016-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263646/distribuidorababyworld/variedades/RPA-016-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño de dos piezas con blusa y pantalón",
+      "Detalles de volantes y pechera fruncida",
+      "Telas suaves y transpirables para la piel del bebé",
+      "Cintura elástica cómoda en el pantalón",
+      "Ideal para uso diario o eventos especiales"
+    ]
+  },
+  {
+    "id": 107,
+    "sku": "RPA-017-RS",
+    "nombre": "Conjunto Rosa y Blanco con Volantes para Niña",
+    "descripcion": "Hermoso conjunto de dos piezas con blusa de volantes y pantalón a rayas, ideal para mantener a tu bebé cómoda y hermosa.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima elegancia y comodidad con este tierno conjunto de dos piezas. Incluye una blusa blanca texturizada con delicados volantes en los hombros y botones frontales, acompañada por una camiseta interior rosa y un pantalón a rayas con terminaciones elásticas en los tobillos. Fabricado con telas suaves y transpirables ideales para la delicada piel del bebé.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/distribuidorababyworld/variedades/RPA-017-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263676/distribuidorababyworld/variedades/RPA-017-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño de dos piezas fácil de combinar",
+      "Blusa con volantes decorativos y botones frontales",
+      "Pantalón con pretina y puños elásticos suaves",
+      "Materiales suaves y frescos para uso diario"
+    ]
+  },
+  {
+    "id": 108,
+    "sku": "RPA-018-AZ",
+    "nombre": "Conjunto Floral con Short de Denim",
+    "descripcion": "Encantador conjunto de blusa con mangas de volantes y short de mezclilla para niña.",
+    "descripcionLarga": "Haz que tu pequeña luzca adorable y fresca con este hermoso conjunto. Incluye una blusa de textura acanalada con delicados estampados florales y llamativos volantes en los hombros. Se complementa perfectamente con un short de denim moderno que cuenta con un cinturón de lazo floral ajustable para mayor comodidad y estilo.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/distribuidorababyworld/variedades/RPA-018-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263696/distribuidorababyworld/variedades/RPA-018-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Blusa acanalada con estampado floral",
+      "Mangas con volantes decorativos",
+      "Short de mezclilla con cintura elástica",
+      "Incluye cinturón de lazo a juego"
+    ]
+  },
+  {
+    "id": 109,
+    "sku": "RPA-019-CQ",
+    "nombre": "Vestido Estampado Floral con Lazo para Niña",
+    "descripcion": "Hermoso vestido en tono caqui con delicado estampado floral, volantes en los hombros y tierno lazo frontal.",
+    "descripcionLarga": "Haz que tu pequeña luzca adorable con este encantador vestido en tono caqui decorado con un tierno estampado de flores azules. Diseñado con delicados volantes en los hombros, un lindo lazo en la cintura y prácticos broches frontales para facilitar el cambio de ropa. Confeccionado en tela suave y fresca, ideal para mantener a tu bebé cómoda durante todo el día.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/distribuidorababyworld/variedades/RPA-019-CQ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263718/distribuidorababyworld/variedades/RPA-019-CQ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño con volantes en los hombros",
+      "Estampado floral delicado",
+      "Lazo decorativo en la cintura",
+      "Broches frontales para fácil vestible",
+      "Tela suave y transpirable"
+    ]
+  },
+  {
+    "id": 110,
+    "sku": "RPA-020-SU",
+    "nombre": "Conjunto Estrellas Moradas para Niña",
+    "descripcion": "Encantador conjunto de blusa blanca con mangas abullonadas y short morado con estampado de estrellas.",
+    "descripcionLarga": "Viste a tu pequeña con la máxima comodidad y estilo con este adorable conjunto. Cuenta con una blusa blanca de suave algodón con mangas cortas abullonadas y un short morado con un tierno estampado de estrellas, pretina elástica y un delicado lazo frontal. Ideal para cualquier ocasión casual, brindando frescura y libertad de movimiento.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/distribuidorababyworld/variedades/RPA-020-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263739/distribuidorababyworld/variedades/RPA-020-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Blusa blanca de manga corta abullonada",
+      "Short morado con estampado de estrellas",
+      "Pretina elástica cómoda con detalle de lazo",
+      "Tela suave y fresca ideal para la piel del bebé"
+    ]
+  },
+  {
+    "id": 111,
+    "sku": "RPA-021-SU",
+    "nombre": "Conjunto tierno de osita con short morado",
+    "descripcion": "Conjunto de dos piezas para niña con camiseta blanca a rayas y short morado con estampado de estrellas.",
+    "descripcionLarga": "Encantador conjunto diseñado especialmente para brindar la máxima comodidad y estilo a tu pequeña. Incluye una camiseta blanca de manga corta abullonada con delicadas rayas lilas y un tierno oso sosteniendo una estrella, acompañada de un short morado con patrón de estrellas sutiles. Elaborado en telas suaves y frescas, ideales para el uso diario y para mantener a tu bebé cómoda en todo momento.",
+    "precio": 42000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/distribuidorababyworld/variedades/RPA-021-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263759/distribuidorababyworld/variedades/RPA-021-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye camiseta y short",
+      "Tela suave y transpirable para la piel del bebé",
+      "Diseño tierno con estampado de osito y estrellas",
+      "Mangas abullonadas y ajuste cómodo en la cintura"
+    ]
+  },
+  {
+    "id": 112,
+    "sku": "RPA-022-RS",
+    "nombre": "Vestido de Tul Rosa con Diadema para Niña",
+    "descripcion": "Hermoso vestido de tul con lunares blancos y elegante diadema a juego, ideal para ocasiones especiales.",
+    "descripcionLarga": "Haz que tu pequeña luzca como una verdadera princesa con este encantador conjunto de vestido y diadema. Confeccionado con capas de suave tul, delicados lunares blancos y un hermoso detalle de flor en la cabeza, es perfecto para fiestas, bautizos o sesiones de fotos inolvidables.",
+    "precio": 55000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/distribuidorababyworld/variedades/RPA-022-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263781/distribuidorababyworld/variedades/RPA-022-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye vestido de tul en capas y diadema a juego",
+      "Diseño con lunares blancos y detalles delicados",
+      "Tela suave y cómoda para la piel del bebé",
+      "Ideal para fiestas y ocasiones especiales"
+    ]
+  },
+  {
+    "id": 113,
+    "sku": "RPA-023-RS",
+    "nombre": "Vestido Rosa Elegante con Diadema",
+    "descripcion": "Hermoso vestido de fiesta para bebé niña en tono rosa con capas de tul y diadema a juego.",
+    "descripcionLarga": "Haz que tu pequeña luzca como una princesa en cualquier ocasión especial con este encantador conjunto. Incluye un vestido sin mangas con delicados detalles de lunares, una falda en capas de tul voluminosa y suave, y botones en la espalda para facilitar el cambio. Además, viene acompañado de una hermosa diadema con flor decorativa que complementa perfectamente el estilo elegante y tierno.",
+    "precio": 59900,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/distribuidorababyworld/variedades/RPA-023-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263818/distribuidorababyworld/variedades/RPA-023-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye diadema con flor decorativa a juego",
+      "Falda de tul en múltiples capas con diseño de lunares",
+      "Cierre de botones en la espalda",
+      "Materiales suaves y seguros para la piel del bebé"
+    ]
+  },
+  {
+    "id": 114,
+    "sku": "RPA-024-AZ",
+    "nombre": "Vestido de Fiesta Azul con Flores y Perlas",
+    "descripcion": "Hermoso vestido elegante para niña en color azul con detalles de flores en relieve y collar de perlas.",
+    "descripcionLarga": "Haz que tu pequeña luzca como una princesa en cualquier ocasión especial con este encantador vestido azul. Cuenta con un delicado diseño sin mangas, cuello adornado con perlas sintéticas, un hermoso corpiño cubierto de flores tridimensionales y una falda de tul vaporosa que aporta volumen y gracia. Ideal para bautizos, fiestas, cumpleaños o sesiones de fotos.",
+    "precio": 85000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/distribuidorababyworld/variedades/RPA-024-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263840/distribuidorababyworld/variedades/RPA-024-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Corpiño decorado con flores en relieve",
+      "Cuello elegante con detalles de perlas",
+      "Falda de tul en capas con gran volumen",
+      "Cierre posterior discreto y cómodo"
+    ]
+  },
+  {
+    "id": 115,
+    "sku": "RPA-025-AZ",
+    "nombre": "Vestido de Fiesta Elegante Azul para Niña",
+    "descripcion": "Hermoso vestido de gala en color azul con detalles de tul, lazo y perlas en el cuello para ocasiones especiales.",
+    "descripcionLarga": "Haz que tu pequeña luzca como una verdadera princesa en cualquier evento importante con este encantador vestido de fiesta. Confeccionado con materiales suaves y cómodos, cuenta con una falda de tul vaporosa, un elegante lazo trasero ajustable y un delicado cuello adornado con perlas sintéticas. Su diseño sofisticado garantiza que tu niña se vea radiante y se sienta cómoda durante todo el día.",
+    "precio": 65000,
+    "categoria": "Variedades",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/distribuidorababyworld/variedades/RPA-025-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263865/distribuidorababyworld/variedades/RPA-025-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Diseño elegante con falda de tul y volantes",
+      "Detalle de perlas sintéticas alrededor del cuello",
+      "Lazo trasero ajustable para un mejor ajuste",
+      "Cierre de cremallera posterior para fácil colocación",
+      "Tela suave y transpirable ideal para la piel del bebé"
+    ]
+  },
+  {
+    "id": 116,
+    "sku": "JUG-028-SU",
+    "nombre": "Muñeca Interactiva Baby MayMay con Sonido",
+    "descripcion": "Hermosa muñeca interactiva con sonidos, cabello rizado y accesorios para horas de diversión.",
+    "descripcionLarga": "Sorprende a los más pequeños con la Muñeca Interactiva Baby MayMay. Este hermoso juguete cuenta con funciones especiales como emisión de sonidos, capacidad para beber, orinar y extremidades articuladas. Su diseño incluye un hermoso vestido colorido, un lazo a juego y cabello rizado que estimula la imaginación y el juego de roles en los niños.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/distribuidorababyworld/jugueter_a/JUG-028-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263886/distribuidorababyworld/jugueter_a/JUG-028-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Emite sonidos interactivos al presionarla",
+      "Puede beber y hacer pipí",
+      "Extremidades articuladas y móviles",
+      "Incluye hermoso vestido y accesorios coloridos",
+      "Recomendada para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 117,
+    "sku": "JUG-029-RS",
+    "nombre": "Muñeca Bebé Maymay con Accesorios",
+    "descripcion": "Hermosa muñeca bebé interactiva con accesorios de cuidado como tetero y sonaja, ideal para estimular la imaginación.",
+    "descripcionLarga": "Sorprende a los más pequeños con la encantadora muñeca bebé Maymay. Diseñada con detalles realistas y tiernos, incluye un conjunto estampado a juego, diadema, tetero y accesorios divertidos para fomentar el juego de roles y el cuidado afectivo. Fabricada con materiales seguros y de alta calidad, es el regalo perfecto para niños mayores de 3 años.",
+    "precio": 79900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/distribuidorababyworld/jugueter_a/JUG-029-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791263907/distribuidorababyworld/jugueter_a/JUG-029-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye accesorios de juego como tetero y sonaja",
+      "Diseño realista y tierno con ropa estampada",
+      "Fomenta el desarrollo emocional y el juego de roles",
+      "Materiales seguros y duraderos para niños mayores de 3 años"
+    ]
+  },
+  {
+    "id": 118,
+    "sku": "JUG-030-RS",
+    "nombre": "Muñeca Bebé Realista con Accesorios Baby Huan",
+    "descripcion": "Hermosa muñeca con accesorios de cuidado, incluyendo tetero, chupón y bacinilla para horas de diversión.",
+    "descripcionLarga": "Sorprende a los más pequeños con la adorable muñeca Baby Huan. Este set completo incluye accesorios esenciales como biberón, chupón y una bacinilla rosa, fomentando el juego de roles y el cuidado tierno. Diseñada con materiales seguros y de alta calidad, es ideal para estimular la imaginación y el desarrollo afectivo.",
+    "precio": 89000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/distribuidorababyworld/jugueter_a/JUG-030-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264040/distribuidorababyworld/jugueter_a/JUG-030-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye biberón, chupón y bacinilla",
+      "Diseño realista y tierno",
+      "Fomenta el juego de roles y la empatía",
+      "Materiales seguros y duraderos para niños"
+    ]
+  },
+  {
+    "id": 119,
+    "sku": "JUG-031-RS",
+    "nombre": "Muñeca Princesa Sweet con Vestido Rosa",
+    "descripcion": "Hermosa muñeca Princess Sweet de juguete en su caja original, ideal para niñas mayores de 3 años.",
+    "descripcionLarga": "Sorprende a los más pequeños con la hermosa Muñeca Princesa Sweet. Diseñada con detalles encantadores y un vestido rosa brillante, esta muñeca estimula la imaginación y el juego de roles en niñas a partir de los 3 años. Viene en una presentación de caja ideal para regalo.",
+    "precio": 49900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/distribuidorababyworld/jugueter_a/JUG-031-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264064/distribuidorababyworld/jugueter_a/JUG-031-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Recomendado para mayores de 3 años",
+      "Incluye vestido brillante de princesa",
+      "Diseño detallado y amigable",
+      "Presentación en caja lista para regalar"
+    ]
+  },
+  {
+    "id": 120,
+    "sku": "JUG-032-SU",
+    "nombre": "Set 4 Figuras Tortugas Ninja",
+    "descripcion": "Set de 4 figuras de acción de las Tortugas Ninja. Ideal para coleccionar y recrear divertidas aventuras.",
+    "descripcionLarga": "Lleva la emoción de las Tortugas Ninja a casa con este increíble set de 4 piezas. Cada figura cuenta con detalles auténticos de los personajes favoritos de la serie, permitiendo a los niños recrear sus batallas y aventuras favoritas con total diversión y seguridad.",
+    "precio": 65000,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/distribuidorababyworld/jugueter_a/JUG-032-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264086/distribuidorababyworld/jugueter_a/JUG-032-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye 4 figuras de acción detalladas",
+      "Diseño basado en los personajes clásicos",
+      "Material resistente y seguro para niños",
+      "Perfecto para regalar y coleccionar"
+    ]
+  },
+  {
+    "id": 121,
+    "sku": "JUG-033-AZ",
+    "nombre": "Muñeca Princesa de Hielo con Mascota",
+    "descripcion": "Hermosa muñeca temática de invierno con vestido azul y un adorable muñeco de nieve acompañante.",
+    "descripcionLarga": "Sorprende a los más pequeños con esta fantástica muñeca inspirada en cuentos de hadas invernales. Viene en una presentación de caja de lujo con detalles de copos de nieve, cabello rubio brillante, un vestido elegante en tonos azules con purpurina y una pequeña figura de acompañante. Ideal para estimular la imaginación, el juego de rol y regalar en ocasiones especiales.",
+    "precio": 79900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/distribuidorababyworld/jugueter_a/JUG-033-AZ.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264126/distribuidorababyworld/jugueter_a/JUG-033-AZ.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca con hermoso vestido azul y detalles brillantes",
+      "Viene con una pequeña figura de acompañante de juguete",
+      "Cabello largo y suave ideal para peinar",
+      "Presentación en caja de regalo con temática de invierno",
+      "Recomendado para niñas mayores de 3 años"
+    ]
+  },
+  {
+    "id": 122,
+    "sku": "JUG-034-RS",
+    "nombre": "Ambulancia Hospital Movil con Muñeca",
+    "descripcion": "Set de juego hospital movil ambulancia con muñeca doctora y accesorios medicos para niños.",
+    "descripcionLarga": "Sorprende a los mas pequeños con este fantastico set de juego Mobile Hospital Travel Girl. Incluye una ambulancia transformable, una muñeca doctora y diversos accesorios medicos como camilla y estacion de enfermeria para horas de diversion y juegos de roles llenos de imaginacion.",
+    "precio": 95000,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/distribuidorababyworld/jugueter_a/JUG-034-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264150/distribuidorababyworld/jugueter_a/JUG-034-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye muñeca doctora con bata",
+      "Ambulancia transformable en hospital movil",
+      "Contiene 9 piezas y accesorios medicos",
+      "Estimula el juego de rol y la creatividad"
+    ]
+  },
+  {
+    "id": 123,
+    "sku": "JUG-035-RS",
+    "nombre": "Camioneta Travel Girl Camping con Muñeca",
+    "descripcion": "Divertido set de juego Travel Girl con camioneta transformable de camping, muñeca y accesorios incluidos.",
+    "descripcionLarga": "Sorprende a los más pequeños con este increíble set Travel Girl Fun Camping. Incluye una camioneta que se transforma en dos formas diferentes para crear múltiples escenarios de aventura, una hermosa muñeca y 14 piezas de accesorios para recrear un día de camping inolvidable. Fomenta la imaginación y el juego de roles de manera creativa.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niña",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/distribuidorababyworld/jugueter_a/JUG-035-RS.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264192/distribuidorababyworld/jugueter_a/JUG-035-RS.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Camioneta transformable con múltiples escenarios",
+      "Incluye muñeca articulada con ropa y accesorios",
+      "Set de 14 piezas para una experiencia inmersiva",
+      "Diseño colorido en tonos rosa y turquesa",
+      "Ideal para estimular la creatividad y el juego simbólico"
+    ]
+  },
+  {
+    "id": 124,
+    "sku": "JUG-036-SU",
+    "nombre": "Pista de Carreras Track Master",
+    "descripcion": "Emocionante pista de carros a escala 1:64 con controles de mano y diseño de alta velocidad.",
+    "descripcionLarga": "Vive la máxima velocidad con la pista de carros Track Master. Este set incluye dos vehículos a escala 1:64 y controles manuales ergonómicos para una experiencia de carrera inigualable. Con una longitud de pista de 128 cm, es perfecta para niños mayores de 6 años que disfrutan de la adrenalina y la competencia.",
+    "precio": 89900,
+    "categoria": "Juguetería",
+    "genero": "Niño",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/distribuidorababyworld/jugueter_a/JUG-036-SU.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264214/distribuidorababyworld/jugueter_a/JUG-036-SU.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye 2 carros a escala 1:64",
+      "Controles de mano ergonómicos",
+      "Longitud total de la pista: 128 cm",
+      "Diseñado para niños mayores de 6 años"
+    ]
+  },
+  {
+    "id": 125,
+    "sku": "JUG-037-VD",
+    "nombre": "Set de Vehículos de Reciclaje y Ciudad",
+    "descripcion": "Completo set de juguetes de camiones de saneamiento y accesorios viales para niños.",
+    "descripcionLarga": "Estimula la imaginación y enseña la importancia del cuidado ambiental con este increíble set de vehículos de saneamiento urbano. Incluye camiones recolectores, tanque, camioneta, señales de tránsito, semáforo y contenedores de reciclaje para crear divertidas escenas de simulación y aprendizaje.",
+    "precio": 79900,
+    "categoria": "Juguetería",
+    "genero": "Unisex",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/distribuidorababyworld/jugueter_a/JUG-037-VD.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1791264237/distribuidorababyworld/jugueter_a/JUG-037-VD.png"
+    ],
+    "stock": 10,
+    "detalles": [
+      "Incluye múltiples vehículos de saneamiento",
+      "Accesorios viales y semáforo incluidos",
+      "Contenedores de reciclaje didácticos",
+      "Diseño ecológico y seguro para niños"
+    ]
+  }
+]
