@@ -781,6 +781,7 @@ export function ConfigProductos() {
       marcaId: formData.marcaId ? Number(formData.marcaId) : null,
       clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
+      precioWeb: price1,
       costo: Number(formData.costo) || 0,
       costoUltimo: Number(formData.costoUltimo) || 0,
       costoI: Number(formData.costoI) || 0,
