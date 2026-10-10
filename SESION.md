@@ -302,3 +302,14 @@ VITE_API_URL=https://api.edatia.com
 
 **Sincronización Multi-Tenant:**
 - Se sincronizó la tabla `ClienteManager` para reflejar correctamente "Distribuidora Baby World" en el panel interno del propietario del SaaS (`manager.edatia.com`).
+
+## Sesión 2026-10-09 - Mejoras UX en Gestión de Productos y Limpieza Cloudinary
+
+**Frontend (ERP):**
+- Se implementó la funcionalidad Drag & Drop (Arrastrar y Soltar) en `ConfigProductoDetalle.tsx` para subir imágenes de los productos de manera más intuitiva.
+- Se añadió feedback visual (`isDragging`) con diseño punteado y capa superpuesta para mejorar la UX.
+
+**Backend & Integración Cloudinary:**
+- Se creó el endpoint `DELETE /configuracion/archivo/cloudinary` en `configuracion-archivo.controller.ts` para el borrado físico de imágenes, evitando almacenamiento inútil.
+- Se optimizó la carga de imágenes (`api.ts`) inyectando automáticamente parámetros de transformación de Cloudinary (`q_auto,f_auto,c_limit,w_1200`).
+- Se actualizó `productos.service.ts` para que, al borrar un producto del inventario, se eliminen automáticamente sus respectivas fotos en Cloudinary.

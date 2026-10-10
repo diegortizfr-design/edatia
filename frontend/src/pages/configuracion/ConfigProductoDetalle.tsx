@@ -64,7 +64,9 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     nombreWeb: producto.nombreWeb || '',
     slug: producto.slug || '',
     descripcionWeb: producto.descripcionWeb || '',
-    imagenes: Array.isArray(producto.imagenes) ? producto.imagenes : [],
+    imagenes: Array.isArray(producto.imagenes) && producto.imagenes.length > 0 
+      ? producto.imagenes 
+      : producto.imagen ? [producto.imagen] : [],
     etiquetaSeo: producto.etiquetaSeo || '',
     metaDescripcion: producto.metaDescripcion || '',
     ordenMostrar: producto.ordenMostrar || 0,
@@ -74,6 +76,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [saved, setSaved] = useState(false)
   const [newImagen, setNewImagen] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     setData({
@@ -82,7 +85,9 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       nombreWeb: producto.nombreWeb || '',
       slug: producto.slug || '',
       descripcionWeb: producto.descripcionWeb || '',
-      imagenes: Array.isArray(producto.imagenes) ? producto.imagenes : [],
+      imagenes: Array.isArray(producto.imagenes) && producto.imagenes.length > 0 
+        ? producto.imagenes 
+        : producto.imagen ? [producto.imagen] : [],
       etiquetaSeo: producto.etiquetaSeo || '',
       metaDescripcion: producto.metaDescripcion || '',
       ordenMostrar: producto.ordenMostrar || 0,
@@ -106,7 +111,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       const updatedImgs = [...data.imagenes, url]
       const nextData = { ...data, imagenes: updatedImgs }
       setData(nextData)
-      await updateProducto(producto.id, nextData)
+      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
       refetch()
       toast.success('Imagen subida y guardada exitosamente ✓')
     } catch (err: any) {
@@ -117,9 +122,52 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     }
   }
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, suelta un archivo de imagen válido');
+      return;
+    }
+    
+    setUploadingImg(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/configuracion/archivo/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { url } = response.data;
+      const updatedImgs = [...data.imagenes, url];
+      const nextData = { ...data, imagenes: updatedImgs };
+      setData(nextData);
+      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null });
+      refetch();
+      toast.success('Imagen subida y guardada exitosamente ✓');
+    } catch (err: any) {
+      toast.error('Error al subir la imagen');
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
   const save = async () => {
     try {
-      await updateProducto(producto.id, data)
+      await updateProducto(producto.id, { ...data, imagen: data.imagenes[0] || null })
       setSaved(true)
       refetch()
       toast.success('Configuración web guardada ✓')
@@ -139,7 +187,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     setData(nextData)
     setNewImagen('')
     try {
-      await updateProducto(producto.id, nextData)
+      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
       refetch()
       toast.success('Imagen agregada y guardada ✓')
     } catch (err) {
@@ -148,11 +196,22 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   }
 
   const removeImagen = async (i: number) => {
+    const imageToDelete = data.imagenes[i];
     const updatedImgs = data.imagenes.filter((_, j) => j !== i)
     const nextData = { ...data, imagenes: updatedImgs }
     setData(nextData)
     try {
-      await updateProducto(producto.id, nextData)
+      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
+      
+      // Eliminar físicamente de Cloudinary
+      if (imageToDelete && imageToDelete.includes('res.cloudinary.com')) {
+        try {
+          await api.delete('/configuracion/archivo/cloudinary', { data: { url: imageToDelete } });
+        } catch (e) {
+          console.error("No se pudo eliminar la imagen físicamente de Cloudinary", e);
+        }
+      }
+
       refetch()
       toast.success('Imagen eliminada ✓')
     } catch (err) {
@@ -248,11 +307,29 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       </div>
 
       {/* Imágenes */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4">
-        <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2"><Upload size={14} /> Imágenes del Producto (URLs)</h4>
-        <div className="flex gap-2">
+      <div 
+        className={`bg-white border-2 rounded-2xl p-5 space-y-4 transition-all duration-300 ${isDragging ? 'border-indigo-500 bg-indigo-50/50 scale-[1.01] border-dashed' : 'border-slate-200/80'}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Upload size={14} /> Imágenes del Producto (URLs)
+          </h4>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md hidden sm:inline-block">Puedes arrastrar y soltar fotos aquí</span>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-2 relative">
+          {/* Si está arrastrando, muestra una capa superpuesta */}
+          {isDragging && (
+            <div className="absolute inset-0 bg-indigo-500/10 rounded-xl border-2 border-indigo-400 border-dashed z-10 flex items-center justify-center backdrop-blur-[1px]">
+              <span className="font-extrabold text-indigo-600 text-sm flex items-center gap-2"><Upload size={18} /> Suelta tu imagen aquí</span>
+            </div>
+          )}
+          
           <input type="text" value={newImagen} onChange={e => setNewImagen(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addImagen())}
-            placeholder="Pegar URL de imagen o usa el botón de subir" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
+            placeholder="Pegar URL de imagen o arrastra un archivo..." className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
           <button type="button" onClick={addImagen} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" title="Agregar URL manual"><Plus size={14} /></button>
           
           <label className="flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all border border-slate-200 shrink-0">
@@ -261,10 +338,11 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
             <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImg} className="hidden" />
           </label>
         </div>
+        
         {data.imagenes.length > 0 ? (
           <div className="flex flex-wrap gap-3">
             {data.imagenes.map((img, i) => (
-              <div key={i} className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+              <div key={i} className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 relative overflow-hidden">
                 <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
                   <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
                 </div>
@@ -275,7 +353,11 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">Sin imágenes. Agrega URLs de imágenes del producto.</p>
+          <div className="py-6 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+            <Upload size={24} className="text-slate-300 mb-2" />
+            <p className="text-xs font-bold text-slate-400">Sin imágenes</p>
+            <p className="text-[10px] text-slate-400 mt-1">Sube, pega una URL o arrastra un archivo aquí</p>
+          </div>
         )}
       </div>
     </div>

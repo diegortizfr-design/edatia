@@ -9,6 +9,7 @@ import {
   UploadedFile,
   BadRequestException,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -84,11 +85,6 @@ export class ConfiguracionArchivoController {
         resource_type: 'auto',
       });
 
-      // Eliminar el archivo temporal del disco duro local
-      if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
-      }
-
       return {
         nombre: file.originalname,
         filename: file.filename,
@@ -99,6 +95,11 @@ export class ConfiguracionArchivoController {
     } catch (error) {
       console.error("Cloudinary error:", error);
       throw new BadRequestException('Error subiendo archivo a la nube.');
+    } finally {
+      // Garantizar que el archivo temporal siempre se elimine del disco duro local
+      if (file && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
     }
   }
 
@@ -230,6 +231,40 @@ export class ConfiguracionArchivoController {
       }
     }
     return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('cloudinary')
+  async deleteCloudinaryFile(@Body('url') url: string, @GetUser() u: JwtPayload) {
+    if (!url || !url.includes('res.cloudinary.com')) {
+      return { success: false, message: 'URL no válida o no pertenece a Cloudinary' };
+    }
+    try {
+      const parts = url.split('/upload/');
+      if (parts.length > 1) {
+        let pathPart = parts[1];
+        // Encontrar la carpeta base del ERP para saltar transformaciones y versiones
+        const folderIndex = pathPart.indexOf('edatia_erp/');
+        if (folderIndex !== -1) {
+          pathPart = pathPart.substring(folderIndex);
+        }
+        // Quitar la extensión del archivo para obtener el public_id real
+        const lastDot = pathPart.lastIndexOf('.');
+        const publicId = lastDot !== -1 ? pathPart.substring(0, lastDot) : pathPart;
+        
+        // Seguridad: Verificar que solo borren fotos de su propia empresa
+        if (publicId.includes(`empresa_${u.empresaId}`)) {
+          await cloudinary.uploader.destroy(publicId);
+          return { success: true, message: 'Imagen eliminada de la nube' };
+        } else {
+          throw new BadRequestException('No tienes permisos para eliminar este archivo.');
+        }
+      }
+      return { success: false, message: 'No se pudo parsear el public_id' };
+    } catch (error) {
+      console.error('Error al eliminar de Cloudinary:', error);
+      throw new BadRequestException('Error al intentar eliminar el archivo de la nube');
+    }
   }
 
   private detectFileType(filename: string): string {

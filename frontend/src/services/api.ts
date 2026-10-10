@@ -21,14 +21,25 @@ export function getApiError(err: unknown, fallback = 'Ocurrió un error'): strin
   return fallback
 }
 
-export function getMediaUrl(url: string | null | undefined): string {
+export function getMediaUrl(url: string | null | undefined, optimize: boolean = true): string {
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
-    return url
+  
+  let finalUrl = url;
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+    const baseUrl = (import.meta.env.VITE_API_URL || 'https://api.edatia.com').replace(/\/$/, '')
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`
+    finalUrl = `${baseUrl}${cleanUrl}`
   }
-  const baseUrl = (import.meta.env.VITE_API_URL || 'https://api.edatia.com').replace(/\/$/, '')
-  const cleanUrl = url.startsWith('/') ? url : `/${url}`
-  return `${baseUrl}${cleanUrl}`
+
+  // Si es una imagen de Cloudinary y queremos optimizarla
+  if (optimize && finalUrl.includes('res.cloudinary.com') && finalUrl.includes('/upload/')) {
+    // Evitar agregar la transformación si ya existe
+    if (!finalUrl.includes('/upload/q_auto,f_auto')) {
+      finalUrl = finalUrl.replace('/upload/', '/upload/q_auto,f_auto,c_limit,w_1200/');
+    }
+  }
+
+  return finalUrl
 }
 
 export const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.edatia.com'

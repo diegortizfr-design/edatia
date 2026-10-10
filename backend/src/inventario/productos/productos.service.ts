@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductoDto, UpdateProductoDto } from './dto/producto.dto';
+import { v2 as cloudinary } from 'cloudinary';
 
 const PRODUCTO_INCLUDE = {
   categoria: { select: { id: true, nombre: true } },
@@ -361,8 +362,37 @@ export class ProductosService {
       await (this.prisma as any).stock.deleteMany({ where: { productoId: id } });
       await (this.prisma as any).lote.deleteMany({ where: { productoId: id } });
       await (this.prisma as any).numeroSerie.deleteMany({ where: { productoId: id } });
-      await (this.prisma as any).varianteProducto.deleteMany({ where: { productoId: id } });
-      
+      // Limpiar fotos físicas de Cloudinary para no dejar archivos huérfanos
+      try {
+        const prod = await this.findOne(id, empresaId);
+        const urlsToDelete: string[] = [];
+        if (prod.imagen) urlsToDelete.push(prod.imagen);
+        
+        // Obtener las imagenes de la metadataWeb si existen
+        const metaInfo = prod.metadataWeb as any;
+        if (metaInfo && metaInfo.imagenes && Array.isArray(metaInfo.imagenes)) {
+          urlsToDelete.push(...metaInfo.imagenes);
+        }
+
+        for (const url of urlsToDelete) {
+          if (url && typeof url === 'string' && url.includes('res.cloudinary.com')) {
+            const parts = url.split('/upload/');
+            if (parts.length > 1) {
+              let pathPart = parts[1];
+              const folderIndex = pathPart.indexOf('edatia_erp/');
+              if (folderIndex !== -1) pathPart = pathPart.substring(folderIndex);
+              const lastDot = pathPart.lastIndexOf('.');
+              const publicId = lastDot !== -1 ? pathPart.substring(0, lastDot) : pathPart;
+              if (publicId.includes(`empresa_${empresaId}`)) {
+                await cloudinary.uploader.destroy(publicId).catch(() => {});
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error limpiando imágenes de Cloudinary al borrar el producto', id, err);
+      }
+
       return await (this.prisma as any).producto.delete({ where: { id } });
     } catch (e: any) {
       if (e.code === 'P2003') {
