@@ -1215,9 +1215,15 @@ export function ConfigProductos() {
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               {p.imagen && (
-                                <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                <a 
+                                  href={getMediaUrl(p.imagen)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
+                                  title="Ver imagen completa"
+                                >
                                   <img src={getMediaUrl(p.imagen)} alt={p.nombre} className="w-full h-full object-cover" />
-                                </div>
+                                </a>
                               )}
                               <div>
                                 <div className="font-bold text-slate-800">{p.nombre}</div>

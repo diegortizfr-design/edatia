@@ -39,6 +39,7 @@ manager  → Manager React (Caddy)
   - Se simplificó la *Matriz Especial de 11 Precios* (Sección 6) a solo un precio adicional (Precio Mayorista) para limpiar la interfaz.
   - **Sincronización Tienda Virtual:** Se agregó `precioWeb` al payload de guardado en el ERP para que los precios se sincronicen automáticamente hacia la tienda de Distribuidora Baby World (`glowxir`) sin necesidad de doble digitación.
   - Reconstrucción del contenedor frontend (`edatia-web`) para aplicar los cambios en entorno local.
+  - **Previsualización de Imágenes (ERP):** Se hizo cliqueable la miniatura del producto en la tabla del inventario (`ConfigProductos.tsx`), permitiendo abrir la imagen completa en una nueva pestaña (`target="_blank"`) para mejor usabilidad sin perder el contexto ni los filtros.
 
 ---
 
