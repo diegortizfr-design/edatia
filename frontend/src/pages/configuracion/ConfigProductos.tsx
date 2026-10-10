@@ -347,7 +347,7 @@ export function ConfigProductos() {
         colorId: p.colorId ? String(p.colorId) : '',
         marcaId: p.marcaId ? String(p.marcaId) : '',
         clasificacionId: p.clasificacionId ? String(p.clasificacionId) : '',
-        precios: Array.isArray(p.precios) ? p.precios : DEFAULT_FORM.precios,
+        precios: (Array.isArray(p.precios) && p.precios.length > 0) ? p.precios : [p.precioBase || 0, ...Array(10).fill(0)],
         selectedTags: Array.isArray(p.selectedTags) ? p.selectedTags : DEFAULT_FORM.selectedTags,
         appliedTaxIds: Array.isArray(p.appliedTaxIds) ? p.appliedTaxIds : DEFAULT_FORM.appliedTaxIds,
       }
@@ -781,6 +781,7 @@ export function ConfigProductos() {
       marcaId: formData.marcaId ? Number(formData.marcaId) : null,
       clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
+      precioWeb: price1,
       costo: Number(formData.costo) || 0,
       costoUltimo: Number(formData.costoUltimo) || 0,
       costoI: Number(formData.costoI) || 0,
@@ -1375,7 +1376,25 @@ export function ConfigProductos() {
                   </label>
                 </div>
 
-                <div className="md:col-span-4">
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Precio de Venta (Base) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
+                    <input
+                      type="text"
+                      required
+                      value={formatCOP(formData.precios[0])}
+                      onChange={e => {
+                        const newPrecios = [...formData.precios]
+                        newPrecios[0] = parseCOP(e.target.value)
+                        setFormData(prev => ({ ...prev, precios: newPrecios }))
+                      }}
+                      placeholder="0"
+                      className="w-full pl-6 pr-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-400 transition-all font-mono shadow-inner"
+                    />
+                  </div>
+                </div>
+                <div className="md:col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descripción Comercial / Alterna</label>
                   <input
                     type="text"
@@ -1921,7 +1940,7 @@ export function ConfigProductos() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2">
                   <Tag size={16} className="text-indigo-600" />
-                  6. Matriz Especial de 11 Precios
+                  6. Impuestos y Precios Adicionales (Mayorista)
                 </h2>
                 <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100 flex items-center gap-1.5 animate-pulse">
                   <Percent size={12} /> Tasa de Impuestos Aplicada: {getAppliedTaxRate(formData)}%
@@ -2029,14 +2048,14 @@ export function ConfigProductos() {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {formData.precios.map((precio, idx) => {
+                {formData.precios.slice(1, 2).map((precio, slicedIdx) => {
+                  const idx = slicedIdx + 1;
                   const taxRate = getAppliedTaxRate(formData)
                   const valorConImpuestos = (precio || 0) * (1 + taxRate / 100)
                   return (
                     <div key={idx} className="p-3.5 bg-slate-50/75 border border-slate-200/60 rounded-2xl space-y-1.5 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Precio {idx + 1}</span>
-                        {idx === 0 && <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded uppercase">Base</span>}
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Precio Mayorista (P2)</span>
                       </div>
                       
                       <div className="relative">
