@@ -37,6 +37,7 @@ manager  → Manager React (Caddy)
   - Se corrigió el bug de mapeo de datos que causaba que el `precioBase` apareciera como `$0` al editar un producto en `ConfigProductos.tsx`.
   - Se reubicó el campo de **Precio de Venta (Base)** a la Sección 1 (Información General) con diseño destacado (emerald).
   - Se simplificó la *Matriz Especial de 11 Precios* (Sección 6) a solo un precio adicional (Precio Mayorista) para limpiar la interfaz.
+  - **Sincronización Tienda Virtual:** Se agregó `precioWeb` al payload de guardado en el ERP para que los precios se sincronicen automáticamente hacia la tienda de Distribuidora Baby World (`glowxir`) sin necesidad de doble digitación.
   - Reconstrucción del contenedor frontend (`edatia-web`) para aplicar los cambios en entorno local.
 
 ---
