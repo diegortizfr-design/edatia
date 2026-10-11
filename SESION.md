@@ -56,6 +56,11 @@ glowxir  → Tienda Virtual Baby World (Caddy)
   - Verificado el pipeline de subida: las imágenes se reciben de forma temporal en el VPS y se transfieren de inmediato a Cloudinary, eliminándose del disco local (`fs.unlinkSync`), manteniendo 0 ocupación de espacio persistente en el VPS.
   - Confirmada la política de borrado: al eliminar un producto en el backend, sus imágenes asociadas en Cloudinary se eliminan de forma automática (`cloudinary.uploader.destroy`).
 
+✅ **Fix en Edición de Usuarios y Cambio de Contraseña (ERP):**
+  - **Causa raíz del error 400:** La validación estricta del backend (`forbidNonWhitelisted: true`) rechazaba el payload de `Usuarios.tsx` en `PATCH /api/v1/users/:id` porque `UpdateUserDto` solo tenía definidos `nombre`, `bio` y `password`, bloqueando `usuario`, `email`, `activo` y `rol`.
+  - **Resolución Backend:** Se expandió `UpdateUserDto` para aceptar `usuario`, `email`, `activo` y `rol` con sus debidos validadores, se ajustó la longitud mínima de contraseña a 6 caracteres con mensajes amigables, y se actualizó `UsersService.update` para aplicar estos campos en base de datos con chequeo de unicidad por empresa y protección del último administrador activo.
+  - **Resolución Frontend:** Se integraron notificaciones toast (`react-hot-toast`), se aseguró la conservación del rol de administrador al abrir el formulario de edición y se añadió pre-validación de contraseña.
+
 ---
 
 ## Estado resuelto (sesión 5)

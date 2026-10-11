@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Users, Plus, Search, Trash2, Edit3, CheckCircle2, ShieldAlert, Check, X, RefreshCw } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { getUsuariosERP, createUsuarioERP, updateUsuarioERP, deleteUsuarioERP } from '../../services/erp.service'
 
 interface UsuarioConfig {
@@ -96,7 +97,10 @@ export function Usuarios() {
 
   const handleOpenEdit = (item: any) => {
     setEditingId(item.id)
-    setForm({ ...item })
+    setForm({ 
+      ...item,
+      administrador: item.administrador ?? (item.rol === 'admin')
+    })
     setEmail(item.email || '')
     setPassword('')
     setViewMode('form')
@@ -126,10 +130,16 @@ export function Usuarios() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.usuario || !form.nombre || !email) {
-      return alert('El usuario, nombre completo y correo son obligatorios.')
+      toast.error('El usuario, nombre completo y correo son obligatorios.')
+      return
     }
     if (!editingId && !password) {
-      return alert('La contraseña es obligatoria para usuarios nuevos.')
+      toast.error('La contraseña es obligatoria para usuarios nuevos.')
+      return
+    }
+    if (password && password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres.')
+      return
     }
 
     try {
@@ -146,15 +156,18 @@ export function Usuarios() {
 
       if (editingId) {
         await updateUsuarioERP(Number(editingId), payload)
+        toast.success('Usuario y credenciales actualizados correctamente')
       } else {
         await createUsuarioERP(payload)
+        toast.success('Usuario creado con éxito')
       }
 
       fetchUsers()
       setViewMode('list')
     } catch (err: any) {
       console.error(err)
-      alert(err.response?.data?.message || 'Error al guardar el usuario.')
+      const msg = err.response?.data?.message || 'Error al guardar el usuario.'
+      toast.error(msg)
     }
   }
 
@@ -375,7 +388,7 @@ export function Usuarios() {
                     <Input
                       value={password}
                       onChange={setPassword}
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder="Mínimo 6 caracteres"
                       type="password"
                     />
                   </Field>

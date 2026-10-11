@@ -88,11 +88,73 @@ export class UsersService {
     }
 
     // Verificar pertenencia a la empresa
-    await this.findOne(id, empresaId);
+    const currentUser = await this.findOne(id, empresaId);
 
     const updateData: Record<string, unknown> = {};
-    if (dto.nombre) updateData.nombre = dto.nombre;
-    if (dto.password) updateData.password = await bcrypt.hash(dto.password, 12);
+    if (dto.nombre !== undefined) updateData.nombre = dto.nombre;
+
+    if (dto.usuario !== undefined) {
+      const usuarioClean = dto.usuario.trim();
+      const exists = await this.prisma.user.findFirst({
+        where: {
+          empresaId,
+          usuario: usuarioClean,
+          id: { not: id },
+        },
+      });
+      if (exists) {
+        throw new BadRequestException('El nombre de usuario ya está en uso en esta empresa');
+      }
+      updateData.usuario = usuarioClean;
+    }
+
+    if (dto.email !== undefined) {
+      const emailClean = dto.email ? dto.email.trim() : null;
+      if (emailClean) {
+        const existsEmail = await this.prisma.user.findFirst({
+          where: {
+            empresaId,
+            email: emailClean,
+            id: { not: id },
+          },
+        });
+        if (existsEmail) {
+          throw new BadRequestException('El correo ya está en uso en esta empresa');
+        }
+      }
+      updateData.email = emailClean;
+    }
+
+    if (dto.password) {
+      updateData.password = await bcrypt.hash(dto.password, 12);
+    }
+
+    // Rol y Activo solo pueden ser modificados por un administrador
+    if (requesterRol === 'admin') {
+      if (dto.rol !== undefined) {
+        if (currentUser.rol === 'admin' && dto.rol !== 'admin') {
+          const adminCount = await this.prisma.user.count({
+            where: { empresaId, rol: 'admin', activo: true, id: { not: id } },
+          });
+          if (adminCount === 0) {
+            throw new BadRequestException('No puedes quitar el rol de administrador al único administrador activo de la empresa');
+          }
+        }
+        updateData.rol = dto.rol;
+      }
+
+      if (dto.activo !== undefined) {
+        if (currentUser.rol === 'admin' && dto.activo === false) {
+          const adminCount = await this.prisma.user.count({
+            where: { empresaId, rol: 'admin', activo: true, id: { not: id } },
+          });
+          if (adminCount === 0) {
+            throw new BadRequestException('No puedes desactivar al único administrador activo de la empresa');
+          }
+        }
+        updateData.activo = dto.activo;
+      }
+    }
 
     if (dto.bio !== undefined) {
       await this.prisma.profile.upsert({
