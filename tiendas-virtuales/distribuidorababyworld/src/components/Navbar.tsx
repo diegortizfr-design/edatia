@@ -28,6 +28,8 @@ export function Navbar({
       case 'Pañalera': return '🍼'
       case 'Juguetería': return '🧸'
       case 'Variedades': return '🎀'
+      case 'Ropa': return '👕'
+      case 'Alimentación': return '🍼'
       default: return '✨'
     }
   }

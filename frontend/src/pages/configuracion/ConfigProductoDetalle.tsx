@@ -342,11 +342,40 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         {data.imagenes.length > 0 ? (
           <div className="flex flex-wrap gap-3">
             {data.imagenes.map((img, i) => (
-              <div key={i} className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 relative overflow-hidden">
-                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+              <div key={i} 
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', i.toString())}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                  const toIndex = i;
+                  if (fromIndex === toIndex || isNaN(fromIndex)) return;
+                  const updatedImgs = [...data.imagenes];
+                  const [moved] = updatedImgs.splice(fromIndex, 1);
+                  updatedImgs.splice(toIndex, 0, moved);
+                  const nextData = { ...data, imagenes: updatedImgs };
+                  setData(nextData);
+                  try {
+                    await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null });
+                    refetch();
+                    toast.success('Orden de imágenes actualizado ✓');
+                  } catch (err) {
+                    toast.error('Error al actualizar el orden');
+                  }
+                }}
+                className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 hover:border-indigo-400 hover:shadow-md cursor-grab active:cursor-grabbing rounded-xl text-xs text-slate-600 relative overflow-hidden transition-all"
+                title="Arrastra para reordenar"
+              >
+                {i === 0 && (
+                  <div className="absolute top-0 left-0 bg-indigo-500 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-br-md z-10 uppercase tracking-wider">
+                    Principal
+                  </div>
+                )}
+                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative">
                   <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
                 </div>
-                <span className="truncate max-w-[150px] font-mono">{img}</span>
+                <span className="truncate max-w-[150px] font-mono select-none">{img}</span>
                 <button type="button" onClick={() => removeImagen(i)}
                   className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
               </div>

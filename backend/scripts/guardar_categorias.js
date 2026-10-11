@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const jsonPath = '/app/clasificacion_ia.json';
+  const jsonPath = '/app/clasificacion_ia_2.json';
   const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
   // 1. Reorganizar reglas lógicas (usando includes para evadir caracteres corruptos)
@@ -33,9 +33,9 @@ async function main() {
   });
 
   // 3. Crear en la base de datos
-  console.log('Borrrando categorías viejas de la Empresa 1...');
+  console.log('Borrrando categorías viejas de la Empresa 2...');
   // Los productos tienen set null on delete, así que podemos borrar sin romper
-  await prisma.categoria.deleteMany({ where: { empresaId: 1 } });
+  await prisma.categoria.deleteMany({ where: { empresaId: 2 } });
 
   const mapaSubcategorias = {}; // { 'Variedades-Lencería': id }
 
@@ -46,7 +46,7 @@ async function main() {
     
     const categoriaPadre = await prisma.categoria.create({
       data: {
-        empresaId: 1,
+        empresaId: 2,
         nombre: catNombre,
         slug: catSlug,
         activo: true
@@ -57,7 +57,7 @@ async function main() {
       const subSlug = catSlug + '-' + subNombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       const sub = await prisma.categoria.create({
         data: {
-          empresaId: 1,
+          empresaId: 2,
           nombre: subNombre,
           slug: subSlug,
           parentId: categoriaPadre.id,
@@ -74,7 +74,7 @@ async function main() {
   for (const p of data) {
     const subCatId = mapaSubcategorias[`${p.categoria}-${p.subcategoria}`];
     if (subCatId) {
-      await prisma.producto.update({
+      await prisma.producto.updateMany({
         where: { id: p.id },
         data: { categoriaId: subCatId }
       });

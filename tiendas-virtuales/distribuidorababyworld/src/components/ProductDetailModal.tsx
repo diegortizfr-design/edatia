@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus } from 'lucide-react'
 import { Product } from '../data/productos'
 
@@ -10,6 +10,14 @@ interface ProductDetailModalProps {
 
 export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDetailModalProps) {
   const [quantity, setQuantity] = useState(1)
+  const [currentImage, setCurrentImage] = useState(product?.imagen)
+
+  useEffect(() => {
+    if (product) {
+      setCurrentImage(product.imagen)
+      setQuantity(1)
+    }
+  }, [product])
 
   if (!product) return null
 
@@ -48,17 +56,36 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
           <X size={18} />
         </button>
 
-        {/* Product Image */}
-        <div className="w-full sm:w-1/2 aspect-square bg-slate-50 rounded-2xl overflow-hidden relative shadow-inner flex-shrink-0">
-          <img
-            src={product.imagen}
-            alt={product.nombre}
-            className="w-full h-full object-cover"
-          />
-          {product.etapa && (
-            <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
-              {product.etapa}
-            </span>
+        {/* Product Image Stage */}
+        <div className="w-full sm:w-1/2 flex flex-col gap-3 flex-shrink-0">
+          <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden relative shadow-inner">
+            <img
+              src={currentImage}
+              alt={product.nombre}
+              className="w-full h-full object-cover"
+            />
+            {product.etapa && (
+              <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
+                {product.etapa}
+              </span>
+            )}
+          </div>
+          
+          {/* Thumbnails */}
+          {product.imagenes && product.imagenes.length > 1 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {product.imagenes.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImage(img)}
+                  className={`w-14 h-14 shrink-0 rounded-lg border-2 overflow-hidden transition-all ${
+                    currentImage === img ? 'border-sky-500 ring-2 ring-sky-200' : 'border-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  <img src={img} alt={`${product.nombre} - ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
         </div>
 

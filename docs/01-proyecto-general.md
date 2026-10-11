@@ -82,11 +82,12 @@ edatia/
 │       └── lib/               # api.ts, utils.ts
 │
 ├── landing/                   # HTML estático — edatia.com
+├── tiendas-virtuales/         # Storefronts e-commerce (distribuidorababyworld conectado al ERP)
 ├── docs/                      # ← Documentación del proyecto (aquí estás)
 │   ├── 01-proyecto-general.md
 │   ├── 02-modulo-inventario.md
 │   └── 03-portal-manager.md
-├── docker-compose.yml         # 5 servicios: db, api, web, landing, manager
+├── docker-compose.yml         # 6 servicios: db, api, web, landing, manager, glowxir
 ├── deploy.sh                  # Script de despliegue
 └── CLAUDE.md                  # Instrucciones para el asistente IA
 ```

@@ -138,7 +138,7 @@ services:
 
   glowxir:
     build:
-      context: ./tiendas-virtuales/glowxir
+      context: ./tiendas-virtuales/distribuidorababyworld
       dockerfile: Dockerfile
     container_name: edatia-glowxir
     restart: unless-stopped

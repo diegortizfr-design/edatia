@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-10 (sesión 5)
+> Última actualización: 2026-10-11 (sesión 6)
 
 ---
 
@@ -14,13 +14,14 @@ SaaS ERP para empresas de retail y distribución. Tiene 4 portales:
 
 ## Estado actual del servidor
 
-### Contenedores Docker (5 servicios)
+### Contenedores Docker (6 servicios)
 ```
 db       → PostgreSQL 15
 api      → NestJS backend
 web      → ERP React (Caddy)
 landing  → HTML estático (Caddy)
 manager  → Manager React (Caddy)
+glowxir  → Tienda Virtual Baby World (Caddy)
 ```
 
 ### Credenciales
@@ -28,6 +29,32 @@ manager  → Manager React (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+---
+
+## Estado resuelto (sesión 6)
+
+✅ **Soporte Multi-imagen en Tienda Virtual (`distribuidorababyworld`):**
+  - **Exposición API:** Se modificó `digital.service.ts` (`getProductosWebPublic`) para incluir `metadataWeb: true` en la consulta Prisma, permitiendo que el endpoint público `/digital/tienda/:slug/productos` entregue todas las imágenes adicionales registradas del producto.
+  - **Mapeo Frontend:** Se actualizó `App.tsx` para mapear dinámicamente `metadataWeb.imagenes` hacia `product.imagenes`, asegurando fallback limpio a `p.imagen` principal o imagen por defecto.
+  - **Galería Interactiva:** Se implementó selector dinámico con carrusel de miniaturas tanto en la vista individual de producto (`ProductDetailPage.tsx`) como en el modal de detalle rápido (`ProductDetailModal.tsx`).
+  - **Nuevas Categorías:** Se agregaron íconos y soporte para 'Ropa' y 'Alimentación' en la navegación (`Navbar.tsx`).
+
+✅ **Reordenamiento Drag & Drop de Galería en ERP:**
+  - En la pestaña Web de edición de producto (`ConfigProductoDetalle.tsx`), se implementó ordenamiento drag-and-drop nativo HTML5 para las miniaturas de imágenes.
+  - **Imagen Principal Dinámica:** La primera imagen del arreglo se destaca con una etiqueta visual "Principal". Al arrastrar y soltar cualquier miniatura a la primera posición, el ERP actualiza automáticamente tanto `metadataWeb.imagenes` como el campo raíz `imagen` en la base de datos a través de la API.
+
+✅ **Optimización de Importación de Catálogo (Bulk Insert):**
+  - En `importar_catalogo.ts`, se refactorizó la inserción de productos generados por IA cambiando el bucle secuencial `create` por `prisma.producto.createMany({ skipDuplicates: true })`, resolviendo problemas de lentitud y timeout al procesar cientos de ítems.
+  - Ajustes de clasificación de categorías y subcategorías para la empresa en scripts de backend.
+
+✅ **Despliegue y Validación Docker:**
+  - Se actualizó el contexto de construcción del servicio `glowxir` en `docker-compose.yml` apuntando al directorio `./tiendas-virtuales/distribuidorababyworld`.
+  - Reconstrucción y despliegue exitoso de contenedores `edatia-glowxir`, `edatia-backend` y `edatia-frontend`.
+
+✅ **Auditoría de Almacenamiento (Cloudinary vs VPS):**
+  - Verificado el pipeline de subida: las imágenes se reciben de forma temporal en el VPS y se transfieren de inmediato a Cloudinary, eliminándose del disco local (`fs.unlinkSync`), manteniendo 0 ocupación de espacio persistente en el VPS.
+  - Confirmada la política de borrado: al eliminar un producto en el backend, sus imágenes asociadas en Cloudinary se eliminan de forma automática (`cloudinary.uploader.destroy`).
 
 ---
 

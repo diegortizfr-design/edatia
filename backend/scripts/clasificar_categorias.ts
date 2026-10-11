@@ -7,7 +7,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
   const productos = await prisma.producto.findMany({
-    where: { empresaId: 1, activo: true },
+    where: { empresaId: 2, activo: true },
     select: { id: true, nombre: true, descripcion: true, sku: true }
   });
 
@@ -32,7 +32,7 @@ No inventes más de 12 subcategorías distintas en total.
 
 Devuelve ÚNICAMENTE un arreglo JSON válido con este formato para cada producto, sin texto adicional ni bloques de markdown (ni \`\`\`json):
 [
-  { "id": 1, "categoria": "Juguetería", "subcategoria": "Estimulación" }
+  { "sku": "JUG-001-AZ", "categoria": "Juguetería", "subcategoria": "Estimulación" }
 ]
 
 Lista de productos:

@@ -3,12 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const prisma = new PrismaClient();
-const INPUT_FILE = path.join(__dirname, '../../tiendas-virtuales/glowxir/src/data/productos_generados.json');
+const INPUT_FILE = path.join(__dirname, 'productos_generados.json');
 
 async function main() {
   console.log('📦 Conectando a la base de datos PostgreSQL...');
 
-  // 1. Encontrar la empresa ligada a la tienda "glowxir"
+  // 1. Encontrar la empresa ligada a la tienda "distribuidorababyworld"
   const tienda = await prisma.configuracionTienda.findUnique({
     where: { slugTienda: 'glowxir' },
     include: { empresa: true }
@@ -47,34 +47,35 @@ async function main() {
 
   console.log(`📥 Importando ${productos.length} nuevos productos generados por IA a la base de datos...`);
 
-  // 4. Insertar los nuevos productos
-  let contador = 0;
-  for (const p of productos) {
+  // 4. Preparar y crear productos en bloque (Bulk Insert) para mejorar drásticamente el rendimiento
+  const productosAInsertar = productos.map((p: any) => {
     // Convertimos el nombre en slug (ej. "Juguete Rojo" -> "juguete-rojo")
     const slugValue = p.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + p.sku.toLowerCase();
 
-    await prisma.producto.create({
-      data: {
-        empresaId: empresaId,
-        sku: p.sku,
-        nombre: p.nombre,
-        descripcion: p.descripcion, // Descripción corta
-        descripcionWeb: p.descripcionLarga, // Descripción larga generada por Gemini
-        precioBase: p.precio,
-        precioWeb: p.precio,
-        imagen: p.imagen, // URL de Cloudinary
-        activo: true,
-        publicadoWeb: true, // Para que aparezca inmediatamente en la tienda
-        esDestacado: Math.random() > 0.8, // 20% de probabilidad de ser destacado aleatoriamente
-        slug: slugValue,
-        tipoProducto: 'Inventario',
-        tipoIva: 'EXENTO', // O gravado según convenga
-      }
-    });
-    contador++;
-  }
+    return {
+      empresaId: empresaId,
+      sku: p.sku,
+      nombre: p.nombre,
+      descripcion: p.descripcion, // Descripción corta
+      descripcionWeb: p.descripcionLarga, // Descripción larga generada por Gemini
+      precioBase: p.precio,
+      precioWeb: p.precio,
+      imagen: p.imagen, // URL de Cloudinary
+      activo: true,
+      publicadoWeb: true, // Para que aparezca inmediatamente en la tienda
+      esDestacado: Math.random() > 0.8, // 20% de probabilidad de ser destacado aleatoriamente
+      slug: slugValue,
+      tipoIva: 'EXENTO', // O gravado según convenga
+    };
+  });
 
-  console.log(`🎉 ¡ÉXITO! Se importaron ${contador} productos reales al catálogo.`);
+  console.log(`⏳ Insertando ${productosAInsertar.length} productos en bloque...`);
+  const result = await prisma.producto.createMany({
+    data: productosAInsertar,
+    skipDuplicates: true // Opcional: evita errores si algún SKU se repite accidentalmente
+  });
+
+  console.log(`🎉 ¡ÉXITO! Se importaron ${result.count} productos reales al catálogo.`);
 }
 
 main()

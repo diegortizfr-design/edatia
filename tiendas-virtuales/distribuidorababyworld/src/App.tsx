@@ -73,6 +73,10 @@ export function App() {
               }
             }
 
+            const imagenesMapeadas = Array.isArray(p.metadataWeb?.imagenes) && p.metadataWeb.imagenes.length > 0
+              ? p.metadataWeb.imagenes
+              : p.imagen ? [p.imagen] : ['https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700'];
+
             return {
               id: p.id,
               nombre: p.nombre,
@@ -83,9 +87,8 @@ export function App() {
               categoria: cat,
               subcategoria: subcat,
               genero: 'Unisex',
-              imagen: p.imagen
-                ? p.imagen
-                : 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700',
+              imagen: imagenesMapeadas[0],
+              imagenes: imagenesMapeadas,
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
               stock: p.stock || 30,

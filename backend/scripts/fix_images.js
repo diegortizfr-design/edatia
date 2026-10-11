@@ -27,7 +27,7 @@ async function main() {
     
   console.log(`Encontradas ${allResources.length} imágenes en total en Cloudinary.`);
   
-  const productos = await prisma.producto.findMany({ where: { empresaId: 1 } });
+  const productos = await prisma.producto.findMany({ where: { empresaId: 2 } });
   console.log(`Encontrados ${productos.length} productos en la BD.`);
 
   let actualizados = 0;

@@ -26,12 +26,14 @@ export function ProductDetailPage({
   onOpenCart
 }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
+  const [currentImage, setCurrentImage] = useState(product.imagen)
 
   // Scroll to top whenever product changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setQuantity(1)
-  }, [product.id])
+    setCurrentImage(product.imagen)
+  }, [product.id, product.imagen])
 
   const fmtPrice = (val: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -121,10 +123,10 @@ export function ProductDetailPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10 items-start">
             
             {/* Product Image Stage */}
-            <div className="relative">
+            <div className="relative space-y-4">
               <div className="aspect-square bg-slate-50 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 shadow-inner flex items-center justify-center relative group">
                 <img
-                  src={product.imagen}
+                  src={currentImage}
                   alt={product.nombre}
                   className="w-full h-full object-cover sm:object-contain group-hover:scale-105 transition-transform duration-500"
                 />
@@ -143,6 +145,25 @@ export function ProductDetailPage({
                   )}
                 </div>
               </div>
+              
+              {/* Image Thumbnails */}
+              {product.imagenes && product.imagenes.length > 1 && (
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 snap-x">
+                  {product.imagenes.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImage(img)}
+                      className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                        currentImage === img 
+                          ? 'border-sky-500 ring-2 ring-sky-200' 
+                          : 'border-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      <img src={img} alt={`${product.nombre} view ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info & Actions */}

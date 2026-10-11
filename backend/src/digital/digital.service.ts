@@ -247,6 +247,7 @@ export class DigitalService {
         descripcion: true,
         descripcionWeb: true,
         esDestacado: true,
+        metadataWeb: true,
         categoria: {
           select: {
             nombre: true,
