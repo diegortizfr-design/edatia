@@ -70,6 +70,10 @@ glowxir  → Tienda Virtual Baby World (Caddy)
   - **Causa Raíz Identificada:** El acortador oficial de Meta `https://wa.me/` efectúa una redirección HTTP 302 hacia `api.whatsapp.com` cuyo servidor interno corrompe los caracteres UTF-8 de 4 bytes (emojis como 🍼, 🎉, 💵) transformándolos en `%EF%BF%BD` (el carácter de reemplazo Unicode ).
   - **Remediación:** Se reemplazó el uso de `wa.me` por la API directa `https://api.whatsapp.com/send?phone=...&text=...` tanto en el checkout (`CheckoutModal.tsx`) como en el carrito lateral (`CartDrawer.tsx`), preservando la codificación UTF-8 intacta y mostrando los emojis legítimos en cualquier dispositivo o navegador.
 
+✅ **Depuración de Pruebas y Reinicio de Consecutivos para Producción:**
+  - **Limpieza de Pedidos de Prueba:** Se eliminaron las 8 órdenes de prueba generadas durante la sesión en `PedidoVenta` y sus líneas en `PedidoVentaItem`, así como el cliente web de pruebas en `Tercero`.
+  - **Reinicio del Consecutivo:** Se reiniciaron las secuencias de base de datos a 1 (`PedidoVenta_id_seq` y `PedidoVentaItem_id_seq`). El próximo pedido real que ingrese a la tienda virtual se creará limpiamente con el consecutivo **`#PED-000001`**.
+
 ✅ **Despliegue y Validación Docker:**
   - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 
