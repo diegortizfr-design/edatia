@@ -57,6 +57,11 @@ glowxir  → Tienda Virtual Baby World (Caddy)
   - **Envíos Nacionales (Transportadora - Flete al Cobro):** Para pedidos fuera de la zona local, el flete se marca como $0 en la tienda web y se informa claramente que se despacha por transportadora con flete al cobro al recibir en su puerta (aprox. $12.000 - $18.000).
   - **Sincronización en Backend:** Validación en `digital.service.ts` para rechazar contra-entregas fuera de la zona local y calcular el envío correspondiente en base a la ciudad del pedido.
 
+✅ **Desplegable de Ciudades y Capitales de Colombia (Envíos Nacionales):**
+  - **Selector Organizado:** Al seleccionar "Otra Ciudad (Envío Nacional)" en el checkout de la tienda virtual, en lugar de un campo de texto en blanco, ahora se despliega un selector `<select>` categorizado por regiones (Bogotá/Cundinamarca, Antioquia, Valle del Cauca, Eje Cafetero, Santanderes, Costa Caribe, Suroccidente, Tolima/Huila, Boyacá, Llanos/Amazonía) con más de 60 ciudades principales y capitales del país.
+  - **Opción para Pueblos Apartados:** Se añadió la opción "Otro municipio o población (escribir)..." que activa el campo de texto libre únicamente cuando el cliente reside en un municipio o corregimiento no listado.
+  - **Confirmación Dinámica:** La nota informativa de flete al cobro por transportadora personaliza el destino dinámicamente indicando la ciudad elegida.
+
 ✅ **Despliegue y Validación Docker:**
   - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 

@@ -42,6 +42,54 @@ const isLocalCoverage = (ciudad: string): boolean => {
   return LOCAL_KEYS.some((k) => clean.includes(k))
 }
 
+interface CityGroup {
+  region: string
+  cities: string[]
+}
+
+const CIUDADES_NACIONALES: CityGroup[] = [
+  {
+    region: 'Bogotá y Cundinamarca',
+    cities: ['Bogotá D.C.', 'Soacha', 'Chía', 'Zipaquirá', 'Mosquera', 'Madrid', 'Funza', 'Facatativá', 'Fusagasugá', 'Girardot'],
+  },
+  {
+    region: 'Antioquia',
+    cities: ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Sabaneta', 'Apartadó', 'Copacabana', 'La Estrella'],
+  },
+  {
+    region: 'Valle del Cauca (Otras ciudades)',
+    cities: ['Buga (Guadalajara de Buga)', 'Tuluá', 'Cartago', 'Buenaventura', 'Zarzal', 'Roldanillo', 'Sevilla', 'Caicedonia', 'Pradera', 'Florida', 'Guacarí', 'Ginebra'],
+  },
+  {
+    region: 'Eje Cafetero',
+    cities: ['Pereira', 'Manizales', 'Armenia', 'Dosquebradas', 'Santa Rosa de Cabal', 'Calarcá', 'Chinchiná', 'La Virginia'],
+  },
+  {
+    region: 'Santander y Norte de Santander',
+    cities: ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Cúcuta', 'Barrancabermeja', 'Ocaña', 'Pamplona', 'Villa del Rosario', 'Los Patios'],
+  },
+  {
+    region: 'Costa Caribe',
+    cities: ['Barranquilla', 'Soledad', 'Cartagena', 'Santa Marta', 'Valledupar', 'Montería', 'Sincelejo', 'Riohacha', 'Malambo', 'Turbaco', 'Magangué', 'Aguachica'],
+  },
+  {
+    region: 'Suroccidente (Cauca y Nariño)',
+    cities: ['Pasto', 'Popayán', 'Ipiales', 'Santander de Quilichao', 'Tumaco', 'Piendamó', 'Puerto Asís'],
+  },
+  {
+    region: 'Tolima y Huila',
+    cities: ['Ibagué', 'Neiva', 'Espinal', 'Pitalito', 'Melgar', 'Garzón', 'Mariquita', 'Honda'],
+  },
+  {
+    region: 'Boyacá',
+    cities: ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá', 'Paipa'],
+  },
+  {
+    region: 'Llanos y Orinoquía / Amazonía',
+    cities: ['Villavicencio', 'Yopal', 'Florencia', 'Acacías', 'Granada', 'Arauca', 'San José del Guaviare', 'Mocoa'],
+  },
+]
+
 export function CheckoutModal({
   isOpen,
   onClose,
@@ -51,6 +99,7 @@ export function CheckoutModal({
   storeSlug
 }: CheckoutModalProps) {
   const [selectedCityZone, setSelectedCityZone] = useState('Candelaria')
+  const [nationalCity, setNationalCity] = useState('Bogotá D.C.')
   const [customCity, setCustomCity] = useState('')
   const [formData, setFormData] = useState({
     nombre: '',
@@ -78,20 +127,22 @@ export function CheckoutModal({
 
   if (!isOpen) return null
 
-  const effectiveCity = selectedCityZone === 'OTRA' ? (customCity.trim() || 'Otra Ciudad') : selectedCityZone
+  const effectiveCity = selectedCityZone === 'OTRA'
+    ? (nationalCity === 'OTRO_MUNICIPIO' ? (customCity.trim() || 'Colombia') : nationalCity)
+    : selectedCityZone
   const isLocal = isLocalCoverage(effectiveCity)
 
   const handleCityZoneChange = (zone: string) => {
     setSelectedCityZone(zone)
-    const nextIsLocal = zone === 'OTRA' ? isLocalCoverage(customCity) : isLocalCoverage(zone)
+    const nextIsLocal = zone === 'OTRA' ? false : isLocalCoverage(zone)
     if (!nextIsLocal && paymentMethod === 'contra_entrega') {
       setPaymentMethod('transferencia')
     }
   }
 
-  const handleCustomCityChange = (val: string) => {
-    setCustomCity(val)
-    if (!isLocalCoverage(val) && paymentMethod === 'contra_entrega') {
+  const handleNationalCityChange = (val: string) => {
+    setNationalCity(val)
+    if (paymentMethod === 'contra_entrega') {
       setPaymentMethod('transferencia')
     }
   }
@@ -176,8 +227,8 @@ export function CheckoutModal({
     setIsSubmitting(true)
     setSubmitError('')
 
-    if (selectedCityZone === 'OTRA' && !customCity.trim()) {
-      setSubmitError('Por favor escribe tu ciudad o municipio de entrega.')
+    if (selectedCityZone === 'OTRA' && nationalCity === 'OTRO_MUNICIPIO' && !customCity.trim()) {
+      setSubmitError('Por favor escribe tu municipio o población de entrega.')
       setIsSubmitting(false)
       return
     }
@@ -395,20 +446,47 @@ export function CheckoutModal({
                 </div>
 
                 {selectedCityZone === 'OTRA' && (
-                  <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 space-y-1.5 animate-in fade-in duration-150">
-                    <label className="block text-[10.5px] font-bold text-amber-900">
-                      Escribe tu Ciudad o Municipio de Colombia *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={customCity}
-                      onChange={e => handleCustomCityChange(e.target.value)}
-                      placeholder="Ej. Bogotá, Medellín, Pasto, Pereira..."
-                      className="w-full p-2 bg-white border border-amber-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-400 font-semibold text-slate-800"
-                    />
+                  <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-150">
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-amber-900 mb-1">
+                        Selecciona tu Ciudad o Capital en Colombia *
+                      </label>
+                      <select
+                        value={nationalCity}
+                        onChange={e => handleNationalCityChange(e.target.value)}
+                        className="w-full p-2.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                      >
+                        {CIUDADES_NACIONALES.map(group => (
+                          <optgroup key={group.region} label={group.region}>
+                            {group.cities.map(city => (
+                              <option key={city} value={city}>{city}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                        <optgroup label="✍️ Municipio no listado">
+                          <option value="OTRO_MUNICIPIO">Otro municipio o población (escribir)...</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {nationalCity === 'OTRO_MUNICIPIO' && (
+                      <div className="animate-in fade-in duration-150">
+                        <label className="block text-[10px] font-bold text-amber-900 mb-1">
+                          Escribe tu Municipio y Departamento *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={customCity}
+                          onChange={e => setCustomCity(e.target.value)}
+                          placeholder="Ej. Garzón (Huila), San Gil (Santander), La Ceja..."
+                          className="w-full p-2 bg-white border border-amber-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-400 font-semibold text-slate-800"
+                        />
+                      </div>
+                    )}
+
                     <p className="text-[10px] text-amber-800 leading-tight">
-                      📦 <b>Envío por Transportadora:</b> El flete es <b>al cobro</b> (lo pagas a la transportadora al recibir, aprox. $12.000 - $18.000). Los productos se cancelan por anticipado con Bre-B o Mercado Pago.
+                      📦 <b>Envío por Transportadora:</b> El flete es <b>al cobro</b> (lo pagas a la transportadora al recibir en {effectiveCity}, aprox. $12.000 - $18.000 según destino). Los productos se cancelan por anticipado con Bre-B o Mercado Pago.
                     </p>
                   </div>
                 )}
