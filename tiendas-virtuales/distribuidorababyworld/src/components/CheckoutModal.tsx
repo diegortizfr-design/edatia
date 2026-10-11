@@ -274,10 +274,14 @@ export function CheckoutModal({
         )
         return
       }
-      setOrderNumber(data.numero)
+      const orderNum = data.numero
+      setOrderNumber(orderNum)
       if (typeof data.orderId === 'number') setOrderId(data.orderId)
       setSavedItemsCount(itemsCount)
       setSavedCartItems([...cartItems])
+      const appliedSubtotal = typeof data.subtotal === 'number' ? data.subtotal : subtotal
+      const appliedEnvio = typeof data.envio === 'number' ? data.envio : shipping
+      const appliedTotal = typeof data.total === 'number' ? data.total : total
       if (typeof data.subtotal === 'number') setServerSubtotal(data.subtotal)
       if (typeof data.envio === 'number') setServerEnvio(data.envio)
       if (typeof data.total === 'number') setServerTotal(data.total)
@@ -285,11 +289,69 @@ export function CheckoutModal({
         setCheckoutUrl(data.checkoutUrl)
       }
       setIsSuccess(true)
+      onSuccess() // Vacía el carrito de compras
+
+      // Si es Contra Entrega, abrimos WhatsApp automáticamente de una vez
+      if (paymentMethod === 'contra_entrega') {
+        const waUrl = buildWhatsAppUrl(
+          orderNum,
+          appliedSubtotal,
+          appliedEnvio,
+          appliedTotal,
+          'contra_entrega',
+          cartItems
+        )
+        try {
+          window.open(waUrl, '_blank')
+        } catch {
+          window.location.href = waUrl
+        }
+      }
     } catch (err) {
       setSubmitError('Error de conexión. Revisa tu internet o escríbenos por WhatsApp.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const buildWhatsAppUrl = (
+    ordNum: string,
+    subTot: number,
+    shipVal: number,
+    totVal: number,
+    method = paymentMethod,
+    items = (activeCartItems.length > 0 ? activeCartItems : cartItems)
+  ) => {
+    let msg = `🍼 *PEDIDO BABY-WORLD - ORDEN #${ordNum}*\n\n`
+    msg += `*Cliente:* ${formData.nombre}\n`
+    msg += `*Teléfono:* ${formData.telefono}\n`
+    msg += `*Dirección:* ${formData.direccion}, ${effectiveCity}\n`
+    msg += `*Método de Pago:* ${getPaymentMethodLabel(method)}\n\n`
+    msg += `*Productos:*\n`
+    items.forEach(i => {
+      msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
+    })
+    msg += `\n*Subtotal:* ${fmtPrice(subTot)}`
+    if (isLocal) {
+      msg += `\n*Envío:* ${shipVal === 0 ? 'Gratis 🎉 (Domicilio Local)' : `${fmtPrice(shipVal)} (Domicilio Local)`}`
+    } else {
+      msg += `\n*Envío:* Flete al Cobro por Transportadora (lo pagas al recibir)`
+    }
+    msg += `\n*Total:* ${fmtPrice(totVal)}`
+
+    if (method === 'transferencia') {
+      if (isLocal) {
+        msg += `\n\n📌 *Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
+      } else {
+        msg += `\n\n📦 *Despacho Nacional:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Por favor compártanme la guía de la transportadora cuando el pedido sea despachado.`
+      }
+    } else if (method === 'mercadopago') {
+      msg += `\n\n💳 *Nota:* Seleccioné pago online con Mercado Pago para la orden #${ordNum}.`
+    } else {
+      msg += `\n\n💵 *Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
+    }
+
+    return `https://wa.me/573023863380?text=${encodeURIComponent(msg)}`
   }
 
   const handleFinish = () => {
@@ -312,37 +374,15 @@ export function CheckoutModal({
   }
 
   const handleSendWhatsAppConfirmation = () => {
-    let msg = `🍼 *PEDIDO BABY-WORLD - ORDEN #${orderNumber}*\n\n`
-    msg += `*Cliente:* ${formData.nombre}\n`
-    msg += `*Teléfono:* ${formData.telefono}\n`
-    msg += `*Dirección:* ${formData.direccion}, ${effectiveCity}\n`
-    msg += `*Método de Pago:* ${getPaymentMethodLabel()}\n\n`
-    msg += `*Productos:*\n`
-    activeCartItems.forEach(i => {
-      msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
-    })
-    msg += `\n*Subtotal:* ${fmtPrice(finalSubtotal)}`
-    if (isLocal) {
-      msg += `\n*Envío:* ${finalEnvio === 0 ? 'Gratis 🎉 (Domicilio Local)' : `${fmtPrice(finalEnvio)} (Domicilio Local)`}`
-    } else {
-      msg += `\n*Envío:* Flete al Cobro por Transportadora (lo pagas al recibir)`
-    }
-    msg += `\n*Total:* ${fmtPrice(finalTotal)}`
-
-    if (paymentMethod === 'transferencia') {
-      if (isLocal) {
-        msg += `\n\n📌 *Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
-      } else {
-        msg += `\n\n📦 *Despacho Nacional:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Por favor compártanme la guía de la transportadora cuando el pedido sea despachado.`
-      }
-    } else if (paymentMethod === 'mercadopago') {
-      msg += `\n\n💳 *Nota:* Seleccioné pago online con Mercado Pago para la orden #${orderNumber}.`
-    } else {
-      msg += `\n\n💵 *Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
-    }
-    
-    window.open(`https://wa.me/573023863380?text=${encodeURIComponent(msg)}`, '_blank')
-    handleFinish()
+    const waUrl = buildWhatsAppUrl(
+      orderNumber,
+      finalSubtotal,
+      finalEnvio,
+      finalTotal,
+      paymentMethod,
+      activeCartItems
+    )
+    window.open(waUrl, '_blank')
   }
 
   return (
@@ -738,7 +778,7 @@ export function CheckoutModal({
                   ¡Gracias por tu compra, {formData.nombre}!
                 </h2>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                  Hemos registrado tu orden <b className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono text-xs">#{orderNumber}</b>. Prepararemos tu paquete y pagarás en efectivo al recibir en tu dirección.
+                  Hemos registrado tu orden <b className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono text-xs">#{orderNumber}</b>. Abrimos WhatsApp para coordinar el despacho de tu paquete; pagarás en efectivo al recibir en tu dirección.
                 </p>
               </div>
             )}
@@ -1083,20 +1123,27 @@ export function CheckoutModal({
             <div className="space-y-2 pt-1">
               <button
                 onClick={handleSendWhatsAppConfirmation}
-                className={`w-full rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer ${
+                className={`w-full rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-0.5 active:scale-95 cursor-pointer ${
                   paymentMethod === 'mercadopago' && checkoutUrl
                     ? 'py-2.5 bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50'
                     : 'py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-md'
                 }`}
               >
-                <MessageCircle size={17} />
-                <span>
-                  {paymentMethod === 'transferencia'
-                    ? 'Enviar Comprobante por WhatsApp'
-                    : paymentMethod === 'mercadopago'
-                    ? (checkoutUrl ? '¿Dudas con tu pago? Escríbenos' : 'Solicitar Enlace de Pago por WhatsApp')
-                    : 'Confirmar Pedido por WhatsApp'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={17} />
+                  <span>
+                    {paymentMethod === 'transferencia'
+                      ? 'Enviar Comprobante por WhatsApp'
+                      : paymentMethod === 'mercadopago'
+                      ? (checkoutUrl ? '¿Dudas con tu pago? Escríbenos' : 'Solicitar Enlace de Pago por WhatsApp')
+                      : 'Abrir WhatsApp para Coordinar Entrega'}
+                  </span>
+                </div>
+                {paymentMethod === 'contra_entrega' && (
+                  <span className="text-[10px] text-emerald-100 font-normal lowercase tracking-normal">
+                    (Toca aquí si WhatsApp no se abrió automáticamente)
+                  </span>
+                )}
               </button>
 
               <button

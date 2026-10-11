@@ -62,6 +62,10 @@ glowxir  → Tienda Virtual Baby World (Caddy)
   - **Opción para Pueblos Apartados:** Se añadió la opción "Otro municipio o población (escribir)..." que activa el campo de texto libre únicamente cuando el cliente reside en un municipio o corregimiento no listado.
   - **Confirmación Dinámica:** La nota informativa de flete al cobro por transportadora personaliza el destino dinámicamente indicando la ciudad elegida.
 
+✅ **Apertura Automática de WhatsApp en Contra Entrega y Pantalla de Respaldo:**
+  - **Apertura Inmediata:** Al presionar "Confirmar y Enviar Pedido" con método Contra Entrega, el sistema crea la orden en la base de datos de Edatia con su consecutivo (`#PED-00000X`), vacía el carrito de compras e intenta abrir WhatsApp inmediatamente en una nueva pestaña/app con el mensaje prellenado del pedido.
+  - **Pantalla de Respaldo Intuitiva:** El modal permanece abierto en la pantalla de éxito con todos los datos clave (valor en efectivo a alistar, dirección y número de orden) y un botón de contingencia: *"Abrir WhatsApp para Coordinar Entrega (Toca aquí si WhatsApp no se abrió automáticamente)"*, evitando la contradicción de textos previa y garantizando que el 100% de los clientes inicien el chat.
+
 ✅ **Despliegue y Validación Docker:**
   - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 
