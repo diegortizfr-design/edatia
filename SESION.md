@@ -66,6 +66,10 @@ glowxir  → Tienda Virtual Baby World (Caddy)
   - **Apertura Inmediata:** Al presionar "Confirmar y Enviar Pedido" con método Contra Entrega, el sistema crea la orden en la base de datos de Edatia con su consecutivo (`#PED-00000X`), vacía el carrito de compras e intenta abrir WhatsApp inmediatamente en una nueva pestaña/app con el mensaje prellenado del pedido.
   - **Pantalla de Respaldo Intuitiva:** El modal permanece abierto en la pantalla de éxito con todos los datos clave (valor en efectivo a alistar, dirección y número de orden) y un botón de contingencia: *"Abrir WhatsApp para Coordinar Entrega (Toca aquí si WhatsApp no se abrió automáticamente)"*, evitando la contradicción de textos previa y garantizando que el 100% de los clientes inicien el chat.
 
+✅ **Corrección de Emojis Corruptos () en Enlaces de WhatsApp:**
+  - **Causa Raíz Identificada:** El acortador oficial de Meta `https://wa.me/` efectúa una redirección HTTP 302 hacia `api.whatsapp.com` cuyo servidor interno corrompe los caracteres UTF-8 de 4 bytes (emojis como 🍼, 🎉, 💵) transformándolos en `%EF%BF%BD` (el carácter de reemplazo Unicode ).
+  - **Remediación:** Se reemplazó el uso de `wa.me` por la API directa `https://api.whatsapp.com/send?phone=...&text=...` tanto en el checkout (`CheckoutModal.tsx`) como en el carrito lateral (`CartDrawer.tsx`), preservando la codificación UTF-8 intacta y mostrando los emojis legítimos en cualquier dispositivo o navegador.
+
 ✅ **Despliegue y Validación Docker:**
   - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 
