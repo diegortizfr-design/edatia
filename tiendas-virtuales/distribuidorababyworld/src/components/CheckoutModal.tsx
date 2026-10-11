@@ -23,6 +23,25 @@ interface CheckoutModalProps {
 type PaymentMethodType = 'contra_entrega' | 'transferencia' | 'mercadopago'
 type WalletType = 'Nequi' | 'Daviplata' | 'Bancolombia'
 
+const isLocalCoverage = (ciudad: string): boolean => {
+  if (!ciudad) return false
+  const clean = ciudad
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+  const LOCAL_KEYS = [
+    'cali',
+    'candelaria',
+    'palmira',
+    'jamundi',
+    'yumbo',
+    'ciudad del campo',
+    'poblado campestre',
+  ]
+  return LOCAL_KEYS.some((k) => clean.includes(k))
+}
+
 export function CheckoutModal({
   isOpen,
   onClose,
@@ -31,10 +50,11 @@ export function CheckoutModal({
   API_BASE,
   storeSlug
 }: CheckoutModalProps) {
+  const [selectedCityZone, setSelectedCityZone] = useState('Candelaria')
+  const [customCity, setCustomCity] = useState('')
   const [formData, setFormData] = useState({
     nombre: '',
     telefono: '',
-    ciudad: 'Candelaria',
     direccion: '',
     barrio: '',
     notas: '',
@@ -58,9 +78,27 @@ export function CheckoutModal({
 
   if (!isOpen) return null
 
+  const effectiveCity = selectedCityZone === 'OTRA' ? (customCity.trim() || 'Otra Ciudad') : selectedCityZone
+  const isLocal = isLocalCoverage(effectiveCity)
+
+  const handleCityZoneChange = (zone: string) => {
+    setSelectedCityZone(zone)
+    const nextIsLocal = zone === 'OTRA' ? isLocalCoverage(customCity) : isLocalCoverage(zone)
+    if (!nextIsLocal && paymentMethod === 'contra_entrega') {
+      setPaymentMethod('transferencia')
+    }
+  }
+
+  const handleCustomCityChange = (val: string) => {
+    setCustomCity(val)
+    if (!isLocalCoverage(val) && paymentMethod === 'contra_entrega') {
+      setPaymentMethod('transferencia')
+    }
+  }
+
   const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
-  const shipping = subtotal >= 150000 ? 0 : 8000
+  const shipping = isLocal ? (subtotal >= 150000 ? 0 : 8000) : 0
   const total = subtotal + shipping
 
   // Congelamos datos para la vista de éxito
@@ -136,6 +174,19 @@ export function CheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitError('')
+
+    if (selectedCityZone === 'OTRA' && !customCity.trim()) {
+      setSubmitError('Por favor escribe tu ciudad o municipio de entrega.')
+      setIsSubmitting(false)
+      return
+    }
+
+    if (paymentMethod === 'contra_entrega' && !isLocal) {
+      setSubmitError('El pago contra entrega en efectivo solo está disponible para Cali, Candelaria, Ciudad del Campo, Poblado Campestre, Palmira, Jamundí y Yumbo. Para tu ciudad, selecciona Bre-B o Mercado Pago.')
+      setIsSubmitting(false)
+      return
+    }
 
     const readableMethod = getPaymentMethodLabel()
 
@@ -144,8 +195,8 @@ export function CheckoutModal({
       nombre: formData.nombre,
       email: `${formData.telefono}@cliente.babyworld.com`,
       telefono: formData.telefono,
-      direccion: `${formData.direccion}, Barrio: ${formData.barrio || 'N/A'}, ${formData.ciudad}. Notas: ${formData.notas || 'Ninguna'}`,
-      ciudad: formData.ciudad,
+      direccion: `${formData.direccion}, Barrio: ${formData.barrio || 'N/A'}, ${effectiveCity}. Notas: ${formData.notas || 'Ninguna'}`,
+      ciudad: effectiveCity,
       medioPago: readableMethod,
       metodoPagoCodigo: paymentMethod,
       items: (activeCartItems.length > 0 ? activeCartItems : cartItems).map(item => ({
@@ -213,18 +264,26 @@ export function CheckoutModal({
     let msg = `🍼 *PEDIDO BABY-WORLD - ORDEN #${orderNumber}*\n\n`
     msg += `*Cliente:* ${formData.nombre}\n`
     msg += `*Teléfono:* ${formData.telefono}\n`
-    msg += `*Dirección:* ${formData.direccion}, ${formData.ciudad}\n`
+    msg += `*Dirección:* ${formData.direccion}, ${effectiveCity}\n`
     msg += `*Método de Pago:* ${getPaymentMethodLabel()}\n\n`
     msg += `*Productos:*\n`
     activeCartItems.forEach(i => {
       msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
     })
     msg += `\n*Subtotal:* ${fmtPrice(finalSubtotal)}`
-    msg += `\n*Envío:* ${finalEnvio === 0 ? 'Gratis 🎉' : fmtPrice(finalEnvio)}`
+    if (isLocal) {
+      msg += `\n*Envío:* ${finalEnvio === 0 ? 'Gratis 🎉 (Domicilio Local)' : `${fmtPrice(finalEnvio)} (Domicilio Local)`}`
+    } else {
+      msg += `\n*Envío:* Flete al Cobro por Transportadora (lo pagas al recibir)`
+    }
     msg += `\n*Total:* ${fmtPrice(finalTotal)}`
 
     if (paymentMethod === 'transferencia') {
-      msg += `\n\n📌 *Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
+      if (isLocal) {
+        msg += `\n\n📌 *Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
+      } else {
+        msg += `\n\n📦 *Despacho Nacional:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Por favor compártanme la guía de la transportadora cuando el pedido sea despachado.`
+      }
     } else if (paymentMethod === 'mercadopago') {
       msg += `\n\n💳 *Nota:* Seleccioné pago online con Mercado Pago para la orden #${orderNumber}.`
     } else {
@@ -296,32 +355,63 @@ export function CheckoutModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Ciudad / Municipio *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.ciudad}
-                    onChange={e => setFormData({ ...formData, ciudad: e.target.value })}
-                    placeholder="Candelaria, Cali..."
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
-                  />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Ciudad / Cobertura *
+                    </label>
+                    <select
+                      value={selectedCityZone}
+                      onChange={e => handleCityZoneChange(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all cursor-pointer"
+                    >
+                      <optgroup label="📍 Domicilio Local ($8.000 / Gratis ≥ $150k)">
+                        <option value="Candelaria">Candelaria</option>
+                        <option value="Cali">Cali</option>
+                        <option value="Ciudad del Campo">Ciudad del Campo</option>
+                        <option value="Poblado Campestre">Poblado Campestre</option>
+                        <option value="Palmira">Palmira</option>
+                        <option value="Jamundí">Jamundí</option>
+                        <option value="Yumbo">Yumbo</option>
+                      </optgroup>
+                      <optgroup label="🇨🇴 Envíos Nacionales (Transportadora)">
+                        <option value="OTRA">Otra Ciudad (Envío Nacional)</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Barrio
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.barrio}
+                      onChange={e => setFormData({ ...formData, barrio: e.target.value })}
+                      placeholder="Ej. El Poblado, Centro"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Barrio
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.barrio}
-                    onChange={e => setFormData({ ...formData, barrio: e.target.value })}
-                    placeholder="Ej. El Poblado, Centro"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-300 focus:bg-white transition-all"
-                  />
-                </div>
+
+                {selectedCityZone === 'OTRA' && (
+                  <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 space-y-1.5 animate-in fade-in duration-150">
+                    <label className="block text-[10.5px] font-bold text-amber-900">
+                      Escribe tu Ciudad o Municipio de Colombia *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={customCity}
+                      onChange={e => handleCustomCityChange(e.target.value)}
+                      placeholder="Ej. Bogotá, Medellín, Pasto, Pereira..."
+                      className="w-full p-2 bg-white border border-amber-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-400 font-semibold text-slate-800"
+                    />
+                    <p className="text-[10px] text-amber-800 leading-tight">
+                      📦 <b>Envío por Transportadora:</b> El flete es <b>al cobro</b> (lo pagas a la transportadora al recibir, aprox. $12.000 - $18.000). Los productos se cancelan por anticipado con Bre-B o Mercado Pago.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -347,27 +437,42 @@ export function CheckoutModal({
                 <div className="space-y-2">
                   {/* Opción 1: Contra Entrega */}
                   <div
-                    onClick={() => setPaymentMethod('contra_entrega')}
-                    className={`cursor-pointer p-3 rounded-2xl border transition-all flex items-start gap-3 ${
-                      paymentMethod === 'contra_entrega'
-                        ? 'border-sky-500 bg-sky-50/50 shadow-sm ring-1 ring-sky-400'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    onClick={() => {
+                      if (!isLocal) {
+                        setSubmitError('El pago contra entrega en efectivo solo está disponible para Cali, Candelaria, Ciudad del Campo, Poblado Campestre, Palmira, Jamundí y Yumbo. Para envíos nacionales, por favor selecciona Bre-B o Mercado Pago.')
+                        return
+                      }
+                      setSubmitError('')
+                      setPaymentMethod('contra_entrega')
+                    }}
+                    className={`p-3 rounded-2xl border transition-all flex items-start gap-3 ${
+                      !isLocal
+                        ? 'opacity-60 bg-slate-50 border-slate-200 cursor-not-allowed'
+                        : paymentMethod === 'contra_entrega'
+                        ? 'cursor-pointer border-sky-500 bg-sky-50/50 shadow-sm ring-1 ring-sky-400'
+                        : 'cursor-pointer border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
                     <div className={`mt-0.5 p-2 rounded-xl ${
-                      paymentMethod === 'contra_entrega' ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-600'
+                      !isLocal ? 'bg-slate-200 text-slate-400' : paymentMethod === 'contra_entrega' ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-600'
                     }`}>
                       <Banknote size={18} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-800">Pago Contra Entrega</span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                          Efectivo
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                          !isLocal
+                            ? 'text-slate-500 bg-slate-100 border-slate-200'
+                            : 'text-emerald-700 bg-emerald-50 border-emerald-100'
+                        }`}>
+                          {!isLocal ? 'Solo Cali y alrededores' : 'Efectivo'}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Pagas en efectivo al momento de recibir el pedido en tu puerta (Candelaria y alrededores).
+                        {!isLocal
+                          ? 'No disponible para envíos nacionales por transportadora. Selecciona Bre-B o Mercado Pago.'
+                          : 'Pagas en efectivo al momento de recibir el pedido en tu puerta con domiciliario local.'}
                       </p>
                     </div>
                   </div>
@@ -456,19 +561,26 @@ export function CheckoutModal({
               <div className="flex justify-between text-slate-600">
                 <span className="flex items-center gap-1">
                   <Truck size={13} className="text-sky-600" />
-                  <span>Costo de Envío a Domicilio</span>
+                  <span>{isLocal ? 'Costo de Envío a Domicilio' : 'Envío por Transportadora'}</span>
                 </span>
-                <span className={shipping === 0 ? "text-emerald-600 font-bold" : "font-semibold text-slate-800"}>
-                  {shipping === 0 ? "¡Gratis! 🎉" : fmtPrice(shipping)}
+                <span className={isLocal ? (shipping === 0 ? "text-emerald-600 font-bold" : "font-semibold text-slate-800") : "text-amber-800 font-bold bg-amber-100/70 border border-amber-200 px-2 py-0.5 rounded text-[10.5px]"}>
+                  {isLocal 
+                    ? (shipping === 0 ? "¡Gratis! 🎉" : fmtPrice(shipping))
+                    : "Al Cobro al recibir 📦"}
                 </span>
               </div>
               <div className="flex justify-between font-black text-slate-900 text-sm pt-1.5 border-t border-slate-200">
-                <span>Total a Pagar</span>
+                <span>Total a Pagar {isLocal ? '' : '(Productos)'}</span>
                 <span className="text-sky-600 font-black">{fmtPrice(total)}</span>
               </div>
-              {shipping > 0 && (
+              {isLocal && shipping > 0 && (
                 <p className="text-[10px] text-slate-400 pt-0.5 text-right font-medium">
                   * Agrega {fmtPrice(150000 - subtotal)} más para calificar a envío gratis
+                </p>
+              )}
+              {!isLocal && (
+                <p className="text-[10.5px] text-amber-800 pt-1 text-right font-medium leading-tight">
+                  * El flete nacional lo pagas a la transportadora al recibir en tu puerta (aprox. $12.000 - $18.000).
                 </p>
               )}
             </div>
@@ -698,16 +810,23 @@ export function CheckoutModal({
                   <div className="flex justify-between text-slate-600 text-[11px]">
                     <span className="flex items-center gap-1">
                       <Truck size={12} className="text-slate-400" />
-                      Costo de Envío a Domicilio:
+                      {isLocal ? 'Costo de Envío a Domicilio:' : 'Envío por Transportadora:'}
                     </span>
-                    <span className={finalEnvio === 0 ? "text-emerald-600 font-bold" : "font-semibold text-slate-800"}>
-                      {finalEnvio === 0 ? "¡Gratis! 🎉" : fmtPrice(finalEnvio)}
+                    <span className={isLocal ? (finalEnvio === 0 ? "text-emerald-600 font-bold" : "font-semibold text-slate-800") : "text-amber-800 font-bold"}>
+                      {isLocal 
+                        ? (finalEnvio === 0 ? "¡Gratis! 🎉" : fmtPrice(finalEnvio))
+                        : "Al Cobro al recibir 📦"}
                     </span>
                   </div>
                   <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-100 text-xs">
-                    <span>Total a Transferir:</span>
+                    <span>Total a Transferir {isLocal ? '' : '(Productos)'}:</span>
                     <span className="text-sky-600 text-sm font-black">{fmtPrice(finalTotal)}</span>
                   </div>
+                  {!isLocal && (
+                    <p className="text-[10px] text-amber-800 pt-0.5 text-right font-medium">
+                      Pagas el flete a la transportadora al recibir en tu ciudad
+                    </p>
+                  )}
                 </div>
 
                 {/* Selector entre QR Bre-B y Llave Bre-B */}
@@ -877,7 +996,7 @@ export function CheckoutModal({
                 </div>
 
                 <p className="text-[11px] text-emerald-800 leading-relaxed">
-                  Por favor ten a mano la cantidad exacta en efectivo (<b>{fmtPrice(finalTotal)}</b>) para cuando el domiciliario llegue a tu dirección: <b>{formData.direccion}, {formData.ciudad}</b>.
+                  Por favor ten a mano la cantidad exacta en efectivo (<b>{fmtPrice(finalTotal)}</b>) para cuando el domiciliario llegue a tu dirección: <b>{formData.direccion}, {effectiveCity}</b>.
                 </p>
               </div>
             )}

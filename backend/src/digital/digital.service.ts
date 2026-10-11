@@ -265,8 +265,29 @@ export class DigitalService {
     });
   }
 
-  // Regla de envío (debe coincidir con la que muestra la tienda)
-  private calcularEnvio(subtotal: number) {
+  // Zonas de cobertura local directa (Cali y alrededores con domiciliario propio)
+  private readonly ZONAS_LOCALES = [
+    'cali',
+    'candelaria',
+    'palmira',
+    'jamundi',
+    'jamundí',
+    'yumbo',
+    'ciudad del campo',
+    'poblado campestre',
+  ];
+
+  public esZonaLocal(ciudad?: string | null): boolean {
+    if (!ciudad) return false;
+    const norm = String(ciudad).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    return this.ZONAS_LOCALES.some((z) => norm.includes(z.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+  }
+
+  // Regla de envío: Local es $8.000 (gratis >= $150.000). Nacional es $0 en la tienda (flete al cobro por transportadora).
+  private calcularEnvio(subtotal: number, ciudad?: string | null) {
+    if (ciudad && !this.esZonaLocal(ciudad)) {
+      return 0; // Nacional: Flete al cobro directamente a la transportadora
+    }
     return subtotal >= 150000 ? 0 : 8000;
   }
 
@@ -336,8 +357,14 @@ export class DigitalService {
       throw new BadRequestException('Uno o más productos no tienen precio configurado');
     }
 
+    if (metodoCodigo === 'contra_entrega' && !this.esZonaLocal(ciudad)) {
+      throw new BadRequestException(
+        'El pago contra entrega en efectivo solo está disponible para Cali y alrededores (Cali, Candelaria, Ciudad del Campo, Poblado Campestre, Palmira, Jamundí y Yumbo). Para envíos nacionales, por favor selecciona Transferencia o Mercado Pago.'
+      );
+    }
+
     const subtotal = lineas.reduce((s, l) => s + l.total, 0);
-    const envio = this.calcularEnvio(subtotal);
+    const envio = this.calcularEnvio(subtotal, ciudad);
     const total = subtotal;
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -407,7 +434,10 @@ export class DigitalService {
         }
       }
 
-      const notasPedido = `Pedido recibido desde tienda virtual. Dirección de entrega: ${direccion}, ${ciudad}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Envío: ${envio}.`;
+      const tipoEnvioTexto = this.esZonaLocal(ciudad)
+      ? `Domicilio Local ($${envio === 0 ? 'Gratis' : envio})`
+      : 'Nacional por Transportadora (Flete al Cobro)';
+    const notasPedido = `Pedido recibido desde tienda virtual. Ciudad: ${ciudad}. Dirección: ${direccion}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Tipo de Envío: ${tipoEnvioTexto}.`;
       const condicionesPago = metodoCodigo === 'contra_entrega'
         ? 'CONTRA_ENTREGA'
         : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
@@ -568,10 +598,11 @@ export class DigitalService {
 
     const pedido = await this.prisma.pedidoVenta.findFirst({
       where: { id: orderId, empresaId: config.empresaId },
+      include: { cliente: true },
     });
     if (!pedido) return { received: true, ignored: true };
 
-    const esperado = Number(pedido.total) + this.calcularEnvio(Number(pedido.total));
+    const esperado = Number(pedido.total) + this.calcularEnvio(Number(pedido.total), pedido.cliente?.municipio);
     const marca = `[MP pago ${pago.id}]`;
 
     // Idempotencia: si ya se registró este pago aprobado, no repetir
@@ -642,6 +673,12 @@ export class DigitalService {
     const metodoCodigo = String(body?.metodoCodigo || '').trim().toLowerCase();
     const medioPago = String(body?.medioPago || metodoCodigo).slice(0, 100);
 
+    if (metodoCodigo === 'contra_entrega' && !this.esZonaLocal(pedido.cliente?.municipio)) {
+      throw new BadRequestException(
+        'El pago contra entrega en efectivo solo está disponible para Cali y alrededores (Cali, Candelaria, Ciudad del Campo, Poblado Campestre, Palmira, Jamundí y Yumbo).'
+      );
+    }
+
     const condicionesPago = metodoCodigo === 'contra_entrega'
       ? 'CONTRA_ENTREGA'
       : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
@@ -660,7 +697,7 @@ export class DigitalService {
 
     let checkoutUrl: string | null = null;
     if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
-      const envio = this.calcularEnvio(Number(pedido.total));
+      const envio = this.calcularEnvio(Number(pedido.total), pedido.cliente?.municipio);
       const items = (pedido.items || []).map((it: any) => ({
         id: String(it.productoId),
         title: String(it.descripcion || 'Producto').slice(0, 250),

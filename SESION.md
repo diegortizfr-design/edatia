@@ -51,6 +51,12 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 ✅ **Integración Mercado Pago Online:**
   - Se configuró el servicio `mercadopago.service.ts` y su endpoint en el backend para generar preferencias de pago seguras y redirección oficial a la pasarela.
 
+✅ **Cobertura Local (Cali y Alrededores) vs. Envíos Nacionales con Flete al Cobro:**
+  - **Zonas Locales con Domiciliario Propio:** Se definieron y habilitaron los sectores de atención directa: **Cali, Candelaria, Ciudad del Campo, Poblado Campestre, Palmira, Jamundí y Yumbo** con tarifa de domicilio local de **$8.000** (o Gratis para compras ≥ $150.000).
+  - **Protección del Pago Contra Entrega:** El método de "Contra Entrega en Efectivo" queda habilitado únicamente para la zona de cobertura local. Si el cliente selecciona una ciudad fuera del Valle del Cauca, la opción se deshabilita automáticamente y se solicita el pago anticipado por Bre-B o Mercado Pago.
+  - **Envíos Nacionales (Transportadora - Flete al Cobro):** Para pedidos fuera de la zona local, el flete se marca como $0 en la tienda web y se informa claramente que se despacha por transportadora con flete al cobro al recibir en su puerta (aprox. $12.000 - $18.000).
+  - **Sincronización en Backend:** Validación en `digital.service.ts` para rechazar contra-entregas fuera de la zona local y calcular el envío correspondiente en base a la ciudad del pedido.
+
 ✅ **Despliegue y Validación Docker:**
   - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 
