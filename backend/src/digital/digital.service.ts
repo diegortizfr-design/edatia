@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MercadoPagoService } from './mercadopago.service';
 
 @Injectable()
 export class DigitalService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(DigitalService.name);
+
+  constructor(private prisma: PrismaService, private mp: MercadoPagoService) {}
 
   async getConfig(empresaId: number) {
     let config = await this.prisma.configuracionTienda.findUnique({
@@ -262,6 +265,15 @@ export class DigitalService {
     });
   }
 
+  // Regla de envío (debe coincidir con la que muestra la tienda)
+  private calcularEnvio(subtotal: number) {
+    return subtotal >= 150000 ? 0 : 8000;
+  }
+
+  private sanitizeText(v: unknown, max: number): string {
+    return String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
+  }
+
   async crearPedidoWeb(slug: string, dto: any) {
     const config = await this.prisma.configuracionTienda.findFirst({
       where: {
@@ -277,15 +289,66 @@ export class DigitalService {
 
     const empresaId = config.empresaId;
 
-    return this.prisma.$transaction(async (tx) => {
+    // ── Validación de entrada (nunca confiar en el navegador) ──
+    const nombre = this.sanitizeText(dto?.nombre, 120);
+    const telefono = this.sanitizeText(dto?.telefono, 30).replace(/[^\d+ ]/g, '');
+    const ciudad = this.sanitizeText(dto?.ciudad, 80);
+    const direccion = this.sanitizeText(dto?.direccion, 400);
+    const email = this.sanitizeText(dto?.email, 120);
+    const medioPago = this.sanitizeText(dto?.medioPago, 80);
+    const metodoCodigo = ['contra_entrega', 'transferencia', 'mercadopago'].includes(dto?.metodoPagoCodigo)
+      ? dto.metodoPagoCodigo
+      : (medioPago.includes('Contra Entrega') ? 'contra_entrega' : 'transferencia');
+
+    if (!nombre || telefono.replace(/\D/g, '').length < 7 || !direccion || !ciudad) {
+      throw new BadRequestException('Datos de entrega incompletos');
+    }
+    if (!Array.isArray(dto?.items) || dto.items.length === 0 || dto.items.length > 100) {
+      throw new BadRequestException('El carrito está vacío o es inválido');
+    }
+
+    // Agrupar cantidades por producto
+    const cantidades = new Map<number, number>();
+    for (const it of dto.items) {
+      const id = Number(it?.productoId);
+      const cant = Number(it?.cantidad);
+      if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(cant) || cant < 1 || cant > 999) {
+        throw new BadRequestException('Producto o cantidad inválida');
+      }
+      cantidades.set(id, (cantidades.get(id) ?? 0) + cant);
+    }
+
+    // Precios SIEMPRE desde la base de datos
+    const productos = await this.prisma.producto.findMany({
+      where: { id: { in: [...cantidades.keys()] }, empresaId, publicadoWeb: true, activo: true },
+      select: { id: true, nombre: true, precioWeb: true, precioBase: true },
+    });
+    if (productos.length !== cantidades.size) {
+      throw new BadRequestException('Uno o más productos ya no están disponibles');
+    }
+    const lineas = productos.map((p) => {
+      const web = Number(p.precioWeb ?? 0);
+      const precio = web > 0 ? web : Number(p.precioBase ?? 0);
+      const cantidad = cantidades.get(p.id)!;
+      return { productoId: p.id, nombre: p.nombre, precio, cantidad, total: precio * cantidad };
+    });
+    if (lineas.some((l) => !(l.precio > 0))) {
+      throw new BadRequestException('Uno o más productos no tienen precio configurado');
+    }
+
+    const subtotal = lineas.reduce((s, l) => s + l.total, 0);
+    const envio = this.calcularEnvio(subtotal);
+    const total = subtotal;
+
+    const result = await this.prisma.$transaction(async (tx) => {
       // 1. Encontrar o Crear el Tercero (Cliente)
       let cliente = await tx.tercero.findFirst({
         where: {
           empresaId,
           esCliente: true,
           OR: [
-            { email: dto.email },
-            { telefono: dto.telefono }
+            ...(email ? [{ email }] : []),
+            { telefono }
           ]
         }
       });
@@ -296,13 +359,13 @@ export class DigitalService {
         cliente = await tx.tercero.create({
           data: {
             empresaId,
-            nombre: dto.nombre,
+            nombre,
             tipoDocumento: 'CC',
             numeroDocumento: docNum,
-            email: dto.email,
-            telefono: dto.telefono,
-            direccion: dto.direccion,
-            municipio: dto.ciudad,
+            email: email || null,
+            telefono,
+            direccion,
+            municipio: ciudad,
             esCliente: true,
             activo: true,
           }
@@ -330,72 +393,299 @@ export class DigitalService {
         });
       }
 
-      // 3. Obtener consecutivo de pedido (PedidoVenta)
-      const lastOrder = await tx.pedidoVenta.findFirst({
-        where: { empresaId },
-        orderBy: { id: 'desc' }
-      });
-      const seq = lastOrder ? parseInt(lastOrder.numero.split('-').pop() ?? '0') + 1 : 1;
-      const orderNum = `PED-${seq.toString().padStart(6, '0')}`;
+      // 3. Verificar si viene un orderId previo en estado PENDIENTE para reutilizarlo
+      let order: any = null;
+      let orderNum = '';
 
-      // 4. Calcular totales de items
-      const subtotal = dto.items.reduce((sum: number, it: any) => sum + (it.precioUnitario * it.cantidad), 0);
-      const total = subtotal;
+      if (dto.orderId && Number.isInteger(Number(dto.orderId))) {
+        const existing = await (tx as any).pedidoVenta.findFirst({
+          where: { id: Number(dto.orderId), empresaId, estado: 'PENDIENTE' },
+        });
+        if (existing) {
+          order = existing;
+          orderNum = existing.numero;
+        }
+      }
 
-      // 5. Crear PedidoVenta
-      const order = await tx.pedidoVenta.create({
-        data: {
-          empresaId,
-          numero: orderNum,
-          clienteId: cliente.id,
-          bodegaId: bodega.id,
-          fecha: new Date(),
-          notas: `Pedido recibido desde tienda virtual. Dirección de entrega: ${dto.direccion}, ${dto.ciudad}. Teléfono: ${dto.telefono}. Método de pago: ${dto.medioPago}`,
-          condicionesPago: dto.medioPago === 'Contra Entrega' ? 'CONTRA_ENTREGA' : 'ANTICIPADO',
-          subtotal,
-          total,
-          descuento: 0,
-          baseIva19: 0,
-          iva19: 0,
-          baseIva5: 0,
-          iva5: 0,
-          estado: 'PENDIENTE',
-          items: {
-            create: dto.items.map((it: any, idx: number) => ({
-              productoId: it.productoId,
-              descripcion: it.nombre,
-              unidad: 'UND',
-              cantidad: it.cantidad,
-              precioUnitario: it.precioUnitario,
-              descuentoPct: 0,
-              descuentoValor: 0,
-              tipoIva: 'EXCLUIDO',
-              baseIva: it.precioUnitario * it.cantidad,
-              ivaValor: 0,
-              subtotal: it.precioUnitario * it.cantidad,
-              total: it.precioUnitario * it.cantidad,
-              orden: idx
-            }))
+      const notasPedido = `Pedido recibido desde tienda virtual. Dirección de entrega: ${direccion}, ${ciudad}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Envío: ${envio}.`;
+      const condicionesPago = metodoCodigo === 'contra_entrega'
+        ? 'CONTRA_ENTREGA'
+        : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
+
+      if (order) {
+        // Reutilizar y actualizar pedido existente
+        await (tx as any).pedidoVentaItem.deleteMany({ where: { pedidoId: order.id } });
+        order = await (tx as any).pedidoVenta.update({
+          where: { id: order.id },
+          data: {
+            clienteId: cliente.id,
+            notas: notasPedido,
+            condicionesPago,
+            subtotal,
+            total,
+            items: {
+              create: lineas.map((l, idx) => ({
+                productoId: l.productoId,
+                descripcion: l.nombre,
+                unidad: 'UND',
+                cantidad: l.cantidad,
+                precioUnitario: l.precio,
+                descuentoPct: 0,
+                descuentoValor: 0,
+                tipoIva: 'EXCLUIDO',
+                baseIva: l.total,
+                ivaValor: 0,
+                subtotal: l.total,
+                total: l.total,
+                orden: idx
+              }))
+            }
           }
-        }
-      });
+        });
+      } else {
+        // Generar nuevo consecutivo de pedido (PedidoVenta)
+        const lastOrder = await (tx as any).pedidoVenta.findFirst({
+          where: { empresaId },
+          orderBy: { id: 'desc' }
+        });
+        const seq = lastOrder ? parseInt(lastOrder.numero.split('-').pop() ?? '0') + 1 : 1;
+        orderNum = `PED-${seq.toString().padStart(6, '0')}`;
 
-      // 6. Crear Notificación de Campana en el ERP
-      await tx.notificacion.create({
-        data: {
-          empresaId,
-          tipo: 'INFO',
-          titulo: 'Nuevo Pedido Web',
-          mensaje: `Se ha recibido el pedido ${orderNum} de ${dto.nombre} por valor de ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(total)}.`,
-          leida: false,
-        }
-      });
+        // 4. Crear PedidoVenta
+        order = await (tx as any).pedidoVenta.create({
+          data: {
+            empresaId,
+            numero: orderNum,
+            clienteId: cliente.id,
+            bodegaId: bodega.id,
+            fecha: new Date(),
+            notas: notasPedido,
+            condicionesPago,
+            subtotal,
+            total,
+            descuento: 0,
+            baseIva19: 0,
+            iva19: 0,
+            baseIva5: 0,
+            iva5: 0,
+            estado: 'PENDIENTE',
+            items: {
+              create: lineas.map((l, idx) => ({
+                productoId: l.productoId,
+                descripcion: l.nombre,
+                unidad: 'UND',
+                cantidad: l.cantidad,
+                precioUnitario: l.precio,
+                descuentoPct: 0,
+                descuentoValor: 0,
+                tipoIva: 'EXCLUIDO',
+                baseIva: l.total,
+                ivaValor: 0,
+                subtotal: l.total,
+                total: l.total,
+                orden: idx
+              }))
+            }
+          }
+        });
 
-      return {
-        success: true,
-        orderId: order.id,
-        numero: orderNum
-      };
+        // 5. Crear Notificación de Campana en el ERP
+        await (tx as any).notificacion.create({
+          data: {
+            empresaId,
+            tipo: 'INFO',
+            titulo: 'Nuevo Pedido Web',
+            mensaje: `Se ha recibido el pedido ${orderNum} de ${nombre} por valor de ${this.cop(total + envio)} (${medioPago || metodoCodigo}).`,
+            leida: false,
+          }
+        });
+      }
+
+      return { orderId: order.id, numero: orderNum };
     });
+
+    // 6. Mercado Pago: se crea la preferencia FUERA de la transacción (llamada externa)
+    let checkoutUrl: string | null = null;
+    if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
+      const items = lineas.map((l) => ({
+        id: String(l.productoId),
+        title: l.nombre.slice(0, 250),
+        quantity: l.cantidad,
+        unit_price: l.precio,
+      }));
+      if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
+
+      const pref = await this.mp.createPreference({
+        slug: config.slugTienda,
+        dominioPropio: (config as any).dominioPropio,
+        orderId: result.orderId,
+        orderNumero: result.numero,
+        items,
+        payerName: nombre,
+      });
+      checkoutUrl = pref?.initPoint ?? null;
+    }
+
+    return {
+      success: true,
+      orderId: result.orderId,
+      numero: result.numero,
+      subtotal,
+      envio,
+      total: total + envio,
+      checkoutUrl,
+    };
+  }
+
+  private cop(v: number) {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+  }
+
+  /**
+   * Webhook de Mercado Pago. Nunca se confía en el cuerpo: se consulta el pago
+   * en la API de MP con el token de la tienda y se valida tienda, pedido y monto.
+   */
+  async procesarWebhookMercadoPago(slug: string, query: any, body: any, headers: Record<string, any>) {
+    const tipo = String(body?.type ?? body?.topic ?? query?.type ?? query?.topic ?? '');
+    const dataId = String(body?.data?.id ?? query?.['data.id'] ?? query?.id ?? '');
+
+    if (tipo !== 'payment' || !/^\d{1,20}$/.test(dataId)) {
+      return { received: true, ignored: true };
+    }
+
+    const config = await this.prisma.configuracionTienda.findFirst({ where: { slugTienda: slug } });
+    if (!config || !this.mp.isEnabled(slug)) return { received: true, ignored: true };
+
+    if (!this.mp.verifySignature(slug, headers, dataId)) {
+      throw new UnauthorizedException('Firma inválida');
+    }
+
+    const pago = await this.mp.getPayment(slug, dataId);
+    if (!pago) return { received: true, ignored: true };
+
+    const orderId = Number(pago.external_reference);
+    if (!Number.isInteger(orderId) || orderId <= 0) return { received: true, ignored: true };
+
+    const pedido = await this.prisma.pedidoVenta.findFirst({
+      where: { id: orderId, empresaId: config.empresaId },
+    });
+    if (!pedido) return { received: true, ignored: true };
+
+    const esperado = Number(pedido.total) + this.calcularEnvio(Number(pedido.total));
+    const marca = `[MP pago ${pago.id}]`;
+
+    // Idempotencia: si ya se registró este pago aprobado, no repetir
+    if (pedido.condicionesPago === 'MERCADOPAGO_APROBADO') return { received: true };
+
+    if (pago.status === 'approved') {
+      if (pago.currency_id !== 'COP' || Math.round(pago.transaction_amount) < Math.round(esperado)) {
+        this.logger.warn(`Pago MP ${pago.id} con monto/moneda inesperados para pedido ${pedido.numero}`);
+        await this.prisma.notificacion.create({
+          data: {
+            empresaId: config.empresaId, tipo: 'ADVERTENCIA', titulo: 'Revisar pago Mercado Pago',
+            mensaje: `El pago ${pago.id} del pedido ${pedido.numero} no coincide con el total esperado (${this.cop(esperado)}).`,
+            leida: false,
+          },
+        });
+        return { received: true };
+      }
+
+      await this.prisma.pedidoVenta.update({
+        where: { id: pedido.id },
+        data: {
+          estado: 'APROBADO',
+          condicionesPago: 'MERCADOPAGO_APROBADO',
+          notas: `${pedido.notas ?? ''}\n${marca} APROBADO ${this.cop(pago.transaction_amount)} (${pago.payment_method_id ?? ''}).`,
+        },
+      });
+      await this.prisma.notificacion.create({
+        data: {
+          empresaId: config.empresaId, tipo: 'ALERTA', titulo: '💳 Pago recibido (Mercado Pago)',
+          mensaje: `El pedido ${pedido.numero} fue pagado: ${this.cop(pago.transaction_amount)}.`,
+          leida: false,
+        },
+      });
+    } else if (['rejected', 'cancelled', 'refunded', 'charged_back'].includes(pago.status)) {
+      if (!(pedido.notas ?? '').includes(`${marca} ${pago.status}`)) {
+        await this.prisma.pedidoVenta.update({
+          where: { id: pedido.id },
+          data: {
+            condicionesPago: 'MERCADOPAGO_RECHAZADO',
+            notas: `${pedido.notas ?? ''}\n${marca} ${pago.status} (${pago.status_detail}).`,
+          },
+        });
+      }
+    }
+
+    return { received: true };
+  }
+
+  /**
+   * Permite al cliente cambiar la forma de pago de un pedido pendiente desde la web.
+   * Si cambia a Mercado Pago, genera la preferencia para que pueda pagar de inmediato.
+   */
+  async cambiarMetodoPagoWeb(slug: string, orderId: number, body: { metodoCodigo: string; medioPago?: string }) {
+    const config = await this.prisma.configuracionTienda.findFirst({ where: { slugTienda: slug } });
+    if (!config) throw new NotFoundException('Tienda no encontrada');
+
+    const pedido = await (this.prisma as any).pedidoVenta.findFirst({
+      where: { id: orderId, empresaId: config.empresaId },
+      include: { items: true, cliente: true },
+    });
+    if (!pedido) throw new NotFoundException('Pedido no encontrado');
+
+    // Solo permitir si el pedido está en estado PENDIENTE
+    if (pedido.estado !== 'PENDIENTE') {
+      return { success: false, message: 'El pedido ya no está pendiente de pago.' };
+    }
+
+    const metodoCodigo = String(body?.metodoCodigo || '').trim().toLowerCase();
+    const medioPago = String(body?.medioPago || metodoCodigo).slice(0, 100);
+
+    const condicionesPago = metodoCodigo === 'contra_entrega'
+      ? 'CONTRA_ENTREGA'
+      : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
+
+    const notaCambio = `[Forma de pago cambiada a: ${medioPago}]`;
+    const notasActuales = pedido.notas || '';
+    const notas = notasActuales.includes(notaCambio) ? notasActuales : `${notasActuales}\n${notaCambio}`;
+
+    await (this.prisma as any).pedidoVenta.update({
+      where: { id: pedido.id },
+      data: {
+        condicionesPago,
+        notas,
+      },
+    });
+
+    let checkoutUrl: string | null = null;
+    if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
+      const envio = this.calcularEnvio(Number(pedido.total));
+      const items = (pedido.items || []).map((it: any) => ({
+        id: String(it.productoId),
+        title: String(it.descripcion || 'Producto').slice(0, 250),
+        quantity: Number(it.cantidad || 1),
+        unit_price: Number(it.precioUnitario || 0),
+      }));
+      if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
+
+      const pref = await this.mp.createPreference({
+        slug: config.slugTienda,
+        dominioPropio: (config as any).dominioPropio,
+        orderId: pedido.id,
+        orderNumero: pedido.numero,
+        items,
+        payerName: pedido.cliente?.nombreRazonSocial || 'Cliente',
+      });
+      checkoutUrl = pref?.initPoint ?? null;
+    }
+
+    return {
+      success: true,
+      orderId: pedido.id,
+      numero: pedido.numero,
+      condicionesPago,
+      checkoutUrl,
+    };
   }
 }

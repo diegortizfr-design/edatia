@@ -50,6 +50,29 @@ export function App() {
     setActiveSubcategory('Todos')
   }, [activeCategory])
 
+  // Retorno desde Mercado Pago (?pago=exito|pendiente|fallido&pedido=PED-xxxx)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const estado = params.get('pago')
+    if (!estado) return
+    const pedido = (params.get('pedido') || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 20)
+    const ref = pedido ? ` #${pedido}` : ''
+    if (estado === 'exito') {
+      toast.success(`¡Pago recibido! Tu pedido${ref} está confirmado. Te contactaremos por WhatsApp para el envío.`, {
+        duration: 8000, icon: '💳', style: { borderRadius: '1rem', background: '#047857', color: '#fff' }
+      })
+    } else if (estado === 'pendiente') {
+      toast(`Tu pago del pedido${ref} está en proceso. Te avisaremos apenas Mercado Pago lo confirme.`, {
+        duration: 8000, icon: '⏳'
+      })
+    } else if (estado === 'fallido') {
+      toast.error(`El pago del pedido${ref} no se completó. Puedes intentarlo de nuevo o escribirnos por WhatsApp.`, {
+        duration: 8000
+      })
+    }
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [])
+
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
   useEffect(() => {
     fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`)

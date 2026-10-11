@@ -182,11 +182,26 @@ export function CartDrawer({
           {/* Footer Subtotal & Checkouts */}
           {items.length > 0 && (
             <div className="border-t border-slate-100 p-4 sm:p-5 bg-slate-50/70 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-bold text-xs">Subtotal:</span>
-                <span className="font-black text-slate-900 text-lg">
-                  {fmtPrice(subtotal)}
-                </span>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Subtotal productos:</span>
+                  <span className="font-bold text-slate-800">{fmtPrice(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <Truck size={12} className="text-sky-600" />
+                    <span>Envío estimado:</span>
+                  </span>
+                  <span className={subtotal >= FREE_SHIPPING_THRESHOLD ? "font-bold text-emerald-600" : "font-semibold text-slate-800"}>
+                    {subtotal >= FREE_SHIPPING_THRESHOLD ? "¡Gratis! 🎉" : fmtPrice(8000)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
+                  <span className="text-slate-800 font-extrabold text-xs">Total estimado:</span>
+                  <span className="font-black text-slate-900 text-base">
+                    {fmtPrice(subtotal + (subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 8000))}
+                  </span>
+                </div>
               </div>
 
               {/* Action Buttons */}

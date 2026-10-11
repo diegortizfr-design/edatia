@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-11 (sesión 6)
+> Última actualización: 2026-10-11 (sesión 7)
 
 ---
 
@@ -29,6 +29,30 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+---
+
+## Estado resuelto (sesión 7)
+
+✅ **Transparencia en Precios y Costo de Envío en Checkout:**
+  - Se implementó un desglose claro e inequívoco en el checkout: Subtotal de productos + Flete ($8.000 para pedidos < $150.000, o Gratis para compras ≥ $150.000) con mensajes explicativos para evitar que el usuario perciba aumentos sorpresa en el total final al seleccionar Contra Entrega o cualquier método.
+  - Se corrigió el flujo para que nunca muestre mensajes de "Gracias por tu compra" antes de que el pedido y el método de pago hayan sido realmente confirmados.
+
+✅ **Gestión y Modificación de Pedidos sin Pérdida de Consecutivo:**
+  - **Reutilización de Orden:** Al hacer clic en "Modificar pedido", el frontend ahora preserva y actualiza el `orderId` existente mediante `PATCH /public/tiendas/:slug/pedidos/:id/metodo-pago` en `digital-public.controller.ts` y `digital.service.ts`, evitando generar pedidos duplicados o quemar consecutivos fantasma (`#PED-00000X`).
+  - **Limpieza de Pruebas:** Se depuraron las órdenes de prueba anteriores en la base de datos `edatia_erp` para que el contador de ventas reales arranque limpiamente desde `#PED-000001`.
+
+✅ **Integración de Pagos Interoperables Bre-B (Banco de la República):**
+  - **Código QR:** Se integró el código QR oficial de alta definición en `/qr-bre-b.png` con botón de descarga rápida (`Descargar QR para pagar desde tu galería`), solucionando la fricción de usuarios móviles que compran desde el celular y no pueden escanear su propia pantalla.
+  - **Llave Bre-B Oficial:** Se configuró la llave **`@eip656`** como identificador de pago interoperable para todas las entidades financieras de Colombia (Nequi, Daviplata, Bancolombia, Banco de Bogotá, etc.), con botón de copiado en un clic y soporte en la vista de QR y pestaña dedicada.
+  - **Retiro de Cuentas Tradicionales:** Se eliminó cualquier referencia a números de cuenta de Nequi / celulares personales en el modal de pago según solicitud, dejando el flujo 100% interoperable bajo Bre-B y Mercado Pago.
+  - **Mensajes Automáticos a WhatsApp:** Los mensajes generados al presionar "Finalizar Pedido" indican con precisión el método de pago seleccionado (`Bre-B (Llave: @eip656 / QR)` o Contra Entrega) y adjuntan los datos del pedido directamente al WhatsApp de atención de la tienda.
+
+✅ **Integración Mercado Pago Online:**
+  - Se configuró el servicio `mercadopago.service.ts` y su endpoint en el backend para generar preferencias de pago seguras y redirección oficial a la pasarela.
+
+✅ **Despliegue y Validación Docker:**
+  - Reconstrucción y despliegue exitoso de `edatia-glowxir` y `edatia-backend` en Docker, validando respuestas HTTP/2 200 en producción.
 
 ---
 
