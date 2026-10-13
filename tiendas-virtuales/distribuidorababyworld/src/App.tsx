@@ -13,6 +13,7 @@ import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
+import { analytics } from './lib/analytics'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:4000/api/v1'
@@ -49,6 +50,16 @@ export function App() {
   useEffect(() => {
     setActiveSubcategory('Todos')
   }, [activeCategory])
+
+  // Analítica: registra la visita (GA4 + contador propio)
+  useEffect(() => {
+    analytics.init(API_BASE, STORE_SLUG)
+  }, [])
+
+  // Analítica: producto visto al abrir su detalle
+  useEffect(() => {
+    if (selectedProduct) analytics.verProducto(selectedProduct.id, selectedProduct.nombre, selectedProduct.precio)
+  }, [selectedProduct?.id])
 
   // Retorno desde Mercado Pago (?pago=exito|pendiente|fallido&pedido=PED-xxxx)
   useEffect(() => {
@@ -155,6 +166,7 @@ export function App() {
   })
 
   const handleAddToCart = (product: Product, quantity = 1) => {
+    analytics.agregarCarrito(product.id, product.nombre, product.precio, quantity)
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id)
       if (existing) {
@@ -201,6 +213,7 @@ export function App() {
   }
 
   const handleCheckoutSuccess = () => {
+    analytics.compra(cart.reduce((sum, item) => sum + item.product.precio * item.quantity, 0))
     setCart([])
     toast.success('¡Pedido procesado con éxito en Baby-World!', {
       duration: 5000,
@@ -457,6 +470,7 @@ export function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onCheckout={() => {
+          analytics.iniciarCheckout(cart.reduce((sum, item) => sum + item.product.precio * item.quantity, 0))
           setIsCartOpen(false)
           setIsCheckoutOpen(true)
         }}

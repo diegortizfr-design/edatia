@@ -260,6 +260,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavGroup label="Digital" icon={<Globe size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.digital} onClick={() => toggleGroup('digital')}>
                 <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={isCollapsed} />
                 <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={isCollapsed} />
+                <NavItem to="/digital/visitas" icon={<BarChart3 size={14}/>} label="Visitas Tienda" isCollapsed={isCollapsed} />
                 <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={isCollapsed} />
               </NavGroup>
             )}

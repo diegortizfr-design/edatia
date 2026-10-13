@@ -1,11 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { DigitalService } from './digital.service';
+import { AnaliticaService } from './analitica.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('digital')
 @UseGuards(JwtAuthGuard)
 export class DigitalController {
-  constructor(private readonly digitalService: DigitalService) {}
+  constructor(
+    private readonly digitalService: DigitalService,
+    private readonly analiticaService: AnaliticaService,
+  ) {}
+
+  @Get('analitica')
+  getAnalitica(@Request() req: any, @Query('dias') dias?: string) {
+    return this.analiticaService.getEstadisticas(req.user.empresaId, dias ? Number(dias) : undefined);
+  }
 
   @Get('config')
   getConfig(@Request() req: any) {

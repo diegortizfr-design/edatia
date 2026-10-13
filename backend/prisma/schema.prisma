@@ -891,6 +891,22 @@ model ConfiguracionTienda {
   updatedAt       DateTime @updatedAt
 }
 
+// Analítica propia de la tienda virtual (datos anónimos, sin PII)
+model EventoTienda {
+  id          Int      @id @default(autoincrement())
+  empresaId   Int
+  tipo        String   // VISITA | VER_PRODUCTO | AGREGAR_CARRITO | INICIO_CHECKOUT
+  visitorId   String   // ID anónimo aleatorio generado en el navegador
+  productoId  Int?
+  origen      String?  // utm_source o dominio del referrer, "directo" si no hay
+  dispositivo String?  // MOVIL | ESCRITORIO | TABLET
+  createdAt   DateTime @default(now())
+
+  @@index([empresaId, createdAt])
+  @@index([empresaId, tipo, createdAt])
+  @@index([empresaId, productoId])
+}
+
 model Bodega {
   id          Int      @id @default(autoincrement())
   empresaId   Int

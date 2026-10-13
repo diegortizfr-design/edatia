@@ -140,6 +140,8 @@ services:
     build:
       context: ./tiendas-virtuales/distribuidorababyworld
       dockerfile: Dockerfile
+      args:
+        VITE_GA_MEASUREMENT_ID: G-Q32JSMM3KL
     container_name: edatia-glowxir
     restart: unless-stopped
     labels:

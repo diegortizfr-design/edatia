@@ -1,4 +1,4 @@
-﻿# Dependencias
+# Dependencias
 node_modules/
 .npm/
 
@@ -44,6 +44,7 @@ docker-compose.override.yml
 
 # Backups
 *.sql
+!backend/prisma/migrations/**/*.sql
 backups/
 
 # Traefik local data

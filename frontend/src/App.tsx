@@ -32,6 +32,7 @@ import { Traslados } from './pages/inventario/Traslados'
 import { DigitalDashboard } from './pages/digital/DigitalDashboard'
 import { CatalogoDigital } from './pages/digital/CatalogoDigital'
 import { ConfigTienda } from './pages/digital/ConfigTienda'
+import { VisitasTienda } from './pages/digital/VisitasTienda'
 
 // ── Ventas ──
 import { VentasDashboard } from './pages/ventas/VentasDashboard'
@@ -215,6 +216,7 @@ function App() {
         <Route path="/digital/dashboard" element={<P><DigitalDashboard /></P>} />
         <Route path="/digital/catalogo"  element={<P><CatalogoDigital /></P>} />
         <Route path="/digital/config"    element={<P><ConfigTienda /></P>} />
+        <Route path="/digital/visitas"   element={<P><VisitasTienda /></P>} />
 
         {/* ── POS ── */}
         <Route path="/pos" element={<P><PosDashboard /></P>} />

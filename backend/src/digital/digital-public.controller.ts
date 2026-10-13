@@ -1,10 +1,22 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, Headers, HttpCode, ParseIntPipe } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { DigitalService } from './digital.service';
+import { AnaliticaService } from './analitica.service';
 
 @Controller('public/tiendas')
 export class DigitalPublicController {
-  constructor(private readonly digitalService: DigitalService) {}
+  constructor(
+    private readonly digitalService: DigitalService,
+    private readonly analiticaService: AnaliticaService,
+  ) {}
+
+  // Analítica anónima de la tienda (visitas, producto visto, carrito, checkout)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @Post(':slug/eventos')
+  @HttpCode(202)
+  async registrarEvento(@Param('slug') slug: string, @Body() body: any) {
+    return this.analiticaService.registrarEvento(slug, body);
+  }
 
   @Get(':slug/productos')
   async getProductosPublic(@Param('slug') slug: string) {
