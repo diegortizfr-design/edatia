@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Info, X, CheckCircle2, ShieldCheck, Sparkles, CreditCard, ArrowRight } from 'lucide-react'
+import { Info, X, ShieldCheck, Sparkles } from 'lucide-react'
 
 interface BnplCreditSimulatorProps {
   price: number

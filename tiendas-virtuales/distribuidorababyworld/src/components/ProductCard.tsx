@@ -1,5 +1,5 @@
 import React from 'react'
-import { Star, Plus, Eye } from 'lucide-react'
+import { Star, Plus } from 'lucide-react'
 import { Product } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 

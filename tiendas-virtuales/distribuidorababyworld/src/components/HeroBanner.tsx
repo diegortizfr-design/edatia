@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle, CreditCard } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle } from 'lucide-react'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
