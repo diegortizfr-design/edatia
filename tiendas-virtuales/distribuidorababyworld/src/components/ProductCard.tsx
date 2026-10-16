@@ -1,15 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Star, Plus } from 'lucide-react'
 import { Product } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
+import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 
 interface ProductCardProps {
   product: Product
   onAddToCart: (p: Product) => void
   onViewDetails: (p: Product) => void
+  priority?: boolean
 }
 
-export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onViewDetails, priority = false }: ProductCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+
   const fmtPrice = (val: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency', currency: 'COP', maximumFractionDigits: 0,
@@ -37,11 +41,29 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
         onClick={() => onViewDetails(product)}
         className="relative overflow-hidden aspect-square bg-slate-50 cursor-pointer select-none"
       >
+        {/* Skeleton Shimmer de carga mientras se descarga la imagen */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-slate-100 animate-pulse flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full border-2 border-slate-200 border-t-sky-400 animate-spin opacity-40" />
+          </div>
+        )}
+
         <img
-          src={product.imagen}
+          src={getOptimizedImageUrl(product.imagen, 500)}
           alt={product.nombre}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
+          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            const target = e.currentTarget
+            if (target.src !== FALLBACK_IMAGE) {
+              target.src = FALLBACK_IMAGE
+            }
+            setImageLoaded(true)
+          }}
         />
 
         {/* Top Badges */}

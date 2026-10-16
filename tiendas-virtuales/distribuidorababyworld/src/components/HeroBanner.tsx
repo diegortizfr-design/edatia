@@ -23,7 +23,13 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
 
       {/* Decoración Derecha (Mascota como marca de agua) */}
       <div className="absolute right-[-4rem] md:right-0 lg:right-10 top-0 w-48 sm:w-64 lg:w-[22rem] hidden md:block pointer-events-none drop-shadow-xl z-10 opacity-25">
-        <img src="/mascotas.png" alt="Baby World Mascotas" className="w-full h-full object-contain" />
+        <img
+          src="/mascotas-banner.png"
+          alt="Baby World Mascotas"
+          className="w-full h-full object-contain"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">

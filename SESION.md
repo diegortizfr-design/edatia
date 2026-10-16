@@ -30,6 +30,27 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 
+## Estado resuelto (sesión 8)
+
+✅ **Optimización Integral de Carga de Imágenes en Tienda Virtual (`distribuidorababyworld`):**
+  - **Diagnóstico de Rendimiento:** Se detectó que para visitantes nuevos o en modo incógnito (con caché vacía), la descarga inicial de imágenes resultaba sumamente lenta debido a que se servían archivos PNG originales sin comprimir de hasta 1.72 MB cada uno (~35 MB descargados en la primera visita).
+  - **Transformaciones Dinámicas de CDN:** Se implementó el módulo centralizado `imageOptimizer.ts` que inyecta automáticamente transformaciones en vivo a Cloudinary (`f_auto,q_auto,w_${width},c_limit`), convirtiendo los PNGs a formatos modernos ultraligeros (WebP / AVIF) y reduciendo el peso de cada imagen en un 99% (de 1.72 MB a ~14.6 KB).
+  - **Dimensionamiento Inteligente por Componente:**
+    - Tarjetas de catálogo y carrusel (`ProductCard.tsx`): 500px (~14 KB).
+    - Miniaturas de carrito lateral (`CartDrawer.tsx`): 160px (~4 KB).
+    - Detalle y Modal de producto (`ProductDetailPage.tsx` y `ProductDetailModal.tsx`): 900px para la foto principal y 160px-180px para las miniaturas de galería.
+  - **Carga Prioritaria (Above-The-Fold):**
+    - En el carrusel de recomendados (`FeaturedCarousel.tsx`) y los primeros 4 ítems del grid en `App.tsx`, se habilitó `loading="eager"` y decodificación asíncrona (`decoding="async"`), eliminando la postergación innecesaria del render visual.
+  - **Experiencia de Usuario con Skeleton Shimmer y Resiliencia:**
+    - En `ProductCard.tsx`, se añadió un placeholder animado suave tipo esqueleto durante la descarga con transición de opacidad (`fade-in`).
+    - Manejo defensivo `onError`: si alguna imagen remota falla, conmuta automáticamente a `FALLBACK_IMAGE` y desactiva el esqueleto para evitar spinners colgados.
+  - **Pre-conexión de Red y Optimización de Assets Estáticos:**
+    - En `index.html`, se agregaron directivas `preconnect` y `dns-prefetch` para `https://res.cloudinary.com` y `https://api.edatia.com`, ahorrando 150-250ms de latencia DNS/TLS previa.
+    - Se generó un `favicon.png` ligero de 35 KB (sustituyendo al uso de `mascotas.png` de 1.74 MB como favicon).
+    - Se optimizó la marca de agua decorativa del banner a `mascotas-banner.png` (700px con antialiasing bicúbico).
+  - **Compilación y Despliegue Docker:**
+    - Verificación exitosa de tipos con `tsc && vite build` y recreación del contenedor `edatia-glowxir` en producción respondiendo con HTTP/1.1 200 OK.
+
 ---
 
 ## Estado resuelto (sesión 7)
