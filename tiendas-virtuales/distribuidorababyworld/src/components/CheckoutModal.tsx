@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { 
   X, CheckCircle, Truck, ShieldCheck, MessageCircle, 
   ArrowRight, CreditCard, Smartphone, Banknote, Copy, Check, Info, Clock,
-  RefreshCw, Edit3, QrCode, Download, KeyRound
+  RefreshCw, Edit3, QrCode, Download, KeyRound, Sparkles
 } from 'lucide-react'
 import { Product } from '../data/productos'
 
@@ -20,7 +20,7 @@ interface CheckoutModalProps {
   storeSlug: string
 }
 
-type PaymentMethodType = 'contra_entrega' | 'transferencia' | 'mercadopago'
+type PaymentMethodType = 'contra_entrega' | 'transferencia' | 'mercadopago' | 'credito'
 type WalletType = 'Nequi' | 'Daviplata' | 'Bancolombia'
 
 const isLocalCoverage = (ciudad: string): boolean => {
@@ -109,6 +109,8 @@ export function CheckoutModal({
     notas: '',
   })
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('contra_entrega')
+  const [creditoProvider, setCreditoProvider] = useState<'addi' | 'sistecredito'>('addi')
+  const [cedulaCredito, setCedulaCredito] = useState('')
   const [selectedWallet, setSelectedWallet] = useState<WalletType>('Nequi')
   const [transferView, setTransferView] = useState<'qr' | 'llave'>('qr')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -192,6 +194,7 @@ export function CheckoutModal({
   const getPaymentMethodLabel = (method = paymentMethod, _wallet?: WalletType) => {
     if (method === 'contra_entrega') return 'Contra Entrega (Efectivo)'
     if (method === 'transferencia') return 'Transferencia (Bre-B / QR / Llave @eip656)'
+    if (method === 'credito') return `Crédito ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}${cedulaCredito.trim() ? ` (CC: ${cedulaCredito.trim()})` : ''}`
     return 'Mercado Pago (PSE / Tarjeta / Efecty)'
   }
 
@@ -291,14 +294,14 @@ export function CheckoutModal({
       setIsSuccess(true)
       onSuccess() // Vacía el carrito de compras
 
-      // Si es Contra Entrega, abrimos WhatsApp automáticamente de una vez
-      if (paymentMethod === 'contra_entrega') {
+      // Si es Contra Entrega o Crédito Asistido, abrimos WhatsApp automáticamente de una vez
+      if (paymentMethod === 'contra_entrega' || paymentMethod === 'credito') {
         const waUrl = buildWhatsAppUrl(
           orderNum,
           appliedSubtotal,
           appliedEnvio,
           appliedTotal,
-          'contra_entrega',
+          paymentMethod,
           cartItems
         )
         try {
@@ -347,6 +350,10 @@ export function CheckoutModal({
       }
     } else if (method === 'mercadopago') {
       msg += `\n\n💳 *Nota:* Seleccioné pago online con Mercado Pago para la orden #${ordNum}.`
+    } else if (method === 'credito') {
+      msg += `\n\n💳 *Financiación a Crédito con ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}:*\n`
+      if (cedulaCredito.trim()) msg += `*Cédula del titular:* ${cedulaCredito.trim()}\n`
+      msg += `Solicito el enlace de pago oficial de ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'} para confirmar mi crédito y procesar la orden #${ordNum}. ¡Muchas gracias!`
     } else {
       msg += `\n\n💵 *Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
     }
@@ -666,6 +673,110 @@ export function CheckoutModal({
                       </p>
                     </div>
                   </div>
+
+                  {/* Opción 4: Crédito Addi / Sistecrédito */}
+                  <div
+                    onClick={() => {
+                      setSubmitError('')
+                      setPaymentMethod('credito')
+                    }}
+                    className={`cursor-pointer p-3 rounded-2xl border transition-all flex flex-col gap-2.5 ${
+                      paymentMethod === 'credito'
+                        ? 'border-emerald-500 bg-emerald-50/40 shadow-sm ring-1 ring-emerald-400'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 p-2 rounded-xl ${
+                        paymentMethod === 'credito' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        <Sparkles size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800">Crédito Addi o Sistecrédito</span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                            Sin Tarjeta
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                          Financia tu compra a cuotas con Addi (0% interés en 3 cuotas) o a quincenas con Sistecrédito. Aprobación en minutos.
+                        </p>
+                      </div>
+                    </div>
+
+                    {paymentMethod === 'credito' && (
+                      <div className="pt-2 border-t border-emerald-100/80 space-y-3 animate-in fade-in duration-150">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            ¿Con qué entidad deseas financiar? *
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCreditoProvider('addi')
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                creditoProvider === 'addi'
+                                  ? 'bg-white border-emerald-500 ring-2 ring-emerald-200 shadow-xs'
+                                  : 'bg-white/60 border-slate-200 hover:bg-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-black text-emerald-700">Addi</span>
+                                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">0% interés</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500">Hasta 3 cuotas</p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCreditoProvider('sistecredito')
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all ${
+                                creditoProvider === 'sistecredito'
+                                  ? 'bg-white border-blue-500 ring-2 ring-blue-200 shadow-xs'
+                                  : 'bg-white/60 border-slate-200 hover:bg-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-black text-blue-700">Sistecrédito</span>
+                                <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded">Quincenas</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500">Cómodas quincenas</p>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Número de Cédula del Titular (Opcional)
+                          </label>
+                          <input
+                            type="text"
+                            value={cedulaCredito}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => setCedulaCredito(e.target.value)}
+                            placeholder="Para agilizar la aprobación de tu crédito..."
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-300"
+                          />
+                        </div>
+
+                        <div className="p-2.5 bg-white/80 rounded-xl border border-emerald-100 text-[10.5px] text-slate-600 space-y-1">
+                          <p className="font-semibold text-emerald-800">
+                            ⚡ ¿Cómo completas el pago?
+                          </p>
+                          <p className="leading-snug">
+                            Al enviar el pedido, te contactaremos por WhatsApp con el enlace oficial de <b>{creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}</b> para que apruebes el crédito desde tu teléfono en 3 minutos.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -721,6 +832,8 @@ export function CheckoutModal({
                   ? 'Confirmar Pedido y Ver Cuentas'
                   : paymentMethod === 'mercadopago'
                   ? 'Continuar al Pago con Mercado Pago'
+                  : paymentMethod === 'credito'
+                  ? `Solicitar Crédito con ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}`
                   : 'Confirmar y Enviar Pedido'}
               </span>
               <ArrowRight size={14} />
@@ -733,7 +846,23 @@ export function CheckoutModal({
           <div className="py-2 space-y-4">
             
             {/* Encabezado contextual según el método de pago */}
-            {paymentMethod === 'mercadopago' ? (
+            {paymentMethod === 'credito' ? (
+              <div className="text-center">
+                <div className="mx-auto h-14 w-14 bg-emerald-50 border-2 border-emerald-200 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm mb-3">
+                  <Sparkles size={28} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80 inline-flex items-center gap-1.5">
+                  <Clock size={12} />
+                  Solicitud de Crédito ({creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'})
+                </span>
+                <h2 className="text-xl font-black text-slate-900 mt-2">
+                  ¡Pedido Registrado, {formData.nombre}!
+                </h2>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                  Apartamos tu orden <b className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono text-xs">#{orderNumber}</b>. Te compartiremos el enlace oficial de <b>{creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}</b> a tu WhatsApp para que confirmes tu crédito en minutos.
+                </p>
+              </div>
+            ) : paymentMethod === 'mercadopago' ? (
               <div className="text-center">
                 <div className="mx-auto h-14 w-14 bg-blue-50 border-2 border-blue-200 rounded-2xl flex items-center justify-center text-[#009EE3] shadow-sm mb-3">
                   <CreditCard size={28} />
@@ -801,7 +930,7 @@ export function CheckoutModal({
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleSwitchPaymentMethod('contra_entrega')}
@@ -842,6 +971,20 @@ export function CheckoutModal({
                 >
                   <CreditCard size={15} />
                   <span className="leading-tight text-center">Mercado Pago</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchPaymentMethod('credito')}
+                  disabled={isSwitchingMethod}
+                  className={`py-2 px-1.5 rounded-xl text-[10.5px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all border cursor-pointer active:scale-95 ${
+                    paymentMethod === 'credito'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-200'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <Sparkles size={15} />
+                  <span className="leading-tight text-center">Addi / Siste</span>
                 </button>
               </div>
             </div>
@@ -1119,6 +1262,60 @@ export function CheckoutModal({
               </div>
             )}
 
+            {/* Tarjeta de CRÉDITO ADDI / SISTECRÉDITO con DESGLOSE TRANSPARENTE */}
+            {paymentMethod === 'credito' && (
+              <div className="bg-gradient-to-br from-emerald-50/90 to-sky-50/50 p-4 rounded-2xl border border-emerald-200/80 text-xs space-y-3 shadow-xs">
+                <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+                  <span className="font-extrabold text-emerald-950 text-xs flex items-center gap-1.5">
+                    <Sparkles size={15} className="text-emerald-600" />
+                    Paga a Cuotas con {creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    Sin tarjeta
+                  </span>
+                </div>
+
+                {/* Desglose transparente */}
+                <div className="bg-white/95 rounded-xl p-3 border border-emerald-100 space-y-1.5 shadow-2xs">
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Productos ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
+                    <span className="font-semibold text-slate-800">{fmtPrice(finalSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <Truck size={12} className="text-slate-400" />
+                      {isLocal ? 'Costo de Envío a Domicilio:' : 'Envío por Transportadora:'}
+                    </span>
+                    <span className={isLocal ? (finalEnvio === 0 ? "text-emerald-600 font-bold" : "font-semibold text-slate-800") : "text-amber-800 font-bold"}>
+                      {isLocal 
+                        ? (finalEnvio === 0 ? "¡Gratis! 🎉" : fmtPrice(finalEnvio))
+                        : "Al Cobro al recibir 📦"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-100 text-xs">
+                    <span>Monto Total a Financiar:</span>
+                    <span className="text-emerald-700 text-sm font-black">{fmtPrice(finalTotal)}</span>
+                  </div>
+                  {creditoProvider === 'addi' && finalTotal >= 50000 && (
+                    <p className="text-[10.5px] text-emerald-700 font-bold pt-1 border-t border-dashed border-emerald-100 text-right">
+                      Aprox. 3 cuotas de {fmtPrice(Math.round(finalTotal / 3))} sin interés*
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-[11px] text-slate-600 space-y-1 pt-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1">
+                    <Info size={12} className="text-emerald-600" /> Siguiente paso para tu despacho:
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-0.5 text-slate-600 text-[10.5px]">
+                    <li>Toca el botón verde abajo para abrir nuestro WhatsApp oficial.</li>
+                    <li>Te enviaremos el link seguro de <b>{creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}</b> para aprobar tu crédito en 3 minutos con tu cédula.</li>
+                    <li>Una vez aprobado el crédito por la entidad, despachamos tu pedido inmediatamente.</li>
+                  </ol>
+                </div>
+              </div>
+            )}
+
             {/* Botones de acción contextuales */}
             <div className="space-y-2 pt-1">
               <button
@@ -1136,6 +1333,8 @@ export function CheckoutModal({
                       ? 'Enviar Comprobante por WhatsApp'
                       : paymentMethod === 'mercadopago'
                       ? (checkoutUrl ? '¿Dudas con tu pago? Escríbenos' : 'Solicitar Enlace de Pago por WhatsApp')
+                      : paymentMethod === 'credito'
+                      ? `Abrir WhatsApp para Validación (${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'})`
                       : 'Abrir WhatsApp para Coordinar Entrega'}
                   </span>
                 </div>
