@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, ShieldCheck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, Sparkles, Tag, PackageCheck
+  ChevronRight, PackageCheck
 } from 'lucide-react'
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
