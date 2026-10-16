@@ -1,6 +1,7 @@
 import React from 'react'
 import { X, Trash2, Plus, Minus, ShoppingBag, MessageCircle, ArrowRight, Truck } from 'lucide-react'
 import { Product } from '../data/productos'
+import { getOptimizedImageUrl } from '../lib/imageOptimizer'
 
 export interface CartItem {
   product: Product
@@ -128,9 +129,11 @@ export function CartDrawer({
                   className="flex gap-3 p-3 bg-slate-50/80 border border-slate-100 rounded-2xl relative group"
                 >
                   <img
-                    src={item.product.imagen}
+                    src={getOptimizedImageUrl(item.product.imagen, 160)}
                     alt={item.product.nombre}
                     className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-100 flex-shrink-0"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="flex-1 flex flex-col justify-between min-w-0">
                     <div className="pr-6">

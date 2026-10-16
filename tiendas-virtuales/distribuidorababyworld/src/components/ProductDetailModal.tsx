@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus } from 'lucide-react'
 import { Product } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
+import { getOptimizedImageUrl } from '../lib/imageOptimizer'
 
 interface ProductDetailModalProps {
   product: Product | null
@@ -61,9 +62,11 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
         <div className="w-full sm:w-1/2 flex flex-col gap-3 flex-shrink-0">
           <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden relative shadow-inner">
             <img
-              src={currentImage}
+              src={getOptimizedImageUrl(currentImage, 900)}
               alt={product.nombre}
               className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
             />
             {product.etapa && (
               <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
@@ -83,7 +86,13 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                     currentImage === img ? 'border-sky-500 ring-2 ring-sky-200' : 'border-slate-100 hover:border-slate-300'
                   }`}
                 >
-                  <img src={img} alt={`${product.nombre} - ${idx}`} className="w-full h-full object-cover" />
+                  <img
+                    src={getOptimizedImageUrl(img, 160)}
+                    alt={`${product.nombre} - ${idx}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </button>
               ))}
             </div>

@@ -7,6 +7,7 @@ import {
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
+import { getOptimizedImageUrl } from '../lib/imageOptimizer'
 import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
@@ -127,9 +128,11 @@ export function ProductDetailPage({
             <div className="relative space-y-4">
               <div className="aspect-square bg-slate-50 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 shadow-inner flex items-center justify-center relative group">
                 <img
-                  src={currentImage}
+                  src={getOptimizedImageUrl(currentImage, 900)}
                   alt={product.nombre}
                   className="w-full h-full object-cover sm:object-contain group-hover:scale-105 transition-transform duration-500"
+                  loading="eager"
+                  decoding="async"
                 />
 
                 {/* Floating Badges */}
@@ -160,7 +163,13 @@ export function ProductDetailPage({
                           : 'border-slate-100 hover:border-slate-300'
                       }`}
                     >
-                      <img src={img} alt={`${product.nombre} view ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img
+                        src={getOptimizedImageUrl(img, 180)}
+                        alt={`${product.nombre} view ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </button>
                   ))}
                 </div>
