@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-11 (sesión 7)
+> Última actualización: 2026-10-15 (sesión 8)
 
 ---
 
@@ -404,3 +404,34 @@ VITE_API_URL=https://api.edatia.com
 - Se creó el endpoint `DELETE /configuracion/archivo/cloudinary` en `configuracion-archivo.controller.ts` para el borrado físico de imágenes, evitando almacenamiento inútil.
 - Se optimizó la carga de imágenes (`api.ts`) inyectando automáticamente parámetros de transformación de Cloudinary (`q_auto,f_auto,c_limit,w_1200`).
 - Se actualizó `productos.service.ts` para que, al borrar un producto del inventario, se eliminen automáticamente sus respectivas fotos en Cloudinary.
+
+## Sesión 2026-10-15 - Integración BNPL (Addi y Sistecrédito) para Baby World
+
+**Frontend (Tienda Virtual Distribuidora Baby World):**
+- **Componente `BnplCreditSimulator.tsx`:**
+  - Simulador de cuotas dinámico para Addi (3 cuotas 0% interés para montos ≥ $50.000 COP) y Sistecrédito (quincenas cómodas).
+  - Modal interactivo *"¿Cómo funciona?"* con guía paso a paso para aprobación rápida con cédula y WhatsApp.
+  - Modo compacto integrado en las tarjetas de producto del catálogo (`ProductCard.tsx`).
+- **Logos Oficiales:**
+  - Se añadieron y optimizaron los logos oficiales de Addi (`/logo-addi.png`) y Sistecrédito (`/logo-sistecredito.png`) en `public/`.
+  - Integrados en el simulador, tarjetas, aviso de carrito, opciones de checkout y footer.
+- **Ficha de Producto (`ProductDetailPage.tsx` y `ProductDetailModal.tsx`):**
+  - Simulador de cuotas insertado estratégicamente debajo del precio principal.
+- **Top Announcement Bar & Hero Banner (`App.tsx`, `HeroBanner.tsx`):**
+  - Cintillo superior promocionando el crédito sin tarjeta tanto en la tienda virtual como en el local de Candelaria.
+  - Trust badge actualizado en el Hero con los logotipos oficiales.
+- **Carrito de Compras (`CartDrawer.tsx`):**
+  - Recordatorio antes del checkout con los logos oficiales para incentivar la finalización de compra.
+- **Checkout Modal (`CheckoutModal.tsx`):**
+  - Método de pago 4: *"Crédito Addi o Sistecrédito (Sin tarjeta)"*.
+  - Selector de entidad (`Addi` vs `Sistecrédito`), campo opcional para número de cédula del titular, mensaje prearmado a WhatsApp y pantalla de confirmación contextual con desglose de cuotas.
+- **Footer (`App.tsx`):**
+  - Sección de sellos oficiales de medios de pago y financiación autorizados con logos oficiales.
+
+**Backend (`digital.service.ts`):**
+- Soporte para el código de pago `'credito'` en `crearPedidoWeb` y `cambiarMetodoPagoWeb`.
+- Asignación de condición de pago `CREDITO_PENDIENTE` en `pedidoVenta`.
+
+**Infraestructura (Docker):**
+- Reconstrucción de imágenes `edatia-glowxir` y `edatia-backend`.
+- Despliegue en caliente (`docker compose up -d glowxir api`) y validación HTTP 200 en puerto local 3005 y 4000.
