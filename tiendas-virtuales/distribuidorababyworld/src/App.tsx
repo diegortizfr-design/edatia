@@ -240,6 +240,18 @@ export function App() {
       {/* Toast notifications */}
       <Toaster position="bottom-right" toastOptions={{ className: 'text-xs font-bold' }} />
 
+      {/* Top BNPL Announcement Bar */}
+      <div className="bg-gradient-to-r from-emerald-600 via-sky-600 to-indigo-600 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center font-bold tracking-wide shadow-xs relative z-40">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+            ✨ Nuevo
+          </span>
+          <span>Paga a cuotas sin tarjeta con <b>Addi</b> y <b>Sistecrédito</b> en tienda virtual y local físico</span>
+          <span className="hidden md:inline text-white/70">•</span>
+          <span className="hidden md:inline text-white/90">Aprobación en 3 minutos</span>
+        </div>
+      </div>
+
       {/* Navigation Bar */}
       <Navbar
         cartCount={totalCartCount}
@@ -434,6 +446,32 @@ export function App() {
                   <span>Pago Contra Entrega disponible</span>
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Medios de Pago y Financiación */}
+          <div className="py-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Medios de Pago y Financiación:
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                <span>Addi (3 cuotas 0% interés)</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[65px] object-contain" />
+                <span>(Quincenas)</span>
+              </span>
+              <span className="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-lg">
+                Contra Entrega
+              </span>
+              <span className="bg-sky-50 text-sky-700 font-bold px-2 py-1 rounded-lg border border-sky-100">
+                Bre-B / Transferencia
+              </span>
+              <span className="bg-blue-50 text-[#009EE3] font-bold px-2 py-1 rounded-lg border border-blue-100">
+                Mercado Pago
+              </span>
             </div>
           </div>
 

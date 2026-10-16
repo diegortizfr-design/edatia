@@ -1,6 +1,7 @@
 import React from 'react'
 import { Star, Plus, Eye } from 'lucide-react'
 import { Product } from '../data/productos'
+import { BnplCreditSimulator } from './BnplCreditSimulator'
 
 interface ProductCardProps {
   product: Product
@@ -99,6 +100,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails }: ProductCard
             <span className="font-extrabold text-slate-900 text-xs sm:text-base truncate block">
               {fmtPrice(product.precio)}
             </span>
+            <BnplCreditSimulator price={product.precio} compact className="mt-0.5" />
           </div>
 
           <button

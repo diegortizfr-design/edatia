@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus } from 'lucide-react'
 import { Product } from '../data/productos'
+import { BnplCreditSimulator } from './BnplCreditSimulator'
 
 interface ProductDetailModalProps {
   product: Product | null
@@ -122,6 +123,9 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                   {fmtPrice(product.precio)}
                 </span>
               </div>
+
+              {/* Simulador de Cuotas Addi y Sistecrédito */}
+              <BnplCreditSimulator price={product.precio} className="mt-2" />
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">

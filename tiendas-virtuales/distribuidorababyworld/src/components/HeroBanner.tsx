@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle, CreditCard } from 'lucide-react'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
@@ -66,17 +66,24 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-[11px] sm:text-xs text-slate-500 font-medium pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-[11px] sm:text-xs text-slate-600 font-medium pt-2">
             <div className="flex items-center gap-1.5">
-              <Truck size={15} className="text-sky-400" />
+              <Truck size={15} className="text-sky-500" />
               <span>Envíos rápidos</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Heart size={15} className="text-pink-400" />
               <span>Paga contra entrega</span>
             </div>
+            <div className="flex items-center gap-1.5 bg-white text-slate-800 px-3 py-1 rounded-full border border-slate-200 shadow-2xs font-extrabold">
+              <div className="flex items-center gap-1">
+                <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[45px] object-contain" />
+              </div>
+              <span>Crédito Addi & Sistecrédito</span>
+            </div>
             <div className="flex items-center gap-1.5">
-              <ShieldCheck size={15} className="text-emerald-400" />
+              <ShieldCheck size={15} className="text-emerald-500" />
               <span>100% Garantizado</span>
             </div>
           </div>

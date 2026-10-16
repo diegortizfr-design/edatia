@@ -317,9 +317,9 @@ export class DigitalService {
     const direccion = this.sanitizeText(dto?.direccion, 400);
     const email = this.sanitizeText(dto?.email, 120);
     const medioPago = this.sanitizeText(dto?.medioPago, 80);
-    const metodoCodigo = ['contra_entrega', 'transferencia', 'mercadopago'].includes(dto?.metodoPagoCodigo)
+    const metodoCodigo = ['contra_entrega', 'transferencia', 'mercadopago', 'credito'].includes(dto?.metodoPagoCodigo)
       ? dto.metodoPagoCodigo
-      : (medioPago.includes('Contra Entrega') ? 'contra_entrega' : 'transferencia');
+      : (medioPago.includes('Contra Entrega') ? 'contra_entrega' : (medioPago.toLowerCase().includes('crédito') || medioPago.toLowerCase().includes('credito') ? 'credito' : 'transferencia'));
 
     if (!nombre || telefono.replace(/\D/g, '').length < 7 || !direccion || !ciudad) {
       throw new BadRequestException('Datos de entrega incompletos');
@@ -440,7 +440,11 @@ export class DigitalService {
     const notasPedido = `Pedido recibido desde tienda virtual. Ciudad: ${ciudad}. Dirección: ${direccion}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Tipo de Envío: ${tipoEnvioTexto}.`;
       const condicionesPago = metodoCodigo === 'contra_entrega'
         ? 'CONTRA_ENTREGA'
-        : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
+        : metodoCodigo === 'mercadopago'
+        ? 'MERCADOPAGO_PENDIENTE'
+        : metodoCodigo === 'credito'
+        ? 'CREDITO_PENDIENTE'
+        : 'ANTICIPADO';
 
       if (order) {
         // Reutilizar y actualizar pedido existente
@@ -681,7 +685,11 @@ export class DigitalService {
 
     const condicionesPago = metodoCodigo === 'contra_entrega'
       ? 'CONTRA_ENTREGA'
-      : metodoCodigo === 'mercadopago' ? 'MERCADOPAGO_PENDIENTE' : 'ANTICIPADO';
+      : metodoCodigo === 'mercadopago'
+      ? 'MERCADOPAGO_PENDIENTE'
+      : metodoCodigo === 'credito'
+      ? 'CREDITO_PENDIENTE'
+      : 'ANTICIPADO';
 
     const notaCambio = `[Forma de pago cambiada a: ${medioPago}]`;
     const notasActuales = pedido.notas || '';

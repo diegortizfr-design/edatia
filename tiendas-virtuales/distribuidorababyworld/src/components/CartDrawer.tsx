@@ -204,6 +204,20 @@ export function CartDrawer({
                 </div>
               </div>
 
+              {/* BNPL Credit Reminder */}
+              <div className="p-2.5 bg-gradient-to-r from-blue-50/60 via-white to-emerald-50/60 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2 text-[11px] shadow-2xs">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <div className="flex items-center gap-1">
+                    <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                    <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[50px] object-contain" />
+                  </div>
+                  <span>Paga a cuotas sin tarjeta</span>
+                </div>
+                <span className="text-[10px] font-extrabold text-[#4766fc] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                  Aprobación en 3 min
+                </span>
+              </div>
+
               {/* Action Buttons */}
               <div className="space-y-2">
                 <button

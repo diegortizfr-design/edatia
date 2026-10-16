@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
+import { BnplCreditSimulator } from './BnplCreditSimulator'
 import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
@@ -206,6 +207,9 @@ export function ProductDetailPage({
                   </span>
                   <span className="text-xs text-slate-400 font-bold uppercase">COP</span>
                 </div>
+
+                {/* Simulador de Cuotas Addi y Sistecrédito */}
+                <BnplCreditSimulator price={product.precio} className="my-2" />
 
                 {/* Description */}
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
