@@ -26,15 +26,14 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
   if (compact) {
     return (
       <div className={`flex items-center gap-1.5 text-[10px] text-slate-500 font-medium ${className}`}>
-        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Addi
+        <span className="inline-flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
+          <img src="/logo-addi.png" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain" />
+          <span className="font-extrabold text-[#4766fc]">Addi</span>
         </span>
         <span className="text-slate-300">•</span>
-        <span className="inline-flex items-center bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-100">
-          Sistecrédito
+        <span className="inline-flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
+          <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[48px] object-contain" />
         </span>
-        <span className="hidden sm:inline text-slate-400">a cuotas</span>
       </div>
     )
   }
@@ -42,10 +41,10 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
   return (
     <>
       {/* Caja Principal del Simulador */}
-      <div className={`p-3 sm:p-3.5 bg-gradient-to-r from-emerald-50/60 via-white to-sky-50/60 rounded-2xl border border-emerald-100/80 shadow-sm transition-all hover:border-emerald-200 ${className}`}>
+      <div className={`p-3 sm:p-3.5 bg-gradient-to-r from-blue-50/50 via-white to-emerald-50/50 rounded-2xl border border-slate-200/80 shadow-sm transition-all hover:border-slate-300 ${className}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white shadow-xs">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-900 text-white shadow-xs">
               <Sparkles size={11} />
             </span>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-800">
@@ -66,17 +65,19 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
         {/* Opciones de financiación */}
         <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
           {/* Opción Addi */}
-          <div className="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-              addi
-            </div>
+          <div className="bg-white/95 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
+            <img 
+              src="/logo-addi.png" 
+              alt="Addi" 
+              className="w-9 h-9 rounded-full object-contain shrink-0 shadow-2xs" 
+            />
             <div className="min-w-0 flex-1 leading-tight">
               {price >= minAddi ? (
                 <>
                   <p className="text-[11px] text-slate-600">
                     Hasta <span className="font-extrabold text-slate-900">3 cuotas de {fmtPrice(cuotaAddi)}</span>
                   </p>
-                  <p className="text-[10px] text-emerald-600 font-bold">
+                  <p className="text-[10px] text-[#4766fc] font-extrabold">
                     0% de interés*
                   </p>
                 </>
@@ -94,15 +95,19 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
           </div>
 
           {/* Opción Sistecrédito */}
-          <div className="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-[10px] tracking-tight shrink-0 shadow-xs">
-              SISTE
+          <div className="bg-white/95 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
+            <div className="h-9 w-20 bg-white rounded-lg border border-slate-100 flex items-center justify-center p-1 shrink-0 shadow-2xs">
+              <img 
+                src="/logo-sistecredito.png" 
+                alt="Sistecrédito" 
+                className="w-full h-full object-contain" 
+              />
             </div>
             <div className="min-w-0 flex-1 leading-tight">
               <p className="text-[11px] text-slate-600">
                 Paga a <span className="font-extrabold text-slate-900">quincenas cómodas</span>
               </p>
-              <p className="text-[10px] text-blue-600 font-bold">
+              <p className="text-[10px] text-emerald-600 font-extrabold">
                 {price >= 30000 ? `Desde aprox. ${fmtPrice(cuotaQuincenalAprox)}/quincena` : 'Aprobación inmediata'}
               </p>
             </div>
@@ -162,13 +167,19 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
               </div>
 
               {/* Paso 2 */}
-              <div className="flex items-start gap-3 p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100">
-                <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+              <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="w-6 h-6 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                   2
                 </div>
-                <div className="text-xs leading-tight">
-                  <p className="font-bold text-slate-800">Elige Addi o Sistecrédito</p>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                <div className="text-xs leading-tight flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-bold text-slate-800">Elige Addi o Sistecrédito</p>
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                      <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 object-contain" />
+                    </div>
+                  </div>
+                  <p className="text-slate-500 text-[11px] leading-snug">
                     En la forma de pago escoge <b>Crédito Addi / Sistecrédito</b>. Te enviaremos el enlace oficial a tu WhatsApp o lo validamos en 2 minutos.
                   </p>
                 </div>

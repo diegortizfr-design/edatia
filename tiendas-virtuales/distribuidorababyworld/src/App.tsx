@@ -455,13 +455,13 @@ export function App() {
               Medios de Pago y Financiación:
             </span>
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 font-extrabold px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Addi (3 cuotas 0% interés)
+              <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                <span>Addi (3 cuotas 0% interés)</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 font-extrabold px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                Sistecrédito (Quincenas)
+              <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[65px] object-contain" />
+                <span>(Quincenas)</span>
               </span>
               <span className="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-lg">
                 Contra Entrega

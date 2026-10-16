@@ -694,7 +694,13 @@ export function CheckoutModal({
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">Crédito Addi o Sistecrédito</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-800">Crédito Addi o Sistecrédito</span>
+                            <div className="flex items-center gap-1.5">
+                              <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                              <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[45px] object-contain" />
+                            </div>
+                          </div>
                           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
                             Sin Tarjeta
                           </span>
@@ -720,13 +726,16 @@ export function CheckoutModal({
                               }}
                               className={`p-2.5 rounded-xl border text-left transition-all ${
                                 creditoProvider === 'addi'
-                                  ? 'bg-white border-emerald-500 ring-2 ring-emerald-200 shadow-xs'
+                                  ? 'bg-white border-[#4766fc] ring-2 ring-blue-200 shadow-xs'
                                   : 'bg-white/60 border-slate-200 hover:bg-white'
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-xs font-black text-emerald-700">Addi</span>
-                                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">0% interés</span>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                  <img src="/logo-addi.png" alt="Addi" className="w-5 h-5 rounded-full object-contain" />
+                                  <span className="text-xs font-extrabold text-[#4766fc]">Addi</span>
+                                </div>
+                                <span className="text-[9px] font-bold bg-blue-100 text-[#4766fc] px-1.5 py-0.2 rounded">0% interés</span>
                               </div>
                               <p className="text-[10px] text-slate-500">Hasta 3 cuotas</p>
                             </button>
@@ -739,13 +748,13 @@ export function CheckoutModal({
                               }}
                               className={`p-2.5 rounded-xl border text-left transition-all ${
                                 creditoProvider === 'sistecredito'
-                                  ? 'bg-white border-blue-500 ring-2 ring-blue-200 shadow-xs'
+                                  ? 'bg-white border-emerald-500 ring-2 ring-emerald-200 shadow-xs'
                                   : 'bg-white/60 border-slate-200 hover:bg-white'
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-xs font-black text-blue-700">Sistecrédito</span>
-                                <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded">Quincenas</span>
+                              <div className="flex items-center justify-between mb-1">
+                                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-4 max-w-[85px] object-contain" />
+                                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">Quincenas</span>
                               </div>
                               <p className="text-[10px] text-slate-500">Cómodas quincenas</p>
                             </button>
@@ -1266,10 +1275,16 @@ export function CheckoutModal({
             {paymentMethod === 'credito' && (
               <div className="bg-gradient-to-br from-emerald-50/90 to-sky-50/50 p-4 rounded-2xl border border-emerald-200/80 text-xs space-y-3 shadow-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
-                  <span className="font-extrabold text-emerald-950 text-xs flex items-center gap-1.5">
-                    <Sparkles size={15} className="text-emerald-600" />
-                    Paga a Cuotas con {creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={creditoProvider === 'addi' ? '/logo-addi.png' : '/logo-sistecredito.png'} 
+                      alt={creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'} 
+                      className={creditoProvider === 'addi' ? 'w-6 h-6 rounded-full object-contain' : 'h-4 max-w-[85px] object-contain'} 
+                    />
+                    <span className="font-extrabold text-slate-900 text-xs">
+                      Paga a Cuotas con {creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}
+                    </span>
+                  </div>
                   <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                     Sin tarjeta
                   </span>

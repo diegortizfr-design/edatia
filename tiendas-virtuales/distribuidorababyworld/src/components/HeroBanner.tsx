@@ -75,8 +75,11 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               <Heart size={15} className="text-pink-400" />
               <span>Paga contra entrega</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full border border-emerald-200 shadow-2xs font-bold">
-              <CreditCard size={13} className="text-emerald-600" />
+            <div className="flex items-center gap-1.5 bg-white text-slate-800 px-3 py-1 rounded-full border border-slate-200 shadow-2xs font-extrabold">
+              <div className="flex items-center gap-1">
+                <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[45px] object-contain" />
+              </div>
               <span>Crédito Addi & Sistecrédito</span>
             </div>
             <div className="flex items-center gap-1.5">
