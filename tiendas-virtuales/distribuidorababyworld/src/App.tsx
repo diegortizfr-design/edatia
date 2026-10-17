@@ -12,7 +12,7 @@ import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
-import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO } from './data/productos'
+import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -43,7 +43,7 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
   const [isLoading, setIsLoading] = useState(true)
 
   // Reset subcategory when switching main category
@@ -120,25 +120,38 @@ export function App() {
               precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : undefined,
               categoria: cat,
               subcategoria: subcat,
-              genero: 'Unisex',
+              genero: p.metadataWeb?.genero || 'Unisex',
               imagen: imagenesMapeadas[0],
               imagenes: imagenesMapeadas,
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
               stock: p.stock || 30,
               esDestacado: !!p.esDestacado,
-              detalles: [
-                "100% Calidad y seguridad comprobada",
-                "Hipoalergénico y recomendado para bebés",
-                "Despacho y entrega rápida garantizada"
-              ]
+              detalles: Array.isArray(p.metadataWeb?.detalles) && p.metadataWeb.detalles.length > 0
+                ? p.metadataWeb.detalles
+                : [
+                  "100% Calidad y seguridad comprobada",
+                  "Hipoalergénico y recomendado para bebés",
+                  "Despacho y entrega rápida garantizada"
+                ],
+              especificaciones: {
+                ...(p.metadataWeb?.tallas ? { 'Tallas': Array.isArray(p.metadataWeb.tallas) ? p.metadataWeb.tallas.join(', ') : p.metadataWeb.tallas } : {}),
+                ...(p.metadataWeb?.tipoCierre ? { 'Tipo de Cierre': p.metadataWeb.tipoCierre } : {}),
+                ...(p.metadataWeb?.material ? { 'Material': p.metadataWeb.material } : {}),
+                ...(p.sku ? { 'SKU': p.sku } : {})
+              }
             }
           })
           setProducts(mapped)
+        } else if (PRODUCTOS_BABY_WORLD.length > 0) {
+          setProducts(PRODUCTOS_BABY_WORLD)
         }
       })
       .catch(err => {
         console.error('Error cargando catálogo desde el backend:', err.message)
+        if (PRODUCTOS_BABY_WORLD.length > 0) {
+          setProducts(PRODUCTOS_BABY_WORLD)
+        }
       })
       .finally(() => {
         setIsLoading(false)

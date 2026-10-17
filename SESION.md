@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-15 (sesión 8)
+> Última actualización: 2026-10-16 (sesión 9)
 
 ---
 
@@ -29,6 +29,24 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+## Estado resuelto (sesión 9)
+
+✅ **Pipeline Automatizado de Calzado con IA (Gemini Flash), Cloudinary y PostgreSQL:**
+  - **Procesamiento Multimodal y Clasificación de 39 Productos:**
+    - Se procesaron las 90 imágenes de la carpeta `catalogo/zapatos/`, separando limpiamente **27 modelos de subcarpetas** con múltiples ángulos y **12 modelos individuales de la raíz** con 1 foto única.
+    - Gemini Flash Lite generó nombres comerciales, descripciones cortas y persuasivas, rangos de tallas sugeridas, tipos de cierre (*Velcro, Cordón, Elástico*), materiales y viñetas técnicas.
+  - **Alojamiento y Estructura en Cloudinary:**
+    - Subida automática bajo `distribuidorababyworld/zapatos/` con nombrado semántico (`SAN-xxx`, `ZDP-xxx`, `ZCS-xxx`, `BOT-xxx`).
+  - **Integración en Base de Datos y Estrategia Prueba vs. Producción:**
+    - En pruebas (`edatia-db`): 39 productos insertados en la categoría *Calzado* con `publicadoWeb = true` para visualización inmediata.
+    - Para producción: se generó `backend/scripts/importar_zapatos_produccion.sql` con `publicadoWeb = false`, permitiendo cargar los 39 productos al inventario del ERP Edatia ocultos de la web hasta ajustar precios reales.
+  - **Corrección de Codificación UTF-8:**
+    - Se resolvió el problema de caracteres corruptos (`??`) en Windows PowerShell mediante transferencia binaria directa con `docker compose cp` y ejecución con `psql -f`.
+  - **Despliegue y UX de la Tienda Virtual (`edatia-glowxir`):**
+    - Mapeo dinámico en `App.tsx` para renderizar atributos reales de calzado (`metadataWeb`) y recompilación exitosa de la SPA con Vite y Caddy.
+
+---
 
 ## Estado resuelto (sesión 8)
 
