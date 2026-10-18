@@ -12,7 +12,7 @@ BEGIN
   -- 1. Obtener ID de la empresa vinculada a la tienda distribuidorababyworld (o fallback a primera empresa activa)
   SELECT "empresaId" INTO v_empresa_id FROM "ConfiguracionTienda" WHERE "slugTienda" = 'distribuidorababyworld' LIMIT 1;
   IF v_empresa_id IS NULL THEN
-    SELECT id INTO v_empresa_id FROM "Empresa" WHERE activo = true LIMIT 1;
+    SELECT id INTO v_empresa_id FROM "Empresa" LIMIT 1;
   END IF;
 
   -- 2. Asegurar que exista la categoría 'Calzado'

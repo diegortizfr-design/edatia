@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-16 (sesión 9)
+> Última actualización: 2026-10-18 (sesión 10)
 
 ---
 
@@ -29,6 +29,25 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+
+## Estado resuelto (sesión 10)
+
+✅ **Despliegue y Blindaje de Catálogo de Calzado en Producción:**
+  - **Ejecución y Carga en Base de Datos PostgreSQL (`edatia_erp`):**
+    - Se ejecutó el script `backend/scripts/importar_zapatos_produccion.sql`, asegurando la categoría *Calzado* e importando limpiamente los **39 productos de calzado** con sus 90 fotos alojadas en Cloudinary (`distribuidorababyworld/zapatos/`).
+    - Todos los 39 productos se cargaron con `publicadoWeb = false` y `esDestacado = false`, integrándose de inmediato al inventario del ERP Edatia para control interno de bodega, sin exposición pública en la tienda virtual hasta definir precios reales.
+    - Se garantizó transferencia binaria directa con `docker compose cp` y ejecución con `psql -f`, preservando al 100% la codificación UTF-8 en nombres, descripciones y `metadataWeb` (tallas, tipos de cierre y materiales).
+    - Se corrigió la consulta fallback de empresa en `generar_sql_importacion.js` e `importar_zapatos_produccion.sql` (eliminando referencia a columna inexistente `activo` en la tabla `Empresa`).
+  - **Blindaje y Dinamismo de la Tienda Virtual (`distribuidorababyworld`):**
+    - **Protección contra filtración de precios provisionales:** Se vació el array de fallback estático `PRODUCTOS_BABY_WORLD = []` en `productos.ts` y se inicializó el estado `products` en `[]` en `App.tsx` para evitar que ningún zapato con precio preliminar de prueba ($55.000) se visualice en la web durante la carga o ante caídas de red.
+    - **Categoría Calzado Dinámica:** En `Navbar.tsx` y `App.tsx`, se implementó la propiedad `categories` calculada dinámicamente (`availableCategories`). La pestaña **"Calzado 👟"** permanece oculta mientras la tienda no tenga productos publicados en dicha categoría, evitando mostrar una sección vacía a los clientes.
+    - **Activación automática desde el ERP:** En cuanto el administrador actualice los precios reales en el ERP (`erp.edatia.com`) y active el switch `publicadoWeb = true`, el producto y la categoría **"Calzado 👟"** aparecerán automáticamente en la tienda virtual sin requerir nuevos despliegues de código.
+  - **Compilación y Despliegue Docker:**
+    - Reducción del bundle JS en ~56 KB tras retirar mocks embebidos (`vite build` exitoso).
+    - Reconstrucción de `edatia-glowxir` con `docker compose build --no-cache glowxir` y despliegue en caliente (`docker compose up -d glowxir`).
+    - Validación de respuestas `HTTP/2 200 OK` tanto en la tienda virtual (`https://distribuidorababyworld.com`) como en la API pública (`https://api.edatia.com`), verificando que solo 110 productos activos se entregan al público y 39 permanecen seguros en el inventario.
+
+---
 
 ## Estado resuelto (sesión 9)
 

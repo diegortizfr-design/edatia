@@ -30,7 +30,7 @@ function generarSql(publicadoWeb, nombreArchivo) {
   sql += `  -- 1. Obtener ID de la empresa vinculada a la tienda distribuidorababyworld (o fallback a primera empresa activa)\n`;
   sql += `  SELECT "empresaId" INTO v_empresa_id FROM "ConfiguracionTienda" WHERE "slugTienda" = 'distribuidorababyworld' LIMIT 1;\n`;
   sql += `  IF v_empresa_id IS NULL THEN\n`;
-  sql += `    SELECT id INTO v_empresa_id FROM "Empresa" WHERE activo = true LIMIT 1;\n`;
+  sql += `    SELECT id INTO v_empresa_id FROM "Empresa" LIMIT 1;\n`;
   sql += `  END IF;\n\n`;
 
   sql += `  -- 2. Asegurar que exista la categoría 'Calzado'\n`;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2, Filter } from 'lucide-react'
 import { Navbar } from './components/Navbar'
@@ -43,7 +43,7 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
 
-  const [products, setProducts] = useState<Product[]>(PRODUCTOS_BABY_WORLD)
+  const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Reset subcategory when switching main category
@@ -248,6 +248,13 @@ export function App() {
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
   const isCareSection = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
 
+  const availableCategories = useMemo(() => {
+    const hasCalzado = products.some(p => p.categoria === 'Calzado')
+    return hasCalzado
+      ? CATEGORIAS_PRODUCTOS
+      : CATEGORIAS_PRODUCTOS.filter(c => c !== 'Calzado')
+  }, [products])
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 pb-20 md:pb-0">
       {/* Toast notifications */}
@@ -273,6 +280,7 @@ export function App() {
         setActiveCategory={handleCategorySelect}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        categories={availableCategories}
       />
 
       {/* If a product is selected, display the full Dedicated Product View Page */}

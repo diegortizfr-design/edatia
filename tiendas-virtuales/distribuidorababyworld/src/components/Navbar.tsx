@@ -10,6 +10,7 @@ interface NavbarProps {
   setActiveCategory: (cat: string) => void
   searchQuery: string
   setSearchQuery: (query: string) => void
+  categories?: readonly string[]
 }
 
 export function Navbar({
@@ -19,6 +20,7 @@ export function Navbar({
   setActiveCategory,
   searchQuery,
   setSearchQuery,
+  categories = CATEGORIAS_PRODUCTOS,
 }: NavbarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
@@ -26,6 +28,7 @@ export function Navbar({
     switch (cat) {
       case 'Pañales y Cuidado':
       case 'Pañalera': return '🍼'
+      case 'Calzado': return '👟'
       case 'Juguetería': return '🧸'
       case 'Variedades': return '🎀'
       case 'Ropa': return '👕'
@@ -154,7 +157,7 @@ export function Navbar({
 
         {/* Horizontal Category Filter Pills (Mobile Swipe) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2.5 pt-0.5 no-scrollbar scroll-smooth">
-          {CATEGORIAS_PRODUCTOS.map((cat) => {
+          {categories.map((cat) => {
             const isActive = activeCategory === cat
             return (
               <button
