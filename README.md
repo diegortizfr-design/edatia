@@ -6,6 +6,7 @@ Este proyecto es la versión SaaS moderna y escalable de Edatia ERP, estructurad
 - `/backend`: API REST construida con **NestJS**, **TypeScript** y **Prisma ORM**.
 - `/frontend`: SPA construida con **React**, **Vite** y **shadcn/ui**, servida por **Caddy**.
 - `/tiendas-virtuales/distribuidorababyworld`: Storefront de e-commerce (Headless Commerce) conectado en tiempo real al ERP (servicio docker `glowxir`).
+- `/tiendas-virtuales/prestamos`: Plataforma SaaS multitenant para control de préstamos, cobranza de cartera, amortizaciones y rutas diarias (servicio docker `edatia-prestamos`).
 - `/traefik`: Configuración del proxy inverso y almacenamiento de certificados SSL.
 - `docker-compose.yml`: Orquestador de todos los servicios.
 
