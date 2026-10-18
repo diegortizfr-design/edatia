@@ -474,3 +474,160 @@ export const getLoans = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(500).json({ error: 'Error al cargar la lista de préstamos.' });
   }
 };
+
+// Update an existing loan (Allowed only if no payments have been registered yet)
+export const updateLoan = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const { id } = req.params;
+  const { principal, interestRate, paymentFrequency, installments, startDate } = req.body;
+
+  if (!principal || !interestRate || !paymentFrequency || !installments) {
+    return res.status(400).json({ error: 'Monto, interés, frecuencia y cuotas son requeridos.' });
+  }
+
+  const p = parseFloat(principal);
+  const r = parseFloat(interestRate);
+  const inst = parseInt(installments);
+
+  if (p <= 0 || r < 0 || inst <= 0) {
+    return res.status(400).json({ error: 'Valores numéricos inválidos para el crédito.' });
+  }
+
+  try {
+    const loan = await prisma.loan.findFirst({
+      where: { id, tenantId },
+      include: {
+        payments: true
+      }
+    });
+
+    if (!loan) {
+      return res.status(404).json({ error: 'Préstamo no encontrado o no pertenece a esta empresa.' });
+    }
+
+    if (loan.status === 'RENEWED' || loan.status === 'PAID') {
+      return res.status(400).json({ error: 'No se puede editar un crédito que ya ha sido cancelado o renovado.' });
+    }
+
+    if (loan.payments.length > 0) {
+      return res.status(400).json({
+        error: `Este préstamo ya registra ${loan.payments.length} abono(s). Para proteger la integridad contable y los recibos de caja, no es posible alterar el monto original. Puedes utilizar la opción de 'Renovar Crédito' para reestructurar la deuda.`
+      });
+    }
+
+    // Capital disponible: verificar que el nuevo monto no exceda el capital disponible en caja
+    // Excluimos este crédito del cálculo del capital en calle para evaluar la capacidad real
+    const { initialCapital, availableCapital } = await getTenantAvailableCapital(tenantId, loan.id);
+    if (initialCapital > 0 && p > availableCapital) {
+      return res.status(400).json({
+        error: `El nuevo monto del préstamo ($${p.toLocaleString('es-CO')}) supera el capital disponible en tu caja ($${availableCapital.toLocaleString('es-CO')}).`
+      });
+    }
+
+    const loanStartDate = startDate ? new Date(startDate) : new Date(loan.startDate);
+    const interestAmount = p * (r / 100);
+    const totalAmount = p + interestAmount;
+    const regularInstallment = Math.round((totalAmount / inst) * 100) / 100;
+    const lastInstallment = Math.round((totalAmount - regularInstallment * (inst - 1)) * 100) / 100;
+    const dates = calculateInstallmentDates(loanStartDate, paymentFrequency, inst);
+    const endDate = dates[dates.length - 1];
+
+    const updatedLoan = await prisma.$transaction(async (tx) => {
+      // 1. Eliminar cronograma de amortización previo (limpio, sin pagos)
+      await tx.amortizationSchedule.deleteMany({
+        where: { loanId: loan.id }
+      });
+
+      // 2. Actualizar datos financieros del préstamo
+      const updated = await tx.loan.update({
+        where: { id: loan.id },
+        data: {
+          principal: p,
+          interestRate: r,
+          interestAmount,
+          totalAmount,
+          balance: totalAmount,
+          paymentFrequency,
+          installments: inst,
+          installmentAmt: regularInstallment,
+          startDate: loanStartDate,
+          endDate,
+          status: 'ACTIVE'
+        }
+      });
+
+      // 3. Crear nuevo cronograma de amortización con las nuevas fechas y montos
+      const scheduleData = dates.map((date, index) => ({
+        loanId: loan.id,
+        installmentNumber: index + 1,
+        dueDate: date,
+        amount: index === inst - 1 ? lastInstallment : regularInstallment,
+        status: 'PENDING'
+      }));
+
+      await tx.amortizationSchedule.createMany({
+        data: scheduleData
+      });
+
+      return updated;
+    });
+
+    const fullLoan = await prisma.loan.findUnique({
+      where: { id: updatedLoan.id },
+      include: {
+        customer: true,
+        amortizations: {
+          orderBy: { installmentNumber: 'asc' }
+        },
+        payments: true
+      }
+    });
+
+    return res.json({
+      message: 'Préstamo y tabla de amortización actualizados exitosamente.',
+      loan: fullLoan
+    });
+  } catch (error) {
+    console.error('Error al actualizar préstamo:', error);
+    return res.status(500).json({ error: 'Ocurrió un error al actualizar los datos del préstamo.' });
+  }
+};
+
+// Delete / Void a loan (Allowed only if no payments have been registered yet)
+export const deleteLoan = async (req: AuthenticatedRequest, res: Response) => {
+  const tenantId = req.tenantId!;
+  const { id } = req.params;
+
+  try {
+    const loan = await prisma.loan.findFirst({
+      where: { id, tenantId },
+      include: {
+        payments: true
+      }
+    });
+
+    if (!loan) {
+      return res.status(404).json({ error: 'Préstamo no encontrado o no pertenece a esta empresa.' });
+    }
+
+    if (loan.payments.length > 0) {
+      return res.status(400).json({
+        error: `No se puede anular un préstamo que ya registra ${loan.payments.length} abono(s).`
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.amortizationSchedule.deleteMany({
+        where: { loanId: loan.id }
+      });
+      await tx.loan.delete({
+        where: { id: loan.id }
+      });
+    });
+
+    return res.json({ message: 'Préstamo anulado y eliminado exitosamente.' });
+  } catch (error) {
+    console.error('Error al anular préstamo:', error);
+    return res.status(500).json({ error: 'Error al anular el préstamo.' });
+  }
+};

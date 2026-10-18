@@ -1,15 +1,17 @@
 import React from 'react';
 import type { Loan } from './clientDetailTypes';
-import { Receipt, Calendar, Coins } from 'lucide-react';
+import { Receipt, Calendar, Coins, Pencil } from 'lucide-react';
 
 interface AmortizationTableProps {
   loan: Loan;
   onPrintContract?: () => void;
+  onEditLoan?: (loan: Loan) => void;
 }
 
 export const AmortizationTable: React.FC<AmortizationTableProps> = ({
   loan,
-  onPrintContract
+  onPrintContract,
+  onEditLoan
 }) => {
   const translateFrequency = (freq: string) => {
     const freqs: Record<string, string> = {
@@ -66,14 +68,26 @@ export const AmortizationTable: React.FC<AmortizationTableProps> = ({
             </p>
           </div>
 
-          {onPrintContract && (
-            <button
-              onClick={onPrintContract}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              <Receipt className="w-4 h-4 text-brand-400" /> Imprimir Contrato / Tabla
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {onEditLoan && loan.status !== 'RENEWED' && loan.status !== 'PAID' && (
+              <button
+                onClick={() => onEditLoan(loan)}
+                className="flex items-center gap-1.5 bg-brand-600/10 hover:bg-brand-600/20 text-brand-400 border border-brand-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                title="Editar montos, tasa o condiciones del préstamo"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Editar Crédito
+              </button>
+            )}
+
+            {onPrintContract && (
+              <button
+                onClick={onPrintContract}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+              >
+                <Receipt className="w-4 h-4 text-brand-400" /> Imprimir Contrato / Tabla
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Financial Metrics Cards */}

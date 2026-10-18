@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiCall } from '../utils/api';
 import { 
   ArrowLeft, User, Phone, MapPin, Mail, 
-  Coins, RefreshCw, Plus, Edit3, Trash2, ShieldCheck, FolderHeart, Receipt, Printer 
+  Coins, RefreshCw, Plus, Edit3, Trash2, ShieldCheck, FolderHeart, Receipt, Printer, Pencil 
 } from 'lucide-react';
 
 import type { 
-  ClientFullDetails, PrintInvoiceData, PrintReceiptData 
+  ClientFullDetails, PrintInvoiceData, PrintReceiptData, Loan 
 } from '../components/client-detail/clientDetailTypes';
 import { EditClientModal } from '../components/client-detail/EditClientModal';
 import { DeleteClientModal } from '../components/client-detail/DeleteClientModal';
@@ -14,6 +14,7 @@ import { CameraModal } from '../components/client-detail/CameraModal';
 import { KycAttachmentsTab } from '../components/client-detail/KycAttachmentsTab';
 import { NewLoanModal } from '../components/client-detail/NewLoanModal';
 import { RenewLoanModal } from '../components/client-detail/RenewLoanModal';
+import { EditLoanModal } from '../components/client-detail/EditLoanModal';
 import { PaymentModal } from '../components/client-detail/PaymentModal';
 import { AmortizationTable } from '../components/client-detail/AmortizationTable';
 import { PrintInvoiceView, PrintReceiptView } from '../components/client-detail/PrintViews';
@@ -37,6 +38,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [showRenewModal, setShowRenewModal] = useState(false);
+  const [showEditLoanModal, setShowEditLoanModal] = useState(false);
+  const [loanToEdit, setLoanToEdit] = useState<Loan | null>(null);
 
   // Print Views Data
   const [printInvoiceData, setPrintInvoiceData] = useState<PrintInvoiceData | null>(null);
@@ -238,6 +241,16 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
               >
                 <RefreshCw className="w-4 h-4" /> Renovar Crédito
               </button>
+              <button
+                onClick={() => {
+                  setLoanToEdit(activeLoan);
+                  setShowEditLoanModal(true);
+                }}
+                className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 bg-brand-600/10 hover:bg-brand-600/20 text-brand-400 border border-brand-500/30 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm transition"
+                title="Editar monto o condiciones del crédito"
+              >
+                <Pencil className="w-4 h-4" /> Editar Monto
+              </button>
             </>
           ) : (
             <button
@@ -387,6 +400,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
                 key={loan.id}
                 loan={loan}
                 onPrintContract={() => setPrintInvoiceData({ client, loan })}
+                onEditLoan={(l) => {
+                  setLoanToEdit(l);
+                  setShowEditLoanModal(true);
+                }}
               />
             ))
           ) : (
@@ -473,6 +490,25 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ clientId, onBack }) 
         onSuccess={receiptData => {
           setPrintReceiptData(receiptData);
           fetchClientDetails();
+        }}
+      />
+
+      <EditLoanModal
+        show={showEditLoanModal}
+        loan={loanToEdit}
+        client={client}
+        onClose={() => {
+          setShowEditLoanModal(false);
+          setLoanToEdit(null);
+        }}
+        onSuccess={() => {
+          fetchClientDetails();
+        }}
+        onDeleteSuccess={() => {
+          fetchClientDetails();
+        }}
+        onOpenRenew={() => {
+          setShowRenewModal(true);
         }}
       />
     </div>
