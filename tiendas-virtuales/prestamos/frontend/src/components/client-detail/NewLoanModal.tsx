@@ -42,6 +42,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
         const interestAmount = p * (r / 100);
         const totalAmount = p + interestAmount;
         const installmentAmt = Math.round(totalAmount / inst);
+        const lastInstallmentAmt = totalAmount - (installmentAmt * (inst - 1));
 
         const dates: Date[] = [];
         let currentDate = new Date();
@@ -67,7 +68,7 @@ export const NewLoanModal: React.FC<NewLoanModalProps> = ({
           schedule: dates.map((d, i) => ({
             installmentNumber: i + 1,
             dueDate: d.toISOString(),
-            amount: installmentAmt
+            amount: i === inst - 1 ? lastInstallmentAmt : installmentAmt
           }))
         });
       } else {

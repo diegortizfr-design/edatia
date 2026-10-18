@@ -46,34 +46,28 @@ export const Portfolio: React.FC<PortfolioProps> = ({ setCurrentPage, setSelecte
 
   const fetchPortfolioData = async () => {
     try {
-      // 1. Fetch Stats
-      const reportsData = await apiCall('/reports/portfolio');
+      // 1. Consultar estadísticas y préstamos en paralelo en una sola ronda HTTP
+      const [reportsData, loansData] = await Promise.all([
+        apiCall('/reports/portfolio'),
+        apiCall('/loans')
+      ]);
       setStats(reportsData);
 
-      // 2. Fetch all clients and construct portfolio list based on their loans
-      const clientsData = await apiCall('/clients');
-      const portfolioItems: LoanPortfolioItem[] = [];
-
-      for (const client of clientsData) {
-        // Fetch detailed client profile to get their loans
-        const details = await apiCall(`/clients/${client.id}`);
-        details.loans.forEach((loan: any) => {
-          portfolioItems.push({
-            id: loan.id,
-            loanNumber: loan.loanNumber,
-            customerId: client.id,
-            customerName: client.name,
-            documentId: client.documentId,
-            principal: loan.principal,
-            totalAmount: loan.totalAmount,
-            balance: loan.balance,
-            paymentFrequency: loan.paymentFrequency,
-            installments: loan.installments,
-            status: loan.status,
-            startDate: loan.startDate
-          });
-        });
-      }
+      // 2. Mapear los préstamos directamente con los datos de cliente ya incluidos
+      const portfolioItems: LoanPortfolioItem[] = (loansData || []).map((loan: any) => ({
+        id: loan.id,
+        loanNumber: loan.loanNumber,
+        customerId: loan.customer?.id || loan.customerId,
+        customerName: loan.customer?.name || 'Cliente',
+        documentId: loan.customer?.documentId || '',
+        principal: loan.principal,
+        totalAmount: loan.totalAmount,
+        balance: loan.balance,
+        paymentFrequency: loan.paymentFrequency,
+        installments: loan.installments,
+        status: loan.status,
+        startDate: loan.startDate
+      }));
 
       setLoans(portfolioItems);
     } catch (err: any) {

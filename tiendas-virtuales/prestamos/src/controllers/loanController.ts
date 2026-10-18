@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { syncTenantOverdueStatus } from './reportsController';
 
 // Helper to calculate payment schedule dates
 export const calculateInstallmentDates = (startDate: Date, frequency: string, installments: number): Date[] => {
@@ -41,14 +42,15 @@ export const simulateLoan = (req: AuthenticatedRequest, res: Response) => {
 
   const interestAmount = p * (r / 100);
   const totalAmount = p + interestAmount;
-  const installmentAmt = Math.round((totalAmount / inst) * 100) / 100;
+  const regularInstallment = Math.round((totalAmount / inst) * 100) / 100;
+  const lastInstallment = Math.round((totalAmount - regularInstallment * (inst - 1)) * 100) / 100;
 
   const dates = calculateInstallmentDates(new Date(), paymentFrequency, inst);
 
   const schedule = dates.map((date, idx) => ({
     installmentNumber: idx + 1,
     dueDate: date,
-    amount: installmentAmt,
+    amount: idx === inst - 1 ? lastInstallment : regularInstallment,
     status: 'PENDING'
   }));
 
@@ -57,7 +59,7 @@ export const simulateLoan = (req: AuthenticatedRequest, res: Response) => {
     interestRate: r,
     interestAmount,
     totalAmount,
-    installmentAmt,
+    installmentAmt: regularInstallment,
     schedule
   });
 };
@@ -108,7 +110,7 @@ export const getProducts = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 // Helper to calculate tenant's dynamic available capital
-const getTenantAvailableCapital = async (tenantId: string, excludeLoanId?: string): Promise<{ initialCapital: number; availableCapital: number }> => {
+export const getTenantAvailableCapital = async (tenantId: string, excludeLoanId?: string): Promise<{ initialCapital: number; availableCapital: number }> => {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
     select: { initialCapital: true }
@@ -119,35 +121,50 @@ const getTenantAvailableCapital = async (tenantId: string, excludeLoanId?: strin
     return { initialCapital: 0, availableCapital: Infinity }; // No limit enforced if capital is 0
   }
 
+  // 1. Capital pendiente de cobro en calle (saldo proporcional de capital no recuperado)
   const activeLoans = await prisma.loan.findMany({
     where: {
       tenantId,
       status: { in: ['ACTIVE', 'OVERDUE'] },
       ...(excludeLoanId ? { id: { not: excludeLoanId } } : {})
     },
-    select: { principal: true }
+    select: { principal: true, totalAmount: true, balance: true }
   });
-  const totalCapitalPrestado = activeLoans.reduce((sum, l) => sum + l.principal, 0);
+  const capitalEnCalle = activeLoans.reduce((sum, l) => {
+    const ratio = l.totalAmount > 0 ? l.principal / l.totalAmount : 1;
+    return sum + (l.balance * ratio);
+  }, 0);
 
+  // 2. Intereses cobrados (ganancia en caja acumulada)
+  const amortizations = await prisma.amortizationSchedule.findMany({
+    where: { loan: { tenantId } },
+    select: { interestPaid: true }
+  });
+  const totalInteresesCobrados = amortizations.reduce((sum, a) => sum + a.interestPaid, 0);
+
+  // 3. Mora cobrada acumulada
   const allPayments = await prisma.payment.findMany({
     where: { tenantId },
-    select: { amount: true }
+    select: { lateInterestAmount: true }
   });
-  const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalMoraCobrada = allPayments.reduce((sum, p) => sum + (p.lateInterestAmount || 0), 0);
 
+  // 4. Ingresos adicionales de contabilidad
   const allIncomes = await prisma.income.findMany({
     where: { tenantId },
     select: { amount: true }
   });
   const totalIncomes = allIncomes.reduce((sum, i) => sum + i.amount, 0);
 
+  // 5. Gastos operativos de contabilidad
   const allExpenses = await prisma.expense.findMany({
     where: { tenantId },
     select: { amount: true }
   });
   const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-  const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected + totalIncomes - totalExpenses);
+  // Dinero real en caja = Capital Base + Intereses y Mora Cobrados + Ingresos - Gastos - Capital Prestado Pendiente
+  const availableCapital = Math.max(0, Math.round((initialCapital + totalInteresesCobrados + totalMoraCobrada + totalIncomes - totalExpenses - capitalEnCalle) * 100) / 100);
 
   return { initialCapital, availableCapital };
 };
@@ -199,10 +216,11 @@ export const createLoan = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Calculate details
+    // Calculate details with last installment absorbing any rounding difference
     const interestAmount = p * (r / 100);
     const totalAmount = p + interestAmount;
-    const installmentAmt = Math.round((totalAmount / inst) * 100) / 100;
+    const regularInstallment = Math.round((totalAmount / inst) * 100) / 100;
+    const lastInstallment = Math.round((totalAmount - regularInstallment * (inst - 1)) * 100) / 100;
     const dates = calculateInstallmentDates(new Date(), paymentFrequency, inst);
     const endDate = dates[dates.length - 1];
 
@@ -224,7 +242,7 @@ export const createLoan = async (req: AuthenticatedRequest, res: Response) => {
           balance: totalAmount,
           paymentFrequency,
           installments: inst,
-          installmentAmt,
+          installmentAmt: regularInstallment,
           endDate,
           status: 'ACTIVE'
         }
@@ -235,7 +253,7 @@ export const createLoan = async (req: AuthenticatedRequest, res: Response) => {
         loanId: newLoan.id,
         installmentNumber: index + 1,
         dueDate: date,
-        amount: installmentAmt,
+        amount: index === inst - 1 ? lastInstallment : regularInstallment,
         status: 'PENDING'
       }));
 
@@ -308,10 +326,11 @@ export const renewLoan = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // 3. Calculate new loan values
+    // 3. Calculate new loan values with rounding adjustment
     const interestAmount = p * (r / 100);
     const totalAmount = p + interestAmount;
-    const installmentAmt = Math.round((totalAmount / inst) * 100) / 100;
+    const regularInstallment = Math.round((totalAmount / inst) * 100) / 100;
+    const lastInstallment = Math.round((totalAmount - regularInstallment * (inst - 1)) * 100) / 100;
     const dates = calculateInstallmentDates(new Date(), paymentFrequency, inst);
     const endDate = dates[dates.length - 1];
 
@@ -355,7 +374,7 @@ export const renewLoan = async (req: AuthenticatedRequest, res: Response) => {
           balance: totalAmount,
           paymentFrequency,
           installments: inst,
-          installmentAmt,
+          installmentAmt: regularInstallment,
           endDate,
           status: 'ACTIVE',
           renewalFromId: oldLoanId
@@ -367,7 +386,7 @@ export const renewLoan = async (req: AuthenticatedRequest, res: Response) => {
         loanId: createdLoan.id,
         installmentNumber: index + 1,
         dueDate: date,
-        amount: installmentAmt,
+        amount: index === inst - 1 ? lastInstallment : regularInstallment,
         status: 'PENDING'
       }));
 
@@ -436,6 +455,9 @@ export const getLoans = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
 
   try {
+    // Sincronizar estados de mora antes de listar
+    await syncTenantOverdueStatus(tenantId);
+
     const loans = await prisma.loan.findMany({
       where: { tenantId },
       include: {
