@@ -53,8 +53,11 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
     - **Pestañas de estado de cartera con contadores en vivo:** `Todos`, `🔴 En Mora` (con badge rojo pulsante), `🟢 Al Día` y `⚪ Paz y Salvo`.
     - **Filtro de periodicidad:** Desplegable para filtrar por modalidad (`Diario`, `Semanal`, `Quincenal`, `Mensual`).
     - **Badges visuales y diseño responsivo:** Alerta de `MORA` en rojo en deudores vencidos, contador de coincidencias, botón de restablecer filtros y adaptación para smartphones.
+  - **Edición y Anulación de Préstamos con Protección Contable (`PUT /loans/:id` y `DELETE /loans/:id`):**
+    - **Backend:** Validación de seguridad para permitir editar o anular préstamos únicamente si no tienen abonos registrados (`payments.length === 0`), recalculando el cronograma de amortización y ajustando el capital disponible del tenant en una transacción atómica. Si ya registran abonos, bloquea la alteración del capital original y orienta a la renovación.
+    - **Frontend:** Modal interactivo `EditLoanModal.tsx` con simulación y recálculo en vivo de cuotas e intereses, botón de "✏️ Editar Monto" en la ficha del cliente y en la tabla de amortización (`AmortizationTable.tsx`), y opción para anular créditos errados.
   - **Documentación del Módulo:**
-    - Creación del archivo `tiendas-virtuales/prestamos/README.md` y actualización del `README.md` general del repositorio.
+    - Creación y actualización de `tiendas-virtuales/prestamos/README.md` y sincronización con `README.md` general y `SESION.md`.
 
 ---
 
