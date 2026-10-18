@@ -1,27 +1,30 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-18 (sesión 10)
+> Última actualización: 2026-10-18 (sesión 11)
 
 ---
 
 ## ¿Qué es Edatia?
-SaaS ERP para empresas de retail y distribución. Tiene 4 portales:
+SaaS ERP para empresas de retail y distribución. Tiene 4 portales principales y módulos especializados:
 - `edatia.com` → Landing estática
 - `erp.edatia.com` → ERP React (frontend/)
 - `api.edatia.com` → API NestJS (backend/) — Swagger en /api/docs
 - `manager.edatia.com` → Manager interno Edatia (manager/) ← EN CONSTRUCCIÓN ACTIVA
+- `tiendas-virtuales/prestamos` → SaaS Multitenant de Control de Préstamos y Cobranza (puerto 3006)
 
 ---
 
 ## Estado actual del servidor
 
-### Contenedores Docker (6 servicios)
+### Contenedores Docker
 ```
-db       → PostgreSQL 15
-api      → NestJS backend
-web      → ERP React (Caddy)
-landing  → HTML estático (Caddy)
-manager  → Manager React (Caddy)
-glowxir  → Tienda Virtual Baby World (Caddy)
+db                → PostgreSQL 15 (ERP)
+api               → NestJS backend
+web               → ERP React (Caddy)
+landing           → HTML estático (Caddy)
+manager           → Manager React (Caddy)
+glowxir           → Tienda Virtual Baby World (Caddy)
+prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19) [:3006]
+prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 ```
 
 ### Credenciales
@@ -29,6 +32,31 @@ glowxir  → Tienda Virtual Baby World (Caddy)
 |--------|-------|------------|
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
+| Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 11)
+
+✅ **Auditoría Financiera, Navegación Interactiva y Optimización del Módulo de Préstamos:**
+  - **Corrección de Inconsistencias Matemáticas y Amortizaciones:**
+    - **Desglose exacto de cuotas (`paymentController.ts`):** Cada cuota ahora calcula y persiste de forma proporcional `principalPaid` e `interestPaid`, manteniendo la integridad entre el saldo de capital colocado y las utilidades devengadas.
+    - **Ajuste de centavos en última cuota (`loanController.ts` y `NewLoanModal.tsx`):** La última cuota absorbe los residuos de división decimal para garantizar que la suma exacta de las cuotas sea idéntica al monto total del crédito. Se agregó tolerancia (< $1 COP) para marcar préstamos como `PAID` sin centavos huérfanos.
+    - **Sincronización automática de morosidad (`reportsController.ts` y `routeController.ts`):** Se implementó `syncTenantOverdueStatus(tenantId)`, evaluando cuotas vencidas y actualizando atómicamente cuotas y créditos a `OVERDUE`.
+    - **Fórmula de Caja y Capital Disponible:** Corrección de la caja real de tesorería e inclusión de intereses por mora recaudados en los reportes ejecutivos.
+    - **Optimización de Consulta N+1 (`Portfolio.tsx`):** Se eliminó el bucle de peticiones secuenciales reemplazándolo por una consulta paralela única.
+  - **Navegación Interactiva en Dashboard con Filtros Automáticos (`Dashboard.tsx` y `App.tsx`):**
+    - Todas las tarjetas KPI ahora cuentan con efectos hover, cursores interactivos e indicadores visuales de enlace.
+    - *Total en Cartera* y *Cartera en Mora* trasladan a la tabla de Cartera filtrando automáticamente créditos `Vigentes` o `En Mora`.
+    - *Cobrado Hoy* y *Recaudo últimos 7 días* llevan a la tabla de Recibos con filtro de fecha `Hoy` o `Semana`.
+    - Soporte completo para parámetros hash en la URL (`/#portfolio?status=OVERDUE`, `/#transactions?date=today`).
+  - **Directorio de Clientes con Ordenamiento y Filtros Inteligentes (`Clients.tsx` y `clientController.ts`):**
+    - **Ordenamiento multicolumna ascendente y descendente:** Nombre/Cédula (A-Z/Z-A), Teléfono, Dirección, Créditos Activos (numérico) y Saldo Pendiente (mayor a menor / menor a mayor) con indicadores visuales `↑`, `↓`, `↕`.
+    - **Pestañas de estado de cartera con contadores en vivo:** `Todos`, `🔴 En Mora` (con badge rojo pulsante), `🟢 Al Día` y `⚪ Paz y Salvo`.
+    - **Filtro de periodicidad:** Desplegable para filtrar por modalidad (`Diario`, `Semanal`, `Quincenal`, `Mensual`).
+    - **Badges visuales y diseño responsivo:** Alerta de `MORA` en rojo en deudores vencidos, contador de coincidencias, botón de restablecer filtros y adaptación para smartphones.
+  - **Documentación del Módulo:**
+    - Creación del archivo `tiendas-virtuales/prestamos/README.md` y actualización del `README.md` general del repositorio.
+
+---
 
 ## Estado resuelto (sesión 10)
 

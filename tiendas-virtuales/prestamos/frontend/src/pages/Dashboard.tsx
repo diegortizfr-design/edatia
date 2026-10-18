@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, Users, AlertCircle, Calendar, Landmark, Coins } from 'lucide-react';
+import { TrendingUp, Users, AlertCircle, Calendar, Landmark, Coins, ArrowUpRight } from 'lucide-react';
 
 interface PortfolioSummary {
   totalCustomers: number;
@@ -24,12 +24,39 @@ interface ChartItem {
   amount: number;
 }
 
-export const Dashboard: React.FC<{ setCurrentPage: (page: string) => void }> = ({ setCurrentPage }) => {
+export interface DashboardProps {
+  setCurrentPage: (page: string) => void;
+  navigateTo?: (
+    page: string, 
+    options?: { 
+      portfolioStatus?: string; 
+      transactionDate?: 'today' | 'yesterday' | 'week' | 'month' | 'all'; 
+      clientId?: string 
+    }
+  ) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ setCurrentPage, navigateTo }) => {
   const { tenant } = useAuth();
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const [chartData, setChartData] = useState<ChartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const handleNav = (
+    page: string, 
+    options?: { 
+      portfolioStatus?: string; 
+      transactionDate?: 'today' | 'yesterday' | 'week' | 'month' | 'all'; 
+      clientId?: string 
+    }
+  ) => {
+    if (navigateTo) {
+      navigateTo(page, options);
+    } else {
+      setCurrentPage(page);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -105,60 +132,102 @@ export const Dashboard: React.FC<{ setCurrentPage: (page: string) => void }> = (
         </div>
 
         {summary?.initialCapital !== undefined && summary.initialCapital > 0 && (
-          <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl flex items-center gap-3">
-            <div className="w-9 h-9 bg-brand-600/10 border border-brand-500/20 rounded-lg flex items-center justify-center text-brand-400">
+          <div 
+            onClick={() => handleNav('accounting')}
+            className="bg-slate-900 border border-slate-800 hover:border-brand-500/40 px-4 py-2.5 rounded-xl flex items-center gap-3 cursor-pointer group transition hover-glow"
+            title="Clic para ver movimientos y dinero en caja"
+          >
+            <div className="w-9 h-9 bg-brand-600/10 border border-brand-500/20 rounded-lg flex items-center justify-center text-brand-400 group-hover:scale-105 transition-transform">
               <Coins className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Capital Base Inicial</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Capital Base Inicial</span>
+                <ArrowUpRight className="w-3 h-3 text-slate-500 group-hover:text-brand-400 transition" />
+              </div>
               <span className="text-sm font-bold text-white font-mono">${summary.initialCapital.toLocaleString('es-CO')} COP</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid con navegación a filtros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* KPI 1 */}
-        <div className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/30 transition">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+        {/* KPI 1: Total en Cartera */}
+        <div 
+          onClick={() => handleNav('portfolio', { portfolioStatus: 'ACTIVE' })}
+          className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/50 hover:bg-slate-900/40 transition cursor-pointer hover-glow"
+          title="Clic para filtrar créditos activos en Cartera"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-transform">
             <Landmark className="w-16 h-16 text-brand-500" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total en Cartera</p>
-          <h3 className="text-2xl font-bold text-white mt-2">
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total en Cartera</p>
+            <span className="text-[10px] text-brand-400 font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+              Ver Cartera <ArrowUpRight className="w-3 h-3" />
+            </span>
+          </div>
+          <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-brand-300 transition">
             ${summary?.outstandingBalance.toLocaleString('es-CO')} COP
           </h3>
           <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
-            <span className="font-semibold text-emerald-400">
+            <span 
+              onClick={(e) => { e.stopPropagation(); handleNav('portfolio', { portfolioStatus: 'ALL' }); }}
+              className="font-semibold text-emerald-400 hover:underline"
+              title="Clic para ver todo el capital colocado histórico"
+            >
               ${summary?.capitalPrestado.toLocaleString('es-CO')}
             </span> 
             <span>capital de origen</span>
           </div>
         </div>
 
-        {/* KPI 2 */}
-        <div className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-emerald-500/30 transition">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+        {/* KPI 2: Cobrado Hoy */}
+        <div 
+          onClick={() => handleNav('transactions', { transactionDate: 'today' })}
+          className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-emerald-500/50 hover:bg-slate-900/40 transition cursor-pointer hover-glow"
+          title="Clic para ver recibos cobrados hoy"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-transform">
             <Coins className="w-16 h-16 text-emerald-500" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cobrado Hoy</p>
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cobrado Hoy</p>
+            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+              Ver Recibos <ArrowUpRight className="w-3 h-3" />
+            </span>
+          </div>
           <h3 className="text-2xl font-bold text-emerald-400 mt-2">
             ${summary?.collectedToday.toLocaleString('es-CO')} COP
           </h3>
           <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
             <span>Total acumulado:</span>
-            <span className="font-semibold text-slate-300">
+            <span 
+              onClick={(e) => { e.stopPropagation(); handleNav('transactions', { transactionDate: 'all' }); }}
+              className="font-semibold text-slate-200 hover:text-emerald-300 hover:underline"
+              title="Clic para ver todos los recibos históricos"
+            >
               ${summary?.totalCollected.toLocaleString('es-CO')}
             </span>
           </div>
         </div>
 
-        {/* KPI 3 */}
-        <div className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-red-500/30 transition">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+        {/* KPI 3: Cartera en Mora */}
+        <div 
+          onClick={() => handleNav('portfolio', { portfolioStatus: 'OVERDUE' })}
+          className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-red-500/50 hover:bg-red-500/5 transition cursor-pointer hover-glow"
+          title="Clic para filtrar créditos en mora en Cartera"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-transform">
             <AlertCircle className="w-16 h-16 text-red-500" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cartera en Mora</p>
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cartera en Mora</p>
+            <span className="text-[10px] text-red-400 font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+              Ver Morosos <ArrowUpRight className="w-3 h-3" />
+            </span>
+          </div>
           <h3 className="text-2xl font-bold text-red-400 mt-2">
             ${summary?.overdueBalance.toLocaleString('es-CO')} COP
           </h3>
@@ -168,17 +237,32 @@ export const Dashboard: React.FC<{ setCurrentPage: (page: string) => void }> = (
           </div>
         </div>
 
-        {/* KPI 4 */}
-        <div className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/30 transition">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+        {/* KPI 4: Clientes Activos */}
+        <div 
+          onClick={() => handleNav('clients')}
+          className="glass-card p-6 rounded-xl relative overflow-hidden group hover:border-brand-500/50 hover:bg-slate-900/40 transition cursor-pointer hover-glow"
+          title="Clic para ver el directorio de clientes"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-transform">
             <Users className="w-16 h-16 text-brand-500" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Clientes Activos</p>
-          <h3 className="text-2xl font-bold text-white mt-2">
+          <div className="flex justify-between items-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Clientes Activos</p>
+            <span className="text-[10px] text-brand-400 font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+              Ver Clientes <ArrowUpRight className="w-3 h-3" />
+            </span>
+          </div>
+          <h3 className="text-2xl font-bold text-white mt-2 group-hover:text-brand-300 transition">
             {summary?.totalCustomers}
           </h3>
           <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
-            <span className="text-brand-400 font-semibold">{summary?.activeLoansCount}</span>
+            <span 
+              onClick={(e) => { e.stopPropagation(); handleNav('portfolio', { portfolioStatus: 'ACTIVE' }); }}
+              className="text-brand-400 font-semibold hover:underline"
+              title="Clic para ver créditos vigentes en Cartera"
+            >
+              {summary?.activeLoansCount}
+            </span>
             <span>préstamos vigentes</span>
           </div>
         </div>
@@ -190,12 +274,26 @@ export const Dashboard: React.FC<{ setCurrentPage: (page: string) => void }> = (
         <div className="lg:col-span-2 glass-card p-6 rounded-xl flex flex-col justify-between">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-lg font-bold text-white">Recaudo de los últimos 7 días</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white">Recaudo de los últimos 7 días</h3>
+                <button 
+                  onClick={() => handleNav('transactions', { transactionDate: 'week' })}
+                  className="text-xs text-brand-400 hover:text-brand-300 hover:underline flex items-center gap-0.5 ml-2"
+                  title="Ver recibos de la semana"
+                >
+                  Ver recibos <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </div>
               <p className="text-xs text-slate-400">Comportamiento diario de la cobranza</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full font-medium">
+            <div 
+              onClick={() => handleNav('reports')}
+              className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-full font-medium cursor-pointer transition hover-glow"
+              title="Clic para ver reporte financiero y de tesorería"
+            >
               <TrendingUp className="w-3.5 h-3.5" />
               Eficiencia: {summary?.collectionEfficiency}%
+              <ArrowUpRight className="w-3 h-3 ml-0.5" />
             </div>
           </div>
 

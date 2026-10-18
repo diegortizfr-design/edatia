@@ -57,9 +57,11 @@ const AppContent: React.FC = () => {
     }
   }, [isAuthenticated, tenant]);
   
-  // Hash-based simple router
+  // Hash-based simple router with filter synchronization
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [portfolioFilter, setPortfolioFilter] = useState<string>('ALL');
+  const [transactionsDateFilter, setTransactionsDateFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'all'>('today');
 
   const navItems = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
@@ -72,15 +74,47 @@ const AppContent: React.FC = () => {
     { id: 'settings', name: 'Ajustes', icon: SettingsIcon },
   ];
 
+  // Helper para navegar hacia una página aplicando filtros específicos
+  const navigateTo = (
+    page: string, 
+    options?: { 
+      portfolioStatus?: string; 
+      transactionDate?: 'today' | 'yesterday' | 'week' | 'month' | 'all'; 
+      clientId?: string 
+    }
+  ) => {
+    if (options?.portfolioStatus) {
+      setPortfolioFilter(options.portfolioStatus);
+    }
+    if (options?.transactionDate) {
+      setTransactionsDateFilter(options.transactionDate);
+    }
+    if (options?.clientId) {
+      setSelectedClientId(options.clientId);
+    }
+    setCurrentPage(page);
+  };
+
   // Synchronize hash changes
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (['dashboard', 'clients', 'portfolio', 'route', 'transactions', 'reports', 'accounting', 'settings'].includes(hash)) {
-        setCurrentPage(hash);
-      } else if (hash.startsWith('clients/') && hash.split('/')[1]) {
-        setSelectedClientId(hash.split('/')[1]);
+      const fullHash = window.location.hash.replace('#', '');
+      const [path, queryString] = fullHash.split('?');
+      const params = new URLSearchParams(queryString || '');
+
+      if (path === 'portfolio') {
+        const status = params.get('status');
+        if (status) setPortfolioFilter(status.toUpperCase());
+        setCurrentPage('portfolio');
+      } else if (path === 'transactions') {
+        const date = params.get('date') as any;
+        if (date) setTransactionsDateFilter(date);
+        setCurrentPage('transactions');
+      } else if (path.startsWith('clients/') && path.split('/')[1]) {
+        setSelectedClientId(path.split('/')[1]);
         setCurrentPage('client-detail');
+      } else if (['dashboard', 'clients', 'route', 'reports', 'accounting', 'settings'].includes(path)) {
+        setCurrentPage(path);
       }
     };
 
@@ -95,10 +129,14 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (currentPage === 'client-detail' && selectedClientId) {
       window.location.hash = `clients/${selectedClientId}`;
-    } else if (['dashboard', 'clients', 'portfolio', 'route', 'transactions', 'reports', 'accounting', 'settings'].includes(currentPage)) {
+    } else if (currentPage === 'portfolio') {
+      window.location.hash = portfolioFilter !== 'ALL' ? `portfolio?status=${portfolioFilter}` : 'portfolio';
+    } else if (currentPage === 'transactions') {
+      window.location.hash = transactionsDateFilter !== 'today' ? `transactions?date=${transactionsDateFilter}` : 'transactions';
+    } else if (['dashboard', 'clients', 'route', 'reports', 'accounting', 'settings'].includes(currentPage)) {
       window.location.hash = currentPage;
     }
-  }, [currentPage, selectedClientId]);
+  }, [currentPage, selectedClientId, portfolioFilter, transactionsDateFilter]);
 
   if (loading) {
     return (
@@ -148,7 +186,7 @@ const AppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 p-4 md:p-8 min-h-screen relative overflow-y-auto print:ml-0 print:p-0 print:bg-white print:text-black pt-16 md:pt-8 pb-20 md:pb-8">
-        {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} />}
+        {currentPage === 'dashboard' && <Dashboard setCurrentPage={setCurrentPage} navigateTo={navigateTo} />}
         {currentPage === 'clients' && (
           <Clients 
             setCurrentPage={setCurrentPage} 
@@ -165,6 +203,7 @@ const AppContent: React.FC = () => {
           <Portfolio 
             setCurrentPage={setCurrentPage} 
             setSelectedClientId={setSelectedClientId} 
+            initialFilter={portfolioFilter}
           />
         )}
         {currentPage === 'route' && (
@@ -173,7 +212,7 @@ const AppContent: React.FC = () => {
             setSelectedClientId={setSelectedClientId} 
           />
         )}
-        {currentPage === 'transactions' && <Transactions />}
+        {currentPage === 'transactions' && <Transactions initialDateFilter={transactionsDateFilter} />}
         {currentPage === 'reports' && <Reports />}
         {currentPage === 'accounting' && <Accounting />}
         {currentPage === 'settings' && <Settings />}

@@ -32,9 +32,10 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
       orderBy: { name: 'asc' }
     });
 
-    // Format output to include active loans count and total debt
+    // Format output to include active loans count, overdue status and total debt
     const formattedClients = clients.map(client => {
       const activeLoans = client.loans.filter(l => l.status === 'ACTIVE' || l.status === 'OVERDUE');
+      const overdueLoans = client.loans.filter(l => l.status === 'OVERDUE');
       const totalDebt = activeLoans.reduce((sum, loan) => sum + loan.balance, 0);
 
       return {
@@ -47,6 +48,8 @@ export const getClients = async (req: AuthenticatedRequest, res: Response) => {
         status: client.status,
         defaultFrequency: client.defaultFrequency || 'DAILY',
         activeLoansCount: activeLoans.length,
+        overdueLoansCount: overdueLoans.length,
+        hasOverdue: overdueLoans.length > 0,
         totalDebt,
         createdAt: client.createdAt
       };

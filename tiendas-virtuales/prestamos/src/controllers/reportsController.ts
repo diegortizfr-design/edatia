@@ -2,10 +2,84 @@ import { Response } from 'express';
 import prisma from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
 
+// Helper to synchronize overdue statuses based on current date
+export const syncTenantOverdueStatus = async (tenantId: string) => {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+  // 1. Mark past-due pending amortizations as OVERDUE
+  await prisma.amortizationSchedule.updateMany({
+    where: {
+      loan: { tenantId },
+      dueDate: { lt: startOfToday },
+      status: { in: ['PENDING', 'PARTIAL'] }
+    },
+    data: {
+      status: 'OVERDUE'
+    }
+  });
+
+  // 2. Mark active loans that have overdue amortizations (or past endDate) as OVERDUE
+  const overdueLoans = await prisma.loan.findMany({
+    where: {
+      tenantId,
+      status: 'ACTIVE',
+      OR: [
+        {
+          amortizations: {
+            some: {
+              dueDate: { lt: startOfToday },
+              status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] }
+            }
+          }
+        },
+        {
+          endDate: { lt: startOfToday },
+          balance: { gt: 0 }
+        }
+      ]
+    },
+    select: { id: true }
+  });
+
+  if (overdueLoans.length > 0) {
+    await prisma.loan.updateMany({
+      where: { id: { in: overdueLoans.map(l => l.id) } },
+      data: { status: 'OVERDUE' }
+    });
+  }
+
+  // 3. Revert loans back to ACTIVE if their overdue installments were paid (and not past endDate)
+  const recoveredLoans = await prisma.loan.findMany({
+    where: {
+      tenantId,
+      status: 'OVERDUE',
+      endDate: { gte: startOfToday },
+      amortizations: {
+        none: {
+          dueDate: { lt: startOfToday },
+          status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] }
+        }
+      }
+    },
+    select: { id: true }
+  });
+
+  if (recoveredLoans.length > 0) {
+    await prisma.loan.updateMany({
+      where: { id: { in: recoveredLoans.map(l => l.id) } },
+      data: { status: 'ACTIVE' }
+    });
+  }
+};
+
 export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
 
   try {
+    // Sincronizar automáticamente estados de mora
+    await syncTenantOverdueStatus(tenantId);
+
     // 1. Get active and overdue loans
     const activeLoans = await prisma.loan.findMany({
       where: {
@@ -20,12 +94,12 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
     const currentOutstandingBalance = activeLoans.reduce((sum, l) => sum + l.balance, 0);
     const totalExpectedInteres = activeLoans.reduce((sum, l) => sum + l.interestAmount, 0);
 
-    // 2. Get payments stats
+    // 2. Get payments stats (incluyendo mora cobrada)
     const allPayments = await prisma.payment.findMany({
       where: { tenantId }
     });
 
-    const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalCollected = allPayments.reduce((sum, p) => sum + p.amount + (p.lateInterestAmount || 0), 0);
 
     // 3. Collected today
     const startOfToday = new Date();
@@ -42,7 +116,7 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
         }
       }
     });
-    const totalCollectedToday = paymentsToday.reduce((sum, p) => sum + p.amount, 0);
+    const totalCollectedToday = paymentsToday.reduce((sum, p) => sum + p.amount + (p.lateInterestAmount || 0), 0);
 
     // 4. Overdue loans calculations
     const overdueLoans = activeLoans.filter(l => l.status === 'OVERDUE');
@@ -74,7 +148,7 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
         }
       });
 
-      const dayTotal = dayPayments.reduce((sum, p) => sum + p.amount, 0);
+      const dayTotal = dayPayments.reduce((sum, p) => sum + p.amount + (p.lateInterestAmount || 0), 0);
       const formattedDate = d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
 
       last7DaysData.push({
@@ -100,7 +174,20 @@ export const getPortfolioStats = async (req: AuthenticatedRequest, res: Response
     });
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    const availableCapital = Math.max(0, initialCapital - totalCapitalPrestado + totalCollected + totalIncomes - totalExpenses);
+    // Capital pendiente en calle
+    const capitalEnCalle = activeLoans.reduce((sum, l) => {
+      const ratio = l.totalAmount > 0 ? l.principal / l.totalAmount : 1;
+      return sum + (l.balance * ratio);
+    }, 0);
+
+    const amortizations = await prisma.amortizationSchedule.findMany({
+      where: { loan: { tenantId } },
+      select: { interestPaid: true }
+    });
+    const totalInteresesCobrados = amortizations.reduce((sum, a) => sum + a.interestPaid, 0);
+    const totalMoraCobrada = allPayments.reduce((sum, p) => sum + (p.lateInterestAmount || 0), 0);
+
+    const availableCapital = Math.max(0, Math.round((initialCapital + totalInteresesCobrados + totalMoraCobrada + totalIncomes - totalExpenses - capitalEnCalle) * 100) / 100);
 
     return res.json({
       summary: {
@@ -135,6 +222,8 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
   const tenantId = req.tenantId!;
 
   try {
+    await syncTenantOverdueStatus(tenantId);
+
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { initialCapital: true }
@@ -146,12 +235,12 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
     });
 
     const capitalPrestado = activeLoans.reduce((sum, l) => sum + l.principal, 0);
-    const totalInteresProyectado = activeLoans.reduce((sum, l) => sum + l.interestAmount, 0);
 
     const allPayments = await prisma.payment.findMany({
       where: { tenantId }
     });
-    const totalCollected = allPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalCollected = allPayments.reduce((sum, p) => sum + p.amount + (p.lateInterestAmount || 0), 0);
+    const totalMoraCobrada = allPayments.reduce((sum, p) => sum + (p.lateInterestAmount || 0), 0);
 
     const allIncomes = await prisma.income.findMany({
       where: { tenantId }
@@ -163,17 +252,28 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
     });
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    const availableCapital = Math.max(0, initialCapital - capitalPrestado + totalCollected + totalIncomes - totalExpenses);
-
     const amortizations = await prisma.amortizationSchedule.findMany({
       where: { loan: { tenantId } }
     });
 
-    const capitalCobrado = amortizations.reduce((sum, a) => sum + a.principalPaid, 0);
-    const interesesCobrados = amortizations.reduce((sum, a) => sum + a.interestPaid, 0);
+    const capitalCobrado = Math.round(amortizations.reduce((sum, a) => sum + a.principalPaid, 0) * 100) / 100;
+    const interesesCobrados = Math.round(amortizations.reduce((sum, a) => sum + a.interestPaid, 0) * 100) / 100;
     
-    const capitalPorCobrar = Math.max(0, capitalPrestado - capitalCobrado);
-    const interesesPorCobrar = Math.max(0, totalInteresProyectado - interesesCobrados);
+    // Capital pendiente en calle
+    const capitalPorCobrar = Math.round(activeLoans.reduce((sum, l) => {
+      const ratio = l.totalAmount > 0 ? l.principal / l.totalAmount : 1;
+      return sum + (l.balance * ratio);
+    }, 0) * 100) / 100;
+
+    // Intereses pendientes en calle
+    const interesesPorCobrar = Math.round(activeLoans.reduce((sum, l) => {
+      const ratio = l.totalAmount > 0 ? l.principal / l.totalAmount : 1;
+      return sum + (l.balance * (1 - ratio));
+    }, 0) * 100) / 100;
+
+    const cajaIntereses = Math.round((interesesCobrados + totalMoraCobrada) * 100) / 100;
+
+    const availableCapital = Math.max(0, Math.round((initialCapital + cajaIntereses + totalIncomes - totalExpenses - capitalPorCobrar) * 100) / 100);
 
     return res.json({
       initialCapital,
@@ -182,7 +282,7 @@ export const getTreasuryReport = async (req: AuthenticatedRequest, res: Response
       totalCollected,
       totalIncomes,
       totalExpenses,
-      cajaIntereses: interesesCobrados,
+      cajaIntereses,
       capitalPorCobrar,
       capitalCobrado,
       interesesPorCobrar,

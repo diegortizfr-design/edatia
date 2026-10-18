@@ -1,12 +1,14 @@
 import { Response } from 'express';
 import prisma from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { syncTenantOverdueStatus } from './reportsController';
 
 export const getDailyRoute = async (req: AuthenticatedRequest, res: Response) => {
   const tenantId = req.tenantId!;
   const { date } = req.query; // Expects YYYY-MM-DD, defaults to today
 
   try {
+    await syncTenantOverdueStatus(tenantId);
     const targetDate = date ? new Date(String(date)) : new Date();
     
     // Set targetDate to end of that day (23:59:59.999) to capture all installments due up to that date
@@ -89,6 +91,7 @@ export const getRouteCheckout = async (req: AuthenticatedRequest, res: Response)
   const { date } = req.query; // Expects YYYY-MM-DD
 
   try {
+    await syncTenantOverdueStatus(tenantId);
     const targetDate = date ? new Date(String(date)) : new Date();
     
     // Start and end of the target day

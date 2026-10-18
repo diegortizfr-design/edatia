@@ -57,6 +57,7 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
       // B. Distribute the payment amount over pending amortization installments (FIFO order)
       let remainingPayment = payAmount;
       const amortizationsToUpdate = loan.amortizations;
+      const principalRatio = loan.totalAmount > 0 ? loan.principal / loan.totalAmount : 1;
 
       for (const amort of amortizationsToUpdate) {
         if (remainingPayment <= 0) break;
@@ -65,10 +66,15 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
 
         if (remainingPayment >= outstandingAmountForInstallment) {
           // Pay installment fully
+          const fullPrincipal = Math.round(amort.amount * principalRatio * 100) / 100;
+          const fullInterest = Math.round((amort.amount - fullPrincipal) * 100) / 100;
+
           await tx.amortizationSchedule.update({
             where: { id: amort.id },
             data: {
               amountPaid: amort.amount,
+              principalPaid: fullPrincipal,
+              interestPaid: fullInterest,
               status: 'PAID',
               paidAt: new Date()
             }
@@ -76,10 +82,16 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
           remainingPayment -= outstandingAmountForInstallment;
         } else {
           // Pay installment partially
+          const newAmountPaid = Math.round((amort.amountPaid + remainingPayment) * 100) / 100;
+          const partialPrincipal = Math.round(newAmountPaid * principalRatio * 100) / 100;
+          const partialInterest = Math.round((newAmountPaid - partialPrincipal) * 100) / 100;
+
           await tx.amortizationSchedule.update({
             where: { id: amort.id },
             data: {
-              amountPaid: amort.amountPaid + remainingPayment,
+              amountPaid: newAmountPaid,
+              principalPaid: partialPrincipal,
+              interestPaid: partialInterest,
               status: 'PARTIAL',
               paidAt: new Date()
             }
@@ -88,9 +100,10 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
         }
       }
 
-      // C. Update the loan balance
-      const newBalance = Math.max(0, loan.balance - payAmount);
-      const isPaid = newBalance === 0;
+      // C. Update the loan balance with rounding/cent tolerance
+      const rawNewBalance = Math.max(0, loan.balance - payAmount);
+      const isPaid = rawNewBalance < 1; // Cancela el crédito si el saldo residual es menor a 1 peso/centavo por redondeo
+      const newBalance = isPaid ? 0 : Math.round(rawNewBalance * 100) / 100;
 
       const updatedLoan = await tx.loan.update({
         where: { id: loanId },
@@ -99,6 +112,17 @@ export const createPayment = async (req: AuthenticatedRequest, res: Response) =>
           status: isPaid ? 'PAID' : loan.status
         }
       });
+
+      if (isPaid) {
+        // Asegurar que todas las cuotas del préstamo cancelado queden marcadas como PAID
+        await tx.amortizationSchedule.updateMany({
+          where: { loanId, status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } },
+          data: {
+            status: 'PAID',
+            paidAt: new Date()
+          }
+        });
+      }
 
       return { payment, updatedLoan };
     });
