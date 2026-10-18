@@ -43,7 +43,11 @@ interface Payment {
   };
 }
 
-export const Transactions: React.FC = () => {
+interface TransactionsProps {
+  initialDateFilter?: 'today' | 'yesterday' | 'week' | 'month' | 'all';
+}
+
+export const Transactions: React.FC<TransactionsProps> = ({ initialDateFilter }) => {
   const [activeTab, setActiveTab] = useState<'receipts' | 'invoices'>('receipts');
   
   // Data states
@@ -54,8 +58,15 @@ export const Transactions: React.FC = () => {
 
   // Filtering states
   const [search, setSearch] = useState('');
-  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'all'>('today');
+  const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'all'>(initialDateFilter || 'today');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  // Sincronizar filtro cuando cambie desde la navegación del Dashboard
+  useEffect(() => {
+    if (initialDateFilter) {
+      setDateFilter(initialDateFilter);
+    }
+  }, [initialDateFilter]);
 
   // Printing states
   const [printInvoiceData, setPrintInvoiceData] = useState<any>(null);

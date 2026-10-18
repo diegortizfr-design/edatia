@@ -34,15 +34,23 @@ interface PortfolioStats {
 interface PortfolioProps {
   setCurrentPage: (page: string) => void;
   setSelectedClientId: (id: string) => void;
+  initialFilter?: string;
 }
 
-export const Portfolio: React.FC<PortfolioProps> = ({ setCurrentPage, setSelectedClientId }) => {
+export const Portfolio: React.FC<PortfolioProps> = ({ setCurrentPage, setSelectedClientId, initialFilter }) => {
   const [loans, setLoans] = useState<LoanPortfolioItem[]>([]);
   const [stats, setStats] = useState<PortfolioStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filterStatus, setFilterStatus] = useState('ALL'); // ALL, ACTIVE, OVERDUE
+  const [filterStatus, setFilterStatus] = useState(initialFilter || 'ALL'); // ALL, ACTIVE, OVERDUE
   const [search, setSearch] = useState('');
+
+  // Sincronizar filtro cuando cambie desde la navegación del Dashboard
+  useEffect(() => {
+    if (initialFilter) {
+      setFilterStatus(initialFilter);
+    }
+  }, [initialFilter]);
 
   const fetchPortfolioData = async () => {
     try {
