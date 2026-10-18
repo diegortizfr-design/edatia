@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { apiCall } from '../utils/api';
-import { Plus, Search, User, Phone, MapPin, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
+import { 
+  Plus, Search, User, Phone, MapPin, ChevronRight, Trash2, AlertTriangle,
+  ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, SlidersHorizontal
+} from 'lucide-react';
 
 interface Client {
   id: string;
@@ -10,8 +13,12 @@ interface Client {
   address: string;
   email: string | null;
   status: string;
+  defaultFrequency?: string;
   activeLoansCount: number;
+  overdueLoansCount?: number;
+  hasOverdue?: boolean;
   totalDebt: number;
+  createdAt?: string;
 }
 
 interface ClientsProps {
@@ -19,12 +26,24 @@ interface ClientsProps {
   setSelectedClientId: (id: string) => void;
 }
 
+type SortField = 'name' | 'phone' | 'address' | 'activeLoansCount' | 'totalDebt';
+type SortOrder = 'asc' | 'desc';
+type DebtFilter = 'ALL' | 'OVERDUE' | 'UP_TO_DATE' | 'PAID';
+
 export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedClientId }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Sorting State
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  // Filters State
+  const [debtFilter, setDebtFilter] = useState<DebtFilter>('ALL');
+  const [frequencyFilter, setFrequencyFilter] = useState<string>('ALL');
 
   // Delete modal state
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
@@ -75,6 +94,84 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
+  // Manejador de ordenamiento por columna
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      // Para métricas numéricas (deuda o préstamos activos), ordenar descendente por defecto
+      setSortOrder(field === 'totalDebt' || field === 'activeLoansCount' ? 'desc' : 'asc');
+    }
+  };
+
+  // Contadores para pestañas de filtros
+  const counts = useMemo(() => {
+    const total = clients.length;
+    const overdue = clients.filter(c => c.hasOverdue || (c.overdueLoansCount && c.overdueLoansCount > 0)).length;
+    const upToDate = clients.filter(c => c.activeLoansCount > 0 && !c.hasOverdue && (!c.overdueLoansCount || c.overdueLoansCount === 0)).length;
+    const paid = clients.filter(c => c.activeLoansCount === 0 || c.totalDebt === 0).length;
+    return { total, overdue, upToDate, paid };
+  }, [clients]);
+
+  // Filtrado y ordenamiento en memoria
+  const processedClients = useMemo(() => {
+    return clients
+      .filter(client => {
+        // 1. Filtro por estado de cartera / deuda
+        if (debtFilter === 'OVERDUE') {
+          const isOverdue = client.hasOverdue || (client.overdueLoansCount && client.overdueLoansCount > 0);
+          if (!isOverdue) return false;
+        } else if (debtFilter === 'UP_TO_DATE') {
+          const isUpToDate = client.activeLoansCount > 0 && !client.hasOverdue && (!client.overdueLoansCount || client.overdueLoansCount === 0);
+          if (!isUpToDate) return false;
+        } else if (debtFilter === 'PAID') {
+          const isPaid = client.activeLoansCount === 0 || client.totalDebt === 0;
+          if (!isPaid) return false;
+        }
+
+        // 2. Filtro por periodicidad / frecuencia
+        if (frequencyFilter !== 'ALL') {
+          const freq = client.defaultFrequency || 'DAILY';
+          if (freq !== frequencyFilter) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        let valA: any = a[sortField];
+        let valB: any = b[sortField];
+
+        if (typeof valA === 'string') {
+          valA = (valA || '').toLowerCase();
+          valB = (valB || '').toLowerCase();
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      });
+  }, [clients, debtFilter, frequencyFilter, sortField, sortOrder]);
+
+  const hasActiveFilters = search !== '' || debtFilter !== 'ALL' || frequencyFilter !== 'ALL';
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setDebtFilter('ALL');
+    setFrequencyFilter('ALL');
+  };
+
+  const translateFrequency = (freq?: string) => {
+    const freqs: Record<string, string> = {
+      DAILY: 'Diario',
+      WEEKLY: 'Semanal',
+      BIWEEKLY: 'Quincenal',
+      MONTHLY: 'Mensual'
+    };
+    return freqs[freq || 'DAILY'] || freq || 'Diario';
+  };
+
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -113,6 +210,41 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
     setCurrentPage('client-detail');
   };
 
+  // Renderizador de encabezado ordenable
+  const renderSortHeader = (label: string, field: SortField, align: 'left' | 'center' | 'right' = 'left') => {
+    const isActive = sortField === field;
+    return (
+      <th
+        onClick={() => handleSort(field)}
+        className={`p-4 cursor-pointer hover:bg-slate-800/60 select-none group transition ${
+          align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'
+        }`}
+        title={`Clic para ordenar por ${label} (${isActive && sortOrder === 'asc' ? 'descendente' : 'ascendente'})`}
+      >
+        <div className={`inline-flex items-center gap-1.5 ${
+          align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
+        }`}>
+          <span className={`text-xs font-semibold uppercase tracking-wider ${
+            isActive ? 'text-brand-400 font-bold' : 'text-slate-400 group-hover:text-slate-200'
+          }`}>
+            {label}
+          </span>
+          <span className="shrink-0">
+            {isActive ? (
+              sortOrder === 'asc' ? (
+                <ArrowUp className="w-3.5 h-3.5 text-brand-400" />
+              ) : (
+                <ArrowDown className="w-3.5 h-3.5 text-brand-400" />
+              )
+            ) : (
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-600 opacity-40 group-hover:opacity-100 transition-opacity" />
+            )}
+          </span>
+        </div>
+      </th>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
@@ -133,16 +265,141 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="glass-card p-4 rounded-xl flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, documento o teléfono..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition"
-          />
+      <div className="glass-card p-4 rounded-xl space-y-3">
+        {/* Upper row: Search bar + Status Tabs */}
+        <div className="flex flex-col lg:flex-row gap-3 justify-between items-stretch lg:items-center">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, documento o teléfono..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:border-brand-500 transition"
+            />
+          </div>
+
+          {/* Debt Status Tabs */}
+          <div className="flex flex-wrap gap-1.5 bg-slate-950/50 p-1 rounded-lg border border-slate-850">
+            <button
+              onClick={() => setDebtFilter('ALL')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                debtFilter === 'ALL'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>Todos</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                debtFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {counts.total}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setDebtFilter('OVERDUE')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                debtFilter === 'OVERDUE'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-red-300 hover:bg-red-500/10'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${counts.overdue > 0 ? 'bg-red-400 animate-pulse' : 'bg-slate-600'}`}></span>
+              <span>En Mora</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                debtFilter === 'OVERDUE' ? 'bg-white/20 text-white' : counts.overdue > 0 ? 'bg-red-500/20 text-red-400' : 'bg-slate-800 text-slate-500'
+              }`}>
+                {counts.overdue}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setDebtFilter('UP_TO_DATE')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                debtFilter === 'UP_TO_DATE'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10'
+              }`}
+            >
+              <span>Al Día</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                debtFilter === 'UP_TO_DATE' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {counts.upToDate}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setDebtFilter('PAID')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                debtFilter === 'PAID'
+                  ? 'bg-slate-700 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>Paz y Salvo</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                debtFilter === 'PAID' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
+              }`}>
+                {counts.paid}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Lower row: Frequency filter + Quick Sort Indicator + Summary & Reset */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60 text-xs text-slate-400">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-brand-400" />
+              <span className="font-medium text-slate-300">Modalidad:</span>
+              <select
+                value={frequencyFilter}
+                onChange={(e) => setFrequencyFilter(e.target.value)}
+                className="bg-slate-900 border border-slate-800 rounded-md px-2.5 py-1 text-xs text-white focus:outline-none focus:border-brand-500 transition cursor-pointer"
+              >
+                <option value="ALL">Todas las periodicidades</option>
+                <option value="DAILY">Diario</option>
+                <option value="WEEKLY">Semanal</option>
+                <option value="BIWEEKLY">Quincenal</option>
+                <option value="MONTHLY">Mensual</option>
+              </select>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
+              <span>•</span>
+              <span>Orden actual:</span>
+              <span className="text-slate-300 font-medium">
+                {sortField === 'name' && 'Nombre / Cédula'}
+                {sortField === 'phone' && 'Contacto'}
+                {sortField === 'address' && 'Dirección'}
+                {sortField === 'activeLoansCount' && 'Créditos Activos'}
+                {sortField === 'totalDebt' && 'Saldo Pendiente'}
+              </span>
+              <span className="text-brand-400">
+                ({sortOrder === 'asc' ? 'Ascendente ↑' : 'Descendente ↓'})
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <span className="text-slate-400">
+              Mostrando <strong className="text-white">{processedClients.length}</strong> de {clients.length} clientes
+            </span>
+
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="flex items-center gap-1 text-brand-400 hover:text-brand-300 hover:underline transition"
+                title="Restablecer todos los filtros y búsqueda"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Limpiar filtros</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -161,12 +418,25 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
       ) : clients.length === 0 ? (
         <div className="glass-card p-12 text-center rounded-xl">
           <User className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-450 font-medium">No se encontraron clientes registrados.</p>
+          <p className="text-slate-450 font-medium">No se encontraron clientes registrados en la empresa.</p>
           <button
             onClick={() => setIsModalOpen(true)}
             className="mt-4 text-brand-400 hover:text-brand-300 font-semibold"
           >
             Crear el primer cliente ahora
+          </button>
+        </div>
+      ) : processedClients.length === 0 ? (
+        <div className="glass-card p-12 text-center rounded-xl">
+          <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+          <p className="text-white font-semibold">No se encontraron clientes con los filtros aplicados.</p>
+          <p className="text-slate-400 text-xs mt-1">Prueba cambiando la búsqueda, el estado o la modalidad.</p>
+          <button
+            onClick={handleClearFilters}
+            className="mt-4 px-4 py-2 bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Restablecer Filtros
           </button>
         </div>
       ) : (
@@ -177,84 +447,108 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                    <th className="p-4">Nombre / Cédula</th>
-                    <th className="p-4">Contacto</th>
-                    <th className="p-4">Dirección</th>
-                    <th className="p-4 text-center">Créditos Activos</th>
-                    <th className="p-4 text-right">Saldo Pendiente</th>
-                    <th className="p-4"></th>
+                  <tr className="border-b border-slate-800 bg-slate-900/40">
+                    {renderSortHeader('Nombre / Cédula', 'name', 'left')}
+                    {renderSortHeader('Contacto', 'phone', 'left')}
+                    {renderSortHeader('Dirección', 'address', 'left')}
+                    {renderSortHeader('Créditos Activos', 'activeLoansCount', 'center')}
+                    {renderSortHeader('Saldo Pendiente', 'totalDebt', 'right')}
+                    <th className="p-4 w-16"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850">
-                  {clients.map((client) => (
-                    <tr
-                      key={client.id}
-                      onClick={() => handleSelectClient(client.id)}
-                      className="hover:bg-slate-900/30 cursor-pointer transition group"
-                    >
-                      <td className="p-4">
-                        <div className="font-semibold text-white group-hover:text-brand-400 transition-colors">
-                          {client.name}
-                        </div>
-                        <div className="text-xs text-slate-500 font-mono mt-0.5">
-                          CC: {client.documentId}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300">
-                          <Phone className="w-3.5 h-3.5 text-slate-500" />
-                          {client.phone}
-                        </div>
-                        {client.email && (
-                          <div className="text-xs text-slate-500 truncate max-w-[200px] mt-0.5">
-                            {client.email}
+                  {processedClients.map((client) => {
+                    const isOverdue = client.hasOverdue || (client.overdueLoansCount && client.overdueLoansCount > 0);
+                    return (
+                      <tr
+                        key={client.id}
+                        onClick={() => handleSelectClient(client.id)}
+                        className="hover:bg-slate-900/40 cursor-pointer transition group"
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white group-hover:text-brand-400 transition-colors">
+                              {client.name}
+                            </span>
+                            {isOverdue && (
+                              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30">
+                                Mora
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1.5 text-sm text-slate-300 max-w-[220px] truncate">
-                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          {client.address}
-                        </div>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span
-                          className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold leading-none ${
-                            client.activeLoansCount > 0
-                              ? 'bg-brand-500/10 text-brand-400'
-                              : 'bg-slate-850 text-slate-500'
-                          }`}
-                        >
-                          {client.activeLoansCount}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right font-mono font-semibold text-slate-200">
-                        {client.totalDebt > 0 ? (
-                          <span className="text-brand-400">
-                            ${client.totalDebt.toLocaleString('es-CO')}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">$0</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setClientToDelete(client);
-                            }}
-                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                            title="Eliminar Cliente"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-slate-500 font-mono">
+                              CC: {client.documentId}
+                            </span>
+                            <span className="text-[10px] text-slate-400 bg-slate-850 px-1.5 py-0.2 rounded font-sans">
+                              {translateFrequency(client.defaultFrequency)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1.5 text-sm text-slate-300">
+                            <Phone className="w-3.5 h-3.5 text-slate-500" />
+                            {client.phone}
+                          </div>
+                          {client.email && (
+                            <div className="text-xs text-slate-500 truncate max-w-[200px] mt-0.5">
+                              {client.email}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1.5 text-sm text-slate-300 max-w-[220px] truncate">
+                            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            {client.address}
+                          </div>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="inline-flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold leading-none ${
+                                isOverdue
+                                  ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                  : client.activeLoansCount > 0
+                                  ? 'bg-brand-500/10 text-brand-400'
+                                  : 'bg-slate-850 text-slate-500'
+                              }`}
+                            >
+                              {client.activeLoansCount}
+                            </span>
+                            {client.overdueLoansCount && client.overdueLoansCount > 0 && (
+                              <span className="text-[10px] text-red-400 font-semibold">
+                                ({client.overdueLoansCount} en mora)
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right font-mono font-semibold">
+                          {client.totalDebt > 0 ? (
+                            <span className={isOverdue ? 'text-red-400' : 'text-brand-400'}>
+                              ${client.totalDebt.toLocaleString('es-CO')}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">$0</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setClientToDelete(client);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                              title="Eliminar Cliente"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -262,64 +556,87 @@ export const Clients: React.FC<ClientsProps> = ({ setCurrentPage, setSelectedCli
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {clients.map((client) => (
-              <div
-                key={client.id}
-                onClick={() => handleSelectClient(client.id)}
-                className="glass-card p-4 rounded-xl border border-slate-800 active:border-brand-500 transition space-y-3"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-bold text-white text-base">{client.name}</h4>
-                    <span className="text-xs text-slate-500 font-mono">CC: {client.documentId}</span>
+            {processedClients.map((client) => {
+              const isOverdue = client.hasOverdue || (client.overdueLoansCount && client.overdueLoansCount > 0);
+              return (
+                <div
+                  key={client.id}
+                  onClick={() => handleSelectClient(client.id)}
+                  className={`glass-card p-4 rounded-xl border transition space-y-3 cursor-pointer ${
+                    isOverdue 
+                      ? 'border-red-500/30 hover:border-red-500/50' 
+                      : 'border-slate-800 active:border-brand-500'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-white text-base">{client.name}</h4>
+                        {isOverdue && (
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.2 rounded bg-red-500/20 text-red-400">
+                            Mora
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-slate-500 font-mono">CC: {client.documentId}</span>
+                        <span className="text-[10px] text-slate-400 bg-slate-850 px-1.5 py-0.2 rounded">
+                          {translateFrequency(client.defaultFrequency)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {client.activeLoansCount > 0 ? (
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${
+                          isOverdue
+                            ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                            : 'bg-brand-500/10 text-brand-400 border-brand-500/20'
+                        }`}>
+                          {client.activeLoansCount} Activos
+                        </span>
+                      ) : (
+                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-850 text-slate-500">
+                          Sin Créditos
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setClientToDelete(client);
+                        }}
+                        className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition"
+                        title="Eliminar Cliente"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {client.activeLoansCount > 0 ? (
-                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                        {client.activeLoansCount} Activos
-                      </span>
-                    ) : (
-                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-850 text-slate-500">
-                        Sin Créditos
-                      </span>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setClientToDelete(client);
-                      }}
-                      className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition"
-                      title="Eliminar Cliente"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
 
-                <div className="flex justify-between items-end pt-3 border-t border-slate-850 text-xs text-slate-400">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-slate-305">
-                      <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                      {client.phone}
+                  <div className="flex justify-between items-end pt-3 border-t border-slate-850 text-xs text-slate-400">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-slate-300">
+                        <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        {client.phone}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-400 max-w-[180px] truncate">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        {client.address}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-400 max-w-[180px] truncate">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                      {client.address}
+                    <div className="text-right">
+                      <span className="text-[9px] text-slate-500 block">Saldo Pendiente:</span>
+                      {client.totalDebt > 0 ? (
+                        <span className={`font-mono font-bold text-sm ${isOverdue ? 'text-red-400' : 'text-brand-400'}`}>
+                          ${client.totalDebt.toLocaleString('es-CO')}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">$0</span>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] text-slate-550 block">Saldo Pendiente:</span>
-                    {client.totalDebt > 0 ? (
-                      <span className="font-mono font-bold text-sm text-brand-400">
-                        ${client.totalDebt.toLocaleString('es-CO')}
-                      </span>
-                    ) : (
-                      <span className="text-slate-500">$0</span>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
