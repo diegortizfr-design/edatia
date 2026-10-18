@@ -67,6 +67,16 @@ Todas las tarjetas KPI y métricas principales son clickeables y redirigen con f
 - **Diseño Adaptativo Móvil:**
   - Tarjetas de cliente optimizadas para smartphones con indicadores de mora y saldo.
 
+### 3. Edición y Anulación de Préstamos (Seguridad y Protección Contable)
+- **Corrección de Montos y Parámetros (`PUT /loans/:id`):**
+  - Si el usuario se equivocó al ingresar el monto prestado, la tasa de interés, el número de cuotas o la fecha de inicio, puede corregirlos desde el botón **"✏️ Editar Monto"** en la ficha del cliente o en la tabla de amortización.
+  - El modal `EditLoanModal` recalcula y simula en tiempo real la nueva cuota, el nuevo interés y la fecha estimada de vencimiento.
+  - Al confirmar, se regenera limpiamente el plan de amortización con las nuevas fechas y montos exactos.
+- **Anulación Segura (`DELETE /loans/:id`):**
+  - Permite anular por completo un crédito generado por error, eliminando sus cuotas y restituyendo el capital disponible en caja.
+- **Blindaje Contable contra Alteraciones:**
+  - Si el préstamo **ya cuenta con abonos registrados**, la edición directa del capital queda bloqueada automáticamente para preservar la validez legal de los recibos de caja emitidos, guiando al usuario hacia el flujo de **Renovación de Crédito** para refinanciar el saldo.
+
 ---
 
 ## 🔑 Credenciales y Accesos Rápidos
