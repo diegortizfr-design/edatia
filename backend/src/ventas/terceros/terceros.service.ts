@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { CreateTerceroDto, UpdateTerceroDto } from './dto/tercero.dto'
 
@@ -53,6 +53,15 @@ export class TercerosService {
   }
 
   async create(dto: CreateTerceroDto, empresaId: number) {
+    if (dto.vendedorAsignadoId) {
+      const vend = await this.prisma.tercero.findFirst({
+        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+      })
+      if (!vend) {
+        throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
+      }
+    }
+
     const exists = await this.prisma.tercero.findUnique({
       where: {
         empresaId_tipoDocumento_numeroDocumento: {
@@ -93,6 +102,15 @@ export class TercerosService {
 
   async update(id: number, dto: UpdateTerceroDto, empresaId: number) {
     await this.findOne(id, empresaId)
+
+    if (dto.vendedorAsignadoId) {
+      const vend = await this.prisma.tercero.findFirst({
+        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+      })
+      if (!vend) {
+        throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
+      }
+    }
 
     const { sucursales, ...rest } = dto
 
@@ -141,6 +159,9 @@ export class TercerosService {
             ventasPos: true,
             ordenesCompra: true,
             facturasCompra: true,
+            proveedoresRel: true,
+            cajasPosDefault: true,
+            clientesAsignados: true,
           }
         }
       }
@@ -158,15 +179,17 @@ export class TercerosService {
         data: { activo: false }
       })
       return {
-        message: 'El tercero tiene historial de transacciones y no se puede eliminar físicamente. Ha sido desactivado automáticamente.',
+        message: 'El tercero tiene historial de transacciones o relaciones vinculadas y no se puede eliminar físicamente. Ha sido desactivado automáticamente.',
         softDeleted: true
       }
     }
 
-    // Hard delete
-    await this.prisma.tercero.delete({
-      where: { id }
+    // Hard delete seguro dentro de transacción
+    await this.prisma.$transaction(async (tx) => {
+      await tx.sucursalTercero.deleteMany({ where: { terceroId: id, empresaId } })
+      await tx.tercero.delete({ where: { id } })
     })
+
     return {
       message: 'Tercero eliminado exitosamente.',
       softDeleted: false

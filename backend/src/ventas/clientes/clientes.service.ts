@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { CreateClienteDto, UpdateClienteDto } from './dto/cliente.dto'
 
@@ -22,6 +22,7 @@ export class ClientesService {
       },
       include: {
         sucursales: true,
+        vendedorAsignado: { select: { id: true, nombre: true } },
         _count: { select: { facturasVenta: true, cotizaciones: true } }
       },
       orderBy: { nombre: 'asc' },
@@ -71,6 +72,15 @@ export class ClientesService {
   }
 
   async create(dto: CreateClienteDto, empresaId: number) {
+    if (dto.vendedorAsignadoId) {
+      const vend = await this.prisma.tercero.findFirst({
+        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+      })
+      if (!vend) {
+        throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
+      }
+    }
+
     // Buscar si ya existe un Tercero con ese documento
     let tercero = await this.prisma.tercero.findUnique({
       where: {
@@ -143,6 +153,16 @@ export class ClientesService {
 
   async update(id: number, dto: UpdateClienteDto, empresaId: number) {
     await this.findOne(id, empresaId)
+
+    if (dto.vendedorAsignadoId) {
+      const vend = await this.prisma.tercero.findFirst({
+        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+      })
+      if (!vend) {
+        throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
+      }
+    }
+
     const { sucursales, ...rest } = dto
 
     return this.prisma.$transaction(async (tx) => {
@@ -184,7 +204,27 @@ export class ClientesService {
   async remove(id: number, empresaId: number) {
     const c = await this.findOne(id, empresaId)
     
-    // Verificación inteligente de transacciones
+    // Si tiene otros roles activos (Proveedor o Colaborador), NO borrar el tercero
+    const tieneOtroRol = !!c.esProveedor || !!c.esColaborador || !!c.esVendedor
+    if (tieneOtroRol) {
+      await this.prisma.tercero.update({
+        where: { id },
+        data: {
+          esCliente: false,
+          cupoCredito: null,
+          plazoCredito: 0,
+          descuentoCliente: 0,
+          vendedorAsignadoId: null,
+        }
+      })
+      return {
+        message: 'El rol de cliente ha sido removido exitosamente. El registro del tercero se conserva intacto en sus otros roles (Proveedor / Colaborador).',
+        softDeleted: true,
+        rolRemovido: true
+      }
+    }
+
+    // Verificación exhaustiva de dependencias en todo el ERP
     const count = await this.prisma.tercero.findFirst({
       where: { id, empresaId },
       select: {
@@ -196,25 +236,38 @@ export class ClientesService {
             notasCredito: true,
             recibos: true,
             ventasPos: true,
+            ordenesCompra: true,
+            facturasCompra: true,
+            proveedoresRel: true,
+            cajasPosDefault: true,
+            clientesAsignados: true,
           }
         }
       }
     })
 
-    const hasTransactions = count ? Object.values(count._count).some(v => v > 0) : false
+    const hasDependencies = count ? Object.values(count._count).some(v => v > 0) : false
 
-    if (hasTransactions) {
+    if (hasDependencies) {
       await this.prisma.tercero.update({
         where: { id },
-        data: { activo: false }
+        data: { activo: false, esCliente: false }
       })
-      return { message: 'El cliente tiene historial y ha sido desactivado automáticamente.', softDeleted: true }
+      return {
+        message: 'El cliente tiene historial de transacciones o relaciones vinculadas. Ha sido desactivado automáticamente.',
+        softDeleted: true
+      }
     }
 
-    await this.prisma.tercero.delete({
-      where: { id },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.sucursalTercero.deleteMany({ where: { terceroId: id, empresaId } })
+      await tx.tercero.delete({ where: { id } })
     })
-    return { message: 'Cliente eliminado exitosamente.', softDeleted: false }
+
+    return {
+      message: 'Cliente eliminado definitivamente del sistema.',
+      softDeleted: false
+    }
   }
 
   async saldos(empresaId: number) {

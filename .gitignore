@@ -53,3 +53,8 @@ traefik/acme.json
 # ImÃ¡genes fuente del catÃ¡logo (ya alojadas en Cloudinary)
 tiendas-virtuales/glowxir/public/catalogo/
 tiendas-virtuales/distribuidorababyworld/public/catalogo/
+
+# Local shell wrappers
+powershell.cmd
+backend/powershell.cmd
+

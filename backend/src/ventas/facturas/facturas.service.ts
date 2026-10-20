@@ -76,6 +76,23 @@ export class FacturasService {
     })
 
     const nuevaFactura = await this.prisma.$transaction(async (tx) => {
+      // Validar que el cliente pertenezca a la empresa y esté activo
+      const cliente = await tx.tercero.findFirst({
+        where: { id: dto.clienteId, empresaId, activo: true },
+      })
+      if (!cliente) {
+        throw new BadRequestException('El cliente seleccionado no pertenece a su empresa o se encuentra inactivo')
+      }
+
+      if (dto.vendedorId) {
+        const vendedor = await tx.tercero.findFirst({
+          where: { id: dto.vendedorId, empresaId, activo: true },
+        })
+        if (!vendedor) {
+          throw new BadRequestException('El vendedor asignado no pertenece a su empresa o se encuentra inactivo')
+        }
+      }
+
       let cufe: string | null = null
       let qrUrl: string | null = null
       let xmlDIAN: string | null = null

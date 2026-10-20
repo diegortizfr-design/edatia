@@ -197,10 +197,17 @@ const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
   }
 }
 
-export function ConfigTerceroForm() {
+export interface ConfigTerceroFormProps {
+  defaultRole?: 'cliente' | 'proveedor' | 'empleado'
+}
+
+export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
-  const isEdit = !!id
+  const roleParam = searchParams.get('role') || defaultRole
+  const numericId = id ? parseInt(id.replace(/\D/g, ''), 10) : null
+  const terceroId = numericId && !isNaN(numericId) ? numericId : null
+  const isEdit = !!terceroId
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -216,8 +223,6 @@ export function ConfigTerceroForm() {
     { id: 4, codigoDian: '41', nombreCorto: 'PASAPORTE', descripcion: 'Pasaporte', activo: true },
     { id: 5, codigoDian: '47', nombreCorto: 'PEP', descripcion: 'Permiso Especial de Permanencia', activo: true },
   ]
-
-  const terceroId = id ? parseInt(id, 10) : null
 
   // Queries
   const { data: terceroData, isLoading: loadingTercero } = useQuery({
@@ -325,18 +330,17 @@ export function ConfigTerceroForm() {
       setForm(mapDbTerceroToForm(terceroData))
       setSucursales(terceroData.sucursales || [])
     } else if (!isEdit) {
-      const roleParam = searchParams.get('role')
       setForm({
         ...DEFAULT_TERCERO,
         codigo: '01',
         fechaCreacion: new Date().toLocaleDateString('es-CO'),
-        cliente: roleParam === 'cliente' || roleParam === null,
+        cliente: roleParam === 'cliente' || roleParam === null || roleParam === undefined,
         proveedor: roleParam === 'proveedor',
         empleado: roleParam === 'empleado',
       })
       setSucursales([])
     }
-  }, [id, isEdit, searchParams, terceroData])
+  }, [id, isEdit, roleParam, terceroData])
 
   // Guardar datos
   const handleSave = async (e: React.FormEvent) => {
@@ -357,13 +361,12 @@ export function ConfigTerceroForm() {
 
       if (isEdit && terceroId) {
         await mutUpdateTercero.mutateAsync({ id: terceroId, data: payload })
-        toast.success('Tercero actualizado exitosamente')
+        toast.success(roleParam === 'cliente' ? 'Cliente actualizado exitosamente' : roleParam === 'proveedor' ? 'Proveedor actualizado exitosamente' : 'Tercero actualizado exitosamente')
       } else {
         await mutCreateTercero.mutateAsync(payload)
-        toast.success('Tercero creado exitosamente')
+        toast.success(roleParam === 'cliente' ? 'Cliente creado exitosamente' : roleParam === 'proveedor' ? 'Proveedor creado exitosamente' : 'Tercero creado exitosamente')
       }
 
-      const roleParam = searchParams.get('role')
       if (roleParam === 'cliente') {
         navigate('/ventas/clientes')
       } else if (roleParam === 'proveedor') {
@@ -499,9 +502,8 @@ export function ConfigTerceroForm() {
           <button
             type="button"
             onClick={() => {
-              const role = searchParams.get('role')
-              if (role === 'cliente') navigate('/ventas/clientes')
-              else if (role === 'proveedor') navigate('/inventario/proveedores')
+              if (roleParam === 'cliente') navigate('/ventas/clientes')
+              else if (roleParam === 'proveedor') navigate('/inventario/proveedores')
               else navigate('/configuracion/terceros')
             }}
             className="p-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors"
@@ -510,17 +512,41 @@ export function ConfigTerceroForm() {
           </button>
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-              <span>Configuración</span>
-              <span className="text-slate-300">/</span>
-              <span>Terceros</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-600 font-medium">{isEdit ? 'Ficha de Tercero' : 'Nuevo Tercero'}</span>
+              {roleParam === 'cliente' ? (
+                <>
+                  <span>Ventas</span>
+                  <span className="text-slate-300">/</span>
+                  <span>Clientes</span>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-600 font-medium">{isEdit ? 'Ficha de Cliente' : 'Nuevo Cliente'}</span>
+                </>
+              ) : roleParam === 'proveedor' ? (
+                <>
+                  <span>Inventario</span>
+                  <span className="text-slate-300">/</span>
+                  <span>Proveedores</span>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-600 font-medium">{isEdit ? 'Ficha de Proveedor' : 'Nuevo Proveedor'}</span>
+                </>
+              ) : (
+                <>
+                  <span>Configuración</span>
+                  <span className="text-slate-300">/</span>
+                  <span>Terceros</span>
+                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-600 font-medium">{isEdit ? 'Ficha de Tercero' : 'Nuevo Tercero'}</span>
+                </>
+              )}
             </div>
             <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2 tracking-tight">
-              {isEdit ? form.nombre : 'Nuevo Tercero'}
+              {isEdit ? form.nombre : (roleParam === 'cliente' ? 'Nuevo Cliente' : roleParam === 'proveedor' ? 'Nuevo Proveedor' : 'Nuevo Tercero')}
             </h1>
             <p className="text-slate-500 text-xs mt-0.5 font-mono">
-              {isEdit ? `ID: ${form.id} — Creado el ${form.fechaCreacion || '31/07/2023'}` : 'Ingresa la información básica y fiscal del tercero'}
+              {isEdit ? `ID: ${form.id} — Creado el ${form.fechaCreacion || '31/07/2023'}` : (
+                roleParam === 'cliente' ? 'Ingresa los datos comerciales, de contacto y tributarios del cliente' :
+                roleParam === 'proveedor' ? 'Ingresa los datos de compra, contacto y tributarios del proveedor' :
+                'Ingresa la información básica y fiscal del tercero'
+              )}
             </p>
           </div>
         </div>
@@ -1186,9 +1212,8 @@ export function ConfigTerceroForm() {
           <button
             type="button"
             onClick={() => {
-              const role = searchParams.get('role')
-              if (role === 'cliente') navigate('/ventas/clientes')
-              else if (role === 'proveedor') navigate('/inventario/proveedores')
+              if (roleParam === 'cliente') navigate('/ventas/clientes')
+              else if (roleParam === 'proveedor') navigate('/inventario/proveedores')
               else navigate('/configuracion/terceros')
             }}
             className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold active:scale-[0.98] transition-all"
@@ -1200,7 +1225,7 @@ export function ConfigTerceroForm() {
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 active:scale-[0.98] transition-all flex items-center gap-2"
           >
             <Save size={16} />
-            Guardar Tercero
+            {roleParam === 'cliente' ? 'Guardar Cliente' : roleParam === 'proveedor' ? 'Guardar Proveedor' : 'Guardar Tercero'}
           </button>
         </div>
       </form>

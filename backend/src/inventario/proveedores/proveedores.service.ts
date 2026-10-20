@@ -163,9 +163,29 @@ export class ProveedoresService {
   }
 
   async remove(id: number, empresaId: number) {
-    await this.findOne(id, empresaId);
+    const p = await this.findOne(id, empresaId);
 
-    // Verificación de transacciones
+    // Si tiene otros roles activos (Cliente o Colaborador), NO borrar el tercero
+    const tieneOtroRol = !!p.esCliente || !!p.esColaborador || !!p.esVendedor;
+    if (tieneOtroRol) {
+      await this.prisma.tercero.update({
+        where: { id },
+        data: {
+          esProveedor: false,
+          descuentoProveedor: null,
+          plazoEntregaDias: null,
+          condicionesPago: null,
+          contactoNombre: null,
+        }
+      });
+      return {
+        message: 'El rol de proveedor ha sido removido exitosamente. El registro del tercero se conserva intacto en sus otros roles (Cliente / Colaborador).',
+        softDeleted: true,
+        rolRemovido: true
+      };
+    }
+
+    // Verificación exhaustiva de dependencias en todo el ERP
     const count = await this.prisma.tercero.findFirst({
       where: { id, empresaId },
       select: {
@@ -173,22 +193,41 @@ export class ProveedoresService {
           select: {
             ordenesCompra: true,
             facturasCompra: true,
+            proveedoresRel: true,
+            cotizaciones: true,
+            pedidos: true,
+            facturasVenta: true,
+            notasCredito: true,
+            recibos: true,
+            ventasPos: true,
+            cajasPosDefault: true,
+            clientesAsignados: true,
           }
         }
       }
     });
 
-    const hasTransactions = count ? Object.values(count._count).some(v => v > 0) : false;
+    const hasDependencies = count ? Object.values(count._count).some(v => v > 0) : false;
 
-    if (hasTransactions) {
+    if (hasDependencies) {
       await this.prisma.tercero.update({
         where: { id },
-        data: { activo: false }
+        data: { activo: false, esProveedor: false }
       });
-      return { message: 'El proveedor tiene historial y ha sido desactivado automáticamente.', softDeleted: true };
+      return {
+        message: 'El proveedor tiene historial de transacciones o relaciones vinculadas. Ha sido desactivado automáticamente.',
+        softDeleted: true
+      };
     }
 
-    await this.prisma.tercero.delete({ where: { id } });
-    return { message: 'Proveedor eliminado exitosamente.', softDeleted: false };
+    await this.prisma.$transaction(async (tx) => {
+      await tx.sucursalTercero.deleteMany({ where: { terceroId: id, empresaId } });
+      await tx.tercero.delete({ where: { id } });
+    });
+
+    return {
+      message: 'Proveedor eliminado definitivamente del sistema.',
+      softDeleted: false
+    };
   }
 }

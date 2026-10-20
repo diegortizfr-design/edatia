@@ -202,9 +202,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
               <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Regimen Tributario" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Régimen Tributario" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Identificación DIAN" isCollapsed={isCollapsed} />
+              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Códigos CIIU" isCollapsed={isCollapsed} />
               <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/tags" icon={<Tag size={14}/>} label="Tags" isCollapsed={isCollapsed} />
             </NavGroup>
 
 
