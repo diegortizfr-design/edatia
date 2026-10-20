@@ -138,7 +138,7 @@ async function main() {
 
   // Asegurar o buscar categorías
   let catPanales = await prisma.categoria.findFirst({
-    where: { empresaId, LOWER_nombre: undefined, nombre: { contains: 'Pañales', mode: 'insensitive' } }
+    where: { empresaId, nombre: { contains: 'Pañales', mode: 'insensitive' } }
   });
   let catAlimentacion = await prisma.categoria.findFirst({
     where: { empresaId, nombre: { contains: 'Alimentación', mode: 'insensitive' } }
@@ -409,7 +409,7 @@ async function main() {
   sql += `BEGIN\n`;
   sql += `  SELECT "empresaId" INTO v_empresa_id FROM "ConfiguracionTienda" WHERE "slugTienda" = 'distribuidorababyworld' LIMIT 1;\n`;
   sql += `  IF v_empresa_id IS NULL THEN\n`;
-  sql += `    SELECT id INTO v_empresa_id FROM "Empresa" WHERE activo = true LIMIT 1;\n`;
+  sql += `    SELECT id INTO v_empresa_id FROM "Empresa" LIMIT 1;\n`;
   sql += `  END IF;\n\n`;
 
   productosProcesados.forEach((p) => {

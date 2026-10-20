@@ -43,11 +43,14 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
   - **Alojamiento y Estructura en Cloudinary:**
     - Subida automática bajo `distribuidorababyworld/panales_y_leches/` con nombrado semántico (`PAN-014` a `PAN-026` y `LEC-001` a `LEC-011`).
   - **Integración en Base de Datos ERP (Inventario vs. Tienda Virtual):**
-    - Los 24 productos fueron insertados directamente en PostgreSQL (`edatia_erp`) asociados a Distribuidora Baby World (`empresaId = 1`).
+    - Los 24 productos fueron importados directamente en PostgreSQL (`edatia_erp`) asociados a Distribuidora Baby World (`empresaId = 2` resuelto dinámicamente desde `ConfiguracionTienda`).
+    - **Alineación de Categorías:** Se corrigieron los IDs estáticos en el script SQL para vincular dinámicamente con las categorías reales de producción: *Pañales y Cuidado* (`id = 41`) y *Alimentación* (`id = 39`), evitando fallas de llave foránea.
     - **Configuración de Publicación:** Marcados con `activo = true` (disponibles en el inventario del ERP) y **`publicadoWeb = false`** (ocultos de la tienda virtual hasta que se definan precios de venta finales y se decida su lanzamiento público).
+  - **Reconstrucción y Despliegue:**
+    - Reconstrucción de la imagen Docker de `edatia-glowxir` y despliegue en caliente con Caddy.
   - **Artefactos y Scripts Exportados:**
     - `backend/scripts/productos_panales_y_leches.json` y copia en `tiendas-virtuales/distribuidorababyworld/src/data/productos_panales_y_leches.json`.
-    - `backend/scripts/importar_panales_y_leches.sql` con 738 líneas de SQL idempotente para replicar en el servidor de producción.
+    - `backend/scripts/importar_panales_y_leches.sql` blindado e importado con éxito en producción (24 registros creados).
 
 ## Estado resuelto (sesión 12)
 
