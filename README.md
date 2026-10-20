@@ -67,6 +67,7 @@ Genera una copia en `backups/backup_YYYYMMDD_HHMMSS/` que incluye:
 
 ## 🛠️ Tecnologías Utilizadas
 - **Backend**: NestJS, PostgreSQL, Prisma, JWT, Cloudinary (Almacenamiento de imágenes).
+- **Pipeline Multimodal IA**: Google Gemini Flash (clasificación visual automatizada de productos, extracción de atributos y generación de metadatos).
 - **Frontend / ERP**: React 18, Tailwind CSS, shadcn/ui.
 - **Tiendas Virtuales**: React 18, Tailwind CSS, Headless API.
 - **Infraestructura**: Docker, Traefik v2.10, Caddy, Let's Encrypt.
