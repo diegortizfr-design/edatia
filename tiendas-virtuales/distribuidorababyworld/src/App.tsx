@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2, Filter } from 'lucide-react'
+import { Shield, MapPin, Truck } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -13,6 +13,7 @@ import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
+import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
@@ -500,7 +501,7 @@ export function App() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-emerald-600 font-bold hover:underline"
                 >
-                  <MessageCircle size={15} />
+                  <WhatsAppIcon size={16} />
                   <span>+57 302 386 3380 (WhatsApp Directo)</span>
                 </a>
                 <p className="flex items-center gap-2">

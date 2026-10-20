@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ShoppingBag, Search, X, Sparkles, Baby, Heart } from 'lucide-react'
+import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { CATEGORIAS_PRODUCTOS } from '../data/productos'
