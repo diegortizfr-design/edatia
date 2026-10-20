@@ -72,9 +72,10 @@ export class ClientesService {
   }
 
   async create(dto: CreateClienteDto, empresaId: number) {
-    if (dto.vendedorAsignadoId) {
+    const assignedVendedorId = dto.vendedorAsignadoId ?? dto.vendedorId
+    if (assignedVendedorId) {
       const vend = await this.prisma.tercero.findFirst({
-        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+        where: { id: assignedVendedorId, empresaId, activo: true }
       })
       if (!vend) {
         throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
@@ -92,13 +93,22 @@ export class ClientesService {
       }
     })
 
+    const { sucursales, vendedorId, descuentoBase, vendedorAsignadoId, descuentoCliente, ...rest } = dto
+    const finalVendedorAsignadoId = vendedorAsignadoId ?? vendedorId
+    const finalDescuentoCliente = descuentoCliente ?? descuentoBase
+    const clientPayload: any = {
+      ...rest,
+      esCliente: true,
+      ...(finalVendedorAsignadoId !== undefined ? { vendedorAsignadoId: finalVendedorAsignadoId } : {}),
+      ...(finalDescuentoCliente !== undefined ? { descuentoCliente: finalDescuentoCliente } : {}),
+    }
+
     if (tercero) {
       if (tercero.esCliente) {
         throw new ConflictException('Ya existe un cliente con ese documento')
       }
       
       // Si existe pero no era cliente, lo actualizamos para que sea cliente y le añadimos los campos de cliente
-      const { sucursales, ...rest } = dto
       return this.prisma.$transaction(async (tx) => {
         // Eliminar sucursales viejas y recrear
         await tx.sucursalTercero.deleteMany({ where: { terceroId: tercero!.id, empresaId } })
@@ -106,8 +116,7 @@ export class ClientesService {
         return tx.tercero.update({
           where: { id: tercero!.id },
           data: {
-            ...rest,
-            esCliente: true,
+            ...clientPayload,
             sucursales: sucursales && sucursales.length > 0 ? {
               create: sucursales.map((s: any) => ({
                 empresaId,
@@ -127,12 +136,10 @@ export class ClientesService {
       })
     }
 
-    const { sucursales, ...rest } = dto
     return this.prisma.tercero.create({
       data: {
-        ...rest,
+        ...clientPayload,
         empresaId,
-        esCliente: true,
         sucursales: sucursales && sucursales.length > 0 ? {
           create: sucursales.map((s: any) => ({
             empresaId,
@@ -154,16 +161,24 @@ export class ClientesService {
   async update(id: number, dto: UpdateClienteDto, empresaId: number) {
     await this.findOne(id, empresaId)
 
-    if (dto.vendedorAsignadoId) {
+    const assignedVendedorId = dto.vendedorAsignadoId ?? dto.vendedorId
+    if (assignedVendedorId) {
       const vend = await this.prisma.tercero.findFirst({
-        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+        where: { id: assignedVendedorId, empresaId, activo: true }
       })
       if (!vend) {
         throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
       }
     }
 
-    const { sucursales, ...rest } = dto
+    const { sucursales, vendedorId, descuentoBase, vendedorAsignadoId, descuentoCliente, ...rest } = dto
+    const finalVendedorAsignadoId = vendedorAsignadoId ?? vendedorId
+    const finalDescuentoCliente = descuentoCliente ?? descuentoBase
+    const clientPayload: any = {
+      ...rest,
+      ...(finalVendedorAsignadoId !== undefined ? { vendedorAsignadoId: finalVendedorAsignadoId } : {}),
+      ...(finalDescuentoCliente !== undefined ? { descuentoCliente: finalDescuentoCliente } : {}),
+    }
 
     return this.prisma.$transaction(async (tx) => {
       await tx.sucursalTercero.deleteMany({
@@ -173,7 +188,7 @@ export class ClientesService {
       return tx.tercero.update({
         where: { id },
         data: {
-          ...rest,
+          ...clientPayload,
           sucursales: sucursales && sucursales.length > 0 ? {
             create: sucursales.map((s: any) => ({
               empresaId,

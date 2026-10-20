@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-18 (sesión 11)
+> Última actualización: 2026-10-20 (sesión 12)
 
 ---
 
@@ -33,6 +33,30 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 12)
+
+✅ **Integración, Blindaje Multi-Tenant de Terceros, Corrección de Compilación y Despliegue en Producción:**
+  - **Diagnóstico y Corrección de Compilación TypeScript en Backend (`clientes.service.ts` y `cliente.dto.ts`):**
+    - Se detectó y subsanó un error de TypeScript (`TS2339: Property 'vendedorAsignadoId' does not exist on type 'CreateClienteDto'`).
+    - Se incorporaron `vendedorAsignadoId` y `descuentoCliente` en los DTOs de clientes (`CreateClienteDto` y `UpdateClienteDto`), manteniendo total retrocompatibilidad con `vendedorId` y `descuentoBase`.
+    - Sanitización del payload antes de Prisma para prevenir excepciones en tiempo de ejecución por propiedades no mapeadas.
+  - **Integridad y Sincronización de Base de Datos y Prisma:**
+    - Alineación de `backend/prisma/schema.prisma` con la regla `onDelete: SetNull` en la relación autorreferencial de `vendedorAsignado`.
+    - Verificación exitosa en PostgreSQL (`edatia_erp`) confirmando que la llave foránea ya contaba con `ON DELETE SET NULL`.
+    - Regeneración completa del cliente de Prisma.
+  - **Blindaje Multi-Tenant y Seguridad de Terceros:**
+    - Verificación estricta en ventas y facturas para asegurar que el cliente y el vendedor pertenezcan a la empresa y se encuentren activos.
+    - Desacoplamiento seguro de roles: si un tercero posee múltiples roles (ej. cliente y proveedor), retirar un rol desactiva únicamente la bandera (`esCliente = false`) sin destruir el tercero ni sus otros roles activos.
+    - Protección contable transaccional: verificación de dependencias (órdenes de compra, facturas, recibos, POS, cotizaciones); si tiene historial, se aplica soft-delete (`activo: false`).
+    - Soporte a Consumidor Final (`222222222222`) y registro de clientes web en `digital.service.ts`.
+    - Corrección de código DIAN de Pasaporte ('41') y Tarjeta de Identidad ('12') en `ubl.service.ts`.
+  - **Frontend Unificado y UI:**
+    - `ClienteForm.tsx` y `ProveedorForm.tsx` refactorizados como wrappers delegados sobre `ConfigTerceroForm.tsx`.
+    - Mejoras en `Clientes.tsx` y `Proveedores.tsx`: badges de régimen fiscal, acciones rápidas, confirmación de eliminación con toast notifications.
+  - **Compilación y Despliegue Exitoso en Contenedores Docker:**
+    - Reconstrucción de imágenes `edatia-api` y `edatia-web` con `docker compose build api web`.
+    - Despliegue en caliente (`docker compose up -d api web`). Contenedores saludables (`healthy`), con `GET /api/v1/health` respondiendo en 0-1ms y Caddy sirviendo los nuevos bundles de Vite.
 
 ## Estado resuelto (sesión 11)
 
