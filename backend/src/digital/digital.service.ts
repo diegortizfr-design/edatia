@@ -54,9 +54,13 @@ export class DigitalService {
     }
   }
 
-  async getProductosWeb(empresaId: number) {
+  async getProductosWeb(empresaId: number, query?: { publicado?: boolean }) {
+    const where: any = { empresaId };
+    if (query?.publicado !== undefined) {
+      where.publicadoWeb = query.publicado;
+    }
     return this.prisma.producto.findMany({
-      where: { empresaId, publicadoWeb: true },
+      where,
       select: {
         id: true,
         nombre: true,
@@ -66,7 +70,13 @@ export class DigitalService {
         publicadoWeb: true,
         slug: true,
         imagen: true,
+        activo: true,
+        categoria: { select: { id: true, nombre: true } },
       },
+      orderBy: [
+        { publicadoWeb: 'desc' },
+        { nombre: 'asc' },
+      ],
     });
   }
 

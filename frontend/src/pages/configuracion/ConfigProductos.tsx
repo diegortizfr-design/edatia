@@ -5,8 +5,10 @@ import {
   Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
   Layers, ArrowLeft, Save, Package, Info, Percent, 
   Scale, Tag, AlertTriangle, FileText, Eye,
-  Upload, Download, FileSpreadsheet, Loader2, X, Printer
+  Upload, Download, FileSpreadsheet, Loader2, X, Printer,
+  Globe, EyeOff
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { getProductos, createProducto, updateProducto, deleteProducto, importarProductosMasivo } from '../../services/inventario.service'
 import { getMediaUrl } from '../../services/api'
 import {
@@ -176,6 +178,8 @@ const DEFAULT_FORM = {
   esFacturable: true,
   esAjustable: true,
   receta: false,
+  publicadoWeb: false,
+  precioWeb: 0,
 
   // Categorizacion
   categoriaId: '',
@@ -282,6 +286,8 @@ export function ConfigProductos() {
   const [filterMarca, setFilterMarca] = useState('')
   const [filterClasificacion, setFilterClasificacion] = useState('')
   const [filterSinCosto, setFilterSinCosto] = useState<boolean>(false)
+  const [filterWeb, setFilterWeb] = useState<'all' | 'published' | 'hidden'>('all')
+  const [togglingWebId, setTogglingWebId] = useState<number | null>(null)
 
   // Form State
   const [formData, setFormData] = useState(DEFAULT_FORM)
@@ -355,6 +361,26 @@ export function ConfigProductos() {
   })
 
   const pendingCostCount = products.filter(p => (Number(p.extData.costo) || Number(p.costoPromedio) || Number(p.extData.costoUltimo) || 0) === 0).length
+  const publishedWebCount = products.filter(p => !!p.publicadoWeb).length
+  const hiddenWebCount = products.filter(p => !p.publicadoWeb).length
+
+  const handleToggleWeb = async (p: any) => {
+    try {
+      setTogglingWebId(p.id)
+      const nextVal = !p.publicadoWeb
+      await updateProducto(p.id, { publicadoWeb: nextVal })
+      await qc.invalidateQueries({ queryKey: ['config_productos'] })
+      toast.success(
+        nextVal
+          ? `"${p.nombre}" publicado en la tienda virtual ✓`
+          : `"${p.nombre}" retirado de la tienda virtual (solo inventario) ✓`
+      )
+    } catch (err: any) {
+      toast.error('No se pudo actualizar el estado en tienda virtual')
+    } finally {
+      setTogglingWebId(null)
+    }
+  }
 
   // Pre-load edit if editParam is present
   useEffect(() => {
@@ -375,6 +401,10 @@ export function ConfigProductos() {
     if (filterSinCosto) {
       const c = Number(p.extData.costo) || Number(p.costoPromedio) || Number(p.extData.costoUltimo) || 0
       if (c > 0) return false
+    }
+    if (filterWeb !== 'all') {
+      const isPub = filterWeb === 'published'
+      if (!!p.publicadoWeb !== isPub) return false
     }
     if (filterSku && !p.sku.toLowerCase().includes(filterSku.toLowerCase())) return false
     if (filterReferencia && !(p.referencia || '').toLowerCase().includes(filterReferencia.toLowerCase())) return false
@@ -468,6 +498,7 @@ export function ConfigProductos() {
       'Fecha_Vencimiento',
       'Clase_ABC',
       'Estado',
+      'Publicado_Tienda_Virtual',
       'Descripcion'
     ]
 
@@ -509,6 +540,7 @@ export function ConfigProductos() {
         escapeCsv(p.lotes?.[0]?.fechaVencimiento ? String(p.lotes[0].fechaVencimiento).split('T')[0] : ''),
         escapeCsv(p.claseAbc || ''),
         p.activo ? 'ACTIVO' : 'INACTIVO',
+        p.publicadoWeb ? 'SI' : 'NO',
         escapeCsv(p.descripcion || '')
       ].join(';')
     })
@@ -736,6 +768,8 @@ export function ConfigProductos() {
       nombre: p.nombre,
       referencia: p.referencia || '',
       activo: p.activo,
+      publicadoWeb: !!p.publicadoWeb,
+      precioWeb: p.precioWeb || 0,
     })
     setCostTaxIds(p.extData?.appliedTaxIds || ['iva_19'])
     setError(null)
@@ -781,7 +815,7 @@ export function ConfigProductos() {
       marcaId: formData.marcaId ? Number(formData.marcaId) : null,
       clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
-      precioWeb: price1,
+      precioWeb: Number(formData.precioWeb) || price1 || null,
       costo: Number(formData.costo) || 0,
       costoUltimo: Number(formData.costoUltimo) || 0,
       costoI: Number(formData.costoI) || 0,
@@ -805,6 +839,7 @@ export function ConfigProductos() {
       esFacturable: !!formData.esFacturable,
       esAjustable: !!formData.esAjustable,
       receta: !!formData.receta,
+      publicadoWeb: !!formData.publicadoWeb,
       noAutoAddPos: !!formData.noAutoAddPos,
       manejaBodega: true,
       manejaLotes: !!formData.esLote,
@@ -1008,6 +1043,94 @@ export function ConfigProductos() {
             </div>
           </div>
 
+          {/* Quick Metrics & Storefront Status Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <button
+              type="button"
+              onClick={() => { setFilterWeb('all'); setFilterSinCosto(false) }}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                filterWeb === 'all' && !filterSinCosto
+                  ? 'bg-indigo-50/70 border-indigo-200 ring-2 ring-indigo-500/20 shadow-sm'
+                  : 'bg-white border-slate-200/80 hover:bg-slate-50 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Productos</span>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100/70 text-indigo-700 flex items-center justify-center">
+                  <Package size={16} />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-slate-800 tracking-tight">{products.length}</div>
+              <p className="text-[11px] text-slate-400 mt-0.5">En el inventario del ERP</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterWeb(prev => prev === 'published' ? 'all' : 'published')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                filterWeb === 'published'
+                  ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/30 shadow-sm'
+                  : 'bg-white border-slate-200/80 hover:bg-emerald-50/30 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Publicados en Tienda
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <Globe size={16} />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-emerald-700 tracking-tight">{publishedWebCount}</div>
+              <p className="text-[11px] text-emerald-600/80 mt-0.5 font-medium">
+                {filterWeb === 'published' ? 'Mostrando activos en Baby World' : 'Visibles en Baby World (Clic para filtrar)'}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterWeb(prev => prev === 'hidden' ? 'all' : 'hidden')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                filterWeb === 'hidden'
+                  ? 'bg-slate-100 border-slate-400 ring-2 ring-slate-400/30 shadow-sm'
+                  : 'bg-white border-slate-200/80 hover:bg-slate-50 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Solo Inventario (Ocultos)</span>
+                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                  <EyeOff size={16} />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-slate-700 tracking-tight">{hiddenWebCount}</div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {filterWeb === 'hidden' ? 'Mostrando solo inventario ERP' : 'Ocultos en tienda (Clic para filtrar)'}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterSinCosto(prev => !prev)}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                filterSinCosto
+                  ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/30 shadow-sm'
+                  : 'bg-white border-slate-200/80 hover:bg-amber-50/30 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Sin Costo Asignado</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <AlertTriangle size={16} />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-amber-700 tracking-tight">{pendingCostCount}</div>
+              <p className="text-[11px] text-amber-600/80 mt-0.5 font-medium">
+                {filterSinCosto ? 'Mostrando sin costo' : 'Requieren costeo (Clic para filtrar)'}
+              </p>
+            </button>
+          </div>
+
           {/* Advanced Filter Panel */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 space-y-4">
             <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700 uppercase tracking-widest border-b border-slate-100 pb-2">
@@ -1103,6 +1226,19 @@ export function ConfigProductos() {
                   {marcas.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tienda Virtual</label>
+                <select 
+                  value={filterWeb} 
+                  onChange={e => setFilterWeb(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium"
+                >
+                  <option value="all">🌐 Tienda: Todos ({products.length})</option>
+                  <option value="published">✅ Publicados en Tienda ({publishedWebCount})</option>
+                  <option value="hidden">⚪ No Publicados / Solo ERP ({hiddenWebCount})</option>
+                </select>
+              </div>
             </div>
             
             <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
@@ -1132,6 +1268,7 @@ export function ConfigProductos() {
                   setFilterMarca('')
                   setFilterClasificacion('')
                   setFilterSinCosto(false)
+                  setFilterWeb('all')
                 }}
                 className="px-4 py-2 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all active:scale-[0.98]"
               >
@@ -1155,13 +1292,14 @@ export function ConfigProductos() {
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Costo Último</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grupo</th>
+                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tienda Web</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-400 italic">
+                      <td colSpan={11} className="p-8 text-center text-slate-400 italic">
                         Cargando catálogo de productos...
                       </td>
                     </tr>
@@ -1253,6 +1391,32 @@ export function ConfigProductos() {
                           <td className="p-4 font-medium text-slate-600">{catName}</td>
                           <td className="p-4 font-medium text-slate-600">{grpName}</td>
                           <td className="p-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleWeb(p)}
+                              disabled={togglingWebId === p.id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide transition-all shadow-xs active:scale-95 cursor-pointer ${
+                                p.publicadoWeb
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 hover:text-slate-700'
+                              }`}
+                              title={
+                                p.publicadoWeb
+                                  ? 'Publicado en la tienda virtual de Baby World. Haz clic para ocultarlo y dejarlo solo en inventario.'
+                                  : 'Oculto en la tienda virtual (solo inventario ERP). Haz clic para publicarlo en Baby World.'
+                              }
+                            >
+                              {togglingWebId === p.id ? (
+                                <Loader2 size={13} className="animate-spin text-indigo-600" />
+                              ) : p.publicadoWeb ? (
+                                <Globe size={13} className="text-emerald-600 shrink-0" />
+                              ) : (
+                                <EyeOff size={13} className="text-slate-400 shrink-0" />
+                              )}
+                              <span>{p.publicadoWeb ? 'Publicado' : 'No publicado'}</span>
+                            </button>
+                          </td>
+                          <td className="p-4 text-center">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase ${
                               p.activo
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
@@ -1266,7 +1430,7 @@ export function ConfigProductos() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-slate-400 italic">
+                      <td colSpan={11} className="p-8 text-center text-slate-400 italic">
                         No se encontraron productos registrados con los criterios seleccionados.
                       </td>
                     </tr>
@@ -1583,6 +1747,7 @@ export function ConfigProductos() {
                   { key: 'esFacturable', label: 'Facturable', desc: 'Venta comercial' },
                   { key: 'esAjustable', label: 'Ajustable', desc: 'Permite ajuste stock' },
                   { key: 'receta', label: 'Maneja Receta', desc: 'Materia prima / BOP' },
+                  { key: 'publicadoWeb', label: '🌐 Tienda Virtual', desc: 'Visible en catálogo web' },
                 ].map(item => (
                   <label key={item.key} className="flex flex-col p-3 bg-slate-50 border border-slate-200/60 rounded-xl cursor-pointer hover:bg-slate-100/50 transition-all">
                     <div className="flex items-center gap-2 mb-1">

@@ -34,6 +34,7 @@ export interface Producto {
   tipoIva: string; manejaBodega: boolean; manejaLotes: boolean; manejaSerial: boolean
   stockMinimo: number; stockMaximo?: number; puntoReorden: number
   claseAbc?: string; activo: boolean; imagen?: string
+  publicadoWeb?: boolean; precioWeb?: number; slug?: string; descripcionWeb?: string; esDestacado?: boolean
   stock?: StockItem[]
 }
 
@@ -94,7 +95,7 @@ export const createBodega = (data: any) => api.post('/inventario/bodegas', data)
 export const updateBodega = (id: number, data: any) => api.patch(`/inventario/bodegas/${id}`, data).then(r => r.data)
 
 // Productos
-export const getProductos = (params?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean }) =>
+export const getProductos = (params?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean; publicadoWeb?: boolean }) =>
   api.get<Producto[]>('/inventario/productos', { params }).then(r => r.data)
 export const getProducto = (id: number) => api.get<Producto>(`/inventario/productos/${id}`).then(r => r.data)
 export const buscarProductos = (q: string) => api.get<Producto[]>('/inventario/productos/buscar', { params: { q } }).then(r => r.data)

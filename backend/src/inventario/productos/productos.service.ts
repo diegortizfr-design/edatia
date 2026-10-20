@@ -40,9 +40,10 @@ export class ProductosService {
     return base + checkDigit.toString();
   }
 
-  async findAll(empresaId: number, query?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean }) {
+  async findAll(empresaId: number, query?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean; publicadoWeb?: boolean }) {
     const where: any = { empresaId };
     if (query?.activo !== undefined) where.activo = query.activo;
+    if (query?.publicadoWeb !== undefined) where.publicadoWeb = query.publicadoWeb;
     if (query?.categoriaId) where.categoriaId = query.categoriaId;
     if (query?.marcaId) where.marcaId = query.marcaId;
     if (query?.q) {
