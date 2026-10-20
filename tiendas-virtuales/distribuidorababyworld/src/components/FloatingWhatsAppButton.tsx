@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 
 interface FloatingWhatsAppButtonProps {
   phone?: string
@@ -47,7 +48,7 @@ export function FloatingWhatsAppButton({
         <span className="absolute -inset-1 rounded-full bg-[#25D366] opacity-30 animate-ping -z-10" />
 
         {/* WhatsApp Icon */}
-        <MessageCircle size={28} className="fill-white stroke-[#25D366]" />
+        <WhatsAppIcon size={30} />
 
         {/* Online Green Dot Badge */}
         <span className="absolute top-0 right-0 h-3.5 w-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />
