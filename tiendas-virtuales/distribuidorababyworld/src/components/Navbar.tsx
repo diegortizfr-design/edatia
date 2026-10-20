@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { ShoppingBag, Search, MessageCircle, X, Sparkles, Baby, Heart } from 'lucide-react'
+import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
+import { WhatsAppIcon } from './WhatsAppIcon'
 import { CATEGORIAS_PRODUCTOS } from '../data/productos'
 
 interface NavbarProps {
@@ -51,11 +52,12 @@ export function Navbar({
             href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold text-[11px] transition-colors"
+            className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 hover:border-[#25D366] px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-[11px] transition-all shadow-2xs hover:shadow-emerald-500/20 active:scale-95 shrink-0"
+            title="Escríbenos por WhatsApp"
           >
-            <MessageCircle size={13} className="text-emerald-400" />
-            <span className="hidden sm:inline">Pedir por WhatsApp</span>
-            <span className="sm:hidden">WhatsApp</span>
+            <WhatsAppIcon size={16} />
+            <span className="hidden sm:inline text-emerald-300">Pedir por WhatsApp</span>
+            <span className="sm:hidden text-emerald-300">WhatsApp</span>
           </a>
         </div>
       </div>

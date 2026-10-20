@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { MessageCircle, Shield, Phone, MapPin, Mail, Instagram, Sparkles, Truck, CheckCircle2, Filter } from 'lucide-react'
+import { Shield, MapPin, Truck } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -12,6 +12,8 @@ import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
+import { BnplInfoModal } from './components/BnplInfoModal'
+import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
@@ -42,6 +44,7 @@ export function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
 
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -260,15 +263,57 @@ export function App() {
       {/* Toast notifications */}
       <Toaster position="bottom-right" toastOptions={{ className: 'text-xs font-bold' }} />
 
-      {/* Top BNPL Announcement Bar */}
-      <div className="bg-gradient-to-r from-emerald-600 via-sky-600 to-indigo-600 text-white text-[11px] sm:text-xs py-1.5 px-3 text-center font-bold tracking-wide shadow-xs relative z-40">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
-            ✨ Nuevo
+      {/* Top BNPL Announcement Bar (Ultra-compacto en móvil, con logos oficiales de Addi y Sistecrédito) */}
+      <div 
+        onClick={() => setIsBnplModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsBnplModalOpen(true) }}
+        className="bg-gradient-to-r from-emerald-600 via-sky-600 to-indigo-600 text-white text-[10px] sm:text-xs py-1 sm:py-1.5 px-2.5 sm:px-4 text-center font-bold tracking-wide shadow-xs relative z-40 cursor-pointer hover:brightness-105 active:scale-[0.99] transition-all select-none"
+        title="Toca para conocer cómo pagar a cuotas con Addi y Sistecrédito"
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-1.5 sm:gap-2.5 flex-nowrap overflow-hidden">
+          {/* Badge Nuevo / Cuotas */}
+          <span className="inline-flex items-center gap-1 bg-white/20 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shrink-0">
+            ✨ <span className="hidden xs:inline">Nuevo:</span> Cuotas
           </span>
-          <span>Paga a cuotas sin tarjeta con <b>Addi</b> y <b>Sistecrédito</b> en tienda virtual y local físico</span>
-          <span className="hidden md:inline text-white/70">•</span>
-          <span className="hidden md:inline text-white/90">Aprobación en 3 minutos</span>
+
+          {/* Texto descriptivo adaptable */}
+          <span className="text-white/95 font-medium shrink-0">
+            <span className="hidden sm:inline">Paga a cuotas sin tarjeta con</span>
+            <span className="sm:hidden">Sin tarjeta con</span>
+          </span>
+
+          {/* Micro-píldora con Logos oficiales Addi y Sistecrédito */}
+          <div className="inline-flex items-center gap-1 sm:gap-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs shrink-0 border border-white/60">
+            <img 
+              src="/logo-addi.png" 
+              alt="Addi" 
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full object-contain" 
+            />
+            <span className="text-slate-300 text-[10px] font-light">•</span>
+            <img 
+              src="/logo-sistecredito.png" 
+              alt="Sistecrédito" 
+              className="h-2.5 sm:h-3 max-w-[46px] sm:max-w-[55px] object-contain" 
+            />
+          </div>
+
+          {/* Beneficios adicionales para pantallas medianas/grandes */}
+          <span className="hidden sm:inline text-white/90 font-normal">
+            en tienda virtual y físico
+          </span>
+          <span className="hidden md:inline text-white/60">•</span>
+          <span className="hidden md:inline text-emerald-200 font-extrabold">
+            Aprobación en 3 minutos
+          </span>
+
+          {/* Micro-indicador "Ver info" interactivo */}
+          <span className="inline-flex items-center gap-0.5 text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-normal ml-0.5 transition-colors shrink-0">
+            <span className="hidden sm:inline">¿Cómo funciona?</span>
+            <span className="sm:hidden">Info</span>
+            <span className="text-[10px] leading-none">↗</span>
+          </span>
         </div>
       </div>
 
@@ -456,7 +501,7 @@ export function App() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-emerald-600 font-bold hover:underline"
                 >
-                  <MessageCircle size={15} />
+                  <WhatsAppIcon size={16} />
                   <span>+57 302 386 3380 (WhatsApp Directo)</span>
                 </a>
                 <p className="flex items-center gap-2">
@@ -544,6 +589,12 @@ export function App() {
         onSuccess={handleCheckoutSuccess}
         API_BASE={API_BASE}
         storeSlug={STORE_SLUG}
+      />
+
+      {/* Modal Informativo BNPL (Addi & Sistecrédito) */}
+      <BnplInfoModal
+        isOpen={isBnplModalOpen}
+        onClose={() => setIsBnplModalOpen(false)}
       />
     </div>
   )

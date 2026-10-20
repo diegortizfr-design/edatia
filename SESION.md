@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-20 (sesión 13)
+> Última actualización: 2026-10-20 (sesión 14)
 
 ---
 
@@ -33,6 +33,22 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 14)
+
+✅ **Optimización UI/UX del Header, Financiación BNPL y Branding Oficial de WhatsApp en Tienda Virtual Baby World:**
+  - **Rediseño y Compactación Móvil del Banner Superior BNPL (Addi & Sistecrédito):**
+    - **Reducción de >55% de altura en pantallas móviles:** Se reemplazó el texto multilínea por una distribución horizontal estricta (`flex-nowrap`, `py-1` / ~26px) con los logos oficiales (`/logo-addi.png` y `/logo-sistecredito.png`) alojados sobre una micro-píldora blanca con borde suave (`bg-white/95 px-2 py-0.5 rounded-full`) para máximo contraste.
+    - **Modal Explicativo Reutilizable (DRY):** Se creó el componente `BnplInfoModal.tsx`, integrándolo de forma interactiva tanto al hacer tap en el banner superior como en los simuladores de cuotas de cada producto (`BnplCreditSimulator.tsx`), eliminando ~90 líneas de código duplicado.
+  - **Integración del Logo Oficial Vectorizado de WhatsApp (`WhatsAppIcon.tsx`):**
+    - **Insignia Vectorial Oficial con Doble Contorno:** Se desarrolló un componente SVG nativo con el aro exterior verde fino, el anillo blanco de separación, el cuerpo de burbuja verde `#28971B` y el auricular blanco en diagonal, garantizando 100% de transparencia real (sin la cuadrícula de ajedrez de falsos PNGs).
+    - **Botón en Barra Superior:** Se actualizó el enlace en la barra oscura del Navbar a una píldora translúcida con el logo oficial (`bg-[#25D366]/20 border border-[#25D366]/40`).
+    - **Refactorización del Botón Flotante (`FloatingWhatsAppButton.tsx`):** Se eliminó el contenedor circular verde redundante, permitiendo que la insignia de WhatsApp actúe directamente como botón flotante con sombra adaptada (`drop-shadow`) y feedback táctil.
+    - **Footer & Hero:** Se unificó el logo oficial en el botón del HeroBanner y en el bloque de contacto del pie de página (*Atención & Asesoría*).
+  - **Auditoría de Código y Limpieza de Dependencias:**
+    - Depuración de 12 importaciones huérfanas de `lucide-react` en `App.tsx` y `Navbar.tsx`.
+    - Validación de compilación estricta de TypeScript (`tsc`) y empaquetado de producción de Vite en Docker con código de salida 0.
+    - Despliegue en caliente y verificación HTTP 200 en contenedor `edatia-glowxir` (`localhost:3005`).
 
 ## Estado resuelto (sesión 13)
 

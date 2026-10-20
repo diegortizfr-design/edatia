@@ -1,5 +1,6 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck, MessageCircle } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
@@ -66,7 +67,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-slate-50 text-slate-700 rounded-full font-bold shadow-md shadow-slate-200/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100 text-sm"
             >
-              <MessageCircle size={18} className="text-emerald-500 fill-emerald-50" />
+              <WhatsAppIcon size={18} />
               Pedir por WhatsApp
             </a>
           </div>

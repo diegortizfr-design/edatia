@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { WhatsAppIcon } from './WhatsAppIcon'
 
 interface FloatingWhatsAppButtonProps {
   phone?: string
@@ -37,20 +38,23 @@ export function FloatingWhatsAppButton({
         </div>
       )}
 
-      {/* Main Floating Button */}
+      {/* Main Floating Button (El logo actúa como el botón flotante directo sin círculo verde redundante) */}
       <button
         onClick={handleOpenWhatsApp}
-        className="relative h-13 w-13 sm:h-14 sm:w-14 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_24px_rgba(37,211,102,0.55)] active:scale-90 transition-all duration-300 animate-bounce hover:animate-none"
+        className="relative group/btn focus:outline-none transition-all duration-300 hover:scale-110 active:scale-95 animate-bounce hover:animate-none"
         aria-label="Contactar por WhatsApp"
       >
         {/* Subtle Radar Wave */}
-        <span className="absolute -inset-1 rounded-full bg-[#25D366] opacity-30 animate-ping -z-10" />
+        <span className="absolute inset-1 rounded-full bg-[#28971B]/25 animate-ping -z-10" />
 
-        {/* WhatsApp Icon */}
-        <MessageCircle size={28} className="fill-white stroke-[#25D366]" />
+        {/* WhatsApp Badge Icon */}
+        <WhatsAppIcon 
+          size={54} 
+          className="drop-shadow-[0_6px_16px_rgba(40,151,27,0.4)] group-hover/btn:drop-shadow-[0_10px_24px_rgba(40,151,27,0.6)] transition-all" 
+        />
 
         {/* Online Green Dot Badge */}
-        <span className="absolute top-0 right-0 h-3.5 w-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />
+        <span className="absolute top-0.5 right-0.5 h-3.5 w-3.5 bg-emerald-400 border-2 border-white rounded-full shadow-sm" />
       </button>
     </div>
   )
