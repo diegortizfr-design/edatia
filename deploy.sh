@@ -54,13 +54,17 @@ if grep -q 'CAMBIAR_POR_SECRET' "$ENV_FILE"; then
 fi
 
 # 5.5. Crear copia de seguridad automática de la base de datos de producción
-log "Creando copia de seguridad preventiva de la base de datos..."
-mkdir -p ./backups
-BACKUP_FILE="./backups/edatia_backup_$(date +'%Y%m%d_%H%M%S').sql"
-if docker compose exec -T db pg_dumpall -U postgres > "$BACKUP_FILE" 2>/dev/null; then
-  log "✅ Respaldado exitosamente en: $BACKUP_FILE"
+log "Creando copia de seguridad preventiva del sistema..."
+if [ -x "./backup.sh" ]; then
+  ./backup.sh
 else
-  warn "No se pudo realizar el backup preventivo (posiblemente la DB aún no está inicializada)."
+  mkdir -p ./backups
+  BACKUP_FILE="./backups/edatia_backup_$(date +'%Y%m%d_%H%M%S').sql.gz"
+  if docker exec edatia-db pg_dumpall -U admin -l edatia_erp 2>/dev/null | gzip > "$BACKUP_FILE"; then
+    log "✅ Respaldado exitosamente en: $BACKUP_FILE"
+  else
+    warn "No se pudo realizar el backup preventivo."
+  fi
 fi
 
 # 6. Construir y levantar contenedores

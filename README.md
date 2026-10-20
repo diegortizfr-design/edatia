@@ -29,6 +29,36 @@ nano backend/.env
 ```bash
 ./deploy.sh
 ```
+> **Nota:** `./deploy.sh` genera automáticamente un respaldo preventivo de todas las bases de datos antes de construir los contenedores.
+
+## 💾 Copias de Seguridad y Restauración
+
+El sistema cuenta con herramientas integrales de respaldo (`backup.sh`) y recuperación (`restore.sh`):
+
+### Crear un Respaldo Completo
+```bash
+./backup.sh
+```
+Genera una copia en `backups/backup_YYYYMMDD_HHMMSS/` que incluye:
+- Cluster completo de PostgreSQL (`cluster_all_*.sql.gz`)
+- Dumps individuales comprimidos (`edatia_erp`, `prestamos_edatia`, `herramientas_edatia`)
+- Archivos subidos por clientes (`uploads_*.tar.gz`)
+- Variables de entorno sensibles (`configs_*.tar.gz`, permisos 600)
+- Manifiesto con sumas criptográficas SHA-256 y conteo de registros clave (`manifest.txt`)
+- Purga automática de copias de más de 14 días
+
+### Restaurar un Respaldo
+```bash
+# Listar respaldos disponibles
+./restore.sh list
+
+# Restaurar la copia más reciente
+./restore.sh latest
+
+# Restaurar una copia específica
+./restore.sh backups/backup_20261019_235349
+```
+*(Requiere confirmación explícita escribiendo `RESTAURAR` para evitar accidentes).*
 
 ## 🔍 Verificación Operativa
 - **Frontend**: https://erp.edatia.com

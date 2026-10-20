@@ -64,7 +64,9 @@ edatia/
 ├── landing/               # HTML estático (edatia.com)
 ├── tiendas-virtuales/     # Storefronts e-commerce (distribuidorababyworld conectado al ERP)
 ├── docker-compose.yml     # 6 servicios: db, api, web, landing, manager, glowxir
-├── deploy.sh              # Script de despliegue con validaciones
+├── deploy.sh              # Script de despliegue con validaciones y backup preventivo
+├── backup.sh              # Respaldo completo (PostgreSQL, uploads, .env) con retención de 14 días
+├── restore.sh             # Script interactivo de restauración segura
 └── CLAUDE.md              # Este archivo
 ```
 
@@ -171,6 +173,11 @@ docker compose exec api npx ts-node --compiler-options '{"module":"CommonJS"}' p
 
 # Migraciones
 docker compose exec api npx prisma migrate deploy
+
+# Respaldos y Restauración
+./backup.sh            # Genera backup completo con gzip y manifest
+./restore.sh list      # Lista backups disponibles
+./restore.sh latest    # Restaura el último backup disponible
 
 # Limpiar Docker
 docker system prune -f

@@ -524,3 +524,32 @@ VITE_API_URL=https://api.edatia.com
 **Infraestructura (Docker):**
 - Reconstrucción de imágenes `edatia-glowxir` y `edatia-backend`.
 - Despliegue en caliente (`docker compose up -d glowxir api`) y validación HTTP 200 en puerto local 3005 y 4000.
+
+## Sesión 2026-10-20 - Auditoría, Sistema de Backups y Restauración Integral del Sistema
+
+**Diagnóstico y Corrección de Infraestructura:**
+- **Detección de fallo silencioso en `deploy.sh`:** Se descubrió que el paso de backup preventivo ejecutaba `pg_dumpall -U postgres`, pero el usuario `postgres` no existe en la instancia de PostgreSQL de producción (el superusuario configurado es `admin`). Esto causaba que todos los backups generados en despliegues previos fueran archivos vacíos de 0 bytes (se eliminaron 35 archivos corruptos/vacíos).
+- **Falta de backups en `prestamos_edatia`:** La base de datos de Préstamos nunca había tenido una copia de seguridad exitosa.
+
+**Nuevos Scripts de Operación:**
+- **`backup.sh`:**
+  - Respaldo completo del cluster PostgreSQL (`pg_dumpall`).
+  - Dumps individuales comprimidos con gzip para `edatia_erp`, `prestamos_edatia` y `herramientas_edatia`.
+  - Respaldo empaquetado del volumen de archivos subidos por clientes (`edatia_uploads-data`).
+  - Respaldo seguro de configuraciones y variables de entorno (`.env`) con permisos `chmod 600`.
+  - Generación de `manifest.txt` con sumas criptográficas SHA-256, metadatos de Git (commit/branch) y conteo de registros clave (`User`, `Empresa`, `Producto`, `Tercero`, `Loan`, `Customer`).
+  - Política de retención automática para purgar copias de más de 14 días.
+- **`restore.sh`:**
+  - Script interactivo de restauración con opciones `list`, `latest` o ruta específica.
+  - Verificación previa del contenedor y confirmación explícita escribiendo `RESTAURAR` para evitar pérdidas accidentales.
+- **`deploy.sh`:**
+  - Actualizado para invocar automáticamente `backup.sh` antes de reconstruir imágenes o correr migraciones.
+
+**Auditoría y Pruebas de Restauración:**
+- Se ejecutó un backup completo e íntegro del sistema en `backups/backup_20261019_235349/`.
+- Verificación exitosa de sumas de integridad SHA-256 y compresión gzip (`OK` en el 100% de los archivos).
+- Simulacro de restauración en bases de datos temporales:
+  - `prestamos_edatia`: Restauración 100% limpia sin errores (46 préstamos, 28 clientes, cronogramas y pagos).
+  - `herramientas_edatia`: Restauración 100% limpia sin errores.
+  - `edatia_erp`: Restauración operacional completa de la Empresa 2 (*Distribuidora Baby World* - 149 productos, usuarios, etc.). Se documentó la presencia de registros huérfanos residuales pertenecientes a las empresas demo 1 y 3 (eliminadas en sesiones previas).
+
