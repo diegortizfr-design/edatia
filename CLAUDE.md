@@ -179,6 +179,10 @@ docker compose exec api npx prisma migrate deploy
 ./restore.sh list      # Lista backups disponibles
 ./restore.sh latest    # Restaura el último backup disponible
 
+# Importación de Catálogos IA (Pañales/Leches o Calzado)
+docker exec -i edatia-db psql -U admin -d edatia_erp < backend/scripts/importar_panales_y_leches.sql
+docker exec -i edatia-db psql -U admin -d edatia_erp < backend/scripts/importar_zapatos_produccion.sql
+
 # Limpiar Docker
 docker system prune -f
 ```

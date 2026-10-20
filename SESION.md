@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-20 (sesión 12)
+> Última actualización: 2026-10-20 (sesión 13)
 
 ---
 
