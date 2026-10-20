@@ -55,7 +55,7 @@ export function Navbar({
             className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 hover:border-[#25D366] px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-[11px] transition-all shadow-2xs hover:shadow-emerald-500/20 active:scale-95 shrink-0"
             title="Escríbenos por WhatsApp"
           >
-            <WhatsAppIcon size={14} />
+            <WhatsAppIcon size={16} />
             <span className="hidden sm:inline text-emerald-300">Pedir por WhatsApp</span>
             <span className="sm:hidden text-emerald-300">WhatsApp</span>
           </a>
