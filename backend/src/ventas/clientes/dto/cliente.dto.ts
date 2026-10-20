@@ -63,7 +63,13 @@ export class CreateClienteDto {
   cupoCredito?: number
 
   @IsNumber() @IsOptional() @Type(() => Number)
+  descuentoCliente?: number
+
+  @IsNumber() @IsOptional() @Type(() => Number)
   descuentoBase?: number
+
+  @IsNumber() @IsOptional() @Type(() => Number)
+  vendedorAsignadoId?: number
 
   @IsNumber() @IsOptional() @Type(() => Number)
   vendedorId?: number

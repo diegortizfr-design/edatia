@@ -213,6 +213,8 @@ export const createProveedor = (data: any) =>
   api.post('/inventario/proveedores', data).then(r => r.data)
 export const updateProveedor = (id: number, data: any) =>
   api.patch(`/inventario/proveedores/${id}`, data).then(r => r.data)
+export const deleteProveedor = (id: number) =>
+  api.delete(`/inventario/proveedores/${id}`).then(r => r.data)
 
 // ── Órdenes de Compra API ──────────────────────────────────────────────────
 export const getOrdenesCompra = (params?: { estado?: string; proveedorId?: number }) =>

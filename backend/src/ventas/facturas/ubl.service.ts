@@ -231,7 +231,7 @@ export class UblService {
         <cbc:RegistrationName><![CDATA[${escXml(cliente.nombre)}]]></cbc:RegistrationName>
         <cbc:CompanyID schemeAgencyID="195" schemeAgencyName="CO, DIAN" schemeID="${cliente.digitoVerificacion ?? ''}" schemeName="${docSchemeName(cliente.tipoDocumento)}">${cliente.numeroDocumento}</cbc:CompanyID>
       </cac:PartyLegalEntity>
-      <cac:Contact><cbc:ElectronicMail>${cliente.email ?? ''}</cbc:ElectronicMail></cac:Contact>
+      ${cliente.email ? `<cac:Contact><cbc:ElectronicMail>${escXml(cliente.email)}</cbc:ElectronicMail></cac:Contact>` : ''}
     </cac:Party>
   </cac:AccountingCustomerParty>
   ${lineasXml}
@@ -246,7 +246,7 @@ function escXml(s: string): string {
 }
 
 function docSchemeName(tipoDoc: string): string {
-  const map: Record<string, string> = { NIT: '31', CC: '13', CE: '22', PASAPORTE: '91', PEP: '47' }
+  const map: Record<string, string> = { NIT: '31', CC: '13', CE: '22', PASAPORTE: '41', PEP: '47', TI: '12' }
   return map[tipoDoc] ?? '31'
 }
 

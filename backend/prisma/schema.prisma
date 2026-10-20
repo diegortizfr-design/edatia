@@ -1325,7 +1325,7 @@ model Tercero {
   cupoCredito         Decimal?          @db.Decimal(15,2)
   descuentoCliente    Decimal           @default(0) @db.Decimal(5,2)
   vendedorAsignadoId  Int?              // Vendedor asignado
-  vendedorAsignado    Tercero?          @relation("ClientesDelVendedor", fields: [vendedorAsignadoId], references: [id])
+  vendedorAsignado    Tercero?          @relation("ClientesDelVendedor", fields: [vendedorAsignadoId], references: [id], onDelete: SetNull)
   clientesAsignados   Tercero[]         @relation("ClientesDelVendedor")
 
   // Campos de Proveedor

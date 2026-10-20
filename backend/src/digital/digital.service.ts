@@ -321,6 +321,13 @@ export class DigitalService {
       ? dto.metodoPagoCodigo
       : (medioPago.includes('Contra Entrega') ? 'contra_entrega' : (medioPago.toLowerCase().includes('crédito') || medioPago.toLowerCase().includes('credito') ? 'credito' : 'transferencia'));
 
+    const rawDocumento = this.sanitizeText(dto?.documento || dto?.numeroDocumento, 30).replace(/[^\w-]/g, '');
+    const esConsumidorFinal = Boolean(dto?.esConsumidorFinal) || rawDocumento === '222222222222';
+    const tipoDocumento = ['CC', 'NIT', 'CE', 'PASAPORTE', 'TI'].includes(dto?.tipoDocumento)
+      ? dto.tipoDocumento
+      : (esConsumidorFinal ? 'NIT' : 'CC');
+    const numeroDocumento = esConsumidorFinal ? '222222222222' : rawDocumento;
+
     if (!nombre || telefono.replace(/\D/g, '').length < 7 || !direccion || !ciudad) {
       throw new BadRequestException('Datos de entrega incompletos');
     }
@@ -369,34 +376,90 @@ export class DigitalService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Encontrar o Crear el Tercero (Cliente)
-      let cliente = await tx.tercero.findFirst({
-        where: {
-          empresaId,
-          esCliente: true,
-          OR: [
-            ...(email ? [{ email }] : []),
-            { telefono }
-          ]
-        }
-      });
+      let cliente: any = null;
 
-      if (!cliente) {
-        const count = await tx.tercero.count({ where: { empresaId } });
-        const docNum = `WEB-${1000 + count}`;
-        cliente = await tx.tercero.create({
-          data: {
+      if (esConsumidorFinal) {
+        cliente = await tx.tercero.findFirst({
+          where: {
             empresaId,
-            nombre,
-            tipoDocumento: 'CC',
-            numeroDocumento: docNum,
-            email: email || null,
-            telefono,
-            direccion,
-            municipio: ciudad,
-            esCliente: true,
-            activo: true,
+            numeroDocumento: '222222222222',
           }
         });
+
+        if (!cliente) {
+          cliente = await tx.tercero.create({
+            data: {
+              empresaId,
+              nombre: 'Consumidor Final',
+              nombreComercial: nombre || 'Consumidor Final Web',
+              tipoPersona: 'NATURAL',
+              tipoDocumento: 'NIT',
+              numeroDocumento: '222222222222',
+              email: email || null,
+              telefono,
+              direccion,
+              municipio: ciudad,
+              esCliente: true,
+              activo: true,
+              notas: 'Cliente Consumidor Final registrado desde Tienda Web',
+            }
+          });
+        }
+      } else {
+        if (numeroDocumento) {
+          cliente = await tx.tercero.findFirst({
+            where: {
+              empresaId,
+              numeroDocumento,
+            }
+          });
+        }
+
+        if (!cliente && (email || telefono)) {
+          cliente = await tx.tercero.findFirst({
+            where: {
+              empresaId,
+              OR: [
+                ...(email ? [{ email }] : []),
+                ...(telefono ? [{ telefono }] : [])
+              ]
+            }
+          });
+        }
+
+        if (cliente) {
+          const updateData: any = {};
+          if (!cliente.esCliente) updateData.esCliente = true;
+          if (!cliente.email && email) updateData.email = email;
+          if (!cliente.telefono && telefono) updateData.telefono = telefono;
+          if (!cliente.direccion && direccion) updateData.direccion = direccion;
+          if (!cliente.municipio && ciudad) updateData.municipio = ciudad;
+
+          if (Object.keys(updateData).length > 0) {
+            cliente = await tx.tercero.update({
+              where: { id: cliente.id },
+              data: updateData,
+            });
+          }
+        } else {
+          const doc = numeroDocumento || `WEB-${1000 + await tx.tercero.count({ where: { empresaId } })}`;
+          cliente = await tx.tercero.create({
+            data: {
+              empresaId,
+              nombre,
+              tipoPersona: 'NATURAL',
+              tipoDocumento,
+              numeroDocumento: doc,
+              email: email || null,
+              telefono,
+              direccion,
+              municipio: ciudad,
+              esCliente: true,
+              activo: true,
+              notas: 'Cliente registrado desde la Tienda Virtual (Web)',
+            }
+          });
+        }
       }
 
       // 2. Encontrar la bodega principal para el pedido

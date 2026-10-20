@@ -253,8 +253,12 @@ Tercero → Factura Electrónica
 
 ## Prioridad de construcción
 
-1. **Fase 1** — CRUD básico de terceros (tipo cliente) con campos obligatorios DIAN
-2. **Fase 2** — Validación de completitud del perfil tributario
+1. **Fase 1** — CRUD básico de terceros (tipo cliente y proveedor) con campos obligatorios DIAN ✅ (Completado y blindado)
+   - Unificación de formularios (`ClienteForm` y `ProveedorForm` como wrappers sobre `ConfigTerceroForm`).
+   - Desacoplamiento seguro de roles (la retirada de un rol como cliente no destruye al tercero si actúa como proveedor o colaborador).
+   - Verificación exhaustiva de dependencias contables/operativas con soft-delete preventivo.
+   - Soporte a Consumidor Final (`222222222222`) para e-commerce.
+2. **Fase 2** — Validación de completitud del perfil tributario y unificación de terceros
 3. **Fase 3** — Integración con facturación electrónica (proveedor tecnológico)
 4. **Fase 4** — Integración directa DIAN (largo plazo)
 
@@ -264,5 +268,8 @@ Tercero → Factura Electrónica
 
 - El módulo de Terceros del ERP es **multi-tenant**: cada empresa ve solo sus terceros
 - El modelo `Tercero` se une a `Empresa` (un tercero existe dentro del contexto de una empresa)
+- **Roles Simultáneos**: Un mismo registro en `Tercero` puede tener activas banderas booleanas `esCliente`, `esProveedor`, `esColaborador`, `esVendedor`.
+- **Desvinculación Segura**: Al eliminar desde la vista de clientes o proveedores, si el tercero tiene otros roles activos, el sistema únicamente apaga la bandera respectiva y conserva intacto el registro.
+- **Vendedor Asignado**: La relación autorreferencial `vendedorAsignadoId` cuenta con regla `ON DELETE SET NULL`.
 - Los datos del cliente en el **Manager** son independientes de los del **ERP** — son dos bases de datos conceptualmente diferentes (una es del SaaS, la otra es de los datos operacionales del cliente del SaaS)
 - Cuando un cliente del Manager activa el módulo de Ventas, se crea la estructura multi-tenant para que ese cliente pueda gestionar sus propios terceros en el ERP

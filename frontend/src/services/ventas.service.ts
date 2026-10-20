@@ -9,6 +9,8 @@ export const createCliente = (data: any) =>
   api.post('/ventas/clientes', data).then(r => r.data)
 export const updateCliente = (id: number, data: any) =>
   api.patch(`/ventas/clientes/${id}`, data).then(r => r.data)
+export const deleteCliente = (id: number) =>
+  api.delete(`/ventas/clientes/${id}`).then(r => r.data)
 export const toggleCliente = (id: number) =>
   api.patch(`/ventas/clientes/${id}/toggle`).then(r => r.data)
 export const getSaldosClientes = () =>
