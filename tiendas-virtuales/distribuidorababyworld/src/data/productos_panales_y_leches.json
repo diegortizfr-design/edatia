@@ -1,0 +1,726 @@
+[
+  {
+    "empresaId": 1,
+    "sku": "PAN-014-XXG",
+    "nombre": "Pañales Winny Pants Etapa 5 XXG x 50 Und",
+    "descripcion": "Pañales desechables tipo calzoncito Winny Pants Etapa 5 XXG, paquete por 50 unidades. Para bebés de más de 14 kg.",
+    "descripcionWeb": "Los pañales Winny Pants Etapa 5 XXG ofrecen la máxima comodidad y absorción para tu bebé. Diseñados como ropita interior para facilitar la transición y el cambio. Cuentan con ultra absorción, cintura elástica y fibra natural para cuidar la piel delicada de tu pequeño, evitando filtraciones por más tiempo.",
+    "precio": 65000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 50 pañales",
+    "etapaTalla": "Etapa 5 / Talla XXG",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459458/distribuidorababyworld/panales_y_leches/PAN-014-XXG-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459458/distribuidorababyworld/panales_y_leches/PAN-014-XXG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459462/distribuidorababyworld/panales_y_leches/PAN-014-XXG-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Diseño tipo calzoncito fácil de subir y bajar",
+      "Ultra absorbentes para mayor protección",
+      "Con fibra natural para el cuidado de la piel",
+      "Para bebés de más de 14 kg / Over 30 lbs",
+      "Paquete económico por 50 unidades"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-015-L",
+    "nombre": "Pañales Winny Confort Talla L x 80 Und",
+    "descripcion": "Pañales Winny Confort Talla L con hasta 12 horas de absorción, indicador de humedad y diseño anatómico.",
+    "descripcionWeb": "Los pañales Winny Confort en Talla L ofrecen la máxima protección y comodidad para tu bebé. Cuentan con un sistema ultra-absorbente que retiene y gelatiniza la orina, manteniendo la piel de tu pequeño seca hasta por 12 horas. Su diseño anatómico incluye barreras altas antifugas, cintas y cintura elastizadas para un ajuste perfecto, y una cubierta tipo tela supersuave con indicador de humedad que cambia de color para avisarte el momento del cambio.",
+    "precio": 65000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 80 pañales",
+    "etapaTalla": "Talla L",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459475/distribuidorababyworld/panales_y_leches/PAN-015-L-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459475/distribuidorababyworld/panales_y_leches/PAN-015-L-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459479/distribuidorababyworld/panales_y_leches/PAN-015-L-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Hasta 12 horas de absorción con sistema que gelatiniza la orina",
+      "Barreras altas y cómodas para prevenir filtraciones",
+      "Cintas y cintura elastizadas con sistema pega-despega",
+      "Indicador de humedad que cambia a color azul al orinar",
+      "Cubierta tipo tela con diseños, abullonada y supersuave"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (10)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-016-XXXG",
+    "nombre": "Pañales Winny Pants Talla XXXG x 30 Und",
+    "descripcion": "Pañales tipo calzón Winny Pants Talla XXXG para más de 16 Kg. Paquete por 30 unidades con alta absorción.",
+    "descripcionWeb": "Los pañales Winny Pants en presentación Talla XXXG ofrecen máxima comodidad y absorción para niños de más de 16 kg. Su diseño tipo calzón facilita el cambio rápido y práctico, adaptándose perfectamente a los movimientos del bebé. Cuentan con ultra absorción y fibra natural para cuidar la piel delicada, brindando seguridad y protección contra filtraciones durante todo el día y la noche.",
+    "precio": 65000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 30 pañales",
+    "etapaTalla": "Talla XXXG",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459490/distribuidorababyworld/panales_y_leches/PAN-016-XXXG-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459490/distribuidorababyworld/panales_y_leches/PAN-016-XXXG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459493/distribuidorababyworld/panales_y_leches/PAN-016-XXXG-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Diseño tipo calzón (Pants) para fácil colocación",
+      "Ultra absorbente para mayor protección",
+      "Con fibra natural para el cuidado de la piel",
+      "Indicado para bebés de más de 16 kg",
+      "Paquete económico por 30 unidades"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (11)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-017-SEC",
+    "nombre": "Pañales Winny Sec y Confort",
+    "descripcion": "Pañales Winny con sistema cushion de absorción y distribución rápida, cintas elásticas y cubiertas suaves para proteger la piel del bebé.",
+    "descripcionWeb": "Los pañales Winny ofrecen la máxima protección y comodidad para tu bebé. Cuentan con un sistema Cushion que absorbe y distribuye el líquido rápidamente, manteniendo la piel seca y previniendo irritaciones. Sus cintas y cintura elásticas brindan un ajuste perfecto, mientras que las barreras altas previenen filtraciones. Incluyen indicador de humedad y telas suaves que cuidan la delicada piel de tu pequeño.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete de pañales desechables",
+    "etapaTalla": "Varias tallas",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459502/distribuidorababyworld/panales_y_leches/PAN-017-SEC-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459502/distribuidorababyworld/panales_y_leches/PAN-017-SEC-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459505/distribuidorababyworld/panales_y_leches/PAN-017-SEC-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Sistema Cushion que absorbe y distribuye más rápido la orina",
+      "Cintas y cintura elásticas para garantizar un mejor ajuste",
+      "Barreras altas y cómodas para prevenir filtraciones",
+      "Indicador de humedad que cambia de color azul cuando es hora de cambiar",
+      "Cubierta y telas suaves con diseño anatómico"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (12)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-001-250",
+    "nombre": "Cereal Infantil Nestum Arroz Nestlé Caja x 250g",
+    "descripcion": "Cereal infantil Nestum Arroz con probiótico Bifidus BL, vitaminas y minerales para bebés.",
+    "descripcionWeb": "Cereal infantil Nestum Arroz ideal para la alimentación complementaria de tu bebé. Elaborado con granos cuidadosamente cultivados, enriquecido con 15 vitaminas y minerales, rico en hierro para apoyar el desarrollo cognitivo y con probiótico Bifidus BL que ayuda al normal funcionamiento del sistema digestivo. Fácil de preparar.",
+    "precio": 25000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé",
+    "presentacion": "Caja x 250g",
+    "etapaTalla": "A partir de 6 meses",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459516/distribuidorababyworld/panales_y_leches/LEC-001-250-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459516/distribuidorababyworld/panales_y_leches/LEC-001-250-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459518/distribuidorababyworld/panales_y_leches/LEC-001-250-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Contiene 15 vitaminas y minerales esenciales",
+      "Rico en hierro para apoyar el normal desarrollo cognitivo",
+      "Con probiótico Bifidus BL que ayuda al sistema digestivo",
+      "Granos seleccionados y cultivados responsablemente",
+      "Fácil preparación en forma de papilla"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (13)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-018-M",
+    "nombre": "Pañales Winny Sec Plus Talla M",
+    "descripcion": "Pañales desechables Winny Sec Plus con sistema ultra-absorbente y diseño anatómico para mayor comodidad y protección.",
+    "descripcionWeb": "Los pañales Winny Sec Plus ofrecen la máxima protección y comodidad para tu bebé. Cuentan con un sistema ultra-absorbente que retiene y gelatiza la orina por hasta 12 horas, capa extra-seca que previene irritaciones, barreras altas antifugas y cintas elastizadas para un ajuste perfecto y seguro. Su cubierta tipo tela con divertidos diseños es suave y respirable, cuidando la piel delicada de tu pequeño en todo momento.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete de pañales",
+    "etapaTalla": "Talla M",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459529/distribuidorababyworld/panales_y_leches/PAN-018-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459529/distribuidorababyworld/panales_y_leches/PAN-018-M-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459532/distribuidorababyworld/panales_y_leches/PAN-018-M-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Hasta 12 horas de absorción con sistema que gelatiza la orina",
+      "Barreras altas y cómodas para prevenir filtraciones",
+      "Capa extra-seca que ayuda a prevenir irritaciones",
+      "Cintas y cintura elastizadas con diseño anatómico",
+      "Bandas respirables, almohadonadas y supersuaves"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (2)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-019-XG",
+    "nombre": "Pañales Winny Pants Talla XG",
+    "descripcion": "Pañales desechables tipo calzoncito Winny Pants con alta absorción y ajuste cómodo para el bebé.",
+    "descripcionWeb": "Los pañales Winny Pants ofrecen la máxima comodidad y protección para tu bebé. Su diseño tipo calzoncito facilita ponerlo y quitarlo como ropa interior. Cuenta con una capa extra-seca que previene irritaciones, sistema ultra-absorbente que gelifica la orina, y elásticos 360° suaves y ajustables que evitan filtraciones brindando hasta 12 horas de protección continua.",
+    "precio": 55000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete de pañales desechables",
+    "etapaTalla": "Talla XG",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459542/distribuidorababyworld/panales_y_leches/PAN-019-XG-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459542/distribuidorababyworld/panales_y_leches/PAN-019-XG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459544/distribuidorababyworld/panales_y_leches/PAN-019-XG-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Diseño tipo calzoncito fácil de subir y bajar",
+      "Hasta 12 horas de absorción continua",
+      "Capa extra-seca que previene irritaciones",
+      "Elásticos 360° súper ajustables y suaves"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (3)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-020-M",
+    "nombre": "Pañales Winny Sec Plus Talla M x 60 Und",
+    "descripcion": "Pañales desechables Winny Sec Plus Talla M con sistema ultra-absorbente de hasta 12 horas y barreras antifugas.",
+    "descripcionWeb": "Los pañales Winny Sec Plus en Talla M ofrecen máxima protección y comodidad para tu bebé. Cuentan con un sistema ultra-absorbente que retiene y gelatiniza la orina por hasta 12 horas, capa extra-seca para prevenir irritaciones, barreras altas y cómodas, y una cubierta tipo tela con diseño anatómico, cintas elastizadas y reajustables.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 60 pañales",
+    "etapaTalla": "Talla M",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459555/distribuidorababyworld/panales_y_leches/PAN-020-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459555/distribuidorababyworld/panales_y_leches/PAN-020-M-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459558/distribuidorababyworld/panales_y_leches/PAN-020-M-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Sistema ultra-absorbente que retiene y gelatiniza la orina por hasta 12 horas",
+      "Capa extra-seca que mantiene seca la colita previniendo irritaciones",
+      "Barreras altas y cómodas para prevenir filtraciones de orina",
+      "Cintas y cintura elastizadas con diseño anatómico",
+      "Cubierta tipo tela con diseños, respirable y supersuave"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (4)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-021-M",
+    "nombre": "Pañales Winny Sec Plus Talla M",
+    "descripcion": "Pañales desechables Winny Sec Plus Talla M, diseñados para ofrecer máxima absorción, comodidad y protección contra filtraciones.",
+    "descripcionWeb": "Los pañales Winny Sec Plus Talla M brindan el cuidado ideal para tu bebé. Cuentan con un sistema ultra-absorbente que gelifica la orina en el interior, capa extra-seca para prevenir irritaciones, barreras altas y cómodas antifugas, y una cubierta tipo tela con diseños tiernos. Sus cintas pega-despega y cintura elastizada aseguran un ajuste perfecto y cómodo durante todo el día y la noche.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete de pañales",
+    "etapaTalla": "Talla M",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459568/distribuidorababyworld/panales_y_leches/PAN-021-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459568/distribuidorababyworld/panales_y_leches/PAN-021-M-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459571/distribuidorababyworld/panales_y_leches/PAN-021-M-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Sistema ultra-absorbente que retiene y gelifica la orina",
+      "Capa extra-seca que mantiene seca la colita del bebé",
+      "Barreras altas y cómodas para prevenir filtraciones",
+      "Cintas y cintura elastizadas con diseño anatómico",
+      "Bandas respirables, abullonadas y supersuaves"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (5)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-022-M",
+    "nombre": "Pañales Winny Ultratrim Sec Etapa 2 Talla M x 50 Unidades",
+    "descripcion": "Pañales Winny Ultratrim Sec Etapa 2 Talla M, paquete de 50 unidades con alta absorción.",
+    "descripcionWeb": "Los pañales Winny Ultratrim Sec Etapa 2 (Talla M) están diseñados para bebés de 6 a 9 kg. Ofrecen una excelente protección gracias a su núcleo ultra absorbente que mantiene la colita seca y evita filtraciones. Brindan comodidad y suavidad durante todo el día y la noche, permitiendo que tu bebé se mueva con total libertad.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 50 pañales",
+    "etapaTalla": "Etapa 2 / Talla M",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459583/distribuidorababyworld/panales_y_leches/PAN-022-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459583/distribuidorababyworld/panales_y_leches/PAN-022-M-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459587/distribuidorababyworld/panales_y_leches/PAN-022-M-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Núcleo ultra absorbente para mantener la colita seca",
+      "Barreras protectoras que ayudan a evitar filtraciones",
+      "Diseñado para bebés de 6 a 9 kg (Talla M, Etapa 2)",
+      "Incluye 10 toallitas húmedas de regalo"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (6)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-023-G",
+    "nombre": "Pañales Winny Ultratrim Sec Talla G x 30 Und",
+    "descripcion": "Pañales desechables Winny Ultratrim Sec Talla G, paquete por 30 unidades. Incluye 10 toallitas húmedas de regalo.",
+    "descripcionWeb": "Los pañales Winny Ultratrim Sec en talla G están diseñados para brindar máxima absorción y comodidad a tu bebé. Cuentan con tecnología ultra absorbente que ayuda a mantener la colita seca por más tiempo, previniendo filtraciones y protegiendo la delicada piel del bebé. Ideales para bebés de 8 a 12 kg.",
+    "precio": 35000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 30 pañales",
+    "etapaTalla": "Talla G",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459599/distribuidorababyworld/panales_y_leches/PAN-023-G-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459599/distribuidorababyworld/panales_y_leches/PAN-023-G-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459607/distribuidorababyworld/panales_y_leches/PAN-023-G-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Ultra absorbentes para mantener la colita seca",
+      "Evita filtraciones y derrames",
+      "Diseñado para bebés de 8 a 12 kg",
+      "Incluye 10 toallitas húmedas con Aloe Vera y Vitamina E"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (7)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-024-M",
+    "nombre": "Pañales Winny Ultratrim Sec Talla M Etapa 2 x 30 Und",
+    "descripcion": "Pañales Winny Ultratrim Sec Talla M Etapa 2 con 30 unidades, diseñados para mantener la colita seca y evitar filtraciones.",
+    "descripcionWeb": "Los pañales Winny Ultratrim Sec Etapa 2 Talla M (6 a 9 kg) ofrecen una absorción superior gracias a su diseño avanzado que mantiene la piel de tu bebé seca y protegida. Cuentan con barreras seguras para evitar filtraciones y materiales suaves que cuidan la delicada piel infantil, brindando comodidad durante todo el día y la noche.",
+    "precio": 28500,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete x 30 pañales",
+    "etapaTalla": "Talla M / Etapa 2",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459620/distribuidorababyworld/panales_y_leches/PAN-024-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459620/distribuidorababyworld/panales_y_leches/PAN-024-M-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459626/distribuidorababyworld/panales_y_leches/PAN-024-M-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Ultra absorbentes para mantener la colita seca",
+      "Diseñados para evitar filtraciones y accidentes",
+      "Talla M adecuada para bebés de 6 a 9 kg (13 a 20 lbs)",
+      "Etapa 2 con ajuste cómodo y seguro"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (8)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-025-XG",
+    "nombre": "Pañales Winny Sec Etapa 4 XG",
+    "descripcion": "Pañales Winny Sec Etapa XG con diseño anatómico, indicador de humedad y hasta 12 horas de absorción.",
+    "descripcionWeb": "Descubre los pañales Winny Sec en etapa XG, diseñados para brindar la máxima comodidad y protección a tu bebé. Cuentan con un sistema ultra-absorbente que gelifica la orina manteniéndola alejada de la piel, barreras altas antifugas, bandas respirables supersuaves y un práctico indicador de humedad que cambia de color para avisarte cuándo es momento del cambio. Su diseño anatómico y cintas elastizadas garantizan un ajuste perfecto.",
+    "precio": 55000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Winny",
+    "presentacion": "Paquete de pañales desechables",
+    "etapaTalla": "Etapa 4 / XG",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459635/distribuidorababyworld/panales_y_leches/PAN-025-XG-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459635/distribuidorababyworld/panales_y_leches/PAN-025-XG-1.png",
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459638/distribuidorababyworld/panales_y_leches/PAN-025-XG-2.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Hasta 12 horas de absorción continua",
+      "Indicador de humedad que cambia de color",
+      "Barreras altas y cómodas para prevenir filtraciones",
+      "Cintas y cintura elastizadas para un mejor ajuste",
+      "Bandas respirables, abullonaditas y supersuaves"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Carpeta: Nueva carpeta (9)"
+  },
+  {
+    "empresaId": 1,
+    "sku": "PAN-026-M",
+    "nombre": "Pañales Babysec Ultra Protect Talla M x 50 Und",
+    "descripcion": "Pañales desechables Babysec Ultra Protect Talla M, paquete por 50 unidades. Con hasta 12 horas de absorción.",
+    "descripcionWeb": "Los pañales Babysec Ultra Protect Talla M están diseñados para brindar la máxima comodidad y protección a tu bebé. Ofrecen hasta 12 horas de absorción continua para mantenerlo seco toda la noche. Cuentan con cintura elástica para un ajuste perfecto y protección avanzada contra derrames, cuidando la piel delicada de tu pequeño en cada etapa.",
+    "precio": 45000,
+    "categoriaId": 73,
+    "tipoProducto": "PANAL",
+    "marca": "Babysec",
+    "presentacion": "Paquete x 50 pañales",
+    "etapaTalla": "Talla M",
+    "subcategoria": "Pañales Desechables",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459653/distribuidorababyworld/panales_y_leches/PAN-026-M-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459653/distribuidorababyworld/panales_y_leches/PAN-026-M-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Hasta 12 horas de absorción que dura toda la noche",
+      "Protección avanzada contra derrames",
+      "Cintura elástica para mayor comodidad y ajuste",
+      "Diseñado para bebés de 5 a 9.5 kg (Talla M)"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 14_37_43.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-002-1800",
+    "nombre": "Leche Nestlé Klim Crecimiento 1+ Megapack 1800g",
+    "descripcion": "Alimento lácteo instantáneo en polvo con inulina y oligofructosa para niños a partir de 24 meses.",
+    "descripcionWeb": "Fórmula láctea Nestlé Klim Crecimiento 1+ en presentación Megapack de 1800g. Diseñada especialmente para apoyar la nutrición especializada de los niños a partir de los 24 meses. Contiene nutrientes esenciales como selenio, vitaminas A, D y C para la inmunidad, calcio, magnesio y proteína para huesos y músculos, hierro y zinc para la función cognitiva, además de 2 prebióticos. Ayuda en el desarrollo saludable durante la etapa de crecimiento.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé Klim",
+    "presentacion": "Bolsa x 1800g",
+    "etapaTalla": "1+",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459675/distribuidorababyworld/panales_y_leches/LEC-002-1800-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459675/distribuidorababyworld/panales_y_leches/LEC-002-1800-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Inmunidad: Selenio, Vitaminas A, D y C",
+      "Huesos y músculos: Calcio, magnesio y proteína",
+      "Función cognitiva: Hierro y zinc",
+      "Contiene 2 prebióticos (inulina y oligofructosa)",
+      "A partir de 24 meses"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 14_43_08-2.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-003-1000",
+    "nombre": "Leche Klim Crecimiento 1+ Nestlé Bolsa x 1000g",
+    "descripcion": "Alimento lácteo en polvo para niños a partir de 24 meses, con prebióticos, vitaminas y minerales para su desarrollo.",
+    "descripcionWeb": "Klim Crecimiento 1+ de Nestlé es un alimento lácteo instantáneo en polvo especialmente formulado para niños a partir de 24 meses. Contiene prebióticos, selenio, vitaminas A, D y C para apoyar la inmunidad, además de calcio, magnesio y proteína para huesos y músculos fuertes, y hierro y zinc para la función cognitiva. Su presentación en bolsa con cierre hermético reutilizable facilita su conservación y preparación.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé",
+    "presentacion": "Bolsa x 1000g",
+    "etapaTalla": "1+",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459693/distribuidorababyworld/panales_y_leches/LEC-003-1000-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459693/distribuidorababyworld/panales_y_leches/LEC-003-1000-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Inmunidad: Enriquecido con selenio, vitaminas A, D y C",
+      "Huesos y músculos: Contiene calcio, magnesio y proteína",
+      "Función cognitiva: Aporte de hierro y zinc",
+      "Contiene 2 prebióticos y fibra (inulina y oligofructosa)",
+      "Apto para niños a partir de 24 meses (2 años)"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 14_43_09-3.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-004-E3",
+    "nombre": "Fórmula Nan Optipro 3 x 800g",
+    "descripcion": "Fórmula láctea de crecimiento Nestlé Nan Optipro 3 con 5 HMO Complex en lata de 800g para niños a partir de 2 años.",
+    "descripcionWeb": "Nan Optipro 3 de Nestlé es una fórmula de crecimiento científicamente diseñada para niños a partir de 2 años. Contiene el innovador complejo 5 HMO, proteína optimizada de alta calidad, probióticos BL y DHA que apoyan el desarrollo cerebral, visual y el sistema inmune en esta etapa clave de crecimiento. Preparación recomendada según las instrucciones del pediatra.",
+    "precio": 85000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nan",
+    "presentacion": "Lata x 800g",
+    "etapaTalla": "Etapa 3",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459704/distribuidorababyworld/panales_y_leches/LEC-004-E3-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459704/distribuidorababyworld/panales_y_leches/LEC-004-E3-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Contiene 5 HMO Complex para apoyar la inmunidad",
+      "Proteína optimizada para el desarrollo saludable",
+      "Con Probiótico BL y DHA",
+      "A partir de 2 años",
+      "Rinde aproximadamente 25 porciones"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_17_48-1.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-005-E3",
+    "nombre": "Fórmula Nestlé Nestógeno 3 Etapa 3 Lata x 800g",
+    "descripcion": "Fórmula infantil Nestógeno 3 de Nestlé en lata de 800g, diseñada para niños a partir de 2 años.",
+    "descripcionWeb": "Nestógeno 3 de Nestlé es una fórmula de crecimiento diseñada especialmente para niños a partir de los 2 años. Contiene Comfortis Grow con probiótico L. Reuteri y GOS, ingredientes clínicamente probados que apoyan una digestión saludable, fortalecen el sistema inmune y contribuyen al correcto desarrollo de los huesos. Brinda la nutrición complementaria ideal para esta etapa de crecimiento activo.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé",
+    "presentacion": "Lata x 800g",
+    "etapaTalla": "Etapa 3",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459712/distribuidorababyworld/panales_y_leches/LEC-005-E3-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459712/distribuidorababyworld/panales_y_leches/LEC-005-E3-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Contiene probiótico L. Reuteri y 6 GOS",
+      "Apoya una digestión saludable",
+      "Fortalece el sistema inmune",
+      "Contribuye al desarrollo de los huesos",
+      "A partir de 2 años"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_17_48-2.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-006-135",
+    "nombre": "Fórmula Nestogeno Nutri Esencial 0-12 Meses Bolsa x 135g",
+    "descripcion": "Fórmula láctea en polvo con hierro para lactantes de 0 a 12 meses. Contiene carbohidratos, vitaminas y minerales esenciales.",
+    "descripcionWeb": "Nestogeno Nutri Esencial está diseñada para acompañar la nutrición de tu bebé desde el nacimiento hasta los 12 meses. Su fórmula contiene un perfil equilibrado con 100% lactosa, vitaminas y minerales que apoyan el desarrollo saludable. Enriquecida con hierro para lactantes. Se recomienda seguir las indicaciones del pediatra para su correcta preparación y dosificación.",
+    "precio": 18500,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestógeno",
+    "presentacion": "Bolsa x 135g",
+    "etapaTalla": "0-12 meses",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459721/distribuidorababyworld/panales_y_leches/LEC-006-135-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459721/distribuidorababyworld/panales_y_leches/LEC-006-135-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Fórmula láctea con hierro para lactantes",
+      "Carbohidratos con 100% lactosa",
+      "Enriquecida con vitaminas y minerales esenciales",
+      "Apta para bebés de 0 a 12 meses"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_17_49-3.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-007-E1",
+    "nombre": "Fórmula Nestlé Nan Optipro 1 x 900g",
+    "descripcion": "Fórmula infantil en polvo con proteína optimizada, probióticos y 5 HMO para lactantes de 0 a 6 meses.",
+    "descripcionWeb": "Fórmula infantil avanzada Nestlé Nan Optipro 1 en lata de 900g, diseñada especialmente para lactantes de 0 a 6 meses. Contiene proteína optimizada en cantidad y calidad, complejo 5 HMO, probiótico B. lactis, DHA y ARA para apoyar un crecimiento saludable, el desarrollo visual y cerebral, y fortalecer el sistema inmunitario. Consulte a su pediatra.",
+    "precio": 95000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé Nan",
+    "presentacion": "Lata x 900g",
+    "etapaTalla": "Etapa 1 (0-6 meses)",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459728/distribuidorababyworld/panales_y_leches/LEC-007-E1-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459728/distribuidorababyworld/panales_y_leches/LEC-007-E1-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Proteína optimizada para el desarrollo saludable",
+      "Contiene complejo 5 HMO",
+      "Con probiótico B. lactis",
+      "Enriquecida con DHA y ARA",
+      "Para lactantes de 0 a 6 meses"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_17_49-4.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-008-400",
+    "nombre": "Fórmula Infantil Baby Klim Etapa 1 Lata x 400g",
+    "descripcion": "Fórmula láctea de inicio en polvo para lactantes de 0 a 6 meses con hierro, zinc y vitaminas.",
+    "descripcionWeb": "Fórmula láctea de inicio Baby Klim Etapa 1 diseñada especialmente para bebés de 0 a 6 meses. Contiene nutrientes esenciales como proteína, hierro, zinc y vitaminas que apoyan el desarrollo y crecimiento saludable durante sus primeros meses de vida. Preparación fácil y segura para la alimentación complementaria o sustituta.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé",
+    "presentacion": "Lata x 400g",
+    "etapaTalla": "Etapa 1",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459738/distribuidorababyworld/panales_y_leches/LEC-008-400-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459738/distribuidorababyworld/panales_y_leches/LEC-008-400-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Fórmula de inicio para bebés de 0 a 6 meses",
+      "Enriquecida con hierro y zinc",
+      "Contiene proteínas y vitaminas esenciales",
+      "Fácil digestión para lactantes",
+      "Contenido neto de 400g en lata"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_25_55-1.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-009-E2",
+    "nombre": "Fórmula Infantil Nestlé Baby Klim Etapa 2 x 400g",
+    "descripcion": "Fórmula láctea de continuación en polvo con hierro para bebés de 6 a 12 meses. Lata de 400g.",
+    "descripcionWeb": "Fórmula infantil de continuación Nestlé Baby Klim Etapa 2, diseñada especialmente para cubrir los requerimientos nutricionales de los lactantes de 6 a 12 meses. Su fórmula contiene proteína adecuada, hierro, zinc y vitaminas esenciales para apoyar el crecimiento y desarrollo saludable de tu bebé. Sigue siempre las recomendaciones del pediatra para su preparación.",
+    "precio": 45000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestle",
+    "presentacion": "Lata x 400g",
+    "etapaTalla": "Etapa 2",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459751/distribuidorababyworld/panales_y_leches/LEC-009-E2-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459751/distribuidorababyworld/panales_y_leches/LEC-009-E2-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Fórmula de continuación para bebés de 6 a 12 meses",
+      "Enriquecida con hierro y zinc",
+      "Aporte óptimo de proteínas y vitaminas esenciales",
+      "Presentación práctica en lata de 400g"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_25_56-2.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-010-800",
+    "nombre": "Fórmula Nestlé Baby Klim 2 Etapa 2 x 800g",
+    "descripcion": "Fórmula láctea de continuación en polvo para lactantes de 6 a 12 meses, con proteína, hierro, zinc y vitaminas.",
+    "descripcionWeb": "Fórmula láctea de continuación Baby Klim 2 de Nestlé, diseñada especialmente para bebés de 6 a 12 meses. Aporta nutrientes esenciales como proteínas de alta calidad, hierro, zinc y vitaminas que apoyan el crecimiento y desarrollo saludable durante esta etapa de transición alimentaria. Preparación fácil y segura siguiendo las instrucciones del empaque.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé Baby Klim",
+    "presentacion": "Lata x 800g",
+    "etapaTalla": "Etapa 2",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459762/distribuidorababyworld/panales_y_leches/LEC-010-800-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459762/distribuidorababyworld/panales_y_leches/LEC-010-800-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Fórmula de continuación para lactantes de 6 a 12 meses",
+      "Enriquecida con proteínas, hierro y zinc",
+      "Contiene vitaminas esenciales para el desarrollo",
+      "Contenido neto de 800g en presentación de lata"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_25_57-3.png"
+  },
+  {
+    "empresaId": 1,
+    "sku": "LEC-011-800",
+    "nombre": "Fórmula Infantil Baby Klim Etapa 1 Lata x 800g",
+    "descripcion": "Fórmula láctea de inicio en polvo para lactantes de 0 a 6 meses con hierro, zinc y vitaminas.",
+    "descripcionWeb": "Baby Klim Etapa 1 es una fórmula láctea de inicio especialmente diseñada para brindar una nutrición equilibrada y adecuada a los lactantes de 0 a 6 meses. Su fórmula contiene nutrientes esenciales como proteína, hierro, zinc y vitaminas que apoyan el desarrollo y crecimiento saludable del bebé durante sus primeros meses de vida.",
+    "precio": 65000,
+    "categoriaId": 71,
+    "tipoProducto": "LECHE",
+    "marca": "Nestlé",
+    "presentacion": "Lata x 800g",
+    "etapaTalla": "0-6 meses",
+    "subcategoria": "Fórmulas y Leches",
+    "imagen": "https://res.cloudinary.com/azun29xn/image/upload/v1792459775/distribuidorababyworld/panales_y_leches/LEC-011-800-1.png",
+    "imagenes": [
+      "https://res.cloudinary.com/azun29xn/image/upload/v1792459775/distribuidorababyworld/panales_y_leches/LEC-011-800-1.png"
+    ],
+    "stock": 30,
+    "detalles": [
+      "Fórmula de inicio para bebés de 0 a 6 meses",
+      "Enriquecida con hierro y zinc",
+      "Contiene proteínas y vitaminas esenciales",
+      "Fórmula láctea en polvo de alta calidad"
+    ],
+    "publicadoWeb": false,
+    "activo": true,
+    "esDestacado": false,
+    "productoKey": "Individual: Imagen de ChatGPT 18 oct 2026, 15_25_58-4.png"
+  }
+]

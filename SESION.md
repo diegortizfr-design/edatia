@@ -34,6 +34,21 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
 
+## Estado resuelto (sesión 12)
+
+✅ **Pipeline Automatizado de Pañales y Leches con IA (Gemini Flash), Cloudinary y Base de Datos ERP:**
+  - **Procesamiento Multimodal y Clasificación de 24 Productos Nuevos:**
+    - Se procesaron las 37 imágenes de la carpeta `catalogo/pañales y leches/`, agrupando limpiamente **13 modelos de subcarpetas** con múltiples fotos/ángulos y **11 modelos individuales de la raíz** con 1 foto única.
+    - Gemini Flash Lite identificó marcas líderes (*Winny, Babysec, Klim, Nan Optipro, Nestógeno, Nestum*), líneas, etapas de edad/talla (*Etapa 1 a 5, Talla M, G, XG, XXG, XXXG*), gramajes netos (*135g, 250g, 400g, 800g, 900g, 1000g, 1800g*), viñetas técnicas y precios realistas en COP.
+  - **Alojamiento y Estructura en Cloudinary:**
+    - Subida automática bajo `distribuidorababyworld/panales_y_leches/` con nombrado semántico (`PAN-014` a `PAN-026` y `LEC-001` a `LEC-011`).
+  - **Integración en Base de Datos ERP (Inventario vs. Tienda Virtual):**
+    - Los 24 productos fueron insertados directamente en PostgreSQL (`edatia_erp`) asociados a Distribuidora Baby World (`empresaId = 1`).
+    - **Configuración de Publicación:** Marcados con `activo = true` (disponibles en el inventario del ERP) y **`publicadoWeb = false`** (ocultos de la tienda virtual hasta que se definan precios de venta finales y se decida su lanzamiento público).
+  - **Artefactos y Scripts Exportados:**
+    - `backend/scripts/productos_panales_y_leches.json` y copia en `tiendas-virtuales/distribuidorababyworld/src/data/productos_panales_y_leches.json`.
+    - `backend/scripts/importar_panales_y_leches.sql` con 738 líneas de SQL idempotente para replicar en el servidor de producción.
+
 ## Estado resuelto (sesión 11)
 
 ✅ **Auditoría Financiera, Navegación Interactiva y Optimización del Módulo de Préstamos:**
