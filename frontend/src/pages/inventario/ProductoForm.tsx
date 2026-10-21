@@ -97,6 +97,7 @@ export function ProductoForm() {
       marcaId: form.marcaId ? +form.marcaId : undefined,
       unidadMedidaId: form.unidadMedidaId ? +form.unidadMedidaId : undefined,
       precioBase: +form.precioBase,
+      precioWeb: +form.precioBase,
       tipoIva: form.tipoIva,
       manejaBodega: form.manejaBodega,
       manejaLotes: form.manejaLotes,

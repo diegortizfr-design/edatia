@@ -261,6 +261,11 @@ Solo se puede recibir una OC en estado `APROBADA` o `RECIBIDA_PARCIAL`. La recep
 ### R8 — Traslado entre bodegas
 Se crean **dos movimientos atómicos**: `TRASLADO_SALIDA` y `TRASLADO_ENTRADA`, vinculados por `movimientoParId`. El número del segundo es `{numero-salida}-E`.
 
+### R9 — Sincronización de Precios y Vitrina con Tienda Virtual
+- `precioBase` es el precio de venta en el ERP.
+- Al guardar un producto o importarlo masivamente (CSV/Excel), `precioWeb` se sincroniza automáticamente con `precioBase` para reflejarse de inmediato en la tienda virtual (Baby World) sin doble digitación.
+- La visibilidad se controla con `publicadoWeb: boolean` (controlable en 1 clic desde la tabla de productos o la vitrina web).
+
 ---
 
 ## 7. Arquitectura Frontend

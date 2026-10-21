@@ -815,7 +815,7 @@ export function ConfigProductos() {
       marcaId: formData.marcaId ? Number(formData.marcaId) : null,
       clasificacionId: formData.clasificacionId ? Number(formData.clasificacionId) : null,
       precioBase: price1,
-      precioWeb: Number(formData.precioWeb) || price1 || null,
+      precioWeb: price1,
       costo: Number(formData.costo) || 0,
       costoUltimo: Number(formData.costoUltimo) || 0,
       costoI: Number(formData.costoI) || 0,
@@ -1556,8 +1556,9 @@ export function ConfigProductos() {
                       value={formatCOP(formData.precios[0])}
                       onChange={e => {
                         const newPrecios = [...formData.precios]
-                        newPrecios[0] = parseCOP(e.target.value)
-                        setFormData(prev => ({ ...prev, precios: newPrecios }))
+                        const newPrice = parseCOP(e.target.value)
+                        newPrecios[0] = newPrice
+                        setFormData(prev => ({ ...prev, precios: newPrecios, precioWeb: newPrice }))
                       }}
                       placeholder="0"
                       className="w-full pl-6 pr-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-400 transition-all font-mono shadow-inner"

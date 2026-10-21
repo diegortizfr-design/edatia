@@ -145,6 +145,10 @@ export class ProductosService {
       }
     }
 
+    if (productData.precioBase !== undefined && (productData.precioWeb === undefined || productData.precioWeb === null || productData.precioWeb === 0)) {
+      productData.precioWeb = productData.precioBase;
+    }
+
     const p = await (this.prisma as any).producto.create({
       data: {
         ...productData,
@@ -248,6 +252,10 @@ export class ProductosService {
       } else if (Array.isArray(appliedTaxes) && appliedTaxes.some((t: string) => t.toLowerCase().includes('19'))) {
         productData.tipoIva = 'GRAVADO_19';
       }
+    }
+
+    if (productData.precioBase !== undefined && (productData.precioWeb === undefined || productData.precioWeb === null || productData.precioWeb === 0)) {
+      productData.precioWeb = productData.precioBase;
     }
 
     const p = await (this.prisma as any).producto.update({
@@ -574,6 +582,7 @@ export class ProductosService {
               marcaId: marcaId ?? existing.marcaId,
               unidadMedidaId: unidadMedidaId ?? existing.unidadMedidaId,
               precioBase: precioBase > 0 ? precioBase : existing.precioBase,
+              precioWeb: precioBase > 0 ? precioBase : (existing.precioWeb || existing.precioBase),
               precios: precioBase > 0 ? precios : existing.precios,
               costo: costo > 0 ? costo : existing.costo,
               costoPromedio: costo > 0 ? costo : existing.costoPromedio,
@@ -610,6 +619,7 @@ export class ProductosService {
               marcaId,
               unidadMedidaId,
               precioBase,
+              precioWeb: precioBase,
               precios,
               costo,
               costoPromedio: costo,

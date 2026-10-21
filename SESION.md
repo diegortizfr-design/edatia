@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-20 (sesión 15)
+> Última actualización: 2026-10-21 (sesión 16)
 
 ---
 
@@ -33,6 +33,17 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 16)
+
+✅ **Sincronización Automática de Precios entre Inventario ERP y Tienda Virtual Baby World:**
+  - **Causa Raíz:** La tienda virtual (`distribuidorababyworld/src/App.tsx`) prioriza `p.precioWeb || p.precioBase`. En `ConfigProductos.tsx`, la lógica previa `precioWeb: Number(formData.precioWeb) || price1` preservaba el `precioWeb` cargado originalmente, ignorando el nuevo `price1` (`precioBase`).
+  - **Corrección en Frontend (`ConfigProductos.tsx` y `ProductoForm.tsx`):** `precioWeb` ahora se asigna directamente a `price1` en el guardado (`handleSave`) y en el `onChange` del formulario, garantizando que cualquier actualización en el ERP actualice de inmediato la tienda virtual.
+  - **Salvaguarda en Backend (`productos.service.ts`):** En `update()`, `create()` e `importarMasivo()` (carga por Excel/CSV), si se actualiza o crea con `precioBase` y no se especifica un `precioWeb` diferente, se sincroniza automáticamente `precioWeb = precioBase`.
+  - **Saneamiento Inmediato de Base de Datos:** Se actualizó en PostgreSQL (`edatia_erp`) todos los productos donde `precioWeb != precioBase`, reflejándose de inmediato los precios actualizados en la tienda virtual en vivo.
+  - **Recompilación y Despliegue:** Contenedores `edatia-backend` y `edatia-frontend` reconstruidos y reiniciados exitosamente.
+
+---
 
 ## Estado resuelto (sesión 15)
 
