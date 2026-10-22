@@ -53,13 +53,15 @@ export class TercerosService {
   }
 
   async create(dto: CreateTerceroDto, empresaId: number) {
-    if (dto.vendedorAsignadoId) {
+    let cleanVendedorId: number | null = null
+    if (dto.vendedorAsignadoId && Number(dto.vendedorAsignadoId) > 0) {
       const vend = await this.prisma.tercero.findFirst({
-        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+        where: { id: Number(dto.vendedorAsignadoId), empresaId, activo: true }
       })
       if (!vend) {
         throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
       }
+      cleanVendedorId = vend.id
     }
 
     const exists = await this.prisma.tercero.findUnique({
@@ -71,16 +73,63 @@ export class TercerosService {
         }
       }
     })
-    if (exists) {
-      throw new ConflictException('Ya existe un tercero registrado con este tipo y número de documento')
+
+    const { sucursales, vendedorAsignadoId, ...rest } = dto
+    const payloadData: any = {
+      ...rest,
+      vendedorAsignadoId: cleanVendedorId,
+      empresaId,
     }
 
-    const { sucursales, ...rest } = dto
+    if (exists) {
+      // Si ya existía con el mismo rol activo que se está intentando crear
+      if (dto.esCliente && exists.esCliente) {
+        throw new ConflictException(`Ya existe un cliente registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      }
+      if (dto.esProveedor && exists.esProveedor && !dto.esCliente) {
+        throw new ConflictException(`Ya existe un proveedor registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      }
+
+      // Si existía con otro rol o inactivo, lo actualizamos incorporando el nuevo rol y datos
+      return this.prisma.$transaction(async (tx) => {
+        if (sucursales && sucursales.length > 0) {
+          await tx.sucursalTercero.deleteMany({
+            where: { terceroId: exists.id, empresaId }
+          })
+        }
+
+        return tx.tercero.update({
+          where: { id: exists.id },
+          data: {
+            ...payloadData,
+            activo: true,
+            esCliente: dto.esCliente !== undefined ? !!dto.esCliente : exists.esCliente,
+            esProveedor: dto.esProveedor !== undefined ? !!dto.esProveedor : exists.esProveedor,
+            esColaborador: dto.esColaborador !== undefined ? !!dto.esColaborador : exists.esColaborador,
+            esVendedor: dto.esVendedor !== undefined ? !!dto.esVendedor : exists.esVendedor,
+            sucursales: sucursales && sucursales.length > 0 ? {
+              create: sucursales.map((s: any) => ({
+                empresaId,
+                codigo: s.codigo,
+                descripcion: s.descripcion,
+                direccion: s.direccion || '',
+                telefono: s.telefono || '',
+                ciudad: s.ciudad || '',
+                departamento: s.departamento || '',
+                pais: s.pais || 'COLOMBIA',
+                contacto: s.contacto || '',
+                cargo: s.cargo || '',
+              }))
+            } : undefined
+          },
+          include: { sucursales: true }
+        })
+      })
+    }
 
     return this.prisma.tercero.create({
       data: {
-        ...rest,
-        empresaId,
+        ...payloadData,
         sucursales: sucursales && sucursales.length > 0 ? {
           create: sucursales.map((s: any) => ({
             empresaId,
@@ -103,28 +152,33 @@ export class TercerosService {
   async update(id: number, dto: UpdateTerceroDto, empresaId: number) {
     await this.findOne(id, empresaId)
 
-    if (dto.vendedorAsignadoId) {
+    let cleanVendedorId: number | null = null
+    if (dto.vendedorAsignadoId && Number(dto.vendedorAsignadoId) > 0) {
       const vend = await this.prisma.tercero.findFirst({
-        where: { id: dto.vendedorAsignadoId, empresaId, activo: true }
+        where: { id: Number(dto.vendedorAsignadoId), empresaId, activo: true }
       })
       if (!vend) {
         throw new BadRequestException('El vendedor asignado no pertenece a su empresa o no está activo')
       }
+      cleanVendedorId = vend.id
     }
 
-    const { sucursales, ...rest } = dto
+    const { sucursales, vendedorAsignadoId, ...rest } = dto
 
     return this.prisma.$transaction(async (tx) => {
-      // Eliminar sucursales anteriores
-      await tx.sucursalTercero.deleteMany({
-        where: { terceroId: id, empresaId }
-      })
+      // Eliminar sucursales anteriores si se pasaron sucursales
+      if (sucursales !== undefined) {
+        await tx.sucursalTercero.deleteMany({
+          where: { terceroId: id, empresaId }
+        })
+      }
 
       // Actualizar tercero y crear nuevas sucursales
       return tx.tercero.update({
         where: { id },
         data: {
           ...rest,
+          vendedorAsignadoId: cleanVendedorId,
           sucursales: sucursales && sucursales.length > 0 ? {
             create: sucursales.map((s: any) => ({
               empresaId,

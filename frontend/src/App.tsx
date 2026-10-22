@@ -107,6 +107,7 @@ function PosWrap({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>
 }
 
+import { Toaster } from 'react-hot-toast'
 import { useParams } from 'react-router-dom'
 
 function RedirectToProductDetail() {
@@ -117,6 +118,7 @@ function RedirectToProductDetail() {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<Login />} />
 
