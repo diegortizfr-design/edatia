@@ -370,7 +370,7 @@ export function ProductDetailPage({
       </div>
 
       {/* Floating Sticky Mobile Buy Bar */}
-      <div className="sm:hidden fixed bottom-14 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-3.5 py-2.5 shadow-lg flex items-center justify-between gap-3">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3.5">
         <div className="min-w-0">
           <span className="text-[10px] text-slate-400 font-bold block uppercase leading-none">Total</span>
           <span className="text-base font-black text-slate-900 truncate block mt-0.5">
@@ -380,9 +380,9 @@ export function ProductDetailPage({
 
         <button
           onClick={handleAdd}
-          className="flex-1 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-1.5 transition-all"
+          className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all"
         >
-          <ShoppingBag size={15} />
+          <ShoppingBag size={16} />
           <span>Añadir a la Bolsa</span>
         </button>
       </div>

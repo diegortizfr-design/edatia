@@ -558,14 +558,16 @@ export function App() {
       {/* Floating WhatsApp Button */}
       <FloatingWhatsAppButton phone="573023863380" />
 
-      {/* Sticky Mobile Bottom Navigation (Only visible on smartphones) */}
-      <MobileBottomNav
-        activeCategory={activeCategory}
-        onSelectCategory={handleCategorySelect}
-        cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
-      />
+      {/* Sticky Mobile Bottom Navigation (Only visible on smartphones in catalog view) */}
+      {!selectedProduct && (
+        <MobileBottomNav
+          activeCategory={activeCategory}
+          onSelectCategory={handleCategorySelect}
+          cartCount={totalCartCount}
+          onOpenCart={() => setIsCartOpen(true)}
+          onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
+        />
+      )}
 
       {/* Cart Drawer */}
       <CartDrawer
