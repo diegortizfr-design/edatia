@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-20 (sesión 14)
+> Última actualización: 2026-10-21 (sesión 16)
 
 ---
 
@@ -33,6 +33,33 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 16)
+
+✅ **Sincronización Automática de Precios entre Inventario ERP y Tienda Virtual Baby World:**
+  - **Causa Raíz:** La tienda virtual (`distribuidorababyworld/src/App.tsx`) prioriza `p.precioWeb || p.precioBase`. En `ConfigProductos.tsx`, la lógica previa `precioWeb: Number(formData.precioWeb) || price1` preservaba el `precioWeb` cargado originalmente, ignorando el nuevo `price1` (`precioBase`).
+  - **Corrección en Frontend (`ConfigProductos.tsx` y `ProductoForm.tsx`):** `precioWeb` ahora se asigna directamente a `price1` en el guardado (`handleSave`) y en el `onChange` del formulario, garantizando que cualquier actualización en el ERP actualice de inmediato la tienda virtual.
+  - **Salvaguarda en Backend (`productos.service.ts`):** En `update()`, `create()` e `importarMasivo()` (carga por Excel/CSV), si se actualiza o crea con `precioBase` y no se especifica un `precioWeb` diferente, se sincroniza automáticamente `precioWeb = precioBase`.
+  - **Saneamiento Inmediato de Base de Datos:** Se actualizó en PostgreSQL (`edatia_erp`) todos los productos donde `precioWeb != precioBase`, reflejándose de inmediato los precios actualizados en la tienda virtual en vivo.
+  - **Recompilación y Despliegue:** Contenedores `edatia-backend` y `edatia-frontend` reconstruidos y reiniciados exitosamente.
+
+---
+
+## Estado resuelto (sesión 15)
+
+✅ **Visibilidad y Control de Publicación de Productos en Tienda Virtual Baby World desde el Inventario ERP:**
+  - **Identificación Visual y Control Rápido en Catálogo de Productos (`ConfigProductos.tsx` y `Productos.tsx`):**
+    - **Tarjetas KPI Interactivas de Tienda Web:** Se crearon 4 métricas superiores: Total Productos, 🌐 Publicados en Tienda Web (`publicadoWeb = true`), ⚪ Solo Inventario (Ocultos / `publicadoWeb = false`) y ⚠️ Sin Costo Asignado. Al hacer clic en cualquiera de las tarjetas se filtra la tabla automáticamente.
+    - **Columna "Tienda Web" con Toggle Rápido de 1 Clic:** Se agregó la columna a la tabla de productos con insignias `🌐 Publicado` (verde) y `⚪ No publicado` (gris). Al hacer clic en el botón, se actualiza el estado de publicación en la base de datos de inmediato vía API (`updateProducto`) con feedback visual tipo toast, permitiendo publicar o retirar productos de la tienda virtual sin entrar a editar la ficha completa.
+    - **Filtro Avanzado de Tienda Virtual:** Desplegable que permite segmentar entre "Todos en Tienda", "Solo Publicados en Tienda" y "Solo No Publicados / Solo ERP".
+    - **Exportación Excel / CSV Enriquecida:** Se agregó el campo `Publicado_Tienda_Virtual` (`SI` / `NO`) en los reportes descargables de productos.
+    - **Ficha Técnica:** Checkbox `🌐 Tienda Virtual` en la sección de características especiales para crear o editar productos con estado web y precio web opcional.
+  - **Apertura de la Vitrina Web / Catálogo Digital (`CatalogoDigital.tsx` y `backend/src/digital`):**
+    - **Corrección en Endpoint API Backend (`digital.service.ts` y `digital.controller.ts`):** Se removió el filtro estático `where: { publicadoWeb: true }` del controlador autenticado del ERP, permitiendo que ahora devuelva el catálogo completo de la empresa o filtre por query `publicado`.
+    - **Rediseño de la Vitrina Web:** Nuevas tarjetas de conteo rápido, botón directo de acceso a la tienda pública de Baby World, insignias de estado con iconos vectoriales y switches de publicación inmediata.
+  - **Soporte de Filtros en API de Inventario (`productos.controller.ts` y `productos.service.ts`):**
+    - Soporte del parámetro query `publicadoWeb` en `findAll` de productos.
+    - Tipado robusto en el servicio frontend (`inventario.service.ts`).
 
 ## Estado resuelto (sesión 14)
 

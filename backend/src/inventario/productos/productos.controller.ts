@@ -26,12 +26,14 @@ export class ProductosController {
     @Query('categoriaId') categoriaId?: string,
     @Query('marcaId') marcaId?: string,
     @Query('activo') activo?: string,
+    @Query('publicadoWeb') publicadoWeb?: string,
   ) {
     return this.svc.findAll(user.empresaId!, {
       q,
       categoriaId: categoriaId ? +categoriaId : undefined,
       marcaId: marcaId ? +marcaId : undefined,
       activo: activo !== undefined ? activo === 'true' : undefined,
+      publicadoWeb: publicadoWeb !== undefined ? publicadoWeb === 'true' : undefined,
     });
   }
 

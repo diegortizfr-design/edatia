@@ -27,8 +27,11 @@ export class DigitalController {
   }
 
   @Get('productos')
-  getProductos(@Request() req: any) {
-    return this.digitalService.getProductosWeb(req.user.empresaId);
+  getProductos(@Request() req: any, @Query('publicado') publicado?: string) {
+    return this.digitalService.getProductosWeb(
+      req.user.empresaId,
+      publicado !== undefined ? { publicado: publicado === 'true' } : undefined,
+    );
   }
 
   @Patch('productos/:id/toggle')
