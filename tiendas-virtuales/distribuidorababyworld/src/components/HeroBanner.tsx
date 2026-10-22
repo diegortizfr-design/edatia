@@ -62,12 +62,12 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               Ver catálogo
             </button>
             <a 
-              href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
+              href="https://wa.me/573023863380?text=Hola%20Baby%20World%20%F0%9F%91%8B,%20estoy%20en%20la%20tienda%20virtual%20y%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-slate-50 text-slate-700 rounded-full font-bold shadow-md shadow-slate-200/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100 text-sm"
+              className="group w-full sm:w-auto px-8 py-3.5 bg-mint-100 hover:bg-mint-200/90 text-emerald-900 border border-mint-200/90 rounded-full font-bold shadow-md shadow-mint-500/15 hover:shadow-mint-500/25 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
             >
-              <WhatsAppIcon size={18} />
+              <WhatsAppIcon size={18} className="group-hover:scale-110 group-hover:rotate-6 transition-transform duration-200" />
               Pedir por WhatsApp
             </a>
           </div>
