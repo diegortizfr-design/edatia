@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail, FileText, Plus, Trash2, Shield, Globe, ShoppingCart, RefreshCw, Upload, File, Pencil, X } from 'lucide-react'
-import toast from 'react-hot-toast'
+import toast, { Toaster } from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
@@ -148,12 +148,15 @@ const mapDbTerceroToForm = (t: any): Tercero => ({
 })
 
 const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
+  const vendId = f.vendedor && !isNaN(parseInt(f.vendedor, 10)) ? parseInt(f.vendedor, 10) : null
+  const finalNombre = f.nombre?.trim() || f.nombreComercial?.trim() || ''
+
   return {
-    tipoPersona: f.tipoPersona,
-    tipoDocumento: f.tipoDocumento,
-    numeroDocumento: f.numeroDocumento,
+    tipoPersona: f.tipoPersona || 'JURIDICA',
+    tipoDocumento: f.tipoDocumento || 'NIT',
+    numeroDocumento: (f.numeroDocumento || '').trim(),
     digitoVerificacion: f.digitoVerificacion || null,
-    nombre: f.nombre,
+    nombre: finalNombre,
     nombreComercial: f.nombreComercial || null,
     email: f.email || null,
     telefono: f.telefono || null,
@@ -168,15 +171,15 @@ const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
     esColaborador: !!f.empleado,
     esVendedor: !!f.empleado,
 
-    plazoCredito: f.formaPago.includes('30') ? 30 : 0,
-    cupoCredito: f.cupoCredito ? f.cupoCreditoValor : null,
-    vendedorAsignadoId: f.vendedor ? parseInt(f.vendedor, 10) : null,
+    plazoCredito: (f.formaPago || '').includes('30') ? 30 : 0,
+    cupoCredito: f.cupoCredito && f.cupoCreditoValor ? Number(f.cupoCreditoValor) : null,
+    vendedorAsignadoId: vendId && vendId > 0 ? vendId : null,
     
-    contactoNombre: f.nombre || null,
+    contactoNombre: finalNombre || null,
     condicionesPago: f.formaPago || '01 - EFECTIVO',
     monedaProveedor: 'COP',
 
-    activo: f.activo,
+    activo: f.activo !== false,
     notas: f.observacion || null,
     
     regimenFiscal: f.regimenFiscal || '49',
@@ -259,11 +262,22 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
   // Mutations
   const mutCreateTercero = useMutation({
     mutationFn: createTercero,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['terceros-erp'] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['terceros-erp'] })
+      qc.invalidateQueries({ queryKey: ['clientes'] })
+      qc.invalidateQueries({ queryKey: ['proveedores'] })
+      qc.invalidateQueries({ queryKey: ['vendedores'] })
+    }
   })
   const mutUpdateTercero = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateTercero(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['terceros-erp'] })
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['terceros-erp'] })
+      qc.invalidateQueries({ queryKey: ['clientes'] })
+      qc.invalidateQueries({ queryKey: ['proveedores'] })
+      qc.invalidateQueries({ queryKey: ['vendedores'] })
+      qc.invalidateQueries({ queryKey: ['tercero-detail', variables.id] })
+    }
   })
 
   // Tabs: principal, sucursales, adjuntos, tributaria, web, transacciones
@@ -345,8 +359,9 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
   // Guardar datos
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.nombre) return toast.error('El nombre completo/razón social es obligatorio.')
-    if (!form.numeroDocumento) return toast.error('El número de documento es obligatorio.')
+    const resolvedNombre = form.nombre?.trim() || form.nombreComercial?.trim()
+    if (!resolvedNombre) return toast.error('El nombre completo o razón social es obligatorio.')
+    if (!form.numeroDocumento?.trim()) return toast.error('El número de documento es obligatorio.')
 
     try {
       const isClientChecked = !!form.cliente
@@ -375,6 +390,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
         navigate('/configuracion/terceros')
       }
     } catch (err) {
+      console.error('Error al guardar tercero:', err)
       toast.error(getApiError(err, 'Error al guardar tercero'))
     }
   }
@@ -496,6 +512,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
 
   return (
     <div className="w-full space-y-6">
+      <Toaster position="top-right" />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">

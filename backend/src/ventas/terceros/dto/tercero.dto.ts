@@ -5,7 +5,7 @@ export class CreateTerceroDto {
   @IsOptional() @IsIn(['NATURAL', 'JURIDICA'])
   tipoPersona?: string = 'JURIDICA'
 
-  @IsOptional() @IsIn(['NIT', 'CC', 'CE', 'PASAPORTE', 'PEP'])
+  @IsString() @IsOptional()
   tipoDocumento?: string = 'NIT'
 
   @IsString() @MinLength(3)
