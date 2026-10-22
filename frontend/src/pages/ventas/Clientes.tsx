@@ -3,7 +3,7 @@ import { Plus, Search, Users, Pencil, Trash2, Phone, Mail, UserCheck, CreditCard
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getClientes, deleteCliente } from '../../services/ventas.service'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { getApiError } from '../../services/api'
 
 const REGIMEN_CONFIG: Record<string, { label: string; color: string }> = {
@@ -64,7 +64,6 @@ export function Clientes() {
 
   return (
     <div className="space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">

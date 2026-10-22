@@ -638,3 +638,31 @@ VITE_API_URL=https://api.edatia.com
   - `herramientas_edatia`: Restauración 100% limpia sin errores.
   - `edatia_erp`: Restauración operacional completa de la Empresa 2 (*Distribuidora Baby World* - 149 productos, usuarios, etc.). Se documentó la presencia de registros huérfanos residuales pertenecientes a las empresas demo 1 y 3 (eliminadas en sesiones previas).
 
+## Sesión 2026-10-22 - Optimización, Unificación de Toasters y Robustecimiento de Terceros
+
+**Backend (Gestión de Terceros y Relaciones Multi-Rol):**
+- **Validación y sanitización en `CreateTerceroDto` y `UpdateTerceroDto`:**
+  - Flexibilización de validación en `tipoDocumento` (`@IsString() @IsOptional()`).
+  - Limpieza y verificación de `vendedorAsignadoId` garantizando que pertenezca a la empresa y esté activo.
+- **Gestión inteligente de duplicados y reactivación:**
+  - Si un tercero ya existe con el documento proporcionado dentro de la empresa, el backend evalúa si ya posee el rol activo solicitado (arrojando `ConflictException` específico por rol) o si posee otro rol.
+  - En caso de rol complementario (ej. un proveedor que ahora se registra como cliente) o tercero previamente desactivado (`activo === false`), se actualiza la entidad activando el nuevo rol y sincronizando sus datos y sucursales sin duplicar registros contables ni violar la restricción única `[empresaId, tipoDocumento, numeroDocumento]`.
+  - Soporte de roles extendido a `esColaborador` y `esVendedor`.
+- **Protección de Sucursales en Actualizaciones Parciales:**
+  - En `update`, la purga y reemplazo de sucursales relacionales ahora se ejecuta únicamente si se envía la propiedad `sucursales` (`if (sucursales !== undefined)`), evitando el borrado involuntario de sucursales en llamadas parciales desde el frontend.
+
+**Frontend (Centralización de Notificaciones y Limpieza de Código):**
+- **Toaster Global Unificado:**
+  - Centralización del componente `<Toaster position="top-right" />` en la raíz de la aplicación (`App.tsx`).
+  - Remoción de 10 instancias locales de `<Toaster />` en `ConfigTerceroForm`, `Clientes`, `Proveedores`, `ConfigFormatosImpresion`, `ConfigGeolocalizacion`, `ConfigDocumentos`, `ConfigTercerosExtra`, `ConfigArchivo`, `ConfigContable` y `ConfigSucursales`, previniendo duplicidad de toasts y solapamientos en UI.
+- **Correcciones y Tipado en `ConfigTerceroForm.tsx`:**
+  - Corrección de typo en la subida de adjuntos (`progreso: progress`).
+  - Inclusión de la propiedad obligatoria `clasificacion: 'General'` en `DEFAULT_TERCERO` satisfaciendo la interfaz `Tercero`.
+  - Tipado explícito de parámetros en callbacks de listas geográficas (`p`, `d`, `c`).
+  - Sincronización e invalidación reactiva de cache en React Query para `terceros-erp`, `clientes`, `proveedores`, `vendedores` y `tercero-detail`.
+
+**Infraestructura y Despliegue:**
+- Compilación de TypeScript en backend (`tsc`) y frontend (`vite build`) con 0 errores.
+- Reconstrucción de imágenes Docker y despliegue en caliente de los servicios `api` (`edatia-backend`) y `web` (`edatia-frontend`) mediante Docker Compose.
+- Verificación de estado `healthy` y disponibilidad continua del servicio.
+

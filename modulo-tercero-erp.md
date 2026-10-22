@@ -270,6 +270,8 @@ Tercero → Factura Electrónica
 - El modelo `Tercero` se une a `Empresa` (un tercero existe dentro del contexto de una empresa)
 - **Roles Simultáneos**: Un mismo registro en `Tercero` puede tener activas banderas booleanas `esCliente`, `esProveedor`, `esColaborador`, `esVendedor`.
 - **Desvinculación Segura**: Al eliminar desde la vista de clientes o proveedores, si el tercero tiene otros roles activos, el sistema únicamente apaga la bandera respectiva y conserva intacto el registro.
+- **Gestión Inteligente de Duplicados y Reactivación**: Al crear un tercero con un documento ya existente en la empresa, el backend evalúa si ya posee el rol activo solicitado (lanzando `ConflictException` informativo) o si posee otro rol o está inactivo. En este caso, el sistema actualiza el registro activando el nuevo rol y sus datos sin duplicar la entidad física ni violar el índice único `[empresaId, tipoDocumento, numeroDocumento]`.
+- **Preservación de Sucursales en Update**: En las actualizaciones (`update`), las sucursales existentes solo se eliminan y reemplazan si el payload incluye explícitamente el campo `sucursales`, protegiendo la integridad relacional en actualizaciones parciales.
 - **Vendedor Asignado**: La relación autorreferencial `vendedorAsignadoId` cuenta con regla `ON DELETE SET NULL`.
 - Los datos del cliente en el **Manager** son independientes de los del **ERP** — son dos bases de datos conceptualmente diferentes (una es del SaaS, la otra es de los datos operacionales del cliente del SaaS)
 - Cuando un cliente del Manager activa el módulo de Ventas, se crea la estructura multi-tenant para que ese cliente pueda gestionar sus propios terceros en el ERP

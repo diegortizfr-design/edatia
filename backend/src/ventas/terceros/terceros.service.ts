@@ -83,11 +83,17 @@ export class TercerosService {
 
     if (exists) {
       // Si ya existía con el mismo rol activo que se está intentando crear
-      if (dto.esCliente && exists.esCliente) {
-        throw new ConflictException(`Ya existe un cliente registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      if (dto.esCliente && exists.esCliente && exists.activo) {
+        throw new ConflictException(`Ya existe un cliente activo registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
       }
-      if (dto.esProveedor && exists.esProveedor && !dto.esCliente) {
-        throw new ConflictException(`Ya existe un proveedor registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      if (dto.esProveedor && exists.esProveedor && exists.activo && !dto.esCliente) {
+        throw new ConflictException(`Ya existe un proveedor activo registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      }
+      if (dto.esColaborador && exists.esColaborador && exists.activo && !dto.esCliente && !dto.esProveedor) {
+        throw new ConflictException(`Ya existe un colaborador activo registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
+      }
+      if (dto.esVendedor && exists.esVendedor && exists.activo && !dto.esCliente && !dto.esProveedor && !dto.esColaborador) {
+        throw new ConflictException(`Ya existe un vendedor activo registrado con ${dto.tipoDocumento || 'NIT'} ${dto.numeroDocumento} (${exists.nombre})`)
       }
 
       // Si existía con otro rol o inactivo, lo actualizamos incorporando el nuevo rol y datos

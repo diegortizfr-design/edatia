@@ -23,7 +23,7 @@ const Barcode = ({ size = 18, className = '' }: { size?: number; className?: str
     <path d="M3 5v14M6 5v14M11 5v14M14 5v14M18 5v14M21 5v14M8 5v14M16 5v14" />
   </svg>
 )
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { getProductos } from '../../services/inventario.service'
 
@@ -212,7 +212,6 @@ export function ConfigArchivo() {
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">

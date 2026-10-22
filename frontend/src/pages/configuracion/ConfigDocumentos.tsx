@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { getDocumentosConfig, createDocumentoConfig, updateDocumentoConfig, deleteDocumentoConfig, getSucursales } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
 import {
@@ -605,7 +605,6 @@ export function ConfigDocumentos() {
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
       {viewMode === 'list' ? (
         <>
           {/* Header */}
