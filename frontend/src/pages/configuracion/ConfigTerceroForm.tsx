@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, User, Building2, MapPin, CreditCard, Info, Phone, Mail, FileText, Plus, Trash2, Shield, Globe, ShoppingCart, RefreshCw, Upload, File, Pencil, X } from 'lucide-react'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
@@ -53,6 +53,7 @@ const DEFAULT_TERCERO: Tercero = {
   cartera: 'CL - CLIENTES',
   formaPago: '01 - EFECTIVO',
   nivelPrecio: 'Precio Estándar',
+  clasificacion: 'General',
   cupoCredito: false,
   cupoCreditoValor: 0,
   paginaWeb: '',
@@ -304,38 +305,38 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
   const paisesList = geoData?.paises || []
   
   const selectedPaisObj = paisesList.find(
-    p => p.nombre.toUpperCase() === (form.pais || 'COLOMBIA').toUpperCase() ||
+    (p: any) => p.nombre.toUpperCase() === (form.pais || 'COLOMBIA').toUpperCase() ||
          p.codigo.toUpperCase() === (form.pais || 'CO').toUpperCase()
   )
 
   const deptsList = selectedPaisObj
-    ? (geoData?.departamentos || []).filter(d => d.paisId === selectedPaisObj.id)
+    ? (geoData?.departamentos || []).filter((d: any) => d.paisId === selectedPaisObj.id)
     : []
 
   const selectedDeptObj = deptsList.find(
-    d => d.nombre.toUpperCase() === (form.departamento || '').toUpperCase()
+    (d: any) => d.nombre.toUpperCase() === (form.departamento || '').toUpperCase()
   )
 
   const citiesList = selectedDeptObj
-    ? (geoData?.ciudades || []).filter(c => c.departamentoId === selectedDeptObj.id)
+    ? (geoData?.ciudades || []).filter((c: any) => c.departamentoId === selectedDeptObj.id)
     : []
 
   // Para sucursales del tercero
   const selectedPaisForSucursal = paisesList.find(
-    p => p.nombre.toUpperCase() === (sucForm.pais || 'COLOMBIA').toUpperCase() ||
+    (p: any) => p.nombre.toUpperCase() === (sucForm.pais || 'COLOMBIA').toUpperCase() ||
          p.codigo.toUpperCase() === (sucForm.pais || 'CO').toUpperCase()
-  ) || selectedPaisObj || paisesList.find(p => p.codigo === 'CO')
+  ) || selectedPaisObj || paisesList.find((p: any) => p.codigo === 'CO')
   
   const deptsListForSucursal = selectedPaisForSucursal
-    ? (geoData?.departamentos || []).filter(d => d.paisId === selectedPaisForSucursal.id)
+    ? (geoData?.departamentos || []).filter((d: any) => d.paisId === selectedPaisForSucursal.id)
     : []
 
   const selectedDeptObjForSucursal = deptsListForSucursal.find(
-    d => d.nombre.toUpperCase() === (sucForm.departamento || '').toUpperCase()
+    (d: any) => d.nombre.toUpperCase() === (sucForm.departamento || '').toUpperCase()
   )
 
   const citiesListForSucursal = selectedDeptObjForSucursal
-    ? (geoData?.ciudades || []).filter(c => c.departamentoId === selectedDeptObjForSucursal.id)
+    ? (geoData?.ciudades || []).filter((c: any) => c.departamentoId === selectedDeptObjForSucursal.id)
     : []
 
   // Cargar datos
@@ -498,7 +499,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
         setAdjuntos(prev => prev.map(a => a.id === id ? { ...a, tamaño: '254 KB', progreso: undefined } : a))
         toast.success('Documento subido correctamente')
       } else {
-        setAdjuntos(prev => prev.map(a => a.id === id ? { ...a, progreso } : a))
+        setAdjuntos(prev => prev.map(a => a.id === id ? { ...a, progreso: progress } : a))
       }
     }, 200)
   }
@@ -512,7 +513,6 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
@@ -765,7 +765,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 <Field label="País">
                   <select value={form.pais || ''} onChange={set('pais')} className={inputCls}>
                     <option value="">-- Seleccionar País --</option>
-                    {paisesList.map(p => (
+                    {paisesList.map((p: any) => (
                       <option key={p.id} value={p.nombre.toUpperCase()}>{p.nombre.toUpperCase()}</option>
                     ))}
                   </select>
@@ -773,7 +773,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 <Field label="Departamento">
                   <select value={form.departamento || ''} onChange={set('departamento')} className={inputCls} disabled={!form.pais}>
                     <option value="">-- Seleccionar --</option>
-                    {deptsList.map(d => (
+                    {deptsList.map((d: any) => (
                       <option key={d.id} value={d.nombre}>{d.nombre}</option>
                     ))}
                   </select>
@@ -781,7 +781,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 <Field label="Ciudad / Municipio">
                   <select value={form.ciudad || ''} onChange={set('ciudad')} className={inputCls} disabled={!form.departamento}>
                     <option value="">-- Seleccionar --</option>
-                    {citiesList.map(c => (
+                    {citiesList.map((c: any) => (
                       <option key={c.id} value={c.nombre}>{c.nombre}</option>
                     ))}
                   </select>
@@ -1291,7 +1291,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                     className={inputCls}
                   >
                     <option value="">-- Seleccionar --</option>
-                    {paisesList.map(p => (
+                    {paisesList.map((p: any) => (
                       <option key={p.id} value={p.nombre.toUpperCase()}>{p.nombre.toUpperCase()}</option>
                     ))}
                   </select>
@@ -1304,7 +1304,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                     disabled={!sucForm.pais}
                   >
                     <option value="">-- Seleccionar --</option>
-                    {deptsListForSucursal.map(d => (
+                    {deptsListForSucursal.map((d: any) => (
                       <option key={d.id} value={d.nombre}>{d.nombre}</option>
                     ))}
                   </select>
@@ -1317,7 +1317,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                     disabled={!sucForm.departamento}
                   >
                     <option value="">-- Seleccionar --</option>
-                    {citiesListForSucursal.map(c => (
+                    {citiesListForSucursal.map((c: any) => (
                       <option key={c.id} value={c.nombre}>{c.nombre}</option>
                     ))}
                   </select>

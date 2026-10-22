@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Globe, Plus, Search, Trash2, Edit3, CheckCircle2, SlidersHorizontal, MapPin, RefreshCw } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import {
   getGeolocationState, resetGeolocationToDefaults,
   createPais, updatePais, deletePais,
@@ -487,7 +487,6 @@ export function ConfigGeolocalizacion() {
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
       {viewMode === 'list' ? (
         <>
           {/* Header */}

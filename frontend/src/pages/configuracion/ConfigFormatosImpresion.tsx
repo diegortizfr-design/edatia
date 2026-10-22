@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileText, Receipt, Save, CheckCircle2, ChevronRight,
   Palette, Printer, Sliders, Settings2, Info, LayoutTemplate
 } from 'lucide-react'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { getFormatosImpresion, updateFormatoImpresion } from '../../services/erp.service'
 
 interface FormatoConfig {
@@ -121,7 +121,6 @@ export function ConfigFormatosImpresion() {
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">

@@ -5,7 +5,7 @@ import {
   FileText, Layers, ClipboardList, Shield, Lock, BarChart3, Receipt, Tag,
   CheckCircle2, AlertTriangle, X, ChevronRight, Calculator, PlusCircle
 } from 'lucide-react'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getVendedores,
@@ -503,7 +503,6 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
 
   return (
     <div className="space-y-6">
-      <Toaster position="top-right" />
 
       {/* Cabecera Premium */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm">

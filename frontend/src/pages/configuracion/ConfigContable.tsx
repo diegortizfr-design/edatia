@@ -3,7 +3,7 @@ import {
   Plus, Trash2, Edit3, Search, FileText, Shield,
   Layers, ChevronRight, Calculator, ClipboardList
 } from 'lucide-react'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getRegimenesFiscales, createRegimenFiscal, updateRegimenFiscal, deleteRegimenFiscal,
@@ -174,7 +174,6 @@ export function ConfigContable() {
 
   return (
     <div className="w-full space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">
