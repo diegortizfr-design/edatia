@@ -231,8 +231,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NavItem to="/inventario/proveedores" icon={<Truck size={14}/>} label="Proveedores" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/compras" icon={<ShoppingCart size={14}/>} label="Compras" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/control-existencias" icon={<Package size={14}/>} label="Control de Existencia" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/traslados" icon={<ArrowLeftRight size={14}/>} label="Traslados de Inventario" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos" isCollapsed={isCollapsed} />
+                <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos y Traslados" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Gestión de Bodegas" isCollapsed={isCollapsed} />
                 <NavItem to="/inventario/radian" icon={<ClipboardCheck size={14}/>} label="RADIAN" isCollapsed={isCollapsed} />
               </NavGroup>

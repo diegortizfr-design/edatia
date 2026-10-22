@@ -1,12 +1,12 @@
 import {
-  Injectable, NotFoundException, BadRequestException,
+  Injectable, NotFoundException, BadRequestException, ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StockService } from '../stock/stock.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import {
   EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
-  DevolucionProveedorDto, DevolucionClienteDto,
+  DevolucionProveedorDto, DevolucionClienteDto, ModificarKardexManualDto,
 } from './dto/movimiento.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -1071,6 +1071,62 @@ export class MovimientosService {
 
       return mov;
     });
+  }
+
+  // ── Modificación Manual de Kardex con Validación de Contraseña ──────────────
+  async modificarKardexManual(dto: ModificarKardexManualDto, empresaId: number, usuarioId: number) {
+    // 1. Validar código de autorización configurado en la empresa
+    const config = await (this.prisma as any).configuracionERP.findUnique({
+      where: { empresaId },
+    });
+    const codigoValido = config?.codeModificarKardex ?? 'KARDEX123';
+    if (!dto.codigoAutorizacion || dto.codigoAutorizacion.trim() !== codigoValido.trim()) {
+      throw new ForbiddenException('Código de autorización incorrecto para modificar el kardex');
+    }
+
+    if (!dto.motivo || !dto.motivo.trim()) {
+      throw new BadRequestException('Debe ingresar un motivo o justificación para la modificación manual del kardex');
+    }
+
+    // 2. Obtener producto y stock actual en la bodega solicitada
+    await this.getProducto(dto.productoId, empresaId);
+    const stockActual = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId);
+    const cantActual = parseFloat(stockActual.cantidad.toString());
+    const diferencia = dto.nuevoStock - cantActual;
+
+    if (Math.abs(diferencia) < 0.0001) {
+      return {
+        mensaje: 'El stock actual ya coincide con el saldo indicado. No fue necesario realizar ajustes.',
+        saldoAnterior: cantActual,
+        nuevoSaldo: dto.nuevoStock,
+        diferencia: 0,
+      };
+    }
+
+    // 3. Procesar ajuste a través del motor auditado de inventario
+    const mov = await this.procesarAjuste(
+      {
+        productoId: dto.productoId,
+        bodegaId: dto.bodegaId,
+        cantidad: diferencia,
+        motivo: 'MODIFICACION_MANUAL_KARDEX',
+        notas: `Ajuste manual de Kardex: Saldo anterior ${cantActual} -> Nuevo saldo ${dto.nuevoStock}. Justificación: ${dto.motivo}`,
+        costoUnitario: dto.costoUnitario,
+        loteNumero: dto.loteNumero,
+        fechaVencimiento: dto.fechaVencimiento,
+        seriales: dto.seriales,
+      },
+      empresaId,
+      usuarioId,
+    );
+
+    return {
+      mensaje: 'Kardex modificado y stock actualizado correctamente',
+      movimiento: mov,
+      saldoAnterior: cantActual,
+      nuevoSaldo: dto.nuevoStock,
+      diferencia,
+    };
   }
 
   // ── Traslado ──────────────────────────────────────────────────────────────

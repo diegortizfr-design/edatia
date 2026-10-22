@@ -92,6 +92,7 @@ export const updateUnidad = (id: number, data: any) => api.patch(`/inventario/un
 export const getBodegas = () => api.get<Bodega[]>('/inventario/bodegas').then(r => r.data)
 export const createBodega = (data: any) => api.post('/inventario/bodegas', data).then(r => r.data)
 export const updateBodega = (id: number, data: any) => api.patch(`/inventario/bodegas/${id}`, data).then(r => r.data)
+export const deleteBodega = (id: number) => api.delete(`/inventario/bodegas/${id}`).then(r => r.data)
 
 // Productos
 export const getProductos = (params?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean }) =>
@@ -109,6 +110,15 @@ export const getStock = (params?: { bodegaId?: number; soloAlertas?: boolean }) 
 export const getStockProducto = (id: number) => api.get<StockItem[]>(`/inventario/stock/producto/${id}`).then(r => r.data)
 export const getAlertas = () => api.get('/inventario/stock/alertas').then(r => r.data)
 export const getValoracion = () => api.get('/inventario/stock/valoracion').then(r => r.data)
+export const acomodarProducto = (data: {
+  productoId: number
+  bodegaId: number
+  ubicacion1?: string
+  ubicacion2?: string
+  cantidadInicial?: number
+  costoUnitario?: number
+  notas?: string
+}) => api.post('/inventario/stock/acomodar', data).then(r => r.data)
 
 // Movimientos
 export const getMovimientos = (params?: any) =>
@@ -119,6 +129,16 @@ export const postEntrada = (data: any) => api.post('/inventario/movimientos/entr
 export const postSalida = (data: any) => api.post('/inventario/movimientos/salida', data).then(r => r.data)
 export const postAjuste = (data: any) => api.post('/inventario/movimientos/ajuste', data).then(r => r.data)
 export const postTraslado = (data: any) => api.post('/inventario/movimientos/traslado', data).then(r => r.data)
+export const postAjusteManualKardex = (data: {
+  productoId: number
+  bodegaId: number
+  nuevoStock: number
+  motivo: string
+  codigoAutorizacion: string
+  costoUnitario?: number
+  loteNumero?: string
+  seriales?: string[]
+}) => api.post('/inventario/movimientos/modificar-kardex', data).then(r => r.data)
 
 // Dashboard
 export const getInvKpis = () => api.get<InvKpis>('/inventario/dashboard').then(r => r.data)
