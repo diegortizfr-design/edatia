@@ -63,7 +63,7 @@ edatia/
 │   └── Caddyfile
 ├── landing/               # HTML estático (edatia.com)
 ├── tiendas-virtuales/     # Storefronts e-commerce (distribuidorababyworld conectado al ERP)
-├── docker-compose.yml     # 6 servicios: db, api, web, landing, manager, glowxir
+├── docker-compose.yml     # 8 servicios: db, api, web, landing, manager, herramientas, glowxir, prestamos
 ├── deploy.sh              # Script de despliegue con validaciones y backup preventivo
 ├── backup.sh              # Respaldo completo (PostgreSQL, uploads, .env) con retención de 14 días
 ├── restore.sh             # Script interactivo de restauración segura
@@ -153,7 +153,7 @@ docker compose exec api npx prisma migrate deploy
 ## Comandos útiles en el servidor
 
 ```bash
-# Estado de contenedores (ahora hay 6)
+# Estado de contenedores (8 servicios)
 docker compose ps
 
 # Logs del Manager

@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-21 (sesión 16)
+> Última actualización: 2026-10-23 (sesión 17)
 
 ---
 
@@ -23,8 +23,8 @@ web               → ERP React (Caddy)
 landing           → HTML estático (Caddy)
 manager           → Manager React (Caddy)
 glowxir           → Tienda Virtual Baby World (Caddy)
+herramientas      → Herramientas Edatia (Caddy)
 prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19) [:3006]
-prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 ```
 
 ### Credenciales
@@ -33,6 +33,24 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 17) — 2026-10-23
+
+✅ **Verificación Post-Pull, Sincronización de Inventario y Migración Segura en Producción:**
+  - **Validación Post-Pull (PR #21):**
+    - Se verificaron cambios incorporados desde la rama `Diego` referentes al módulo de Inventario (`ControlExistencias.tsx`, `Bodegas.tsx`, `Movimientos.tsx`, `stock.service.ts`, `movimientos.service.ts`) y configuración de documentos (`ConfigDocumentos.tsx`).
+    - Verificación estricta de dependencias y compilación: `tsc --noEmit` en backend y Vite build en frontend completados sin errores ni librerías sueltas.
+  - **Migración Formal en Prisma (`codeModificarKardex`):**
+    - Se identificó la adición del atributo `codeModificarKardex` en `ConfiguracionERP` de `schema.prisma`.
+    - Para asegurar trazabilidad y coherencia en entornos limpios, se creó la migración oficial `20261023020000_add_code_modificar_kardex` con sentencia segura idempotente (`ADD COLUMN IF NOT EXISTS`).
+    - Se ejecutó `prisma migrate deploy`, registrando la migración en `_prisma_migrations` sin tiempo de inactividad ni impacto sobre los datos existentes.
+  - **Optimización de Empaquetado Frontend:**
+    - Se configuró la partición de bundles en `frontend/vite.config.ts`, aislando los iconos vectoriales (`lucide-react`) en un chunk independiente (`icons`), optimizando el tiempo de carga del bundle principal.
+  - **Despliegue y Salud Operativa:**
+    - Respaldo preventivo completo generado en `backups/backup_20261023_014910`.
+    - Reconstrucción de imágenes y despliegue exitoso con `deploy.sh`. Todos los 8 contenedores (`edatia-backend`, `edatia-frontend`, `edatia-db`, `edatia-manager`, `edatia-landing`, `edatia-glowxir`, `edatia-herramientas`, `edatia-prestamos`) 100% operativos y saludables en producción.
+
+---
 
 ## Estado resuelto (sesión 16)
 
