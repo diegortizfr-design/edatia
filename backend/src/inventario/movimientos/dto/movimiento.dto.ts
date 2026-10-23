@@ -87,6 +87,36 @@ export class AjusteDto {
   documentoId?: number;
 }
 
+export class ModificarKardexManualDto {
+  @IsInt()
+  productoId!: number;
+
+  @IsInt()
+  bodegaId!: number;
+
+  /** Nuevo saldo físico total que debe quedar en la bodega */
+  @IsNumber({ maxDecimalPlaces: 3 })
+  nuevoStock!: number;
+
+  @IsString()
+  motivo!: string;
+
+  @IsString()
+  codigoAutorizacion!: string;
+
+  @IsOptional() @IsNumber()
+  costoUnitario?: number;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsDateString()
+  fechaVencimiento?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
+}
+
 export class TrasladoDto {
   @IsInt()
   productoId!: number;

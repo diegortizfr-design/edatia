@@ -16,6 +16,8 @@ interface LineaItem {
   cantidad: string
   costoUnitario: string
   descuentoPct: string
+  ivaPct: number
+  tieneIvaOriginal: boolean
 }
 
 function fmt(n: number) {
@@ -70,13 +72,34 @@ export function OrdenCompraForm() {
   function addItem(producto: any) {
     const ya = items.find(i => i.productoId === producto.id)
     if (ya) { setBusqueda(''); return }
+
+    // Priorizar costo unitario base del catálogo, luego promedio, luego último
+    const costoSugerido = Number(producto.costo) || Number(producto.costoPromedio) || Number(producto.costoUltimo) || 0
+
+    // Detectar si el producto viene con IVA o sin IVA según su configuración
+    const isExento = producto.productoExentoIva === true || 
+                     producto.liquidarIva === false || 
+                     producto.tipoIva === 'EXENTO' || 
+                     producto.tipoIva === 'EXCLUIDO' ||
+                     (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
+
+    let ivaPct = 0
+    if (!isExento) {
+      if (producto.tipoIva === 'GRAVADO_5') ivaPct = 5
+      else if (producto.tipoIva === 'GRAVADO_19') ivaPct = 19
+      else if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.some((t: string) => t.includes('5'))) ivaPct = 5
+      else if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.some((t: string) => t.includes('19'))) ivaPct = 19
+    }
+
     setItems(prev => [...prev, {
       productoId: producto.id,
       productoNombre: producto.nombre,
       productoSku: producto.sku,
       cantidad: '1',
-      costoUnitario: String(Number(producto.costoPromedio) || 0),
+      costoUnitario: String(costoSugerido),
       descuentoPct: '0',
+      ivaPct: ivaPct,
+      tieneIvaOriginal: ivaPct > 0,
     }])
     setBusqueda('')
   }
@@ -85,7 +108,7 @@ export function OrdenCompraForm() {
     setItems(prev => prev.filter((_, i) => i !== idx))
   }
 
-  function updateItem(idx: number, field: keyof LineaItem, val: string) {
+  function updateItem(idx: number, field: keyof LineaItem, val: any) {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item))
   }
 
@@ -94,10 +117,23 @@ export function OrdenCompraForm() {
     const cant = parseFloat(item.cantidad) || 0
     const costo = parseFloat(item.costoUnitario) || 0
     const dto = parseFloat(item.descuentoPct) || 0
-    const subtotal = cant * costo * (1 - dto / 100)
-    return { ...item, subtotalCalc: subtotal }
+    const subtotalBruto = cant * costo
+    const descuentoVal = subtotalBruto * (dto / 100)
+    const subtotal = subtotalBruto - descuentoVal
+    const ivaVal = subtotal * (item.ivaPct / 100)
+    const totalItem = subtotal + ivaVal
+    return { 
+      ...item, 
+      subtotalCalc: subtotal, 
+      descuentoCalc: descuentoVal, 
+      ivaCalc: ivaVal, 
+      totalCalc: totalItem 
+    }
   })
-  const totalBruto = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
+  const totalSubtotal = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
+  const totalDescuento = lineas.reduce((acc, l) => acc + l.descuentoCalc, 0)
+  const totalIva = lineas.reduce((acc, l) => acc + l.ivaCalc, 0)
+  const totalNeto = totalSubtotal + totalIva
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -118,6 +154,7 @@ export function OrdenCompraForm() {
         cantidad: parseFloat(item.cantidad),
         costoUnitario: parseFloat(item.costoUnitario),
         descuentoPct: parseFloat(item.descuentoPct) || 0,
+        ivaPct: item.ivaPct,
       })),
     })
   }
@@ -207,17 +244,37 @@ export function OrdenCompraForm() {
               className="w-full pl-9 pr-3 py-2 border border-dashed border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-solid"
             />
             {busqueda.length >= 2 && !buscando && sugerencias.length > 0 && (
-              <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-                {sugerencias.map(p => (
-                  <button key={p.id} type="button" onClick={() => addItem(p)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{p.nombre}</p>
-                      <p className="text-xs text-slate-400">{p.sku}</p>
-                    </div>
-                    <span className="text-xs text-indigo-600 flex items-center gap-1"><Plus size={12} /> Agregar</span>
-                  </button>
-                ))}
+              <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
+                {sugerencias.map(p => {
+                  const isExento = p.productoExentoIva === true || 
+                                   p.liquidarIva === false || 
+                                   p.tipoIva === 'EXENTO' || 
+                                   p.tipoIva === 'EXCLUIDO' ||
+                                   (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length === 0)
+                  const costoBase = Number(p.costo) || Number(p.costoPromedio) || Number(p.costoUltimo) || 0
+                  const labelIva = isExento ? 'Sin IVA' : p.tipoIva === 'GRAVADO_5' ? 'IVA 5%' : 'IVA 19%'
+
+                  return (
+                    <button key={p.id} type="button" onClick={() => addItem(p)}
+                      className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{p.nombre}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-slate-400 font-mono">{p.sku}</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="text-xs text-slate-600 font-semibold">Costo: {fmt(costoBase)}</span>
+                          <span className="text-slate-300">·</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            isExento ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                          }`}>
+                            {labelIva}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-indigo-600 flex items-center gap-1 font-semibold whitespace-nowrap"><Plus size={13} /> Agregar</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -242,38 +299,61 @@ export function OrdenCompraForm() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200">
-                    <th className="text-left py-2 text-xs font-semibold text-slate-500 uppercase">Producto</th>
-                    <th className="text-right py-2 text-xs font-semibold text-slate-500 uppercase w-28">Cantidad</th>
-                    <th className="text-right py-2 text-xs font-semibold text-slate-500 uppercase w-36">Costo unit.</th>
-                    <th className="text-right py-2 text-xs font-semibold text-slate-500 uppercase w-24">Dto %</th>
-                    <th className="text-right py-2 text-xs font-semibold text-slate-500 uppercase w-32">Subtotal</th>
-                    <th className="py-2 w-10"></th>
+                    <th className="text-left py-2.5 text-xs font-semibold text-slate-500 uppercase">Producto</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-24">Cantidad</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-32">Costo unit.</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-20">Dto %</th>
+                    <th className="text-center py-2.5 text-xs font-semibold text-slate-500 uppercase w-32">IVA</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-28">Subtotal</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-28">Total</th>
+                    <th className="py-2.5 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {lineas.map((item, idx) => (
-                    <tr key={item.productoId}>
-                      <td className="py-2 pr-2">
+                    <tr key={item.productoId} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-2.5 pr-2">
                         <p className="font-medium text-slate-800">{item.productoNombre}</p>
-                        <p className="text-xs text-slate-400">{item.productoSku}</p>
+                        <p className="text-xs text-slate-400 font-mono">{item.productoSku}</p>
                       </td>
-                      <td className="py-2 px-1">
+                      <td className="py-2.5 px-1">
                         <input type="number" min="0.001" step="0.001" value={item.cantidad}
                           onChange={e => updateItem(idx, 'cantidad', e.target.value)}
-                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono" />
                       </td>
-                      <td className="py-2 px-1">
+                      <td className="py-2.5 px-1">
                         <input type="number" min="0" step="0.01" value={item.costoUnitario}
                           onChange={e => updateItem(idx, 'costoUnitario', e.target.value)}
-                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono" />
                       </td>
-                      <td className="py-2 px-1">
+                      <td className="py-2.5 px-1">
                         <input type="number" min="0" max="100" step="0.01" value={item.descuentoPct}
                           onChange={e => updateItem(idx, 'descuentoPct', e.target.value)}
-                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono" />
                       </td>
-                      <td className="py-2 pl-2 text-right font-semibold text-slate-700">{fmt(item.subtotalCalc)}</td>
-                      <td className="py-2 pl-2">
+                      <td className="py-2.5 px-1">
+                        <select
+                          value={item.ivaPct}
+                          onChange={e => updateItem(idx, 'ivaPct', Number(e.target.value))}
+                          className={`w-full px-2 py-1 border rounded text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer ${
+                            item.ivaPct > 0 
+                              ? 'border-indigo-200 bg-indigo-50/60 text-indigo-700' 
+                              : 'border-slate-200 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <option value={0}>0% (Sin IVA)</option>
+                          <option value={5}>5% (IVA 5%)</option>
+                          <option value={19}>19% (IVA 19%)</option>
+                        </select>
+                        {item.ivaCalc > 0 && (
+                          <span className="text-[10px] text-indigo-600 block text-right mt-0.5 font-medium">
+                            +{fmt(item.ivaCalc)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pl-2 text-right font-medium text-slate-600 font-mono">{fmt(item.subtotalCalc)}</td>
+                      <td className="py-2.5 pl-2 text-right font-bold text-slate-800 font-mono">{fmt(item.totalCalc)}</td>
+                      <td className="py-2.5 pl-2 text-center">
                         <button type="button" onClick={() => removeItem(idx)} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
                           <Trash2 size={14} />
                         </button>
@@ -283,14 +363,30 @@ export function OrdenCompraForm() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-200">
-                    <td colSpan={4} className="pt-3 text-right text-sm font-semibold text-slate-600">Total estimado:</td>
-                    <td className="pt-3 text-right text-base font-bold text-slate-800">{fmt(totalBruto)}</td>
+                    <td colSpan={5} className="pt-3 text-right text-xs font-medium text-slate-500">Subtotal:</td>
+                    <td colSpan={2} className="pt-3 text-right text-sm font-semibold text-slate-700 font-mono">{fmt(totalSubtotal)}</td>
                     <td></td>
                   </tr>
+                  {totalDescuento > 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-1 text-right text-xs font-medium text-emerald-600">Descuento aplicado:</td>
+                      <td colSpan={2} className="py-1 text-right text-sm font-semibold text-emerald-600 font-mono">-{fmt(totalDescuento)}</td>
+                      <td></td>
+                    </tr>
+                  )}
                   <tr>
-                    <td colSpan={6} className="pt-1">
-                      <p className="text-xs text-slate-400 text-right">* IVA se calcula según configuración de cada producto</p>
+                    <td colSpan={5} className="py-1 text-right text-xs font-medium text-slate-500">
+                      IVA {totalIva === 0 ? '(Productos sin IVA)' : ''}:
                     </td>
+                    <td colSpan={2} className={`py-1 text-right text-sm font-semibold font-mono ${totalIva > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
+                      {fmt(totalIva)}
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr className="border-t border-slate-100">
+                    <td colSpan={5} className="py-2.5 text-right text-sm font-bold text-slate-800">Total Orden de Compra:</td>
+                    <td colSpan={2} className="py-2.5 text-right text-lg font-extrabold text-slate-900 font-mono">{fmt(totalNeto)}</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>

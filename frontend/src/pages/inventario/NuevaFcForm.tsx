@@ -93,15 +93,20 @@ export function NuevaFcForm() {
       setOrdenCompraId(String(rpObj.ocId))
       
       // Map RP items to lines
-      const mappedItems = rpObj.items.map((ri: any) => ({
-        productoId: ri.ordenCompraItem?.productoId || 0,
-        productoNombre: ri.ordenCompraItem?.producto?.nombre || 'Producto recibido',
-        productoSku: ri.ordenCompraItem?.producto?.sku || '',
-        cantidad: String(ri.cantidadRecibida),
-        costoUnitario: String(ri.costoUnitario),
-        descuentoPct: '0',
-        tipoIva: ri.ordenCompraItem?.producto?.tipoIva || 'IVA_19'
-      }))
+      const mappedItems = rpObj.items.map((ri: any) => {
+        const prod = ri.ordenCompraItem?.producto || {}
+        const ivaItemValor = Number(ri.ordenCompraItem?.ivaValor) || 0
+        const esExento = ivaItemValor === 0 || prod.productoExentoIva || prod.liquidarIva === false || prod.tipoIva === 'EXENTO' || prod.tipoIva === 'EXCLUIDO'
+        return {
+          productoId: ri.ordenCompraItem?.productoId || 0,
+          productoNombre: prod.nombre || 'Producto recibido',
+          productoSku: prod.sku || '',
+          cantidad: String(ri.cantidadRecibida),
+          costoUnitario: String(ri.costoUnitario),
+          descuentoPct: '0',
+          tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
+        }
+      })
       setItems(mappedItems)
     } else {
       setOrdenCompraId('')
@@ -116,15 +121,20 @@ export function NuevaFcForm() {
     if (ocObj) {
       setProveedorId(String(ocObj.proveedorId))
       // Map OC items to lines
-      const mappedItems = ocObj.items.map((item: any) => ({
-        productoId: item.productoId,
-        productoNombre: item.producto?.nombre || 'Producto',
-        productoSku: item.producto?.sku || '',
-        cantidad: String(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)),
-        costoUnitario: String(item.costoUnitario),
-        descuentoPct: String(item.descuentoPct || 0),
-        tipoIva: item.producto?.tipoIva || 'IVA_19'
-      }))
+      const mappedItems = ocObj.items.map((item: any) => {
+        const prod = item.producto || {}
+        const ivaItemValor = Number(item.ivaValor) || 0
+        const esExento = ivaItemValor === 0 || prod.productoExentoIva || prod.liquidarIva === false || prod.tipoIva === 'EXENTO' || prod.tipoIva === 'EXCLUIDO'
+        return {
+          productoId: item.productoId,
+          productoNombre: prod.nombre || 'Producto',
+          productoSku: prod.sku || '',
+          cantidad: String(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)),
+          costoUnitario: String(item.costoUnitario),
+          descuentoPct: String(item.descuentoPct || 0),
+          tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
+        }
+      })
       setItems(mappedItems.filter((i: any) => parseFloat(i.cantidad) > 0))
     } else {
       setProveedorId('')
@@ -148,14 +158,17 @@ export function NuevaFcForm() {
   function addItem(producto: any) {
     const ya = items.find(i => i.productoId === producto.id)
     if (ya) { setBusqueda(''); return }
+    const costoSugerido = Number(producto.costo) || Number(producto.costoPromedio) || Number(producto.costoUltimo) || 0
+    const esExento = producto.productoExentoIva || !producto.liquidarIva || producto.tipoIva === 'EXENTO' || producto.tipoIva === 'EXCLUIDO' || (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
+    const tipoIva = esExento ? 'EXCLUIDO' : (producto.tipoIva === 'GRAVADO_5' || producto.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
     setItems(prev => [...prev, {
       productoId: producto.id,
       productoNombre: producto.nombre,
       productoSku: producto.sku,
       cantidad: '1',
-      costoUnitario: String(Number(producto.costoPromedio) || 0),
+      costoUnitario: String(costoSugerido),
       descuentoPct: '0',
-      tipoIva: producto.tipoIva || 'IVA_19',
+      tipoIva: tipoIva,
     }])
     setBusqueda('')
   }
@@ -176,7 +189,7 @@ export function NuevaFcForm() {
 
     let tasaIva = 0.19
     if (item.tipoIva === 'EXENTO' || item.tipoIva === 'EXCLUIDO') tasaIva = 0
-    else if (item.tipoIva === 'IVA_5') tasaIva = 0.05
+    else if (item.tipoIva === 'IVA_5' || item.tipoIva === 'GRAVADO_5') tasaIva = 0.05
     const ivaCalc = subtotal * tasaIva
 
     return { ...item, subtotalCalc: subtotal, ivaCalc }

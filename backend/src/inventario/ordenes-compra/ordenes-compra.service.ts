@@ -51,14 +51,41 @@ export class OrdenesCompraService {
     return `REC-${year}-${String(count + 1).padStart(5, '0')}`;
   }
 
-  private calcularTotalesItem(cantidad: number, costoUnitario: number, descuentoPct = 0, tipoIva = 'GRAVADO_19') {
+  private calcularTotalesItem(
+    cantidad: number,
+    costoUnitario: number,
+    descuentoPct = 0,
+    producto?: any,
+    ivaPctOverride?: number,
+  ) {
     const subtotalBruto = cantidad * costoUnitario;
     const descuento = subtotalBruto * (descuentoPct / 100);
     const subtotal = subtotalBruto - descuento;
-    const tasaIva = tipoIva === 'GRAVADO_19' ? 0.19 : tipoIva === 'GRAVADO_5' ? 0.05 : 0;
+
+    let tasaIva = 0;
+    if (typeof ivaPctOverride === 'number') {
+      tasaIva = ivaPctOverride / 100;
+    } else if (producto) {
+      const isExento =
+        producto.productoExentoIva === true ||
+        producto.liquidarIva === false ||
+        producto.tipoIva === 'EXENTO' ||
+        producto.tipoIva === 'EXCLUIDO';
+      if (!isExento) {
+        if (producto.tipoIva === 'GRAVADO_19') {
+          tasaIva = 0.19;
+        } else if (producto.tipoIva === 'GRAVADO_5') {
+          tasaIva = 0.05;
+        } else if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length > 0) {
+          if (producto.appliedTaxIds.some((t: string) => t.toLowerCase().includes('19'))) tasaIva = 0.19;
+          else if (producto.appliedTaxIds.some((t: string) => t.toLowerCase().includes('5'))) tasaIva = 0.05;
+        }
+      }
+    }
+
     const ivaValor = subtotal * tasaIva;
     const total = subtotal + ivaValor;
-    return { subtotal, ivaValor, total, descuento: descuento };
+    return { subtotal, ivaValor, total, descuento };
   }
 
   private calcularTotalesOC(items: Array<{ subtotal: number; ivaValor: number; total: number }>) {
@@ -132,7 +159,15 @@ export class OrdenesCompraService {
     const productoIds = dto.items.map(i => i.productoId);
     const productos = await (this.prisma as any).producto.findMany({
       where: { id: { in: productoIds }, empresaId },
-      select: { id: true, tipoIva: true },
+      select: {
+        id: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        costo: true,
+        costoPromedio: true,
+      },
     });
     const productoMap = new Map(productos.map((p: any) => [p.id, p]));
 
@@ -140,7 +175,13 @@ export class OrdenesCompraService {
     const itemsCalculados = dto.items.map(item => {
       const producto = productoMap.get(item.productoId) as any;
       if (!producto) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-      const totales = this.calcularTotalesItem(item.cantidad, item.costoUnitario, item.descuentoPct ?? 0, producto.tipoIva);
+      const totales = this.calcularTotalesItem(
+        item.cantidad,
+        item.costoUnitario,
+        item.descuentoPct ?? 0,
+        producto,
+        item.ivaPct,
+      );
       return { ...item, ...totales };
     });
 
@@ -209,14 +250,28 @@ export class OrdenesCompraService {
         const productoIds = dto.items.map(i => i.productoId);
         const productos = await tx.producto.findMany({
           where: { id: { in: productoIds }, empresaId },
-          select: { id: true, tipoIva: true },
+          select: {
+            id: true,
+            tipoIva: true,
+            liquidarIva: true,
+            productoExentoIva: true,
+            appliedTaxIds: true,
+            costo: true,
+            costoPromedio: true,
+          },
         });
         const productoMap = new Map(productos.map((p: any) => [p.id, p]));
 
         const itemsCalculados = dto.items.map((item: any) => {
           const producto = productoMap.get(item.productoId) as any;
           if (!producto) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
-          const totales = this.calcularTotalesItem(item.cantidad, item.costoUnitario, item.descuentoPct ?? 0, producto.tipoIva);
+          const totales = this.calcularTotalesItem(
+            item.cantidad,
+            item.costoUnitario,
+            item.descuentoPct ?? 0,
+            producto,
+            item.ivaPct,
+          );
           return { ...item, ...totales };
         });
 

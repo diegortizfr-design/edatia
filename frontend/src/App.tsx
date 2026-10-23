@@ -107,6 +107,7 @@ function PosWrap({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>
 }
 
+import { Toaster } from 'react-hot-toast'
 import { useParams } from 'react-router-dom'
 
 function RedirectToProductDetail() {
@@ -117,6 +118,7 @@ function RedirectToProductDetail() {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<Login />} />
 
@@ -135,7 +137,7 @@ function App() {
         <Route path="/inventario/control-existencias/nuevo-traslado" element={<P><NuevoTrasladoForm /></P>} />
         <Route path="/inventario/bodegas"              element={<P><Bodegas /></P>} />
         <Route path="/inventario/movimientos"          element={<P><Movimientos /></P>} />
-        <Route path="/inventario/traslados"            element={<P><Traslados /></P>} />
+        <Route path="/inventario/traslados"            element={<Navigate to="/inventario/movimientos?tab=traslados" replace />} />
         <Route path="/inventario/maestros"             element={<P><Maestros /></P>} />
         <Route path="/inventario/proveedores"              element={<P><Proveedores /></P>} />
         <Route path="/inventario/proveedores/nuevo"        element={<P><ProveedorForm /></P>} />

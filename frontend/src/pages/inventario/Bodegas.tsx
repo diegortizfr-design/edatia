@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getBodegas, createBodega, updateBodega } from '../../services/inventario.service'
+import { getBodegas, createBodega, updateBodega, deleteBodega } from '../../services/inventario.service'
 import { getSucursales } from '../../services/configuracion.service'
-import { Plus, Warehouse, Star, Edit2, X, Check, MapPin, AlertCircle } from 'lucide-react'
+import { Plus, Warehouse, Star, Edit2, Trash2, X, Check, MapPin, AlertCircle } from 'lucide-react'
 
 const TIPOS = ['ALMACEN', 'PUNTO_VENTA', 'DEVOLUCION', 'VIRTUAL']
 const TIPO_LABEL: Record<string, string> = {
@@ -40,6 +40,35 @@ export function Bodegas() {
       }
     },
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteBodega(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bodegas'] })
+      setError(null)
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message
+      if (typeof msg === 'string') {
+        setError(msg)
+      } else if (Array.isArray(msg)) {
+        setError(msg.join(', '))
+      } else {
+        setError('Error al eliminar la bodega.')
+      }
+    },
+  })
+
+  function handleDelete(b: any) {
+    if (b.esPrincipal) {
+      setError('No se puede eliminar la bodega principal. Primero asigne otra bodega como principal.')
+      return
+    }
+    const confirmMsg = `¿Está seguro de que desea eliminar la bodega "${b.nombre}" (${b.codigo})?\n\nSi la bodega tiene historial o movimientos, se desactivará de forma segura.`
+    if (window.confirm(confirmMsg)) {
+      deleteMutation.mutate(b.id)
+    }
+  }
 
   function openEdit(b: any) {
     setEditing(b)
@@ -101,6 +130,19 @@ export function Bodegas() {
           Nueva bodega
         </button>
       </div>
+
+      {/* Error alert if form is closed */}
+      {!showForm && error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-medium flex items-center justify-between gap-2 animate-shake">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-700">
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Form Card */}
       {showForm && (
@@ -236,12 +278,23 @@ export function Bodegas() {
                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{b.codigo}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => openEdit(b)} 
-                  className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors absolute top-4 right-4"
-                >
-                  <Edit2 size={13} />
-                </button>
+                <div className="flex items-center gap-1 absolute top-4 right-4">
+                  <button 
+                    onClick={() => openEdit(b)} 
+                    title="Editar bodega"
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(b)} 
+                    title={b.esPrincipal ? 'No se puede eliminar la bodega principal' : 'Eliminar bodega'}
+                    disabled={b.esPrincipal || deleteMutation.isPending}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
 
               {/* Badges row */}

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { StockService } from './stock.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
@@ -33,5 +33,13 @@ export class StockController {
   @Get('producto/:id')
   findByProducto(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
     return this.svc.findByProducto(id, user.empresaId!);
+  }
+
+  @Post('acomodar')
+  acomodar(
+    @Body() dto: { productoId: number; bodegaId: number; ubicacion1?: string; ubicacion2?: string; cantidadInicial?: number; costoUnitario?: number; notas?: string },
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.acomodarProducto(user.empresaId!, user.sub, dto);
   }
 }

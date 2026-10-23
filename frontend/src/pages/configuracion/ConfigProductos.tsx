@@ -355,7 +355,9 @@ export function ConfigProductos() {
         clasificacionId: p.clasificacionId ? String(p.clasificacionId) : '',
         precios: (Array.isArray(p.precios) && p.precios.length > 0) ? p.precios : [p.precioBase || 0, ...Array(10).fill(0)],
         selectedTags: Array.isArray(p.selectedTags) ? p.selectedTags : DEFAULT_FORM.selectedTags,
-        appliedTaxIds: Array.isArray(p.appliedTaxIds) ? p.appliedTaxIds : DEFAULT_FORM.appliedTaxIds,
+        appliedTaxIds: Array.isArray(p.appliedTaxIds)
+          ? p.appliedTaxIds
+          : ((p.tipoIva === 'EXENTO' || p.tipoIva === 'EXCLUIDO' || p.productoExentoIva || p.liquidarIva === false) ? [] : DEFAULT_FORM.appliedTaxIds),
       }
     }
   })
@@ -771,7 +773,10 @@ export function ConfigProductos() {
       publicadoWeb: !!p.publicadoWeb,
       precioWeb: p.precioWeb || 0,
     })
-    setCostTaxIds(p.extData?.appliedTaxIds || ['iva_19'])
+    const initialTaxes = Array.isArray(p.extData?.appliedTaxIds)
+      ? p.extData.appliedTaxIds
+      : ((p.tipoIva === 'EXENTO' || p.tipoIva === 'EXCLUIDO' || p.productoExentoIva || p.liquidarIva === false) ? [] : ['iva_19'])
+    setCostTaxIds(initialTaxes)
     setError(null)
     setViewMode('form')
   }
@@ -850,14 +855,14 @@ export function ConfigProductos() {
       selectedTags: formData.selectedTags || [],
       precios: formData.precios || Array(11).fill(0),
       observacion: formData.observacion || null,
-      liquidarIva: !!formData.liquidarIva,
+      liquidarIva: !formData.productoExentoIva && costTaxIds.length > 0,
       productoExentoIva: !!formData.productoExentoIva,
-      appliedTaxIds: formData.appliedTaxIds || [],
+      appliedTaxIds: costTaxIds,
       tipoIva: formData.productoExentoIva 
         ? 'EXENTO' 
-        : (!formData.liquidarIva || !formData.appliedTaxIds || formData.appliedTaxIds.length === 0) 
+        : (costTaxIds.length === 0 || !formData.liquidarIva) 
           ? 'EXCLUIDO' 
-          : (formData.appliedTaxIds.includes('iva_5') || formData.appliedTaxIds.some((t: string) => t.toLowerCase().includes('5'))) 
+          : (costTaxIds.includes('iva_5') || costTaxIds.some((t: string) => t.toLowerCase().includes('5'))) 
             ? 'GRAVADO_5' 
             : 'GRAVADO_19',
     }
@@ -1997,6 +2002,11 @@ export function ConfigProductos() {
                                 ? costTaxIds.filter(id => id !== tax.id)
                                 : [...costTaxIds, tax.id]
                               setCostTaxIds(updated)
+                              setFormData(prev => ({
+                                ...prev,
+                                appliedTaxIds: updated,
+                                liquidarIva: updated.length > 0
+                              }))
                             }}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
                               isChecked
@@ -2190,7 +2200,12 @@ export function ConfigProductos() {
                               const updated = isChecked
                                 ? formData.appliedTaxIds.filter(id => id !== tax.id)
                                 : [...formData.appliedTaxIds, tax.id]
-                              setFormData(prev => ({ ...prev, appliedTaxIds: updated }))
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                appliedTaxIds: updated,
+                                liquidarIva: updated.length > 0
+                              }))
+                              setCostTaxIds(updated)
                             }}
                             className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-40"
                           />
