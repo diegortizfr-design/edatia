@@ -9,7 +9,7 @@ interface FloatingWhatsAppButtonProps {
 
 export function FloatingWhatsAppButton({
   phone = '573023863380',
-  defaultMessage = '¡Hola Distribuidora Baby-World! Deseo información sobre sus productos y envíos.'
+  defaultMessage = '¡Hola Baby World! 👋 Deseo asesoría sobre productos, tallas o realizar un pedido.'
 }: FloatingWhatsAppButtonProps) {
   const [showTooltip, setShowTooltip] = useState(true)
 
@@ -24,7 +24,7 @@ export function FloatingWhatsAppButton({
       {showTooltip && (
         <div className="hidden sm:flex items-center gap-1.5 bg-white text-slate-800 text-xs font-bold py-1.5 px-3 rounded-2xl shadow-lg border border-slate-100 animate-in fade-in slide-in-from-right-4 duration-300">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>¿Dudas? ¡Escríbenos al WhatsApp!</span>
+          <span>👶 ¿Dudas o asesoría? ¡Escríbenos!</span>
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -42,7 +42,7 @@ export function FloatingWhatsAppButton({
       <button
         onClick={handleOpenWhatsApp}
         className="relative group/btn focus:outline-none transition-all duration-300 hover:scale-110 active:scale-95 animate-bounce hover:animate-none"
-        aria-label="Contactar por WhatsApp"
+        aria-label="Asesoría y pedidos por WhatsApp"
       >
         {/* Subtle Radar Wave */}
         <span className="absolute inset-1 rounded-full bg-[#28971B]/25 animate-ping -z-10" />

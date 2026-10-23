@@ -302,7 +302,7 @@ export function ProductDetailPage({
                   className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
                   <MessageCircle size={18} />
-                  <span>Pedir / Consultar por WhatsApp</span>
+                  <span>Asesoría o Pedido por WhatsApp</span>
                 </a>
 
                 {/* Trust Badges */}

@@ -68,7 +68,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               className="group w-full sm:w-auto px-8 py-3.5 bg-mint-100 hover:bg-mint-200/90 text-emerald-900 border border-mint-200/90 rounded-full font-bold shadow-md shadow-mint-500/15 hover:shadow-mint-500/25 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
             >
               <WhatsAppIcon size={18} className="group-hover:scale-110 group-hover:rotate-6 transition-transform duration-200" />
-              Pedir por WhatsApp
+              Asesoría y Pedidos
             </a>
           </div>
 
