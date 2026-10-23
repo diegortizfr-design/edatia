@@ -235,6 +235,7 @@ export function OrdenCompraDetalle() {
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Cant.</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Recibido</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Costo u.</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">IVA</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase">Total</th>
               </tr>
             </thead>
@@ -259,6 +260,15 @@ export function OrdenCompraDetalle() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right text-slate-600 hidden md:table-cell">{fmt(Number(item.costoUnitario))}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">
+                      {Number(item.ivaValor) > 0 ? (
+                        <span className="text-xs text-indigo-700 font-medium">
+                          {fmt(Number(item.ivaValor))}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Sin IVA ($0)</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-700">{fmt(Number(item.total))}</td>
                   </tr>
                 )
@@ -273,10 +283,15 @@ export function OrdenCompraDetalle() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <h3 className="font-semibold text-slate-800 mb-3">Resumen financiero</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>{fmt(Number(oc.subtotal))}</span></div>
-              {Number(oc.descuento) > 0 && <div className="flex justify-between text-green-600"><span>Descuento</span><span>-{fmt(Number(oc.descuento))}</span></div>}
-              <div className="flex justify-between text-slate-600"><span>IVA</span><span>{fmt(Number(oc.iva))}</span></div>
-              <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t border-slate-100"><span>Total</span><span>{fmt(Number(oc.total))}</span></div>
+              <div className="flex justify-between text-slate-600"><span>Subtotal</span><span className="font-mono">{fmt(Number(oc.subtotal))}</span></div>
+              {Number(oc.descuento) > 0 && <div className="flex justify-between text-green-600"><span>Descuento</span><span className="font-mono">-{fmt(Number(oc.descuento))}</span></div>}
+              <div className="flex justify-between text-slate-600">
+                <span>IVA {Number(oc.iva) === 0 ? '(0% Sin IVA)' : ''}</span>
+                <span className={`font-mono ${Number(oc.iva) > 0 ? 'text-indigo-600 font-semibold' : 'text-slate-400'}`}>
+                  {fmt(Number(oc.iva))}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t border-slate-100"><span>Total</span><span className="font-mono">{fmt(Number(oc.total))}</span></div>
             </div>
           </div>
 

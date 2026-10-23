@@ -13,6 +13,9 @@ export class CreateOrdenCompraItemDto {
 
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0)
   descuentoPct?: number;
+
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0)
+  ivaPct?: number;
 }
 
 export class CreateOrdenCompraDto {
