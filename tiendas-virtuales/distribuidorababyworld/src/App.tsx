@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, MapPin, Truck } from 'lucide-react'
+import { Shield, MapPin, Truck, Store, Clock, Navigation } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -13,6 +13,7 @@ import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
+import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
@@ -45,6 +46,7 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
 
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -326,6 +328,7 @@ export function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         categories={availableCategories}
+        onOpenLocation={() => setIsLocationModalOpen(true)}
       />
 
       {/* If a product is selected, display the full Dedicated Product View Page */}
@@ -339,6 +342,7 @@ export function App() {
           }}
           onAddToCart={handleAddToCart}
           onOpenCart={() => setIsCartOpen(true)}
+          onOpenLocation={() => setIsLocationModalOpen(true)}
         />
       ) : (
         <>
@@ -489,12 +493,45 @@ export function App() {
               </ul>
             </div>
 
-            {/* Contact & WhatsApp */}
-            <div className="space-y-2.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                Atención & Asesoría
+            {/* Contact & WhatsApp & Physical Store */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <Store size={14} className="text-sky-600" />
+                <span>Tienda Física & Atención</span>
               </p>
-              <div className="space-y-2 text-xs text-slate-500">
+              
+              {/* Tarjeta interactiva de tienda física */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-xs shadow-2xs">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700 shrink-0 mt-0.5">
+                    <MapPin size={15} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Atención Presencial</span>
+                    </div>
+                    <p className="font-extrabold text-slate-900 leading-snug">Manzana 4 # Casa 26</p>
+                    <p className="text-slate-500 text-[11px]">Barrio Manuela Beltrán • Cali / Candelaria</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-0.5 border-t border-slate-200/60">
+                  <Clock size={12} className="text-slate-400 shrink-0" />
+                  <span>Lun - Sáb: 8am - 7pm • Dom: 9am - 2pm</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLocationModalOpen(true)}
+                  className="w-full py-2 px-3 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-sky-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95"
+                >
+                  <Navigation size={13} className="text-sky-600" />
+                  <span>Ver Mapa y Cómo Llegar</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 text-xs text-slate-500 pt-1">
                 <a
                   href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
                   target="_blank"
@@ -504,10 +541,6 @@ export function App() {
                   <WhatsAppIcon size={16} />
                   <span>+57 302 386 3380 (WhatsApp Directo)</span>
                 </a>
-                <p className="flex items-center gap-2">
-                  <MapPin size={14} className="text-slate-400" />
-                  <span>Candelaria / Cali - Envíos Nacionales</span>
-                </p>
                 <p className="flex items-center gap-2">
                   <Truck size={14} className="text-slate-400" />
                   <span>Pago Contra Entrega disponible</span>
@@ -597,6 +630,12 @@ export function App() {
       <BnplInfoModal
         isOpen={isBnplModalOpen}
         onClose={() => setIsBnplModalOpen(false)}
+      />
+
+      {/* Modal de Ubicación de Tienda Física */}
+      <StoreLocationModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
       />
     </div>
   )

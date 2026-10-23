@@ -1,5 +1,5 @@
 import React from 'react'
-import { ShoppingBag, Search, X } from 'lucide-react'
+import { ShoppingBag, Search, X, MapPin } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { CATEGORIAS_PRODUCTOS } from '../data/productos'
@@ -12,6 +12,7 @@ interface NavbarProps {
   searchQuery: string
   setSearchQuery: (query: string) => void
   categories?: readonly string[]
+  onOpenLocation?: () => void
 }
 
 export function Navbar({
@@ -22,6 +23,7 @@ export function Navbar({
   searchQuery,
   setSearchQuery,
   categories = CATEGORIAS_PRODUCTOS,
+  onOpenLocation,
 }: NavbarProps) {
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -40,10 +42,25 @@ export function Navbar({
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
       {/* Top Delivery & WhatsApp Quick Banner */}
       <div className="bg-slate-900 text-white text-[11px] font-medium py-1 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="text-sky-400 font-bold animate-pulse">🚀 Envío GRATIS en compras superiores a $150.000 COP</span>
-            <span className="text-slate-400 hidden sm:inline">• Atención personalizada</span>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 truncate">
+            {onOpenLocation ? (
+              <button
+                onClick={onOpenLocation}
+                className="inline-flex items-center gap-1.5 text-sky-300 hover:text-white transition-colors underline decoration-sky-400/40 hover:decoration-white font-semibold cursor-pointer truncate"
+                title="Ver dirección de la tienda física y cómo llegar"
+              >
+                <MapPin size={13} className="text-sky-400 shrink-0" />
+                <span>Tienda Física: Manuela Beltrán (Mz 4 #26)</span>
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-sky-300 font-semibold truncate">
+                <MapPin size={13} className="text-sky-400 shrink-0" />
+                <span>Tienda Física: Manuela Beltrán (Mz 4 #26)</span>
+              </span>
+            )}
+            <span className="text-slate-500 hidden md:inline">•</span>
+            <span className="text-slate-300 hidden md:inline">🚀 Envío GRATIS sobre $150.000 COP</span>
           </div>
 
           <a
@@ -105,6 +122,18 @@ export function Navbar({
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Store Location Button */}
+            {onOpenLocation && (
+              <button
+                onClick={onOpenLocation}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-200 text-slate-700 hover:text-sky-700 rounded-full font-bold text-xs transition-all active:scale-95"
+                title="Ver ubicación de tienda y cómo llegar"
+              >
+                <MapPin size={15} className="text-sky-600" />
+                <span>Tienda Física</span>
+              </button>
+            )}
+
             {/* Shopping Cart Button */}
             <button
               onClick={onCartClick}

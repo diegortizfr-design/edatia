@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, ShieldCheck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, PackageCheck
+  ChevronRight, PackageCheck, Store, MapPin
 } from 'lucide-react'
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
@@ -17,6 +17,7 @@ interface ProductDetailPageProps {
   onSelectProduct: (p: Product) => void
   onAddToCart: (p: Product, quantity?: number) => void
   onOpenCart: () => void
+  onOpenLocation?: () => void
 }
 
 export function ProductDetailPage({
@@ -25,7 +26,8 @@ export function ProductDetailPage({
   onBack,
   onSelectProduct,
   onAddToCart,
-  onOpenCart
+  onOpenCart,
+  onOpenLocation,
 }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product.imagen)
@@ -311,13 +313,25 @@ export function ProductDetailPage({
                     <Truck size={15} className="text-sky-500" />
                     <span>Envíos Nacionales</span>
                   </div>
+                  {onOpenLocation ? (
+                    <button
+                      type="button"
+                      onClick={onOpenLocation}
+                      className="p-2 bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-100 rounded-xl flex flex-col items-center gap-1 text-emerald-800 transition-all cursor-pointer group"
+                      title="Ver ubicación en Manuela Beltrán y cómo llegar"
+                    >
+                      <Store size={15} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                      <span className="font-bold">Tienda Física</span>
+                    </button>
+                  ) : (
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
+                      <Store size={15} className="text-emerald-500" />
+                      <span>Tienda Física</span>
+                    </div>
+                  )}
                   <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
                     <HeartHandshake size={15} className="text-pink-500" />
                     <span>Pago Contra Entrega</span>
-                  </div>
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                    <ShieldCheck size={15} className="text-emerald-500" />
-                    <span>Garantía Baby-World</span>
                   </div>
                 </div>
               </div>
