@@ -575,14 +575,14 @@ export function App() {
                 <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[65px] object-contain" />
                 <span>(Quincenas)</span>
               </span>
-              <span className="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-lg">
-                Contra Entrega
-              </span>
               <span className="bg-sky-50 text-sky-700 font-bold px-2 py-1 rounded-lg border border-sky-100">
                 Bre-B / Transferencia
               </span>
-              <span className="bg-blue-50 text-[#009EE3] font-bold px-2 py-1 rounded-lg border border-blue-100">
-                Mercado Pago
+              <span className="bg-white text-slate-800 font-bold px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                💳 Tarjetas Débito & Crédito
+              </span>
+              <span className="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-lg">
+                Contra Entrega
               </span>
             </div>
           </div>

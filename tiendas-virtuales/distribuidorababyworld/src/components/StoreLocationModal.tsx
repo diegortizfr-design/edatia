@@ -187,22 +187,41 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
             </div>
           </div>
 
-          {/* Tarjeta 3: Micro-cintillo de Servicios y Beneficios */}
-          <div className="px-3 py-2 bg-sky-50/70 border border-sky-100 rounded-xl flex items-center justify-between text-[10px] sm:text-[11px] text-slate-600">
-            <span className="flex items-center gap-1 font-semibold text-slate-700">
-              <ShoppingBag size={12} className="text-sky-600" />
-              Retiro gratis en local
-            </span>
-            <span className="text-slate-300">•</span>
-            <span className="flex items-center gap-1 font-semibold text-slate-700">
-              <CreditCard size={12} className="text-emerald-600" />
-              Addi, Sistecrédito & Nequi
-            </span>
-            <span className="text-slate-300 hidden sm:inline">•</span>
-            <span className="hidden sm:flex items-center gap-1 text-slate-500">
-              <Truck size={12} className="text-slate-400" />
-              Envíos a todo el país
-            </span>
+          {/* Métodos de Pago en Tienda con Logos Oficiales */}
+          <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                <CreditCard size={12} className="text-sky-600" />
+                Métodos de Pago en Tienda
+              </span>
+              <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                Financiación inmediata
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 items-center">
+              {/* Addi */}
+              <div className="flex items-center justify-center gap-1 bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Paga a cuotas con Addi">
+                <img src="/logo-addi.png" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain shrink-0" />
+                <span className="text-[11px] font-extrabold text-slate-800">Addi</span>
+              </div>
+
+              {/* Sistecrédito */}
+              <div className="flex items-center justify-center bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Crédito por quincenas con Sistecrédito">
+                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[55px] object-contain" />
+              </div>
+
+              {/* Bre-B */}
+              <div className="flex items-center justify-center gap-1 bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Transferencias inmediatas Bre-B">
+                <span className="text-[11px] font-extrabold text-sky-700">Bre-B</span>
+              </div>
+
+              {/* Tarjetas */}
+              <div className="flex items-center justify-center gap-1 bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Tarjetas Débito y Crédito">
+                <CreditCard size={12} className="text-indigo-600 shrink-0" />
+                <span className="text-[11px] font-extrabold text-slate-800">Tarjetas</span>
+              </div>
+            </div>
           </div>
 
           {/* Botón de cierre compacto */}
