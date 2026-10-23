@@ -188,18 +188,44 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
             </div>
           </div>
 
-          {/* Horarios de Atención */}
-          <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between text-xs text-slate-700">
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-slate-500" />
-              <div>
-                <span className="font-bold">Horarios de Atención:</span>
-                <p className="text-[11px] text-slate-500">Lunes a Sábado: 8:00 AM - 7:00 PM • Domingos: 9:00 AM - 2:00 PM</p>
+          {/* Horarios de Atención Reales */}
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-xs text-slate-700">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-sky-600" />
+                <span className="font-extrabold text-slate-900">Horarios de Atención en Tienda</span>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Atención Presencial
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
+                <span className="font-bold text-slate-800 block">Lunes a Viernes</span>
+                <div className="text-slate-500 leading-tight space-y-0.5">
+                  <p>☀️ 9:00 a.m. – 1:00 p.m.</p>
+                  <p>🌙 4:00 p.m. – 8:30 p.m.</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
+                <span className="font-bold text-slate-800 block">Sábados</span>
+                <div className="text-slate-500 leading-tight space-y-0.5">
+                  <p>☀️ 9:00 a.m. – 1:00 p.m.</p>
+                  <p>🌙 4:00 p.m. – 9:00 p.m.</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
+                <span className="font-bold text-slate-800 block">Domingos</span>
+                <div className="text-slate-500 leading-tight space-y-0.5">
+                  <p>✨ 9:00 a.m. – 5:00 p.m.</p>
+                  <span className="text-[10px] text-sky-600 font-semibold">(Jornada continua)</span>
+                </div>
               </div>
             </div>
-            <span className="hidden sm:inline-block px-2.5 py-1 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg text-[10px]">
-              Jornada Continua
-            </span>
           </div>
         </div>
 

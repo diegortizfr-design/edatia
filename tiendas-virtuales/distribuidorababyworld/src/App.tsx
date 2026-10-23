@@ -518,7 +518,7 @@ export function App() {
 
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-0.5 border-t border-slate-200/60">
                   <Clock size={12} className="text-slate-400 shrink-0" />
-                  <span>Lun - Sáb: 8am - 7pm • Dom: 9am - 2pm</span>
+                  <span>Lun-Sáb: 9am-1pm / 4-8:30pm • Dom: 9am-5pm</span>
                 </div>
 
                 <button
