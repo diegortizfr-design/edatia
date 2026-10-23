@@ -10,7 +10,6 @@ import {
   Check,
   ShoppingBag,
   CreditCard,
-  MessageCircle,
   Truck
 } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
@@ -42,194 +41,176 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div 
-        className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header con gradiente suave */}
-        <div className="relative bg-gradient-to-r from-sky-500 via-sky-600 to-indigo-600 text-white p-5 sm:p-6 pb-6">
+        {/* Header Compacto con Gradiente Suave */}
+        <div className="relative bg-gradient-to-r from-sky-500 via-sky-600 to-indigo-600 text-white px-5 py-3.5 sm:px-6 sm:py-4">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95"
+            className="absolute top-3.5 right-3.5 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95"
             aria-label="Cerrar modal"
           >
-            <X size={18} />
+            <X size={17} />
           </button>
 
-          <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-extrabold uppercase tracking-wider text-white">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Atención Presencial en Tienda
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-white/20 backdrop-blur-md">
+              <Store size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-extrabold tracking-tight leading-tight">
+                  Nuestra Tienda Física
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[9px] font-black uppercase tracking-wider text-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Atención Presencial
+                </span>
+              </div>
+              <p className="text-[11px] text-sky-100 leading-tight mt-0.5">
+                Barrio Manuela Beltrán • Asesoría personalizada en pañales y juguetes
+              </p>
+            </div>
           </div>
-
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight flex items-center gap-2">
-            <Store className="shrink-0" size={24} />
-            <span>Nuestra Tienda Física</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-sky-100 mt-1 max-w-md">
-            ¡Ven a visitarnos! Recibe asesoría personalizada en pañales, estimulación, juguetes y ajuar para tu bebé.
-          </p>
         </div>
 
-        {/* Contenido scrolleable */}
-        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto">
-          {/* Tarjeta de Dirección con Copiado Rápido */}
-          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-sky-100 text-sky-700 shrink-0 mt-0.5">
-                  <MapPin size={20} />
+        {/* Contenido Ultra-Compacto Sin Scroll */}
+        <div className="p-4 sm:p-5 space-y-3">
+          {/* Tarjeta 1: Dirección y Accesos GPS */}
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700 shrink-0">
+                  <MapPin size={16} />
                 </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Dirección Principal
-                  </span>
-                  <p className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-900 truncate leading-snug">
                     Manzana 4 # Casa 26
                   </p>
-                  <p className="text-xs text-slate-600 font-medium">
+                  <p className="text-[11px] text-slate-500 truncate">
                     Barrio Manuela Beltrán • Cali / Candelaria
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Valle del Cauca, Colombia
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={handleCopyAddress}
-                className="shrink-0 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs active:scale-95"
+                className="shrink-0 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 flex items-center gap-1 transition-all shadow-2xs active:scale-95"
                 title="Copiar dirección completa"
               >
                 {copied ? (
                   <>
-                    <Check size={14} className="text-emerald-600" />
-                    <span className="text-emerald-700">¡Copiada!</span>
+                    <Check size={12} className="text-emerald-600" />
+                    <span className="text-emerald-700">Copiada</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={14} />
-                    <span className="hidden sm:inline">Copiar</span>
+                    <Copy size={12} />
+                    <span>Copiar</span>
                   </>
                 )}
               </button>
             </div>
 
-            {/* Botones de Navegación Rápida (Maps / Waze / WhatsApp) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            {/* Botones GPS de 1 solo toque */}
+            <div className="grid grid-cols-3 gap-2">
               <a
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs group active:scale-95"
+                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95"
               >
-                <Navigation size={14} className="text-blue-600 group-hover:scale-110 transition-transform" />
-                <span>Google Maps</span>
-                <ExternalLink size={12} className="text-slate-400 ml-auto" />
+                <Navigation size={13} className="text-blue-600 shrink-0" />
+                <span>Maps</span>
+                <ExternalLink size={11} className="text-slate-400" />
               </a>
 
               <a
                 href={wazeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs group active:scale-95"
+                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95"
               >
-                <span className="text-xs">🚗</span>
+                <span className="text-xs leading-none">🚗</span>
                 <span>Waze</span>
-                <ExternalLink size={12} className="text-slate-400 ml-auto" />
+                <ExternalLink size={11} className="text-slate-400" />
               </a>
 
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-emerald-900 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95"
+                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-950 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95"
               >
                 <WhatsAppIcon size={14} />
-                <span>¿Cómo llegar?</span>
+                <span className="truncate">Llegar</span>
               </a>
             </div>
           </div>
 
-
-          {/* Horarios de Atención Reales */}
-          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-xs text-slate-700">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-sky-600" />
-                <span className="font-extrabold text-slate-900">Horarios de Atención en Tienda</span>
+          {/* Tarjeta 2: Horarios Reales de Atención */}
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                <Clock size={14} className="text-sky-600" />
+                <span>Horarios de Atención en Tienda</span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Atención Presencial
-              </span>
+              <span className="text-[10px] text-slate-500 font-medium">Jornada continua domingos</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
-                <span className="font-bold text-slate-800 block">Lunes a Viernes</span>
-                <div className="text-slate-500 leading-tight space-y-0.5">
-                  <p>☀️ 9:00 a.m. – 1:00 p.m.</p>
-                  <p>🌙 4:00 p.m. – 8:30 p.m.</p>
-                </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] sm:text-[11px]">
+              <div className="p-2 bg-white rounded-xl border border-slate-200/70">
+                <span className="font-bold text-slate-700 block mb-0.5">Lun - Vie</span>
+                <span className="text-slate-500 leading-tight block text-[10px]">9:00 am - 1:00 pm</span>
+                <span className="text-slate-500 leading-tight block text-[10px]">4:00 pm - 8:30 pm</span>
               </div>
 
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
-                <span className="font-bold text-slate-800 block">Sábados</span>
-                <div className="text-slate-500 leading-tight space-y-0.5">
-                  <p>☀️ 9:00 a.m. – 1:00 p.m.</p>
-                  <p>🌙 4:00 p.m. – 9:00 p.m.</p>
-                </div>
+              <div className="p-2 bg-white rounded-xl border border-slate-200/70">
+                <span className="font-bold text-slate-700 block mb-0.5">Sábados</span>
+                <span className="text-slate-500 leading-tight block text-[10px]">9:00 am - 1:00 pm</span>
+                <span className="text-slate-500 leading-tight block text-[10px]">4:00 pm - 9:00 pm</span>
               </div>
 
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200/70 space-y-1">
-                <span className="font-bold text-slate-800 block">Domingos</span>
-                <div className="text-slate-500 leading-tight space-y-0.5">
-                  <p>✨ 9:00 a.m. – 5:00 p.m.</p>
-                  <span className="text-[10px] text-sky-600 font-semibold">(Jornada continua)</span>
-                </div>
+              <div className="p-2 bg-white rounded-xl border border-slate-200/70 bg-gradient-to-b from-white to-sky-50/40">
+                <span className="font-bold text-sky-800 block mb-0.5">Domingos</span>
+                <span className="text-sky-700 font-extrabold leading-tight block text-[10px]">9:00 am - 5:00 pm</span>
+                <span className="text-[9px] text-slate-400 block mt-0.5">(Continuo)</span>
               </div>
             </div>
           </div>
 
-          {/* Ventajas y Servicios en Tienda */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-            <div className="p-3 bg-sky-50/60 border border-sky-100 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-sky-900">
-                <ShoppingBag size={15} className="text-sky-600" />
-                <span>Recogida Inmediata</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                Haz tu pedido en línea o WhatsApp y retíralo directamente en tienda sin costos de envío.
-              </p>
-            </div>
-
-            <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-900">
-                <CreditCard size={15} className="text-emerald-600" />
-                <span>Medios de Pago en Local</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                Recibimos efectivo, transferencias (Nequi, Daviplata), Addi, Sistecrédito y tarjetas.
-              </p>
-            </div>
+          {/* Tarjeta 3: Micro-cintillo de Servicios y Beneficios */}
+          <div className="px-3 py-2 bg-sky-50/70 border border-sky-100 rounded-xl flex items-center justify-between text-[10px] sm:text-[11px] text-slate-600">
+            <span className="flex items-center gap-1 font-semibold text-slate-700">
+              <ShoppingBag size={12} className="text-sky-600" />
+              Retiro gratis en local
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="flex items-center gap-1 font-semibold text-slate-700">
+              <CreditCard size={12} className="text-emerald-600" />
+              Addi, Sistecrédito & Nequi
+            </span>
+            <span className="text-slate-300 hidden sm:inline">•</span>
+            <span className="hidden sm:flex items-center gap-1 text-slate-500">
+              <Truck size={12} className="text-slate-400" />
+              Envíos a todo el país
+            </span>
           </div>
-        </div>
 
-        {/* Footer del Modal */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <Truck size={14} className="text-slate-400" />
-            <span className="text-[11px]">¿No puedes visitarnos? ¡Enviamos a tu domicilio!</span>
-          </div>
+          {/* Botón de cierre compacto */}
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all active:scale-95"
+            className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-98"
           >
-            Entendido
+            Cerrar
           </button>
         </div>
       </div>
