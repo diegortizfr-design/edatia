@@ -367,7 +367,7 @@ export class MovimientosService {
     return `${prefijo}-${year}-${seq}`;
   }
 
-  private async getOrCreateStock(productoId: number, bodegaId: number, empresaId: number, tx: any) {
+  private async getOrCreateStock(productoId: number, bodegaId: number, empresaId: number, tx: any = this.prisma) {
     let stock = await tx.stock.findUnique({
       where: { productoId_bodegaId: { productoId, bodegaId } },
     });
@@ -1090,7 +1090,7 @@ export class MovimientosService {
 
     // 2. Obtener producto y stock actual en la bodega solicitada
     await this.getProducto(dto.productoId, empresaId);
-    const stockActual = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId);
+    const stockActual = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, this.prisma);
     const cantActual = parseFloat(stockActual.cantidad.toString());
     const diferencia = dto.nuevoStock - cantActual;
 
