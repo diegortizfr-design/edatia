@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBodegaDto, UpdateBodegaDto } from './dto/bodega.dto';
 
@@ -6,9 +6,13 @@ import { CreateBodegaDto, UpdateBodegaDto } from './dto/bodega.dto';
 export class BodegasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(empresaId: number) {
+  async findAll(empresaId: number, incluirInactivas = false) {
+    const where: any = { empresaId };
+    if (!incluirInactivas) {
+      where.activo = true;
+    }
     return (this.prisma as any).bodega.findMany({
-      where: { empresaId },
+      where,
       include: {
         _count: { select: { stock: true } },
         sucursal: { select: { id: true, nombre: true } },
@@ -73,5 +77,50 @@ export class BodegasService {
     }
 
     return (this.prisma as any).bodega.update({ where: { id }, data: dto });
+  }
+
+  async remove(id: number, empresaId: number) {
+    const bodega = await this.findOne(id, empresaId);
+
+    if (bodega.esPrincipal) {
+      throw new BadRequestException('No se puede eliminar la bodega principal. Primero asigne otra bodega como principal antes de eliminar esta.');
+    }
+
+    // Validar si tiene productos con existencias > 0
+    const stocksConCantidad = await (this.prisma as any).stock.findMany({
+      where: { bodegaId: id, empresaId, cantidad: { gt: 0 } },
+      include: { producto: { select: { nombre: true, sku: true } } },
+      take: 5,
+    });
+
+    if (stocksConCantidad.length > 0) {
+      const nombres = stocksConCantidad.map((s: any) => `${s.producto?.nombre || 'Producto'} (${s.producto?.sku || 'S/SKU'})`).join(', ');
+      throw new BadRequestException(`No se puede eliminar la bodega porque contiene productos con existencias físicas: ${nombres}. Ajuste o traslade el stock a cero primero.`);
+    }
+
+    // Verificar transacciones históricas (movimientos, facturas de venta, órdenes de compra)
+    const [movimientosCount, facturasCount, ocsCount] = await Promise.all([
+      (this.prisma as any).movimientoInventario.count({
+        where: { OR: [{ bodegaOrigenId: id }, { bodegaDestinoId: id }] },
+      }),
+      (this.prisma as any).facturaVenta.count({
+        where: { bodegaId: id },
+      }),
+      (this.prisma as any).ordenCompra.count({
+        where: { bodegaId: id },
+      }),
+    ]);
+
+    if (movimientosCount > 0 || facturasCount > 0 || ocsCount > 0) {
+      // Si tiene historial, desactivar lógicamente para no romper integridad referencial
+      return (this.prisma as any).bodega.update({
+        where: { id },
+        data: { activo: false, nombre: `${bodega.nombre} (Inactiva)` },
+      });
+    }
+
+    // Si no tiene movimientos ni transacciones, borrar registros de stock vacíos y eliminar la bodega físicamente
+    await (this.prisma as any).stock.deleteMany({ where: { bodegaId: id } });
+    return (this.prisma as any).bodega.delete({ where: { id } });
   }
 }

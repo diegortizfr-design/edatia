@@ -23,12 +23,21 @@ export function Movimientos() {
   const qc = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const docVerParam = searchParams.get('ver')
-  const [activeTab, setActiveTab] = useState<'docs' | 'kardex' | 'bolsas'>('docs')
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState<'docs' | 'traslados-pendientes' | 'kardex' | 'bolsas'>(
+    initialTab === 'traslados' || initialTab === 'traslados-pendientes' ? 'traslados-pendientes' :
+    initialTab === 'kardex' ? 'kardex' :
+    initialTab === 'bolsas' ? 'bolsas' : 'docs'
+  )
   const [documentoVer, setDocumentoVer] = useState<any | null>(null)
   
   // Tab 1 filters
   const [filtroDocTipo, setFiltroDocTipo] = useState<string>('todos')
   const [filtroDocQ, setFiltroDocQ] = useState<string>('')
+
+  // Tab Traslados filters
+  const [filtroTrasladoEstado, setFiltroTrasladoEstado] = useState<'todos' | 'EN_TRANSITO' | 'RECIBIDO'>('todos')
+  const [filtroTrasladoQ, setFiltroTrasladoQ] = useState<string>('')
 
   // Tab 2 filters
   const [kardexProductoId, setKardexProductoId] = useState<string>('todos')
@@ -219,6 +228,22 @@ export function Movimientos() {
       fechaVerificacion: m.fechaVerificacion,
       autorizadoPor: 'Supervisor'
     }))
+
+  // Filtered traslados for the unified tab
+  const trasladosFiltrados = traslados.filter(t => {
+    if (filtroTrasladoEstado !== 'todos' && t.estado !== filtroTrasladoEstado) return false
+    if (filtroTrasladoQ) {
+      const q = filtroTrasladoQ.toLowerCase()
+      return (
+        t.id.toLowerCase().includes(q) ||
+        t.productoNombre.toLowerCase().includes(q) ||
+        t.productoSku.toLowerCase().includes(q) ||
+        t.bodegaOrigenNombre.toLowerCase().includes(q) ||
+        t.bodegaDestinoNombre.toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
 
   // Extract real adjustments from dbMovements
   const ajustes = dbMovements
@@ -538,10 +563,10 @@ export function Movimientos() {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2.5">
             <RotateCcw className="text-indigo-600" />
-            Movimientos y Auditoría de Documentos
+            Movimientos y Traslados de Inventario
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            Historial de documentos comerciales, valoraciones de Kardex CPP y control de bolsas de merma
+            Trazabilidad consolidada de documentos, traslados entre bodegas, kardex valorizado y control de mermas
           </p>
         </div>
 
@@ -565,7 +590,7 @@ export function Movimientos() {
       <div className="bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm w-full md:w-fit flex flex-wrap md:flex-nowrap gap-1">
         {(
           [['docs', 'Historial de Documentos', sortedDocs.length], 
-           ['traslados-pendientes', 'Traslados Pendientes', sortedDocs.filter(d => d.tipo === 'TI' && d.estado === 'EN_TRANSITO').length],
+           ['traslados-pendientes', 'Traslados entre Bodegas', traslados.length],
            ['kardex', 'Kardex Valorizado (CPP)', combinedMovements.length], 
            ['bolsas', 'Bolsas de Control', (bolsaAverias.length + bolsaPerdidas.length)]
           ] as [typeof activeTab, string, number][]
@@ -741,6 +766,126 @@ export function Movimientos() {
                             >
                               Ver Comprobante
                             </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Traslados entre Bodegas */}
+      {activeTab === 'traslados-pendientes' && (
+        <div className="space-y-4">
+          {/* Filtros de Traslados */}
+          <div className="flex gap-3 flex-wrap items-center justify-between bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Estado:</span>
+              <div className="flex gap-1.5">
+                {[
+                  ['todos', 'Todos', traslados.length],
+                  ['EN_TRANSITO', 'En Tránsito (Pendientes)', traslados.filter(t => t.estado === 'EN_TRANSITO').length],
+                  ['RECIBIDO', 'Recibidos', traslados.filter(t => t.estado === 'RECIBIDO').length]
+                ].map(([val, label, count]) => (
+                  <button
+                    key={val}
+                    onClick={() => setFiltroTrasladoEstado(val as any)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      filtroTrasladoEstado === val
+                        ? 'bg-slate-800 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <span className="text-[10px] opacity-75">({count})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative min-w-[240px] flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                type="text"
+                placeholder="Buscar por código, producto o bodega..."
+                value={filtroTrasladoQ}
+                onChange={e => setFiltroTrasladoQ(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Tabla de Traslados */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {trasladosFiltrados.length === 0 ? (
+              <div className="text-center py-16 text-slate-400 text-sm font-semibold">
+                No se encontraron traslados con los filtros seleccionados.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
+                      <th className="text-left px-6 py-4">Doc / N° Traslado</th>
+                      <th className="text-left px-6 py-4">Fecha</th>
+                      <th className="text-left px-6 py-4">Bodega Origen</th>
+                      <th className="text-left px-6 py-4">Bodega Destino</th>
+                      <th className="text-left px-6 py-4">Producto</th>
+                      <th className="text-right px-6 py-4">Cantidad</th>
+                      <th className="text-center px-6 py-4">Estado</th>
+                      <th className="text-right px-6 py-4">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {trasladosFiltrados.map(t => {
+                      const isPending = t.estado === 'EN_TRANSITO'
+                      return (
+                        <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-slate-700">{t.id}</td>
+                          <td className="px-6 py-4 text-slate-400 font-medium">
+                            {new Date(t.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 font-semibold">{t.bodegaOrigenNombre}</td>
+                          <td className="px-6 py-4 text-slate-800 font-bold">{t.bodegaDestinoNombre}</td>
+                          <td className="px-6 py-4">
+                            <p className="font-semibold text-slate-800">{t.productoNombre}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{t.productoSku}</p>
+                          </td>
+                          <td className="px-6 py-4 text-right font-extrabold text-indigo-600">{t.cantidad}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center gap-1 font-bold px-2.5 py-0.5 rounded-full text-[10px] ${
+                              isPending
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-green-50 text-green-700 border border-green-200'
+                            }`}>
+                              {isPending ? 'En Tránsito' : 'Recibido'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {isPending && (
+                                <button
+                                  onClick={() => handleVerifyTraslado(t.dbId)}
+                                  disabled={recibirTrasladoMutation.isPending}
+                                  className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded text-[10px] transition-all shadow-sm active:scale-95"
+                                >
+                                  {recibirTrasladoMutation.isPending ? 'Recibiendo...' : 'Recibir en Destino'}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  const matchingDoc = sortedDocs.find((d: any) => d.id === t.id)
+                                  if (matchingDoc) setDocumentoVer(matchingDoc)
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded text-[10px] transition-all"
+                              >
+                                Ver Comprobante
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )

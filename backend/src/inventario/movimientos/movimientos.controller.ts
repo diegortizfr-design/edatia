@@ -2,7 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, ParseIntPipe, UseGuards } fr
 import { MovimientosService } from './movimientos.service';
 import {
   EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
-  DevolucionProveedorDto, DevolucionClienteDto,
+  DevolucionProveedorDto, DevolucionClienteDto, ModificarKardexManualDto,
 } from './dto/movimiento.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
@@ -52,6 +52,11 @@ export class MovimientosController {
   @Post('ajuste')
   ajuste(@Body() dto: AjusteDto, @GetUser() user: JwtPayload) {
     return this.svc.procesarAjuste(dto, user.empresaId!, user.sub);
+  }
+
+  @Post('modificar-kardex')
+  modificarKardex(@Body() dto: ModificarKardexManualDto, @GetUser() user: JwtPayload) {
+    return this.svc.modificarKardexManual(dto, user.empresaId!, user.sub);
   }
 
   @Post('traslado')

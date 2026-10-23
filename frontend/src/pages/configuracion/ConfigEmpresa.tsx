@@ -200,6 +200,7 @@ export function ConfigEmpresa() {
         codeModificarConsecutivo: erp.codeModificarConsecutivo ?? 'ADMIN123',
         codeAnularTransaccion: erp.codeAnularTransaccion ?? 'SUPER99',
         codeEliminarSucursal: erp.codeEliminarSucursal ?? 'SUCURSAL123',
+        codeModificarKardex: erp.codeModificarKardex ?? 'KARDEX123',
       })
       setInitialized(true)
     }
@@ -249,6 +250,7 @@ export function ConfigEmpresa() {
         codeModificarConsecutivo: form.codeModificarConsecutivo ?? 'ADMIN123',
         codeAnularTransaccion: form.codeAnularTransaccion ?? 'SUPER99',
         codeEliminarSucursal: form.codeEliminarSucursal ?? 'SUCURSAL123',
+        codeModificarKardex: form.codeModificarKardex ?? 'KARDEX123',
       }
       await updateConfigERP(erpPayload)
 
@@ -271,7 +273,7 @@ export function ConfigEmpresa() {
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
         'facturadorElectronico', 'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
-        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal'
+        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal', 'codeModificarKardex'
       ]
       frontendKeys.forEach((k: string) => { delete databasePayload[k] })
       return updateEmpresaConfig(databasePayload)
@@ -1255,6 +1257,19 @@ export function ConfigEmpresa() {
                       value={form.codeAnularTransaccion} 
                       onChange={set('codeAnularTransaccion')} 
                       placeholder="SUPER99" 
+                    />
+                  </Field>
+                </div>
+
+                <div className="md:col-span-3">
+                  <Field 
+                    label="Código para Modificar Kardex Manual" 
+                    hint="Requerido para autorizar ajustes y modificaciones directas en el kardex."
+                  >
+                    <Input 
+                      value={form.codeModificarKardex} 
+                      onChange={set('codeModificarKardex')} 
+                      placeholder="KARDEX123" 
                     />
                   </Field>
                 </div>
