@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, MapPin, Truck, Store, Clock, Navigation } from 'lucide-react'
+import { Shield, MapPin, Truck, Store, Clock, Navigation, ExternalLink } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -521,14 +521,26 @@ export function App() {
                   <span>Lun-Sáb: 9am-1pm / 4-8:30pm • Dom: 9am-5pm</span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsLocationModalOpen(true)}
-                  className="w-full py-2 px-3 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-sky-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95"
-                >
-                  <Navigation size={13} className="text-sky-600" />
-                  <span>Ver Mapa y Cómo Llegar</span>
-                </button>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsLocationModalOpen(true)}
+                    className="flex-1 py-2 px-2.5 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-sky-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95"
+                  >
+                    <Navigation size={13} className="text-sky-600" />
+                    <span>Ver Mapa y Horarios</span>
+                  </button>
+                  <a
+                    href="https://maps.app.goo.gl/yY63rsTFhMYcwv3k6"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-95 shrink-0"
+                    title="Abrir directamente en Google Maps"
+                  >
+                    <ExternalLink size={13} />
+                    <span>Maps</span>
+                  </a>
+                </div>
               </div>
 
               <div className="space-y-2 text-xs text-slate-500 pt-1">

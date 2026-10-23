@@ -27,8 +27,8 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
   if (!isOpen) return null
 
   const address = 'Manzana 4 # Casa 26, Barrio Manuela Beltrán, Cali - Candelaria, Valle del Cauca'
-  const googleMapsUrl = 'https://www.google.com/maps/search/?api=1&query=Manzana+4+casa+26+Manuela+Beltran+Cali+Candelaria+Valle+del+Cauca'
-  const wazeUrl = 'https://waze.com/ul?q=Manzana%204%20casa%2026%20Manuela%20Beltran%20Cali%20Candelaria%20Valle%20del%20Cauca'
+  const googleMapsUrl = 'https://maps.app.goo.gl/yY63rsTFhMYcwv3k6'
+  const wazeUrl = 'https://waze.com/ul?ll=3.4116568,-76.4553798&navigate=yes'
   const whatsappUrl = 'https://wa.me/573023863380?text=Hola%20Baby%20World%20%F0%9F%91%8B,%20deseo%20saber%20c%C3%B3mo%20llegar%20a%20su%20tienda%20f%C3%ADsica%20en%20Manuela%20Beltr%C3%A1n'
 
   const handleCopyAddress = () => {
@@ -154,15 +154,25 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
             </div>
           </div>
 
-          {/* Mapa Incrustado Responsivo */}
-          <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative h-48 sm:h-56 bg-slate-100">
+          {/* Mapa Incrustado Responsivo con Pin Exacto */}
+          <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative h-48 sm:h-56 bg-slate-100 group">
             <iframe
-              title="Ubicación Baby-World Manuela Beltrán"
-              src="https://maps.google.com/maps?q=Manzana+4+casa+26+Manuela+Beltran+Cali+Candelaria+Valle+del+Cauca&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              title="Ubicación Distribuidora Baby World"
+              src="https://maps.google.com/maps?q=3.4116568,-76.4553798&hl=es&z=17&output=embed"
               className="w-full h-full border-0"
               loading="lazy"
               allowFullScreen
             />
+            {/* Botón flotante para abrir en pantalla completa en Google Maps */}
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-2.5 right-2.5 px-3 py-1.5 bg-white/95 hover:bg-white text-slate-800 text-[11px] font-bold rounded-xl shadow-md border border-slate-200 flex items-center gap-1.5 backdrop-blur-xs transition-all active:scale-95"
+            >
+              <span>Abrir en Maps</span>
+              <ExternalLink size={12} className="text-sky-600" />
+            </a>
           </div>
 
           {/* Ventajas y Servicios en Tienda */}
