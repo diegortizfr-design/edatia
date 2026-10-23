@@ -389,11 +389,16 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: any
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer group select-none">
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={e => onChange(e.target.checked)}
+      />
       <div
-        onClick={() => onChange(!checked)}
-        className={`w-10 h-6 rounded-full transition-colors relative flex items-center ${checked ? 'bg-indigo-600' : 'bg-slate-300'}`}
+        className={`w-11 h-6 rounded-full transition-colors relative flex items-center shrink-0 ${checked ? 'bg-indigo-600' : 'bg-slate-300'}`}
       >
-        <div className={`absolute w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
+        <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
       </div>
       <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{label}</span>
     </label>
@@ -550,12 +555,7 @@ export function ConfigDocumentos() {
       return
     }
 
-    const currentTemplate = CATALOGO_PLANTILLAS.find(
-      p => p.codigo === form.sigla?.toUpperCase()
-    )
-    const isDianForced = currentTemplate?.obligatorioDian === 'SI'
-    const isDianHidden = currentTemplate?.obligatorioDian === 'NO'
-    const esElectronicoEnforced = isDianForced ? true : (isDianHidden ? false : !!form.esElectronico)
+    const esElectronico = !!form.esElectronico
 
     const dto: any = {
       nombre: form.nombre,
@@ -565,13 +565,13 @@ export function ConfigDocumentos() {
       consecutivoSiguiente: form.consecutivoSiguiente,
       tipoOperacion: form.tipoOperacion || 'VENTAS',
       plantillaImpresion: form.plantillaImpresion || 'CARTA',
-      esElectronico: esElectronicoEnforced,
+      esElectronico,
       estado: form.estado || 'ACTIVO',
-      resolucionDian: form.resolucionDian || undefined,
-      fechaResolucion: form.fechaResolucion || undefined,
-      vigenciaMeses: form.vigenciaMeses,
-      rangoDesde: form.rangoDesde,
-      rangoHasta: form.rangoHasta,
+      resolucionDian: esElectronico ? (form.resolucionDian?.trim() || null) : null,
+      fechaResolucion: esElectronico && form.fechaResolucion ? form.fechaResolucion : null,
+      vigenciaMeses: esElectronico && form.vigenciaMeses ? Number(form.vigenciaMeses) : null,
+      rangoDesde: esElectronico && form.rangoDesde ? Number(form.rangoDesde) : null,
+      rangoHasta: esElectronico && form.rangoHasta ? Number(form.rangoHasta) : null,
       sucursalId: form.sucursalId ? parseInt(String(form.sucursalId), 10) : undefined,
     }
 
@@ -597,11 +597,7 @@ export function ConfigDocumentos() {
     p => p.codigo === form.sigla?.toUpperCase()
   )
 
-  const isDianForced = currentTemplate?.obligatorioDian === 'SI'
-  const isDianHidden = currentTemplate?.obligatorioDian === 'NO'
-  const showDianSection = !isDianHidden
-  const showDianToggle = !currentTemplate || currentTemplate.obligatorioDian === 'SEGUN_CASO'
-  const showDianFields = isDianForced || (showDianToggle && form.esElectronico)
+  const isDianSuggested = currentTemplate?.obligatorioDian === 'SI'
 
   return (
     <div className="w-full space-y-6">
@@ -992,102 +988,125 @@ export function ConfigDocumentos() {
                 </div>
               </div>
 
-              {/* Sección DIAN */}
-              {showDianSection && (
-                <div className="pt-4 border-t border-slate-100 space-y-4">
-                  {isDianForced && (
-                    <div className="flex items-start gap-2.5 p-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700">
-                      <ShieldCheck size={16} className="mt-0.5 flex-shrink-0" />
-                      <div className="text-xs">
-                        <span className="font-bold">Obligatoriedad Fiscal:</span> Este tipo de documento ({currentTemplate?.documento}) requiere habilitación y envío electrónico por normativa DIAN.
-                      </div>
-                    </div>
-                  )}
+              {/* Sección DIAN / Documentación Electrónica */}
+              <div className="pt-4 border-t border-slate-100 space-y-4">
+                {/* Switch / Check interactivo para activar o desactivar resolución electrónica */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl transition-all">
+                  <div className="space-y-1">
+                    <Toggle
+                      checked={!!form.esElectronico}
+                      onChange={(v) => {
+                        setForm(f => ({
+                          ...f,
+                          esElectronico: v,
+                          vigenciaMeses: v ? (f.vigenciaMeses || 12) : f.vigenciaMeses,
+                          rangoDesde: v ? (f.rangoDesde || 1) : f.rangoDesde,
+                          rangoHasta: v ? (f.rangoHasta || 99999) : f.rangoHasta,
+                        }))
+                      }}
+                      label="¿Requiere Resolución para Documento Electrónico DIAN?"
+                    />
+                    <p className="text-xs text-slate-500 leading-tight pl-14">
+                      {form.esElectronico
+                        ? 'Activado: Este documento operará bajo numeración autorizada y validación electrónica ante la DIAN.'
+                        : 'Desactivado: Operará como comprobante interno o administrativo sin exigencia de resolución fiscal.'}
+                    </p>
+                  </div>
+                  <div className="self-start sm:self-center shrink-0 pl-14 sm:pl-0">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all ${
+                      form.esElectronico
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      {form.esElectronico && <ShieldCheck size={14} className="text-indigo-600" />}
+                      {form.esElectronico ? 'Electrónico DIAN' : 'Interno / No Electrónico'}
+                    </span>
+                  </div>
+                </div>
 
-                  {showDianToggle && (
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1 pr-6">
-                        <Toggle
-                          checked={!!form.esElectronico}
-                          onChange={(v) => setForm(f => ({ ...f, esElectronico: v }))}
-                          label="Habilitar Facturación/Documentación Electrónica DIAN"
-                        />
-                        <p className="text-xs text-slate-400 leading-tight">
-                          Activa la validación previa, firma digital y envío del XML estructurado a la DIAN de forma automatizada.
-                        </p>
-                      </div>
+                {/* Banner de recomendación fiscal cuando la plantilla suele requerir DIAN */}
+                {isDianSuggested && (
+                  <div className="flex items-start gap-2.5 p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl text-blue-700 text-xs">
+                    <ShieldCheck size={16} className="mt-0.5 flex-shrink-0 text-blue-600" />
+                    <div className="leading-relaxed">
+                      <span className="font-bold">Normativa DIAN:</span> Por regulación fiscal, ({currentTemplate?.documento}) suele transmitirse de manera electrónica. Sin embargo, puedes activar o desactivar este requisito con el check superior según el régimen tributario y operativa de tu empresa.
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Campos condicionales DIAN */}
-                  {showDianFields && (
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                      <h4 className="text-xs font-bold text-indigo-700 uppercase tracking-widest flex items-center gap-1.5">
-                        <Building2 size={14} />
+                {/* Campos condicionales de Resolución DIAN (visibles solo cuando el check está activo) */}
+                {form.esElectronico && (
+                  <div className="p-5 rounded-2xl bg-indigo-50/30 border border-indigo-100/80 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Building2 size={15} className="text-indigo-600" />
                         Resolución de Autorización de Numeración DIAN
                       </h4>
+                      <span className="text-[11px] text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-md font-medium">
+                        Parámetros habilitados
+                      </span>
+                    </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <div className="md:col-span-6">
-                          <Field label="Número de Resolución">
-                            <Input
-                              value={form.resolucionDian}
-                              onChange={(v: string) => setForm(f => ({ ...f, resolucionDian: v }))}
-                              placeholder="Ej. Resolución Nº 1876400000000000000"
-                            />
-                          </Field>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                      <div className="md:col-span-6">
+                        <Field label="Número de Resolución">
+                          <Input
+                            value={form.resolucionDian || ''}
+                            onChange={(v: string) => setForm(f => ({ ...f, resolucionDian: v }))}
+                            placeholder="Ej. Resolución Nº 1876400000000000000"
+                          />
+                        </Field>
+                      </div>
 
-                        <div className="md:col-span-3">
-                          <Field label="Fecha de Resolución">
-                            <Input
-                              type="date"
-                              value={form.fechaResolucion}
-                              onChange={(v: string) => setForm(f => ({ ...f, fechaResolucion: v }))}
-                            />
-                          </Field>
-                        </div>
+                      <div className="md:col-span-3">
+                        <Field label="Fecha de Resolución">
+                          <Input
+                            type="date"
+                            value={form.fechaResolucion || ''}
+                            onChange={(v: string) => setForm(f => ({ ...f, fechaResolucion: v }))}
+                          />
+                        </Field>
+                      </div>
 
-                        <div className="md:col-span-3">
-                          <Field label="Vigencia (Meses)">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={form.vigenciaMeses}
-                              onChange={(v: number) => setForm(f => ({ ...f, vigenciaMeses: v }))}
-                              placeholder="12"
-                            />
-                          </Field>
-                        </div>
+                      <div className="md:col-span-3">
+                        <Field label="Vigencia (Meses)">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={form.vigenciaMeses || ''}
+                            onChange={(v: any) => setForm(f => ({ ...f, vigenciaMeses: v ? parseInt(v, 10) : undefined }))}
+                            placeholder="12"
+                          />
+                        </Field>
+                      </div>
 
-                        <div className="md:col-span-6">
-                          <Field label="Rango de Consecutivos (Desde)">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={form.rangoDesde}
-                              onChange={(v: number) => setForm(f => ({ ...f, rangoDesde: v }))}
-                              placeholder="1"
-                            />
-                          </Field>
-                        </div>
+                      <div className="md:col-span-6">
+                        <Field label="Rango de Consecutivos (Desde)">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={form.rangoDesde || ''}
+                            onChange={(v: any) => setForm(f => ({ ...f, rangoDesde: v ? parseInt(v, 10) : undefined }))}
+                            placeholder="1"
+                          />
+                        </Field>
+                      </div>
 
-                        <div className="md:col-span-6">
-                          <Field label="Rango de Consecutivos (Hasta)">
-                            <Input
-                              type="number"
-                              min={1}
-                              value={form.rangoHasta}
-                              onChange={(v: number) => setForm(f => ({ ...f, rangoHasta: v }))}
-                              placeholder="10000"
-                            />
-                          </Field>
-                        </div>
+                      <div className="md:col-span-6">
+                        <Field label="Rango de Consecutivos (Hasta)">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={form.rangoHasta || ''}
+                            onChange={(v: any) => setForm(f => ({ ...f, rangoHasta: v ? parseInt(v, 10) : undefined }))}
+                            placeholder="10000"
+                          />
+                        </Field>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
 
               {/* Botones del Formulario */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

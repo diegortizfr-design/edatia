@@ -33,6 +33,8 @@ export class DocumentosConfigService {
     // Convertir fecha si viene como string
     if (dto.fechaResolucion) {
       data.fechaResolucion = new Date(dto.fechaResolucion)
+    } else {
+      data.fechaResolucion = null
     }
 
     // El consecutivoSiguiente debe arrancar igual al inicial
@@ -62,6 +64,8 @@ export class DocumentosConfigService {
     const data: any = { ...dto }
     if (dto.fechaResolucion) {
       data.fechaResolucion = new Date(dto.fechaResolucion)
+    } else if (dto.fechaResolucion === null || (dto as any).fechaResolucion === '') {
+      data.fechaResolucion = null
     }
 
     return (this.prisma as any).documentoConfig.update({
