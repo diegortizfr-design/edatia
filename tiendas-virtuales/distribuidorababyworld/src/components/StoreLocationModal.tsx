@@ -154,49 +154,6 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
             </div>
           </div>
 
-          {/* Mapa Incrustado Responsivo con Pin Exacto */}
-          <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative h-48 sm:h-56 bg-slate-100 group">
-            <iframe
-              title="Ubicación Distribuidora Baby World"
-              src="https://maps.google.com/maps?q=3.4116568,-76.4553798&hl=es&z=17&output=embed"
-              className="w-full h-full border-0"
-              loading="lazy"
-              allowFullScreen
-            />
-            {/* Botón flotante para abrir en pantalla completa en Google Maps */}
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute bottom-2.5 right-2.5 px-3 py-1.5 bg-white/95 hover:bg-white text-slate-800 text-[11px] font-bold rounded-xl shadow-md border border-slate-200 flex items-center gap-1.5 backdrop-blur-xs transition-all active:scale-95"
-            >
-              <span>Abrir en Maps</span>
-              <ExternalLink size={12} className="text-sky-600" />
-            </a>
-          </div>
-
-          {/* Ventajas y Servicios en Tienda */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-sky-50/60 border border-sky-100 rounded-xl space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-sky-900">
-                <ShoppingBag size={15} className="text-sky-600" />
-                <span>Recogida Inmediata</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                Haz tu pedido en línea o por WhatsApp y retíralo directamente en nuestra tienda sin costos de envío.
-              </p>
-            </div>
-
-            <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-900">
-                <CreditCard size={15} className="text-emerald-600" />
-                <span>Medios de Pago en Local</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                Recibimos efectivo, transferencias (Nequi, Daviplata, Bancolombia), Addi, Sistecrédito y tarjetas.
-              </p>
-            </div>
-          </div>
 
           {/* Horarios de Atención Reales */}
           <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-xs text-slate-700">
@@ -235,6 +192,29 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
                   <span className="text-[10px] text-sky-600 font-semibold">(Jornada continua)</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Ventajas y Servicios en Tienda */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <div className="p-3 bg-sky-50/60 border border-sky-100 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                <ShoppingBag size={15} className="text-sky-600" />
+                <span>Recogida Inmediata</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                Haz tu pedido en línea o WhatsApp y retíralo directamente en tienda sin costos de envío.
+              </p>
+            </div>
+
+            <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                <CreditCard size={15} className="text-emerald-600" />
+                <span>Medios de Pago en Local</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                Recibimos efectivo, transferencias (Nequi, Daviplata), Addi, Sistecrédito y tarjetas.
+              </p>
             </div>
           </div>
         </div>
