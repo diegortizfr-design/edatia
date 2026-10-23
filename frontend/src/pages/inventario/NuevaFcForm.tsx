@@ -190,6 +190,10 @@ export function NuevaFcForm() {
     let tasaIva = 0.19
     if (item.tipoIva === 'EXENTO' || item.tipoIva === 'EXCLUIDO') tasaIva = 0
     else if (item.tipoIva === 'IVA_5' || item.tipoIva === 'GRAVADO_5') tasaIva = 0.05
+    else if (typeof item.tipoIva === 'string' && item.tipoIva.startsWith('GRAVADO_')) {
+      const p = parseFloat(item.tipoIva.replace('GRAVADO_', ''))
+      if (!isNaN(p)) tasaIva = p / 100
+    }
     const ivaCalc = subtotal * tasaIva
 
     return { ...item, subtotalCalc: subtotal, ivaCalc }

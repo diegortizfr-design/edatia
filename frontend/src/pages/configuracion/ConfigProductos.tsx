@@ -212,7 +212,7 @@ const DEFAULT_FORM = {
   observacion: '',
   liquidarIva: true,
   productoExentoIva: false,
-  appliedTaxIds: ['iva_19'] as string[],
+  appliedTaxIds: [] as string[],
 }
 
 const DEFAULT_SYSTEM_IMPUESTOS = [
@@ -273,7 +273,7 @@ export function ConfigProductos() {
   const [importError, setImportError] = useState<string | null>(null)
 
   // Cost taxes state
-  const [costTaxIds, setCostTaxIds] = useState<string[]>(['iva_19'])
+  const [costTaxIds, setCostTaxIds] = useState<string[]>([])
 
   // Filters State
   const [filterSku, setFilterSku] = useState('')
@@ -316,16 +316,39 @@ export function ConfigProductos() {
   const tags: MasterItem[] = tagData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
   const systemTaxes: any[] = taxData.length > 0 ? taxData : DEFAULT_SYSTEM_IMPUESTOS
 
+  // Helper para verificar si un impuesto está seleccionado considerando id o aliases legados
+  const isTaxSelected = (taxId: string | number, selectedList: string[]) => {
+    const sId = String(taxId)
+    if (selectedList.includes(sId)) return true
+    const taxObj = systemTaxes.find(t => String(t.id) === sId)
+    if (!taxObj) return false
+    if (selectedList.includes('iva_19') && Number(taxObj.tarifa) === 19) return true
+    if (selectedList.includes('iva_5') && Number(taxObj.tarifa) === 5) return true
+    return false
+  }
+
+  // Obtener IDs de impuestos por defecto del sistema
+  const getDefaultTaxIds = () => {
+    const activeIva = systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.estado === 'ACTIVO' || t.activo !== false))
+    if (activeIva.length === 0) return []
+    const def = activeIva.find(t => t.esDefecto) || activeIva[0]
+    return [String(def.id)]
+  }
+
   const getAppliedTaxRate = (pForm: any) => {
     if (!pForm) return 0
     if (pForm.productoExentoIva) return 0 // Exento de todo impuesto -> 0%
-    if (!pForm.liquidarIva) return 0 // No liquidar impuestos seleccionados -> 0% (keeps checklist editable)
+    if (!pForm.liquidarIva) return 0 // No liquidar impuestos seleccionados -> 0%
 
     let rate = 0
-    if (!pForm.appliedTaxIds) return 0
+    if (!pForm.appliedTaxIds || !Array.isArray(pForm.appliedTaxIds)) return 0
     pForm.appliedTaxIds.forEach((taxId: string) => {
-      // Find either by ID (from defaults) or by code / id string
-      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
+      const tax = systemTaxes.find(t => 
+        String(t.id) === String(taxId) || 
+        String(t.nombre) === String(taxId) ||
+        (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
+        (taxId === 'iva_5' && Number(t.tarifa) === 5)
+      )
       if (tax && tax.activo !== false) {
         rate += Number(tax.tarifa || tax.porcentaje) || 0
       }
@@ -442,18 +465,25 @@ export function ConfigProductos() {
   useEffect(() => {
     const baseCost = Number(formData.costo) || 0
     let rate = 0
-    costTaxIds.forEach((taxId) => {
-      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
-      if (tax && tax.activo !== false) {
-        rate += Number(tax.tarifa || tax.porcentaje) || 0
-      }
-    })
+    if (!formData.productoExentoIva && formData.liquidarIva !== false) {
+      costTaxIds.forEach((taxId) => {
+        const tax = systemTaxes.find(t => 
+          String(t.id) === String(taxId) || 
+          String(t.nombre) === String(taxId) ||
+          (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
+          (taxId === 'iva_5' && Number(t.tarifa) === 5)
+        )
+        if (tax && tax.activo !== false) {
+          rate += Number(tax.tarifa || tax.porcentaje) || 0
+        }
+      })
+    }
     const integratedCost = baseCost * (1 + rate / 100)
     setFormData(prev => ({
       ...prev,
       costoI: Math.round(integratedCost)
     }))
-  }, [formData.costo, costTaxIds, systemTaxes])
+  }, [formData.costo, formData.productoExentoIva, formData.liquidarIva, costTaxIds, systemTaxes])
 
   const showNotification = (msg: string) => {
     setSuccessMsg(msg)
@@ -741,11 +771,14 @@ export function ConfigProductos() {
 
   const handleOpenNew = () => {
     setEditingId(null)
+    const defTaxes = getDefaultTaxIds()
     setFormData({
       ...DEFAULT_FORM,
+      appliedTaxIds: defTaxes,
+      liquidarIva: defTaxes.length > 0,
       precios: Array(11).fill(0)
     })
-    setCostTaxIds(['iva_19'])
+    setCostTaxIds(defTaxes)
     setError(null)
     setBarcodeInput('')
     setShowBarcodeModal(true)
@@ -763,6 +796,24 @@ export function ConfigProductos() {
 
   const handleOpenEdit = (p: any) => {
     setEditingId(p.id)
+    let initialTaxes: string[] = []
+    const isExempt = p.extData?.productoExentoIva || p.productoExentoIva || p.liquidarIva === false || p.tipoIva === 'EXENTO' || p.tipoIva === 'EXCLUIDO'
+    if (!isExempt) {
+      const savedTaxes = Array.isArray(p.extData?.appliedTaxIds) && p.extData.appliedTaxIds.length > 0
+        ? p.extData.appliedTaxIds
+        : (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length > 0 ? p.appliedTaxIds : [])
+
+      if (savedTaxes.length > 0) {
+        initialTaxes = savedTaxes.map(String)
+      } else if (p.tipoIva === 'GRAVADO_5' || p.tipoIva === 'IVA_5') {
+        const t5 = systemTaxes.find(t => Number(t.tarifa) === 5)
+        if (t5) initialTaxes = [String(t5.id)]
+      } else {
+        const def = systemTaxes.find(t => t.esDefecto) || systemTaxes.find(t => Number(t.tarifa) === 19) || systemTaxes[0]
+        if (def) initialTaxes = [String(def.id)]
+      }
+    }
+
     setFormData({
       ...DEFAULT_FORM,
       ...p.extData,
@@ -772,10 +823,10 @@ export function ConfigProductos() {
       activo: p.activo,
       publicadoWeb: !!p.publicadoWeb,
       precioWeb: p.precioWeb || 0,
+      appliedTaxIds: initialTaxes,
+      liquidarIva: !isExempt && initialTaxes.length > 0,
+      productoExentoIva: !!isExempt,
     })
-    const initialTaxes = Array.isArray(p.extData?.appliedTaxIds)
-      ? p.extData.appliedTaxIds
-      : ((p.tipoIva === 'EXENTO' || p.tipoIva === 'EXCLUIDO' || p.productoExentoIva || p.liquidarIva === false) ? [] : ['iva_19'])
     setCostTaxIds(initialTaxes)
     setError(null)
     setViewMode('form')
@@ -862,9 +913,13 @@ export function ConfigProductos() {
         ? 'EXENTO' 
         : (costTaxIds.length === 0 || !formData.liquidarIva) 
           ? 'EXCLUIDO' 
-          : (costTaxIds.includes('iva_5') || costTaxIds.some((t: string) => t.toLowerCase().includes('5'))) 
-            ? 'GRAVADO_5' 
-            : 'GRAVADO_19',
+          : (() => {
+              const selectedTaxes = systemTaxes.filter(t => isTaxSelected(t.id, costTaxIds))
+              const rate = selectedTaxes.reduce((acc, t) => acc + (Number(t.tarifa) || 0), 0)
+              if (rate === 5) return 'GRAVADO_5'
+              if (rate === 19) return 'GRAVADO_19'
+              return rate > 0 ? `GRAVADO_${rate}` : 'EXCLUIDO'
+            })(),
     }
 
     if (!editingId && formData.sku) {
@@ -1992,15 +2047,16 @@ export function ConfigProductos() {
                     <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Impuestos Aplicados al Costo</label>
                     <div className="flex flex-wrap gap-1.5 mt-0.5">
                       {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').map(tax => {
-                        const isChecked = costTaxIds.includes(tax.id)
+                        const isChecked = isTaxSelected(tax.id, costTaxIds)
+                        const sId = String(tax.id)
                         return (
                           <button
                             key={tax.id}
                             type="button"
                             onClick={() => {
                               const updated = isChecked
-                                ? costTaxIds.filter(id => id !== tax.id)
-                                : [...costTaxIds, tax.id]
+                                ? costTaxIds.filter(id => id !== sId && id !== 'iva_19' && id !== 'iva_5' && id !== tax.nombre)
+                                : [...costTaxIds.filter(id => id !== 'iva_19' && id !== 'iva_5'), sId]
                               setCostTaxIds(updated)
                               setFormData(prev => ({
                                 ...prev,
@@ -2176,10 +2232,11 @@ export function ConfigProductos() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').map(tax => {
-                      const isChecked = formData.appliedTaxIds.includes(tax.id)
+                      const isChecked = isTaxSelected(tax.id, costTaxIds)
                       const isExempt = formData.productoExentoIva
                       const isNotLiquidated = !formData.liquidarIva
-                      const displayRate = isExempt || isNotLiquidated ? 0 : tax.tarifa
+                      const displayRate = isExempt || isNotLiquidated ? 0 : (tax.tarifa || tax.porcentaje)
+                      const sId = String(tax.id)
 
                       return (
                         <label 
@@ -2198,8 +2255,8 @@ export function ConfigProductos() {
                             checked={isChecked && !isExempt}
                             onChange={() => {
                               const updated = isChecked
-                                ? formData.appliedTaxIds.filter(id => id !== tax.id)
-                                : [...formData.appliedTaxIds, tax.id]
+                                ? costTaxIds.filter(id => id !== sId && id !== 'iva_19' && id !== 'iva_5' && id !== tax.nombre)
+                                : [...costTaxIds.filter(id => id !== 'iva_19' && id !== 'iva_5'), sId]
                               setFormData(prev => ({ 
                                 ...prev, 
                                 appliedTaxIds: updated,

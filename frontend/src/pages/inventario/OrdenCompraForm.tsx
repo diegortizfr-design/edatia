@@ -6,6 +6,7 @@ import {
   createOrdenCompra,
 } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
+import { getImpuestos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
 
@@ -44,6 +45,54 @@ export function OrdenCompraForm() {
     enabled: busqueda.length >= 2,
   })
 
+  // Obtener impuestos del sistema (Configuración > General > Impuestos)
+  const { data: impuestos = [] } = useQuery({ queryKey: ['impuestos'], queryFn: getImpuestos })
+  const impuestosIva = impuestos.filter((imp: any) => 
+    (imp.tipo === 'IVA' || imp.tipo === 'CONSUMO') && 
+    imp.activo !== false && 
+    imp.estado !== 'INACTIVO' &&
+    imp.retencionCompra !== true
+  )
+
+  function resolveProductoIva(producto: any): number {
+    const isExento = producto.productoExentoIva === true || 
+                     producto.liquidarIva === false || 
+                     producto.tipoIva === 'EXENTO' || 
+                     producto.tipoIva === 'EXCLUIDO' ||
+                     (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
+    if (isExento) return 0
+
+    // 1. Resolver por appliedTaxIds buscando en los impuestos del sistema
+    if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length > 0) {
+      for (const taxId of producto.appliedTaxIds) {
+        const matching = impuestos.find((t: any) => 
+          String(t.id) === String(taxId) || 
+          (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
+          (taxId === 'iva_5' && Number(t.tarifa) === 5)
+        )
+        if (matching && Number(matching.tarifa) >= 0) {
+          return Number(matching.tarifa)
+        }
+      }
+    }
+
+    // 2. Resolver por tipoIva estándar
+    if (producto.tipoIva === 'GRAVADO_5' || producto.tipoIva === 'IVA_5') return 5
+    if (producto.tipoIva === 'GRAVADO_19' || producto.tipoIva === 'IVA_19') return 19
+    if (typeof producto.tipoIva === 'string' && producto.tipoIva.startsWith('GRAVADO_')) {
+      const parsed = parseFloat(producto.tipoIva.replace('GRAVADO_', ''))
+      if (!isNaN(parsed)) return parsed
+    }
+
+    // 3. Fallback a impuesto por defecto configurado
+    if (impuestosIva.length > 0) {
+      const def = impuestosIva.find((t: any) => t.esDefecto) || impuestosIva[0]
+      return Number(def.tarifa) || 0
+    }
+
+    return 19
+  }
+
   // Filter documents by type 'OC' and active state, matching destination sucursal
   const bodegaSeleccionada = bodegas.find(b => b.id === Number(header.bodegaId))
   const sucursalId = bodegaSeleccionada?.sucursalId
@@ -76,20 +125,8 @@ export function OrdenCompraForm() {
     // Priorizar costo unitario base del catálogo, luego promedio, luego último
     const costoSugerido = Number(producto.costo) || Number(producto.costoPromedio) || Number(producto.costoUltimo) || 0
 
-    // Detectar si el producto viene con IVA o sin IVA según su configuración
-    const isExento = producto.productoExentoIva === true || 
-                     producto.liquidarIva === false || 
-                     producto.tipoIva === 'EXENTO' || 
-                     producto.tipoIva === 'EXCLUIDO' ||
-                     (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
-
-    let ivaPct = 0
-    if (!isExento) {
-      if (producto.tipoIva === 'GRAVADO_5') ivaPct = 5
-      else if (producto.tipoIva === 'GRAVADO_19') ivaPct = 19
-      else if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.some((t: string) => t.includes('5'))) ivaPct = 5
-      else if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.some((t: string) => t.includes('19'))) ivaPct = 19
-    }
+    // Detectar si el producto viene con IVA o sin IVA según su configuración e impuestos del sistema
+    const ivaPct = resolveProductoIva(producto)
 
     setItems(prev => [...prev, {
       productoId: producto.id,
@@ -246,13 +283,8 @@ export function OrdenCompraForm() {
             {busqueda.length >= 2 && !buscando && sugerencias.length > 0 && (
               <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
                 {sugerencias.map(p => {
-                  const isExento = p.productoExentoIva === true || 
-                                   p.liquidarIva === false || 
-                                   p.tipoIva === 'EXENTO' || 
-                                   p.tipoIva === 'EXCLUIDO' ||
-                                   (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length === 0)
-                  const costoBase = Number(p.costo) || Number(p.costoPromedio) || Number(p.costoUltimo) || 0
-                  const labelIva = isExento ? 'Sin IVA' : p.tipoIva === 'GRAVADO_5' ? 'IVA 5%' : 'IVA 19%'
+                  const ivaPctProd = resolveProductoIva(p)
+                  const labelIva = ivaPctProd === 0 ? 'Sin IVA' : `IVA ${ivaPctProd}%`
 
                   return (
                     <button key={p.id} type="button" onClick={() => addItem(p)}
@@ -342,8 +374,15 @@ export function OrdenCompraForm() {
                           }`}
                         >
                           <option value={0}>0% (Sin IVA)</option>
-                          <option value={5}>5% (IVA 5%)</option>
-                          <option value={19}>19% (IVA 19%)</option>
+                          {impuestosIva.map((imp: any) => (
+                            <option key={imp.id} value={Number(imp.tarifa)}>
+                              {imp.tarifa}% ({imp.nombre})
+                            </option>
+                          ))}
+                          {/* Fallback si el ítem tiene un porcentaje no presente en los activos */}
+                          {item.ivaPct > 0 && !impuestosIva.some((imp: any) => Number(imp.tarifa) === Number(item.ivaPct)) && (
+                            <option value={item.ivaPct}>{item.ivaPct}% (IVA {item.ivaPct}%)</option>
+                          )}
                         </select>
                         {item.ivaCalc > 0 && (
                           <span className="text-[10px] text-indigo-600 block text-right mt-0.5 font-medium">
