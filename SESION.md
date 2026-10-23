@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-21 (sesión 16)
+> Última actualización: 2026-10-23 (sesión 17)
 
 ---
 
@@ -23,8 +23,8 @@ web               → ERP React (Caddy)
 landing           → HTML estático (Caddy)
 manager           → Manager React (Caddy)
 glowxir           → Tienda Virtual Baby World (Caddy)
+herramientas      → Herramientas Edatia (Caddy)
 prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19) [:3006]
-prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 ```
 
 ### Credenciales
@@ -33,6 +33,24 @@ prestamos-studio  → Prisma Studio Gestor BD Préstamos [:5555]
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 17) — 2026-10-23
+
+✅ **Verificación Post-Pull, Sincronización de Inventario y Migración Segura en Producción:**
+  - **Validación Post-Pull (PR #21):**
+    - Se verificaron cambios incorporados desde la rama `Diego` referentes al módulo de Inventario (`ControlExistencias.tsx`, `Bodegas.tsx`, `Movimientos.tsx`, `stock.service.ts`, `movimientos.service.ts`) y configuración de documentos (`ConfigDocumentos.tsx`).
+    - Verificación estricta de dependencias y compilación: `tsc --noEmit` en backend y Vite build en frontend completados sin errores ni librerías sueltas.
+  - **Migración Formal en Prisma (`codeModificarKardex`):**
+    - Se identificó la adición del atributo `codeModificarKardex` en `ConfiguracionERP` de `schema.prisma`.
+    - Para asegurar trazabilidad y coherencia en entornos limpios, se creó la migración oficial `20261023020000_add_code_modificar_kardex` con sentencia segura idempotente (`ADD COLUMN IF NOT EXISTS`).
+    - Se ejecutó `prisma migrate deploy`, registrando la migración en `_prisma_migrations` sin tiempo de inactividad ni impacto sobre los datos existentes.
+  - **Optimización de Empaquetado Frontend:**
+    - Se configuró la partición de bundles en `frontend/vite.config.ts`, aislando los iconos vectoriales (`lucide-react`) en un chunk independiente (`icons`), optimizando el tiempo de carga del bundle principal.
+  - **Despliegue y Salud Operativa:**
+    - Respaldo preventivo completo generado en `backups/backup_20261023_014910`.
+    - Reconstrucción de imágenes y despliegue exitoso con `deploy.sh`. Todos los 8 contenedores (`edatia-backend`, `edatia-frontend`, `edatia-db`, `edatia-manager`, `edatia-landing`, `edatia-glowxir`, `edatia-herramientas`, `edatia-prestamos`) 100% operativos y saludables en producción.
+
+---
 
 ## Estado resuelto (sesión 16)
 
@@ -637,4 +655,32 @@ VITE_API_URL=https://api.edatia.com
   - `prestamos_edatia`: Restauración 100% limpia sin errores (46 préstamos, 28 clientes, cronogramas y pagos).
   - `herramientas_edatia`: Restauración 100% limpia sin errores.
   - `edatia_erp`: Restauración operacional completa de la Empresa 2 (*Distribuidora Baby World* - 149 productos, usuarios, etc.). Se documentó la presencia de registros huérfanos residuales pertenecientes a las empresas demo 1 y 3 (eliminadas en sesiones previas).
+
+## Sesión 2026-10-22 - Optimización, Unificación de Toasters y Robustecimiento de Terceros
+
+**Backend (Gestión de Terceros y Relaciones Multi-Rol):**
+- **Validación y sanitización en `CreateTerceroDto` y `UpdateTerceroDto`:**
+  - Flexibilización de validación en `tipoDocumento` (`@IsString() @IsOptional()`).
+  - Limpieza y verificación de `vendedorAsignadoId` garantizando que pertenezca a la empresa y esté activo.
+- **Gestión inteligente de duplicados y reactivación:**
+  - Si un tercero ya existe con el documento proporcionado dentro de la empresa, el backend evalúa si ya posee el rol activo solicitado (arrojando `ConflictException` específico por rol) o si posee otro rol.
+  - En caso de rol complementario (ej. un proveedor que ahora se registra como cliente) o tercero previamente desactivado (`activo === false`), se actualiza la entidad activando el nuevo rol y sincronizando sus datos y sucursales sin duplicar registros contables ni violar la restricción única `[empresaId, tipoDocumento, numeroDocumento]`.
+  - Soporte de roles extendido a `esColaborador` y `esVendedor`.
+- **Protección de Sucursales en Actualizaciones Parciales:**
+  - En `update`, la purga y reemplazo de sucursales relacionales ahora se ejecuta únicamente si se envía la propiedad `sucursales` (`if (sucursales !== undefined)`), evitando el borrado involuntario de sucursales en llamadas parciales desde el frontend.
+
+**Frontend (Centralización de Notificaciones y Limpieza de Código):**
+- **Toaster Global Unificado:**
+  - Centralización del componente `<Toaster position="top-right" />` en la raíz de la aplicación (`App.tsx`).
+  - Remoción de 10 instancias locales de `<Toaster />` en `ConfigTerceroForm`, `Clientes`, `Proveedores`, `ConfigFormatosImpresion`, `ConfigGeolocalizacion`, `ConfigDocumentos`, `ConfigTercerosExtra`, `ConfigArchivo`, `ConfigContable` y `ConfigSucursales`, previniendo duplicidad de toasts y solapamientos en UI.
+- **Correcciones y Tipado en `ConfigTerceroForm.tsx`:**
+  - Corrección de typo en la subida de adjuntos (`progreso: progress`).
+  - Inclusión de la propiedad obligatoria `clasificacion: 'General'` en `DEFAULT_TERCERO` satisfaciendo la interfaz `Tercero`.
+  - Tipado explícito de parámetros en callbacks de listas geográficas (`p`, `d`, `c`).
+  - Sincronización e invalidación reactiva de cache en React Query para `terceros-erp`, `clientes`, `proveedores`, `vendedores` y `tercero-detail`.
+
+**Infraestructura y Despliegue:**
+- Compilación de TypeScript en backend (`tsc`) y frontend (`vite build`) con 0 errores.
+- Reconstrucción de imágenes Docker y despliegue en caliente de los servicios `api` (`edatia-backend`) y `web` (`edatia-frontend`) mediante Docker Compose.
+- Verificación de estado `healthy` y disponibilidad continua del servicio.
 

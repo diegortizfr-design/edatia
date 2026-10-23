@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Truck, Pencil, Trash2, Phone, Mail, Clock, CreditCard, MapPin } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, deleteProveedor } from '../../services/inventario.service'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { getApiError } from '../../services/api'
 
 export function Proveedores() {
@@ -49,7 +49,6 @@ export function Proveedores() {
 
   return (
     <div className="space-y-6">
-      <Toaster position="top-right" />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
