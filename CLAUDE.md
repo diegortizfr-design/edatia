@@ -62,7 +62,7 @@ edatia/
 │   ├── Dockerfile
 │   └── Caddyfile
 ├── landing/               # HTML estático (edatia.com)
-├── tiendas-virtuales/     # Storefronts e-commerce (distribuidorababyworld conectado al ERP)
+├── tiendas-virtuales/     # Storefronts e-commerce (distribuidorababyworld conectado al ERP con geolocalización GPS y BNPL)
 ├── docker-compose.yml     # 8 servicios: db, api, web, landing, manager, herramientas, glowxir, prestamos
 ├── deploy.sh              # Script de despliegue con validaciones y backup preventivo
 ├── backup.sh              # Respaldo completo (PostgreSQL, uploads, .env) con retención de 14 días
