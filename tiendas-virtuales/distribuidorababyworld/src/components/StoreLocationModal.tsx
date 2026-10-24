@@ -1,15 +1,12 @@
 import React, { useState } from 'react'
 import {
-  MapPin,
   Clock,
   Store,
   X,
   ExternalLink,
   Copy,
   Check,
-  ShoppingBag,
-  CreditCard,
-  Truck
+  CreditCard
 } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { GoogleMapsIcon } from './GoogleMapsIcon'

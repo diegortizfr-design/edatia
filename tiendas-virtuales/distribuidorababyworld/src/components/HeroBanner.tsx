@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck } from 'lucide-react'
+import { Sparkles, Star, Heart, Truck } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { LocationPinIcon } from './LocationPinIcon'
 

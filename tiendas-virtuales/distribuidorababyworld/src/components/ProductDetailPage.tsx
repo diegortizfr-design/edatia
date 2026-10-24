@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
-  Truck, ShieldCheck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, PackageCheck, MapPin
+  Truck, HeartHandshake, Share2, Plus, Minus,
+  ChevronRight, PackageCheck
 } from 'lucide-react'
 import { LocationPinIcon } from './LocationPinIcon'
 import { Product } from '../data/productos'

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, MapPin, Truck, Store, Clock, Navigation, ExternalLink } from 'lucide-react'
+import { Shield, Truck, Store, Clock, Navigation } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
@@ -16,6 +16,7 @@ import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
+import { LocationPinIcon } from './components/LocationPinIcon'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
@@ -507,8 +508,8 @@ export function App() {
               {/* Tarjeta interactiva de tienda física */}
               <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5 text-xs shadow-2xs">
                 <div className="flex items-start gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700 shrink-0 mt-0.5">
-                    <MapPin size={15} />
+                  <div className="p-1 rounded-xl bg-rose-50 border border-rose-100/80 shrink-0 mt-0.5 flex items-center justify-center">
+                    <LocationPinIcon size={16} />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
