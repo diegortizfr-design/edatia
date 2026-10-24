@@ -1,12 +1,13 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck, Store } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
+  onOpenLocation?: () => void
 }
 
-export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
+export function HeroBanner({ onSelectCategory, onOpenLocation }: HeroBannerProps) {
   return (
     <div className="relative bg-gradient-to-b from-pink-50/40 via-white to-amber-50/30 border-b border-slate-100 pt-8 pb-16 sm:pt-14 sm:pb-24 overflow-hidden">
       
@@ -89,10 +90,23 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               </div>
               <span>Crédito Addi & Sistecrédito</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck size={15} className="text-emerald-500" />
-              <span>100% Garantizado</span>
-            </div>
+            {onOpenLocation ? (
+              <button
+                type="button"
+                onClick={onOpenLocation}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-slate-800 hover:text-sky-700 transition-all shadow-2xs group cursor-pointer active:scale-95"
+                title="Toca para ver la ubicación de la tienda física y horarios"
+              >
+                <Store size={15} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                <span className="font-extrabold">Tienda física Manuela Beltrán</span>
+                <span className="text-[10px] text-sky-600 font-bold ml-0.5 group-hover:translate-x-0.5 transition-transform">↗</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Store size={15} className="text-emerald-500" />
+                <span>Tienda física Manuela Beltrán</span>
+              </div>
+            )}
           </div>
 
         </div>

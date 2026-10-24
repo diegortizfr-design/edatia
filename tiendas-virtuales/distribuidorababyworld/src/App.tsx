@@ -349,7 +349,10 @@ export function App() {
           {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
           {activeCategory === 'Todos' && !searchQuery && (
             <>
-              <HeroBanner onSelectCategory={handleCategorySelect} />
+              <HeroBanner 
+                onSelectCategory={handleCategorySelect} 
+                onOpenLocation={() => setIsLocationModalOpen(true)}
+              />
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
