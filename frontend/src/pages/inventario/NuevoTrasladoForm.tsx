@@ -68,17 +68,25 @@ export function NuevoTrasladoForm() {
     }
   }, [queryProducto])
 
-  // Auto-seleccionar sucursales si solo hay una activa
+  // En la base de datos, el modelo Sucursal maneja estado: 'ACTIVO' | 'INACTIVO'
+  const isSucursalActiva = (s: any) => s.estado === 'ACTIVO' || s.activo === true || (!s.estado && s.activo !== false)
+  const sucursalesActivas = sucursales.filter(isSucursalActiva)
+
+  // Auto-seleccionar sucursal si hay al menos una activa y no hay seleccionada aún
   useEffect(() => {
-    const activas = sucursales.filter((s: any) => s.activo)
-    if (activas.length === 1 && !sucursalMismaId) {
-      setSucursalMismaId(String(activas[0].id))
+    if (sucursalesActivas.length > 0) {
+      if (!sucursalMismaId) {
+        setSucursalMismaId(String(sucursalesActivas[0].id))
+      }
+      if (!sucursalOrigenId) {
+        setSucursalOrigenId(String(sucursalesActivas[0].id))
+      }
+      if (sucursalesActivas.length >= 2 && !sucursalDestinoId) {
+        const alt = sucursalesActivas.find((s: any) => String(s.id) !== String(sucursalesActivas[0].id))
+        if (alt) setSucursalDestinoId(String(alt.id))
+      }
     }
-    if (activas.length >= 2 && !sucursalOrigenId && !sucursalDestinoId) {
-      setSucursalOrigenId(String(activas[0].id))
-      setSucursalDestinoId(String(activas[1].id))
-    }
-  }, [sucursales, sucursalMismaId, sucursalOrigenId, sucursalDestinoId])
+  }, [sucursalesActivas, sucursalMismaId, sucursalOrigenId, sucursalDestinoId])
 
   // Soporte para query params (origenId)
   useEffect(() => {
@@ -97,10 +105,11 @@ export function NuevoTrasladoForm() {
   // Bodegas de origen disponibles según la modalidad
   const bodegasOrigenDisponibles = bodegas.filter((b: any) => {
     if (!b.activo) return false
+    if (sucursalesActivas.length === 0) return true
     if (tipoTraslado === 'MISMA_SUCURSAL') {
-      return !sucursalMismaId || Number(b.sucursalId) === Number(sucursalMismaId)
+      return !sucursalMismaId || Number(b.sucursalId) === Number(sucursalMismaId) || !b.sucursalId
     } else {
-      return !sucursalOrigenId || Number(b.sucursalId) === Number(sucursalOrigenId)
+      return !sucursalOrigenId || Number(b.sucursalId) === Number(sucursalOrigenId) || !b.sucursalId
     }
   })
 
@@ -108,10 +117,11 @@ export function NuevoTrasladoForm() {
   const bodegasDestinoDisponibles = bodegas.filter((b: any) => {
     if (!b.activo) return false
     if (String(b.id) === String(bodegaOrigenId)) return false
+    if (sucursalesActivas.length === 0) return true
     if (tipoTraslado === 'MISMA_SUCURSAL') {
-      return !sucursalMismaId || Number(b.sucursalId) === Number(sucursalMismaId)
+      return !sucursalMismaId || Number(b.sucursalId) === Number(sucursalMismaId) || !b.sucursalId
     } else {
-      return !sucursalDestinoId || Number(b.sucursalId) === Number(sucursalDestinoId)
+      return !sucursalDestinoId || Number(b.sucursalId) === Number(sucursalDestinoId) || !b.sucursalId
     }
   })
 
@@ -207,10 +217,13 @@ export function NuevoTrasladoForm() {
     e.preventDefault()
     setError(null)
 
-    if (tipoTraslado === 'MISMA_SUCURSAL' && !sucursalMismaId) {
+    if (tipoTraslado === 'MISMA_SUCURSAL' && sucursalesActivas.length > 0 && !sucursalMismaId) {
       return setError('Seleccione la sucursal del traslado interno.')
     }
     if (tipoTraslado === 'INTER_SUCURSAL') {
+      if (sucursalesActivas.length < 2) {
+        return setError('Se requieren al menos 2 sucursales registradas para traslados entre sucursales.')
+      }
       if (!sucursalOrigenId) return setError('Seleccione la sucursal de origen.')
       if (!sucursalDestinoId) return setError('Seleccione la sucursal de destino.')
       if (sucursalOrigenId === sucursalDestinoId) {
@@ -371,31 +384,40 @@ export function NuevoTrasladoForm() {
             {tipoTraslado === 'MISMA_SUCURSAL' && (
               <div className="space-y-4">
                 {/* Selector de la Sucursal */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Sucursal donde se realizará el traslado *
-                  </label>
-                  <select
-                    value={sucursalMismaId}
-                    onChange={e => {
-                      setSucursalMismaId(e.target.value)
-                      setBodegaOrigenId('')
-                      setBodegaDestinoId('')
-                      setProductoSeleccionado(null)
-                      setCantidad('')
-                      setDocumentoId('')
-                    }}
-                    required
-                    className={inputCls}
-                  >
-                    <option value="">— Seleccionar sucursal —</option>
-                    {sucursales.filter((s: any) => s.activo).map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nombre} ({s.codigo}) {s.esCasaMatriz ? '★ Sede Principal' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {sucursalesActivas.length > 0 ? (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                      Sucursal donde se realizará el traslado *
+                    </label>
+                    <select
+                      value={sucursalMismaId}
+                      onChange={e => {
+                        setSucursalMismaId(e.target.value)
+                        setBodegaOrigenId('')
+                        setBodegaDestinoId('')
+                        setProductoSeleccionado(null)
+                        setCantidad('')
+                        setDocumentoId('')
+                      }}
+                      required
+                      className={inputCls}
+                    >
+                      <option value="">— Seleccionar sucursal —</option>
+                      {sucursalesActivas.map((s: any) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre} ({s.codigo})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-500 flex items-center justify-between">
+                    <span className="font-semibold text-slate-700">Sede Principal (Empresa)</span>
+                    <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">
+                      Sin sucursales múltiples
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Bodega Origen */}
@@ -407,21 +429,19 @@ export function NuevoTrasladoForm() {
                       value={bodegaOrigenId}
                       onChange={e => handleCambioBodegaOrigen(e.target.value)}
                       required
-                      disabled={!sucursalMismaId}
                       className={inputCls}
                     >
                       <option value="">— Seleccionar bodega origen —</option>
-                      {bodegasOrigenDisponibles.map(b => {
-                        const cnt = b._count?.stock ?? ''
-                        return (
-                          <option key={b.id} value={b.id}>
-                            {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
-                          </option>
-                        )
-                      })}
+                      {bodegasOrigenDisponibles.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
+                        </option>
+                      ))}
                     </select>
-                    {!sucursalMismaId && (
-                      <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la sucursal.</p>
+                    {bodegasOrigenDisponibles.length === 0 && (
+                      <p className="text-[10px] text-amber-600 mt-1">
+                        No hay bodegas registradas para esta sucursal.
+                      </p>
                     )}
                   </div>
 
@@ -440,13 +460,17 @@ export function NuevoTrasladoForm() {
                       <option value="">— Seleccionar bodega destino —</option>
                       {bodegasDestinoDisponibles.map(b => (
                         <option key={b.id} value={b.id}>
-                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
+                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
                         </option>
                       ))}
                     </select>
-                    {!bodegaOrigenId && (
+                    {!bodegaOrigenId ? (
                       <p className="text-[10px] text-slate-400 mt-1">Seleccione primero la bodega origen.</p>
-                    )}
+                    ) : bodegasDestinoDisponibles.length === 0 ? (
+                      <p className="text-[10px] text-amber-600 mt-1">
+                        Se requieren al menos 2 bodegas en esta sucursal para realizar traslados internos.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -454,120 +478,126 @@ export function NuevoTrasladoForm() {
 
             {/* CASO B: TRASLADO ENTRE DIFERENTES SUCURSALES */}
             {tipoTraslado === 'INTER_SUCURSAL' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl">
-                {/* LADO ORIGEN */}
-                <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs border-b border-indigo-100 pb-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                    <span>1. Punto de Salida (Origen)</span>
+              <div className="space-y-4">
+                {sucursalesActivas.length < 2 && (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-xs flex items-center gap-2">
+                    <AlertTriangle size={16} className="shrink-0 text-amber-600" />
+                    <span>
+                      Tienes <strong>{sucursalesActivas.length}</strong> sucursal(es) registrada(s). Para realizar traslados inter-sucursales requieres al menos 2 sucursales registradas en Configuración &gt; Sucursales.
+                    </span>
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                      Sucursal de Origen *
-                    </label>
-                    <select
-                      value={sucursalOrigenId}
-                      onChange={e => {
-                        const newSuc = e.target.value
-                        setSucursalOrigenId(newSuc)
-                        setBodegaOrigenId('')
-                        setProductoSeleccionado(null)
-                        setCantidad('')
-                        setDocumentoId('')
-                        if (sucursalDestinoId === newSuc) {
-                          const altDest = sucursales.find((s: any) => s.activo && String(s.id) !== newSuc)
-                          setSucursalDestinoId(altDest ? String(altDest.id) : '')
-                          setBodegaDestinoId('')
-                        }
-                      }}
-                      required
-                      className={inputCls}
-                    >
-                      <option value="">— Seleccionar sucursal origen —</option>
-                      {sucursales.filter((s: any) => s.activo).map((s: any) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nombre} ({s.codigo})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl">
+                  {/* LADO ORIGEN */}
+                  <div className="space-y-3.5">
+                    <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs border-b border-indigo-100 pb-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                      <span>1. Punto de Salida (Origen)</span>
+                    </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                      Bodega de Origen *
-                    </label>
-                    <select
-                      value={bodegaOrigenId}
-                      onChange={e => handleCambioBodegaOrigen(e.target.value)}
-                      required
-                      disabled={!sucursalOrigenId}
-                      className={inputCls}
-                    >
-                      <option value="">— Seleccionar bodega origen —</option>
-                      {bodegasOrigenDisponibles.map(b => (
-                        <option key={b.id} value={b.id}>
-                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* LADO DESTINO */}
-                <div className="space-y-3.5">
-                  <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs border-b border-emerald-100 pb-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span>2. Punto de Llegada (Destino)</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                      Sucursal de Destino *
-                    </label>
-                    <select
-                      value={sucursalDestinoId}
-                      onChange={e => {
-                        setSucursalDestinoId(e.target.value)
-                        setBodegaDestinoId('')
-                      }}
-                      required
-                      className={inputCls}
-                    >
-                      <option value="">— Seleccionar sucursal destino —</option>
-                      {sucursales
-                        .filter((s: any) => s.activo && String(s.id) !== String(sucursalOrigenId))
-                        .map((s: any) => (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        Sucursal de Origen *
+                      </label>
+                      <select
+                        value={sucursalOrigenId}
+                        onChange={e => {
+                          const newSuc = e.target.value
+                          setSucursalOrigenId(newSuc)
+                          setBodegaOrigenId('')
+                          setProductoSeleccionado(null)
+                          setCantidad('')
+                          setDocumentoId('')
+                          if (sucursalDestinoId === newSuc) {
+                            const altDest = sucursalesActivas.find((s: any) => String(s.id) !== newSuc)
+                            setSucursalDestinoId(altDest ? String(altDest.id) : '')
+                            setBodegaDestinoId('')
+                          }
+                        }}
+                        required
+                        className={inputCls}
+                      >
+                        <option value="">— Seleccionar sucursal origen —</option>
+                        {sucursalesActivas.map((s: any) => (
                           <option key={s.id} value={s.id}>
                             {s.nombre} ({s.codigo})
                           </option>
                         ))}
-                    </select>
-                    {sucursales.length <= 1 && (
-                      <p className="text-[10px] text-amber-600 mt-1">
-                        ⚠️ Solo tienes una sucursal registrada. Para traslados inter-sucursales requieres al menos 2 sucursales.
-                      </p>
-                    )}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        Bodega de Origen *
+                      </label>
+                      <select
+                        value={bodegaOrigenId}
+                        onChange={e => handleCambioBodegaOrigen(e.target.value)}
+                        required
+                        disabled={!sucursalOrigenId}
+                        className={inputCls}
+                      >
+                        <option value="">— Seleccionar bodega origen —</option>
+                        {bodegasOrigenDisponibles.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                      Bodega de Destino *
-                    </label>
-                    <select
-                      value={bodegaDestinoId}
-                      onChange={e => setBodegaDestinoId(e.target.value)}
-                      required
-                      disabled={!sucursalDestinoId}
-                      className={inputCls}
-                    >
-                      <option value="">— Seleccionar bodega destino —</option>
-                      {bodegasDestinoDisponibles.map(b => (
-                        <option key={b.id} value={b.id}>
-                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
-                        </option>
-                      ))}
-                    </select>
+                  {/* LADO DESTINO */}
+                  <div className="space-y-3.5">
+                    <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs border-b border-emerald-100 pb-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                      <span>2. Punto de Llegada (Destino)</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        Sucursal de Destino *
+                      </label>
+                      <select
+                        value={sucursalDestinoId}
+                        onChange={e => {
+                          setSucursalDestinoId(e.target.value)
+                          setBodegaDestinoId('')
+                        }}
+                        required
+                        className={inputCls}
+                      >
+                        <option value="">— Seleccionar sucursal destino —</option>
+                        {sucursalesActivas
+                          .filter((s: any) => String(s.id) !== String(sucursalOrigenId))
+                          .map((s: any) => (
+                            <option key={s.id} value={s.id}>
+                              {s.nombre} ({s.codigo})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                        Bodega de Destino *
+                      </label>
+                      <select
+                        value={bodegaDestinoId}
+                        onChange={e => setBodegaDestinoId(e.target.value)}
+                        required
+                        disabled={!sucursalDestinoId}
+                        className={inputCls}
+                      >
+                        <option value="">— Seleccionar bodega destino —</option>
+                        {bodegasDestinoDisponibles.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.nombre} ({b.codigo}) {b.esPrincipal ? '★' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
