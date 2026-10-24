@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-23 (sesión 17)
+> Última actualización: 2026-10-24 (sesión 19)
 
 ---
 
@@ -33,6 +33,57 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 19) — 2026-10-24
+
+✅ **Reconciliación de Ramas Git, Limpieza de Entorno y Despliegue en Producción:**
+  - **Reconciliación y Sincronización de Git (`main`):**
+    - Diagnóstico de divergencia entre `main` local y `origin/main` provocada por 6 commits locales acumulados que eran únicamente merges automáticos sin código propio.
+    - Sincronización estricta e instantánea con el repositorio remoto mediante `git reset --hard origin/main` (alineado al commit `ecf64c2`).
+    - Configuración preventiva de `git config pull.rebase false` para asegurar la estrategia de reconciliación en futuros pulls.
+  - **Saneamiento de Ramas Locales:**
+    - Verificación previa de paridad en la rama `Diego`, confirmando que todos sus commits estaban completamente integrados en `main`.
+    - Eliminación segura de la rama local `Diego` (`git branch -d Diego`) sin pérdida de datos ni código pendiente.
+  - **Auditoría de Dependencias y Compilación Multi-Proyecto:**
+    - Inspección de `package.json` y `package-lock.json` en backend, frontend y tiendas virtuales: cero dependencias sueltas, rotas o desincronizadas.
+    - Verificación de compilación: backend (`tsc`) 100% libre de errores de tipos; frontend ERP (`vite build`) empaquetado en 11 s; tienda virtual Baby World (`tsc && vite build`) empaquetada en 5.7 s.
+    - Verificación de esquema en base de datos PostgreSQL (`edatia-db`): 14 migraciones de Prisma al día.
+  - **Reconstrucción y Despliegue en Caliente en Docker:**
+    - Reconstrucción de imágenes y reinicio de contenedores con `docker compose up -d --build api web glowxir`.
+    - Contenedor backend (`edatia-backend`) verificado en estado `healthy` con respuesta en 1 ms (`GET /api/v1/health`).
+    - Contenedores frontend (`edatia-frontend`) y tienda Baby World (`edatia-glowxir`) activos y sirviendo los últimos cambios a través de Caddy.
+
+---
+
+## Estado resuelto (sesión 18) — 2026-10-23
+
+✅ **Integración, Geolocalización y Experiencia de Usuario de Tienda Física Distribuidora Baby World:**
+  - **Ubicación Exacta y Accesos GPS One-Touch (`StoreLocationModal.tsx`):**
+    - **Geolocalización y Dirección Oficial:** Se conectó la dirección exacta de la placa del local (**Calle 21 con Cra 35 Oeste, Mz 4 Casa 26, Poblado Campestre, Candelaria - Cali**) con el enlace oficial de Google Maps (`https://maps.app.goo.gl/yY63rsTFhMYcwv3k6`) y las coordenadas geográficas directas para Waze (`3.4116568, -76.4553798`) para el negocio *Distribuidora Baby World*.
+    - **Modal Ultracompacto Sin Scroll:** Se eliminó el `iframe` pesado del mapa embebido, reduciendo la altura total a ~340px y eliminando por completo cualquier barra de desplazamiento vertical en celulares y pantallas de escritorio.
+    - **Horarios Reales Desglosados:** Divididos en 3 columnas limpias: Lun-Vie (9:00 am - 1:00 pm / 4:00 pm - 8:30 pm), Sábados (9:00 am - 1:00 pm / 4:00 pm - 9:00 pm) y Domingos en jornada continua (9:00 am - 5:00 pm).
+    - **Métodos de Pago Oficiales en Tienda:** Integrados con sus logotipos oficiales: Addi (`/logo-addi.png`), Sistecrédito (`/logo-sistecredito.png`), distintivo de Bre-B y Tarjetas Débito & Crédito.
+  - **Componentes Vectoriales Oficiales de Navegación (`GoogleMapsIcon.tsx` y `WazeIcon.tsx`):**
+    - **Google Maps Pin:** Componente SVG con los 5 tonos corporativos oficiales de Google Maps (azul, rojo, amarillo y verde).
+    - **Waze:** Componente SVG con la carita sonriente en globo celeste (`#33CCFF`), ruedas oscuras y ojos característicos.
+    - Integrados armoniosamente en la botonera GPS del modal y en el pie de página.
+  - **Unificación Visual con el Pin Rojo de Ubicación Universal (`LocationPinIcon.tsx`):**
+    - Se creó el icono del pin rojo clásico de geolocalización (`#EA4335`) con centro blanco y sombra sutil en la base, unificando todos los puntos de contacto de la tienda física:
+      1. Botón del Navbar (`📍 Tienda Física` en desktop / `📍 Tienda` en móvil).
+      2. Sello interactivo en los Trust Badges del Hero Banner (`🏬 Tienda física Poblado Campestre ↗`).
+      3. Sello de confianza en la Ficha de Producto (`ProductDetailPage.tsx`).
+      4. Tarjeta interactiva del Footer (`App.tsx`).
+      5. Cabecera de dirección dentro del modal de ubicación.
+  - **Optimización de Conversión y CRO:**
+    - Se conservó y protegió el cintillo superior de ventas `🚀 Envío GRATIS en compras superiores a $150.000 COP` en todas las resoluciones (móvil y PC).
+    - Se mantuvieron despejados los 2 CTAs principales del Hero (`Ver catálogo` y `Asesoría y Pedidos`), evitando la saturación cognitiva en móviles.
+  - **Auditoría e Higiene de Código (File Hygiene & Clean Debugging):**
+    - Limpieza de importaciones huérfanas en `StoreLocationModal.tsx`, `HeroBanner.tsx`, `ProductDetailPage.tsx` y `App.tsx`.
+    - Cero sentencias `console.log` o código de prueba.
+    - Validación estricta con `tsc && vite build` dentro de Docker (1.206 módulos transformados sin errores).
+    - Despliegue en caliente y verificación HTTP 200 en contenedor `edatia-glowxir` (`localhost:3005`).
+
+---
 
 ## Estado resuelto (sesión 17) — 2026-10-23
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
-  Truck, ShieldCheck, HeartHandshake, Share2, Plus, Minus,
+  Truck, HeartHandshake, Share2, Plus, Minus,
   ChevronRight, PackageCheck
 } from 'lucide-react'
+import { LocationPinIcon } from './LocationPinIcon'
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
@@ -17,6 +18,7 @@ interface ProductDetailPageProps {
   onSelectProduct: (p: Product) => void
   onAddToCart: (p: Product, quantity?: number) => void
   onOpenCart: () => void
+  onOpenLocation?: () => void
 }
 
 export function ProductDetailPage({
@@ -25,7 +27,8 @@ export function ProductDetailPage({
   onBack,
   onSelectProduct,
   onAddToCart,
-  onOpenCart
+  onOpenCart,
+  onOpenLocation,
 }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product.imagen)
@@ -302,7 +305,7 @@ export function ProductDetailPage({
                   className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
                   <MessageCircle size={18} />
-                  <span>Pedir / Consultar por WhatsApp</span>
+                  <span>Asesoría o Pedido por WhatsApp</span>
                 </a>
 
                 {/* Trust Badges */}
@@ -311,13 +314,25 @@ export function ProductDetailPage({
                     <Truck size={15} className="text-sky-500" />
                     <span>Envíos Nacionales</span>
                   </div>
+                  {onOpenLocation ? (
+                    <button
+                      type="button"
+                      onClick={onOpenLocation}
+                      className="p-2 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-100 rounded-xl flex flex-col items-center gap-1 text-rose-800 transition-all cursor-pointer group"
+                      title="Ver ubicación en Poblado Campestre y cómo llegar"
+                    >
+                      <LocationPinIcon size={16} className="group-hover:scale-110 transition-transform" />
+                      <span className="font-bold">Tienda Física</span>
+                    </button>
+                  ) : (
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
+                      <LocationPinIcon size={16} />
+                      <span>Tienda Física</span>
+                    </div>
+                  )}
                   <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
                     <HeartHandshake size={15} className="text-pink-500" />
                     <span>Pago Contra Entrega</span>
-                  </div>
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                    <ShieldCheck size={15} className="text-emerald-500" />
-                    <span>Garantía Baby-World</span>
                   </div>
                 </div>
               </div>

@@ -1,12 +1,14 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck } from 'lucide-react'
+import { Sparkles, Star, Heart, Truck } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { LocationPinIcon } from './LocationPinIcon'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
+  onOpenLocation?: () => void
 }
 
-export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
+export function HeroBanner({ onSelectCategory, onOpenLocation }: HeroBannerProps) {
   return (
     <div className="relative bg-gradient-to-b from-pink-50/40 via-white to-amber-50/30 border-b border-slate-100 pt-8 pb-16 sm:pt-14 sm:pb-24 overflow-hidden">
       
@@ -68,7 +70,7 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               className="group w-full sm:w-auto px-8 py-3.5 bg-mint-100 hover:bg-mint-200/90 text-emerald-900 border border-mint-200/90 rounded-full font-bold shadow-md shadow-mint-500/15 hover:shadow-mint-500/25 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
             >
               <WhatsAppIcon size={18} className="group-hover:scale-110 group-hover:rotate-6 transition-transform duration-200" />
-              Pedir por WhatsApp
+              Asesoría y Pedidos
             </a>
           </div>
 
@@ -89,10 +91,23 @@ export function HeroBanner({ onSelectCategory }: HeroBannerProps) {
               </div>
               <span>Crédito Addi & Sistecrédito</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck size={15} className="text-emerald-500" />
-              <span>100% Garantizado</span>
-            </div>
+            {onOpenLocation ? (
+              <button
+                type="button"
+                onClick={onOpenLocation}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-rose-50/50 border border-slate-200 hover:border-rose-300 text-slate-800 hover:text-rose-700 transition-all shadow-2xs group cursor-pointer active:scale-95"
+                title="Toca para ver la ubicación de la tienda física y horarios"
+              >
+                <LocationPinIcon size={14} className="group-hover:scale-110 transition-transform" />
+                <span className="font-extrabold">Tienda física Poblado Campestre</span>
+                <span className="text-[10px] text-rose-500 font-bold ml-0.5 group-hover:translate-x-0.5 transition-transform">↗</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <LocationPinIcon size={14} />
+                <span>Tienda física Poblado Campestre</span>
+              </div>
+            )}
           </div>
 
         </div>
