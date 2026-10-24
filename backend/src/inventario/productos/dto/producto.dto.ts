@@ -57,6 +57,12 @@ export class CreateProductoDto {
   @IsOptional() @IsString()
   imagen?: string;
 
+  @IsOptional() @IsBoolean()
+  activo?: boolean;
+
+  @IsOptional() @IsNumber()
+  costoPromedio?: number;
+
   // ── Nuevos campos del plan de reestructuración ──
   @IsOptional() @IsString()
   codigoAlterno?: string;

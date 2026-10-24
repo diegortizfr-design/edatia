@@ -113,7 +113,6 @@ export function ModalCrearProductoRapido({
       referencia: ref || skuFinal,
       nombre: nom,
       costo: costoNum,
-      costoPromedio: costoNum,
       costoUltimo: costoNum,
       precioBase: precioNum,
       precioWeb: precioNum,
@@ -123,7 +122,6 @@ export function ModalCrearProductoRapido({
       liquidarIva: !esExento,
       productoExentoIva: esExento,
       manejaBodega: true,
-      activo: true,
     }
 
     mutation.mutate(payload)
