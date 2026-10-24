@@ -99,13 +99,13 @@ export function HeroBanner({ onSelectCategory, onOpenLocation }: HeroBannerProps
                 title="Toca para ver la ubicación de la tienda física y horarios"
               >
                 <LocationPinIcon size={14} className="group-hover:scale-110 transition-transform" />
-                <span className="font-extrabold">Tienda física Manuela Beltrán</span>
+                <span className="font-extrabold">Tienda física Poblado Campestre</span>
                 <span className="text-[10px] text-rose-500 font-bold ml-0.5 group-hover:translate-x-0.5 transition-transform">↗</span>
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
                 <LocationPinIcon size={14} />
-                <span>Tienda física Manuela Beltrán</span>
+                <span>Tienda física Poblado Campestre</span>
               </div>
             )}
           </div>

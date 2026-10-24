@@ -319,7 +319,7 @@ export function ProductDetailPage({
                       type="button"
                       onClick={onOpenLocation}
                       className="p-2 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-100 rounded-xl flex flex-col items-center gap-1 text-rose-800 transition-all cursor-pointer group"
-                      title="Ver ubicación en Manuela Beltrán y cómo llegar"
+                      title="Ver ubicación en Poblado Campestre y cómo llegar"
                     >
                       <LocationPinIcon size={16} className="group-hover:scale-110 transition-transform" />
                       <span className="font-bold">Tienda Física</span>
