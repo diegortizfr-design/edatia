@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, ShieldCheck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, PackageCheck, Store, MapPin
+  ChevronRight, PackageCheck, MapPin
 } from 'lucide-react'
+import { LocationPinIcon } from './LocationPinIcon'
 import { Product } from '../data/productos'
 import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
@@ -317,15 +318,15 @@ export function ProductDetailPage({
                     <button
                       type="button"
                       onClick={onOpenLocation}
-                      className="p-2 bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-100 rounded-xl flex flex-col items-center gap-1 text-emerald-800 transition-all cursor-pointer group"
+                      className="p-2 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-100 rounded-xl flex flex-col items-center gap-1 text-rose-800 transition-all cursor-pointer group"
                       title="Ver ubicación en Manuela Beltrán y cómo llegar"
                     >
-                      <Store size={15} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+                      <LocationPinIcon size={16} className="group-hover:scale-110 transition-transform" />
                       <span className="font-bold">Tienda Física</span>
                     </button>
                   ) : (
                     <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                      <Store size={15} className="text-emerald-500" />
+                      <LocationPinIcon size={16} />
                       <span>Tienda Física</span>
                     </div>
                   )}

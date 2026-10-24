@@ -1,7 +1,8 @@
 import React from 'react'
-import { ShoppingBag, Search, X, MapPin } from 'lucide-react'
+import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { LocationPinIcon } from './LocationPinIcon'
 import { CATEGORIAS_PRODUCTOS } from '../data/productos'
 
 interface NavbarProps {
@@ -113,10 +114,10 @@ export function Navbar({
             {onOpenLocation && (
               <button
                 onClick={onOpenLocation}
-                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-200 text-slate-700 hover:text-sky-700 rounded-full font-bold text-xs transition-all active:scale-95"
+                className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-50 hover:bg-rose-50/50 border border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-700 rounded-full font-bold text-xs transition-all active:scale-95"
                 title="Ver ubicación de tienda física y horarios"
               >
-                <MapPin size={14} className="text-sky-600 shrink-0" />
+                <LocationPinIcon size={14} className="group-hover:scale-110 transition-transform" />
                 <span className="hidden sm:inline">Tienda Física</span>
                 <span className="sm:hidden text-[11px]">Tienda</span>
               </button>

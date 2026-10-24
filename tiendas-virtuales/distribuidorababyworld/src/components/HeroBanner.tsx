@@ -1,6 +1,7 @@
 import React from 'react'
-import { Sparkles, Star, Heart, ShieldCheck, Truck, Store } from 'lucide-react'
+import { Sparkles, Star, Heart, ShieldCheck, Truck } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { LocationPinIcon } from './LocationPinIcon'
 
 interface HeroBannerProps {
   onSelectCategory: (category: string) => void
@@ -94,16 +95,16 @@ export function HeroBanner({ onSelectCategory, onOpenLocation }: HeroBannerProps
               <button
                 type="button"
                 onClick={onOpenLocation}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-slate-800 hover:text-sky-700 transition-all shadow-2xs group cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white hover:bg-rose-50/50 border border-slate-200 hover:border-rose-300 text-slate-800 hover:text-rose-700 transition-all shadow-2xs group cursor-pointer active:scale-95"
                 title="Toca para ver la ubicación de la tienda física y horarios"
               >
-                <Store size={15} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                <LocationPinIcon size={14} className="group-hover:scale-110 transition-transform" />
                 <span className="font-extrabold">Tienda física Manuela Beltrán</span>
-                <span className="text-[10px] text-sky-600 font-bold ml-0.5 group-hover:translate-x-0.5 transition-transform">↗</span>
+                <span className="text-[10px] text-rose-500 font-bold ml-0.5 group-hover:translate-x-0.5 transition-transform">↗</span>
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
-                <Store size={15} className="text-emerald-500" />
+                <LocationPinIcon size={14} />
                 <span>Tienda física Manuela Beltrán</span>
               </div>
             )}

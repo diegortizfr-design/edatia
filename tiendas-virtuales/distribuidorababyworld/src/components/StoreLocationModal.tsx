@@ -14,6 +14,7 @@ import {
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { GoogleMapsIcon } from './GoogleMapsIcon'
 import { WazeIcon } from './WazeIcon'
+import { LocationPinIcon } from './LocationPinIcon'
 import toast from 'react-hot-toast'
 
 interface StoreLocationModalProps {
@@ -89,8 +90,8 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700 shrink-0">
-                  <MapPin size={16} />
+                <div className="p-1.5 rounded-xl bg-rose-50 border border-rose-100/80 shrink-0 flex items-center justify-center">
+                  <LocationPinIcon size={16} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm font-extrabold text-slate-900 truncate leading-snug">
