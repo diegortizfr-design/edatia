@@ -69,6 +69,10 @@ export class UpdateDocumentoConfigDto {
 
   @IsString()
   @IsOptional()
+  sigla?: string
+
+  @IsString()
+  @IsOptional()
   prefijo?: string
 
   @IsString()
@@ -86,6 +90,10 @@ export class UpdateDocumentoConfigDto {
   @IsString()
   @IsOptional()
   estado?: string
+
+  @IsInt()
+  @IsOptional()
+  consecutivoInicial?: number
 
   @IsInt()
   @IsOptional()

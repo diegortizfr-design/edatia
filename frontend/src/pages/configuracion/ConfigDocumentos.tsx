@@ -576,7 +576,8 @@ export function ConfigDocumentos() {
     }
 
     if (editingId) {
-      mutUpdate.mutate({ id: editingId as number, dto })
+      const { sigla, consecutivoInicial, ...updateDto } = dto
+      mutUpdate.mutate({ id: editingId as number, dto: updateDto })
     } else {
       mutCreate.mutate(dto)
     }

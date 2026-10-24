@@ -62,6 +62,7 @@ export class DocumentosConfigService {
     }
 
     const data: any = { ...dto }
+    delete data.sigla
     if (dto.fechaResolucion) {
       data.fechaResolucion = new Date(dto.fechaResolucion)
     } else if (dto.fechaResolucion === null || (dto as any).fechaResolucion === '') {
