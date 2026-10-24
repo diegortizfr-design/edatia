@@ -5,11 +5,12 @@ import {
   getProductos, getBodegas, getOrdenesCompra, getKardex,
   acomodarProducto, postAjusteManualKardex 
 } from '../../services/inventario.service'
+import { getEmpresaConfig } from '../../services/configuracion.service'
 import { 
   Search, Package, Warehouse, AlertTriangle, ArrowRight, 
   Layers, Hash, SlidersHorizontal, Plus, ArrowRightLeft,
   Lock, Eye, EyeOff, X, Check, History, MapPin, AlertCircle,
-  FileSpreadsheet, ArrowDownLeft, ArrowUpRight
+  FileSpreadsheet, ArrowDownLeft, ArrowUpRight, Printer, FileText
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { getApiError } from '../../services/api'
@@ -19,6 +20,9 @@ export function ControlExistencias() {
   const qc = useQueryClient()
   const [q, setQ] = useState('')
   const [bodegaSeleccionada, setBodegaSeleccionada] = useState<string>('todas')
+  const [modalPlanilla, setModalPlanilla] = useState(false)
+  const [mostrarStockSistema, setMostrarStockSistema] = useState(true)
+  const [soloConStock, setSoloConStock] = useState(false)
 
   // Modals state
   const [modalAcomodar, setModalAcomodar] = useState<{
@@ -76,6 +80,11 @@ export function ControlExistencias() {
   const { data: bodegas = [], isLoading: cargandoBodegas } = useQuery({
     queryKey: ['bodegas-existencias'],
     queryFn: getBodegas
+  })
+
+  const { data: empresa } = useQuery({
+    queryKey: ['empresa-info-conteo'],
+    queryFn: getEmpresaConfig
   })
 
   const { data: ocs = [] } = useQuery({
@@ -162,6 +171,13 @@ export function ControlExistencias() {
     p.sku.toLowerCase().includes(q.toLowerCase()) ||
     (p.codigoBarras && p.codigoBarras.includes(q))
   )
+
+  const bodegaSeleccionadaObj = bodegas.find((b: any) => String(b.id) === bodegaSeleccionada)
+
+  const productosPlanilla = existenciasFiltradas.filter((p: any) => {
+    if (soloConStock && Number(p.stockCalculado || 0) <= 0) return false
+    return true
+  })
 
   const fmtMoneda = (n: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -279,6 +295,13 @@ export function ControlExistencias() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setModalPlanilla(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="Generar e imprimir planilla para toma física de inventario"
+          >
+            <Printer size={15} className="text-indigo-600" /> Planilla Conteo Físico (PDF)
+          </button>
           <Link
             to="/inventario/control-existencias/nuevo-traslado"
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-sm active:scale-95 animate-fade-in"
@@ -935,6 +958,263 @@ export function ControlExistencias() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* MODAL PLANILLA DE CONTEO FÍSICO */}
+      {modalPlanilla && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-start p-4 md:p-6 overflow-y-auto print:p-0 print:m-0 print:bg-white print:static print:overflow-visible">
+          {/* Barra de Controles Superior (Oculta al imprimir) */}
+          <div className="sticky top-0 z-10 w-full max-w-5xl bg-white border border-slate-200 rounded-2xl shadow-xl px-6 py-4 mb-4 flex flex-wrap items-center justify-between gap-4 print:hidden">
+            <div>
+              <div className="flex items-center gap-2 text-indigo-600 font-extrabold text-sm">
+                <FileText size={18} />
+                <h3>Planilla de Conteo Físico de Inventario</h3>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {bodegaSeleccionadaObj 
+                  ? `Bodega: ${bodegaSeleccionadaObj.nombre} (${bodegaSeleccionadaObj.codigo}) — ${productosPlanilla.length} referencias a contar`
+                  : `Todas las Bodegas (Consolidado) — ${productosPlanilla.length} referencias a contar`}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Opciones */}
+              <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={mostrarStockSistema}
+                    onChange={e => setMostrarStockSistema(e.target.checked)}
+                    className="w-4 h-4 rounded text-indigo-600 accent-indigo-600 cursor-pointer"
+                  />
+                  <span>Mostrar Stock Sistema</span>
+                </label>
+                <span className="text-slate-300">|</span>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={soloConStock}
+                    onChange={e => setSoloConStock(e.target.checked)}
+                    className="w-4 h-4 rounded text-indigo-600 accent-indigo-600 cursor-pointer"
+                  />
+                  <span>Ocultar saldo 0</span>
+                </label>
+              </div>
+
+              {/* Botón Imprimir / PDF */}
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-100 transition-all cursor-pointer"
+              >
+                <Printer size={15} /> Imprimir / Guardar en PDF
+              </button>
+
+              {/* Botón Cerrar */}
+              <button
+                onClick={() => setModalPlanilla(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                title="Cerrar vista previa"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* DOCUMENTO IMPRIMIBLE (Hoja de Conteo) */}
+          <div
+            id="printable-conteo"
+            className="w-full max-w-5xl bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-slate-200 print:border-none print:shadow-none print:p-0 print:w-full print:max-w-none text-slate-900 select-text"
+          >
+            {/* Encabezado Institucional */}
+            <div className="border-b-2 border-slate-900 pb-4 mb-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-center gap-3.5">
+                  {empresa?.logo ? (
+                    <img src={empresa.logo} alt="Logo" className="max-h-14 max-w-[140px] object-contain" />
+                  ) : (
+                    <div className="h-12 w-12 bg-slate-900 text-white flex items-center justify-center rounded-xl font-black text-lg">
+                      ED
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-lg font-black uppercase tracking-tight text-slate-900">
+                      {empresa?.nombreComercial || empresa?.nombre || 'Edatia ERP'}
+                    </h2>
+                    <p className="text-xs text-slate-600 font-semibold">
+                      NIT: {empresa?.nit ? `${empresa.nit}${empresa.digitoVerificacion ? `-${empresa.digitoVerificacion}` : ''}` : 'Sin NIT'}
+                      {empresa?.telefono ? ` · Tel: ${empresa.telefono}` : ''}
+                      {empresa?.ciudad ? ` · ${empresa.ciudad}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="inline-block bg-slate-900 text-white text-[11px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
+                    Planilla de Conteo Físico
+                  </span>
+                  <p className="text-[10px] text-slate-500 mt-1.5 font-medium">
+                    Fecha emisión: <strong className="text-slate-800">{new Date().toLocaleDateString('es-CO')} {new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Ficha técnica del conteo */}
+              <div className="grid grid-cols-3 gap-3 mt-4 pt-3 border-t border-dashed border-slate-300 text-xs bg-slate-50/60 p-2.5 rounded-lg">
+                <div>
+                  <span className="text-slate-500 font-bold block text-[9px] uppercase tracking-wider">Almacén / Bodega</span>
+                  <span className="font-extrabold text-slate-900 text-[11px]">
+                    {bodegaSeleccionadaObj 
+                      ? `${bodegaSeleccionadaObj.nombre} (${bodegaSeleccionadaObj.codigo})` 
+                      : 'Todas las Bodegas (Consolidado)'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[9px] uppercase tracking-wider">Sucursal Asociada</span>
+                  <span className="font-extrabold text-slate-900 text-[11px]">
+                    {bodegaSeleccionadaObj?.sucursal?.nombre || 'General / Todas'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[9px] uppercase tracking-wider">Auditor / Responsable</span>
+                  <span className="text-slate-400 font-mono text-[11px]">___________________________</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabla de Conteo Físico */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px] border-collapse border border-slate-300">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 font-bold uppercase text-[9px] tracking-wider border-b border-slate-300">
+                    <th className="border border-slate-300 px-2 py-2 text-center w-8">#</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-left w-28">Código / SKU</th>
+                    <th className="border border-slate-300 px-3 py-2 text-left">Descripción del Producto</th>
+                    <th className="border border-slate-300 px-2 py-2 text-left w-24">Ubicación</th>
+                    {mostrarStockSistema && (
+                      <th className="border border-slate-300 px-2 py-2 text-center w-20">Stock Sist.</th>
+                    )}
+                    <th className="border-2 border-slate-900 bg-amber-50/70 text-slate-900 px-2 py-2 text-center w-28">
+                      Conteo Físico
+                    </th>
+                    <th className="border border-slate-300 px-2 py-2 text-center w-24">Diferencia (+/-)</th>
+                    <th className="border border-slate-300 px-2.5 py-2 text-left w-32">Observaciones / Novedad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productosPlanilla.length === 0 ? (
+                    <tr>
+                      <td colSpan={mostrarStockSistema ? 8 : 7} className="border border-slate-300 text-center py-8 text-slate-400 font-semibold">
+                        No hay productos que coincidan con los filtros seleccionados.
+                      </td>
+                    </tr>
+                  ) : (
+                    productosPlanilla.map((p: any, idx: number) => {
+                      const ubicacionStr = [p.ubicacion1, p.ubicacion2].filter(Boolean).join(' - ')
+                      return (
+                        <tr key={p.id} className="border-b border-slate-200">
+                          <td className="border border-slate-300 px-2 py-2 text-center text-slate-500 font-mono text-[10px]">
+                            {idx + 1}
+                          </td>
+                          <td className="border border-slate-300 px-2.5 py-2 font-mono font-bold text-slate-800 text-[10px]">
+                            <span>{p.sku}</span>
+                            {p.codigoBarras && (
+                              <span className="block text-[8px] text-slate-400 font-normal">CB: {p.codigoBarras}</span>
+                            )}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-2">
+                            <span className="font-bold text-slate-900 block leading-tight">{p.nombre}</span>
+                            <span className="text-[9px] text-slate-500">{p.categoria?.nombre || 'General'}</span>
+                          </td>
+                          <td className="border border-slate-300 px-2 py-2 text-slate-600 text-[10px]">
+                            {ubicacionStr ? (
+                              <span className="font-medium text-indigo-700">📍 {ubicacionStr}</span>
+                            ) : (
+                              <span className="text-slate-300 font-mono">—</span>
+                            )}
+                          </td>
+                          {mostrarStockSistema && (
+                            <td className="border border-slate-300 px-2 py-2 text-center font-bold text-slate-800">
+                              {p.stockCalculado}
+                            </td>
+                          )}
+                          <td className="border-2 border-slate-900 px-2 py-1.5 text-center bg-white">
+                            {/* Cuadro en blanco amplio para escribir a lápiz/esfero */}
+                            <div className="h-6 w-full"></div>
+                          </td>
+                          <td className="border border-slate-300 px-2 py-1.5 text-center">
+                            <div className="h-6 w-full"></div>
+                          </td>
+                          <td className="border border-slate-300 px-2.5 py-1.5 text-slate-400 text-[9px]">
+                            <div className="h-6 w-full"></div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bloque de Observaciones y Firmas */}
+            <div className="mt-6 pt-4 border-t border-slate-300 text-xs space-y-6">
+              <div>
+                <span className="font-bold text-slate-700 block mb-1 uppercase tracking-wider text-[9px]">
+                  Observaciones Generales de la Toma Física:
+                </span>
+                <div className="border border-slate-300 rounded-lg p-2.5 h-14 w-full text-slate-400 text-[10px]">
+                  Espacio para registrar novedades de empaques, productos dañados/averiados, productos sin etiqueta o inconsistencias de acomodo...
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-16 pt-8 pb-4">
+                <div className="border-t-2 border-slate-900 pt-1.5 text-center">
+                  <p className="font-bold text-slate-800 text-[10px] uppercase">Firma Auxiliar de Bodega / Conteo</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">C.C. _________________________________</p>
+                </div>
+                <div className="border-t-2 border-slate-900 pt-1.5 text-center">
+                  <p className="font-bold text-slate-800 text-[10px] uppercase">Firma Administrador / Auditor</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">C.C. _________________________________</p>
+                </div>
+              </div>
+
+              <div className="text-center text-[9px] text-slate-400 pt-3 border-t border-slate-200 flex justify-between items-center">
+                <span>Edatia ERP — Módulo de Control de Existencias</span>
+                <span>Documento oficial de auditoría de inventario físico</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CSS de Impresión */}
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #printable-conteo, #printable-conteo * {
+                visibility: visible !important;
+              }
+              #printable-conteo {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 6mm !important;
+                background: white !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+              }
+              @page {
+                size: portrait;
+                margin: 8mm;
+              }
+            }
+          `}</style>
         </div>
       )}
 
