@@ -4,17 +4,32 @@ import { getBodegas, createBodega, updateBodega, deleteBodega } from '../../serv
 import { getSucursales } from '../../services/configuracion.service'
 import { Plus, Warehouse, Star, Edit2, Trash2, X, Check, MapPin, AlertCircle } from 'lucide-react'
 
-const TIPOS = ['ALMACEN', 'PUNTO_VENTA', 'DEVOLUCION', 'VIRTUAL']
-const TIPO_LABEL: Record<string, string> = {
-  ALMACEN: 'Almacén', PUNTO_VENTA: 'Punto de Venta',
-  DEVOLUCION: 'Devolución', VIRTUAL: 'Virtual',
+export const TIPOS = ['AVERIA', 'PERDIDA', 'DEVOLUCION', 'PUNTO_VENTA', 'BODEGA']
+export const TIPO_LABEL: Record<string, string> = {
+  AVERIA: 'Avería',
+  PERDIDA: 'Pérdida',
+  DEVOLUCION: 'Devolución',
+  PUNTO_VENTA: 'Punto de Venta',
+  BODEGA: 'Bodega',
+  ALMACEN: 'Bodega',
+  VIRTUAL: 'Virtual',
+}
+
+export const TIPO_BADGE_STYLE: Record<string, string> = {
+  AVERIA: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+  PERDIDA: 'bg-rose-50 text-rose-700 border border-rose-200/60',
+  DEVOLUCION: 'bg-purple-50 text-purple-700 border border-purple-200/60',
+  PUNTO_VENTA: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60',
+  BODEGA: 'bg-indigo-50 text-indigo-700 border border-indigo-200/60',
+  ALMACEN: 'bg-indigo-50 text-indigo-700 border border-indigo-200/60',
+  VIRTUAL: 'bg-slate-100 text-slate-600 border border-slate-200/60',
 }
 
 export function Bodegas() {
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any | null>(null)
-  const [form, setForm] = useState({ codigo: '', nombre: '', tipo: 'ALMACEN', sucursalId: '', esPrincipal: false })
+  const [form, setForm] = useState({ codigo: '', nombre: '', tipo: 'BODEGA', sucursalId: '', esPrincipal: false })
   const [error, setError] = useState<string | null>(null)
 
   const { data = [], isLoading } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
@@ -26,7 +41,7 @@ export function Bodegas() {
       qc.invalidateQueries({ queryKey: ['bodegas'] })
       setShowForm(false)
       setEditing(null)
-      setForm({ codigo: '', nombre: '', tipo: 'ALMACEN', sucursalId: '', esPrincipal: false })
+      setForm({ codigo: '', nombre: '', tipo: 'BODEGA', sucursalId: '', esPrincipal: false })
       setError(null)
     },
     onError: (err: any) => {
@@ -72,10 +87,11 @@ export function Bodegas() {
 
   function openEdit(b: any) {
     setEditing(b)
+    const normalizedTipo = b.tipo === 'ALMACEN' ? 'BODEGA' : b.tipo
     setForm({ 
       codigo: b.codigo, 
       nombre: b.nombre, 
-      tipo: b.tipo, 
+      tipo: TIPOS.includes(normalizedTipo) ? normalizedTipo : 'BODEGA', 
       sucursalId: b.sucursalId ? String(b.sucursalId) : '', 
       esPrincipal: b.esPrincipal 
     })
@@ -121,7 +137,7 @@ export function Bodegas() {
         <button 
           onClick={() => { 
             setEditing(null); 
-            setForm({ codigo: '', nombre: '', tipo: 'ALMACEN', sucursalId: '', esPrincipal: false }); 
+            setForm({ codigo: '', nombre: '', tipo: 'BODEGA', sucursalId: '', esPrincipal: false }); 
             setShowForm(true) 
           }}
           className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 active:scale-95 shadow-sm shadow-indigo-600/10 transition-all"
@@ -183,7 +199,7 @@ export function Bodegas() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tipo de Almacén</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tipo de Bodega *</label>
               <select 
                 value={form.tipo} 
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))} 
@@ -299,7 +315,7 @@ export function Bodegas() {
 
               {/* Badges row */}
               <div className="mt-4 flex items-center gap-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+                <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${TIPO_BADGE_STYLE[b.tipo] || 'bg-slate-100 text-slate-600'}`}>
                   {TIPO_LABEL[b.tipo] ?? b.tipo}
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

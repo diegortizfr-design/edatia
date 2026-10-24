@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getEmpresaConfig, updateEmpresaConfig, getConfigERP, updateConfigERP, getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState } from '../../services/configuracion.service'
 import { getBodegas, updateBodega } from '../../services/inventario.service'
+import { TIPO_LABEL } from '../inventario/Bodegas'
 import {
   Building2, FileText, MapPin, Phone, Palette, ShieldCheck,
   Save, CheckCircle2, AlertCircle, ChevronRight, Info, Calculator,
@@ -160,12 +161,15 @@ export function ConfigEmpresa() {
         .filter((b: any) => b.permiteStockNegativo)
         .map((b: any) => b.id)
 
+      const principalBodega = (bodegas as any[]).find((b: any) => b.esPrincipal) || (bodegas as any[])[0]
+
       // Config ERP viene de la BD (ya no de localStorage)
       const erp: any = configERP || {}
 
       setForm({
         ...empresa,
         stockNegativoBodegas: dbStockNegativoBodegas,
+        bodegaDefecto: principalBodega ? String(principalBodega.id) : '',
         fechaMatriculaMercantil: empresa.fechaMatriculaMercantil
           ? empresa.fechaMatriculaMercantil.split('T')[0]
           : '',
@@ -254,11 +258,28 @@ export function ConfigEmpresa() {
       }
       await updateConfigERP(erpPayload)
 
-      // 2. Actualizar permiteStockNegativo en bodegas (sigue en la BD)
+      // 2. Actualizar permiteStockNegativo y bodega principal en bodegas (sigue en la BD)
+      const selectedBodegaId = form.bodegaDefecto ? Number(form.bodegaDefecto) : null
       const bodegaPromises = (bodegas as any[]).map((b: any) => {
         const permite = (form.stockNegativoBodegas || []).includes(b.id)
+        const updateData: any = {}
+        let needsUpdate = false
+
         if (b.permiteStockNegativo !== permite) {
-          return updateBodega(b.id, { permiteStockNegativo: permite })
+          updateData.permiteStockNegativo = permite
+          needsUpdate = true
+        }
+
+        if (selectedBodegaId) {
+          const shouldBePrincipal = b.id === selectedBodegaId
+          if (b.esPrincipal !== shouldBePrincipal) {
+            updateData.esPrincipal = shouldBePrincipal
+            needsUpdate = true
+          }
+        }
+
+        if (needsUpdate) {
+          return updateBodega(b.id, updateData)
         }
         return Promise.resolve()
       })
@@ -272,7 +293,7 @@ export function ConfigEmpresa() {
         'skuAutogenerado', 'skuLength', 'permitirDuplicadoBarras', 'unidadMedidaDefecto',
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
-        'facturadorElectronico', 'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas',
+        'facturadorElectronico', 'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas', 'bodegaDefecto',
         'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal', 'codeModificarKardex'
       ]
       frontendKeys.forEach((k: string) => { delete databasePayload[k] })
@@ -282,6 +303,7 @@ export function ConfigEmpresa() {
       qc.invalidateQueries({ queryKey: ['config-empresa'] })
       qc.invalidateQueries({ queryKey: ['config-erp'] })
       qc.invalidateQueries({ queryKey: ['bodegas-config-empresa'] })
+      qc.invalidateQueries({ queryKey: ['bodegas'] })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
@@ -954,13 +976,18 @@ export function ConfigEmpresa() {
                 <div className="md:col-span-6">
                   <Field label="Bodega principal / Domicilio por defecto">
                     <Select
-                      value={form.bodegaDefecto ?? 'BODEGA_01'}
+                      value={form.bodegaDefecto ?? ''}
                       onChange={set('bodegaDefecto')}
-                      options={[
-                        { value: 'BODEGA_01', label: 'Bodega Principal Central' },
-                        { value: 'BODEGA_NORTE', label: 'Bodega Sucursal Norte' },
-                        { value: 'BODEGA_SUR', label: 'Bodega Sucursal Sur' },
-                      ]}
+                      options={
+                        (bodegas as any[]).length === 0
+                          ? [{ value: '', label: 'Sin bodegas registradas' }]
+                          : (bodegas as any[])
+                              .filter((b: any) => b.activo)
+                              .map((b: any) => ({
+                                value: String(b.id),
+                                label: `${b.nombre}${b.sucursal?.nombre ? ` — ${b.sucursal.nombre}` : ''} [${TIPO_LABEL[b.tipo] || b.tipo}]`,
+                              }))
+                      }
                     />
                   </Field>
                 </div>
