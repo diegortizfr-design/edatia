@@ -10,8 +10,12 @@ export class ProductosController {
   constructor(private readonly svc: ProductosService) {}
 
   @Get('buscar')
-  buscar(@Query('q') q: string, @GetUser() user: JwtPayload) {
-    return this.svc.buscar(q, user.empresaId!);
+  buscar(
+    @Query('q') q: string,
+    @GetUser() user: JwtPayload,
+    @Query('bodegaId') bodegaId?: string,
+  ) {
+    return this.svc.buscar(q, user.empresaId!, bodegaId ? +bodegaId : undefined);
   }
 
   @Post('clasificar-abc')

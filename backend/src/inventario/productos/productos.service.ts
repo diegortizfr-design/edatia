@@ -62,23 +62,42 @@ export class ProductosService {
     });
   }
 
-  async buscar(q: string, empresaId: number) {
-    if (!q || q.length < 2) throw new BadRequestException('Mínimo 2 caracteres para buscar');
+  async buscar(q: string, empresaId: number, bodegaId?: number) {
+    const query = q?.trim() || '';
+    if (!bodegaId && query.length < 2) {
+      throw new BadRequestException('Mínimo 2 caracteres para buscar');
+    }
+
+    const where: any = {
+      empresaId,
+      activo: true,
+    };
+
+    if (query.length > 0) {
+      where.OR = [
+        { nombre: { contains: query, mode: 'insensitive' } },
+        { sku: { contains: query, mode: 'insensitive' } },
+        { codigoBarras: query },
+      ];
+    }
+
+    if (bodegaId) {
+      where.stock = {
+        some: {
+          bodegaId,
+          cantidad: { gt: 0 },
+        },
+      };
+    }
+
     return (this.prisma as any).producto.findMany({
-      where: {
-        empresaId,
-        activo: true,
-        OR: [
-          { nombre: { contains: q, mode: 'insensitive' } },
-          { sku: { contains: q, mode: 'insensitive' } },
-          { codigoBarras: q },
-        ],
-      },
+      where,
       include: {
         unidadMedida: { select: { abreviatura: true } },
-        stock: { include: { bodega: { select: { id: true, nombre: true } } } },
+        stock: { include: { bodega: { select: { id: true, nombre: true, codigo: true } } } },
       },
-      take: 20,
+      take: 25,
+      orderBy: { nombre: 'asc' },
     });
   }
 

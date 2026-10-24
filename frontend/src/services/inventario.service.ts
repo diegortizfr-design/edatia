@@ -99,7 +99,8 @@ export const deleteBodega = (id: number) => api.delete(`/inventario/bodegas/${id
 export const getProductos = (params?: { q?: string; categoriaId?: number; marcaId?: number; activo?: boolean; publicadoWeb?: boolean }) =>
   api.get<Producto[]>('/inventario/productos', { params }).then(r => r.data)
 export const getProducto = (id: number) => api.get<Producto>(`/inventario/productos/${id}`).then(r => r.data)
-export const buscarProductos = (q: string) => api.get<Producto[]>('/inventario/productos/buscar', { params: { q } }).then(r => r.data)
+export const buscarProductos = (q: string, bodegaId?: number) =>
+  api.get<Producto[]>('/inventario/productos/buscar', { params: { q, bodegaId } }).then(r => r.data)
 export const createProducto = (data: any) => api.post('/inventario/productos', data).then(r => r.data)
 export const updateProducto = (id: number, data: any) => api.patch(`/inventario/productos/${id}`, data).then(r => r.data)
 export const deleteProducto = (id: number) => api.delete(`/inventario/productos/${id}`).then(r => r.data)

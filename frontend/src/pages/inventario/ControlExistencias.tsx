@@ -649,240 +649,244 @@ export function ControlExistencias() {
         const cantExcedida = modalAcomodar.cantidad !== '' && parseFloat(modalAcomodar.cantidad) > disponibleOrigen
 
         return (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+              <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl shrink-0">
                     <ArrowRightLeft size={18} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm">Acomodar / Trasladar entre Bodegas</h3>
-                    <p className="text-[11px] text-slate-400">Traslado de existencias con documento TI y asignación de ubicación</p>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-800 text-sm truncate">Acomodar / Trasladar entre Bodegas</h3>
+                    <p className="text-[11px] text-slate-400 truncate">Traslado de existencias con documento TI y asignación de ubicación</p>
                   </div>
                 </div>
                 <button 
+                  type="button"
                   onClick={() => setModalAcomodar(prev => ({ ...prev, abierto: false }))}
-                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmitAcomodar} className="p-6 space-y-4">
-                {/* Info producto */}
-                <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between text-xs">
+              <form onSubmit={handleSubmitAcomodar} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                {/* Cuerpo con scroll interno para cualquier resolución o nivel de zoom */}
+                <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                  {/* Info producto */}
+                  <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-800">{modalAcomodar.producto.nombre}</p>
+                      <p className="text-[10px] font-mono text-slate-500">SKU: {modalAcomodar.producto.sku}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
+                      <span className="font-bold text-indigo-700">{fmtMoneda(Number(modalAcomodar.producto.costoPromedio))}</span>
+                    </div>
+                  </div>
+
+                  {/* Bodega de Origen */}
                   <div>
-                    <p className="font-bold text-slate-800">{modalAcomodar.producto.nombre}</p>
-                    <p className="text-[10px] font-mono text-slate-500">SKU: {modalAcomodar.producto.sku}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
-                    <span className="font-bold text-indigo-700">{fmtMoneda(Number(modalAcomodar.producto.costoPromedio))}</span>
-                  </div>
-                </div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Bodega de Origen *
+                    </label>
+                    <select
+                      value={modalAcomodar.bodegaOrigenId}
+                      onChange={e => {
+                        const newOrigen = e.target.value
+                        setModalAcomodar(prev => {
+                          let newDestino = prev.bodegaDestinoId
+                          if (newDestino === newOrigen) {
+                            const altDestino = bodegas.find((b: any) => String(b.id) !== newOrigen)
+                            newDestino = altDestino ? String(altDestino.id) : ''
+                          }
+                          return {
+                            ...prev,
+                            bodegaOrigenId: newOrigen,
+                            bodegaDestinoId: newDestino,
+                          }
+                        })
+                      }}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="">Seleccione bodega origen...</option>
+                      {bodegas.filter((b: any) => b.activo).map((b: any) => {
+                        const st = modalAcomodar.producto.stock?.find((s: any) => s.bodegaId === b.id)
+                        const stCant = st ? Number(st.cantidad || 0) : 0
+                        return (
+                          <option key={b.id} value={b.id}>
+                            {b.nombre} ({b.codigo}) — Stock: {stCant} un. {b.esPrincipal ? '★' : ''}
+                          </option>
+                        )
+                      })}
+                    </select>
 
-                {/* Bodega de Origen */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Bodega de Origen *
-                  </label>
-                  <select
-                    value={modalAcomodar.bodegaOrigenId}
-                    onChange={e => {
-                      const newOrigen = e.target.value
-                      setModalAcomodar(prev => {
-                        let newDestino = prev.bodegaDestinoId
-                        if (newDestino === newOrigen) {
-                          const altDestino = bodegas.find((b: any) => String(b.id) !== newOrigen)
-                          newDestino = altDestino ? String(altDestino.id) : ''
-                        }
-                        return {
-                          ...prev,
-                          bodegaOrigenId: newOrigen,
-                          bodegaDestinoId: newDestino,
-                        }
-                      })
-                    }}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="">Seleccione bodega origen...</option>
-                    {bodegas.filter((b: any) => b.activo).map((b: any) => {
-                      const st = modalAcomodar.producto.stock?.find((s: any) => s.bodegaId === b.id)
-                      const stCant = st ? Number(st.cantidad || 0) : 0
-                      return (
-                        <option key={b.id} value={b.id}>
-                          {b.nombre} ({b.codigo}) — Stock: {stCant} un. {b.esPrincipal ? '★' : ''}
-                        </option>
-                      )
-                    })}
-                  </select>
-
-                  {/* Feedback de existencias en origen */}
-                  <div className="mt-1.5 flex items-center justify-between">
-                    {modalAcomodar.bodegaOrigenId ? (
-                      disponibleOrigen > 0 ? (
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
-                          <Check size={11} /> Stock disponible en origen: {disponibleOrigen} unidades
-                        </span>
+                    {/* Feedback de existencias en origen */}
+                    <div className="mt-1.5 flex items-center justify-between">
+                      {modalAcomodar.bodegaOrigenId ? (
+                        disponibleOrigen > 0 ? (
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                            <Check size={11} /> Stock disponible en origen: {disponibleOrigen} unidades
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                            <AlertTriangle size={11} /> Sin stock disponible en origen (0 un.)
+                          </span>
+                        )
                       ) : (
-                        <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
-                          <AlertTriangle size={11} /> Sin stock disponible en origen (0 un.)
-                        </span>
-                      )
-                    ) : (
-                      <span className="text-[10px] text-slate-400">Selecciona el origen para validar existencias</span>
-                    )}
+                        <span className="text-[10px] text-slate-400">Selecciona el origen para validar existencias</span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Bodega de Destino (No muestra la bodega origen seleccionada) */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Bodega de Destino *
-                  </label>
-                  <select
-                    value={modalAcomodar.bodegaDestinoId}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, bodegaDestinoId: e.target.value }))}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="">Seleccione bodega destino...</option>
-                    {bodegas
-                      .filter((b: any) => b.activo && String(b.id) !== String(modalAcomodar.bodegaOrigenId))
-                      .map((b: any) => (
-                        <option key={b.id} value={b.id}>
-                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
+                  {/* Bodega de Destino (No muestra la bodega origen seleccionada) */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Bodega de Destino *
+                    </label>
+                    <select
+                      value={modalAcomodar.bodegaDestinoId}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, bodegaDestinoId: e.target.value }))}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="">Seleccione bodega destino...</option>
+                      {bodegas
+                        .filter((b: any) => b.activo && String(b.id) !== String(modalAcomodar.bodegaOrigenId))
+                        .map((b: any) => (
+                          <option key={b.id} value={b.id}>
+                            {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Documento TI Obligatorio */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Documento de Traslado (TI) *
+                    </label>
+                    <select
+                      value={modalAcomodar.documentoId}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, documentoId: e.target.value }))}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="">Seleccione documento TI...</option>
+                      {docsTI.map((d: any) => (
+                        <option key={d.id} value={d.id}>
+                          {d.nombre} ({d.prefijo}) — Consecutivo: #{d.consecutivoSiguiente}
                         </option>
                       ))}
-                  </select>
-                </div>
-
-                {/* Documento TI Obligatorio */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Documento de Traslado (TI) *
-                  </label>
-                  <select
-                    value={modalAcomodar.documentoId}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, documentoId: e.target.value }))}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="">Seleccione documento TI...</option>
-                    {docsTI.map((d: any) => (
-                      <option key={d.id} value={d.id}>
-                        {d.nombre} ({d.prefijo}) — Consecutivo: #{d.consecutivoSiguiente}
-                      </option>
-                    ))}
-                  </select>
-                  {docsTI.length === 0 ? (
-                    <p className="text-[10px] text-amber-600 font-semibold mt-1">
-                      ⚠️ No se encontró documento TI activo. Configura uno en Configuración &gt; Documentos (Tipo: Inventario, Sigla: TI).
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Obligatorio: todo movimiento de bodega a bodega queda respaldado bajo un documento TI.
-                    </p>
-                  )}
-                </div>
-
-                {/* Cantidad a Trasladar */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      Cantidad a Trasladar *
-                    </label>
-                    {disponibleOrigen > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setModalAcomodar(prev => ({ ...prev, cantidad: String(disponibleOrigen) }))}
-                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
-                      >
-                        Trasladar todo el stock ({disponibleOrigen})
-                      </button>
+                    </select>
+                    {docsTI.length === 0 ? (
+                      <p className="text-[10px] text-amber-600 font-semibold mt-1">
+                        ⚠️ No se encontró documento TI activo. Configura uno en Configuración &gt; Documentos (Tipo: Inventario, Sigla: TI).
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Obligatorio: todo movimiento de bodega a bodega queda respaldado bajo un documento TI.
+                      </p>
                     )}
                   </div>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.0001"
-                    max={disponibleOrigen}
-                    value={modalAcomodar.cantidad}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, cantidad: e.target.value }))}
-                    placeholder={`Máximo disponible: ${disponibleOrigen}`}
-                    required
-                    className={`w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 transition-all ${
-                      cantExcedida 
-                        ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500' 
-                        : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
-                    }`}
-                  />
-                  {cantExcedida && (
-                    <p className="text-[10px] text-red-600 font-bold mt-1">
-                      No puedes trasladar más de {disponibleOrigen} unidades que hay en la bodega origen.
-                    </p>
-                  )}
-                </div>
 
-                {/* Ubicaciones físicas en destino */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                  {/* Cantidad a Trasladar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        Cantidad a Trasladar *
+                      </label>
+                      {disponibleOrigen > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setModalAcomodar(prev => ({ ...prev, cantidad: String(disponibleOrigen) }))}
+                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                        >
+                          Trasladar todo el stock ({disponibleOrigen})
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.0001"
+                      max={disponibleOrigen}
+                      value={modalAcomodar.cantidad}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, cantidad: e.target.value }))}
+                      placeholder={`Máximo disponible: ${disponibleOrigen}`}
+                      required
+                      className={`w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                        cantExcedida 
+                          ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500' 
+                          : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
+                      }`}
+                    />
+                    {cantExcedida && (
+                      <p className="text-[10px] text-red-600 font-bold mt-1">
+                        No puedes trasladar más de {disponibleOrigen} unidades que hay en la bodega origen.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Ubicaciones físicas en destino */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Pasillo / Estante en Destino (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={modalAcomodar.ubicacion1}
+                        onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion1: e.target.value }))}
+                        placeholder="Ej. Pasillo 3, Estante B"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Nivel / Gaveta en Destino (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={modalAcomodar.ubicacion2}
+                        onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion2: e.target.value }))}
+                        placeholder="Ej. Nivel 2, Gaveta 4"
+                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notas */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Pasillo / Estante en Destino (Opcional)
+                      Notas u Observaciones del Traslado
                     </label>
                     <input
                       type="text"
-                      value={modalAcomodar.ubicacion1}
-                      onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion1: e.target.value }))}
-                      placeholder="Ej. Pasillo 3, Estante B"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Nivel / Gaveta en Destino (Opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={modalAcomodar.ubicacion2}
-                      onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion2: e.target.value }))}
-                      placeholder="Ej. Nivel 2, Gaveta 4"
+                      value={modalAcomodar.notas}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, notas: e.target.value }))}
+                      placeholder="Motivo del traslado o acomodo..."
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                   </div>
                 </div>
 
-                {/* Notas */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Notas u Observaciones del Traslado
-                  </label>
-                  <input
-                    type="text"
-                    value={modalAcomodar.notas}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, notas: e.target.value }))}
-                    placeholder="Motivo del traslado o acomodo..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                {/* Footer buttons */}
-                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                {/* Footer buttons (fijado abajo, siempre visible) */}
+                <div className="flex justify-end gap-2.5 px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
                   <button
                     type="button"
                     onClick={() => setModalAcomodar(prev => ({ ...prev, abierto: false }))}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={mutAcomodar.isPending || disponibleOrigen <= 0 || cantExcedida || !modalAcomodar.documentoId}
-                    className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-40 shadow-sm shadow-indigo-600/10 cursor-pointer"
+                    className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-40 shadow-sm shadow-indigo-600/10 transition-all cursor-pointer"
                   >
                     <Check size={14} />
                     {mutAcomodar.isPending ? 'Procesando...' : 'Confirmar Traslado (TI)'}
@@ -898,174 +902,176 @@ export function ControlExistencias() {
       {/* MODAL 2: Modificar Kardex Manual con Contraseña                          */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {modalKardex.abierto && modalKardex.producto && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="px-6 py-4 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0">
                   <Lock size={18} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-amber-900 text-sm">Modificación Manual de Kardex</h3>
-                  <p className="text-[11px] text-amber-700/80">Acción protegida mediante código de autorización empresarial</p>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-amber-900 text-sm truncate">Modificación Manual de Kardex</h3>
+                  <p className="text-[11px] text-amber-700/80 truncate">Acción protegida mediante código de autorización empresarial</p>
                 </div>
               </div>
               <button 
+                type="button"
                 onClick={() => setModalKardex(prev => ({ ...prev, abierto: false }))}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmitKardex} className="p-6 space-y-4">
-              
-              {/* Info producto */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-bold text-slate-800">{modalKardex.producto.nombre}</p>
-                  <p className="text-[10px] font-mono text-slate-500">SKU: {modalKardex.producto.sku}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
-                  <span className="font-bold text-slate-700">{fmtMoneda(Number(modalKardex.producto.costoPromedio))}</span>
-                </div>
-              </div>
-
-              {/* Selector de Bodega */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Bodega a Ajustar *
-                </label>
-                <select
-                  value={modalKardex.bodegaId}
-                  onChange={e => {
-                    const bId = e.target.value
-                    const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === bId)
-                    const saldo = stBodega ? Number(stBodega.cantidad || 0) : 0
-                    setModalKardex(prev => ({ ...prev, bodegaId: bId, nuevoStock: String(saldo) }))
-                  }}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="">Seleccione una bodega...</option>
-                  {bodegas.map(b => (
-                    <option key={b.id} value={b.id}>
-                      {b.nombre} ({b.codigo})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Comparador de Stock Actual vs Nuevo */}
-              {modalKardex.bodegaId && (() => {
-                const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
-                const stockActual = stBodega ? Number(stBodega.cantidad || 0) : 0
-                const nuevo = Number(modalKardex.nuevoStock) || 0
-                const dif = nuevo - stockActual
-
-                return (
-                  <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual</p>
-                      <p className="text-base font-extrabold text-slate-700 mt-0.5">{stockActual}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Saldo</p>
-                      <p className="text-base font-extrabold text-indigo-600 mt-0.5">{nuevo}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia</p>
-                      <p className={`text-base font-extrabold mt-0.5 ${dif > 0 ? 'text-green-600' : dif < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                        {dif > 0 ? `+${dif}` : dif}
-                      </p>
-                    </div>
+            <form onSubmit={handleSubmitKardex} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                {/* Info producto */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div>
+                    <p className="font-bold text-slate-800">{modalKardex.producto.nombre}</p>
+                    <p className="text-[10px] font-mono text-slate-500">SKU: {modalKardex.producto.sku}</p>
                   </div>
-                )
-              })()}
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
+                    <span className="font-bold text-slate-700">{fmtMoneda(Number(modalKardex.producto.costoPromedio))}</span>
+                  </div>
+                </div>
 
-              {/* Nuevo Stock Input */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Nuevo Saldo Físico Real en Bodega *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  required
-                  value={modalKardex.nuevoStock}
-                  onChange={e => setModalKardex(prev => ({ ...prev, nuevoStock: e.target.value }))}
-                  placeholder="Ingrese el stock real resultante"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
-              </div>
-
-              {/* Justificación obligatoria */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Motivo o Justificación del Ajuste *
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  value={modalKardex.motivo}
-                  onChange={e => setModalKardex(prev => ({ ...prev, motivo: e.target.value }))}
-                  placeholder="Ej. Conteo físico anual / Corrección de inventario por auditoría..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
-                />
-              </div>
-
-              {/* Contraseña empresarial */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                    Contraseña de Autorización Empresarial *
+                {/* Selector de Bodega */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Bodega a Ajustar *
                   </label>
-                  <span className="text-[10px] text-slate-400">Configurada a nivel de empresa</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type={modalKardex.mostrarPass ? 'text' : 'password'}
+                  <select
+                    value={modalKardex.bodegaId}
+                    onChange={e => {
+                      const bId = e.target.value
+                      const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === bId)
+                      const saldo = stBodega ? Number(stBodega.cantidad || 0) : 0
+                      setModalKardex(prev => ({ ...prev, bodegaId: bId, nuevoStock: String(saldo) }))
+                    }}
                     required
-                    value={modalKardex.codigoAutorizacion}
-                    onChange={e => setModalKardex(prev => ({ ...prev, codigoAutorizacion: e.target.value }))}
-                    placeholder="Clave de seguridad para modificar kardex..."
-                    className="w-full pl-3.5 pr-10 py-2.5 bg-amber-50/40 border border-amber-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setModalKardex(prev => ({ ...prev, mostrarPass: !prev.mostrarPass }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   >
-                    {modalKardex.mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                    <option value="">Seleccione una bodega...</option>
+                    {bodegas.map(b => (
+                      <option key={b.id} value={b.id}>
+                        {b.nombre} ({b.codigo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Comparador de Stock Actual vs Nuevo */}
+                {modalKardex.bodegaId && (() => {
+                  const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
+                  const stockActual = stBodega ? Number(stBodega.cantidad || 0) : 0
+                  const nuevo = Number(modalKardex.nuevoStock) || 0
+                  const dif = nuevo - stockActual
+
+                  return (
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual</p>
+                        <p className="text-base font-extrabold text-slate-700 mt-0.5">{stockActual}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Saldo</p>
+                        <p className="text-base font-extrabold text-indigo-600 mt-0.5">{nuevo}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia</p>
+                        <p className={`text-base font-extrabold mt-0.5 ${dif > 0 ? 'text-green-600' : dif < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                          {dif > 0 ? `+${dif}` : dif}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Nuevo Stock Input */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Nuevo Saldo Físico Real en Bodega *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    required
+                    value={modalKardex.nuevoStock}
+                    onChange={e => setModalKardex(prev => ({ ...prev, nuevoStock: e.target.value }))}
+                    placeholder="Ingrese el stock real resultante"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Justificación obligatoria */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Motivo o Justificación del Ajuste *
+                  </label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={modalKardex.motivo}
+                    onChange={e => setModalKardex(prev => ({ ...prev, motivo: e.target.value }))}
+                    placeholder="Ej. Conteo físico anual / Corrección de inventario por auditoría..."
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
+                  />
+                </div>
+
+                {/* Contraseña empresarial */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                      Contraseña de Autorización Empresarial *
+                    </label>
+                    <span className="text-[10px] text-slate-400">Configurada a nivel de empresa</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={modalKardex.mostrarPass ? 'text' : 'password'}
+                      required
+                      value={modalKardex.codigoAutorizacion}
+                      onChange={e => setModalKardex(prev => ({ ...prev, codigoAutorizacion: e.target.value }))}
+                      placeholder="Clave de seguridad para modificar kardex..."
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-amber-50/40 border border-amber-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setModalKardex(prev => ({ ...prev, mostrarPass: !prev.mostrarPass }))}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {modalKardex.mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Warning note */}
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-[11px] flex gap-2 items-start">
+                  <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    Esta acción quedará registrada en el historial del Kardex y en la auditoría del ERP con tu usuario, fecha y justificación.
+                  </span>
                 </div>
               </div>
 
-              {/* Warning note */}
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-[11px] flex gap-2 items-start">
-                <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  Esta acción quedará registrada en el historial del Kardex y en la auditoría del ERP con tu usuario, fecha y justificación.
-                </span>
-              </div>
-
-              {/* Footer buttons */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              {/* Footer buttons (fijado abajo) */}
+              <div className="flex justify-end gap-2.5 px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setModalKardex(prev => ({ ...prev, abierto: false }))}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={mutModificarKardex.isPending}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 active:scale-95 disabled:opacity-50 shadow-sm shadow-amber-600/10"
+                  className="flex items-center gap-1.5 px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 active:scale-95 disabled:opacity-50 shadow-sm shadow-amber-600/10 transition-all"
                 >
                   <Lock size={14} />
                   {mutModificarKardex.isPending ? 'Validando...' : 'Autorizar y Ajustar Kardex'}
@@ -1081,8 +1087,8 @@ export function ControlExistencias() {
       {/* MODAL 3: Visor Rápido de Kardex del Producto                              */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {modalHistorial.abierto && modalHistorial.producto && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
