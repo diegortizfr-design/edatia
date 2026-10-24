@@ -516,8 +516,8 @@ export function App() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Atención Presencial</span>
                     </div>
-                    <p className="font-extrabold text-slate-900 leading-snug">Manzana 4 # Casa 26</p>
-                    <p className="text-slate-500 text-[11px]">Barrio Manuela Beltrán • Cali / Candelaria</p>
+                    <p className="font-extrabold text-slate-900 leading-snug">Calle 21 # Cra 35 Oeste • Mz 4 Casa 26</p>
+                    <p className="text-slate-500 text-[11px]">Poblado Campestre • Cali / Candelaria</p>
                   </div>
                 </div>
 

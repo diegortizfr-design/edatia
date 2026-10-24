@@ -59,7 +59,7 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 
 ✅ **Integración, Geolocalización y Experiencia de Usuario de Tienda Física Distribuidora Baby World:**
   - **Ubicación Exacta y Accesos GPS One-Touch (`StoreLocationModal.tsx`):**
-    - **Geolocalización Oficial:** Se conectó el enlace oficial de Google Maps (`https://maps.app.goo.gl/yY63rsTFhMYcwv3k6`) y las coordenadas geográficas directas para Waze (`3.4116568, -76.4553798`) para el negocio *Distribuidora Baby World* (Manzana 4 # Casa 26, Barrio Manuela Beltrán, Cali / Candelaria).
+    - **Geolocalización y Dirección Oficial:** Se conectó la dirección exacta de la placa del local (**Calle 21 con Cra 35 Oeste, Mz 4 Casa 26, Poblado Campestre, Candelaria - Cali**) con el enlace oficial de Google Maps (`https://maps.app.goo.gl/yY63rsTFhMYcwv3k6`) y las coordenadas geográficas directas para Waze (`3.4116568, -76.4553798`) para el negocio *Distribuidora Baby World*.
     - **Modal Ultracompacto Sin Scroll:** Se eliminó el `iframe` pesado del mapa embebido, reduciendo la altura total a ~340px y eliminando por completo cualquier barra de desplazamiento vertical en celulares y pantallas de escritorio.
     - **Horarios Reales Desglosados:** Divididos en 3 columnas limpias: Lun-Vie (9:00 am - 1:00 pm / 4:00 pm - 8:30 pm), Sábados (9:00 am - 1:00 pm / 4:00 pm - 9:00 pm) y Domingos en jornada continua (9:00 am - 5:00 pm).
     - **Métodos de Pago Oficiales en Tienda:** Integrados con sus logotipos oficiales: Addi (`/logo-addi.png`), Sistecrédito (`/logo-sistecredito.png`), distintivo de Bre-B y Tarjetas Débito & Crédito.
@@ -70,7 +70,7 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
   - **Unificación Visual con el Pin Rojo de Ubicación Universal (`LocationPinIcon.tsx`):**
     - Se creó el icono del pin rojo clásico de geolocalización (`#EA4335`) con centro blanco y sombra sutil en la base, unificando todos los puntos de contacto de la tienda física:
       1. Botón del Navbar (`📍 Tienda Física` en desktop / `📍 Tienda` en móvil).
-      2. Sello interactivo en los Trust Badges del Hero Banner (`🏬 Tienda física Manuela Beltrán ↗`).
+      2. Sello interactivo en los Trust Badges del Hero Banner (`🏬 Tienda física Poblado Campestre ↗`).
       3. Sello de confianza en la Ficha de Producto (`ProductDetailPage.tsx`).
       4. Tarjeta interactiva del Footer (`App.tsx`).
       5. Cabecera de dirección dentro del modal de ubicación.
