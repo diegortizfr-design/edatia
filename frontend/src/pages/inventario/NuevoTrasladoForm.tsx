@@ -6,9 +6,18 @@ import { getDocumentosConfig, getSucursales } from '../../services/configuracion
 import { getApiError } from '../../services/api'
 import { 
   ArrowLeft, Save, Search, ArrowRightLeft, Building2, Truck, 
-  Check, AlertTriangle, X, CheckCircle2, Lock
+  Check, AlertTriangle, Trash2, Plus, PackageOpen, Layers,
+  Lock, AlertCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+interface ItemTraslado {
+  producto: any
+  cantidad: string
+  disponibleOrigen: number
+  loteNumero?: string
+  seriales?: string
+}
 
 export function NuevoTrasladoForm() {
   const navigate = useNavigate()
@@ -31,14 +40,13 @@ export function NuevoTrasladoForm() {
   const [bodegaOrigenId, setBodegaOrigenId] = useState('')
   const [bodegaDestinoId, setBodegaDestinoId] = useState('')
   const [documentoId, setDocumentoId] = useState('')
-  const [cantidad, setCantidad] = useState('')
   const [observacion, setObservacion] = useState('')
-  const [loteNumero, setLoteNumero] = useState('')
-  const [seriales, setSeriales] = useState('')
 
-  // Product search states
+  // Lista multi-producto de la remisión de traslado
+  const [items, setItems] = useState<ItemTraslado[]>([])
+
+  // Product search state
   const [busqueda, setBusqueda] = useState('')
-  const [productoSeleccionado, setProductoSeleccionado] = useState<any | null>(null)
 
   // Queries
   const { data: sucursales = [] } = useQuery({
@@ -61,12 +69,6 @@ export function NuevoTrasladoForm() {
     queryFn: () => getProducto(Number(paramProductoId)),
     enabled: !!paramProductoId,
   })
-
-  useEffect(() => {
-    if (queryProducto) {
-      setProductoSeleccionado(queryProducto)
-    }
-  }, [queryProducto])
 
   // En la base de datos, el modelo Sucursal maneja estado: 'ACTIVO' | 'INACTIVO'
   const isSucursalActiva = (s: any) => s.estado === 'ACTIVO' || s.activo === true || (!s.estado && s.activo !== false)
@@ -101,6 +103,23 @@ export function NuevoTrasladoForm() {
       }
     }
   }, [paramOrigenId, bodegas])
+
+  // Cargar producto inicial si vino por query params (ej. desde el kardex o catálogo)
+  useEffect(() => {
+    if (queryProducto && bodegaOrigenId && items.length === 0) {
+      const stockItem = queryProducto.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
+      const disp = stockItem ? Number(stockItem.cantidad || 0) : 0
+      if (disp > 0) {
+        setItems([{
+          producto: queryProducto,
+          cantidad: '1',
+          disponibleOrigen: disp,
+          loteNumero: '',
+          seriales: '',
+        }])
+      }
+    }
+  }, [queryProducto, bodegaOrigenId])
 
   // Bodegas de origen disponibles según la modalidad
   const bodegasOrigenDisponibles = bodegas.filter((b: any) => {
@@ -161,28 +180,123 @@ export function NuevoTrasladoForm() {
     }
   }, [filteredDocs, documentoId])
 
-  // Calcular stock disponible en origen del producto seleccionado
-  const stockOrigenItem = productoSeleccionado?.stock?.find(
-    (s: any) => String(s.bodegaId) === String(bodegaOrigenId)
-  )
-  const disponibleOrigen = stockOrigenItem ? Number(stockOrigenItem.cantidad || 0) : 0
-  const cantExcedida = cantidad !== '' && parseFloat(cantidad) > disponibleOrigen
-
   const fmtMoneda = (n: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
   }
 
+  // Agregar producto a la lista del traslado
+  const handleAgregarProducto = (p: any) => {
+    const stockItem = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
+    const disponible = stockItem ? Number(stockItem.cantidad || 0) : 0
+
+    if (disponible <= 0) {
+      toast.error(`"${p.nombre}" no tiene existencias en la bodega origen.`)
+      return
+    }
+
+    const idx = items.findIndex(it => it.producto.id === p.id)
+    if (idx >= 0) {
+      // Incrementar cantidad si hay stock disponible
+      const cantActual = parseFloat(items[idx].cantidad || '0')
+      if (cantActual + 1 > disponible) {
+        toast.error(`No puedes agregar más de ${disponible} unidades de "${p.nombre}".`)
+        return
+      }
+      setItems(prev => {
+        const copy = [...prev]
+        copy[idx] = { ...copy[idx], cantidad: String(cantActual + 1) }
+        return copy
+      })
+      toast.success(`Se incrementó la cantidad de "${p.nombre}"`)
+    } else {
+      setItems(prev => [
+        ...prev,
+        {
+          producto: p,
+          cantidad: '1',
+          disponibleOrigen: disponible,
+          loteNumero: '',
+          seriales: '',
+        }
+      ])
+      toast.success(`"${p.nombre}" agregado al traslado`)
+    }
+    setBusqueda('')
+  }
+
+  // Modificar cantidad de un item
+  const handleUpdateCantidad = (index: number, newCant: string) => {
+    setItems(prev => {
+      const copy = [...prev]
+      copy[index] = { ...copy[index], cantidad: newCant }
+      return copy
+    })
+  }
+
+  // Modificar lote o notas de un item
+  const handleUpdateItemField = (index: number, field: keyof ItemTraslado, value: any) => {
+    setItems(prev => {
+      const copy = [...prev]
+      copy[index] = { ...copy[index], [field]: value }
+      return copy
+    })
+  }
+
+  // Eliminar un item de la lista
+  const handleRemoveItem = (index: number) => {
+    setItems(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Si cambia la bodega origen, recalcular existencias para todos los items
+  const handleCambioBodegaOrigen = (newBodegaId: string) => {
+    setBodegaOrigenId(newBodegaId)
+    setDocumentoId('')
+    setBusqueda('')
+    
+    if (items.length > 0) {
+      setItems(prevItems => {
+        return prevItems.map(item => {
+          const st = item.producto.stock?.find((s: any) => String(s.bodegaId) === String(newBodegaId))
+          const disp = st ? Number(st.cantidad || 0) : 0
+          return {
+            ...item,
+            disponibleOrigen: disp,
+            cantidad: item.cantidad && parseFloat(item.cantidad) > disp ? String(disp) : item.cantidad
+          }
+        })
+      })
+      toast('Se actualizaron las existencias de los productos para la nueva bodega origen.', { icon: 'ℹ️' })
+    }
+  }
+
+  // Totales de la remisión
+  const totalItemsCount = items.length
+  const totalUnidades = items.reduce((acc, it) => acc + (parseFloat(it.cantidad) || 0), 0)
+  const totalValor = items.reduce((acc, it) => {
+    const c = parseFloat(it.cantidad) || 0
+    const cpp = Number(it.producto.costoPromedio || 0)
+    return acc + (c * cpp)
+  }, 0)
+
+  // Validar si algún item excede el disponible
+  const hayExcesoStock = items.some(it => {
+    const c = parseFloat(it.cantidad)
+    return isNaN(c) || c <= 0 || c > it.disponibleOrigen || it.disponibleOrigen <= 0
+  })
+
   const mutation = useMutation({
     mutationFn: postTraslado,
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ['productos-existencias'] })
       qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
       qc.invalidateQueries({ queryKey: ['inv-kpis'] })
+      
+      const numeroDoc = res?.numero || 'TI'
       toast.success(
         sameSucursal 
-          ? 'Traslado interno completado y verificado inmediatamente' 
-          : 'Traslado en tránsito registrado correctamente bajo documento TI'
+          ? `Traslado interno ${numeroDoc} completado (${totalItemsCount} productos)` 
+          : `Traslado ${numeroDoc} registrado en tránsito (${totalItemsCount} productos)`
       )
       navigate('/inventario/movimientos')
     },
@@ -190,28 +304,6 @@ export function NuevoTrasladoForm() {
       setError(getApiError(err, 'Error al registrar el traslado de inventario'))
     }
   })
-
-  const handleSelectProducto = (p: any) => {
-    setProductoSeleccionado(p)
-    setBusqueda('')
-  }
-
-  // Si cambia la bodega origen, verificar si el producto aún tiene stock
-  const handleCambioBodegaOrigen = (newBodegaId: string) => {
-    setBodegaOrigenId(newBodegaId)
-    setDocumentoId('')
-    if (productoSeleccionado) {
-      const st = productoSeleccionado.stock?.find((s: any) => String(s.bodegaId) === String(newBodegaId))
-      const cant = st ? Number(st.cantidad || 0) : 0
-      if (cant <= 0) {
-        setProductoSeleccionado(null)
-        setCantidad('')
-        toast('El producto previamente seleccionado no tiene stock en la nueva bodega origen elegida.', { icon: 'ℹ️' })
-      } else if (cantidad !== '' && parseFloat(cantidad) > cant) {
-        setCantidad(String(cant))
-      }
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -239,45 +331,50 @@ export function NuevoTrasladoForm() {
     if (!documentoId) {
       return setError('Seleccione un documento TI obligatorio para el traslado.')
     }
-    if (!productoSeleccionado) {
-      return setError('Seleccione un producto a trasladar.')
-    }
-    const cantNum = parseFloat(cantidad)
-    if (!cantidad || isNaN(cantNum) || cantNum <= 0) {
-      return setError('Ingrese una cantidad válida mayor a 0.')
-    }
-    if (cantNum > disponibleOrigen) {
-      return setError(`No puedes trasladar más de ${disponibleOrigen} unidades que hay en la bodega origen.`)
+    if (items.length === 0) {
+      return setError('Agregue al menos un producto a la lista de traslado.')
     }
 
-    // Validate serials if required
-    let parsedSeriales: string[] | undefined = undefined
-    if (productoSeleccionado.manejaSerial) {
-      parsedSeriales = seriales.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
-      if (parsedSeriales.length !== Math.ceil(cantNum)) {
-        return setError(`La cantidad de seriales (${parsedSeriales.length}) no coincide con la cantidad a trasladar (${Math.ceil(cantNum)})`)
+    // Validar cantidades de cada producto
+    for (const it of items) {
+      const c = parseFloat(it.cantidad)
+      if (isNaN(c) || c <= 0) {
+        return setError(`Ingrese una cantidad válida mayor a 0 para "${it.producto.nombre}".`)
       }
-    }
-    if (productoSeleccionado.manejaLotes && !loteNumero) {
-      return setError('El número de lote es obligatorio para este producto.')
+      if (c > it.disponibleOrigen) {
+        return setError(`La cantidad de "${it.producto.nombre}" (${c}) supera el stock disponible en origen (${it.disponibleOrigen}).`)
+      }
+      if (it.producto.manejaLotes && !it.loteNumero) {
+        return setError(`El número de lote es obligatorio para "${it.producto.nombre}".`)
+      }
+      if (it.producto.manejaSerial && it.seriales) {
+        const serialsList = it.seriales.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+        if (serialsList.length !== Math.ceil(c)) {
+          return setError(`La cantidad de seriales (${serialsList.length}) no coincide con la cantidad a trasladar (${Math.ceil(c)}) para "${it.producto.nombre}".`)
+        }
+      }
     }
 
     mutation.mutate({
-      productoId: productoSeleccionado.id,
       bodegaOrigenId: Number(bodegaOrigenId),
       bodegaDestinoId: Number(bodegaDestinoId),
-      cantidad: cantNum,
-      notas: observacion.trim(),
-      loteNumero: loteNumero || undefined,
-      seriales: parsedSeriales,
       documentoId: Number(documentoId),
+      notas: observacion.trim(),
+      items: items.map(it => ({
+        productoId: it.producto.id,
+        cantidad: parseFloat(it.cantidad),
+        loteNumero: it.loteNumero || undefined,
+        seriales: it.producto.manejaSerial && it.seriales
+          ? it.seriales.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+          : undefined,
+      })),
     })
   }
 
   const inputCls = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -294,7 +391,7 @@ export function NuevoTrasladoForm() {
             Registrar Traslado de Inventario (TI)
           </h1>
           <p className="text-xs text-slate-400">
-            Genera un documento de traslado TI para mover existencias con trazabilidad y control de existencias.
+            Genera un documento de traslado TI para mover uno o varios productos en una sola remisión.
           </p>
         </div>
       </div>
@@ -308,7 +405,7 @@ export function NuevoTrasladoForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Contenedor Principal */}
+        {/* Contenedor 1: Cabecera del Traslado */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
           
           {/* 1. Selector de Modalidad (Check / Radio Cards) */}
@@ -395,8 +492,7 @@ export function NuevoTrasladoForm() {
                         setSucursalMismaId(e.target.value)
                         setBodegaOrigenId('')
                         setBodegaDestinoId('')
-                        setProductoSeleccionado(null)
-                        setCantidad('')
+                        setItems([])
                         setDocumentoId('')
                       }}
                       required
@@ -506,8 +602,7 @@ export function NuevoTrasladoForm() {
                           const newSuc = e.target.value
                           setSucursalOrigenId(newSuc)
                           setBodegaOrigenId('')
-                          setProductoSeleccionado(null)
-                          setCantidad('')
+                          setItems([])
                           setDocumentoId('')
                           if (sucursalDestinoId === newSuc) {
                             const altDest = sucursalesActivas.find((s: any) => String(s.id) !== newSuc)
@@ -628,51 +723,38 @@ export function NuevoTrasladoForm() {
                 </p>
               ) : (
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Obligatorio: todo movimiento de inventario queda respaldado bajo un documento TI para trazabilidad.
+                  Obligatorio: todos los productos de esta remisión quedarán respaldados bajo este documento TI con un único consecutivo.
                 </p>
               )}
             </div>
           </div>
+        </div>
 
-          {/* 2. Selector y Búsqueda de Producto Filtrado por Bodega Origen */}
-          <div className="border-t border-slate-100 pt-5">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-              Producto a Trasladar (Existencias de la Bodega Origen) *
-            </label>
-            
+        {/* Contenedor 2: Selector y Lista de Productos de la Remisión */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Layers size={18} className="text-indigo-600" />
+                Productos a Trasladar en este Documento
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Busca y agrega todos los productos que necesites trasladar hoy en esta misma remisión.
+              </p>
+            </div>
+            {items.length > 0 && (
+              <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
+                {items.length} {items.length === 1 ? 'producto en remisión' : 'productos en remisión'}
+              </span>
+            )}
+          </div>
+
+          {/* Buscador de Productos con Existencias */}
+          <div>
             {!bodegaOrigenId ? (
               <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 font-medium">
                 <Lock size={18} className="mx-auto mb-1.5 text-slate-300" />
-                Selecciona primero la bodega de origen para buscar y listar los productos con existencias disponibles.
-              </div>
-            ) : productoSeleccionado ? (
-              <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-slate-800 truncate">{productoSeleccionado.nombre}</p>
-                    <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-500 shrink-0">
-                      SKU: {productoSeleccionado.sku}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs">
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
-                      <Check size={12} /> Stock disponible en origen: {disponibleOrigen} {productoSeleccionado.unidadMedida?.abreviatura || 'un.'}
-                    </span>
-                    <span className="text-[11px] text-slate-500">
-                      Costo: <strong className="text-slate-700">{fmtMoneda(Number(productoSeleccionado.costoPromedio))}</strong>
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProductoSeleccionado(null)
-                    setCantidad('')
-                  }}
-                  className="px-3 py-1.5 text-xs text-indigo-700 hover:text-indigo-900 bg-white border border-indigo-200 rounded-lg font-bold transition-colors cursor-pointer shrink-0"
-                >
-                  Cambiar Producto
-                </button>
+                Selecciona primero la bodega de origen para poder buscar y agregar productos con stock.
               </div>
             ) : (
               <div className="relative">
@@ -680,7 +762,7 @@ export function NuevoTrasladoForm() {
                 <input
                   value={busqueda}
                   onChange={e => setBusqueda(e.target.value)}
-                  placeholder="Buscar producto por nombre o SKU en esta bodega origen..."
+                  placeholder="Buscar producto por nombre o SKU para agregarlo a la remisión..."
                   className="w-full pl-9 pr-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
                 />
                 
@@ -690,22 +772,28 @@ export function NuevoTrasladoForm() {
                   </div>
                 )}
 
-                {/* Dropdown de productos disponibles */}
+                {/* Dropdown de productos con existencias */}
                 {sugerenciasConStock.length > 0 ? (
                   <div className="absolute z-20 top-full mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto divide-y divide-slate-100">
                     {sugerenciasConStock.map((p: any) => {
                       const st = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
                       const cantBod = st ? Number(st.cantidad || 0) : 0
+                      const yaAgregado = items.some(it => it.producto.id === p.id)
 
                       return (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => handleSelectProducto(p)}
+                          onClick={() => handleAgregarProducto(p)}
                           className="w-full text-left px-4 py-3 hover:bg-indigo-50/50 transition-colors flex items-center justify-between cursor-pointer gap-3"
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-800 truncate">{p.nombre}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-slate-800 truncate">{p.nombre}</p>
+                              {yaAgregado && (
+                                <span className="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded">En lista</span>
+                              )}
+                            </div>
                             <p className="text-[10px] font-mono text-slate-400">SKU: {p.sku}</p>
                           </div>
                           <div className="text-right shrink-0">
@@ -729,93 +817,166 @@ export function NuevoTrasladoForm() {
             )}
           </div>
 
-          {/* 3. Cantidad a Trasladar con Validación de Stock */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                Cantidad a Trasladar *
-              </label>
-              {disponibleOrigen > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setCantidad(String(disponibleOrigen))}
-                  className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                >
-                  Trasladar todo el stock ({disponibleOrigen})
-                </button>
-              )}
-            </div>
-            <input
-              type="number"
-              step="any"
-              min="0.0001"
-              max={disponibleOrigen}
-              required
-              disabled={!productoSeleccionado}
-              value={cantidad}
-              onChange={e => setCantidad(e.target.value)}
-              placeholder={productoSeleccionado ? `Máximo disponible: ${disponibleOrigen}` : "Seleccione producto primero"}
-              className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 transition-all ${
-                cantExcedida 
-                  ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500' 
-                  : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
-              }`}
-            />
-            {cantExcedida && (
-              <p className="text-[10px] text-red-600 font-bold mt-1 flex items-center gap-1">
-                <AlertTriangle size={12} />
-                No puedes trasladar más de {disponibleOrigen} unidades que hay en la bodega origen.
+          {/* Tabla de Productos Agregados */}
+          {items.length === 0 ? (
+            <div className="p-8 border border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50">
+              <PackageOpen size={32} className="mx-auto text-slate-300 mb-2" />
+              <p className="text-xs font-bold text-slate-600">Ningún producto agregado todavía</p>
+              <p className="text-[11px] text-slate-400 max-w-sm mx-auto mt-0.5">
+                Utiliza el buscador superior para agregar todos los productos que deseas incluir en este documento de traslado.
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                    <tr>
+                      <th className="px-3.5 py-3 w-8 text-center">#</th>
+                      <th className="px-4 py-3 min-w-[200px]">Producto</th>
+                      <th className="px-4 py-3 text-center w-28">Stock Origen</th>
+                      <th className="px-4 py-3 w-40">Cantidad *</th>
+                      <th className="px-4 py-3 text-right w-28">Costo Unit.</th>
+                      <th className="px-4 py-3 text-right w-28">Subtotal</th>
+                      <th className="px-3 py-3 w-10 text-center"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {items.map((it, idx) => {
+                      const cantNum = parseFloat(it.cantidad) || 0
+                      const cpp = Number(it.producto.costoPromedio || 0)
+                      const subtotal = cantNum * cpp
+                      const excede = cantNum > it.disponibleOrigen || it.disponibleOrigen <= 0 || cantNum <= 0
 
-          {/* 4. Observaciones / Justificación */}
+                      return (
+                        <tr key={it.producto.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-3.5 py-3 text-center text-slate-400 font-mono text-[11px]">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-bold text-slate-800 text-xs">{it.producto.nombre}</p>
+                            <p className="text-[10px] font-mono text-slate-400">SKU: {it.producto.sku}</p>
+                            
+                            {/* Manejo de Lotes si aplica */}
+                            {it.producto.manejaLotes && (
+                              <div className="mt-1.5 flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Lote:</span>
+                                <input
+                                  type="text"
+                                  value={it.loteNumero || ''}
+                                  onChange={e => handleUpdateItemField(idx, 'loteNumero', e.target.value)}
+                                  placeholder="Ej. L-892"
+                                  className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-28 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                />
+                              </div>
+                            )}
+
+                            {/* Manejo de Seriales si aplica */}
+                            {it.producto.manejaSerial && (
+                              <div className="mt-1.5">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase block">Seriales (separados por coma):</span>
+                                <input
+                                  type="text"
+                                  value={it.seriales || ''}
+                                  onChange={e => handleUpdateItemField(idx, 'seriales', e.target.value)}
+                                  placeholder="Serial1, Serial2..."
+                                  className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-full mt-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-block">
+                              {it.disponibleOrigen} {it.producto.unidadMedida?.abreviatura || 'un.'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0.0001"
+                                max={it.disponibleOrigen}
+                                value={it.cantidad}
+                                onChange={e => handleUpdateCantidad(idx, e.target.value)}
+                                className={`w-24 px-2.5 py-1.5 bg-slate-50 border rounded-lg text-xs font-bold text-slate-800 text-center focus:outline-none focus:ring-2 transition-all ${
+                                  excede 
+                                    ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30' 
+                                    : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
+                                }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateCantidad(idx, String(it.disponibleOrigen))}
+                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded cursor-pointer"
+                                title="Trasladar todo el stock disponible"
+                              >
+                                Todo
+                              </button>
+                            </div>
+                            {cantNum > it.disponibleOrigen && (
+                              <p className="text-[9px] text-red-600 font-bold mt-1">
+                                Máximo disponible: {it.disponibleOrigen}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right text-slate-500 font-medium">
+                            {fmtMoneda(cpp)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-800">
+                            {fmtMoneda(subtotal)}
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Quitar de este traslado"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Barra de Resumen / Totales */}
+              <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-6 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Referencias</span>
+                    <strong className="text-slate-800 text-sm font-extrabold">{totalItemsCount} productos</strong>
+                  </div>
+                  <div className="border-l border-slate-200 pl-6">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Unidades a Trasladar</span>
+                    <strong className="text-indigo-600 text-sm font-extrabold">{totalUnidades} unidades</strong>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Valoración Estimada del Traslado</span>
+                  <strong className="text-slate-900 text-base font-extrabold">{fmtMoneda(totalValor)}</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Observaciones generales */}
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-              Observación / Justificación de Traslado
+              Observación / Justificación General del Traslado
             </label>
             <textarea
               value={observacion}
               onChange={e => setObservacion(e.target.value)}
-              placeholder="Notas u observaciones del traslado..."
+              placeholder="Motivo del traslado, instrucciones de entrega o despacho..."
               rows={2}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none resize-none"
             />
           </div>
-
-          {/* Lotes inputs if product manejaLotes */}
-          {productoSeleccionado?.manejaLotes && (
-            <div className="border border-slate-100 bg-slate-50/50 p-4 rounded-xl">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Número de Lote *</label>
-              <input
-                value={loteNumero}
-                onChange={e => setLoteNumero(e.target.value)}
-                placeholder="ej: L-9872"
-                required
-                className={inputCls}
-              />
-            </div>
-          )}
-
-          {/* Seriales textarea if product manejaSerial */}
-          {productoSeleccionado?.manejaSerial && (
-            <div className="border border-slate-100 bg-slate-50/50 p-4 rounded-xl">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                Números de Serie *
-              </label>
-              <textarea
-                value={seriales}
-                onChange={e => setSeriales(e.target.value)}
-                placeholder="Ingrese un número de serie por línea o separados por comas..."
-                rows={3}
-                required
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none resize-none"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Deben ser exactamente {Math.ceil(parseFloat(cantidad) || 0)} seriales.
-              </span>
-            </div>
-          )}
 
         </div>
 
@@ -830,11 +991,13 @@ export function NuevoTrasladoForm() {
           </button>
           <button
             type="submit"
-            disabled={mutation.isPending || !productoSeleccionado || disponibleOrigen <= 0 || cantExcedida || !documentoId}
+            disabled={mutation.isPending || items.length === 0 || hayExcesoStock || !documentoId}
             className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-40 transition-all shadow-sm shadow-indigo-600/10 cursor-pointer"
           >
             <Save size={14} /> 
-            {mutation.isPending ? 'Procesando...' : 'Registrar Traslado (TI)'}
+            {mutation.isPending 
+              ? 'Procesando...' 
+              : `Registrar Traslado TI (${totalItemsCount} ${totalItemsCount === 1 ? 'producto' : 'productos'})`}
           </button>
         </div>
 

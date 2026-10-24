@@ -117,15 +117,9 @@ export class ModificarKardexManualDto {
   seriales?: string[];
 }
 
-export class TrasladoDto {
+export class TrasladoItemDto {
   @IsInt()
   productoId!: number;
-
-  @IsInt()
-  bodegaOrigenId!: number;
-
-  @IsInt()
-  bodegaDestinoId!: number;
 
   @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
   cantidad!: number;
@@ -138,9 +132,35 @@ export class TrasladoDto {
 
   @IsOptional() @IsArray() @IsString({ each: true })
   seriales?: string[];
+}
+
+export class TrasladoDto {
+  @IsOptional() @IsInt()
+  productoId?: number;
+
+  @IsInt()
+  bodegaOrigenId!: number;
+
+  @IsInt()
+  bodegaDestinoId!: number;
+
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
+  cantidad?: number;
+
+  @IsOptional() @IsString()
+  notas?: string;
+
+  @IsOptional() @IsString()
+  loteNumero?: string;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  seriales?: string[];
 
   @IsOptional() @IsInt()
   documentoId?: number;
+
+  @IsOptional() @IsArray()
+  items?: TrasladoItemDto[];
 }
 
 export class DevolucionProveedorDto {

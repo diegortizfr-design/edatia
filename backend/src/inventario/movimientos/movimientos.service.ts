@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { StockService } from '../stock/stock.service';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 import {
-  EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto,
+  EntradaManualDto, SalidaManualDto, AjusteDto, TrasladoDto, TrasladoItemDto,
   DevolucionProveedorDto, DevolucionClienteDto, ModificarKardexManualDto,
 } from './dto/movimiento.dto';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -1136,7 +1136,22 @@ export class MovimientosService {
       throw new BadRequestException('La bodega origen y destino deben ser diferentes');
     }
 
-    const producto = await this.getProducto(dto.productoId, empresaId);
+    const items: TrasladoItemDto[] = (dto.items && dto.items.length > 0)
+      ? dto.items
+      : (dto.productoId && dto.cantidad)
+        ? [{
+            productoId: dto.productoId,
+            cantidad: dto.cantidad,
+            loteNumero: dto.loteNumero,
+            seriales: dto.seriales,
+            notas: dto.notas,
+          }]
+        : [];
+
+    if (items.length === 0) {
+      throw new BadRequestException('Debe incluir al menos un producto a trasladar');
+    }
+
     const [bodegaOrigen, bodegaDestino] = await Promise.all([
       (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaOrigenId, empresaId } }),
       (this.prisma as any).bodega.findFirst({ where: { id: dto.bodegaDestinoId, empresaId } }),
@@ -1150,25 +1165,29 @@ export class MovimientosService {
       throw new BadRequestException('El documento de traslado es obligatorio para traslados entre diferentes sucursales.');
     }
 
-    // Verificar stock en origen (BC-08: descontar cantidad reservada)
-    const stockOrigen = await (this.prisma as any).stock.findUnique({
-      where: { productoId_bodegaId: { productoId: dto.productoId, bodegaId: dto.bodegaOrigenId } },
-    });
-    const cantOrigen = stockOrigen ? parseFloat(stockOrigen.cantidad.toString()) : 0;
-    const reservada = stockOrigen ? parseFloat(stockOrigen.cantidadReservada?.toString() ?? '0') : 0;
-    const disponible = cantOrigen - reservada;
-    if (disponible < dto.cantidad) {
-      throw new BadRequestException(`Stock disponible insuficiente en origen. Disponible: ${disponible}, Reservado: ${reservada}`);
-    }
+    // Pre-validar stock en origen de cada producto
+    for (const item of items) {
+      const producto = await this.getProducto(item.productoId, empresaId);
+      const stockOrigen = await (this.prisma as any).stock.findUnique({
+        where: { productoId_bodegaId: { productoId: item.productoId, bodegaId: dto.bodegaOrigenId } },
+      });
+      const cantOrigen = stockOrigen ? parseFloat(stockOrigen.cantidad.toString()) : 0;
+      const reservada = stockOrigen ? parseFloat(stockOrigen.cantidadReservada?.toString() ?? '0') : 0;
+      const disponible = cantOrigen - reservada;
+      if (disponible < item.cantidad) {
+        throw new BadRequestException(
+          `Stock disponible insuficiente en origen para "${producto.nombre}". Disponible: ${disponible}, Solicitado: ${item.cantidad}`
+        );
+      }
 
-    // Validar seriales si maneja serial
-    if (producto.manejaSerial && dto.seriales && dto.seriales.length > 0) {
-      if (dto.seriales.length !== Math.ceil(dto.cantidad)) {
-        throw new BadRequestException(`La cantidad de seriales (${dto.seriales.length}) no coincide con el traslado (${dto.cantidad})`);
+      if (producto.manejaSerial && item.seriales && item.seriales.length > 0) {
+        if (item.seriales.length !== Math.ceil(item.cantidad)) {
+          throw new BadRequestException(
+            `La cantidad de seriales (${item.seriales.length}) no coincide con el traslado (${item.cantidad}) para "${producto.nombre}"`
+          );
+        }
       }
     }
-
-    const cpp = parseFloat(producto.costoPromedio.toString());
 
     return this.prisma.$transaction(async (tx: any) => {
       let numeroSalida = '';
@@ -1183,6 +1202,7 @@ export class MovimientosService {
         numeroSalida = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
         documentoConfigId = docConfig.id;
 
+        // Se incrementa el consecutivo del documento una sola vez para todo el traslado
         await tx.documentoConfig.update({
           where: { id: docConfig.id },
           data: { consecutivoSiguiente: { increment: 1 } },
@@ -1192,180 +1212,173 @@ export class MovimientosService {
         numeroSalida = await this.generarNumero(prefijo, empresaId, tx);
       }
 
-      // Salida de origen
-      await tx.stock.update({
-        where: { id: stockOrigen.id },
-        data: { cantidad: { decrement: dto.cantidad } },
-      });
+      const movimientosSalida: any[] = [];
+      const todosMovimientos: any[] = [];
 
-      const saldoOrigen = cantOrigen - dto.cantidad;
+      for (const item of items) {
+        const producto = await this.getProducto(item.productoId, empresaId);
+        const cpp = parseFloat(producto.costoPromedio.toString());
 
-      // Procesar Lote en origen
-      let loteId: number | undefined;
-      if (producto.manejaLotes) {
-        if (dto.loteNumero) {
-          const lote = await tx.lote.findFirst({
-            where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, numero: dto.loteNumero },
-          });
-          if (!lote) throw new BadRequestException(`El lote ${dto.loteNumero} no existe en la bodega origen`);
-          await tx.lote.update({
-            where: { id: lote.id },
-            data: { cantidad: { decrement: dto.cantidad } },
-          });
-          loteId = lote.id;
-        } else {
-          const lotes = await tx.lote.findMany({
-            where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, activo: true, cantidad: { gt: 0 } },
-            orderBy: [{ fechaVencimiento: 'asc' }, { id: 'asc' }],
-          });
-          let restante = dto.cantidad;
-          for (const lote of lotes) {
-            if (restante <= 0) break;
-            const cantLote = Number(lote.cantidad);
-            if (cantLote <= restante) {
-              await tx.lote.update({ where: { id: lote.id }, data: { cantidad: 0 } });
-              restante -= cantLote;
-            } else {
-              await tx.lote.update({ where: { id: lote.id }, data: { cantidad: { decrement: restante } } });
-              restante = 0;
-              break;
-            }
-          }
-          if (restante > 0 && lotes.length > 0) {
-            await tx.lote.update({ where: { id: lotes[0].id }, data: { cantidad: { decrement: restante } } });
-          }
-        }
-      }
+        const stockOrigen = await tx.stock.findUnique({
+          where: { productoId_bodegaId: { productoId: item.productoId, bodegaId: dto.bodegaOrigenId } },
+        });
+        const cantOrigen = stockOrigen ? parseFloat(stockOrigen.cantidad.toString()) : 0;
 
-      // Guardar información del lote en las notas para recuperarlo al recibir
-      const loteNotas = dto.loteNumero ? ` [Lote: ${dto.loteNumero}]` : '';
-      const finalNotas = dto.notas ? `${dto.notas}${loteNotas}` : `Traslado en tránsito${loteNotas}`;
-
-      const mov1 = await tx.movimientoInventario.create({
-        data: {
-          numero: numeroSalida,
-          empresaId,
-          tipo: 'TRASLADO_SALIDA',
-          concepto: 'TRASLADO',
-          productoId: dto.productoId,
-          bodegaOrigenId: dto.bodegaOrigenId,
-          bodegaDestinoId: dto.bodegaDestinoId,
-          cantidad: dto.cantidad,
-          costoUnitario: cpp,
-          costoTotal: dto.cantidad * cpp,
-          saldoCantidad: saldoOrigen,
-          saldoCostoTotal: saldoOrigen * cpp,
-          saldoCpp: cpp,
-          usuarioId,
-          notas: finalNotas,
-          estado: sameSucursal ? 'RECIBIDO' : 'EN_TRANSITO',
-          referenciaTipo: 'Manual',
-          documentoConfigId,
-        },
-      });
-
-      if (sameSucursal) {
-        // --- Mismo Establecimiento: Recepción Inmediata Directa ---
-        const stockDestino = await this.getOrCreateStock(dto.productoId, dto.bodegaDestinoId, empresaId, tx);
-        const cantDestinoAnterior = parseFloat(stockDestino.cantidad.toString());
-        const saldoDestino = cantDestinoAnterior + dto.cantidad;
-
-        // Entrada en destino
+        // Salida de origen
         await tx.stock.update({
-          where: { id: stockDestino.id },
-          data: { cantidad: { increment: dto.cantidad } },
+          where: { id: stockOrigen.id },
+          data: { cantidad: { decrement: item.cantidad } },
         });
 
-        // Procesar Lote en destino
-        let loteDestinoId: number | undefined;
-        if (producto.manejaLotes && dto.loteNumero) {
-          let loteD = await tx.lote.findFirst({
-            where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaDestinoId, numero: dto.loteNumero },
-          });
-          if (loteD) {
-            loteD = await tx.lote.update({
-              where: { id: loteD.id },
-              data: {
-                cantidad: { increment: dto.cantidad },
-                cantidadInicial: { increment: dto.cantidad },
-              },
+        const saldoOrigen = cantOrigen - item.cantidad;
+
+        // Procesar Lote en origen
+        let loteId: number | undefined;
+        if (producto.manejaLotes) {
+          if (item.loteNumero) {
+            const lote = await tx.lote.findFirst({
+              where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaOrigenId, numero: item.loteNumero },
             });
+            if (!lote) throw new BadRequestException(`El lote ${item.loteNumero} no existe en la bodega origen para "${producto.nombre}"`);
+            await tx.lote.update({
+              where: { id: lote.id },
+              data: { cantidad: { decrement: item.cantidad } },
+            });
+            loteId = lote.id;
           } else {
-            const loteOrigen = await tx.lote.findFirst({
-              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, numero: dto.loteNumero },
+            const lotes = await tx.lote.findMany({
+              where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaOrigenId, activo: true, cantidad: { gt: 0 } },
+              orderBy: [{ fechaVencimiento: 'asc' }, { id: 'asc' }],
             });
-            loteD = await tx.lote.create({
-              data: {
-                empresaId,
-                productoId: dto.productoId,
-                bodegaId: dto.bodegaDestinoId,
-                numero: dto.loteNumero,
-                cantidadInicial: dto.cantidad,
-                cantidad: dto.cantidad,
-                fechaVencimiento: loteOrigen?.fechaVencimiento ?? null,
-                activo: true,
-              },
-            });
+            let restante = item.cantidad;
+            for (const lote of lotes) {
+              if (restante <= 0) break;
+              const cantLote = Number(lote.cantidad);
+              if (cantLote <= restante) {
+                await tx.lote.update({ where: { id: lote.id }, data: { cantidad: 0 } });
+                restante -= cantLote;
+              } else {
+                await tx.lote.update({ where: { id: lote.id }, data: { cantidad: { decrement: restante } } });
+                restante = 0;
+                break;
+              }
+            }
+            if (restante > 0 && lotes.length > 0) {
+              await tx.lote.update({ where: { id: lotes[0].id }, data: { cantidad: { decrement: restante } } });
+            }
           }
-          loteDestinoId = loteD.id;
         }
 
-        // Generar consecutivo para el movimiento de entrada
-        const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+        const itemNotas = item.notas || dto.notas || '';
+        const loteNotas = item.loteNumero ? ` [Lote: ${item.loteNumero}]` : '';
+        const finalNotas = itemNotas ? `${itemNotas}${loteNotas}` : `Traslado en tránsito${loteNotas}`;
 
-        // Crear el movimiento TRASLADO_ENTRADA
-        const mov2 = await tx.movimientoInventario.create({
+        const mov1 = await tx.movimientoInventario.create({
           data: {
-            numero: numeroEntrada,
+            numero: numeroSalida,
             empresaId,
-            tipo: 'TRASLADO_ENTRADA',
+            tipo: 'TRASLADO_SALIDA',
             concepto: 'TRASLADO',
-            productoId: dto.productoId,
+            productoId: item.productoId,
             bodegaOrigenId: dto.bodegaOrigenId,
             bodegaDestinoId: dto.bodegaDestinoId,
-            cantidad: dto.cantidad,
+            cantidad: item.cantidad,
             costoUnitario: cpp,
-            costoTotal: dto.cantidad * cpp,
-            saldoCantidad: saldoDestino,
-            saldoCostoTotal: saldoDestino * cpp,
+            costoTotal: item.cantidad * cpp,
+            saldoCantidad: saldoOrigen,
+            saldoCostoTotal: saldoOrigen * cpp,
             saldoCpp: cpp,
             usuarioId,
             notas: finalNotas,
-            estado: 'RECIBIDO',
-            movimientoParId: mov1.id,
+            estado: sameSucursal ? 'RECIBIDO' : 'EN_TRANSITO',
             referenciaTipo: 'Manual',
+            documentoConfigId,
           },
         });
 
-        // Enlazar mov1 con mov2
-        await tx.movimientoInventario.update({
-          where: { id: mov1.id },
-          data: { movimientoParId: mov2.id },
-        });
+        movimientosSalida.push(mov1);
+        todosMovimientos.push(mov1);
 
-        // Procesar seriales en destino: ponerlos como DISPONIBLE en la bodega destino
-        if (producto.manejaSerial) {
-          if (dto.seriales && dto.seriales.length > 0) {
-            await tx.numeroSerie.updateMany({
-              where: { empresaId, productoId: dto.productoId, serial: { in: dto.seriales } },
-              data: {
-                estado: 'DISPONIBLE',
-                bodegaId: dto.bodegaDestinoId,
-                loteId: loteDestinoId ?? null,
-                movimientoSalidaId: mov1.id,
-                movimientoEntradaId: mov2.id,
-              },
+        if (sameSucursal) {
+          // --- Mismo Establecimiento: Recepción Inmediata Directa ---
+          const stockDestino = await this.getOrCreateStock(item.productoId, dto.bodegaDestinoId, empresaId, tx);
+          const cantDestinoAnterior = parseFloat(stockDestino.cantidad.toString());
+          const saldoDestino = cantDestinoAnterior + item.cantidad;
+
+          await tx.stock.update({
+            where: { id: stockDestino.id },
+            data: { cantidad: { increment: item.cantidad } },
+          });
+
+          let loteDestinoId: number | undefined;
+          if (producto.manejaLotes && item.loteNumero) {
+            let loteD = await tx.lote.findFirst({
+              where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaDestinoId, numero: item.loteNumero },
             });
-          } else {
-            const serialsDisponibles = await tx.numeroSerie.findMany({
-              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
-              orderBy: { id: 'asc' },
-              take: Math.ceil(dto.cantidad),
-            });
-            const serialIds = serialsDisponibles.map((s: any) => s.id);
-            if (serialIds.length > 0) {
+            if (loteD) {
+              loteD = await tx.lote.update({
+                where: { id: loteD.id },
+                data: {
+                  cantidad: { increment: item.cantidad },
+                  cantidadInicial: { increment: item.cantidad },
+                },
+              });
+            } else {
+              const loteOrigen = await tx.lote.findFirst({
+                where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaOrigenId, numero: item.loteNumero },
+              });
+              loteD = await tx.lote.create({
+                data: {
+                  empresaId,
+                  productoId: item.productoId,
+                  bodegaId: dto.bodegaDestinoId,
+                  numero: item.loteNumero,
+                  cantidadInicial: item.cantidad,
+                  cantidad: item.cantidad,
+                  fechaVencimiento: loteOrigen?.fechaVencimiento ?? null,
+                  activo: true,
+                },
+              });
+            }
+            loteDestinoId = loteD.id;
+          }
+
+          const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+
+          const mov2 = await tx.movimientoInventario.create({
+            data: {
+              numero: numeroEntrada,
+              empresaId,
+              tipo: 'TRASLADO_ENTRADA',
+              concepto: 'TRASLADO',
+              productoId: item.productoId,
+              bodegaOrigenId: dto.bodegaOrigenId,
+              bodegaDestinoId: dto.bodegaDestinoId,
+              cantidad: item.cantidad,
+              costoUnitario: cpp,
+              costoTotal: item.cantidad * cpp,
+              saldoCantidad: saldoDestino,
+              saldoCostoTotal: saldoDestino * cpp,
+              saldoCpp: cpp,
+              usuarioId,
+              notas: finalNotas,
+              estado: 'RECIBIDO',
+              movimientoParId: mov1.id,
+              referenciaTipo: 'Manual',
+            },
+          });
+
+          await tx.movimientoInventario.update({
+            where: { id: mov1.id },
+            data: { movimientoParId: mov2.id },
+          });
+
+          todosMovimientos.push(mov2);
+
+          if (producto.manejaSerial) {
+            if (item.seriales && item.seriales.length > 0) {
               await tx.numeroSerie.updateMany({
-                where: { id: { in: serialIds } },
+                where: { empresaId, productoId: item.productoId, serial: { in: item.seriales } },
                 data: {
                   estado: 'DISPONIBLE',
                   bodegaId: dto.bodegaDestinoId,
@@ -1374,46 +1387,67 @@ export class MovimientosService {
                   movimientoEntradaId: mov2.id,
                 },
               });
+            } else {
+              const serialsDisponibles = await tx.numeroSerie.findMany({
+                where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
+                orderBy: { id: 'asc' },
+                take: Math.ceil(item.cantidad),
+              });
+              const serialIds = serialsDisponibles.map((s: any) => s.id);
+              if (serialIds.length > 0) {
+                await tx.numeroSerie.updateMany({
+                  where: { id: { in: serialIds } },
+                  data: {
+                    estado: 'DISPONIBLE',
+                    bodegaId: dto.bodegaDestinoId,
+                    loteId: loteDestinoId ?? null,
+                    movimientoSalidaId: mov1.id,
+                    movimientoEntradaId: mov2.id,
+                  },
+                });
+              }
             }
           }
-        }
-
-        return { traslado: mov1, movimientos: [mov1, mov2] };
-      } else {
-        // --- Diferente Establecimiento: Flujo en Tránsito ---
-        // Procesar seriales: cambiarlos a EN_TRANSITO
-        if (producto.manejaSerial) {
-          if (dto.seriales && dto.seriales.length > 0) {
-            await tx.numeroSerie.updateMany({
-              where: { empresaId, productoId: dto.productoId, serial: { in: dto.seriales } },
-              data: {
-                estado: 'EN_TRANSITO',
-                bodegaId: null,
-                movimientoSalidaId: mov1.id,
-              },
-            });
-          } else {
-            const serialsDisponibles = await tx.numeroSerie.findMany({
-              where: { empresaId, productoId: dto.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
-              orderBy: { id: 'asc' },
-              take: Math.ceil(dto.cantidad),
-            });
-            const serialIds = serialsDisponibles.map((s: any) => s.id);
-            if (serialIds.length > 0) {
+        } else {
+          // --- Diferente Establecimiento: Flujo en Tránsito ---
+          if (producto.manejaSerial) {
+            if (item.seriales && item.seriales.length > 0) {
               await tx.numeroSerie.updateMany({
-                where: { id: { in: serialIds } },
+                where: { empresaId, productoId: item.productoId, serial: { in: item.seriales } },
                 data: {
                   estado: 'EN_TRANSITO',
                   bodegaId: null,
                   movimientoSalidaId: mov1.id,
                 },
               });
+            } else {
+              const serialsDisponibles = await tx.numeroSerie.findMany({
+                where: { empresaId, productoId: item.productoId, bodegaId: dto.bodegaOrigenId, estado: 'DISPONIBLE' },
+                orderBy: { id: 'asc' },
+                take: Math.ceil(item.cantidad),
+              });
+              const serialIds = serialsDisponibles.map((s: any) => s.id);
+              if (serialIds.length > 0) {
+                await tx.numeroSerie.updateMany({
+                  where: { id: { in: serialIds } },
+                  data: {
+                    estado: 'EN_TRANSITO',
+                    bodegaId: null,
+                    movimientoSalidaId: mov1.id,
+                  },
+                });
+              }
             }
           }
         }
-
-        return { traslado: mov1, movimientos: [mov1] };
       }
+
+      return {
+        numero: numeroSalida,
+        traslado: movimientosSalida[0],
+        movimientos: todosMovimientos,
+        itemsCount: items.length,
+      };
     });
   }
 
