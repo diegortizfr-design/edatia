@@ -2,6 +2,7 @@ import React from 'react'
 import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { LocationPinIcon } from './LocationPinIcon'
 import { CATEGORIAS_PRODUCTOS } from '../data/productos'
 
 interface NavbarProps {
@@ -12,6 +13,7 @@ interface NavbarProps {
   searchQuery: string
   setSearchQuery: (query: string) => void
   categories?: readonly string[]
+  onOpenLocation?: () => void
 }
 
 export function Navbar({
@@ -22,6 +24,7 @@ export function Navbar({
   searchQuery,
   setSearchQuery,
   categories = CATEGORIAS_PRODUCTOS,
+  onOpenLocation,
 }: NavbarProps) {
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -40,9 +43,11 @@ export function Navbar({
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
       {/* Top Delivery & WhatsApp Quick Banner */}
       <div className="bg-slate-900 text-white text-[11px] font-medium py-1 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 truncate">
-            <span className="text-sky-400 font-bold animate-pulse">🚀 Envío GRATIS en compras superiores a $150.000 COP</span>
+            <span className="text-sky-400 font-bold animate-pulse truncate">
+              🚀 Envío GRATIS en compras superiores a $150.000 COP
+            </span>
             <span className="text-slate-400 hidden sm:inline">• Atención personalizada</span>
           </div>
 
@@ -51,11 +56,11 @@ export function Navbar({
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 hover:border-[#25D366] px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-[11px] transition-all shadow-2xs hover:shadow-emerald-500/20 active:scale-95 shrink-0"
-            title="Escríbenos por WhatsApp"
+            title="Asesoría y pedidos por WhatsApp"
           >
             <WhatsAppIcon size={16} />
-            <span className="hidden sm:inline text-emerald-300">Pedir por WhatsApp</span>
-            <span className="sm:hidden text-emerald-300">WhatsApp</span>
+            <span className="hidden sm:inline text-emerald-300">Asesoría & Pedidos</span>
+            <span className="sm:hidden text-emerald-300">Asesoría</span>
           </a>
         </div>
       </div>
@@ -105,6 +110,19 @@ export function Navbar({
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Store Location Button */}
+            {onOpenLocation && (
+              <button
+                onClick={onOpenLocation}
+                className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-50 hover:bg-rose-50/50 border border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-700 rounded-full font-bold text-xs transition-all active:scale-95"
+                title="Ver ubicación de tienda física y horarios"
+              >
+                <LocationPinIcon size={14} className="group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">Tienda Física</span>
+                <span className="sm:hidden text-[11px]">Tienda</span>
+              </button>
+            )}
+
             {/* Shopping Cart Button */}
             <button
               onClick={onCartClick}
