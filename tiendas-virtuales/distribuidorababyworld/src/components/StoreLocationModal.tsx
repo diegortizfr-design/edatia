@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {
   MapPin,
-  Navigation,
   Clock,
   Store,
   X,
@@ -13,6 +12,8 @@ import {
   Truck
 } from 'lucide-react'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { GoogleMapsIcon } from './GoogleMapsIcon'
+import { WazeIcon } from './WazeIcon'
 import toast from 'react-hot-toast'
 
 interface StoreLocationModalProps {
@@ -126,31 +127,34 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95 group"
+                title="Abrir ubicación en Google Maps"
               >
-                <Navigation size={13} className="text-blue-600 shrink-0" />
+                <GoogleMapsIcon size={14} className="group-hover:scale-110 transition-transform" />
                 <span>Maps</span>
-                <ExternalLink size={11} className="text-slate-400" />
+                <ExternalLink size={10} className="text-slate-400 group-hover:text-blue-600 shrink-0" />
               </a>
 
               <a
                 href={wazeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-white hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white hover:bg-sky-50/60 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs active:scale-95 group"
+                title="Abrir ubicación en Waze"
               >
-                <span className="text-xs leading-none">🚗</span>
+                <WazeIcon size={16} className="group-hover:scale-110 transition-transform" />
                 <span>Waze</span>
-                <ExternalLink size={11} className="text-slate-400" />
+                <ExternalLink size={10} className="text-slate-400 group-hover:text-sky-600 shrink-0" />
               </a>
 
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1 px-2.5 py-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-950 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-950 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95 group"
+                title="Preguntar cómo llegar por WhatsApp"
               >
-                <WhatsAppIcon size={14} />
+                <WhatsAppIcon size={14} className="group-hover:scale-110 transition-transform" />
                 <span className="truncate">Llegar</span>
               </a>
             </div>

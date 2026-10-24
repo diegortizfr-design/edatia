@@ -15,6 +15,7 @@ import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
+import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
@@ -537,10 +538,10 @@ export function App() {
                     href="https://maps.app.goo.gl/yY63rsTFhMYcwv3k6"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2 px-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-95 shrink-0"
+                    className="py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 shrink-0"
                     title="Abrir directamente en Google Maps"
                   >
-                    <ExternalLink size={13} />
+                    <GoogleMapsIcon size={14} />
                     <span>Maps</span>
                   </a>
                 </div>
