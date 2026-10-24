@@ -283,6 +283,7 @@ export function OrdenCompraForm() {
             {busqueda.length >= 2 && !buscando && sugerencias.length > 0 && (
               <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
                 {sugerencias.map(p => {
+                  const costoBase = Number(p.costo) || Number(p.costoPromedio) || Number(p.costoUltimo) || 0
                   const ivaPctProd = resolveProductoIva(p)
                   const labelIva = ivaPctProd === 0 ? 'Sin IVA' : `IVA ${ivaPctProd}%`
 
@@ -297,7 +298,7 @@ export function OrdenCompraForm() {
                           <span className="text-xs text-slate-600 font-semibold">Costo: {fmt(costoBase)}</span>
                           <span className="text-slate-300">·</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                            isExento ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                            ivaPctProd === 0 ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                           }`}>
                             {labelIva}
                           </span>
