@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2 } from 'lucide-react'
+import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
 import { getApiError } from '../../services/api'
 
 interface LineaItem {
@@ -55,6 +56,7 @@ export function NuevaFcForm() {
   // Items list
   const [items, setItems] = useState<LineaItem[]>([])
   const [busqueda, setBusqueda] = useState('')
+  const [showModalCrear, setShowModalCrear] = useState(false)
 
   // Queries
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
@@ -466,8 +468,8 @@ export function NuevaFcForm() {
           <div className="flex justify-end mb-4">
             <button
               type="button"
-              onClick={() => navigate('/inventario/productos/nuevo')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1"
+              onClick={() => setShowModalCrear(true)}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Plus size={12} /> ¿El producto no existe? Crear Producto nuevo
             </button>
@@ -569,6 +571,17 @@ export function NuevaFcForm() {
           </button>
         </div>
       </form>
+
+      {/* Modal para crear producto rápido sin salir de la FC */}
+      <ModalCrearProductoRapido
+        isOpen={showModalCrear}
+        onClose={() => setShowModalCrear(false)}
+        initialSearch={busqueda}
+        onSuccess={(nuevoProd) => {
+          addItem(nuevoProd)
+          setBusqueda('')
+        }}
+      />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import {
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getImpuestos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
+import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
 import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
 
 interface LineaItem {
@@ -34,6 +35,7 @@ export function OrdenCompraForm() {
   const [documentoConfigId, setDocumentoConfigId] = useState('')
   const [items, setItems] = useState<LineaItem[]>([])
   const [busqueda, setBusqueda] = useState('')
+  const [showModalCrear, setShowModalCrear] = useState(false)
 
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
@@ -315,8 +317,8 @@ export function OrdenCompraForm() {
           <div className="flex justify-end mb-4">
             <button
               type="button"
-              onClick={() => navigate('/inventario/productos/nuevo')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1"
+              onClick={() => setShowModalCrear(true)}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Plus size={12} /> ¿El producto no existe? Crear Producto nuevo
             </button>
@@ -443,6 +445,17 @@ export function OrdenCompraForm() {
           </button>
         </div>
       </form>
+
+      {/* Modal para crear producto rápido sin salir de la OC */}
+      <ModalCrearProductoRapido
+        isOpen={showModalCrear}
+        onClose={() => setShowModalCrear(false)}
+        initialSearch={busqueda}
+        onSuccess={(nuevoProd) => {
+          addItem(nuevoProd)
+          setBusqueda('')
+        }}
+      />
     </div>
   )
 }
