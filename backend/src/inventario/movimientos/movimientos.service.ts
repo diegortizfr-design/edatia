@@ -1173,7 +1173,7 @@ export class MovimientosService {
     return this.prisma.$transaction(async (tx: any) => {
       let numeroSalida = '';
       let documentoConfigId: number | null = null;
-      if (!sameSucursal && dto.documentoId) {
+      if (dto.documentoId) {
         const docConfig = await tx.documentoConfig.findFirst({
           where: { id: dto.documentoId, empresaId },
         });

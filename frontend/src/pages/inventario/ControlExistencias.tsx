@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   getProductos, getBodegas, getOrdenesCompra, getKardex,
-  acomodarProducto, postAjusteManualKardex 
+  acomodarProducto, postAjusteManualKardex, postTraslado 
 } from '../../services/inventario.service'
-import { getEmpresaConfig } from '../../services/configuracion.service'
+import { getEmpresaConfig, getDocumentosConfig } from '../../services/configuracion.service'
 import { 
   Search, Package, Warehouse, AlertTriangle, ArrowRight, 
   Layers, Hash, SlidersHorizontal, Plus, ArrowRightLeft,
@@ -28,18 +28,22 @@ export function ControlExistencias() {
   const [modalAcomodar, setModalAcomodar] = useState<{
     abierto: boolean
     producto: any | null
-    bodegaId: string
+    bodegaOrigenId: string
+    bodegaDestinoId: string
+    documentoId: string
+    cantidad: string
     ubicacion1: string
     ubicacion2: string
-    cantidadInicial: string
     notas: string
   }>({
     abierto: false,
     producto: null,
-    bodegaId: '',
+    bodegaOrigenId: '',
+    bodegaDestinoId: '',
+    documentoId: '',
+    cantidad: '',
     ubicacion1: '',
     ubicacion2: '',
-    cantidadInicial: '',
     notas: '',
   })
 
@@ -87,6 +91,11 @@ export function ControlExistencias() {
     queryFn: getEmpresaConfig
   })
 
+  const { data: documentosConfig = [] } = useQuery({
+    queryKey: ['documentos-config-existencias'],
+    queryFn: getDocumentosConfig,
+  })
+
   const { data: ocs = [] } = useQuery({
     queryKey: ['ocs-existencias'],
     queryFn: () => getOrdenesCompra()
@@ -104,16 +113,39 @@ export function ControlExistencias() {
 
   // Mutations
   const mutAcomodar = useMutation({
-    mutationFn: (dto: any) => acomodarProducto(dto),
-    onSuccess: (res: any) => {
+    mutationFn: async (payload: any) => {
+      // 1. Ejecutar traslado oficial
+      const resTraslado = await postTraslado({
+        productoId: payload.productoId,
+        bodegaOrigenId: payload.bodegaOrigenId,
+        bodegaDestinoId: payload.bodegaDestinoId,
+        cantidad: payload.cantidad,
+        documentoId: payload.documentoId,
+        notas: payload.notas,
+      })
+
+      // 2. Si se asignaron ubicaciones físicas en destino, guardarlas en el producto
+      if (payload.ubicacion1 || payload.ubicacion2) {
+        await acomodarProducto({
+          productoId: payload.productoId,
+          bodegaId: payload.bodegaDestinoId,
+          ubicacion1: payload.ubicacion1 || undefined,
+          ubicacion2: payload.ubicacion2 || undefined,
+        })
+      }
+
+      return resTraslado
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['productos-existencias'] })
       qc.invalidateQueries({ queryKey: ['stock'] })
       qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
-      toast.success(res?.mensaje || 'Producto acomodado exitosamente en bodega')
+      qc.invalidateQueries({ queryKey: ['inv-kpis'] })
+      toast.success('Traslado de inventario y acomodo registrado exitosamente con documento TI')
       setModalAcomodar(prev => ({ ...prev, abierto: false, producto: null }))
     },
     onError: (err: any) => {
-      toast.error(getApiError(err, 'Error al acomodar producto en la bodega'))
+      toast.error(getApiError(err, 'Error al procesar el traslado entre bodegas'))
     }
   })
 
@@ -185,16 +217,43 @@ export function ControlExistencias() {
 
   // Handlers para abrir modales
   const handleOpenAcomodar = (prod: any) => {
-    const defaultBodega = bodegaSeleccionada !== 'todas' 
-      ? bodegaSeleccionada 
-      : (bodegas[0] ? String(bodegas[0].id) : '')
+    // 1. Identificar bodegas donde este producto tenga stock > 0
+    const stockPositivo = prod.stock?.find((s: any) => Number(s.cantidad || 0) > 0)
+    
+    let defaultOrigen = ''
+    if (bodegaSeleccionada !== 'todas') {
+      defaultOrigen = bodegaSeleccionada
+    } else if (stockPositivo) {
+      defaultOrigen = String(stockPositivo.bodegaId)
+    } else if (bodegas.length > 0) {
+      defaultOrigen = String(bodegas[0].id)
+    }
+
+    // 2. Bodega destino distinta a origen
+    const defaultDestino = bodegas.find((b: any) => String(b.id) !== String(defaultOrigen))
+    const defaultDestinoId = defaultDestino ? String(defaultDestino.id) : ''
+
+    // 3. Documento TI por defecto
+    const origenObj = bodegas.find((b: any) => String(b.id) === String(defaultOrigen))
+    const docsTI = documentosConfig.filter((d: any) => {
+      if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+      if (d.sigla !== 'TI' && d.prefijo !== 'TI' && !d.nombre?.toLowerCase().includes('traslado')) return false
+      if (d.sucursalId && origenObj) {
+        return Number(d.sucursalId) === Number(origenObj.sucursalId)
+      }
+      return true
+    })
+    const defaultDocId = docsTI.length > 0 ? String(docsTI[0].id) : ''
+
     setModalAcomodar({
       abierto: true,
       producto: prod,
-      bodegaId: defaultBodega,
+      bodegaOrigenId: defaultOrigen,
+      bodegaDestinoId: defaultDestinoId,
+      documentoId: defaultDocId,
+      cantidad: '',
       ubicacion1: prod.ubicacion1 || '',
       ubicacion2: prod.ubicacion2 || '',
-      cantidadInicial: '',
       notas: '',
     })
   }
@@ -227,20 +286,53 @@ export function ControlExistencias() {
     })
   }
 
-  // Submit Acomodo
+  // Submit Acomodo / Traslado
   const handleSubmitAcomodar = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!modalAcomodar.bodegaId) {
-      toast.error('Debe seleccionar una bodega')
+    if (!modalAcomodar.bodegaOrigenId) {
+      toast.error('Debe seleccionar la bodega de origen')
       return
     }
+    if (!modalAcomodar.bodegaDestinoId) {
+      toast.error('Debe seleccionar la bodega de destino')
+      return
+    }
+    if (modalAcomodar.bodegaOrigenId === modalAcomodar.bodegaDestinoId) {
+      toast.error('La bodega de origen y destino deben ser diferentes')
+      return
+    }
+    if (!modalAcomodar.documentoId) {
+      toast.error('Debe seleccionar obligatoriamente el documento TI para garantizar la trazabilidad')
+      return
+    }
+    const cantNum = parseFloat(modalAcomodar.cantidad)
+    if (isNaN(cantNum) || cantNum <= 0) {
+      toast.error('Ingrese una cantidad válida a trasladar mayor a 0')
+      return
+    }
+
+    // Validar existencias en origen
+    const stockOrigenActual = modalAcomodar.producto?.stock?.find(
+      (s: any) => String(s.bodegaId) === String(modalAcomodar.bodegaOrigenId)
+    )
+    const cantOrigen = stockOrigenActual ? parseFloat(stockOrigenActual.cantidad?.toString() || '0') : 0
+    const cantReservada = stockOrigenActual ? parseFloat(stockOrigenActual.cantidadReservada?.toString() || '0') : 0
+    const disponibleOrigen = Math.max(0, cantOrigen - cantReservada)
+
+    if (cantNum > disponibleOrigen) {
+      toast.error(`No puedes trasladar ${cantNum} unidades. El saldo disponible en la bodega origen es de ${disponibleOrigen} unidades.`)
+      return
+    }
+
     mutAcomodar.mutate({
       productoId: modalAcomodar.producto.id,
-      bodegaId: Number(modalAcomodar.bodegaId),
+      bodegaOrigenId: Number(modalAcomodar.bodegaOrigenId),
+      bodegaDestinoId: Number(modalAcomodar.bodegaDestinoId),
+      cantidad: cantNum,
+      documentoId: Number(modalAcomodar.documentoId),
       ubicacion1: modalAcomodar.ubicacion1.trim() || undefined,
       ubicacion2: modalAcomodar.ubicacion2.trim() || undefined,
-      cantidadInicial: modalAcomodar.cantidadInicial ? Number(modalAcomodar.cantidadInicial) : undefined,
-      notas: modalAcomodar.notas.trim() || undefined,
+      notas: modalAcomodar.notas.trim() || 'Acomodo / Traslado entre bodegas',
     })
   }
 
@@ -493,10 +585,10 @@ export function ControlExistencias() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center justify-center gap-1.5">
-                          {/* Acomodar en Bodega */}
+                          {/* Acomodar / Trasladar en Bodega */}
                           <button
                             onClick={() => handleOpenAcomodar(p)}
-                            title="Acomodar / Ubicar en bodega"
+                            title="Acomodar / Trasladar producto entre bodegas"
                             className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition-all active:scale-95 border border-indigo-100"
                           >
                             <Warehouse size={12} />
@@ -533,147 +625,274 @@ export function ControlExistencias() {
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 1: Acomodar Producto en Bodega                                      */}
+      {/* MODAL 1: Acomodar / Trasladar Producto en Bodega                           */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {modalAcomodar.abierto && modalAcomodar.producto && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
-                  <Warehouse size={18} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 text-sm">Acomodar Producto en Bodega</h3>
-                  <p className="text-[11px] text-slate-400">Asigna ubicación física y existencias iniciales por almacén</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setModalAcomodar(prev => ({ ...prev, abierto: false }))}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
+      {modalAcomodar.abierto && modalAcomodar.producto && (() => {
+        // Calcular existencias en bodega origen seleccionada
+        const stockOrigenActual = modalAcomodar.producto?.stock?.find(
+          (s: any) => String(s.bodegaId) === String(modalAcomodar.bodegaOrigenId)
+        )
+        const cantOrigen = stockOrigenActual ? parseFloat(stockOrigenActual.cantidad?.toString() || '0') : 0
+        const cantReservada = stockOrigenActual ? parseFloat(stockOrigenActual.cantidadReservada?.toString() || '0') : 0
+        const disponibleOrigen = Math.max(0, cantOrigen - cantReservada)
 
-            {/* Form */}
-            <form onSubmit={handleSubmitAcomodar} className="p-6 space-y-4">
-              {/* Info producto */}
-              <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-bold text-slate-800">{modalAcomodar.producto.nombre}</p>
-                  <p className="text-[10px] font-mono text-slate-500">SKU: {modalAcomodar.producto.sku}</p>
+        const origenObj = bodegas.find((b: any) => String(b.id) === String(modalAcomodar.bodegaOrigenId))
+        const docsTI = documentosConfig.filter((d: any) => {
+          if (d.tipoOperacion !== 'INVENTARIO' || d.estado !== 'ACTIVO') return false
+          if (d.sigla !== 'TI' && d.prefijo !== 'TI' && !d.nombre?.toLowerCase().includes('traslado')) return false
+          if (d.sucursalId && origenObj) {
+            return Number(d.sucursalId) === Number(origenObj.sucursalId)
+          }
+          return true
+        })
+
+        const cantExcedida = modalAcomodar.cantidad !== '' && parseFloat(modalAcomodar.cantidad) > disponibleOrigen
+
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Header */}
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <ArrowRightLeft size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm">Acomodar / Trasladar entre Bodegas</h3>
+                    <p className="text-[11px] text-slate-400">Traslado de existencias con documento TI y asignación de ubicación</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
-                  <span className="font-bold text-indigo-700">{fmtMoneda(Number(modalAcomodar.producto.costoPromedio))}</span>
-                </div>
-              </div>
-
-              {/* Selector de Bodega */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Bodega de Destino *
-                </label>
-                <select
-                  value={modalAcomodar.bodegaId}
-                  onChange={e => setModalAcomodar(prev => ({ ...prev, bodegaId: e.target.value }))}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="">Seleccione una bodega...</option>
-                  {bodegas.map(b => (
-                    <option key={b.id} value={b.id}>
-                      {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Ubicaciones físicas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Pasillo / Estante (Ubicación 1)
-                  </label>
-                  <input
-                    type="text"
-                    value={modalAcomodar.ubicacion1}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion1: e.target.value }))}
-                    placeholder="Ej. Pasillo 3, Estante B"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Nivel / Gaveta (Ubicación 2)
-                  </label>
-                  <input
-                    type="text"
-                    value={modalAcomodar.ubicacion2}
-                    onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion2: e.target.value }))}
-                    placeholder="Ej. Nivel 2, Gaveta 4"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* Cantidad Inicial a Ingresar */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Cantidad a ingresar / acomodar (Opcional)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={modalAcomodar.cantidadInicial}
-                  onChange={e => setModalAcomodar(prev => ({ ...prev, cantidadInicial: e.target.value }))}
-                  placeholder="0 (dejar en blanco para solo asignar ubicación)"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Si especificas una cantidad mayor a 0, se registrará el ingreso como apertura en esta bodega con el costo promedio actual.
-                </p>
-              </div>
-
-              {/* Notas */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Notas u Observaciones
-                </label>
-                <input
-                  type="text"
-                  value={modalAcomodar.notas}
-                  onChange={e => setModalAcomodar(prev => ({ ...prev, notas: e.target.value }))}
-                  placeholder="Detalles sobre el almacenamiento..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              {/* Footer buttons */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
+                <button 
                   onClick={() => setModalAcomodar(prev => ({ ...prev, abierto: false }))}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={mutAcomodar.isPending}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-50 shadow-sm shadow-indigo-600/10"
-                >
-                  <Check size={14} />
-                  {mutAcomodar.isPending ? 'Guardando...' : 'Guardar Acomodo'}
+                  <X size={18} />
                 </button>
               </div>
-            </form>
+
+              {/* Form */}
+              <form onSubmit={handleSubmitAcomodar} className="p-6 space-y-4">
+                {/* Info producto */}
+                <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div>
+                    <p className="font-bold text-slate-800">{modalAcomodar.producto.nombre}</p>
+                    <p className="text-[10px] font-mono text-slate-500">SKU: {modalAcomodar.producto.sku}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
+                    <span className="font-bold text-indigo-700">{fmtMoneda(Number(modalAcomodar.producto.costoPromedio))}</span>
+                  </div>
+                </div>
+
+                {/* Bodega de Origen */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Bodega de Origen *
+                  </label>
+                  <select
+                    value={modalAcomodar.bodegaOrigenId}
+                    onChange={e => {
+                      const newOrigen = e.target.value
+                      setModalAcomodar(prev => {
+                        let newDestino = prev.bodegaDestinoId
+                        if (newDestino === newOrigen) {
+                          const altDestino = bodegas.find((b: any) => String(b.id) !== newOrigen)
+                          newDestino = altDestino ? String(altDestino.id) : ''
+                        }
+                        return {
+                          ...prev,
+                          bodegaOrigenId: newOrigen,
+                          bodegaDestinoId: newDestino,
+                        }
+                      })
+                    }}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    <option value="">Seleccione bodega origen...</option>
+                    {bodegas.filter((b: any) => b.activo).map((b: any) => {
+                      const st = modalAcomodar.producto.stock?.find((s: any) => s.bodegaId === b.id)
+                      const stCant = st ? Number(st.cantidad || 0) : 0
+                      return (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre} ({b.codigo}) — Stock: {stCant} un. {b.esPrincipal ? '★' : ''}
+                        </option>
+                      )
+                    })}
+                  </select>
+
+                  {/* Feedback de existencias en origen */}
+                  <div className="mt-1.5 flex items-center justify-between">
+                    {modalAcomodar.bodegaOrigenId ? (
+                      disponibleOrigen > 0 ? (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                          <Check size={11} /> Stock disponible en origen: {disponibleOrigen} unidades
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                          <AlertTriangle size={11} /> Sin stock disponible en origen (0 un.)
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-[10px] text-slate-400">Selecciona el origen para validar existencias</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bodega de Destino (No muestra la bodega origen seleccionada) */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Bodega de Destino *
+                  </label>
+                  <select
+                    value={modalAcomodar.bodegaDestinoId}
+                    onChange={e => setModalAcomodar(prev => ({ ...prev, bodegaDestinoId: e.target.value }))}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    <option value="">Seleccione bodega destino...</option>
+                    {bodegas
+                      .filter((b: any) => b.activo && String(b.id) !== String(modalAcomodar.bodegaOrigenId))
+                      .map((b: any) => (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre} ({b.codigo}) {b.esPrincipal ? '★ Principal' : ''}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Documento TI Obligatorio */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Documento de Traslado (TI) *
+                  </label>
+                  <select
+                    value={modalAcomodar.documentoId}
+                    onChange={e => setModalAcomodar(prev => ({ ...prev, documentoId: e.target.value }))}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  >
+                    <option value="">Seleccione documento TI...</option>
+                    {docsTI.map((d: any) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} ({d.prefijo}) — Consecutivo: #{d.consecutivoSiguiente}
+                      </option>
+                    ))}
+                  </select>
+                  {docsTI.length === 0 ? (
+                    <p className="text-[10px] text-amber-600 font-semibold mt-1">
+                      ⚠️ No se encontró documento TI activo. Configura uno en Configuración &gt; Documentos (Tipo: Inventario, Sigla: TI).
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      Obligatorio: todo movimiento de bodega a bodega queda respaldado bajo un documento TI.
+                    </p>
+                  )}
+                </div>
+
+                {/* Cantidad a Trasladar */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Cantidad a Trasladar *
+                    </label>
+                    {disponibleOrigen > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setModalAcomodar(prev => ({ ...prev, cantidad: String(disponibleOrigen) }))}
+                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                      >
+                        Trasladar todo el stock ({disponibleOrigen})
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.0001"
+                    max={disponibleOrigen}
+                    value={modalAcomodar.cantidad}
+                    onChange={e => setModalAcomodar(prev => ({ ...prev, cantidad: e.target.value }))}
+                    placeholder={`Máximo disponible: ${disponibleOrigen}`}
+                    required
+                    className={`w-full px-3.5 py-2 bg-slate-50 border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                      cantExcedida 
+                        ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500' 
+                        : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
+                    }`}
+                  />
+                  {cantExcedida && (
+                    <p className="text-[10px] text-red-600 font-bold mt-1">
+                      No puedes trasladar más de {disponibleOrigen} unidades que hay en la bodega origen.
+                    </p>
+                  )}
+                </div>
+
+                {/* Ubicaciones físicas en destino */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Pasillo / Estante en Destino (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={modalAcomodar.ubicacion1}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion1: e.target.value }))}
+                      placeholder="Ej. Pasillo 3, Estante B"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Nivel / Gaveta en Destino (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={modalAcomodar.ubicacion2}
+                      onChange={e => setModalAcomodar(prev => ({ ...prev, ubicacion2: e.target.value }))}
+                      placeholder="Ej. Nivel 2, Gaveta 4"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Notas */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Notas u Observaciones del Traslado
+                  </label>
+                  <input
+                    type="text"
+                    value={modalAcomodar.notas}
+                    onChange={e => setModalAcomodar(prev => ({ ...prev, notas: e.target.value }))}
+                    placeholder="Motivo del traslado o acomodo..."
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setModalAcomodar(prev => ({ ...prev, abierto: false }))}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={mutAcomodar.isPending || disponibleOrigen <= 0 || cantExcedida || !modalAcomodar.documentoId}
+                    className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 active:scale-95 disabled:opacity-40 shadow-sm shadow-indigo-600/10 cursor-pointer"
+                  >
+                    <Check size={14} />
+                    {mutAcomodar.isPending ? 'Procesando...' : 'Confirmar Traslado (TI)'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL 2: Modificar Kardex Manual con Contraseña                          */}
