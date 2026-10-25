@@ -559,14 +559,68 @@ export function Movimientos() {
     .filter((m: any, i: number, arr: any[]) => arr.findIndex(x => x.id === m.id) === i)
     .sort((a, b) => new Date(b.fechaMovimiento).getTime() - new Date(a.fechaMovimiento).getTime())
 
+  // Helper para resolver el código de documento legible en Kardex
+  const formatDocNumero = (m: any) => {
+    // 1. Extraer número de recepción de las notas si existe (ej: "Recepción RP-6 ...")
+    if (m.notas) {
+      const matchRp = m.notas.match(/Recepci[oó]n\s+([A-Za-z0-9\-_]+)/i)
+      if (matchRp && matchRp[1]) return matchRp[1]
+    }
+
+    // 2. Si referenciaId ya es un documento formateado (ej: "TIPC-3", "RP-6", "FE-101", "OC-2024-001")
+    if (m.referenciaId && isNaN(Number(m.referenciaId))) {
+      return m.referenciaId
+    }
+
+    // 3. Si el concepto es RECEPCION_COMPRA y referenciaId es numérico (ID de FC o OC)
+    if (m.concepto === 'RECEPCION_COMPRA' || m.referenciaTipo === 'FACTURA_COMPRA') {
+      const fc = fcs.find((f: any) => String(f.id) === String(m.referenciaId) || f.numero === m.referenciaId)
+      if (fc?.recepcionId) return fc.recepcionId
+      if (fc?.numero) return fc.numero
+      if (m.referenciaId) return `RP-${m.referenciaId}`
+    }
+
+    // 4. Si es Orden de Compra y referenciaId es numérico
+    if (m.referenciaTipo === 'OrdenCompra' || m.referenciaTipo === 'ORDEN_COMPRA') {
+      const oc = ocs.find((o: any) => String(o.id) === String(m.referenciaId) || o.numero === m.referenciaId)
+      if (oc?.numero) return oc.numero
+      if (m.referenciaId) return `OC-${m.referenciaId}`
+    }
+
+    // 5. Si es Venta y el numeroMov es VTA-FE-102-1
+    if (m.tipo === 'VENTA' || m.referenciaTipo === 'FACTURA_VENTA') {
+      if (m.numero?.startsWith('VTA-')) {
+        const parts = m.numero.split('-')
+        if (parts.length >= 3) {
+          return parts.slice(1, -1).join('-')
+        }
+      }
+      if (m.referenciaId && !isNaN(Number(m.referenciaId))) {
+        return `FV-${m.referenciaId}`
+      }
+    }
+
+    // 6. Si es Venta POS y el numeroMov es POS-001-1
+    if (m.numero?.startsWith('POS-')) {
+      const parts = m.numero.split('-')
+      if (parts.length >= 3) {
+        return parts.slice(0, -1).join('-')
+      }
+    }
+
+    return m.referenciaId || m.numero
+  }
+
   const filteredKardex = combinedMovements.filter(m => {
     const matchProd = kardexProductoId === 'todos' || String(m.productoId) === kardexProductoId
     const matchBodega = kardexBodegaId === 'todos' || 
       (m.bodegaOrigen && String(m.bodegaOrigen.id) === kardexBodegaId) ||
       (m.bodegaDestino && String(m.bodegaDestino.id) === kardexBodegaId)
     
+    const docDisplay = formatDocNumero(m).toLowerCase()
     const matchQ = !kardexQ || 
       m.numero.toLowerCase().includes(kardexQ.toLowerCase()) ||
+      docDisplay.includes(kardexQ.toLowerCase()) ||
       (m.referenciaId && m.referenciaId.toLowerCase().includes(kardexQ.toLowerCase())) ||
       m.producto?.nombre.toLowerCase().includes(kardexQ.toLowerCase()) ||
       m.producto?.sku.toLowerCase().includes(kardexQ.toLowerCase())
@@ -1070,7 +1124,7 @@ export function Movimientos() {
                             {new Date(m.fechaMovimiento).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td className="px-6 py-4 font-mono font-bold text-slate-700" title={m.numero}>
-                            {m.referenciaId || m.numero}
+                            {formatDocNumero(m)}
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`inline-flex font-bold px-2 py-0.5 rounded text-[9px] ${movColor}`}>

@@ -477,8 +477,8 @@ export class FacturasCompraService {
             saldoCostoTotal: cantTotal * nuevoCPP,
             saldoCpp: nuevoCPP,
             usuarioId,
-            referenciaId: String(facturaCompraId),
-            referenciaTipo: 'FACTURA_COMPRA',
+            referenciaId: numeroRec,
+            referenciaTipo: 'RP',
             notas: `Recepción ${numeroRec} de FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} [Bodega: ${bodega.nombre}]`,
           },
         });

@@ -568,8 +568,8 @@ export class OrdenesCompraService {
               saldoCostoTotal: cantTotal * nuevoCPP,
               saldoCpp: nuevoCPP,
               usuarioId,
-              referenciaId: String(id),
-              referenciaTipo: 'OrdenCompra',
+              referenciaId: numeroRec,
+              referenciaTipo: 'RP',
               notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}`,
             },
           });

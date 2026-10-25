@@ -406,15 +406,9 @@ export function ControlExistencias() {
           </button>
           <Link
             to="/inventario/control-existencias/nuevo-traslado"
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-sm active:scale-95 animate-fade-in"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95 animate-fade-in"
           >
             <ArrowRightLeft size={14} /> Registrar Traslado (TI)
-          </Link>
-          <Link
-            to="/inventario/control-existencias/nuevo-ajuste"
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95"
-          >
-            <Plus size={14} /> Registrar Ajuste de Inventario (AI)
           </Link>
         </div>
       </div>
@@ -1159,13 +1153,25 @@ export function ControlExistencias() {
                         const esEntrada = Number(m.cantidad) > 0
                         const tipoColor = esEntrada ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'
 
+                        let docNum = m.referenciaId || m.numero
+                        if (m.notas) {
+                          const matchRp = m.notas.match(/Recepci[oó]n\s+([A-Za-z0-9\-_]+)/i)
+                          if (matchRp && matchRp[1]) docNum = matchRp[1]
+                        } else if (m.referenciaId && !isNaN(Number(m.referenciaId))) {
+                          if (m.concepto === 'RECEPCION_COMPRA' || m.referenciaTipo === 'FACTURA_COMPRA') {
+                            docNum = `RP-${m.referenciaId}`
+                          } else if (m.referenciaTipo === 'OrdenCompra') {
+                            docNum = `OC-${m.referenciaId}`
+                          }
+                        }
+
                         return (
                           <tr key={m.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-2.5 text-slate-500 text-[11px]">
                               {new Date(m.fechaMovimiento).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </td>
                             <td className="px-4 py-2.5 font-mono font-bold text-slate-700 text-[11px]" title={m.numero}>
-                              {m.referenciaId || m.numero}
+                              {docNum}
                             </td>
                             <td className="px-4 py-2.5 text-center">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${tipoColor}`}>

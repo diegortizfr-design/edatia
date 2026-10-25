@@ -216,7 +216,7 @@ export class FacturasService {
           concepto: `Factura ${factura.numero}`,
           tipo: 'VENTA',
           usuarioId,
-          referenciaId: String(factura.id),
+          referenciaId: factura.numero,
           referenciaTipo: 'FACTURA_VENTA',
           numeroMov: `VTA-${factura.numero}-${item.id}`,
         })
