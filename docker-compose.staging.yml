@@ -52,6 +52,38 @@ services:
       sh -c "createdb -h db -U ${DB_USER:-edatia} herramientas_edatia 2>&1
       || echo 'herramientas_edatia: ya existia o no se pudo crear'"
 
+  # ── Migraciones, en un one-shot con la misma imagen del api ─────────────────
+  # Estaba dentro del arranque del api y lo dejaba colgado: el contenedor
+  # quedaba `running` con el puerto 4000 cerrado, porque algo se trababa antes
+  # de llegar a `node dist/main`.
+  #
+  # Dos cambios para que eso no vuelva a pasar:
+  #  · se invoca el binario directo (/app/node_modules/.bin/prisma) en lugar de
+  #    `npx prisma`. Si el binario no esta, esto falla en el acto; npx en cambio
+  #    intenta bajarlo del registry y se queda esperando un "Ok to proceed?"
+  #    que sin TTY nunca llega -- el cuelgue que estabamos viendo.
+  #  · `exit 0` al final: un fallo de migracion no debe impedir que el api
+  #    arranque. Si las tablas faltan se nota al primer request, y un api
+  #    arriba se puede diagnosticar; uno que no arranca, no.
+  api-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/${DB_NAME:-edatia_staging}?schema=public
+      HERRAMIENTAS_DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/herramientas_edatia?schema=public
+    command: >
+      sh -c "ls -l /app/node_modules/.bin/prisma;
+             /app/node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma;
+             /app/node_modules/.bin/prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
+             exit 0"
+
   # ── API NestJS ──────────────────────────────────────────────────────────────
   api:
     build:
@@ -61,7 +93,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      db-init:
+      api-migrate:
         condition: service_completed_successfully
     # En staging el schema se aplica solo en cada arranque.
     #  · schema.prisma     → tiene migraciones versionadas: migrate deploy
@@ -69,16 +101,7 @@ services:
     #    La base ya la creo el servicio db-init.
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
-    # `;` y no `&&` a proposito: si un paso de prisma falla, el proceso arranca
-    # igual. Con `&&` el contenedor moria y quedaba en restarting, y la API de
-    # Coolify no expone los logs de este contenedor, asi que el error era
-    # invisible. Asi el api llega a healthy y el fallo se puede acotar desde
-    # afuera: si responde /health, el problema estaba en prisma; si sigue
-    # reiniciandose, el que no arranca es Nest.
-    command: >
-      sh -c "npx prisma migrate deploy --schema prisma/schema.prisma;
-             npx prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
-             node dist/main"
+    command: ["node", "dist/main"]
     environment:
       NODE_ENV: production
       PORT: 4000
