@@ -46,9 +46,10 @@ segundo cliente Prisma (`HERRAMIENTAS_DATABASE_URL`).
 
 ## Pasos en Coolify
 
-**1. DNS** — antes que nada, `edatia.matriz.cloud` (y `manager.edatia.matriz.cloud`
-si lo vas a usar) con un registro `A` apuntando a la IP del servidor de Coolify.
-Sin esto el certificado de Let's Encrypt no se emite.
+**1. DNS** — ya está listo: `edatia.matriz.cloud` resuelve a `168.231.70.175`,
+la misma IP que `panel.oportunidaddevida.com`. Si algún día sumás
+`manager.edatia.matriz.cloud`, necesita su propio registro `A` a esa IP; sin eso
+Let's Encrypt no emite el certificado.
 
 **2. Proyecto y entorno** — Coolify → *Projects* → `matriz`; dentro, entorno
 `staging` (crealos si no existen).
