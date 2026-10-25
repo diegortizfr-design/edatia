@@ -7,6 +7,7 @@ producción ni sus volúmenes.
 |---|---|
 | **Panel** | `https://panel.oportunidaddevida.com` |
 | **Proyecto / Entorno** | `matriz` / `staging` |
+| **Repo que deploya** | `Juliandrp/edatia` (fork privado) |
 | **Rama que se deploya** | `julian` |
 | **Compose** | `docker-compose.staging.yml` |
 | **URL pública** | `https://edatia.matriz.cloud` |
@@ -56,8 +57,8 @@ Let's Encrypt no emite el certificado.
 
 **3. Recurso** — *+ New* → *Docker Compose* (no "Application"), y configurá:
 
-- **Source**: repo `diegortizfr-design/edatia` (privado → hace falta una GitHub
-  App o deploy key en Coolify)
+- **Source**: repo `Juliandrp/edatia` — el fork, **no** el de Diego. Ver
+  *¿Por qué un fork?* más abajo.
 - **Branch**: `julian`
 - **Compose file**: `docker-compose.staging.yml`
 - **Base directory**: `/`
@@ -102,3 +103,42 @@ duda de en qué ambiente estás mirando.
 | Migraciones | manuales (`migrate deploy`) | automáticas al arrancar |
 | HSTS | activo | desactivado |
 | Volúmenes | `db-data`, `uploads-data` | `*-staging` (separados) |
+
+## ¿Por qué un fork?
+
+El repo original es de `diegortizfr-design` y acá se trabaja con rol
+`write`, no `admin`. Eso tiene dos consecuencias para Coolify:
+
+- Las **GitHub Apps se instalan por cuenta** y solo ven los repos de esa
+  cuenta. Ser colaborador deja clonar y pushear por git, pero no hace visible
+  el repo del dueño a una app instalada en otra cuenta: `diegortizfr-design/edatia`
+  simplemente no aparece en el selector de Coolify.
+- Agregar una **deploy key** pide rol `admin`, que tampoco hay.
+
+Por eso staging deploya desde `Juliandrp/edatia`, un fork privado donde sí hay
+`admin`. La alternativa de fondo es que Diego instale la GitHub App de este
+Coolify en su cuenta con acceso a `edatia`; ese día se cambia el *Source* del
+recurso al repo original y el fork deja de hacer falta.
+
+### Remotes
+
+```
+origin  →  diegortizfr-design/edatia   (el repo real: PRs y trabajo del día)
+fork    →  Juliandrp/edatia            (solo lo que deploya Coolify)
+```
+
+### Mantener el fork al día
+
+El fork no se actualiza solo. Antes de cada deploy de staging:
+
+```bash
+git fetch origin
+git checkout julian
+git rebase origin/main      # o merge, según cómo venga la rama
+git push origin julian      # el repo real
+git push fork julian        # dispara el deploy en Coolify
+```
+
+Si Coolify tiene el webhook del fork activado, ese último push arranca el
+build solo. Cuidado con el orden: **pushear a `fork` sin haber pusheado a
+`origin`** deja staging corriendo código que no está en el repo real.
