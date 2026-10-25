@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -17,7 +17,7 @@ export class PosService {
 
   async getCajas(empresaId: number) {
     return this.prisma.cajaPos.findMany({
-      where: { empresaId },
+      where: { empresaId, activo: true },
       include: {
         bodega: { select: { id: true, nombre: true, codigo: true } },
         cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
@@ -113,6 +113,48 @@ export class PosService {
     const caja = await this.prisma.cajaPos.findFirst({ where: { id: cajaId, empresaId } })
     if (!caja) throw new NotFoundException('Caja no encontrada')
     return caja
+  }
+
+  async deleteCaja(empresaId: number, cajaId: number, codigoAutorizacion: string, userId?: number) {
+    const caja = await this.findCaja(empresaId, cajaId)
+
+    // 1. Validar código de autorización del administrador
+    const config = await (this.prisma as any).configuracionERP.findUnique({
+      where: { empresaId },
+    })
+    const codigoCorrecto = config?.codeEliminarCaja ?? 'CAJA123'
+
+    if (!codigoAutorizacion || codigoAutorizacion.trim() !== codigoCorrecto.trim()) {
+      throw new ForbiddenException('Código de autorización incorrecto para eliminar la caja')
+    }
+
+    // 2. Validar que la caja no tenga un turno o sesión abierta actualmente
+    const sesionAbierta = await this.prisma.sesionCaja.findFirst({
+      where: { cajaId, estado: 'ABIERTA' },
+    })
+    if (sesionAbierta) {
+      throw new BadRequestException(
+        `No se puede eliminar la caja "${caja.nombre}" porque tiene un turno o sesión de venta abierto actualmente. Debe cerrar el turno antes de eliminarla.`
+      )
+    }
+
+    // 3. Evaluar historial de sesiones y ventas
+    const totalSesiones = await this.prisma.sesionCaja.count({
+      where: { cajaId },
+    })
+
+    if (totalSesiones > 0) {
+      // Si tiene historial, desactivar lógicamente para preservar integridad referencial y auditoría
+      return this.prisma.cajaPos.update({
+        where: { id: cajaId },
+        data: { activo: false },
+      })
+    }
+
+    // Si no tiene ningún historial, eliminación física
+    return this.prisma.cajaPos.delete({
+      where: { id: cajaId },
+    })
   }
 
   // ─── Sesiones ────────────────────────────────────────────────────────────────

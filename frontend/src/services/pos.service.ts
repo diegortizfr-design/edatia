@@ -5,6 +5,8 @@ import api from './api'
 export const getCajas = () => api.get('/pos/cajas').then(r => r.data)
 export const createCaja = (dto: any) => api.post('/pos/cajas', dto).then(r => r.data)
 export const updateCaja = (id: number, dto: any) => api.patch(`/pos/cajas/${id}`, dto).then(r => r.data)
+export const deleteCaja = (id: number, codigoAutorizacion: string) =>
+  api.delete(`/pos/cajas/${id}`, { data: { codigoAutorizacion } }).then(r => r.data)
 
 // ─── Sesiones ────────────────────────────────────────────────────────────────
 

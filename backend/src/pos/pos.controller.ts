@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { PosService } from './pos.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { GetUser } from '../common/decorators/get-user.decorator'
@@ -38,6 +38,15 @@ export class PosController {
   @Patch('cajas/:id')
   updateCaja(@GetUser() u: any, @Param('id', ParseIntPipe) id: number, @Body() dto: any) {
     return this.pos.updateCaja(u.empresaId, id, dto)
+  }
+
+  @Delete('cajas/:id')
+  deleteCaja(
+    @GetUser() u: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('codigoAutorizacion') codigoAutorizacion: string,
+  ) {
+    return this.pos.deleteCaja(u.empresaId, id, codigoAutorizacion, u.sub)
   }
 
   // ─── Sesiones ────────────────────────────────────────────────────────────────

@@ -205,6 +205,7 @@ export function ConfigEmpresa() {
         codeAnularTransaccion: erp.codeAnularTransaccion ?? 'SUPER99',
         codeEliminarSucursal: erp.codeEliminarSucursal ?? 'SUCURSAL123',
         codeModificarKardex: erp.codeModificarKardex ?? 'KARDEX123',
+        codeEliminarCaja: erp.codeEliminarCaja ?? 'CAJA123',
       })
       setInitialized(true)
     }
@@ -255,6 +256,7 @@ export function ConfigEmpresa() {
         codeAnularTransaccion: form.codeAnularTransaccion ?? 'SUPER99',
         codeEliminarSucursal: form.codeEliminarSucursal ?? 'SUCURSAL123',
         codeModificarKardex: form.codeModificarKardex ?? 'KARDEX123',
+        codeEliminarCaja: form.codeEliminarCaja ?? 'CAJA123',
       }
       await updateConfigERP(erpPayload)
 
@@ -294,7 +296,7 @@ export function ConfigEmpresa() {
         'consecutivoPrefijo', 'consecutivoInicial', 'permitirCotizacionesVencidas', 'terminosDefecto', 'plantillaImpresion',
         'limiteCreditoDefecto', 'plazoPagoDefecto', 'tasaInteresMora', 'bloquearClientesMora',
         'facturadorElectronico', 'entornoDian', 'softwarePinDian', 'softwareIdDian', 'notificarEmisionEmail', 'stockNegativoBodegas', 'bodegaDefecto',
-        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal', 'codeModificarKardex'
+        'codeEliminarDocumento', 'codeModificarConsecutivo', 'codeAnularTransaccion', 'codeEliminarSucursal', 'codeModificarKardex', 'codeEliminarCaja'
       ]
       frontendKeys.forEach((k: string) => { delete databasePayload[k] })
       return updateEmpresaConfig(databasePayload)
@@ -1297,6 +1299,19 @@ export function ConfigEmpresa() {
                       value={form.codeModificarKardex} 
                       onChange={set('codeModificarKardex')} 
                       placeholder="KARDEX123" 
+                    />
+                  </Field>
+                </div>
+
+                <div className="md:col-span-3">
+                  <Field 
+                    label="Código para Eliminar Cajas POS" 
+                    hint="Requerido al eliminar o desincorporar cajas del punto de venta (POS)."
+                  >
+                    <Input 
+                      value={form.codeEliminarCaja} 
+                      onChange={set('codeEliminarCaja')} 
+                      placeholder="CAJA123" 
                     />
                   </Field>
                 </div>

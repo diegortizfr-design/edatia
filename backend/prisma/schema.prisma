@@ -295,6 +295,7 @@ model ConfiguracionERP {
   codeModificarConsecutivo String?  @default("ADMIN123")
   codeAnularTransaccion    String?  @default("SUPER99")
   codeModificarKardex      String?  @default("KARDEX123")
+  codeEliminarCaja         String?  @default("CAJA123")
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
