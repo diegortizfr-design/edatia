@@ -5,7 +5,7 @@ Este proyecto es la versión SaaS moderna y escalable de Edatia ERP, estructurad
 ## 🏗️ Estructura del Proyecto
 - `/backend`: API REST construida con **NestJS**, **TypeScript** y **Prisma ORM**.
 - `/frontend`: SPA construida con **React**, **Vite** y **shadcn/ui**, servida por **Caddy**.
-- `/tiendas-virtuales/distribuidorababyworld`: Storefront de e-commerce (Headless Commerce) conectado en tiempo real al ERP con geolocalización física GPS, BNPL (Addi/Sistecrédito) y pagos (servicio docker `glowxir`).
+- `/tiendas-virtuales/distribuidorababyworld`: Storefront de e-commerce (Headless Commerce) conectado en tiempo real al ERP con geolocalización física GPS, BNPL (Addi/Sistecrédito), catálogo y feed XML de sincronización para Meta Commerce Manager (servicio docker `glowxir`).
 - `/tiendas-virtuales/prestamos`: Plataforma SaaS multitenant para control de préstamos, cobranza de cartera, amortizaciones y rutas diarias (servicio docker `edatia-prestamos`).
 - `/traefik`: Configuración del proxy inverso y almacenamiento de certificados SSL.
 - `docker-compose.yml`: Orquestador de todos los servicios.
@@ -63,6 +63,7 @@ Genera una copia en `backups/backup_YYYYMMDD_HHMMSS/` que incluye:
 ## 🔍 Verificación Operativa
 - **Frontend**: https://erp.edatia.com
 - **API Health**: https://api.edatia.com/api/v1/health (Debe retornar `{ "status": "ok" }`)
+- **Meta Catalog Feed**: https://api.edatia.com/api/v1/public/tiendas/distribuidorababyworld/meta-feed.xml
 - **Traefik Dashboard**: (Configurado pero no expuesto públicamente por defecto).
 
 ## 🛠️ Tecnologías Utilizadas
