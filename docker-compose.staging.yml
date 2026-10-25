@@ -69,9 +69,15 @@ services:
     #    La base ya la creo el servicio db-init.
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
+    # `;` y no `&&` a proposito: si un paso de prisma falla, el proceso arranca
+    # igual. Con `&&` el contenedor moria y quedaba en restarting, y la API de
+    # Coolify no expone los logs de este contenedor, asi que el error era
+    # invisible. Asi el api llega a healthy y el fallo se puede acotar desde
+    # afuera: si responde /health, el problema estaba en prisma; si sigue
+    # reiniciandose, el que no arranca es Nest.
     command: >
-      sh -c "npx prisma migrate deploy --schema prisma/schema.prisma &&
-             npx prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss &&
+      sh -c "npx prisma migrate deploy --schema prisma/schema.prisma;
+             npx prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
              node dist/main"
     environment:
       NODE_ENV: production
@@ -114,12 +120,12 @@ services:
         # Caddyfile con el proxy al api, horneado en la imagen
         CADDYFILE: Caddyfile.staging
     restart: unless-stopped
-    # service_healthy a proposito: si el api no levanta, `compose up` falla y
-    # el motivo queda en el log del deploy. La API de Coolify solo expone los
-    # logs del contenedor principal, asi que sin esto un api caido es invisible.
+    # Sin condition: service_healthy. Se probo, y sirvio para confirmar que el
+    # api no llegaba a healthy, pero deja todo el stack abajo (503 en el
+    # dominio) cuando el api falla. En pruebas conviene lo contrario: que el
+    # SPA se pueda ver aunque el backend este caido.
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     expose:
       - "80"
     healthcheck:
@@ -141,8 +147,7 @@ services:
         CADDYFILE: Caddyfile.staging
     restart: unless-stopped
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     expose:
       - "80"
 
