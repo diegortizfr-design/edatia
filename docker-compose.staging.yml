@@ -37,6 +37,21 @@ services:
       retries: 5
       start_period: 20s
 
+  # ── Crea la BD adicional que necesita el segundo cliente Prisma ─────────────
+  # Va en un servicio aparte (la imagen de postgres trae createdb) en lugar de
+  # depender de que `prisma db push` cree la base, y sin bind mounts.
+  db-init:
+    image: postgres:15.6-alpine
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    command: >
+      sh -c "createdb -h db -U ${DB_USER:-edatia} herramientas_edatia 2>&1
+      || echo 'herramientas_edatia: ya existia o no se pudo crear'"
+
   # ── API NestJS ──────────────────────────────────────────────────────────────
   api:
     build:
@@ -46,11 +61,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     # En staging el schema se aplica solo en cada arranque.
     #  · schema.prisma     → tiene migraciones versionadas: migrate deploy
-    #  · herramientas.prisma → no tiene carpeta de migraciones: db push,
-    #    que ademas CREA la base si no existe (por eso el init-db.sh del
-    #    compose de produccion no hace falta aca).
+    #  · herramientas.prisma → no tiene carpeta de migraciones: db push.
+    #    La base ya la creo el servicio db-init.
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
     command: >
@@ -98,8 +114,12 @@ services:
         # Caddyfile con el proxy al api, horneado en la imagen
         CADDYFILE: Caddyfile.staging
     restart: unless-stopped
+    # service_healthy a proposito: si el api no levanta, `compose up` falla y
+    # el motivo queda en el log del deploy. La API de Coolify solo expone los
+    # logs del contenedor principal, asi que sin esto un api caido es invisible.
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     expose:
       - "80"
     healthcheck:
@@ -121,7 +141,8 @@ services:
         CADDYFILE: Caddyfile.staging
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     expose:
       - "80"
 
