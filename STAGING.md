@@ -34,8 +34,8 @@ Servicios del compose:
 | Servicio | Qué es | Dominio |
 |---|---|---|
 | `db` | PostgreSQL 15.6-alpine, volumen `db-data-staging` | — (solo red interna) |
-| `db-init` | one-shot: crea `herramientas_edatia` con `createdb` | — |
-| `api-migrate` | one-shot: `prisma db push` de los dos schemas | — |
+| `db-init` | one-shot: crea las dos bases con `createdb` | — |
+| `api-migrate` | one-shot: `migrate deploy` del schema principal + `db push` de herramientas | — |
 | `api-seed` | one-shot: `seed.ts` + `manager-seed.ts` | — |
 | `api` | NestJS, solo `node dist/main` | — (vía proxy de `web`) |
 | `web` | SPA del ERP + proxy del API | **`edatia.matriz.cloud`** |
@@ -174,7 +174,8 @@ build solo. Cuidado con el orden: **pushear a `fork` sin haber pusheado a
 
 ## Deuda pendiente, fuera de staging
 
-**El historial de migraciones no puede reconstruir la base desde cero.**
+**RESUELTO en el repo, pendiente en producción.** El historial de
+migraciones no podía reconstruir la base desde cero.
 `schema.prisma` declara 94 modelos y `prisma/migrations/` crea 6 tablas: la BD
 de producción se fue armando con `db push`, así que las migraciones quedaron
 cubriendo una fracción. Con `migrate deploy`, una base nueva recibe 6 tablas de
@@ -182,16 +183,22 @@ cubriendo una fracción. Con `migrate deploy`, una base nueva recibe 6 tablas de
 `Pais` en `onApplicationBootstrap` y revienta con `P2021` antes de llegar a
 `app.listen()`. Fue exactamente lo que pasó acá.
 
-Este stack lo esquiva con `db push`, que sincroniza el schema completo sin
-depender del historial. Pero el problema sigue abierto para:
+El problema afectaba a:
 
 - un **restore** desde backup sobre una base vacía,
 - **provisionar un cliente nuevo** (el multi-tenant del paso 5 de la hoja de ruta),
 - cualquier ambiente que se cree de cero.
 
-El arreglo es generar una migración *baseline* desde el schema actual y
-marcarla como aplicada en producción (`prisma migrate resolve --applied`). Toca
-el estado de prod, así que va en su propio cambio y con backup previo.
+La baseline ya está en el repo (`prisma/migrations/0_init`, 94 tablas) y este
+stack volvió a `migrate deploy`. Se verificó creando `edatia_staging_v2` de
+cero: las migraciones la construyeron completa, los seeds corrieron y los dos
+logins funcionan.
+
+**Falta el paso en producción**, que no se ejecutó porque toca el estado de la
+BD real: el procedimiento está en `PRODUCCION-BASELINE.md` y empieza por backup
+y chequeo de deriva. Ojo con el orden — marcar la baseline *antes* de
+deployarla, o el deploy falla con `42P07` y deja una migración en estado
+fallido que bloquea las siguientes.
 
 ## Nota sobre el diagnóstico del `api`
 
