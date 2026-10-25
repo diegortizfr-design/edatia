@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, Headers, HttpCode, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, Headers, Header, HttpCode, ParseIntPipe } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { DigitalService } from './digital.service';
 import { AnaliticaService } from './analitica.service';
@@ -9,6 +9,30 @@ export class DigitalPublicController {
     private readonly digitalService: DigitalService,
     private readonly analiticaService: AnaliticaService,
   ) {}
+
+  // Feed XML para Meta Commerce Manager (Facebook / Instagram Shopping)
+  @Get(':slug/meta-feed.xml')
+  @Header('Content-Type', 'application/xml; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=7200, s-maxage=7200')
+  async getMetaFeedXml(
+    @Param('slug') slug: string,
+    @Query('filtro') filtro?: string,
+    @Query('refresh') refresh?: string,
+  ) {
+    return this.digitalService.getMetaFeedXml(slug, filtro || 'alto_margen', refresh === 'true');
+  }
+
+  // Alias estándar compatible con /feed.xml
+  @Get(':slug/feed.xml')
+  @Header('Content-Type', 'application/xml; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=7200, s-maxage=7200')
+  async getFeedXml(
+    @Param('slug') slug: string,
+    @Query('filtro') filtro?: string,
+    @Query('refresh') refresh?: string,
+  ) {
+    return this.digitalService.getMetaFeedXml(slug, filtro || 'alto_margen', refresh === 'true');
+  }
 
   // Analítica anónima de la tienda (visitas, producto visto, carrito, checkout)
   @Throttle({ default: { limit: 60, ttl: 60000 } })

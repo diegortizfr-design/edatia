@@ -806,4 +806,251 @@ export class DigitalService {
       checkoutUrl,
     };
   }
+
+  // ── Feed XML para Meta Commerce Manager (Facebook / Instagram Catalog) ───────
+  private readonly metaFeedCache = new Map<string, { xml: string; expiresAt: number }>();
+
+  async getMetaFeedXml(slug: string, filtro: string = 'alto_margen', forceRefresh = false): Promise<string> {
+    await this.autoInitializeBabyWorld(slug);
+
+    const cacheKey = `${slug}:${filtro}`;
+    const cached = this.metaFeedCache.get(cacheKey);
+    if (!forceRefresh && cached && cached.expiresAt > Date.now()) {
+      return cached.xml;
+    }
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug },
+        ],
+      },
+    });
+
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    // Dominio base para enlaces canónicos de producto
+    let baseDomain = 'distribuidorababyworld.com';
+    if (config.dominioPropio) {
+      baseDomain = config.dominioPropio.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    } else if (config.slugTienda && config.slugTienda !== 'distribuidorababyworld') {
+      baseDomain = `${config.slugTienda}.edatia.com`;
+    }
+    const baseUrl = `https://${baseDomain}`;
+
+    const productos = await this.prisma.producto.findMany({
+      where: {
+        empresaId: config.empresaId,
+        publicadoWeb: true,
+        activo: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        sku: true,
+        codigoBarras: true,
+        precioBase: true,
+        precioWeb: true,
+        costo: true,
+        costoPromedio: true,
+        slug: true,
+        imagen: true,
+        descripcion: true,
+        descripcionWeb: true,
+        esDestacado: true,
+        metadataWeb: true,
+        categoria: {
+          select: {
+            nombre: true,
+            parent: {
+              select: {
+                nombre: true,
+              },
+            },
+          },
+        },
+        marca: {
+          select: {
+            nombre: true,
+          },
+        },
+        stock: {
+          select: {
+            cantidad: true,
+          },
+        },
+      },
+    });
+
+    const isLowMarginCommodity = (nombre: string, mainCat: string, subcat: string) => {
+      const text = `${nombre} ${mainCat} ${subcat}`.toLowerCase();
+      const lowMarginTerms = [
+        'pañal', 'panal', 'huggies', 'pampers', 'winny', 'babysec', 'pequeñin', 'pequenin',
+        'toallitas', 'toallita', 'panitos', 'pañitos', 'shampoo', 'jabon bebe', 'jabón',
+        'formula infantil', 'fórmula', 'leche en polvo', 'enfamil', 'similac', 'nan pro',
+        'crema antipañalitis', 'crema antipanalitis', 'desitin', 'bepanthen',
+      ];
+      return lowMarginTerms.some((term) => text.includes(term));
+    };
+
+    const isHighMarginProduct = (prod: any) => {
+      const precio = Number(prod.precioWeb || prod.precioBase || 0);
+      const costo = Number(prod.costo || prod.costoPromedio || 0);
+      const nombre = prod.nombre || '';
+      const cat = prod.categoria?.nombre || '';
+      const parentCat = prod.categoria?.parent?.nombre || '';
+      const subcat = parentCat ? cat : '';
+      const mainCat = parentCat || cat;
+
+      // 1. Si tiene costo registrado y el margen es >= 25%
+      if (precio > 0 && costo > 0) {
+        const marginPct = (precio - costo) / precio;
+        if (marginPct >= 0.25) return true;
+        if (marginPct < 0.15) return false;
+      }
+
+      // 2. Si es producto de rotación masiva y bajo margen (pañales, toallitas, leches)
+      if (isLowMarginCommodity(nombre, mainCat, subcat)) {
+        // Excepción: Kits artesanales premium de alto valor (como tortas de pañales con peluche de $145.000)
+        if (nombre.toLowerCase().includes('torta') || precio >= 120000) {
+          return true;
+        }
+        return false;
+      }
+
+      // 3. Categorías típicamente rentables (Juguetes, Calzado, Ropa, Sillas, Accesorios)
+      const highMarginCategories = ['juguetería', 'juguetes', 'calzado', 'ropa', 'variedades', 'accesorios'];
+      if (highMarginCategories.some((c) => mainCat.toLowerCase().includes(c))) {
+        return true;
+      }
+
+      // 4. Palabras clave de productos rentables (caminadores, pistas, gimnasios, montables, etc.)
+      const highMarginTerms = [
+        'caminador', 'nobily', 'pista', 'gimnasio', 'piano', 'montable', 'triciclo',
+        'coche', 'silla', 'cuna', 'corral', 'extractor', 'esterilizador', 'ajuar',
+        'revelacion', 'revelación', 'humo', 'alberca', 'carro', 'patineta',
+      ];
+      if (highMarginTerms.some((t) => nombre.toLowerCase().includes(t))) {
+        return true;
+      }
+
+      // 5. Destacados por el administrador
+      if (prod.esDestacado) return true;
+
+      // Por defecto, productos superiores a $40.000 COP que no sean pañales/aseo masivo
+      return precio >= 40000;
+    };
+
+    // Filtrar según parámetro
+    const productosFiltrados = filtro === 'alto_margen'
+      ? productos.filter(isHighMarginProduct)
+      : productos;
+
+    const cleanCdata = (val: string | null | undefined, max = 5000): string => {
+      if (!val) return '';
+      return String(val).replace(/\]\]>/g, ']] >').trim().slice(0, max);
+    };
+
+    const xmlEscape = (val: string | null | undefined): string => {
+      if (!val) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const itemsXml = productosFiltrados.map((p) => {
+      const precio = Number(p.precioWeb || p.precioBase || 0);
+      const precioAnterior = (p.metadataWeb as any)?.precioAnterior ? Number((p.metadataWeb as any).precioAnterior) : null;
+
+      const slugProducto = p.slug || p.id.toString();
+      const productUrl = `${baseUrl}/producto/${slugProducto}`;
+
+      // Imagen principal
+      let mainImg = p.imagen || 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700';
+      if (mainImg.startsWith('/')) {
+        mainImg = `${baseUrl}${mainImg}`;
+      } else if (mainImg.startsWith('http://')) {
+        mainImg = mainImg.replace('http://', 'https://');
+      }
+
+      // Imágenes adicionales
+      const additionalImgs: string[] = [];
+      const extraList = (p.metadataWeb as any)?.imagenes;
+      if (Array.isArray(extraList)) {
+        for (const img of extraList.slice(0, 10)) {
+          if (typeof img === 'string' && img.trim() && img !== p.imagen) {
+            let fullImg = img.trim();
+            if (fullImg.startsWith('/')) fullImg = `${baseUrl}${fullImg}`;
+            else if (fullImg.startsWith('http://')) fullImg = fullImg.replace('http://', 'https://');
+            additionalImgs.push(fullImg);
+          }
+        }
+      }
+
+      // Stock
+      const stockTotal = (p.stock || []).reduce((sum, s) => sum + Number(s.cantidad || 0), 0);
+      const hasStock = p.stock && p.stock.length > 0 ? stockTotal > 0 : true;
+      const availability = hasStock ? 'in stock' : 'out of stock';
+
+      // Marca
+      const brandName = p.marca?.nombre || (p.metadataWeb as any)?.marca || config.nombreTienda || 'Baby World';
+
+      // Categoría
+      let categoryTree = 'Variedades';
+      if (p.categoria) {
+        categoryTree = p.categoria.parent
+          ? `${p.categoria.parent.nombre} > ${p.categoria.nombre}`
+          : p.categoria.nombre;
+      }
+
+      // Precios
+      let priceTags = `<g:price>${precio.toFixed(2)} COP</g:price>`;
+      if (precioAnterior && precioAnterior > precio) {
+        priceTags = `<g:price>${precioAnterior.toFixed(2)} COP</g:price>\n        <g:sale_price>${precio.toFixed(2)} COP</g:sale_price>`;
+      }
+
+      const isHighMargin = isHighMarginProduct(p);
+      const customLabel = isHighMargin ? 'alto_margen' : 'rotacion_regular';
+
+      return `    <item>
+      <g:id>${xmlEscape(p.sku || String(p.id))}</g:id>
+      <g:title><![CDATA[${cleanCdata(p.nombre, 150)}]]></g:title>
+      <g:description><![CDATA[${cleanCdata(p.descripcionWeb || p.descripcion || p.nombre, 5000)}]]></g:description>
+      <g:link>${xmlEscape(productUrl)}</g:link>
+      <g:image_link>${xmlEscape(mainImg)}</g:image_link>
+${additionalImgs.map((img) => `      <g:additional_image_link>${xmlEscape(img)}</g:additional_image_link>`).join('\n')}
+      <g:brand><![CDATA[${cleanCdata(brandName, 70)}]]></g:brand>
+      <g:condition>new</g:condition>
+      <g:availability>${availability}</g:availability>
+      ${priceTags}
+      <g:product_type><![CDATA[${cleanCdata(categoryTree, 750)}]]></g:product_type>
+      <g:custom_label_0>${customLabel}</g:custom_label_0>
+${p.codigoBarras ? `      <g:gtin>${xmlEscape(p.codigoBarras)}</g:gtin>` : ''}
+    </item>`;
+    }).join('\n');
+
+    const feedXml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title><![CDATA[${cleanCdata(config.nombreTienda || 'Distribuidora Baby World')} - Catálogo Meta]]></title>
+    <link>${xmlEscape(baseUrl)}</link>
+    <description><![CDATA[Feed oficial de productos para Meta Commerce Manager (Facebook e Instagram Shopping)]]></description>
+${itemsXml}
+  </channel>
+</rss>`;
+
+    // Guardar en caché con TTL de 2 horas
+    this.metaFeedCache.set(cacheKey, {
+      xml: feedXml,
+      expiresAt: Date.now() + 2 * 60 * 60 * 1000,
+    });
+
+    return feedXml;
+  }
 }

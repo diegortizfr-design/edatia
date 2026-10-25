@@ -1,5 +1,7 @@
 export interface Product {
   id: number
+  sku?: string
+  slug?: string
   nombre: string
   descripcion: string
   descripcionLarga: string
