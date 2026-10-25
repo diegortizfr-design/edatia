@@ -101,7 +101,20 @@ services:
     #    La base ya la creo el servicio db-init.
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
-    command: ["node", "dist/main"]
+    # Arranque con red de contencion para poder VER el error.
+    # Si `node dist/main` arranca bien, escucha en 4000 y nada mas pasa: lo de
+    # abajo no se ejecuta nunca. Si se cae, se captura su salida y se levanta un
+    # servidor minimo en el 4000 que la sirve como texto. Asi el error viaja por
+    # el proxy de web y se puede leer con un GET a /api/v1/health, que es el
+    # unico canal disponible: la API de Coolify no expone los logs de este
+    # contenedor y no tiene endpoint de ejecucion de comandos.
+    command:
+      - sh
+      - -c
+      - |
+        node dist/main > /tmp/boot.log 2>&1
+        echo '----- el proceso del api termino; salida capturada arriba -----' >> /tmp/boot.log
+        node -e 'const h=require("http"),f=require("fs");h.createServer((q,s)=>{s.writeHead(200,{"Content-Type":"text/plain; charset=utf-8"});s.end(f.readFileSync("/tmp/boot.log","utf8"))}).listen(4000,()=>console.log("modo diagnostico en 4000"))'
     environment:
       NODE_ENV: production
       PORT: 4000
