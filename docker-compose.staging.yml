@@ -78,9 +78,22 @@ services:
     environment:
       DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/${DB_NAME:-edatia_staging}?schema=public
       HERRAMIENTAS_DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/herramientas_edatia?schema=public
+    # `db push` y NO `migrate deploy` para el schema principal.
+    #
+    # El historial de migraciones no puede reconstruir la base desde cero:
+    # schema.prisma declara 94 modelos y prisma/migrations solo crea 6 tablas.
+    # La base de produccion se fue armando con db push, asi que las migraciones
+    # quedaron cubriendo una fraccion. Con migrate deploy, una base nueva recibe
+    # 6 tablas de 94 y el api se mata al arrancar: GeolocalizacionService
+    # consulta la tabla Pais en onApplicationBootstrap y revienta con P2021
+    # antes de llegar a app.listen().
+    #
+    # db push sincroniza el schema completo sin depender del historial, que es
+    # lo correcto para un ambiente que se crea de cero. No arregla el problema
+    # de fondo del repo -- eso pide una migracion baseline generada del schema,
+    # y toca el estado de produccion, asi que va aparte.
     command: >
-      sh -c "ls -l /app/node_modules/.bin/prisma;
-             /app/node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma;
+      sh -c "/app/node_modules/.bin/prisma db push --schema prisma/schema.prisma --skip-generate --accept-data-loss;
              /app/node_modules/.bin/prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
              exit 0"
 

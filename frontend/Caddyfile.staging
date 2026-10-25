@@ -29,17 +29,6 @@
         respond "edatia-staging: el proxy de web no pudo llegar al api ({err.status_code})" {err.status_code}
     }
 
-    # ── SONDA TEMPORAL DE DIAGNOSTICO ───────────────────────────────────────
-    # manager tambien es un servidor HTTP (puerto 80) en la misma red. Sirve
-    # para separar dos causas que dan el mismo 502:
-    #   · /__probe/manager responde 200  → la red entre contenedores funciona,
-    #     con lo cual el problema es que nada escucha en api:4000
-    #   · /__probe/manager responde 502  → los contenedores no se ven entre si
-    # Quitar cuando el api este arriba.
-    handle /__probe/manager* {
-        reverse_proxy manager:80
-    }
-
     # ── API ─────────────────────────────────────────────────────────────────
     handle /api/* {
         reverse_proxy api:4000
