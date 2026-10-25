@@ -97,6 +97,35 @@ services:
              /app/node_modules/.bin/prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
              exit 0"
 
+  # ── Seeds, en un one-shot con la misma imagen del api ───────────────────────
+  # Van como servicio y no a mano porque la API de Coolify no tiene endpoint de
+  # ejecucion de comandos: no hay forma de hacer un `exec` en el contenedor.
+  #
+  # Correrlos en cada deploy es seguro: los dos seeds usan solo upsert (10 y 4
+  # respectivamente, ningun create suelto), asi que son idempotentes.
+  api-seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: "no"
+    depends_on:
+      api-migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/${DB_NAME:-edatia_staging}?schema=public
+      HERRAMIENTAS_DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/herramientas_edatia?schema=public
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      MANAGER_ADMIN_PASSWORD: ${MANAGER_ADMIN_PASSWORD}
+      PUBLIC_API_URL: https://${STAGING_HOST:-edatia.matriz.cloud}
+    command:
+      - sh
+      - -c
+      - |
+        /app/node_modules/.bin/ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
+        /app/node_modules/.bin/ts-node --compiler-options '{"module":"CommonJS"}' prisma/manager-seed.ts
+        exit 0
+
   # ── API NestJS ──────────────────────────────────────────────────────────────
   api:
     build:
