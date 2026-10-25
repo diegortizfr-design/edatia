@@ -58,3 +58,4 @@ tiendas-virtuales/distribuidorababyworld/public/catalogo/
 powershell.cmd
 backend/powershell.cmd
 
+.env.staging

@@ -1,0 +1,130 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Edatia — Stack de PRUEBAS (staging) para Coolify
+# Proyecto: matriz   Entorno: staging   Host: https://edatia.matriz.cloud
+#
+#   /            → SPA del ERP (web)
+#   /api/v1/*    → API NestJS (api)   ← proxy interno, mismo origen = sin CORS
+#   /uploads/*   → archivos subidos (api)
+#
+# Diferencias contra docker-compose.yml (producción con Traefik propio):
+#   · sin red externa n8n_default  → Coolify crea la red del proyecto
+#   · sin container_name fijos     → Coolify prefija por entorno
+#   · sin labels de Traefik        → el dominio se asigna en Coolify al servicio web
+#   · la BD NO publica 5432 al host (solo accesible dentro de la red)
+#   · volúmenes propios *-staging  → jamás toca los datos de producción
+#
+# Variables requeridas (Coolify → Environment Variables): ver .env.staging.example
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL de pruebas ───────────────────────────────────────────────────
+  db:
+    image: postgres:15.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-edatia_staging}
+      POSTGRES_USER: ${DB_USER:-edatia}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data-staging:/var/lib/postgresql/data
+      # Crea las BD adicionales (herramientas_edatia, prestamos_edatia)
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-edatia} -d ${DB_NAME:-edatia_staging}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── API NestJS ──────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # En staging el schema se aplica solo en cada arranque.
+    #  · schema.prisma     → tiene migraciones versionadas: migrate deploy
+    #  · herramientas.prisma → no tiene carpeta de migraciones: db push.
+    #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
+    #    confirmación si hay drift. Es aceptable SOLO porque es staging.
+    command: >
+      sh -c "npx prisma migrate deploy --schema prisma/schema.prisma &&
+             npx prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss &&
+             node dist/main"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/${DB_NAME:-edatia_staging}?schema=public
+      HERRAMIENTAS_DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/herramientas_edatia?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      MANAGER_JWT_SECRET: ${MANAGER_JWT_SECRET}
+      MANAGER_JWT_EXPIRES_IN: ${MANAGER_JWT_EXPIRES_IN:-8h}
+      PUBLIC_API_URL: https://${STAGING_HOST:-edatia.matriz.cloud}
+      # El SPA se sirve en el mismo host, así que CORS no hace falta;
+      # se declara igual para clientes externos y para el manager.
+      CORS_EXTRA_ORIGINS: https://${STAGING_HOST:-edatia.matriz.cloud},https://${MANAGER_STAGING_HOST:-manager.edatia.matriz.cloud}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      MANAGER_ADMIN_PASSWORD: ${MANAGER_ADMIN_PASSWORD}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    volumes:
+      - uploads-data-staging:/app/uploads
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # ── SPA del ERP + proxy al API ──────────────────────────────────────────────
+  # Este es el servicio al que se le asigna el dominio en Coolify.
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Mismo origen que el SPA → el navegador pega a /api/v1 sin CORS
+        VITE_API_URL: https://${STAGING_HOST:-edatia.matriz.cloud}
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - ./deploy/staging/Caddyfile.web:/etc/caddy/Caddyfile:ro
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Portal Manager (opcional) ───────────────────────────────────────────────
+  # Queda corriendo sin dominio; asignale MANAGER_STAGING_HOST en Coolify
+  # cuando lo quieras público.
+  manager:
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://${MANAGER_STAGING_HOST:-manager.edatia.matriz.cloud}
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - ./deploy/staging/Caddyfile.manager:/etc/caddy/Caddyfile:ro
+    expose:
+      - "80"
+
+volumes:
+  db-data-staging:
+    driver: local
+  uploads-data-staging:
+    driver: local

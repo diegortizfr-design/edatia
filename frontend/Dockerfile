@@ -3,6 +3,11 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
+# URL del API que Vite incrusta en el bundle (es build-time, no runtime).
+# El default es producción, así que un build sin argumentos no cambia de comportamiento.
+ARG VITE_API_URL=https://api.edatia.com
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY package*.json ./
 RUN npm install
 

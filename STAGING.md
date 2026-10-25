@@ -1,0 +1,103 @@
+# Ambiente de pruebas — `edatia.matriz.cloud` (Coolify)
+
+Stack de staging aislado de producción. Nada acá toca `edatia.com`, el VPS de
+producción ni sus volúmenes.
+
+| | |
+|---|---|
+| **Panel** | `https://panel.oportunidaddevida.com` |
+| **Proyecto / Entorno** | `matriz` / `staging` |
+| **Rama que se deploya** | `julian` |
+| **Compose** | `docker-compose.staging.yml` |
+| **URL pública** | `https://edatia.matriz.cloud` |
+| **Manager (opcional)** | `https://manager.edatia.matriz.cloud` |
+
+## Cómo está armado
+
+Un solo hostname sirve todo, con Caddy reenviando el API por ruta:
+
+```
+https://edatia.matriz.cloud
+  ├── /            → web      (SPA del ERP, build de Vite servido por Caddy)
+  ├── /api/v1/*    → api:4000 (NestJS)
+  └── /uploads/*   → api:4000
+```
+
+Como el SPA y el API quedan en el **mismo origen**, no hay CORS ni cookies
+cross-site que configurar — que es justo lo que más se rompe al clonar el
+ambiente. El bundle se construye con `VITE_API_URL=https://edatia.matriz.cloud`
+(es build-time en Vite, no runtime: cambiar el host obliga a rebuild).
+
+Servicios del compose:
+
+| Servicio | Qué es | Dominio |
+|---|---|---|
+| `db` | PostgreSQL 15.6-alpine, volumen `db-data-staging` | — (solo red interna) |
+| `api` | NestJS; corre `prisma migrate deploy` en cada arranque | — (vía proxy de `web`) |
+| `web` | SPA del ERP + proxy del API | **`edatia.matriz.cloud`** |
+| `manager` | Portal interno; queda corriendo sin dominio | opcional |
+
+El `db` **no publica el 5432 al host** (producción sí lo hace). Para entrar:
+`docker exec -it <contenedor-db> psql -U edatia -d edatia_staging`.
+
+`init-db.sh` se monta en el entrypoint de Postgres y crea de paso
+`herramientas_edatia` y `prestamos_edatia`, que el backend necesita por su
+segundo cliente Prisma (`HERRAMIENTAS_DATABASE_URL`).
+
+## Pasos en Coolify
+
+**1. DNS** — antes que nada, `edatia.matriz.cloud` (y `manager.edatia.matriz.cloud`
+si lo vas a usar) con un registro `A` apuntando a la IP del servidor de Coolify.
+Sin esto el certificado de Let's Encrypt no se emite.
+
+**2. Proyecto y entorno** — Coolify → *Projects* → `matriz`; dentro, entorno
+`staging` (crealos si no existen).
+
+**3. Recurso** — *+ New* → *Docker Compose* (no "Application"), y configurá:
+
+- **Source**: repo `diegortizfr-design/edatia` (privado → hace falta una GitHub
+  App o deploy key en Coolify)
+- **Branch**: `julian`
+- **Compose file**: `docker-compose.staging.yml`
+- **Base directory**: `/`
+
+**4. Variables de entorno** — pegá el contenido de `.env.staging.example`.
+Los secretos de esa plantilla se generaron aleatorios para este ambiente;
+**no reutilices los de producción**.
+
+**5. Dominio** — en el servicio `web`, campo *Domains*: `https://edatia.matriz.cloud`.
+Dejá `api`, `db` y `manager` sin dominio: el API entra por el proxy de `web`.
+
+**6. Deploy.** El primer build compila 3 imágenes (backend, frontend, manager),
+así que tarda.
+
+**7. Seeds** — una sola vez, en la terminal del contenedor `api`:
+
+```bash
+npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
+npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/manager-seed.ts
+```
+
+Las credenciales salen de `SEED_ADMIN_PASSWORD` y `MANAGER_ADMIN_PASSWORD`.
+
+## Verificación
+
+```bash
+curl -s https://edatia.matriz.cloud/api/v1/health      # API por el proxy
+curl -sI https://edatia.matriz.cloud | grep -i x-edatia-env   # debe decir: staging
+```
+
+El header `X-Edatia-Env: staging` está puesto a propósito para que no quede
+duda de en qué ambiente estás mirando.
+
+## Diferencias contra producción
+
+| | Producción | Staging |
+|---|---|---|
+| Proxy | Traefik propio + labels en el compose | el de Coolify |
+| Red | externa `n8n_default` | la del proyecto en Coolify |
+| `container_name` | fijos (`edatia-db`, …) | los asigna Coolify |
+| Puerto 5432 | publicado al host | cerrado |
+| Migraciones | manuales (`migrate deploy`) | automáticas al arrancar |
+| HSTS | activo | desactivado |
+| Volúmenes | `db-data`, `uploads-data` | `*-staging` (separados) |

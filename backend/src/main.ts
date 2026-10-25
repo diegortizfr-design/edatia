@@ -43,6 +43,13 @@ async function bootstrap() {
   );
 
   // ── CORS ──────────────────────────────────────────────────────────────────
+  // Orígenes extra por entorno (staging, previews) sin tocar este archivo:
+  //   CORS_EXTRA_ORIGINS="https://edatia.matriz.cloud,https://otro.dominio"
+  const extraOrigins = (process.env.CORS_EXTRA_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
     origin: [
       'https://erp.edatia.com',
@@ -57,6 +64,7 @@ async function bootstrap() {
       'http://localhost:5175',
       'http://localhost:3000',
       'http://localhost:3005',
+      ...extraOrigins,
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
