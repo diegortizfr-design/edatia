@@ -144,6 +144,9 @@ services:
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
     # Arranque con red de contencion para poder VER el error.
+    # Responde 503 y no 200 a proposito: con 200 el healthcheck del contenedor
+    # pasaria con el api muerto y Coolify lo reportaria sano. Con 503 el
+    # healthcheck falla como debe y el cuerpo se sigue pudiendo leer con curl.
     # Si `node dist/main` arranca bien, escucha en 4000 y nada mas pasa: lo de
     # abajo no se ejecuta nunca. Si se cae, se captura su salida y se levanta un
     # servidor minimo en el 4000 que la sirve como texto. Asi el error viaja por
@@ -156,7 +159,7 @@ services:
       - |
         node dist/main > /tmp/boot.log 2>&1
         echo '----- el proceso del api termino; salida capturada arriba -----' >> /tmp/boot.log
-        node -e 'const h=require("http"),f=require("fs");h.createServer((q,s)=>{s.writeHead(200,{"Content-Type":"text/plain; charset=utf-8"});s.end(f.readFileSync("/tmp/boot.log","utf8"))}).listen(4000,()=>console.log("modo diagnostico en 4000"))'
+        node -e 'const h=require("http"),f=require("fs");h.createServer((q,s)=>{s.writeHead(503,{"Content-Type":"text/plain; charset=utf-8"});s.end(f.readFileSync("/tmp/boot.log","utf8"))}).listen(4000,()=>console.log("modo diagnostico en 4000"))'
     environment:
       NODE_ENV: production
       PORT: 4000

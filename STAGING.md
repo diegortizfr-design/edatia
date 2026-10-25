@@ -34,9 +34,18 @@ Servicios del compose:
 | Servicio | Qué es | Dominio |
 |---|---|---|
 | `db` | PostgreSQL 15.6-alpine, volumen `db-data-staging` | — (solo red interna) |
-| `api` | NestJS; corre `prisma migrate deploy` en cada arranque | — (vía proxy de `web`) |
+| `db-init` | one-shot: crea `herramientas_edatia` con `createdb` | — |
+| `api-migrate` | one-shot: `prisma db push` de los dos schemas | — |
+| `api-seed` | one-shot: `seed.ts` + `manager-seed.ts` | — |
+| `api` | NestJS, solo `node dist/main` | — (vía proxy de `web`) |
 | `web` | SPA del ERP + proxy del API | **`edatia.matriz.cloud`** |
-| `manager` | Portal interno; queda corriendo sin dominio | opcional |
+| `manager` | Portal interno, corriendo sin dominio | ver nota abajo |
+
+Los tres one-shot existen porque **la API de Coolify no tiene endpoint de
+ejecución de comandos**: no hay forma de hacer `exec` en un contenedor desde
+afuera, así que todo lo que en producción se corre a mano acá tiene que ser un
+servicio del compose. Son idempotentes, así que se repiten en cada deploy sin
+efectos.
 
 El `db` **no publica el 5432 al host** (producción sí lo hace). Para entrar:
 `docker exec -it <contenedor-db> psql -U edatia -d edatia_staging`.
@@ -81,14 +90,26 @@ Dejá `api`, `db` y `manager` sin dominio: el API entra por el proxy de `web`.
 **6. Deploy.** El primer build compila 3 imágenes (backend, frontend, manager),
 así que tarda.
 
-**7. Seeds** — una sola vez, en la terminal del contenedor `api`:
+**7. Seeds** — no hay paso manual: los corre el servicio `api-seed` en cada
+deploy.
 
-```bash
-npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
-npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/manager-seed.ts
-```
+## Credenciales
 
-Las credenciales salen de `SEED_ADMIN_PASSWORD` y `MANAGER_ADMIN_PASSWORD`.
+Probadas contra `POST /api/v1/auth/login`, no deducidas del código. El form
+pide **NIT + usuario + contraseña**.
+
+| NIT | Usuario | Contraseña | Empresa |
+|---|---|---|---|
+| `900000000-0` | `admin` | `Staging123!` | Edatia Demo SAS |
+| `1143875756-0` | `admin_diego` | `Admin123` | Diego Ortiz - Pruebas ERP |
+
+La primera sale de `SEED_ADMIN_PASSWORD`. La segunda está **hardcodeada** en
+`prisma/seed.ts` (`Admin123`, sin `!`) y ninguna variable la cambia.
+
+Manager: `admin@edatia.com` / `MANAGER_ADMIN_PASSWORD`. Todavía no es
+alcanzable: `manager.edatia.matriz.cloud` **no existe en DNS** (no hay
+wildcard en `matriz.cloud`), así que hay que crear el registro `A` a
+`168.231.70.175` y asignarle el dominio al servicio `manager` en Coolify.
 
 ## Verificación
 
@@ -150,3 +171,37 @@ git push fork julian        # dispara el deploy en Coolify
 Si Coolify tiene el webhook del fork activado, ese último push arranca el
 build solo. Cuidado con el orden: **pushear a `fork` sin haber pusheado a
 `origin`** deja staging corriendo código que no está en el repo real.
+
+## Deuda pendiente, fuera de staging
+
+**El historial de migraciones no puede reconstruir la base desde cero.**
+`schema.prisma` declara 94 modelos y `prisma/migrations/` crea 6 tablas: la BD
+de producción se fue armando con `db push`, así que las migraciones quedaron
+cubriendo una fracción. Con `migrate deploy`, una base nueva recibe 6 tablas de
+94 y el API se mata al arrancar — `GeolocalizacionService` consulta la tabla
+`Pais` en `onApplicationBootstrap` y revienta con `P2021` antes de llegar a
+`app.listen()`. Fue exactamente lo que pasó acá.
+
+Este stack lo esquiva con `db push`, que sincroniza el schema completo sin
+depender del historial. Pero el problema sigue abierto para:
+
+- un **restore** desde backup sobre una base vacía,
+- **provisionar un cliente nuevo** (el multi-tenant del paso 5 de la hoja de ruta),
+- cualquier ambiente que se cree de cero.
+
+El arreglo es generar una migración *baseline* desde el schema actual y
+marcarla como aplicada en producción (`prisma migrate resolve --applied`). Toca
+el estado de prod, así que va en su propio cambio y con backup previo.
+
+## Nota sobre el diagnóstico del `api`
+
+El arranque del `api` tiene una red de contención: si `node dist/main` termina,
+se captura su salida y un servidor mínimo la sirve en el puerto 4000 con código
+**503**. Así el error se lee con `curl https://edatia.matriz.cloud/api/v1/health`
+y el healthcheck sigue fallando como debe.
+
+Existe porque la API de Coolify **solo devuelve los logs de un contenedor** del
+recurso (probados `container=`, `service=`, `name=` y el nombre completo: todos
+devuelven el mismo) y no hay endpoint de ejecución. Sin esto, un `api` que no
+levanta es completamente opaco desde afuera. Si el `api` arranca bien, ese
+bloque no se ejecuta nunca.
