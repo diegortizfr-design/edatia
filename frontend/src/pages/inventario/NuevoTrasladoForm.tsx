@@ -729,10 +729,146 @@ export function NuevoTrasladoForm() {
           </div>
         </div>
 
-        {/* Contenedor 2: Estructura de 2 Columnas (Remisión a la izquierda, Catálogo con buscador y scroll a la derecha) */}
+        {/* Contenedor 2: Estructura de 2 Columnas (Catálogo a la izquierda, Remisión a la derecha) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* COLUMNA IZQUIERDA (lg:col-span-7): Productos Agregados a la Remisión TI */}
+          {/* COLUMNA IZQUIERDA (lg:col-span-5): Catálogo con buscador y explorador deslizable */}
+          <div className="lg:col-span-5 space-y-3 sticky top-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+              
+              {/* Cabecera del Catálogo */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                    <Warehouse size={15} className="text-indigo-600" />
+                    Productos en Bodega Origen
+                  </h3>
+                  <p className="text-[10px] text-slate-400 truncate max-w-[190px]">
+                    {bodegaOrigenObj ? `${bodegaOrigenObj.nombre} (${bodegaOrigenObj.codigo})` : 'Selecciona bodega origen'}
+                  </p>
+                </div>
+                {bodegaOrigenId && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full shrink-0">
+                    {sugerenciasConStock.length} disponibles
+                  </span>
+                )}
+              </div>
+
+              {/* Contenido del Catálogo */}
+              {!bodegaOrigenId ? (
+                <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 font-medium">
+                  <Lock size={20} className="mx-auto mb-1.5 text-slate-300" />
+                  Selecciona primero la bodega de origen arriba para cargar sus existencias.
+                </div>
+              ) : (
+                <>
+                  {/* Buscador Integrado */}
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={busqueda}
+                      onChange={e => setBusqueda(e.target.value)}
+                      placeholder="Buscar por nombre o SKU..."
+                      className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                    />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                        title="Limpiar búsqueda"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  {buscando && (
+                    <p className="text-[10px] text-slate-400 font-semibold px-1">
+                      Buscando en bodega origen...
+                    </p>
+                  )}
+
+                  {/* Lista con Desplazador / Scroll Vertical */}
+                  <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
+                    {sugerenciasConStock.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        {busqueda 
+                          ? `No se encontraron productos con stock mayor a 0 para "${busqueda}".` 
+                          : 'No hay productos con existencias disponibles en esta bodega origen.'}
+                      </div>
+                    ) : (
+                      sugerenciasConStock.map((p: any) => {
+                        const st = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
+                        const cantBod = st ? Number(st.cantidad || 0) : 0
+                        const itemEnLista = items.find(it => it.producto.id === p.id)
+                        const cantEnLista = itemEnLista ? parseFloat(itemEnLista.cantidad || '0') : 0
+                        const yaAlcanzoMaximo = cantEnLista >= cantBod
+
+                        return (
+                          <div
+                            key={p.id}
+                            className={`pt-2.5 pb-2 px-2.5 rounded-xl transition-all flex flex-col gap-1.5 ${
+                              itemEnLista 
+                                ? 'bg-indigo-50/50 border border-indigo-100' 
+                                : 'hover:bg-slate-50 border border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                                  {p.nombre}
+                                </p>
+                                <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                  SKU: {p.sku}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-block">
+                                  Stock: {cantBod} {p.unidadMedida?.abreviatura || 'un.'}
+                                </span>
+                                <span className="block text-[10px] text-slate-400 mt-0.5">
+                                  {fmtMoneda(Number(p.costoPromedio || 0))}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <div>
+                                {itemEnLista && (
+                                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                                    {cantEnLista} en remisión
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleAgregarProducto(p)}
+                                disabled={yaAlcanzoMaximo}
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                  yaAlcanzoMaximo
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    : itemEnLista
+                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                                    : 'bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-100'
+                                }`}
+                                title={yaAlcanzoMaximo ? 'Todo el stock disponible ya fue agregado' : 'Agregar al traslado'}
+                              >
+                                <Plus size={12} />
+                                <span>{itemEnLista ? '+1 más' : 'Agregar'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA (lg:col-span-7): Productos Agregados a la Remisión TI */}
           <div className="lg:col-span-7 space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -758,7 +894,7 @@ export function NuevoTrasladoForm() {
                   <PackageOpen size={36} className="mx-auto text-slate-300 mb-2" />
                   <p className="text-xs font-bold text-slate-600">Ningún producto agregado todavía</p>
                   <p className="text-[11px] text-slate-400 max-w-sm mx-auto mt-0.5">
-                    Utiliza el panel derecho para explorar los productos de la bodega o buscarlos por nombre/SKU y haz clic en <strong>Agregar</strong>.
+                    Utiliza el panel izquierdo para explorar los productos de la bodega o buscarlos por nombre/SKU y haz clic en <strong>Agregar</strong>.
                   </p>
                 </div>
               ) : (
@@ -914,142 +1050,6 @@ export function NuevoTrasladoForm() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none resize-none"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* COLUMNA DERECHA (lg:col-span-5): Catálogo con buscador y explorador deslizable */}
-          <div className="lg:col-span-5 space-y-3 sticky top-6">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
-              
-              {/* Cabecera del Catálogo */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div>
-                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
-                    <Warehouse size={15} className="text-indigo-600" />
-                    Productos en Bodega Origen
-                  </h3>
-                  <p className="text-[10px] text-slate-400 truncate max-w-[190px]">
-                    {bodegaOrigenObj ? `${bodegaOrigenObj.nombre} (${bodegaOrigenObj.codigo})` : 'Selecciona bodega origen'}
-                  </p>
-                </div>
-                {bodegaOrigenId && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full shrink-0">
-                    {sugerenciasConStock.length} disponibles
-                  </span>
-                )}
-              </div>
-
-              {/* Contenido del Catálogo */}
-              {!bodegaOrigenId ? (
-                <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 font-medium">
-                  <Lock size={20} className="mx-auto mb-1.5 text-slate-300" />
-                  Selecciona primero la bodega de origen arriba para cargar sus existencias.
-                </div>
-              ) : (
-                <>
-                  {/* Buscador Integrado */}
-                  <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      value={busqueda}
-                      onChange={e => setBusqueda(e.target.value)}
-                      placeholder="Buscar por nombre o SKU..."
-                      className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                    />
-                    {busqueda && (
-                      <button
-                        type="button"
-                        onClick={() => setBusqueda('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                        title="Limpiar búsqueda"
-                      >
-                        <X size={13} />
-                      </button>
-                    )}
-                  </div>
-
-                  {buscando && (
-                    <p className="text-[10px] text-slate-400 font-semibold px-1">
-                      Buscando en bodega origen...
-                    </p>
-                  )}
-
-                  {/* Lista con Desplazador / Scroll Vertical */}
-                  <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
-                    {sugerenciasConStock.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-slate-400">
-                        {busqueda 
-                          ? `No se encontraron productos con stock mayor a 0 para "${busqueda}".` 
-                          : 'No hay productos con existencias disponibles en esta bodega origen.'}
-                      </div>
-                    ) : (
-                      sugerenciasConStock.map((p: any) => {
-                        const st = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
-                        const cantBod = st ? Number(st.cantidad || 0) : 0
-                        const itemEnLista = items.find(it => it.producto.id === p.id)
-                        const cantEnLista = itemEnLista ? parseFloat(itemEnLista.cantidad || '0') : 0
-                        const yaAlcanzoMaximo = cantEnLista >= cantBod
-
-                        return (
-                          <div
-                            key={p.id}
-                            className={`pt-2.5 pb-2 px-2.5 rounded-xl transition-all flex flex-col gap-1.5 ${
-                              itemEnLista 
-                                ? 'bg-indigo-50/50 border border-indigo-100' 
-                                : 'hover:bg-slate-50 border border-transparent'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
-                                  {p.nombre}
-                                </p>
-                                <p className="text-[10px] font-mono text-slate-400 mt-0.5">
-                                  SKU: {p.sku}
-                                </p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-block">
-                                  Stock: {cantBod} {p.unidadMedida?.abreviatura || 'un.'}
-                                </span>
-                                <span className="block text-[10px] text-slate-400 mt-0.5">
-                                  {fmtMoneda(Number(p.costoPromedio || 0))}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between pt-1">
-                              <div>
-                                {itemEnLista && (
-                                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
-                                    {cantEnLista} en remisión
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleAgregarProducto(p)}
-                                disabled={yaAlcanzoMaximo}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                                  yaAlcanzoMaximo
-                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                    : itemEnLista
-                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-                                    : 'bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-100'
-                                }`}
-                                title={yaAlcanzoMaximo ? 'Todo el stock disponible ya fue agregado' : 'Agregar al traslado'}
-                              >
-                                <Plus size={12} />
-                                <span>{itemEnLista ? '+1 más' : 'Agregar'}</span>
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                </>
-              )}
             </div>
           </div>
 

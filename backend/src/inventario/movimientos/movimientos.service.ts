@@ -1199,13 +1199,32 @@ export class MovimientosService {
         if (!docConfig) {
           throw new BadRequestException('El documento de configuración no existe o no pertenece a esta empresa');
         }
-        numeroSalida = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+
+        let consecutivo = docConfig.consecutivoSiguiente;
+
+        // Búsqueda defensiva del siguiente consecutivo disponible para evitar colisión de clave única
+        while (
+          await tx.movimientoInventario.findFirst({
+            where: {
+              empresaId,
+              OR: [
+                { numero: `${docConfig.prefijo}-${consecutivo}` },
+                { numero: { startsWith: `${docConfig.prefijo}-${consecutivo}-` } },
+                { referenciaId: `${docConfig.prefijo}-${consecutivo}` },
+              ],
+            },
+          })
+        ) {
+          consecutivo++;
+        }
+
+        numeroSalida = `${docConfig.prefijo}-${consecutivo}`;
         documentoConfigId = docConfig.id;
 
         // Se incrementa el consecutivo del documento una sola vez para todo el traslado
         await tx.documentoConfig.update({
           where: { id: docConfig.id },
-          data: { consecutivoSiguiente: { increment: 1 } },
+          data: { consecutivoSiguiente: consecutivo + 1 },
         });
       } else {
         const prefijo = sameSucursal ? 'TRI' : 'TR';
@@ -1215,7 +1234,8 @@ export class MovimientosService {
       const movimientosSalida: any[] = [];
       const todosMovimientos: any[] = [];
 
-      for (const item of items) {
+      for (let idx = 0; idx < items.length; idx++) {
+        const item = items[idx];
         const producto = await this.getProducto(item.productoId, empresaId);
         const cpp = parseFloat(producto.costoPromedio.toString());
 
@@ -1273,9 +1293,13 @@ export class MovimientosService {
         const loteNotas = item.loteNumero ? ` [Lote: ${item.loteNumero}]` : '';
         const finalNotas = itemNotas ? `${itemNotas}${loteNotas}` : `Traslado en tránsito${loteNotas}`;
 
+        // Cada movimiento individual debe tener un numero único en la BD.
+        // Si es 1 producto usa numeroSalida (ej: TIPC-3). Si son varios, numera TIPC-3-1, TIPC-3-2...
+        const numSalidaItem = items.length === 1 ? numeroSalida : `${numeroSalida}-${idx + 1}`;
+
         const mov1 = await tx.movimientoInventario.create({
           data: {
-            numero: numeroSalida,
+            numero: numSalidaItem,
             empresaId,
             tipo: 'TRASLADO_SALIDA',
             concepto: 'TRASLADO',
@@ -1291,7 +1315,8 @@ export class MovimientosService {
             usuarioId,
             notas: finalNotas,
             estado: sameSucursal ? 'RECIBIDO' : 'EN_TRANSITO',
-            referenciaTipo: 'Manual',
+            referenciaId: numeroSalida,
+            referenciaTipo: 'TRASLADO_TI',
             documentoConfigId,
           },
         });
@@ -1343,11 +1368,14 @@ export class MovimientosService {
             loteDestinoId = loteD.id;
           }
 
-          const numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
+          // Número único para la entrada en destino
+          const numEntradaItem = items.length === 1 
+            ? `${numeroSalida}-E` 
+            : `${numeroSalida}-E-${idx + 1}`;
 
           const mov2 = await tx.movimientoInventario.create({
             data: {
-              numero: numeroEntrada,
+              numero: numEntradaItem,
               empresaId,
               tipo: 'TRASLADO_ENTRADA',
               concepto: 'TRASLADO',
@@ -1364,7 +1392,9 @@ export class MovimientosService {
               notas: finalNotas,
               estado: 'RECIBIDO',
               movimientoParId: mov1.id,
-              referenciaTipo: 'Manual',
+              referenciaId: numeroSalida,
+              referenciaTipo: 'TRASLADO_TI',
+              documentoConfigId,
             },
           });
 
