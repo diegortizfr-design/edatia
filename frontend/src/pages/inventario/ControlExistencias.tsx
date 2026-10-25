@@ -1145,7 +1145,9 @@ export function ControlExistencias() {
                             <td className="px-4 py-2.5 text-slate-500 text-[11px]">
                               {new Date(m.fechaMovimiento).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </td>
-                            <td className="px-4 py-2.5 font-mono font-bold text-slate-700 text-[11px]">{m.numero}</td>
+                            <td className="px-4 py-2.5 font-mono font-bold text-slate-700 text-[11px]" title={m.numero}>
+                              {m.referenciaId || m.numero}
+                            </td>
                             <td className="px-4 py-2.5 text-center">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${tipoColor}`}>
                                 {m.tipo}

@@ -180,7 +180,11 @@ export function Movimientos() {
         }
       }
     } else if (doc.tipo === 'TI') {
-      const movs = dbMovements.filter((m: any) => m.numero === doc.id)
+      const movs = dbMovements.filter((m: any) => {
+        if (m.tipo !== 'TRASLADO_SALIDA') return false
+        const masterId = m.referenciaId || (m.numero ? m.numero.replace(/-\d+$/, '') : null)
+        return masterId === doc.id || m.numero === doc.id
+      })
       if (movs.length > 0) {
         itemsList = movs.map((m: any) => {
           const seriales = m.serialesSalida || m.serialesEntrada || []
@@ -207,30 +211,66 @@ export function Movimientos() {
     return { itemsList, extraData }
   }
 
-  // Extract real transfers from dbMovements
-  const traslados = dbMovements
+  // Helper para extraer el ID maestro del documento de traslado
+  const getTransferDocId = (m: any) => {
+    if (m.referenciaId) return m.referenciaId
+    if (m.numero) {
+      return m.numero.replace(/-E(-\d+)?$/, '').replace(/-\d+$/, '')
+    }
+    return `TI-${m.id}`
+  }
+
+  // Agrupar movimientos TRASLADO_SALIDA por documento maestro
+  const trasladosGrouped = dbMovements
     .filter((m: any) => m.tipo === 'TRASLADO_SALIDA')
-    .map((m: any) => ({
-      id: m.numero || `TI-${m.id}`,
-      dbId: m.id,
-      numero: m.numero,
-      tipo: 'TI',
-      bodegaOrigenId: m.bodegaOrigenId,
-      bodegaOrigenNombre: m.bodegaOrigen?.nombre || 'Bodega Origen',
-      bodegaDestinoId: m.bodegaDestinoId,
-      bodegaDestinoNombre: m.bodegaDestino?.nombre || 'Bodega Destino',
-      productoId: m.productoId,
-      productoNombre: m.producto?.nombre || 'Producto',
-      productoSku: m.producto?.sku || '',
-      cantidad: Number(m.cantidad),
-      estado: m.estado || 'EN_TRANSITO',
-      fecha: m.fechaMovimiento,
-      fechaVerificacion: m.fechaVerificacion,
-      autorizadoPor: 'Supervisor'
-    }))
+    .reduce((acc: Record<string, any>, m: any) => {
+      const docId = getTransferDocId(m)
+      if (!acc[docId]) {
+        acc[docId] = {
+          id: docId,
+          dbId: m.id,
+          numero: docId,
+          tipo: 'TI',
+          bodegaOrigenId: m.bodegaOrigenId,
+          bodegaOrigenNombre: m.bodegaOrigen?.nombre || 'Bodega Origen',
+          bodegaDestinoId: m.bodegaDestinoId,
+          bodegaDestinoNombre: m.bodegaDestino?.nombre || 'Bodega Destino',
+          items: [],
+          totalCantidad: 0,
+          totalCosto: 0,
+          estado: m.estado || 'RECIBIDO',
+          fecha: m.fechaMovimiento,
+          fechaVerificacion: m.fechaVerificacion,
+          autorizadoPor: 'Supervisor',
+          notas: m.notas || ''
+        }
+      }
+      acc[docId].items.push(m)
+      acc[docId].totalCantidad += Number(m.cantidad || 0)
+      acc[docId].totalCosto += Number(m.cantidad || 0) * Number(m.costoUnitario || 0)
+      if (m.estado === 'EN_TRANSITO') {
+        acc[docId].estado = 'EN_TRANSITO'
+      }
+      return acc
+    }, {})
+
+  const traslados = Object.values(trasladosGrouped).map((t: any) => {
+    const itemCount = t.items.length
+    const resumenProd = itemCount === 1 
+      ? t.items[0]?.producto?.nombre || '1 producto' 
+      : `${itemCount} productos trasladados`
+    const resumenSku = itemCount === 1 ? (t.items[0]?.producto?.sku || '') : `${itemCount} referencias`
+
+    return {
+      ...t,
+      productoNombre: resumenProd,
+      productoSku: resumenSku,
+      cantidad: t.totalCantidad,
+    }
+  })
 
   // Filtered traslados for the unified tab
-  const trasladosFiltrados = traslados.filter(t => {
+  const trasladosFiltrados = traslados.filter((t: any) => {
     if (filtroTrasladoEstado !== 'todos' && t.estado !== filtroTrasladoEstado) return false
     if (filtroTrasladoQ) {
       const q = filtroTrasladoQ.toLowerCase()
@@ -239,7 +279,11 @@ export function Movimientos() {
         t.productoNombre.toLowerCase().includes(q) ||
         t.productoSku.toLowerCase().includes(q) ||
         t.bodegaOrigenNombre.toLowerCase().includes(q) ||
-        t.bodegaDestinoNombre.toLowerCase().includes(q)
+        t.bodegaDestinoNombre.toLowerCase().includes(q) ||
+        t.items.some((it: any) => 
+          it.producto?.nombre?.toLowerCase().includes(q) || 
+          it.producto?.sku?.toLowerCase().includes(q)
+        )
       )
     }
     return true
@@ -390,37 +434,41 @@ export function Movimientos() {
     })
   })
 
-  // Add TIs (Traslados)
-  traslados.forEach(ti => {
-    const mEntrada = dbMovements.find((x: any) => x.movimientoParId === ti.dbId || (x.id === ti.movimientoParId && x.tipo === 'TRASLADO_ENTRADA'))
-    const rpNumero = mEntrada?.numero || null
-
+  // Add TIs (Traslados) - Consolidado en 1 solo documento maestro
+  traslados.forEach((ti: any) => {
     allDocs.push({
       id: ti.id,
       dbId: ti.dbId,
       tipo: 'TI',
       tipoLabel: 'Traslado de Inventario',
       origenDestino: `De ${ti.bodegaOrigenNombre} a ${ti.bodegaDestinoNombre}`,
-      total: null,
+      total: ti.totalCosto > 0 ? ti.totalCosto : null,
       fecha: ti.fecha,
       estado: ti.estado,
       documentosRelacionados: {
         autorizado: ti.autorizadoPor,
         verif: ti.estado === 'RECIBIDO' ? 'Recibido y Verificado' : 'Pendiente Verificación',
-        rpRef: rpNumero
+        detalles: ti.productoNombre,
+        notas: ti.notas
       }
     })
   })
 
-  // Map and add TRASLADO_ENTRADA movements as RPs for inter-branch transfers
+  // Map and add TRASLADO_ENTRADA movements ONLY if it is an inter-branch reception with a real RP document
   const recepcionesTraslado = dbMovements
-    .filter((m: any) => m.tipo === 'TRASLADO_ENTRADA')
+    .filter((m: any) => {
+      if (m.tipo !== 'TRASLADO_ENTRADA') return false
+      // Solo traslados entre sucursales diferentes que fueron recibidos formalmente con documento RP
+      const num = m.numero || ''
+      const isRpDoc = num.startsWith('RP') || m.referenciaTipo === 'RP'
+      return isRpDoc
+    })
     .map((m: any) => {
       const bodegaDestino = bodegas.find((b: any) => String(b.id) === String(m.bodegaDestinoId))
       const bodegaOrigen = bodegas.find((b: any) => String(b.id) === String(m.bodegaOrigenId))
       
       const mPar = dbMovements.find((x: any) => x.id === m.movimientoParId || (x.movimientoParId === m.id && x.tipo === 'TRASLADO_SALIDA'))
-      const trasladoNumero = mPar?.numero || 'S/Ref'
+      const trasladoNumero = mPar?.referenciaId || mPar?.numero || 'S/Ref'
 
       return {
         id: m.numero || `RP-${m.id}`,
@@ -486,6 +534,7 @@ export function Movimientos() {
     
     const matchQ = !kardexQ || 
       m.numero.toLowerCase().includes(kardexQ.toLowerCase()) ||
+      (m.referenciaId && m.referenciaId.toLowerCase().includes(kardexQ.toLowerCase())) ||
       m.producto?.nombre.toLowerCase().includes(kardexQ.toLowerCase()) ||
       m.producto?.sku.toLowerCase().includes(kardexQ.toLowerCase())
 
@@ -749,6 +798,8 @@ export function Movimientos() {
                             )}
                             {doc.tipo === 'TI' && (
                               <p className="text-[10px]">
+                                <span className="font-medium text-slate-700">{doc.documentosRelacionados.detalles}</span>
+                                {' · '}
                                 {doc.documentosRelacionados.rpRef ? (
                                   <>
                                     Cruce RP: <span className="font-semibold text-green-650">{doc.documentosRelacionados.rpRef}</span>
@@ -985,7 +1036,9 @@ export function Movimientos() {
                           <td className="px-6 py-4 text-slate-400 font-medium">
                             {new Date(m.fechaMovimiento).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="px-6 py-4 font-mono font-bold text-slate-700">{m.numero}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-slate-700" title={m.numero}>
+                            {m.referenciaId || m.numero}
+                          </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`inline-flex font-bold px-2 py-0.5 rounded text-[9px] ${movColor}`}>
                               {movLabel}

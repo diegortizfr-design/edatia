@@ -44,46 +44,87 @@ export function Traslados() {
 
   const dbMovements = movementsData?.data || []
 
-  // Extract transfers and map them
-  const traslados = dbMovements
+  // Helper para extraer el ID maestro del documento de traslado
+  const getTransferDocId = (m: any) => {
+    if (m.referenciaId) return m.referenciaId
+    if (m.numero) {
+      return m.numero.replace(/-E(-\d+)?$/, '').replace(/-\d+$/, '')
+    }
+    return `TI-${m.id}`
+  }
+
+  // Group movements TRASLADO_SALIDA by master document
+  const trasladosGrouped = dbMovements
     .filter((m: any) => m.tipo === 'TRASLADO_SALIDA')
-    .map((m: any) => {
+    .reduce((acc: Record<string, any>, m: any) => {
+      const docId = getTransferDocId(m)
       const bodegaOrigen = bodegas.find((b: any) => String(b.id) === String(m.bodegaOrigenId))
       const bodegaDestino = bodegas.find((b: any) => String(b.id) === String(m.bodegaDestinoId))
-      
+      const mEntrada = dbMovements.find((x: any) => x.movimientoParId === m.id || (x.id === m.movimientoParId && x.tipo === 'TRASLADO_ENTRADA'))
+      const rpRef = mEntrada?.referenciaId || mEntrada?.numero || null
+
+      if (!acc[docId]) {
+        acc[docId] = {
+          id: docId,
+          dbId: m.id,
+          numero: docId,
+          tipo: 'TI',
+          bodegaOrigenId: m.bodegaOrigenId,
+          bodegaOrigenNombre: bodegaOrigen?.nombre || m.bodegaOrigen?.nombre || 'Bodega Origen',
+          bodegaOrigenSucursalId: bodegaOrigen?.sucursalId || null,
+          bodegaDestinoId: m.bodegaDestinoId,
+          bodegaDestinoNombre: bodegaDestino?.nombre || m.bodegaDestino?.nombre || 'Bodega Destino',
+          bodegaDestinoSucursalId: bodegaDestino?.sucursalId || null,
+          items: [],
+          totalCantidad: 0,
+          totalCosto: 0,
+          estado: m.estado || 'RECIBIDO',
+          fecha: m.fechaMovimiento,
+          notas: m.notas || '',
+          usuarioId: m.usuarioId,
+          rpRef
+        }
+      }
+
       const serialesStr = (m.serialesSalida || m.serialesEntrada || []).map((s: any) => s.serial).join(', ')
       const lote = m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || null
 
-      const mEntrada = dbMovements.find((x: any) => x.movimientoParId === m.id || (x.id === m.movimientoParId && x.tipo === 'TRASLADO_ENTRADA'))
-      const rpRef = mEntrada?.numero || null
-
-      return {
-        id: m.numero || `TI-${m.id}`,
-        dbId: m.id,
-        numero: m.numero,
-        tipo: 'TI',
-        bodegaOrigenId: m.bodegaOrigenId,
-        bodegaOrigenNombre: bodegaOrigen?.nombre || m.bodegaOrigen?.nombre || 'Bodega Origen',
-        bodegaOrigenSucursalId: bodegaOrigen?.sucursalId || null,
-        bodegaDestinoId: m.bodegaDestinoId,
-        bodegaDestinoNombre: bodegaDestino?.nombre || m.bodegaDestino?.nombre || 'Bodega Destino',
-        bodegaDestinoSucursalId: bodegaDestino?.sucursalId || null,
+      acc[docId].items.push({
+        id: m.id,
         productoId: m.productoId,
         productoNombre: m.producto?.nombre || 'Producto',
         productoSku: m.producto?.sku || '',
         cantidad: Number(m.cantidad),
         costoUnitario: Number(m.costoUnitario),
         total: Number(m.cantidad) * Number(m.costoUnitario),
-        estado: m.estado || 'EN_TRANSITO',
-        fecha: m.fechaMovimiento,
-        notas: m.notas || '',
         lote,
         seriales: serialesStr,
-        usuarioId: m.usuarioId,
-        movimientoParId: m.movimientoParId,
-        rpRef
+      })
+
+      acc[docId].totalCantidad += Number(m.cantidad || 0)
+      acc[docId].totalCosto += Number(m.cantidad || 0) * Number(m.costoUnitario || 0)
+      if (m.estado === 'EN_TRANSITO') {
+        acc[docId].estado = 'EN_TRANSITO'
       }
-    })
+      return acc
+    }, {})
+
+  const traslados = Object.values(trasladosGrouped).map((t: any) => {
+    const itemCount = t.items.length
+    const resumenProd = itemCount === 1 
+      ? t.items[0]?.productoNombre || '1 producto' 
+      : `${itemCount} productos trasladados`
+    const resumenSku = itemCount === 1 ? (t.items[0]?.productoSku || '') : `${itemCount} referencias`
+
+    return {
+      ...t,
+      productoNombre: resumenProd,
+      productoSku: resumenSku,
+      cantidad: t.totalCantidad,
+      total: t.totalCosto,
+      costoUnitario: t.totalCantidad > 0 ? t.totalCosto / t.totalCantidad : 0
+    }
+  })
 
   // Sort transfers by date (most recent first)
   const sortedTraslados = traslados.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
@@ -537,27 +578,29 @@ export function Traslados() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-150">
-                      <tr className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 font-mono font-bold text-slate-650">{selectedTraslado.productoSku}</td>
-                        <td className="px-4 py-3 space-y-1">
-                          <span className="font-semibold text-slate-900">{selectedTraslado.productoNombre}</span>
-                          {selectedTraslado.lote && (
-                            <div className="mt-0.5">
-                              <span className="bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded text-[8px] font-bold">
-                                Lote: {selectedTraslado.lote}
-                              </span>
-                            </div>
-                          )}
-                          {selectedTraslado.seriales && (
-                            <div className="text-[8px] text-indigo-700 bg-indigo-50 border border-indigo-150 p-1.5 rounded leading-tight font-mono mt-1">
-                              <strong>Seriales:</strong> {selectedTraslado.seriales}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right font-extrabold text-slate-900">{selectedTraslado.cantidad}</td>
-                        <td className="px-4 py-3 text-right text-slate-600">{fmtMoneda(selectedTraslado.costoUnitario)}</td>
-                        <td className="px-4 py-3 text-right font-extrabold text-slate-900">{fmtMoneda(selectedTraslado.total)}</td>
-                      </tr>
+                      {(selectedTraslado.items && selectedTraslado.items.length > 0 ? selectedTraslado.items : [selectedTraslado]).map((item: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-mono font-bold text-slate-650">{item.productoSku}</td>
+                          <td className="px-4 py-3 space-y-1">
+                            <span className="font-semibold text-slate-900">{item.productoNombre}</span>
+                            {item.lote && (
+                              <div className="mt-0.5">
+                                <span className="bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                                  Lote: {item.lote}
+                                </span>
+                              </div>
+                            )}
+                            {item.seriales && (
+                              <div className="text-[8px] text-indigo-700 bg-indigo-50 border border-indigo-150 p-1.5 rounded leading-tight font-mono mt-1">
+                                <strong>Seriales:</strong> {item.seriales}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-extrabold text-slate-900">{item.cantidad}</td>
+                          <td className="px-4 py-3 text-right text-slate-600">{fmtMoneda(item.costoUnitario)}</td>
+                          <td className="px-4 py-3 text-right font-extrabold text-slate-900">{fmtMoneda(item.total)}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

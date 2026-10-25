@@ -421,8 +421,8 @@ export class MovimientosService {
         where,
         include: {
           producto: { select: { id: true, nombre: true, sku: true, manejaLotes: true, manejaSerial: true } },
-          bodegaOrigen: { select: { id: true, nombre: true, codigo: true } },
-          bodegaDestino: { select: { id: true, nombre: true, codigo: true } },
+          bodegaOrigen: { select: { id: true, nombre: true, codigo: true, sucursalId: true } },
+          bodegaDestino: { select: { id: true, nombre: true, codigo: true, sucursalId: true } },
           serialesEntrada: { select: { id: true, serial: true } },
           serialesSalida: { select: { id: true, serial: true } },
         },
@@ -1505,74 +1505,23 @@ export class MovimientosService {
       throw new BadRequestException('El documento de recepción (RP) es obligatorio para recibir traslados entre sucursales.');
     }
 
-    const producto = await this.getProducto(mov1.productoId, empresaId);
-    const cpp = parseFloat(producto.costoPromedio.toString());
-
-    return this.prisma.$transaction(async (tx: any) => {
-      const stockDestino = await this.getOrCreateStock(mov1.productoId, mov1.bodegaDestinoId, empresaId, tx);
-      const cantDestinoAnterior = parseFloat(stockDestino.cantidad.toString());
-      const saldoDestino = cantDestinoAnterior + parseFloat(mov1.cantidad.toString());
-
-      // Entrada en destino
-      await tx.stock.update({
-        where: { id: stockDestino.id },
-        data: { cantidad: { increment: mov1.cantidad } },
-      });
-
-      // Extraer número de lote de las notas de mov1 si existe
-      let loteNumero: string | null = null;
-      if (mov1.notas) {
-        const match = mov1.notas.match(/\[Lote:\s*([^\]]+)\]/);
-        if (match) {
-          loteNumero = match[1].trim();
-        }
-      }
-
-      // Procesar Lote en destino
-      let loteId: number | undefined;
-      if (producto.manejaLotes && loteNumero) {
-        let lote = await tx.lote.findFirst({
+    // Identificar todos los movimientos pertenecientes al mismo documento maestro de traslado que estén en tránsito
+    const masterDocRef = mov1.referenciaId;
+    const itemsSalida: any[] = masterDocRef
+      ? await (this.prisma as any).movimientoInventario.findMany({
           where: {
             empresaId,
-            productoId: mov1.productoId,
-            bodegaId: mov1.bodegaDestinoId,
-            numero: loteNumero,
+            tipo: 'TRASLADO_SALIDA',
+            estado: 'EN_TRANSITO',
+            referenciaId: masterDocRef,
           },
-        });
-        if (lote) {
-          lote = await tx.lote.update({
-            where: { id: lote.id },
-            data: {
-              cantidad: { increment: mov1.cantidad },
-              cantidadInicial: { increment: mov1.cantidad },
-            },
-          });
-        } else {
-          const loteOrigen = await tx.lote.findFirst({
-            where: {
-              empresaId,
-              productoId: mov1.productoId,
-              bodegaId: mov1.bodegaOrigenId,
-              numero: loteNumero,
-            },
-          });
-          lote = await tx.lote.create({
-            data: {
-              empresaId,
-              productoId: mov1.productoId,
-              bodegaId: mov1.bodegaDestinoId,
-              numero: loteNumero,
-              cantidadInicial: mov1.cantidad,
-              cantidad: mov1.cantidad,
-              fechaVencimiento: loteOrigen?.fechaVencimiento ?? null,
-              activo: true,
-            },
-          });
-        }
-        loteId = lote.id;
-      }
+        })
+      : [mov1];
 
-      // Generar consecutivo para el movimiento de entrada
+    const itemsToProcess = itemsSalida.length > 0 ? itemsSalida : [mov1];
+
+    return this.prisma.$transaction(async (tx: any) => {
+      // Generar consecutivo para el documento de recepción
       let numeroEntrada = '';
       let documentoConfigId: number | null = null;
       if (!sameSucursal && documentoId) {
@@ -1582,70 +1531,172 @@ export class MovimientosService {
         if (!docConfig) {
           throw new BadRequestException('El documento de configuración de recepción no existe');
         }
-        numeroEntrada = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+
+        let consecutivo = docConfig.consecutivoSiguiente;
+        while (
+          await tx.movimientoInventario.findFirst({
+            where: {
+              empresaId,
+              OR: [
+                { numero: `${docConfig.prefijo}-${consecutivo}` },
+                { numero: { startsWith: `${docConfig.prefijo}-${consecutivo}-` } },
+                { referenciaId: `${docConfig.prefijo}-${consecutivo}` },
+              ],
+            },
+          })
+        ) {
+          consecutivo++;
+        }
+
+        numeroEntrada = `${docConfig.prefijo}-${consecutivo}`;
         documentoConfigId = docConfig.id;
 
         await tx.documentoConfig.update({
           where: { id: docConfig.id },
-          data: { consecutivoSiguiente: { increment: 1 } },
+          data: { consecutivoSiguiente: consecutivo + 1 },
         });
       } else {
         numeroEntrada = await this.generarNumero('MOV', empresaId, tx);
       }
 
-      // Crear el movimiento TRASLADO_ENTRADA
-      const mov2 = await tx.movimientoInventario.create({
-        data: {
-          numero: numeroEntrada,
-          empresaId,
-          tipo: 'TRASLADO_ENTRADA',
-          concepto: 'TRASLADO',
-          productoId: mov1.productoId,
-          bodegaOrigenId: mov1.bodegaOrigenId,
-          bodegaDestinoId: mov1.bodegaDestinoId,
-          cantidad: mov1.cantidad,
-          costoUnitario: cpp,
-          costoTotal: parseFloat(mov1.cantidad.toString()) * cpp,
-          saldoCantidad: saldoDestino,
-          saldoCostoTotal: saldoDestino * cpp,
-          saldoCpp: cpp,
-          usuarioId,
-          notas: mov1.notas,
-          estado: 'RECIBIDO',
-          movimientoParId: mov1.id,
-          referenciaTipo: 'Manual',
-          documentoConfigId,
-        },
-      });
+      const updatedMovsSalida: any[] = [];
+      const movsEntrada: any[] = [];
 
-      // Procesar seriales en destino: ponerlos como DISPONIBLE en la bodega destino
-      if (producto.manejaSerial) {
-        await tx.numeroSerie.updateMany({
-          where: {
-            empresaId,
-            productoId: mov1.productoId,
-            movimientoSalidaId: mov1.id,
-            estado: 'EN_TRANSITO',
-          },
+      for (let idx = 0; idx < itemsToProcess.length; idx++) {
+        const itemSalida = itemsToProcess[idx];
+        const prod = await this.getProducto(itemSalida.productoId, empresaId);
+        const cpp = parseFloat(prod.costoPromedio.toString());
+
+        const stockDestino = await this.getOrCreateStock(itemSalida.productoId, itemSalida.bodegaDestinoId, empresaId, tx);
+        const cantDestinoAnterior = parseFloat(stockDestino.cantidad.toString());
+        const saldoDestino = cantDestinoAnterior + parseFloat(itemSalida.cantidad.toString());
+
+        // Entrada en destino
+        await tx.stock.update({
+          where: { id: stockDestino.id },
+          data: { cantidad: { increment: itemSalida.cantidad } },
+        });
+
+        // Extraer número de lote de las notas de itemSalida si existe
+        let loteNumero: string | null = null;
+        if (itemSalida.notas) {
+          const match = itemSalida.notas.match(/\[Lote:\s*([^\]]+)\]/);
+          if (match) {
+            loteNumero = match[1].trim();
+          }
+        }
+
+        // Procesar Lote en destino
+        let loteId: number | undefined;
+        if (prod.manejaLotes && loteNumero) {
+          let lote = await tx.lote.findFirst({
+            where: {
+              empresaId,
+              productoId: itemSalida.productoId,
+              bodegaId: itemSalida.bodegaDestinoId,
+              numero: loteNumero,
+            },
+          });
+          if (lote) {
+            lote = await tx.lote.update({
+              where: { id: lote.id },
+              data: {
+                cantidad: { increment: itemSalida.cantidad },
+                cantidadInicial: { increment: itemSalida.cantidad },
+              },
+            });
+          } else {
+            const loteOrigen = await tx.lote.findFirst({
+              where: {
+                empresaId,
+                productoId: itemSalida.productoId,
+                bodegaId: itemSalida.bodegaOrigenId,
+                numero: loteNumero,
+              },
+            });
+            lote = await tx.lote.create({
+              data: {
+                empresaId,
+                productoId: itemSalida.productoId,
+                bodegaId: itemSalida.bodegaDestinoId,
+                numero: loteNumero,
+                cantidadInicial: itemSalida.cantidad,
+                cantidad: itemSalida.cantidad,
+                fechaVencimiento: loteOrigen?.fechaVencimiento ?? null,
+                activo: true,
+              },
+            });
+          }
+          loteId = lote.id;
+        }
+
+        // Número único de movimiento para la entrada
+        const numEntradaItem = itemsToProcess.length === 1 
+          ? numeroEntrada 
+          : `${numeroEntrada}-${idx + 1}`;
+
+        // Crear el movimiento TRASLADO_ENTRADA
+        const mov2 = await tx.movimientoInventario.create({
           data: {
-            estado: 'DISPONIBLE',
-            bodegaId: mov1.bodegaDestinoId,
-            loteId: loteId ?? null,
-            movimientoEntradaId: mov2.id,
+            numero: numEntradaItem,
+            empresaId,
+            tipo: 'TRASLADO_ENTRADA',
+            concepto: 'TRASLADO',
+            productoId: itemSalida.productoId,
+            bodegaOrigenId: itemSalida.bodegaOrigenId,
+            bodegaDestinoId: itemSalida.bodegaDestinoId,
+            cantidad: itemSalida.cantidad,
+            costoUnitario: cpp,
+            costoTotal: parseFloat(itemSalida.cantidad.toString()) * cpp,
+            saldoCantidad: saldoDestino,
+            saldoCostoTotal: saldoDestino * cpp,
+            saldoCpp: cpp,
+            usuarioId,
+            notas: itemSalida.notas,
+            estado: 'RECIBIDO',
+            movimientoParId: itemSalida.id,
+            referenciaId: numeroEntrada,
+            referenciaTipo: 'RP',
+            documentoConfigId,
           },
         });
+
+        // Procesar seriales en destino: ponerlos como DISPONIBLE en la bodega destino
+        if (prod.manejaSerial) {
+          await tx.numeroSerie.updateMany({
+            where: {
+              empresaId,
+              productoId: itemSalida.productoId,
+              movimientoSalidaId: itemSalida.id,
+              estado: 'EN_TRANSITO',
+            },
+            data: {
+              estado: 'DISPONIBLE',
+              bodegaId: itemSalida.bodegaDestinoId,
+              loteId: loteId ?? null,
+              movimientoEntradaId: mov2.id,
+            },
+          });
+        }
+
+        // Actualizar itemSalida a RECIBIDO y enlazar con mov2
+        const updatedMovSalida = await tx.movimientoInventario.update({
+          where: { id: itemSalida.id },
+          data: {
+            estado: 'RECIBIDO',
+            movimientoParId: mov2.id,
+          },
+        });
+
+        updatedMovsSalida.push(updatedMovSalida);
+        movsEntrada.push(mov2);
       }
 
-      // Actualizar mov1 a RECIBIDO y enlazar con mov2
-      const updatedMov1 = await tx.movimientoInventario.update({
-        where: { id: mov1.id },
-        data: {
-          estado: 'RECIBIDO',
-          movimientoParId: mov2.id,
-        },
-      });
-
-      return { traslado: updatedMov1, movimientos: [updatedMov1, mov2] };
+      return { 
+        numero: numeroEntrada, 
+        traslado: updatedMovsSalida[0], 
+        movimientos: [...updatedMovsSalida, ...movsEntrada] 
+      };
     });
   }
 
