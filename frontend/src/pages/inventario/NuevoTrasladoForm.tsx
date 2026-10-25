@@ -7,7 +7,7 @@ import { getApiError } from '../../services/api'
 import { 
   ArrowLeft, Save, Search, ArrowRightLeft, Building2, Truck, 
   Check, AlertTriangle, Trash2, Plus, PackageOpen, Layers,
-  Lock, AlertCircle
+  Lock, AlertCircle, Warehouse, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -221,7 +221,6 @@ export function NuevoTrasladoForm() {
       ])
       toast.success(`"${p.nombre}" agregado al traslado`)
     }
-    setBusqueda('')
   }
 
   // Modificar cantidad de un item
@@ -374,7 +373,7 @@ export function NuevoTrasladoForm() {
   const inputCls = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -730,252 +729,328 @@ export function NuevoTrasladoForm() {
           </div>
         </div>
 
-        {/* Contenedor 2: Selector y Lista de Productos de la Remisión */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <Layers size={18} className="text-indigo-600" />
-                Productos a Trasladar en este Documento
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                Busca y agrega todos los productos que necesites trasladar hoy en esta misma remisión.
-              </p>
-            </div>
-            {items.length > 0 && (
-              <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
-                {items.length} {items.length === 1 ? 'producto en remisión' : 'productos en remisión'}
-              </span>
-            )}
-          </div>
-
-          {/* Buscador de Productos con Existencias */}
-          <div>
-            {!bodegaOrigenId ? (
-              <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 font-medium">
-                <Lock size={18} className="mx-auto mb-1.5 text-slate-300" />
-                Selecciona primero la bodega de origen para poder buscar y agregar productos con stock.
-              </div>
-            ) : (
-              <div className="relative">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={busqueda}
-                  onChange={e => setBusqueda(e.target.value)}
-                  placeholder="Buscar producto por nombre o SKU para agregarlo a la remisión..."
-                  className="w-full pl-9 pr-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                />
-                
-                {buscando && (
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
-                    Buscando en bodega...
-                  </div>
+        {/* Contenedor 2: Estructura de 2 Columnas (Remisión a la izquierda, Catálogo con buscador y scroll a la derecha) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* COLUMNA IZQUIERDA (lg:col-span-7): Productos Agregados a la Remisión TI */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <Layers size={18} className="text-indigo-600" />
+                    Productos a Trasladar en este Documento
+                  </h2>
+                  <p className="text-[11px] text-slate-400">
+                    Ajusta las cantidades que se van a despachar en esta remisión TI.
+                  </p>
+                </div>
+                {items.length > 0 && (
+                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-xl">
+                    {items.length} {items.length === 1 ? 'producto en remisión' : 'productos en remisión'}
+                  </span>
                 )}
-
-                {/* Dropdown de productos con existencias */}
-                {sugerenciasConStock.length > 0 ? (
-                  <div className="absolute z-20 top-full mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto divide-y divide-slate-100">
-                    {sugerenciasConStock.map((p: any) => {
-                      const st = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
-                      const cantBod = st ? Number(st.cantidad || 0) : 0
-                      const yaAgregado = items.some(it => it.producto.id === p.id)
-
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => handleAgregarProducto(p)}
-                          className="w-full text-left px-4 py-3 hover:bg-indigo-50/50 transition-colors flex items-center justify-between cursor-pointer gap-3"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-bold text-slate-800 truncate">{p.nombre}</p>
-                              {yaAgregado && (
-                                <span className="text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded">En lista</span>
-                              )}
-                            </div>
-                            <p className="text-[10px] font-mono text-slate-400">SKU: {p.sku}</p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
-                              <Check size={11} /> Stock: {cantBod} {p.unidadMedida?.abreviatura || 'un.'}
-                            </span>
-                            <span className="block text-[10px] text-slate-400 mt-0.5">
-                              {fmtMoneda(Number(p.costoPromedio))}
-                            </span>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : busqueda.length >= 2 && !buscando ? (
-                  <div className="absolute z-20 top-full mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-3 text-center text-xs text-slate-400">
-                    No se encontraron productos con stock mayor a 0 en esta bodega origen para "{busqueda}".
-                  </div>
-                ) : null}
               </div>
-            )}
+
+              {/* Tabla de Productos Agregados */}
+              {items.length === 0 ? (
+                <div className="p-8 border border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50">
+                  <PackageOpen size={36} className="mx-auto text-slate-300 mb-2" />
+                  <p className="text-xs font-bold text-slate-600">Ningún producto agregado todavía</p>
+                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto mt-0.5">
+                    Utiliza el panel derecho para explorar los productos de la bodega o buscarlos por nombre/SKU y haz clic en <strong>Agregar</strong>.
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider sticky top-0 z-10">
+                        <tr>
+                          <th className="px-3 py-2.5 w-7 text-center">#</th>
+                          <th className="px-3 py-2.5 min-w-[170px]">Producto</th>
+                          <th className="px-2 py-2.5 text-center w-24">Stock Origen</th>
+                          <th className="px-3 py-2.5 w-36">Cantidad *</th>
+                          <th className="px-3 py-2.5 text-right w-24">Costo</th>
+                          <th className="px-3 py-2.5 text-right w-24">Subtotal</th>
+                          <th className="px-2 py-2.5 w-8 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {items.map((it, idx) => {
+                          const cantNum = parseFloat(it.cantidad) || 0
+                          const cpp = Number(it.producto.costoPromedio || 0)
+                          const subtotal = cantNum * cpp
+                          const excede = cantNum > it.disponibleOrigen || it.disponibleOrigen <= 0 || cantNum <= 0
+
+                          return (
+                            <tr key={it.producto.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-3 py-2.5 text-center text-slate-400 font-mono text-[11px]">
+                                {idx + 1}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <p className="font-bold text-slate-800 text-xs leading-snug line-clamp-2">{it.producto.nombre}</p>
+                                <p className="text-[10px] font-mono text-slate-400">SKU: {it.producto.sku}</p>
+                                
+                                {/* Manejo de Lotes si aplica */}
+                                {it.producto.manejaLotes && (
+                                  <div className="mt-1.5 flex items-center gap-1.5">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase">Lote:</span>
+                                    <input
+                                      type="text"
+                                      value={it.loteNumero || ''}
+                                      onChange={e => handleUpdateItemField(idx, 'loteNumero', e.target.value)}
+                                      placeholder="Ej. L-892"
+                                      className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-28 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                      required
+                                    />
+                                  </div>
+                                )}
+
+                                {/* Manejo de Seriales si aplica */}
+                                {it.producto.manejaSerial && (
+                                  <div className="mt-1.5">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Seriales (separados por coma):</span>
+                                    <input
+                                      type="text"
+                                      value={it.seriales || ''}
+                                      onChange={e => handleUpdateItemField(idx, 'seriales', e.target.value)}
+                                      placeholder="Serial1, Serial2..."
+                                      className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-full mt-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                      required
+                                    />
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-2 py-2.5 text-center">
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded inline-block">
+                                  {it.disponibleOrigen} {it.producto.unidadMedida?.abreviatura || 'un.'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    min="0.0001"
+                                    max={it.disponibleOrigen}
+                                    value={it.cantidad}
+                                    onChange={e => handleUpdateCantidad(idx, e.target.value)}
+                                    className={`w-20 px-2 py-1 bg-slate-50 border rounded-lg text-xs font-bold text-slate-800 text-center focus:outline-none focus:ring-2 transition-all ${
+                                      excede 
+                                        ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30' 
+                                        : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
+                                    }`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateCantidad(idx, String(it.disponibleOrigen))}
+                                    className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-1 rounded cursor-pointer shrink-0"
+                                    title="Trasladar todo el stock disponible"
+                                  >
+                                    Todo
+                                  </button>
+                                </div>
+                                {cantNum > it.disponibleOrigen && (
+                                  <p className="text-[9px] text-red-600 font-bold mt-0.5">
+                                    Máx: {it.disponibleOrigen}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5 text-right text-slate-500 font-medium text-[11px]">
+                                {fmtMoneda(cpp)}
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-bold text-slate-800 text-[11px]">
+                                {fmtMoneda(subtotal)}
+                              </td>
+                              <td className="px-2 py-2.5 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveItem(idx)}
+                                  className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Quitar de este traslado"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Barra de Resumen / Totales */}
+                  <div className="bg-slate-50 border-t border-slate-200 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-4 text-xs">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Total Referencias</span>
+                        <strong className="text-slate-800 text-xs font-extrabold">{totalItemsCount} productos</strong>
+                      </div>
+                      <div className="border-l border-slate-200 pl-4">
+                        <span className="text-slate-400 block text-[9px] uppercase font-bold">Total Unidades</span>
+                        <strong className="text-indigo-600 text-xs font-extrabold">{totalUnidades} unidades</strong>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Valoración Estimada</span>
+                      <strong className="text-slate-900 text-sm font-extrabold">{fmtMoneda(totalValor)}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Observaciones generales */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Observación / Justificación General del Traslado
+                </label>
+                <textarea
+                  value={observacion}
+                  onChange={e => setObservacion(e.target.value)}
+                  placeholder="Motivo del traslado, instrucciones de entrega o despacho..."
+                  rows={2}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none resize-none"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Tabla de Productos Agregados */}
-          {items.length === 0 ? (
-            <div className="p-8 border border-dashed border-slate-200 rounded-2xl text-center bg-slate-50/50">
-              <PackageOpen size={32} className="mx-auto text-slate-300 mb-2" />
-              <p className="text-xs font-bold text-slate-600">Ningún producto agregado todavía</p>
-              <p className="text-[11px] text-slate-400 max-w-sm mx-auto mt-0.5">
-                Utiliza el buscador superior para agregar todos los productos que deseas incluir en este documento de traslado.
-              </p>
-            </div>
-          ) : (
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    <tr>
-                      <th className="px-3.5 py-3 w-8 text-center">#</th>
-                      <th className="px-4 py-3 min-w-[200px]">Producto</th>
-                      <th className="px-4 py-3 text-center w-28">Stock Origen</th>
-                      <th className="px-4 py-3 w-40">Cantidad *</th>
-                      <th className="px-4 py-3 text-right w-28">Costo Unit.</th>
-                      <th className="px-4 py-3 text-right w-28">Subtotal</th>
-                      <th className="px-3 py-3 w-10 text-center"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {items.map((it, idx) => {
-                      const cantNum = parseFloat(it.cantidad) || 0
-                      const cpp = Number(it.producto.costoPromedio || 0)
-                      const subtotal = cantNum * cpp
-                      const excede = cantNum > it.disponibleOrigen || it.disponibleOrigen <= 0 || cantNum <= 0
+          {/* COLUMNA DERECHA (lg:col-span-5): Catálogo con buscador y explorador deslizable */}
+          <div className="lg:col-span-5 space-y-3 sticky top-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+              
+              {/* Cabecera del Catálogo */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+                    <Warehouse size={15} className="text-indigo-600" />
+                    Productos en Bodega Origen
+                  </h3>
+                  <p className="text-[10px] text-slate-400 truncate max-w-[190px]">
+                    {bodegaOrigenObj ? `${bodegaOrigenObj.nombre} (${bodegaOrigenObj.codigo})` : 'Selecciona bodega origen'}
+                  </p>
+                </div>
+                {bodegaOrigenId && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full shrink-0">
+                    {sugerenciasConStock.length} disponibles
+                  </span>
+                )}
+              </div>
 
-                      return (
-                        <tr key={it.producto.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-3.5 py-3 text-center text-slate-400 font-mono text-[11px]">
-                            {idx + 1}
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-bold text-slate-800 text-xs">{it.producto.nombre}</p>
-                            <p className="text-[10px] font-mono text-slate-400">SKU: {it.producto.sku}</p>
-                            
-                            {/* Manejo de Lotes si aplica */}
-                            {it.producto.manejaLotes && (
-                              <div className="mt-1.5 flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase">Lote:</span>
-                                <input
-                                  type="text"
-                                  value={it.loteNumero || ''}
-                                  onChange={e => handleUpdateItemField(idx, 'loteNumero', e.target.value)}
-                                  placeholder="Ej. L-892"
-                                  className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-28 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                />
-                              </div>
-                            )}
+              {/* Contenido del Catálogo */}
+              {!bodegaOrigenId ? (
+                <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 font-medium">
+                  <Lock size={20} className="mx-auto mb-1.5 text-slate-300" />
+                  Selecciona primero la bodega de origen arriba para cargar sus existencias.
+                </div>
+              ) : (
+                <>
+                  {/* Buscador Integrado */}
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={busqueda}
+                      onChange={e => setBusqueda(e.target.value)}
+                      placeholder="Buscar por nombre o SKU..."
+                      className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                    />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                        title="Limpiar búsqueda"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
 
-                            {/* Manejo de Seriales si aplica */}
-                            {it.producto.manejaSerial && (
-                              <div className="mt-1.5">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase block">Seriales (separados por coma):</span>
-                                <input
-                                  type="text"
-                                  value={it.seriales || ''}
-                                  onChange={e => handleUpdateItemField(idx, 'seriales', e.target.value)}
-                                  placeholder="Serial1, Serial2..."
-                                  className="px-2 py-0.5 border border-slate-200 rounded text-[10px] font-mono w-full mt-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                />
+                  {buscando && (
+                    <p className="text-[10px] text-slate-400 font-semibold px-1">
+                      Buscando en bodega origen...
+                    </p>
+                  )}
+
+                  {/* Lista con Desplazador / Scroll Vertical */}
+                  <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
+                    {sugerenciasConStock.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        {busqueda 
+                          ? `No se encontraron productos con stock mayor a 0 para "${busqueda}".` 
+                          : 'No hay productos con existencias disponibles en esta bodega origen.'}
+                      </div>
+                    ) : (
+                      sugerenciasConStock.map((p: any) => {
+                        const st = p.stock?.find((s: any) => String(s.bodegaId) === String(bodegaOrigenId))
+                        const cantBod = st ? Number(st.cantidad || 0) : 0
+                        const itemEnLista = items.find(it => it.producto.id === p.id)
+                        const cantEnLista = itemEnLista ? parseFloat(itemEnLista.cantidad || '0') : 0
+                        const yaAlcanzoMaximo = cantEnLista >= cantBod
+
+                        return (
+                          <div
+                            key={p.id}
+                            className={`pt-2.5 pb-2 px-2.5 rounded-xl transition-all flex flex-col gap-1.5 ${
+                              itemEnLista 
+                                ? 'bg-indigo-50/50 border border-indigo-100' 
+                                : 'hover:bg-slate-50 border border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                                  {p.nombre}
+                                </p>
+                                <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                  SKU: {p.sku}
+                                </p>
                               </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-block">
-                              {it.disponibleOrigen} {it.producto.unidadMedida?.abreviatura || 'un.'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                step="any"
-                                min="0.0001"
-                                max={it.disponibleOrigen}
-                                value={it.cantidad}
-                                onChange={e => handleUpdateCantidad(idx, e.target.value)}
-                                className={`w-24 px-2.5 py-1.5 bg-slate-50 border rounded-lg text-xs font-bold text-slate-800 text-center focus:outline-none focus:ring-2 transition-all ${
-                                  excede 
-                                    ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500 bg-red-50/30' 
-                                    : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
-                                }`}
-                              />
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md inline-block">
+                                  Stock: {cantBod} {p.unidadMedida?.abreviatura || 'un.'}
+                                </span>
+                                <span className="block text-[10px] text-slate-400 mt-0.5">
+                                  {fmtMoneda(Number(p.costoPromedio || 0))}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <div>
+                                {itemEnLista && (
+                                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                                    {cantEnLista} en remisión
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => handleUpdateCantidad(idx, String(it.disponibleOrigen))}
-                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded cursor-pointer"
-                                title="Trasladar todo el stock disponible"
+                                onClick={() => handleAgregarProducto(p)}
+                                disabled={yaAlcanzoMaximo}
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                                  yaAlcanzoMaximo
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    : itemEnLista
+                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                                    : 'bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-100'
+                                }`}
+                                title={yaAlcanzoMaximo ? 'Todo el stock disponible ya fue agregado' : 'Agregar al traslado'}
                               >
-                                Todo
+                                <Plus size={12} />
+                                <span>{itemEnLista ? '+1 más' : 'Agregar'}</span>
                               </button>
                             </div>
-                            {cantNum > it.disponibleOrigen && (
-                              <p className="text-[9px] text-red-600 font-bold mt-1">
-                                Máximo disponible: {it.disponibleOrigen}
-                              </p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-500 font-medium">
-                            {fmtMoneda(cpp)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-800">
-                            {fmtMoneda(subtotal)}
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(idx)}
-                              className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                              title="Quitar de este traslado"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Barra de Resumen / Totales */}
-              <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-6 text-xs">
-                  <div>
-                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Referencias</span>
-                    <strong className="text-slate-800 text-sm font-extrabold">{totalItemsCount} productos</strong>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
-                  <div className="border-l border-slate-200 pl-6">
-                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Unidades a Trasladar</span>
-                    <strong className="text-indigo-600 text-sm font-extrabold">{totalUnidades} unidades</strong>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Valoración Estimada del Traslado</span>
-                  <strong className="text-slate-900 text-base font-extrabold">{fmtMoneda(totalValor)}</strong>
-                </div>
-              </div>
+                </>
+              )}
             </div>
-          )}
-
-          {/* Observaciones generales */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-              Observación / Justificación General del Traslado
-            </label>
-            <textarea
-              value={observacion}
-              onChange={e => setObservacion(e.target.value)}
-              placeholder="Motivo del traslado, instrucciones de entrega o despacho..."
-              rows={2}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none resize-none"
-            />
           </div>
 
         </div>

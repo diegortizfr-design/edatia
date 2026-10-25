@@ -96,7 +96,7 @@ export class ProductosService {
         unidadMedida: { select: { abreviatura: true } },
         stock: { include: { bodega: { select: { id: true, nombre: true, codigo: true } } } },
       },
-      take: 25,
+      take: bodegaId ? 250 : 25,
       orderBy: { nombre: 'asc' },
     });
   }
