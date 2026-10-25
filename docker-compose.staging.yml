@@ -37,9 +37,12 @@ services:
       retries: 5
       start_period: 20s
 
-  # ── Crea la BD adicional que necesita el segundo cliente Prisma ─────────────
-  # Va en un servicio aparte (la imagen de postgres trae createdb) en lugar de
-  # depender de que `prisma db push` cree la base, y sin bind mounts.
+  # ── Crea las bases antes de migrarlas ───────────────────────────────────────
+  # La principal tambien: POSTGRES_DB solo crea una base en la primera
+  # inicializacion del volumen, asi que cambiar DB_NAME despues no alcanza.
+  # Y `migrate deploy`, a diferencia de `db push`, no crea la base si falta.
+  # Va en un servicio aparte (la imagen de postgres trae createdb), idempotente
+  # y sin bind mounts.
   db-init:
     image: postgres:15.6-alpine
     restart: "no"
@@ -49,8 +52,10 @@ services:
     environment:
       PGPASSWORD: ${DB_PASSWORD}
     command: >
-      sh -c "createdb -h db -U ${DB_USER:-edatia} herramientas_edatia 2>&1
-      || echo 'herramientas_edatia: ya existia o no se pudo crear'"
+      sh -c "createdb -h db -U ${DB_USER:-edatia} ${DB_NAME:-edatia_staging} 2>&1
+      || echo '${DB_NAME:-edatia_staging}: ya existia';
+      createdb -h db -U ${DB_USER:-edatia} herramientas_edatia 2>&1
+      || echo 'herramientas_edatia: ya existia'"
 
   # ── Migraciones, en un one-shot con la misma imagen del api ─────────────────
   # Estaba dentro del arranque del api y lo dejaba colgado: el contenedor
@@ -78,22 +83,14 @@ services:
     environment:
       DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/${DB_NAME:-edatia_staging}?schema=public
       HERRAMIENTAS_DATABASE_URL: postgresql://${DB_USER:-edatia}:${DB_PASSWORD}@db:5432/herramientas_edatia?schema=public
-    # `db push` y NO `migrate deploy` para el schema principal.
+    # migrate deploy para el schema principal, que ya tiene una baseline capaz
+    # de construir las 94 tablas desde cero (prisma/migrations/0_init). Antes
+    # esto era un `db push` porque el historial solo creaba 6 tablas de 94; ver
+    # PRODUCCION-BASELINE.md.
     #
-    # El historial de migraciones no puede reconstruir la base desde cero:
-    # schema.prisma declara 94 modelos y prisma/migrations solo crea 6 tablas.
-    # La base de produccion se fue armando con db push, asi que las migraciones
-    # quedaron cubriendo una fraccion. Con migrate deploy, una base nueva recibe
-    # 6 tablas de 94 y el api se mata al arrancar: GeolocalizacionService
-    # consulta la tabla Pais en onApplicationBootstrap y revienta con P2021
-    # antes de llegar a app.listen().
-    #
-    # db push sincroniza el schema completo sin depender del historial, que es
-    # lo correcto para un ambiente que se crea de cero. No arregla el problema
-    # de fondo del repo -- eso pide una migracion baseline generada del schema,
-    # y toca el estado de produccion, asi que va aparte.
+    # herramientas.prisma sigue con db push: ese schema nunca tuvo migraciones.
     command: >
-      sh -c "/app/node_modules/.bin/prisma db push --schema prisma/schema.prisma --skip-generate --accept-data-loss;
+      sh -c "/app/node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma;
              /app/node_modules/.bin/prisma db push --schema prisma/herramientas.prisma --skip-generate --accept-data-loss;
              exit 0"
 
