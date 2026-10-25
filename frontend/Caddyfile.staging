@@ -12,6 +12,23 @@
 }
 
 :80 {
+    # Logs a stdout: es el unico contenedor cuyos logs expone la API de
+    # Coolify, asi que es la unica ventana que tenemos al trafico.
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+
+    # Firma los errores que genera ESTE Caddy. Un 502 con cuerpo vacio y sin
+    # X-Edatia-Env viene de otro proxy (el de Coolify), no de aca: sirve para
+    # saber de que lado de la cadena esta el problema.
+    handle_errors {
+        header X-Edatia-Env "staging"
+        header X-Edatia-Proxy "web-caddy"
+        respond "edatia-staging: el proxy de web no pudo llegar al api ({err.status_code})" {err.status_code}
+    }
+
     # ── API ─────────────────────────────────────────────────────────────────
     handle /api/* {
         reverse_proxy api:4000
