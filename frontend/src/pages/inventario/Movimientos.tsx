@@ -130,6 +130,28 @@ export function Movimientos() {
           notas: rpObj.notas,
           total: itemsList.reduce((acc, i) => acc + i.total, 0)
         }
+      } else {
+        // RP de Traslado o Recepción física registrada en movimientos
+        const movs = dbMovements.filter((m: any) => {
+          if (m.tipo !== 'TRASLADO_ENTRADA') return false
+          const masterId = m.referenciaId || (m.numero ? m.numero.replace(/-\d+$/, '') : null)
+          return masterId === doc.id || m.numero === doc.id
+        })
+        if (movs.length > 0) {
+          itemsList = movs.map((m: any) => ({
+            sku: m.producto?.sku || 'S/SKU',
+            nombre: m.producto?.nombre || 'Producto',
+            cantidad: Math.abs(Number(m.cantidad)),
+            costoUnitario: Number(m.costoUnitario),
+            total: Math.abs(Number(m.cantidad)) * Number(m.costoUnitario),
+            lote: m.notas?.match(/\[Lote:\s*(.+?)\]/)?.[1] || null
+          }))
+          extraData = {
+            bodega: movs[0].bodegaDestino || movs[0].bodegaOrigen,
+            notas: movs[0].notas,
+            total: itemsList.reduce((acc, i) => acc + i.total, 0)
+          }
+        }
       }
     } else if (doc.tipo === 'FC') {
       const fcObj = fcs.find((f: any) => f.numero === doc.id || f.id === doc.dbId)
@@ -455,7 +477,7 @@ export function Movimientos() {
   })
 
   // Map and add TRASLADO_ENTRADA movements ONLY if it is an inter-branch reception with a real RP document
-  const recepcionesTraslado = dbMovements
+  const recepcionesTrasladoGrouped = dbMovements
     .filter((m: any) => {
       if (m.tipo !== 'TRASLADO_ENTRADA') return false
       // Solo traslados entre sucursales diferentes que fueron recibidos formalmente con documento RP
@@ -463,30 +485,41 @@ export function Movimientos() {
       const isRpDoc = num.startsWith('RP') || m.referenciaTipo === 'RP'
       return isRpDoc
     })
-    .map((m: any) => {
+    .reduce((acc: Record<string, any>, m: any) => {
+      const rpId = m.referenciaId || (m.numero ? m.numero.replace(/-\d+$/, '') : `RP-${m.id}`)
       const bodegaDestino = bodegas.find((b: any) => String(b.id) === String(m.bodegaDestinoId))
       const bodegaOrigen = bodegas.find((b: any) => String(b.id) === String(m.bodegaOrigenId))
-      
       const mPar = dbMovements.find((x: any) => x.id === m.movimientoParId || (x.movimientoParId === m.id && x.tipo === 'TRASLADO_SALIDA'))
       const trasladoNumero = mPar?.referenciaId || mPar?.numero || 'S/Ref'
 
-      return {
-        id: m.numero || `RP-${m.id}`,
-        dbId: m.id,
-        tipo: 'RP',
-        tipoLabel: 'Recepción de Traslado (RP)',
-        origenDestino: `Bodega: ${bodegaDestino?.nombre || 'Destino'}`,
-        total: null,
-        fecha: m.fechaMovimiento,
-        estado: m.estado || 'RECIBIDO',
-        documentosRelacionados: {
-          oc: null,
-          fc: null,
-          trasladoRef: trasladoNumero,
-          bodegaOrigenNombre: bodegaOrigen?.nombre || 'Origen'
+      if (!acc[rpId]) {
+        acc[rpId] = {
+          id: rpId,
+          dbId: m.id,
+          tipo: 'RP',
+          tipoLabel: 'Recepción de Traslado (RP)',
+          origenDestino: `Bodega: ${bodegaDestino?.nombre || 'Destino'}`,
+          total: 0,
+          fecha: m.fechaMovimiento,
+          estado: m.estado || 'RECIBIDO',
+          items: [],
+          documentosRelacionados: {
+            oc: null,
+            fc: null,
+            trasladoRef: trasladoNumero,
+            bodegaOrigenNombre: bodegaOrigen?.nombre || 'Origen'
+          }
         }
       }
-    })
+      acc[rpId].items.push(m)
+      acc[rpId].total += Number(m.cantidad || 0) * Number(m.costoUnitario || 0)
+      return acc
+    }, {})
+
+  const recepcionesTraslado = Object.values(recepcionesTrasladoGrouped).map((rp: any) => ({
+    ...rp,
+    total: rp.total > 0 ? rp.total : null
+  }))
 
   recepcionesTraslado.forEach(rp => {
     allDocs.push(rp)

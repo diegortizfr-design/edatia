@@ -196,13 +196,23 @@ export function ControlExistencias() {
     }
   })
 
-  // 3. Filtrar por buscador
-  const existenciasFiltradas = existenciasProcesadas.filter(p => 
-    !q || 
-    p.nombre.toLowerCase().includes(q.toLowerCase()) || 
-    p.sku.toLowerCase().includes(q.toLowerCase()) ||
-    (p.codigoBarras && p.codigoBarras.includes(q))
-  )
+  // 3. Filtrar por buscador y bodega seleccionada
+  const existenciasFiltradas = existenciasProcesadas.filter(p => {
+    // Si se selecciona una bodega específica, solo mostrar productos con existencia física en ella
+    if (bodegaSeleccionada !== 'todas' && Number(p.stockCalculado || 0) <= 0) {
+      return false
+    }
+
+    if (q) {
+      const qLower = q.toLowerCase()
+      const matchNombre = p.nombre.toLowerCase().includes(qLower)
+      const matchSku = p.sku.toLowerCase().includes(qLower)
+      const matchBarcode = p.codigoBarras && p.codigoBarras.includes(q)
+      if (!matchNombre && !matchSku && !matchBarcode) return false
+    }
+
+    return true
+  })
 
   const bodegaSeleccionadaObj = bodegas.find((b: any) => String(b.id) === bodegaSeleccionada)
 
@@ -503,6 +513,11 @@ export function ControlExistencias() {
               </option>
             ))}
           </select>
+          {bodegaSeleccionada !== 'todas' && (
+            <span className="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-200" title="Referencias con existencias en esta bodega">
+              {existenciasFiltradas.length} con stock
+            </span>
+          )}
         </div>
 
       </div>
@@ -514,7 +529,11 @@ export function ControlExistencias() {
         ) : existenciasFiltradas.length === 0 ? (
           <div className="text-center py-16">
             <Package size={40} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-400 text-sm">No se encontraron productos en el inventario.</p>
+            <p className="text-slate-400 text-sm">
+              {bodegaSeleccionada !== 'todas'
+                ? `No se encontraron productos con existencias en ${bodegaSeleccionadaObj?.nombre || 'la bodega seleccionada'}.`
+                : 'No se encontraron productos en el inventario.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
