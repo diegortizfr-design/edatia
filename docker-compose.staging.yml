@@ -27,8 +27,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db-data-staging:/var/lib/postgresql/data
-      # Crea las BD adicionales (herramientas_edatia, prestamos_edatia)
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    # Sin bind mounts a proposito: Coolify no deja el repo clonado en el host,
+    # asi que Docker crearia un directorio vacio en lugar del archivo. La BD
+    # adicional `herramientas_edatia` la crea `prisma db push` desde el api.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-edatia} -d ${DB_NAME:-edatia_staging}"]
       interval: 10s
@@ -47,7 +48,9 @@ services:
         condition: service_healthy
     # En staging el schema se aplica solo en cada arranque.
     #  · schema.prisma     → tiene migraciones versionadas: migrate deploy
-    #  · herramientas.prisma → no tiene carpeta de migraciones: db push.
+    #  · herramientas.prisma → no tiene carpeta de migraciones: db push,
+    #    que ademas CREA la base si no existe (por eso el init-db.sh del
+    #    compose de produccion no hace falta aca).
     #    --accept-data-loss evita que el contenedor se cuelgue pidiendo
     #    confirmación si hay drift. Es aceptable SOLO porque es staging.
     command: >
@@ -92,11 +95,11 @@ services:
       args:
         # Mismo origen que el SPA → el navegador pega a /api/v1 sin CORS
         VITE_API_URL: https://${STAGING_HOST:-edatia.matriz.cloud}
+        # Caddyfile con el proxy al api, horneado en la imagen
+        CADDYFILE: Caddyfile.staging
     restart: unless-stopped
     depends_on:
       - api
-    volumes:
-      - ./deploy/staging/Caddyfile.web:/etc/caddy/Caddyfile:ro
     expose:
       - "80"
     healthcheck:
@@ -115,11 +118,10 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: https://${MANAGER_STAGING_HOST:-manager.edatia.matriz.cloud}
+        CADDYFILE: Caddyfile.staging
     restart: unless-stopped
     depends_on:
       - api
-    volumes:
-      - ./deploy/staging/Caddyfile.manager:/etc/caddy/Caddyfile:ro
     expose:
       - "80"
 

@@ -41,9 +41,17 @@ Servicios del compose:
 El `db` **no publica el 5432 al host** (producción sí lo hace). Para entrar:
 `docker exec -it <contenedor-db> psql -U edatia -d edatia_staging`.
 
-`init-db.sh` se monta en el entrypoint de Postgres y crea de paso
-`herramientas_edatia` y `prestamos_edatia`, que el backend necesita por su
-segundo cliente Prisma (`HERRAMIENTAS_DATABASE_URL`).
+**El compose de staging no usa ningún bind mount**, a diferencia del de
+producción. Coolify no deja el repo clonado en el host: solo baja el archivo
+de compose. Un `- ./archivo:/ruta` hace que Docker cree un *directorio* vacío
+en el path inexistente y falle al montarlo sobre un archivo — o peor, que
+monte un directorio vacío sin quejarse. Por eso:
+
+- el Caddyfile de cada SPA se hornea en la imagen vía `--build-arg CADDYFILE`
+  (el default es el de producción, así que el build de prod no cambia);
+- la BD `herramientas_edatia` que el backend necesita por su segundo cliente
+  Prisma la crea `prisma db push`, que crea la base si no existe. Así no hace
+  falta el `init-db.sh` que monta el compose de producción.
 
 ## Pasos en Coolify
 

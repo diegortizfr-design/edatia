@@ -18,7 +18,10 @@ RUN npm run build
 FROM caddy:2-alpine
 
 # Copiar la configuración personalizada de Caddy
-COPY Caddyfile /etc/caddy/Caddyfile
+# Permite elegir el Caddyfile por ambiente sin bind mounts.
+# Default = Caddyfile (produccion); staging pasa Caddyfile.staging.
+ARG CADDYFILE=Caddyfile
+COPY ${CADDYFILE} /etc/caddy/Caddyfile
 
 # Copiar el build del frontend a la raíz de Caddy
 COPY --from=build /app/dist /usr/share/caddy

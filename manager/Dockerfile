@@ -18,7 +18,10 @@ RUN npm run build
 # Serve stage (Caddy)
 FROM caddy:2-alpine
 
-COPY Caddyfile /etc/caddy/Caddyfile
+# Permite elegir el Caddyfile por ambiente sin bind mounts.
+# Default = Caddyfile (produccion); staging pasa Caddyfile.staging.
+ARG CADDYFILE=Caddyfile
+COPY ${CADDYFILE} /etc/caddy/Caddyfile
 COPY --from=build /app/dist /usr/share/caddy
 
 EXPOSE 80

@@ -1,0 +1,29 @@
+# Caddyfile del portal Manager en staging — mismo patrón que el del ERP:
+# SPA + proxy del API en el mismo host, con bloques `handle` para que
+# try_files no se coma las rutas del API (ver nota en frontend/Caddyfile.staging).
+{
+    admin off
+}
+
+:80 {
+    handle /api/* {
+        reverse_proxy api:4000
+    }
+
+    handle /uploads/* {
+        reverse_proxy api:4000
+    }
+
+    handle {
+        root * /usr/share/caddy
+        encode gzip
+        try_files {path} /index.html
+        file_server
+    }
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-Edatia-Env "staging"
+    }
+}

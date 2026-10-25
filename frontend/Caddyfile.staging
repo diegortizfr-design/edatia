@@ -1,0 +1,51 @@
+# Caddyfile del SPA del ERP en staging.
+# Sirve el build de Vite y reenvía las rutas del API al contenedor `api`,
+# para que todo viva en https://edatia.matriz.cloud (mismo origen → sin CORS).
+#
+# OJO con el orden: Caddy ejecuta las directivas en SU orden interno, no en el
+# del archivo, y ahí `try_files` va antes que `reverse_proxy`. Con directivas
+# sueltas, /api/v1/health no existe como archivo, try_files lo reescribe a
+# /index.html y el matcher del proxy ya no coincide: el API devolvería el HTML
+# del SPA. Los bloques `handle` son mutuamente excluyentes y evitan eso.
+{
+    admin off
+}
+
+:80 {
+    # ── API ─────────────────────────────────────────────────────────────────
+    handle /api/* {
+        reverse_proxy api:4000
+    }
+
+    # Archivos subidos (getMediaUrl del frontend puede construir /uploads/...)
+    handle /uploads/* {
+        reverse_proxy api:4000
+    }
+
+    # ── SPA ─────────────────────────────────────────────────────────────────
+    handle {
+        root * /usr/share/caddy
+        encode gzip
+        try_files {path} /index.html
+        file_server
+
+        @html {
+            path *.html
+            path /
+        }
+        header @html Cache-Control "no-cache, no-store, must-revalidate"
+        header @html Pragma "no-cache"
+        header @html Expires "0"
+    }
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Permissions-Policy "geolocation=(self), microphone=()"
+        # Sin HSTS en pruebas: evita quedar clavado a HTTPS en el navegador
+        # si algún día se prueba el host por HTTP.
+        -Strict-Transport-Security
+        # Marca visible de que NO es producción
+        X-Edatia-Env "staging"
+    }
+}
