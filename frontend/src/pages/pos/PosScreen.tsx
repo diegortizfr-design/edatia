@@ -56,7 +56,27 @@ export function PosScreen() {
   const [pagosPorMedio, setPagosPorMedio] = useState<Record<string, number>>({})
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('pos_theme')
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark'
+      try {
+        localStorage.setItem('pos_theme', next)
+      } catch (e) {
+        console.error(e)
+      }
+      return next
+    })
+  }
+
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({})
   const isDark = theme === 'dark'
 
@@ -119,6 +139,11 @@ export function PosScreen() {
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
     onSuccess: async (data) => {
+      // Invalidar y refrescar productos de la bodega para reflejar el stock actualizado
+      qc.invalidateQueries({ queryKey: ['pos-productos'] })
+      qc.invalidateQueries({ queryKey: ['sesion-pos', sesId] })
+      refetchProductos()
+
       const cambioFinal = cambio
       setVentaOk({
         ...data,
@@ -146,6 +171,13 @@ export function PosScreen() {
       setShowPago(false)
     },
   })
+
+  const handleNuevaVenta = () => {
+    setVentaOk(null)
+    qc.invalidateQueries({ queryKey: ['pos-productos'] })
+    qc.invalidateQueries({ queryKey: ['sesion-pos', sesId] })
+    refetchProductos()
+  }
 
   const mutAnular = useMutation({
     mutationFn: ({ id, motivo }: { id: number; motivo: string }) => anularVentaPos(id, motivo),
@@ -661,7 +693,7 @@ export function PosScreen() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+            onClick={toggleTheme}
             className={`p-2 rounded-lg transition-colors duration-200 ${
               isDark
                 ? 'text-slate-450 hover:text-white bg-slate-700/50'
@@ -1416,7 +1448,7 @@ export function PosScreen() {
                 }`}>
                 <Printer size={16} /> Imprimir
               </button>
-              <button onClick={() => setVentaOk(null)}
+              <button onClick={handleNuevaVenta}
                 className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                 Nueva venta
               </button>
