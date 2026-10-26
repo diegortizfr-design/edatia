@@ -198,9 +198,10 @@ export function ControlExistencias() {
 
   // 3. Filtrar por buscador y bodega seleccionada
   const existenciasFiltradas = existenciasProcesadas.filter(p => {
-    // Si se selecciona una bodega específica, solo mostrar productos con existencia física en ella
-    if (bodegaSeleccionada !== 'todas' && Number(p.stockCalculado || 0) <= 0) {
-      return false
+    // Si se selecciona una bodega específica, verificar si el producto tiene registro de stock en ella
+    if (bodegaSeleccionada !== 'todas') {
+      const tieneEnBodega = p.stock && p.stock.some((s: any) => String(s.bodegaId) === bodegaSeleccionada)
+      if (!tieneEnBodega) return false
     }
 
     if (q) {

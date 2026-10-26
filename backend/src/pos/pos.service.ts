@@ -410,6 +410,9 @@ export class PosService {
       }
     }
 
+    // Auto-reparar en segundo plano ventas completadas que hayan quedado sin comprobante contable
+    this.sincronizarVentasSinComprobante(empresaId).catch(() => {})
+
     return this.prisma.ventaPos.findMany({
       where,
       include: {
@@ -617,8 +620,8 @@ export class PosService {
           bodegaId: sesion.caja.bodegaId,
           cantidad: item.cantidad,
           concepto: `Venta POS ${numero}`,
-          tipo: 'SALIDA',
-          referenciaId: String(v.id),
+          tipo: 'VENTA',
+          referenciaId: v.numero,
           referenciaTipo: 'VENTA_POS',
           numeroMov: `POS-${numero}-${item.productoId}`,
         })
@@ -1055,67 +1058,144 @@ export class PosService {
 
   // ─── Integración Contable ───────────────────────────────────────────────────
 
+  private async resolverCuentaPUC(
+    prismaOrTx: any,
+    empresaId: number,
+    posiblesCodigos: string[],
+    prefijoFallback?: string,
+  ): Promise<number | null> {
+    if (posiblesCodigos.length > 0) {
+      const exacta = await prismaOrTx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: { in: posiblesCodigos }, activo: true },
+        select: { id: true, codigo: true },
+      })
+      if (exacta) return exacta.id
+    }
+
+    if (prefijoFallback) {
+      const porPrefijo = await prismaOrTx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: { startsWith: prefijoFallback }, activo: true },
+        select: { id: true, codigo: true },
+        orderBy: { codigo: 'asc' },
+      })
+      if (porPrefijo) return porPrefijo.id
+    }
+
+    return null
+  }
+
   private async crearAsientoVentaPos(tx: any, venta: any, empresaId: number, sesionId: number) {
-    // 1. Obtener configuración de la sesión/caja para la cuenta de efectivo
+    // 1. Obtener sesión y configuración de caja
     const sesion = await tx.sesionCaja.findUnique({
       where: { id: sesionId },
-      include: { caja: { include: { cajaBanco: true } } },
+      include: {
+        caja: {
+          include: {
+            cajaBanco: true,
+          }
+        }
+      },
     })
 
-    // 2. Definir cuentas (códigos estándar PUC Colombia)
-    const codigos = ['1105', '1110', '4135', '240801', '240802', '6135', '1435']
-    const cuentas = await tx.cuentaPUC.findMany({
-      where: { empresaId, codigo: { in: codigos } },
-    })
-    const byCode = new Map(cuentas.map((c: any) => [c.codigo, c.id]))
+    // 2. Resolver Cuenta de Caja / Efectivo (1105)
+    let cCaja: number | null = null
 
-    let cCaja = byCode.get('1105')
+    // A. Si la caja POS tiene vinculada una CajaBanco con cuentaPUC (ej: '11050501')
     if (sesion?.caja?.cajaBanco?.cuentaPUC) {
       const dbAcc = await tx.cuentaPUC.findFirst({
-        where: { empresaId, codigo: sesion.caja.cajaBanco.cuentaPUC }
+        where: { empresaId, codigo: sesion.caja.cajaBanco.cuentaPUC, activo: true },
+        select: { id: true }
       })
       if (dbAcc) cCaja = dbAcc.id
     }
-    const cIngresos = byCode.get('4135')
-    const cCostoVta = byCode.get('6135')
-    const cInventario = byCode.get('1435')
 
-    // Resolver cuentas de IVA dinámicas desde los impuestos creados por el contador
+    // B. Buscar CajaBanco de tipo CAJA
+    if (!cCaja) {
+      const cbCaja = await tx.cajaBanco.findFirst({
+        where: { empresaId, tipo: 'CAJA', activo: true, cuentaPUC: { not: null } },
+        orderBy: { id: 'asc' },
+      })
+      if (cbCaja?.cuentaPUC) {
+        const dbAcc = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: cbCaja.cuentaPUC, activo: true },
+          select: { id: true }
+        })
+        if (dbAcc) cCaja = dbAcc.id
+      }
+    }
+
+    // C. Fallbacks de códigos estándar en Colombia
+    if (!cCaja) {
+      cCaja = await this.resolverCuentaPUC(tx, empresaId, ['11050501', '110505', '110501', '1105'], '1105')
+    }
+    if (!cCaja) {
+      cCaja = await this.resolverCuentaPUC(tx, empresaId, [], '11')
+    }
+
+    // 3. Resolver Cuenta de Ingresos (4135)
+    let cIngresos = await this.resolverCuentaPUC(
+      tx,
+      empresaId,
+      ['41350501', '413505', '413536', '4135'],
+      '4135',
+    )
+    if (!cIngresos) {
+      cIngresos = await this.resolverCuentaPUC(tx, empresaId, [], '41')
+    }
+
+    if (!cCaja || !cIngresos) {
+      console.warn('[POS Asiento] No se pudo generar comprobante: faltan cuentas base', { cCaja, cIngresos, empresaId })
+      return
+    }
+
+    // 4. Resolver Cuentas de IVA (2408)
     const impuestosIVA = await tx.impuesto.findMany({
       where: { empresaId, tipo: 'IVA', activo: true }
     })
     const tax19 = impuestosIVA.find((t: any) => Math.round(Number(t.tarifa)) === 19)
     const tax5 = impuestosIVA.find((t: any) => Math.round(Number(t.tarifa)) === 5)
 
-    let cIva19 = byCode.get('240801')
-    let cIva5 = byCode.get('240802')
-
-    if (tax19?.cuentaDebito) {
-      const customIva19 = await tx.cuentaPUC.findFirst({
-        where: { empresaId, codigo: tax19.cuentaDebito }
+    let cIva19: number | null = null
+    const tax19Code = tax19?.cuentaCredito || tax19?.cuentaDebito
+    if (tax19Code) {
+      const customAcc = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: tax19Code, activo: true },
+        select: { id: true }
       })
-      if (customIva19) cIva19 = customIva19.id
+      if (customAcc) cIva19 = customAcc.id
     }
-    if (tax5?.cuentaDebito) {
-      const customIva5 = await tx.cuentaPUC.findFirst({
-        where: { empresaId, codigo: tax5.cuentaDebito }
-      })
-      if (customIva5) cIva5 = customIva5.id
+    if (!cIva19) {
+      cIva19 = await this.resolverCuentaPUC(tx, empresaId, ['24080101', '240801', '2408'], '2408')
     }
 
-    if (!cCaja || !cIngresos) return // Sin configuración contable base, omitir
+    let cIva5: number | null = null
+    const tax5Code = tax5?.cuentaCredito || tax5?.cuentaDebito
+    if (tax5Code) {
+      const customAcc = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: tax5Code, activo: true },
+        select: { id: true }
+      })
+      if (customAcc) cIva5 = customAcc.id
+    }
+    if (!cIva5) {
+      cIva5 = await this.resolverCuentaPUC(tx, empresaId, ['24080201', '240802', '2408'], '2408')
+    }
 
-    // 3. Preparar líneas del asiento
+    // 5. Resolver Costo de Ventas e Inventario
+    const cCostoVta = await this.resolverCuentaPUC(tx, empresaId, ['61350501', '613505', '6135'], '6135') ?? await this.resolverCuentaPUC(tx, empresaId, [], '61')
+    const cInventario = await this.resolverCuentaPUC(tx, empresaId, ['14350501', '143505', '1435'], '1435') ?? await this.resolverCuentaPUC(tx, empresaId, [], '14')
+
+    // 6. Preparar líneas del comprobante
     const lineas = []
     const desc = `Venta POS ${venta.numero}`
 
-    // Débito distribuido por medio de pago recibido
+    // Débitos: Distribución por medio de pago
     const payments = [
-      { key: 'pagoEfectivo', code: 'EFECTIVO', fallback: '1105', name: 'Efectivo' },
-      { key: 'pagoTarjetaDebito', code: 'TARJETA_DEBITO', fallback: '1110', name: 'Tarjeta Débito' },
-      { key: 'pagoTarjetaCredito', code: 'TARJETA_CREDITO', fallback: '1110', name: 'Tarjeta Crédito' },
-      { key: 'pagoTransferencia', code: 'TRANSFERENCIA', fallback: '1110', name: 'Transferencia' },
-      { key: 'pagoNequi', code: 'NEQUI', fallback: '1110', name: 'Nequi' },
+      { key: 'pagoEfectivo', code: 'EFECTIVO', name: 'Efectivo', fallbackPrefijo: '1105' },
+      { key: 'pagoTarjetaDebito', code: 'TARJETA_DEBITO', name: 'Tarjeta Débito', fallbackPrefijo: '1110' },
+      { key: 'pagoTarjetaCredito', code: 'TARJETA_CREDITO', name: 'Tarjeta Crédito', fallbackPrefijo: '1110' },
+      { key: 'pagoTransferencia', code: 'TRANSFERENCIA', name: 'Transferencia', fallbackPrefijo: '1110' },
+      { key: 'pagoNequi', code: 'NEQUI', name: 'Nequi', fallbackPrefijo: '1110' },
     ]
 
     for (const p of payments) {
@@ -1124,32 +1204,57 @@ export class PosService {
         : Number(venta[p.key] ?? 0)
 
       if (val > 0) {
-        let accountId = cCaja
-        
+        let accountId: number | null = null
+
         const mp = await tx.medioPago.findFirst({
           where: { empresaId, codigo: p.code },
           include: { cajaBanco: true },
         })
-        
-        if (mp?.cajaBanco?.cuentaPUCId) {
-          accountId = mp.cajaBanco.cuentaPUCId
-        } else {
-          accountId = byCode.get(p.fallback) || cCaja
+
+        if (mp?.cajaBanco?.cuentaPUC) {
+          const acc = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: mp.cajaBanco.cuentaPUC, activo: true },
+            select: { id: true },
+          })
+          if (acc) accountId = acc.id
         }
 
-        lineas.push({
-          cuentaId: accountId,
-          descripcion: `${desc} - Pago ${p.name}`,
-          debito: val,
-          credito: 0,
-          terceroNit: venta.clienteDoc,
-          terceroNombre: venta.clienteNombre,
-        })
+        if (!accountId) {
+          if (p.code === 'EFECTIVO') {
+            accountId = cCaja
+          } else {
+            accountId = await this.resolverCuentaPUC(tx, empresaId, ['11100501', '11100502', '111005', '1110'], '1110') || cCaja
+          }
+        }
+
+        if (accountId) {
+          lineas.push({
+            cuentaId: accountId,
+            descripcion: `${desc} - Pago ${p.name}`,
+            debito: val,
+            credito: 0,
+            terceroNit: venta.clienteDoc,
+            terceroNombre: venta.clienteNombre,
+          })
+        }
       }
     }
 
-    // Crédito a Ingresos (Base) por producto (Grupo contable)
-    for (const item of venta.items) {
+    // Débito a Descuentos en Ventas si aplica
+    if (Number(venta.descuento) > 0) {
+      const cDesc = await this.resolverCuentaPUC(tx, empresaId, ['53053501', '530535', '5305'], '5305') || cIngresos
+      lineas.push({
+        cuentaId: cDesc,
+        descripcion: `${desc} - Descuento en venta`,
+        debito: Number(venta.descuento),
+        credito: 0,
+        terceroNit: venta.clienteDoc,
+        terceroNombre: venta.clienteNombre,
+      })
+    }
+
+    // Créditos: Ingresos base por ítem
+    for (const item of (venta.items || [])) {
       const product = await tx.producto.findUnique({
         where: { id: item.productoId },
         include: { grupo: true }
@@ -1159,48 +1264,51 @@ export class PosService {
       const customIngresoCode = (product?.grupo?.contable as any)?.ingresoEnVentas
       if (customIngresoCode) {
         const customAcc = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: customIngresoCode }
+          where: { empresaId, codigo: customIngresoCode, activo: true },
+          select: { id: true }
         })
         if (customAcc) cIngresoItem = customAcc.id
       }
 
-      const itemMonto = Number(item.subtotal) - Number(item.descuento || 0)
-      if (itemMonto > 0 && cIngresoItem) {
+      const itemBase = Number(item.subtotal || (Number(item.cantidad) * Number(item.precioUnitario)))
+      if (itemBase > 0 && cIngresoItem) {
         lineas.push({
           cuentaId: cIngresoItem,
           descripcion: `${desc} - ${item.descripcion}`,
           debito: 0,
-          credito: itemMonto,
+          credito: itemBase,
           terceroNit: venta.clienteDoc,
           terceroNombre: venta.clienteNombre,
         })
       }
     }
 
-    // Crédito a IVA
+    // Crédito a IVA 19%
     if (Number(venta.iva19) > 0 && cIva19) {
-      lineas.push({ 
-        cuentaId: cIva19, 
-        descripcion: `${desc} - IVA 19%`, 
-        debito: 0, 
+      lineas.push({
+        cuentaId: cIva19,
+        descripcion: `${desc} - IVA 19%`,
+        debito: 0,
         credito: Number(venta.iva19),
         terceroNit: venta.clienteDoc,
         terceroNombre: venta.clienteNombre,
       })
     }
+
+    // Crédito a IVA 5%
     if (Number(venta.iva5) > 0 && cIva5) {
-      lineas.push({ 
-        cuentaId: cIva5, 
-        descripcion: `${desc} - IVA 5%`, 
-        debito: 0, 
+      lineas.push({
+        cuentaId: cIva5,
+        descripcion: `${desc} - IVA 5%`,
+        debito: 0,
         credito: Number(venta.iva5),
         terceroNit: venta.clienteDoc,
         terceroNombre: venta.clienteNombre,
       })
     }
 
-    // Costo de Ventas e Inventario por producto de forma dinámica
-    for (const item of venta.items) {
+    // Costo de Ventas e Inventario por producto
+    for (const item of (venta.items || [])) {
       const cTotal = Number(item.costoTotal || 0)
       if (cTotal > 0) {
         const product = await tx.producto.findUnique({
@@ -1212,12 +1320,14 @@ export class PosService {
         const customInvCode = (product?.grupo?.contable as any)?.inventarioVenta
         if (customInvCode) {
           const customInv = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: customInvCode }
+            where: { empresaId, codigo: customInvCode, activo: true },
+            select: { id: true }
           })
           if (customInv) cInvId = customInv.id
         } else if (product?.clasificacion?.pucCuenta) {
           const customInv = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: product.clasificacion.pucCuenta }
+            where: { empresaId, codigo: product.clasificacion.pucCuenta, activo: true },
+            select: { id: true }
           })
           if (customInv) cInvId = customInv.id
         }
@@ -1226,7 +1336,8 @@ export class PosService {
         const customCostoCode = (product?.grupo?.contable as any)?.costoEnVentas
         if (customCostoCode) {
           const customCosto = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: customCostoCode }
+            where: { empresaId, codigo: customCostoCode, activo: true },
+            select: { id: true }
           })
           if (customCosto) cCostoVtaId = customCosto.id
         }
@@ -1252,25 +1363,51 @@ export class PosService {
       }
     }
 
-    // 4. Validar partida doble (margen de error 0.01)
+    // Validar y ajustar diferencia menor al peso
     const totalDb = lineas.reduce((acc, l) => acc + l.debito, 0)
     const totalCr = lineas.reduce((acc, l) => acc + l.credito, 0)
-    if (Math.abs(totalDb - totalCr) > 0.1) return // No cuadra, no crear asiento para evitar errores
+    const diff = Math.round((totalDb - totalCr) * 100) / 100
 
-    // 5. Crear el comprobante
+    if (Math.abs(diff) > 0 && Math.abs(diff) <= 2) {
+      if (diff > 0) {
+        lineas.push({
+          cuentaId: cIngresos,
+          descripcion: `${desc} - Ajuste al peso`,
+          debito: 0,
+          credito: diff,
+          terceroNit: venta.clienteDoc,
+          terceroNombre: venta.clienteNombre,
+        })
+      } else {
+        lineas.push({
+          cuentaId: cCaja,
+          descripcion: `${desc} - Ajuste al peso`,
+          debito: Math.abs(diff),
+          credito: 0,
+          terceroNit: venta.clienteDoc,
+          terceroNombre: venta.clienteNombre,
+        })
+      }
+    } else if (Math.abs(diff) > 2) {
+      console.warn('[POS Asiento] Partida doble descuadrada, omitido:', { totalDb, totalCr, diff, venta: venta.numero })
+      return
+    }
+
+    // Crear o asegurar período contable
     const fecha = new Date(venta.fecha)
     const anio = fecha.getFullYear()
     const mes = fecha.getMonth() + 1
 
     const periodo = await tx.periodoContable.upsert({
       where: { empresaId_anio_mes: { empresaId, anio, mes } },
-      create: { empresaId, anio, mes, estado: 'ABIERTA' },
+      create: { empresaId, anio, mes, estado: 'ABIERTO' },
       update: {},
     })
 
     const ultimo = await tx.comprobante.findFirst({
       where: { empresaId, tipo: 'POS' },
       orderBy: { id: 'desc' },
+      select: { numero: true }
     })
     const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() || '0') + 1 : 1
     const numeroComp = `POS-${anio}-${String(seq).padStart(5, '0')}`
@@ -1291,10 +1428,34 @@ export class PosService {
       },
     })
 
-    // 6. Vincular comprobante a la venta
     await tx.ventaPos.update({
       where: { id: venta.id },
       data: { comprobanteId: comprobante.id },
     })
+  }
+
+  /**
+   * Sincroniza automáticamente cualquier venta POS completada que no tenga comprobante contable
+   */
+  async sincronizarVentasSinComprobante(empresaId: number) {
+    try {
+      const ventasSinComp = await this.prisma.ventaPos.findMany({
+        where: {
+          empresaId,
+          estado: 'COMPLETADA',
+          comprobanteId: null,
+        },
+        include: { items: true },
+        take: 50,
+      })
+
+      for (const v of ventasSinComp) {
+        await this.prisma.$transaction(async (tx) => {
+          await this.crearAsientoVentaPos(tx, v, empresaId, v.sesionId)
+        })
+      }
+    } catch (err) {
+      console.error('[POS Sincronización Comprobantes] Error:', err)
+    }
   }
 }

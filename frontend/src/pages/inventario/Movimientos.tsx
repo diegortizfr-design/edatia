@@ -600,7 +600,11 @@ export function Movimientos() {
       }
     }
 
-    // 6. Si es Venta POS y el numeroMov es POS-001-1
+    // 6. Si es Venta POS (ej: FPBW-1)
+    if (m.referenciaTipo === 'VENTA_POS') {
+      return m.referenciaId || m.numero
+    }
+
     if (m.numero?.startsWith('POS-')) {
       const parts = m.numero.split('-')
       if (parts.length >= 3) {
@@ -1111,9 +1115,9 @@ export function Movimientos() {
                       if (m.tipo === 'AJUSTE_POSITIVO' || m.tipo === 'ENTRADA' || m.tipo === 'TRASLADO_ENTRADA') {
                         movColor = "text-green-700 bg-green-50 border-green-200"
                         movLabel = m.tipo === 'AJUSTE_POSITIVO' ? 'AJUSTE (+)' : m.tipo
-                      } else if (m.tipo === 'AJUSTE_NEGATIVO' || m.tipo === 'SALIDA' || m.tipo === 'TRASLADO_SALIDA') {
+                      } else if (m.tipo === 'AJUSTE_NEGATIVO' || m.tipo === 'SALIDA' || m.tipo === 'TRASLADO_SALIDA' || m.tipo === 'VENTA') {
                         movColor = "text-red-700 bg-red-50 border-red-200"
-                        movLabel = m.tipo === 'AJUSTE_NEGATIVO' ? 'AJUSTE (−)' : m.tipo
+                        movLabel = m.tipo === 'VENTA' ? 'VENTA (−)' : (m.tipo === 'AJUSTE_NEGATIVO' ? 'AJUSTE (−)' : m.tipo)
                       }
 
                       const bodegaTxt = m.bodegaOrigen?.nombre || m.bodegaDestino?.nombre || 'General'
