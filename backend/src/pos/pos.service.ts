@@ -965,6 +965,94 @@ export class PosService {
     }
   }
 
+  // ─── Creación Rápida de Cliente en POS ─────────────────────────────────────
+
+  async crearClienteRapidoPos(
+    empresaId: number,
+    dto: {
+      tipoDocumento?: string
+      numeroDocumento: string
+      nombre: string
+      telefono?: string
+      email?: string
+      direccion?: string
+    },
+  ) {
+    if (!dto.numeroDocumento?.trim()) {
+      throw new BadRequestException('El número de documento es obligatorio')
+    }
+    if (!dto.nombre?.trim()) {
+      throw new BadRequestException('El nombre del cliente es obligatorio')
+    }
+
+    const docLimpio = dto.numeroDocumento.trim()
+    const nombreLimpio = dto.nombre.trim()
+    const tipoDoc = dto.tipoDocumento?.toUpperCase() || 'CC'
+    const tipoPersona = tipoDoc === 'NIT' ? 'JURIDICA' : 'NATURAL'
+
+    // Buscar si ya existe el tercero en la empresa por documento
+    const existente = await this.prisma.tercero.findFirst({
+      where: {
+        empresaId,
+        numeroDocumento: docLimpio,
+      },
+    })
+
+    if (existente) {
+      // Si ya existía, asegurarse de que quede habilitado como cliente y actualizar datos de contacto si se suministraron
+      const updated = await this.prisma.tercero.update({
+        where: { id: existente.id },
+        data: {
+          esCliente: true,
+          activo: true,
+          ...(dto.nombre ? { nombre: nombreLimpio } : {}),
+          ...(dto.telefono ? { telefono: dto.telefono.trim(), celular: dto.telefono.trim() } : {}),
+          ...(dto.email ? { email: dto.email.trim() } : {}),
+          ...(dto.direccion ? { direccion: dto.direccion.trim() } : {}),
+        },
+      })
+
+      return {
+        id: updated.id,
+        nombre: updated.nombre,
+        numeroDocumento: updated.numeroDocumento,
+        tipoDocumento: updated.tipoDocumento,
+        telefono: updated.telefono,
+        email: updated.email,
+        direccion: updated.direccion,
+        yaExistia: true,
+      }
+    }
+
+    // Si no existía, crearlo como nuevo cliente
+    const nuevo = await this.prisma.tercero.create({
+      data: {
+        empresaId,
+        tipoPersona,
+        tipoDocumento: tipoDoc,
+        numeroDocumento: docLimpio,
+        nombre: nombreLimpio,
+        telefono: dto.telefono ? dto.telefono.trim() : null,
+        celular: dto.telefono ? dto.telefono.trim() : null,
+        email: dto.email ? dto.email.trim() : null,
+        direccion: dto.direccion ? dto.direccion.trim() : null,
+        esCliente: true,
+        activo: true,
+      },
+    })
+
+    return {
+      id: nuevo.id,
+      nombre: nuevo.nombre,
+      numeroDocumento: nuevo.numeroDocumento,
+      tipoDocumento: nuevo.tipoDocumento,
+      telefono: nuevo.telefono,
+      email: nuevo.email,
+      direccion: nuevo.direccion,
+      yaExistia: false,
+    }
+  }
+
   // ─── Integración Contable ───────────────────────────────────────────────────
 
   private async crearAsientoVentaPos(tx: any, venta: any, empresaId: number, sesionId: number) {

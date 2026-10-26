@@ -2,13 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  getSesion, buscarProductosPos, crearVentaPos, anularVentaPos, crearProductoRapidoPos,
+  getSesion, buscarProductosPos, crearVentaPos, anularVentaPos, crearProductoRapidoPos, crearClienteRapidoPos,
 } from '../../services/pos.service'
 import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Scan, Users, Sun, Moon, Zap, PackagePlus,
+  Tag, Scan, Users, Sun, Moon, Zap, PackagePlus, UserPlus, Check, ChevronDown,
 } from 'lucide-react'
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
@@ -75,6 +75,23 @@ export function PosScreen() {
   const [quickCreating, setQuickCreating] = useState(false)
   const [quickError, setQuickError] = useState<string | null>(null)
 
+  // Quick Client Creation state
+  const [showQuickClient, setShowQuickClient] = useState(false)
+  const [quickClientTipoDoc, setQuickClientTipoDoc] = useState('CC')
+  const [quickClientDoc, setQuickClientDoc] = useState('')
+  const [quickClientNombre, setQuickClientNombre] = useState('')
+  const [quickClientTelefono, setQuickClientTelefono] = useState('')
+  const [quickClientEmail, setQuickClientEmail] = useState('')
+  const [quickClientDireccion, setQuickClientDireccion] = useState('')
+  const [quickClientLoading, setQuickClientLoading] = useState(false)
+  const [quickClientError, setQuickClientError] = useState<string | null>(null)
+
+  // Client search combobox state
+  const [clientSearchOpen, setClientSearchOpen] = useState(false)
+  const [clientSearchQuery, setClientSearchQuery] = useState('')
+  const clientDropdownRef = useRef<HTMLDivElement>(null)
+  const clientInputRef = useRef<HTMLInputElement>(null)
+
   const sesId = parseInt(sesionId ?? '0')
 
   const { data: sesion } = useQuery(['sesion-pos', sesId], () => getSesion(sesId), {
@@ -139,7 +156,7 @@ export function PosScreen() {
     onSuccess: () => setShowAnular(null),
   })
 
-  // Lector de código de barras (teclado rápido y atajo F2)
+  // Lector de código de barras (teclado rápido y atajos F2 y F3)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'F2') {
@@ -152,7 +169,17 @@ export function PosScreen() {
         setShowQuickCreate(true)
         return
       }
-      if (document.activeElement === searchRef.current) return
+      if (e.key === 'F3') {
+        e.preventDefault()
+        openQuickClientModal('', '')
+        return
+      }
+      if (e.key === 'Escape') {
+        setShowQuickCreate(false)
+        setShowQuickClient(false)
+        setClientSearchOpen(false)
+      }
+      if (document.activeElement === searchRef.current || document.activeElement === clientInputRef.current) return
       if (e.key === 'Enter' && barcodeBuffer.current.length > 2) {
         setQ(barcodeBuffer.current.trim())
         barcodeBuffer.current = ''
@@ -166,7 +193,18 @@ export function PosScreen() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [q])
+  }, [q, showQuickCreate, showQuickClient, clientSearchOpen])
+
+  // Cerrar dropdown de búsqueda de cliente al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target as Node)) {
+        setClientSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (q) refetchProductos()
@@ -318,6 +356,97 @@ export function PosScreen() {
       setQuickError(err?.response?.data?.message || err?.message || 'Error al guardar el producto rápido')
     } finally {
       setQuickCreating(false)
+    }
+  }
+
+  const openQuickClientModal = (initialDoc = '', initialNombre = '') => {
+    setQuickClientTipoDoc('CC')
+    setQuickClientDoc(initialDoc)
+    setQuickClientNombre(initialNombre)
+    setQuickClientTelefono('')
+    setQuickClientEmail('')
+    setQuickClientDireccion('')
+    setQuickClientError(null)
+    setShowQuickClient(true)
+    setClientSearchOpen(false)
+  }
+
+  const filteredClientes = useMemo(() => {
+    const query = clientSearchQuery.trim().toLowerCase()
+    if (!query) return clientes.slice(0, 15)
+    return clientes.filter((c: any) => {
+      const matchDoc = c.numeroDocumento && c.numeroDocumento.toLowerCase().includes(query)
+      const matchNom = c.nombre && c.nombre.toLowerCase().includes(query)
+      return matchDoc || matchNom
+    }).slice(0, 15)
+  }, [clientes, clientSearchQuery])
+
+  const handleClientSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const query = clientSearchQuery.trim()
+      if (!query) return
+
+      // 1. Coincidencia exacta por documento
+      const exactMatch = clientes.find((c: any) =>
+        c.numeroDocumento && c.numeroDocumento.trim().toLowerCase() === query.toLowerCase()
+      )
+      if (exactMatch) {
+        setSelectedCliente(exactMatch)
+        setClientSearchOpen(false)
+        setClientSearchQuery('')
+        return
+      }
+
+      // 2. Si solo hay 1 cliente coincidente en el filtro
+      if (filteredClientes.length === 1) {
+        setSelectedCliente(filteredClientes[0])
+        setClientSearchOpen(false)
+        setClientSearchQuery('')
+        return
+      }
+
+      // 3. No existe cliente con este dato -> abrir modal con el dato prellenado
+      const isNum = /^[0-9]+$/.test(query)
+      if (isNum) {
+        openQuickClientModal(query, '')
+      } else {
+        openQuickClientModal('', query)
+      }
+    }
+  }
+
+  const handleSaveQuickClient = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!quickClientDoc.trim()) {
+      setQuickClientError('El número de documento es obligatorio')
+      return
+    }
+    if (!quickClientNombre.trim()) {
+      setQuickClientError('El nombre del cliente es obligatorio')
+      return
+    }
+    try {
+      setQuickClientLoading(true)
+      setQuickClientError(null)
+      const res = await crearClienteRapidoPos({
+        tipoDocumento: quickClientTipoDoc,
+        numeroDocumento: quickClientDoc.trim(),
+        nombre: quickClientNombre.trim(),
+        telefono: quickClientTelefono.trim() || undefined,
+        email: quickClientEmail.trim() || undefined,
+        direccion: quickClientDireccion.trim() || undefined,
+      })
+
+      await qc.invalidateQueries({ queryKey: ['clientes'] })
+      setSelectedCliente(res)
+      setShowQuickClient(false)
+      setClientSearchOpen(false)
+      setClientSearchQuery('')
+    } catch (err: any) {
+      setQuickClientError(err?.response?.data?.message || err?.message || 'Error al guardar el cliente')
+    } finally {
+      setQuickClientLoading(false)
     }
   }
 
@@ -631,29 +760,174 @@ export function PosScreen() {
         {/* Panel derecho: carrito */}
         <div className={`w-80 xl:w-96 flex flex-col transition-colors duration-200 ${isDark ? 'bg-slate-800 text-white' : 'bg-white border-l border-slate-200 text-slate-800'}`}>
           {/* Cliente */}
-          <div className={`p-3 border-b shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <User size={14} className={isDark ? 'text-slate-400' : 'text-slate-550'} />
-              <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>Cliente</span>
+          <div className={`p-3 border-b shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-200'}`} ref={clientDropdownRef}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <User size={14} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+                <span className={`text-[11px] font-bold uppercase tracking-wider transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cliente</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => openQuickClientModal('', '')}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-600 transition-all border border-indigo-500/20"
+                title="Crear cliente rápido (F3)"
+              >
+                <UserPlus size={11} />
+                <span>+ Nuevo (F3)</span>
+              </button>
             </div>
-            <select
-              value={selectedCliente?.id || ''}
-              onChange={e => {
-                const val = e.target.value
-                const found = clientes.find((c: any) => String(c.id) === val)
-                setSelectedCliente(found || null)
-              }}
-              className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200 ${
-                isDark ? 'bg-slate-700 text-white border-slate-600' : 'bg-slate-50 text-slate-800 border-slate-250'
-              }`}
-            >
-              <option value="">Seleccione un cliente...</option>
-              {clientes.map((c: any) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre} ({c.numeroDocumento || 'Sin doc'})
-                </option>
-              ))}
-            </select>
+
+            {/* Selector interactivo de cliente */}
+            <div className="relative">
+              {clientSearchOpen ? (
+                <div>
+                  <div className={`flex items-center border rounded-xl px-2.5 py-1.5 transition-colors ${
+                    isDark ? 'bg-slate-700 border-indigo-500' : 'bg-white border-indigo-500 shadow-sm'
+                  }`}>
+                    <Search size={13} className="text-indigo-400 shrink-0 mr-1.5" />
+                    <input
+                      ref={clientInputRef}
+                      type="text"
+                      autoFocus
+                      value={clientSearchQuery}
+                      onChange={e => setClientSearchQuery(e.target.value)}
+                      onKeyDown={handleClientSearchKeyDown}
+                      placeholder="Cédula, NIT o Nombre..."
+                      className={`w-full bg-transparent text-xs font-semibold outline-none ${
+                        isDark ? 'text-white placeholder-slate-400' : 'text-slate-800 placeholder-slate-400'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientSearchOpen(false)
+                        setClientSearchQuery('')
+                      }}
+                      className={`p-0.5 rounded-md hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+
+                  {/* Dropdown flotante con resultados */}
+                  <div className={`absolute left-0 right-0 top-full mt-1.5 max-h-64 overflow-y-auto rounded-xl shadow-2xl border z-30 p-1.5 space-y-1 ${
+                    isDark ? 'bg-slate-800 border-slate-700 shadow-black/60' : 'bg-white border-slate-200 shadow-slate-300'
+                  }`}>
+                    {/* Opción destacada para crear cliente al vuelo con lo digitado */}
+                    {clientSearchQuery.trim().length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const q = clientSearchQuery.trim()
+                          const isNum = /^[0-9]+$/.test(q)
+                          if (isNum) openQuickClientModal(q, '')
+                          else openQuickClientModal('', q)
+                        }}
+                        className={`w-full text-left p-2 rounded-lg flex items-center gap-2 transition-all border ${
+                          isDark
+                            ? 'bg-indigo-950/40 hover:bg-indigo-900/60 border-indigo-700/50 text-indigo-300'
+                            : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700'
+                        }`}
+                      >
+                        <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+                          <UserPlus size={13} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-bold leading-tight truncate">
+                            {/^[0-9]+$/.test(clientSearchQuery.trim()) ? (
+                              <>Crear cliente con Cédula/NIT <span className="underline font-mono">"{clientSearchQuery.trim()}"</span></>
+                            ) : (
+                              <>Crear cliente con Nombre <span className="underline">"{clientSearchQuery.trim()}"</span></>
+                            )}
+                          </div>
+                          <div className="text-[9px] opacity-75">Presione Enter o haga clic para abrir registro rápido</div>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Lista de clientes encontrados */}
+                    {filteredClientes.length === 0 && !clientSearchQuery.trim() ? (
+                      <div className="p-3 text-center text-xs opacity-60">
+                        Escriba la cédula o nombre del cliente
+                      </div>
+                    ) : filteredClientes.length === 0 ? (
+                      <div className="p-2 text-center text-[11px] opacity-60">
+                        No se encontró ningún cliente registrado con ese término.
+                      </div>
+                    ) : (
+                      filteredClientes.map((c: any) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCliente(c)
+                            setClientSearchOpen(false)
+                            setClientSearchQuery('')
+                          }}
+                          className={`w-full text-left p-2 rounded-lg flex items-center justify-between text-xs transition-colors ${
+                            selectedCliente?.id === c.id
+                              ? isDark ? 'bg-indigo-900/40 text-indigo-300 font-bold' : 'bg-indigo-50 text-indigo-700 font-bold'
+                              : isDark ? 'hover:bg-slate-700/60 text-slate-200' : 'hover:bg-slate-100 text-slate-800'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1 pr-2">
+                            <div className="truncate font-semibold">{c.nombre}</div>
+                            <div className={`text-[10px] font-mono ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
+                              {c.tipoDocumento || 'CC'} {c.numeroDocumento || 'Sin doc'}
+                              {c.telefono ? ` • Tel: ${c.telefono}` : ''}
+                            </div>
+                          </div>
+                          {selectedCliente?.id === c.id && <Check size={14} className="text-indigo-400 shrink-0" />}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Card del cliente seleccionado */
+                <div
+                  onClick={() => setClientSearchOpen(true)}
+                  className={`group flex items-center justify-between p-2 rounded-xl border cursor-pointer transition-all ${
+                    isDark
+                      ? 'bg-slate-700/70 border-slate-600 hover:border-indigo-500/80 hover:bg-slate-700'
+                      : 'bg-slate-50 border-slate-200 hover:border-indigo-400 hover:bg-white shadow-sm'
+                  }`}
+                >
+                  <div className="min-w-0 flex-1 pr-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {selectedCliente?.nombre || 'Consumidor Final'}
+                      </span>
+                    </div>
+                    <div className={`text-[10px] font-mono truncate ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
+                      {selectedCliente?.numeroDocumento
+                        ? `${selectedCliente.tipoDocumento || 'CC'} ${selectedCliente.numeroDocumento}`
+                        : '222222222222 (Sin identificación)'}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-semibold text-indigo-400 group-hover:underline">
+                      Cambiar
+                    </span>
+                    {selectedCliente && sesion?.caja?.clienteDefault && selectedCliente.id !== sesion.caja.clienteDefault.id && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCliente(sesion.caja.clienteDefault)
+                        }}
+                        className={`p-1 rounded-md transition-colors ${
+                          isDark ? 'hover:bg-slate-600 text-slate-400 hover:text-white' : 'hover:bg-slate-200 text-slate-400 hover:text-slate-800'
+                        }`}
+                        title="Restablecer cliente por defecto"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Items del carrito */}
@@ -1143,6 +1417,176 @@ export function PosScreen() {
                     <>
                       <Zap size={14} className="text-amber-300" />
                       Guardar y Agregar a la Venta
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Creación Rápida de Cliente */}
+      {showQuickClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl border p-5 transition-all ${
+            isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold leading-tight">Creación Rápida de Cliente</h3>
+                  <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Asocia o registra el cliente a la venta inmediatamente
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickClient(false)}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  isDark ? 'text-slate-400 hover:text-white hover:bg-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {quickClientError && (
+              <div className="mb-3 p-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{quickClientError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveQuickClient} className="space-y-3">
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Tipo Doc
+                  </label>
+                  <select
+                    value={quickClientTipoDoc}
+                    onChange={e => setQuickClientTipoDoc(e.target.value)}
+                    className={`w-full px-2.5 py-2 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer ${
+                      isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  >
+                    <option value="CC">CC</option>
+                    <option value="NIT">NIT</option>
+                    <option value="CE">CE</option>
+                    <option value="PP">PP</option>
+                    <option value="TI">TI</option>
+                    <option value="DIE">DIE</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Número de Documento *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus={!quickClientDoc}
+                    value={quickClientDoc}
+                    onChange={e => setQuickClientDoc(e.target.value)}
+                    placeholder="Ej. 1098765432"
+                    className={`w-full px-3 py-2 rounded-xl text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Nombre Completo / Razón Social *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus={Boolean(quickClientDoc)}
+                  value={quickClientNombre}
+                  onChange={e => setQuickClientNombre(e.target.value)}
+                  placeholder="Ej. Juan Pérez / Inversiones SAS"
+                  className={`w-full px-3 py-2 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Teléfono / Celular
+                  </label>
+                  <input
+                    type="tel"
+                    value={quickClientTelefono}
+                    onChange={e => setQuickClientTelefono(e.target.value)}
+                    placeholder="300 123 4567"
+                    className={`w-full px-3 py-2 rounded-xl text-xs font-mono font-semibold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={quickClientEmail}
+                    onChange={e => setQuickClientEmail(e.target.value)}
+                    placeholder="cliente@correo.com"
+                    className={`w-full px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Dirección
+                </label>
+                <input
+                  type="text"
+                  value={quickClientDireccion}
+                  onChange={e => setQuickClientDireccion(e.target.value)}
+                  placeholder="Ej. Calle 10 # 5-20"
+                  className={`w-full px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-slate-100 text-slate-800 border border-slate-200'
+                  }`}
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickClient(false)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickClientLoading}
+                  className="flex-2 flex-grow py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white shadow-md shadow-indigo-600/30"
+                >
+                  {quickClientLoading ? (
+                    <span>Guardando...</span>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      Guardar y Asociar a la Venta
                     </>
                   )}
                 </button>

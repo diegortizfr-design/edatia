@@ -37,6 +37,15 @@ export const crearProductoRapidoPos = (dto: {
   tipoIva?: string
 }) => api.post('/pos/productos/rapido', dto).then(r => r.data)
 
+export const crearClienteRapidoPos = (dto: {
+  tipoDocumento?: string
+  numeroDocumento: string
+  nombre: string
+  telefono?: string
+  email?: string
+  direccion?: string
+}) => api.post('/pos/clientes/rapido', dto).then(r => r.data)
+
 // ─── Ventas POS ──────────────────────────────────────────────────────────────
 
 export const getVentasPos = (params?: {

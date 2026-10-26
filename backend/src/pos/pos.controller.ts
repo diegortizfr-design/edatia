@@ -29,6 +29,11 @@ export class PosController {
     return this.pos.crearProductoRapidoPos(u.empresaId, dto)
   }
 
+  @Post('clientes/rapido')
+  crearClienteRapido(@GetUser() u: any, @Body() dto: any) {
+    return this.pos.crearClienteRapidoPos(u.empresaId, dto)
+  }
+
   // ─── Cajas ───────────────────────────────────────────────────────────────────
   @Get('cajas')
   getCajas(@GetUser() u: any) {
