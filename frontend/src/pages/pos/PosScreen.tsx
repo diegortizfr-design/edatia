@@ -2,9 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  getSesion, buscarProductosPos, crearVentaPos, anularVentaPos,
+  getSesion, buscarProductosPos, crearVentaPos, anularVentaPos, crearProductoRapidoPos,
 } from '../../services/pos.service'
-import { createProducto } from '../../services/inventario.service'
 import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
@@ -82,6 +81,12 @@ export function PosScreen() {
     enabled: !!sesId,
     refetchInterval: 30000,
   })
+
+  // Reglas de validación de stock negativo en 3 niveles (Empresa -> Bodega -> Caja)
+  const empresaPermiteNegativo = Boolean(sesion?.empresa?.permiteStockNegativo)
+  const bodegaPermiteNegativo = Boolean(sesion?.caja?.bodega?.permiteStockNegativo)
+  const cajaPermiteNegativo = Boolean(sesion?.caja?.permiteStockNegativo)
+  const puedeStockNegativo = empresaPermiteNegativo && bodegaPermiteNegativo && cajaPermiteNegativo
 
   const { data: clientes = [] } = useQuery(['clientes'], () => getClientes())
   const { data: mediosPago = [] } = useQuery(['medios-pago'], getMediosPago)
@@ -264,45 +269,33 @@ export function PosScreen() {
       return
     }
 
+    if (!puedeStockNegativo) {
+      if (!cajaPermiteNegativo) {
+        setQuickError(`La caja "${sesion?.caja?.nombre}" no tiene habilitado facturar con stock en negativo en su configuración.`)
+      } else if (!bodegaPermiteNegativo) {
+        setQuickError(`La bodega "${sesion?.caja?.bodega?.nombre ?? 'asignada'}" no tiene autorizado stock negativo en Configuración > Empresa > Inventario y Compras.`)
+      } else {
+        setQuickError('La empresa no tiene habilitada la venta con stock en negativo en Configuración > Empresa > Inventario y Compras.')
+      }
+      return
+    }
+
     setQuickCreating(true)
     setQuickError(null)
     try {
-      const isExempt = quickIva === 'EXENTO'
-      const isExcluded = quickIva === 'EXCLUIDO'
-      const appliedTaxes = isExcluded || isExempt ? [] : (quickIva === 'GRAVADO_5' ? ['iva_5'] : ['iva_19'])
-
-      const payload: any = {
+      const created = await crearProductoRapidoPos({
+        sesionId: Number(sesId),
         sku: quickSku.trim(),
-        codigoBarras: quickSku.trim(),
         nombre: quickNombre.trim(),
-        precioBase: precio,
-        costo: 0,
-        costoPromedio: 0,
-        costoUltimo: 0,
-        costoI: 0,
+        precio,
         tipoIva: quickIva,
-        liquidarIva: !isExcluded && !isExempt,
-        productoExentoIva: isExempt,
-        appliedTaxIds: appliedTaxes,
-        precios: [precio, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        manejaBodega: true,
-        activo: true,
-        codigos: [
-          {
-            codigo: quickSku.trim(),
-            tipo: 'EAN13',
-            descripcion: 'Código creado en POS',
-            esPrincipal: true,
-          }
-        ]
-      }
+      })
 
-      const created = await createProducto(payload)
       await qc.invalidateQueries({ queryKey: ['pos-productos'] })
       qc.invalidateQueries({ queryKey: ['config_productos'] })
       qc.invalidateQueries({ queryKey: ['productos'] })
 
-      // Agregar inmediatamente al carrito
+      // Agregar inmediatamente al carrito con su stock inicial
       addToCart({
         id: created.id,
         nombre: created.nombre,
@@ -313,7 +306,7 @@ export function PosScreen() {
         liquidarIva: created.liquidarIva,
         productoExentoIva: created.productoExentoIva,
         appliedTaxIds: created.appliedTaxIds,
-        stock: 999,
+        stock: 0,
       })
 
       setShowQuickCreate(false)
@@ -1020,6 +1013,29 @@ export function PosScreen() {
               </div>
             )}
 
+            {!puedeStockNegativo && (
+              <div className={`p-3.5 rounded-2xl border text-xs flex items-start gap-2.5 ${
+                isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                <AlertCircle size={17} className="text-amber-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <strong className="block font-bold">Venta sin stock físico no autorizada</strong>
+                  <p className="text-[11px] leading-relaxed opacity-90">
+                    {!cajaPermiteNegativo ? (
+                      <>Esta caja POS (<strong>{sesion?.caja?.nombre}</strong>) no tiene habilitada la opción de facturar con stock negativo.</>
+                    ) : !bodegaPermiteNegativo ? (
+                      <>La bodega de despacho (<strong>{sesion?.caja?.bodega?.nombre ?? 'asignada'}</strong>) no tiene autorizado el stock negativo en <em>Configuración &gt; Empresa &gt; Inventario y Compras</em>.</>
+                    ) : (
+                      <>La empresa no tiene habilitada la política general de stock negativo en <em>Configuración &gt; Empresa</em>.</>
+                    )}
+                  </p>
+                  <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                    Para vender este producto recién creado, debe autorizar el stock negativo en la caja y en su bodega asignada.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSaveQuickProduct} className="space-y-4">
               <div>
                 <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -1097,7 +1113,7 @@ export function PosScreen() {
               }`}>
                 <AlertCircle size={15} className="text-amber-500 shrink-0 mt-0.5" />
                 <span>
-                  El producto se guardará con <strong>costo $0</strong> y podrás asignarle costo, categoría y proveedor más tarde en <strong>Configuración &gt; Productos</strong>.
+                  El producto se guardará en la <strong>bodega por defecto</strong> de esta caja con <strong>costo $0</strong> y podrás asignarle costo, categoría y proveedor más tarde en <strong>Configuración &gt; Productos</strong>.
                 </span>
               </div>
 
@@ -1113,8 +1129,13 @@ export function PosScreen() {
                 </button>
                 <button
                   type="submit"
-                  disabled={quickCreating}
-                  className="flex-2 flex-grow py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all"
+                  disabled={quickCreating || !puedeStockNegativo}
+                  title={!puedeStockNegativo ? 'La caja o su bodega asignada no tienen autorizado stock negativo' : ''}
+                  className={`flex-2 flex-grow py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all ${
+                    !puedeStockNegativo
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400 opacity-60'
+                      : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white shadow-md shadow-indigo-600/30'
+                  }`}
                 >
                   {quickCreating ? (
                     <span>Guardando...</span>

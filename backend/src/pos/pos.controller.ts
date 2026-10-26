@@ -24,6 +24,11 @@ export class PosController {
     return this.pos.buscarProductosPos(u.empresaId, q ?? '', bodegaId)
   }
 
+  @Post('productos/rapido')
+  crearProductoRapido(@GetUser() u: any, @Body() dto: any) {
+    return this.pos.crearProductoRapidoPos(u.empresaId, dto)
+  }
+
   // ─── Cajas ───────────────────────────────────────────────────────────────────
   @Get('cajas')
   getCajas(@GetUser() u: any) {

@@ -19,7 +19,7 @@ export class PosService {
     return this.prisma.cajaPos.findMany({
       where: { empresaId, activo: true },
       include: {
-        bodega: { select: { id: true, nombre: true, codigo: true } },
+        bodega: { select: { id: true, nombre: true, codigo: true, permiteStockNegativo: true } },
         cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
         documentoConfig: {
           include: {
@@ -72,9 +72,10 @@ export class PosService {
         cajaBancoId: cajaBancoId ? +cajaBancoId : null,
         documentoConfigId: documentoConfigId ? +documentoConfigId : null,
         clienteDefaultId: clienteDefaultId ? +clienteDefaultId : null,
+        permiteStockNegativo: dto.permiteStockNegativo !== undefined ? !!dto.permiteStockNegativo : false,
       },
       include: {
-        bodega: { select: { id: true, nombre: true } },
+        bodega: { select: { id: true, nombre: true, codigo: true, permiteStockNegativo: true } },
         cajaBanco: { select: { id: true, nombre: true } },
         documentoConfig: {
           include: {
@@ -94,6 +95,7 @@ export class PosService {
     if (bodegaId !== undefined) updateData.bodegaId = bodegaId ? +bodegaId : undefined
     if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
     if (clienteDefaultId !== undefined) updateData.clienteDefaultId = clienteDefaultId ? +clienteDefaultId : null
+    if (dto.permiteStockNegativo !== undefined) updateData.permiteStockNegativo = !!dto.permiteStockNegativo
     if (documentoConfigId !== undefined) {
       updateData.documentoConfigId = documentoConfigId ? +documentoConfigId : null
       if (!bodegaId && documentoConfigId) {
@@ -197,11 +199,12 @@ export class PosService {
             digitoVerificacion: true,
             telefono: true,
             email: true,
+            permiteStockNegativo: true,
           }
         },
         caja: {
           include: {
-            bodega: { select: { id: true, nombre: true } },
+            bodega: { select: { id: true, nombre: true, permiteStockNegativo: true } },
             cajaBanco: { select: { id: true, nombre: true, cuentaPUC: true } },
             documentoConfig: {
               select: {
@@ -471,8 +474,27 @@ export class PosService {
       const disponible = stock ? Number(stock.cantidad) - Number(stock.cantidadReservada) : 0
       if (disponible < item.cantidad) {
         const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
-        const permiteNegativo = (empresa?.permiteStockNegativo ?? false) && (sesion.caja.bodega?.permiteStockNegativo ?? false)
+        const permiteNegativo =
+          (empresa?.permiteStockNegativo ?? false) &&
+          (sesion.caja.bodega?.permiteStockNegativo ?? false) &&
+          (sesion.caja?.permiteStockNegativo ?? false)
+
         if (!permiteNegativo) {
+          if (!sesion.caja?.permiteStockNegativo) {
+            throw new BadRequestException(
+              `La caja "${sesion.caja.nombre}" no tiene habilitado facturar con stock en negativo en su configuración. Stock disponible para "${prod?.nombre ?? item.productoId}": ${disponible}`
+            )
+          }
+          if (!sesion.caja.bodega?.permiteStockNegativo) {
+            throw new BadRequestException(
+              `La bodega "${sesion.caja.bodega?.nombre ?? 'Sin bodega'}" asignada a esta caja no tiene autorizado stock negativo en Configuración > Empresa > Inventario y Compras.`
+            )
+          }
+          if (!empresa?.permiteStockNegativo) {
+            throw new BadRequestException(
+              `La empresa no tiene habilitada la venta con stock en negativo en Configuración > Empresa > Inventario y Compras.`
+            )
+          }
           throw new BadRequestException(`Stock insuficiente para "${prod?.nombre ?? item.productoId}". Disponible: ${disponible}`)
         }
       }
@@ -748,6 +770,18 @@ export class PosService {
       ],
     }
 
+    let permiteNegativo = false
+    if (bodegaId) {
+      const bodega = await this.prisma.bodega.findUnique({
+        where: { id: bodegaId },
+        select: {
+          permiteStockNegativo: true,
+          empresa: { select: { permiteStockNegativo: true } }
+        }
+      })
+      permiteNegativo = (bodega?.permiteStockNegativo ?? false) && (bodega?.empresa?.permiteStockNegativo ?? false)
+    }
+
     // Filtrar estrictamente por la bodega anclada a la caja POS
     if (bodegaId) {
       where.AND = [
@@ -758,7 +792,7 @@ export class PosService {
               stock: {
                 some: {
                   bodegaId,
-                  cantidad: { gt: 0 },
+                  ...(permiteNegativo ? {} : { cantidad: { gt: 0 } }),
                 },
               },
             },
@@ -804,7 +838,129 @@ export class PosService {
           stock: stockDisponible,
         };
       })
-      .filter(p => !p.manejaBodega || p.stock > 0);
+      .filter(p => !p.manejaBodega || permiteNegativo || p.stock > 0);
+  }
+
+  // ─── Creación Rápida de Producto en POS ─────────────────────────────────────
+
+  async crearProductoRapidoPos(
+    empresaId: number,
+    dto: {
+      sesionId: number
+      sku: string
+      nombre: string
+      precio: number
+      tipoIva?: string
+    },
+  ) {
+    const sesion = await this.prisma.sesionCaja.findFirst({
+      where: { id: dto.sesionId, empresaId, estado: 'ABIERTA' },
+      include: {
+        empresa: { select: { permiteStockNegativo: true } },
+        caja: {
+          include: {
+            bodega: { select: { id: true, nombre: true, permiteStockNegativo: true } },
+          },
+        },
+      },
+    })
+
+    if (!sesion) throw new BadRequestException('Sesión no encontrada o cerrada')
+
+    const empresaPermite = sesion.empresa?.permiteStockNegativo ?? false
+    const bodegaPermite = sesion.caja?.bodega?.permiteStockNegativo ?? false
+    const cajaPermite = sesion.caja?.permiteStockNegativo ?? false
+
+    if (!cajaPermite) {
+      throw new BadRequestException(
+        `Esta caja POS ("${sesion.caja.nombre}") no tiene habilitada la opción de facturar con stock en negativo. ` +
+        `Para vender productos creados sin existencias, active la opción en la configuración de la caja.`
+      )
+    }
+
+    if (!bodegaPermite) {
+      throw new BadRequestException(
+        `La bodega ("${sesion.caja.bodega?.nombre ?? 'Sin bodega'}") asignada a esta caja no tiene autorizado stock negativo en Configuración > Empresa > Inventario y Compras.`
+      )
+    }
+
+    if (!empresaPermite) {
+      throw new BadRequestException(
+        `La empresa no tiene habilitada la venta con stock en negativo en Configuración > Empresa > Inventario y Compras.`
+      )
+    }
+
+    const skuLimpio = dto.sku.trim()
+    const nombreLimpio = dto.nombre.trim()
+    const precio = Number(dto.precio) || 0
+
+    const existe = await this.prisma.producto.findFirst({
+      where: { empresaId, sku: skuLimpio },
+    })
+    if (existe) {
+      throw new ConflictException(`Ya existe un producto con el código o SKU "${skuLimpio}"`)
+    }
+
+    const isExempt = dto.tipoIva === 'EXENTO'
+    const isExcluded = dto.tipoIva === 'EXCLUIDO'
+    const appliedTaxes = isExcluded || isExempt ? [] : (dto.tipoIva === 'GRAVADO_5' ? ['iva_5'] : ['iva_19'])
+
+    // Crear el producto en la BD
+    const producto = await this.prisma.producto.create({
+      data: {
+        empresaId,
+        sku: skuLimpio,
+        codigoBarras: skuLimpio,
+        nombre: nombreLimpio,
+        precioBase: precio,
+        precioWeb: precio,
+        costo: 0,
+        costoPromedio: 0,
+        costoUltimo: 0,
+        costoI: 0,
+        tipoIva: dto.tipoIva || 'EXCLUIDO',
+        liquidarIva: !isExcluded && !isExempt,
+        productoExentoIva: isExempt,
+        appliedTaxIds: appliedTaxes,
+        precios: [precio, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        manejaBodega: true,
+        activo: true,
+        codigos: {
+          create: {
+            empresaId,
+            codigo: skuLimpio,
+            tipo: 'EAN13',
+            descripcion: 'Código creado en POS',
+            esPrincipal: true,
+          },
+        },
+      },
+    })
+
+    // Vincular inmediatamente a la bodega por defecto de la caja con stock 0
+    await this.prisma.stock.create({
+      data: {
+        empresaId,
+        productoId: producto.id,
+        bodegaId: sesion.caja.bodegaId,
+        cantidad: 0,
+        cantidadReservada: 0,
+      },
+    })
+
+    return {
+      id: producto.id,
+      nombre: producto.nombre,
+      sku: producto.sku,
+      codigoBarras: producto.codigoBarras,
+      precioBase: Number(producto.precioBase),
+      tipoIva: producto.tipoIva,
+      liquidarIva: producto.liquidarIva,
+      productoExentoIva: producto.productoExentoIva,
+      appliedTaxIds: producto.appliedTaxIds,
+      stock: 0,
+      manejaBodega: true,
+    }
   }
 
   // ─── Integración Contable ───────────────────────────────────────────────────

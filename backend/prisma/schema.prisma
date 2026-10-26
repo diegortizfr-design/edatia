@@ -1823,6 +1823,7 @@ model CajaPos {
   permiteCreditoPos Boolean  @default(false)
   permiteDescuento  Boolean  @default(true)
   maxDescuento      Decimal  @default(100) @db.Decimal(5,2)
+  permiteStockNegativo Boolean @default(false)
 
   activo           Boolean   @default(true)
   createdAt        DateTime  @default(now())

@@ -25,6 +25,7 @@ const EMPTY = {
   permiteCreditoPos: false,
   permiteDescuento: true,
   maxDescuento: 100,
+  permiteStockNegativo: false,
 }
 
 export function PosConfig() {
@@ -97,9 +98,10 @@ export function PosConfig() {
       impresora: caja.impresora ?? '',
       tipoConexion: caja.tipoConexion ?? 'NINGUNA',
       anchoPapel: caja.anchoPapel ?? 80,
-      permiteCreditoPos: caja.permiteCreditoPos,
-      permiteDescuento: caja.permiteDescuento,
-      maxDescuento: caja.maxDescuento,
+      permiteCreditoPos: caja.permiteCreditoPos ?? false,
+      permiteDescuento: caja.permiteDescuento ?? true,
+      maxDescuento: caja.maxDescuento ?? 100,
+      permiteStockNegativo: caja.permiteStockNegativo ?? false,
     })
     setViewMode('form')
   }
@@ -115,6 +117,7 @@ export function PosConfig() {
       clienteDefaultId: form.clienteDefaultId ? +form.clienteDefaultId : null,
       anchoPapel: +form.anchoPapel,
       maxDescuento: +form.maxDescuento,
+      permiteStockNegativo: !!form.permiteStockNegativo,
     }
     if (editing) mutUpdate.mutate({ id: editing.id, dto })
     else mutCreate.mutate(dto)
@@ -342,6 +345,20 @@ export function PosConfig() {
                   className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600" />
                 <span className="text-sm text-slate-700 font-semibold">Habilitar ventas con medio de pago crédito (Cartera)</span>
               </label>
+
+              <label className="flex items-start gap-3 cursor-pointer pt-1 border-t border-slate-100/60">
+                <input type="checkbox" checked={form.permiteStockNegativo} onChange={set('permiteStockNegativo')}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 accent-indigo-600 mt-0.5" />
+                <div>
+                  <span className="text-sm text-slate-700 font-semibold block">Permitir facturar con stock en negativo</span>
+                  <span className="text-xs text-slate-400 block mt-0.5">
+                    Habilita la venta de artículos sin existencias físicas (incluyendo creaciones rápidas en POS).
+                    <strong className="text-amber-600 dark:text-amber-500 block mt-0.5">
+                      Requiere que la bodega asignada por defecto también tenga autorizado el stock negativo en Configuración &gt; Empresa &gt; Inventario y Compras.
+                    </strong>
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -447,6 +464,19 @@ export function PosConfig() {
                 <div className="flex items-center gap-2">
                   <Printer size={12} className="text-slate-400 shrink-0" />
                   <span><strong>Impresora térmica:</strong> {caja.impresora || 'No configurada'} ({caja.anchoPapel}mm)</span>
+                </div>
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                  <span className="text-slate-400 font-bold shrink-0 text-xs">±</span>
+                  <span>
+                    <strong>Stock Negativo:</strong>{' '}
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      caja.permiteStockNegativo 
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {caja.permiteStockNegativo ? 'Autorizado en Caja' : 'Bloqueado'}
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>

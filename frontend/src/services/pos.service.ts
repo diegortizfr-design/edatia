@@ -29,6 +29,14 @@ export const movimientoCaja = (sesionId: number, dto: { tipo: 'INGRESO' | 'RETIR
 export const buscarProductosPos = (q: string, bodegaId: number) =>
   api.get('/pos/productos', { params: { q, bodegaId } }).then(r => r.data)
 
+export const crearProductoRapidoPos = (dto: {
+  sesionId: number
+  sku: string
+  nombre: string
+  precio: number
+  tipoIva?: string
+}) => api.post('/pos/productos/rapido', dto).then(r => r.data)
+
 // ─── Ventas POS ──────────────────────────────────────────────────────────────
 
 export const getVentasPos = (params?: {
