@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -925,15 +925,17 @@ export class PosService {
         precios: [precio, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         manejaBodega: true,
         activo: true,
-        codigos: {
-          create: {
-            empresaId,
-            codigo: skuLimpio,
-            tipo: 'EAN13',
-            descripcion: 'Código creado en POS',
-            esPrincipal: true,
-          },
-        },
+      },
+    })
+
+    await (this.prisma as any).codigoBarras.create({
+      data: {
+        empresaId,
+        productoId: producto.id,
+        codigo: skuLimpio,
+        tipo: 'EAN13',
+        descripcion: 'Código creado en POS',
+        esPrincipal: true,
       },
     })
 
