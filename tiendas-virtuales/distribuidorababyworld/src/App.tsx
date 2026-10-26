@@ -91,6 +91,55 @@ export function App() {
     window.history.replaceState({}, '', window.location.pathname)
   }, [])
 
+  // Deep linking: sincroniza el producto seleccionado con la URL (/producto/:slug o ?producto=:slug)
+  useEffect(() => {
+    if (!products.length) return
+
+    const syncProductFromUrl = () => {
+      const pathname = window.location.pathname
+      const params = new URLSearchParams(window.location.search)
+      const querySlug = params.get('producto') || params.get('p')
+
+      let targetSlug = ''
+      if (pathname.includes('/producto/')) {
+        const parts = pathname.split('/producto/')
+        if (parts[1]) {
+          targetSlug = decodeURIComponent(parts[1].split('/')[0].split('?')[0].trim())
+        }
+      } else if (querySlug) {
+        targetSlug = decodeURIComponent(querySlug.trim())
+      }
+
+      if (targetSlug) {
+        const targetClean = targetSlug.toLowerCase()
+        const found = products.find(p => {
+          const pSlug = (p.slug || '').toLowerCase()
+          const pNameSlug = p.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+          const pId = p.id.toString()
+          const pSku = (p.sku || '').toLowerCase()
+          return pSlug === targetClean || pNameSlug === targetClean || pId === targetClean || pSku === targetClean
+        })
+
+        if (found) {
+          setSelectedProduct(found)
+          document.title = `${found.nombre} | Distribuidora Baby World`
+        }
+      } else {
+        setSelectedProduct(null)
+        document.title = 'Distribuidora Baby World | Tienda Virtual'
+      }
+    }
+
+    syncProductFromUrl()
+
+    const handlePopState = () => {
+      syncProductFromUrl()
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [products])
+
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
   useEffect(() => {
     fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`)
@@ -120,6 +169,8 @@ export function App() {
 
             return {
               id: p.id,
+              sku: p.sku,
+              slug: p.slug,
               nombre: p.nombre,
               descripcion: p.descripcion || 'Producto de alta calidad para bebés.',
               descripcionLarga: p.descripcionWeb || p.descripcion || '',
@@ -242,8 +293,26 @@ export function App() {
     })
   }
 
-  const handleCategorySelect = (category: string) => {
+  const handleOpenProduct = (product: Product) => {
+    setSelectedProduct(product)
+    const productSlug = product.slug || product.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || product.id
+    if (window.location.pathname !== `/producto/${productSlug}`) {
+      window.history.pushState({ productId: product.id }, '', `/producto/${productSlug}`)
+    }
+    document.title = `${product.nombre} | Distribuidora Baby World`
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCloseProduct = () => {
     setSelectedProduct(null)
+    if (window.location.pathname.includes('/producto/')) {
+      window.history.pushState({}, '', '/')
+    }
+    document.title = 'Distribuidora Baby World | Tienda Virtual'
+  }
+
+  const handleCategorySelect = (category: string) => {
+    handleCloseProduct()
     setActiveCategory(category)
     setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
@@ -338,10 +407,8 @@ export function App() {
         <ProductDetailPage
           product={selectedProduct}
           allProducts={products}
-          onBack={() => setSelectedProduct(null)}
-          onSelectProduct={(p) => {
-            setSelectedProduct(p)
-          }}
+          onBack={handleCloseProduct}
+          onSelectProduct={handleOpenProduct}
           onAddToCart={handleAddToCart}
           onOpenCart={() => setIsCartOpen(true)}
           onOpenLocation={() => setIsLocationModalOpen(true)}
@@ -358,7 +425,7 @@ export function App() {
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
-                onViewDetails={p => setSelectedProduct(p)} 
+                onViewDetails={handleOpenProduct} 
               />
             </>
           )}
@@ -451,7 +518,7 @@ export function App() {
                       key={product.id}
                       product={product}
                       onAddToCart={handleAddToCart}
-                      onViewDetails={p => setSelectedProduct(p)}
+                      onViewDetails={handleOpenProduct}
                       priority={idx < 4}
                     />
                   ))}
