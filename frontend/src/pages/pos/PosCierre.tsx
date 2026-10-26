@@ -49,10 +49,12 @@ export function PosCierre() {
   const totalContado = [...BILLETES, ...MONEDAS].reduce((sum, d) => sum + (arqueo[d.key] ?? 0) * d.valor, 0)
   const totalSistema = isLoading ? 0 : Number(sesion?.montoInicial ?? 0) + Number(sesion?.totalEfectivo ?? 0)
   const diferencia = totalContado - totalSistema
+  const tieneDocCierre = Boolean(sesion?.caja?.documentoCierreConfig || sesion?.caja?.documentoCierreConfigId)
 
   const imprimirCierre = () => {
     const w = window.open('', '_blank', 'width=320,height=700')
     if (!w || !sesion) return
+    const numDoc = cerrada?.numeroCierre || sesion?.numeroCierre || '—'
     w.document.write(`
       <html><head><style>
         body{font-family:monospace;font-size:11px;margin:0;padding:8px;width:290px}
@@ -60,8 +62,10 @@ export function PosCierre() {
         .r{display:flex;justify-content:space-between}
       </style></head><body>
         <div class="c b" style="font-size:14px">CIERRE DE CAJA</div>
+        <div class="c b" style="font-size:12px;margin:2px 0 4px">${numDoc}</div>
         <div class="c">${sesion.caja?.nombre}</div>
         <div class="l"></div>
+        <div class="r"><span>Comprobante:</span><span class="b">${numDoc}</span></div>
         <div class="r"><span>Vendedor:</span><span>${sesion.vendedorNombre}</span></div>
         <div class="r"><span>Apertura:</span><span>${new Date(sesion.abiertaAt).toLocaleString('es-CO')}</span></div>
         <div class="r"><span>Cierre:</span><span>${new Date().toLocaleString('es-CO')}</span></div>
@@ -90,9 +94,21 @@ export function PosCierre() {
   if (cerrada) return (
     <div className="max-w-lg mx-auto py-16 text-center">
       <CheckCircle2 size={64} className="text-green-500 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Caja cerrada exitosamente!</h2>
+      <h2 className="text-2xl font-bold text-slate-800 mb-1">¡Caja cerrada exitosamente!</h2>
+      {cerrada.numeroCierre && (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs mb-3">
+          <span>Comprobante de Cierre:</span>
+          <span className="font-mono">{cerrada.numeroCierre}</span>
+        </div>
+      )}
       <p className="text-slate-500 mb-2">Turno finalizado — {cerrada.caja?.nombre}</p>
       <div className="bg-slate-50 rounded-xl p-4 text-left space-y-2 mb-6 text-sm">
+        {cerrada.numeroCierre && (
+          <div className="flex justify-between border-b border-slate-200/60 pb-2">
+            <span className="text-slate-500 font-medium">Comprobante Fiscal:</span>
+            <span className="font-bold font-mono text-indigo-700">{cerrada.numeroCierre}</span>
+          </div>
+        )}
         <div className="flex justify-between"><span className="text-slate-500">Total ventas:</span><span className="font-bold text-green-600">{fmt(Number(cerrada.totalVentas))}</span></div>
         <div className="flex justify-between"><span className="text-slate-500">Monto contado:</span><span className="font-bold">{fmt(Number(cerrada.montoFinalDeclarado))}</span></div>
         <div className={`flex justify-between font-bold ${Number(cerrada.diferencia) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -100,8 +116,8 @@ export function PosCierre() {
         </div>
       </div>
       <div className="flex gap-3 justify-center">
-        <button onClick={imprimirCierre} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50">
-          <Printer size={16} /> Imprimir cierre
+        <button onClick={imprimirCierre} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <Printer size={16} /> Imprimir comprobante
         </button>
         <button onClick={() => navigate('/pos')} className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700">
           Volver al POS
@@ -120,9 +136,28 @@ export function PosCierre() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-800">Cierre de Caja — {sesion?.caja?.nombre}</h1>
-          <p className="text-slate-500 text-sm">Arqueo y cuadre del turno</p>
+          <p className="text-slate-500 text-sm">Arqueo y cuadre del turno respaldado por Comprobante de Cierre [CF]</p>
         </div>
       </div>
+
+      {!tieneDocCierre && !isLoading && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-900 shadow-sm">
+          <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+          <div className="text-sm">
+            <strong className="font-bold block mb-0.5">Comprobante de Cierre [CF] no configurado</strong>
+            Esta caja no tiene vinculado un documento de <strong>Comprobante de Cierre</strong>. En el ERP, todo cierre de caja debe estar respaldado por un documento oficial consecutivo.
+            <div className="mt-2.5">
+              <button
+                type="button"
+                onClick={() => navigate('/pos/config')}
+                className="text-xs bg-amber-700 hover:bg-amber-800 text-white font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm"
+              >
+                Configurar Comprobante en la Caja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resumen del turno */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
@@ -215,8 +250,8 @@ export function PosCierre() {
           className="flex-1 border border-slate-200 rounded-xl py-3 text-slate-600 text-sm font-medium hover:bg-slate-50">
           Cancelar
         </button>
-        <button onClick={() => mutCerrar.mutate()} disabled={mutCerrar.isLoading}
-          className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm transition-colors">
+        <button onClick={() => mutCerrar.mutate()} disabled={mutCerrar.isLoading || !tieneDocCierre}
+          className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm transition-colors cursor-pointer disabled:cursor-not-allowed">
           {mutCerrar.isLoading ? 'Cerrando caja...' : '🔒 Confirmar cierre de caja'}
         </button>
       </div>

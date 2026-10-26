@@ -220,7 +220,10 @@ model DocumentoConfig {
   sucursalId            Int?
   sucursal              Sucursal? @relation(fields: [sucursalId], references: [id])
 
-  cajasPos              CajaPos[]
+  cajasPos              CajaPos[] @relation("CajaDocumentoConfig")
+  cajasReciboPos        CajaPos[] @relation("CajaReciboConfig")
+  cajasCierrePos        CajaPos[] @relation("CajaCierreConfig")
+  sesionesCierre        SesionCaja[] @relation("SesionDocumentoCierre")
 
   // Campos DIAN para documentos electrónicos
   resolucionDian        String?
@@ -1682,6 +1685,8 @@ model ReciboCaja {
   documentoConfigId Int?
   documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
+  ventasPos         VentaPos[]
+
   @@unique([empresaId, numero])
   @@index([empresaId])
 }
@@ -1803,8 +1808,14 @@ model CajaPos {
   cajaBancoId      Int?
   cajaBanco        CajaBanco? @relation(fields: [cajaBancoId], references: [id])
 
-  documentoConfigId Int?
-  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+  documentoConfigId       Int?
+  documentoConfig         DocumentoConfig? @relation("CajaDocumentoConfig", fields: [documentoConfigId], references: [id])
+
+  documentoReciboConfigId Int?
+  documentoReciboConfig   DocumentoConfig? @relation("CajaReciboConfig", fields: [documentoReciboConfigId], references: [id])
+
+  documentoCierreConfigId Int?
+  documentoCierreConfig   DocumentoConfig? @relation("CajaCierreConfig", fields: [documentoCierreConfigId], references: [id])
 
   // Vendedor por defecto
   vendedorId       Int?
@@ -1862,6 +1873,9 @@ model SesionCaja {
   montoFinalDeclarado Decimal? @db.Decimal(15,2)
   diferencia       Decimal?  @db.Decimal(15,2)
   observacionesCierre String?
+  numeroCierre     String?
+  documentoCierreConfigId Int?
+  documentoCierreConfig DocumentoConfig? @relation("SesionDocumentoCierre", fields: [documentoCierreConfigId], references: [id])
 
   abiertaAt        DateTime  @default(now())
   cerradaAt        DateTime?
@@ -1916,6 +1930,13 @@ model VentaPos {
 
   // Referencia a FacturaVenta si el cliente pidió factura electrónica
   facturaId        Int?
+
+  // Referencia a Recibo de Caja generado obligatoriamente por la venta
+  reciboCajaId     Int?
+  reciboCaja       ReciboCaja? @relation(fields: [reciboCajaId], references: [id])
+
+  // Recargo por medio de pago (Addi, Sistecredito, Tarjeta, etc.)
+  recargoMedioPago Decimal     @default(0) @db.Decimal(15,2)
 
   // Referencia comprobante contable
   comprobanteId    Int?
@@ -2574,6 +2595,7 @@ model MedioPago {
   codigo    String   // EFECTIVO, TRANSFERENCIA, CHEQUE, TARJETA_CREDITO, etc.
   nombre    String   // Efectivo, Transferencia Bancaria, Nequi, etc.
   activo    Boolean  @default(true)
+  recargoPct Decimal @default(0) @db.Decimal(5, 2)
   cajaBancoId Int?
   cajaBanco   CajaBanco? @relation(fields: [cajaBancoId], references: [id])
 

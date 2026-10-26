@@ -26,6 +26,12 @@ export class PosService {
             sucursal: { select: { id: true, nombre: true } }
           }
         },
+        documentoReciboConfig: {
+          select: { id: true, nombre: true, prefijo: true, sigla: true, consecutivoSiguiente: true }
+        },
+        documentoCierreConfig: {
+          select: { id: true, nombre: true, prefijo: true, sigla: true, consecutivoSiguiente: true }
+        },
         clienteDefault: { select: { id: true, nombre: true, numeroDocumento: true } },
         sesiones: {
           where: { estado: 'ABIERTA' },
@@ -38,7 +44,7 @@ export class PosService {
   }
 
   async createCaja(empresaId: number, dto: any) {
-    const { cajaBancoId, documentoConfigId, clienteDefaultId, bodegaId, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, documentoReciboConfigId, documentoCierreConfigId, clienteDefaultId, bodegaId, ...rest } = dto
     let resolvedBodegaId = bodegaId ? +bodegaId : null
     
     if (!resolvedBodegaId && documentoConfigId) {
@@ -71,6 +77,8 @@ export class PosService {
         bodegaId: resolvedBodegaId,
         cajaBancoId: cajaBancoId ? +cajaBancoId : null,
         documentoConfigId: documentoConfigId ? +documentoConfigId : null,
+        documentoReciboConfigId: documentoReciboConfigId ? +documentoReciboConfigId : null,
+        documentoCierreConfigId: documentoCierreConfigId ? +documentoCierreConfigId : null,
         clienteDefaultId: clienteDefaultId ? +clienteDefaultId : null,
         permiteStockNegativo: dto.permiteStockNegativo !== undefined ? !!dto.permiteStockNegativo : false,
       },
@@ -82,6 +90,12 @@ export class PosService {
             sucursal: { select: { id: true, nombre: true } }
           }
         },
+        documentoReciboConfig: {
+          select: { id: true, nombre: true, prefijo: true, sigla: true, consecutivoSiguiente: true }
+        },
+        documentoCierreConfig: {
+          select: { id: true, nombre: true, prefijo: true, sigla: true, consecutivoSiguiente: true }
+        },
         clienteDefault: { select: { id: true, nombre: true } },
       },
     })
@@ -89,13 +103,15 @@ export class PosService {
 
   async updateCaja(empresaId: number, cajaId: number, dto: any) {
     await this.findCaja(empresaId, cajaId)
-    const { cajaBancoId, documentoConfigId, clienteDefaultId, bodegaId, codigo, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, documentoReciboConfigId, documentoCierreConfigId, clienteDefaultId, bodegaId, codigo, ...rest } = dto
     const updateData: any = { ...rest }
     
     if (bodegaId !== undefined) updateData.bodegaId = bodegaId ? +bodegaId : undefined
     if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
     if (clienteDefaultId !== undefined) updateData.clienteDefaultId = clienteDefaultId ? +clienteDefaultId : null
     if (dto.permiteStockNegativo !== undefined) updateData.permiteStockNegativo = !!dto.permiteStockNegativo
+    if (documentoReciboConfigId !== undefined) updateData.documentoReciboConfigId = documentoReciboConfigId ? +documentoReciboConfigId : null
+    if (documentoCierreConfigId !== undefined) updateData.documentoCierreConfigId = documentoCierreConfigId ? +documentoCierreConfigId : null
     if (documentoConfigId !== undefined) {
       updateData.documentoConfigId = documentoConfigId ? +documentoConfigId : null
       if (!bodegaId && documentoConfigId) {
@@ -227,8 +243,34 @@ export class PosService {
                 }
               }
             },
+            documentoReciboConfig: {
+              select: {
+                id: true,
+                nombre: true,
+                prefijo: true,
+                sigla: true,
+                consecutivoSiguiente: true,
+              }
+            },
+            documentoCierreConfig: {
+              select: {
+                id: true,
+                nombre: true,
+                prefijo: true,
+                sigla: true,
+                consecutivoSiguiente: true,
+              }
+            },
             clienteDefault: { select: { id: true, nombre: true, numeroDocumento: true } },
           },
+        },
+        documentoCierreConfig: {
+          select: {
+            id: true,
+            nombre: true,
+            prefijo: true,
+            sigla: true,
+          }
         },
         ventas: {
           where: { estado: 'COMPLETADA' },
@@ -303,8 +345,40 @@ export class PosService {
   }) {
     const sesion = await this.prisma.sesionCaja.findFirst({
       where: { id: sesionId, empresaId, estado: 'ABIERTA' },
+      include: {
+        caja: {
+          include: {
+            documentoCierreConfig: true,
+          }
+        }
+      }
     })
     if (!sesion) throw new BadRequestException('Sesión no encontrada o ya cerrada')
+
+    // Validar documento Comprobante de Cierre [CF]
+    let docCierre = sesion.caja?.documentoCierreConfig
+    if (!docCierre && sesion.caja?.documentoCierreConfigId) {
+      docCierre = await this.prisma.documentoConfig.findUnique({
+        where: { id: sesion.caja.documentoCierreConfigId },
+      })
+    }
+
+    if (!docCierre) {
+      throw new BadRequestException(
+        'No se puede cerrar la caja: no tiene vinculado un Comprobante de Cierre [CF]. Configure un documento tipo Comprobante de Cierre en la caja POS antes de cerrar.'
+      )
+    }
+
+    // Generar consecutivo del Comprobante de Cierre
+    const consecutivo = docCierre.consecutivoSiguiente ?? 1
+    const prefijo = docCierre.prefijo ? docCierre.prefijo.trim() : 'CF'
+    const numeroCierre = `${prefijo}-${String(consecutivo).padStart(5, '0')}`
+
+    // Incrementar consecutivo siguiente
+    await this.prisma.documentoConfig.update({
+      where: { id: docCierre.id },
+      data: { consecutivoSiguiente: { increment: 1 } },
+    })
 
     // Calcular total contado
     const a = dto.arqueo
@@ -342,8 +416,9 @@ export class PosService {
       data: {
         sesionId,
         tipo: 'CIERRE',
-        concepto: 'Cierre de caja',
+        concepto: `Cierre de caja - ${numeroCierre}`,
         monto: totalContado,
+        referencia: numeroCierre,
       },
     })
 
@@ -356,8 +431,20 @@ export class PosService {
         diferencia,
         observacionesCierre: dto.observaciones,
         cerradaAt: new Date(),
+        numeroCierre,
+        documentoCierreConfigId: docCierre.id,
       },
-      include: { caja: true, arqueo: true },
+      include: {
+        caja: {
+          include: {
+            documentoConfig: true,
+            documentoReciboConfig: true,
+            documentoCierreConfig: true,
+          }
+        },
+        arqueo: true,
+        documentoCierreConfig: true,
+      },
     })
 
     return sesionCerrada
@@ -438,6 +525,7 @@ export class PosService {
     vendedorId?: number
     vendedorNombre?: string
     descuento?: number
+    recargoMedioPago?: number
     pagoEfectivo?: number
     pagoTarjetaDebito?: number
     pagoTarjetaCredito?: number
@@ -460,11 +548,21 @@ export class PosService {
           include: {
             bodega: true,
             documentoConfig: true,
+            documentoReciboConfig: true,
           }
         }
       },
     })
     if (!sesion) throw new BadRequestException('Sesión no encontrada o cerrada')
+
+    // VALIDACIÓN OBLIGATORIA: Todo cobro en el POS debe estar respaldado por un documento de Recibo de Caja
+    if (!sesion.caja.documentoReciboConfigId && !sesion.caja.documentoReciboConfig) {
+      throw new BadRequestException(
+        `La caja "${sesion.caja.nombre}" no tiene anclado un documento de Recibo de Caja. ` +
+        `Por política del ERP, todo cobro en el POS debe generar obligatoriamente un Recibo de Caja. ` +
+        `Por favor, asigne un documento de Recibo de Caja en la configuración de la caja POS antes de cobrar.`
+      )
+    }
 
     // Verificar stock para cada ítem
     for (const item of dto.items) {
@@ -573,12 +671,87 @@ export class PosService {
       }
     }))
 
-    // Descuento adicional sobre total
+    // Descuento adicional sobre total y recargo por medio de pago
     const descuentoExtra = dto.descuento ?? 0
-    const total = subtotal - descuentoTotal + iva19 + iva5 - descuentoExtra
+    const recargoMedioPago = Number(dto.recargoMedioPago ?? 0)
+    const total = subtotal - descuentoTotal + iva19 + iva5 - descuentoExtra + recargoMedioPago
 
     // Crear venta en transacción
     const venta = await this.prisma.$transaction(async (tx) => {
+      // A. Resolver Documento y consecutivo de Recibo de Caja obligatorio
+      const docRcId = sesion.caja.documentoReciboConfigId
+      const docRc = docRcId
+        ? await tx.documentoConfig.findFirst({ where: { id: docRcId, empresaId } })
+        : (sesion.caja.documentoReciboConfig ?? null)
+
+      if (!docRc) {
+        throw new BadRequestException(
+          `La caja "${sesion.caja.nombre}" no tiene anclado un documento de Recibo de Caja válido. ` +
+          `Configure el documento de Recibo de Caja en la configuración de la caja POS.`
+        )
+      }
+
+      const prefijoRc = docRc.prefijo || 'RC'
+      const consecutivoRc = docRc.consecutivoSiguiente
+      const numeroRecibo = `${prefijoRc}-${consecutivoRc}`
+
+      // B. Resolver Cliente válido para Recibo de Caja (requiere ID de Tercero)
+      let clienteRcId = dto.clienteId
+      if (!clienteRcId && sesion.caja.clienteDefaultId) {
+        clienteRcId = sesion.caja.clienteDefaultId
+      }
+      if (!clienteRcId) {
+        const cExistente = await tx.tercero.findFirst({
+          where: { empresaId, esCliente: true },
+          orderBy: { id: 'asc' },
+        })
+        clienteRcId = cExistente ? cExistente.id : null
+      }
+      if (!clienteRcId) {
+        const cNuevo = await tx.tercero.create({
+          data: {
+            empresaId,
+            tipoPersona: 'NATURAL',
+            tipoDocumento: 'CC',
+            numeroDocumento: '222222222222',
+            nombre: 'Consumidor Final',
+            esCliente: true,
+            activo: true,
+          }
+        })
+        clienteRcId = cNuevo.id
+      }
+
+      // C. Medios de pago utilizados para descripción del Recibo
+      const mediosList: string[] = []
+      if ((dto.pagoEfectivo ?? 0) > 0) mediosList.push('EFECTIVO')
+      if ((dto.pagoTarjetaDebito ?? 0) > 0) mediosList.push('TARJETA_DEBITO')
+      if ((dto.pagoTarjetaCredito ?? 0) > 0) mediosList.push('TARJETA_CREDITO')
+      if ((dto.pagoTransferencia ?? 0) > 0) mediosList.push('TRANSFERENCIA')
+      if ((dto.pagoNequi ?? 0) > 0) mediosList.push('NEQUI')
+      const medioPagoText = mediosList.length === 1 ? mediosList[0] : (mediosList.length > 1 ? 'MIXTO' : 'EFECTIVO')
+
+      // D. Crear Recibo de Caja oficial respaldado por DocumentoConfig
+      const reciboCaja = await tx.reciboCaja.create({
+        data: {
+          empresaId,
+          numero: numeroRecibo,
+          clienteId: clienteRcId,
+          valor: total,
+          medioPago: medioPagoText,
+          referencia: numero,
+          concepto: `Recaudo Venta POS ${numero} - ${dto.clienteNombre ?? 'Consumidor Final'}`,
+          documentoConfigId: docRc.id,
+          usuarioId: dto.vendedorId ?? null,
+        }
+      })
+
+      // Incrementar consecutivo del documento de Recibo de Caja
+      await tx.documentoConfig.update({
+        where: { id: docRc.id },
+        data: { consecutivoSiguiente: { increment: 1 } },
+      })
+
       // 1. Crear venta POS
       const v = await tx.ventaPos.create({
         data: {
@@ -597,6 +770,8 @@ export class PosService {
           baseIva5,
           iva5,
           total,
+          recargoMedioPago,
+          reciboCajaId: reciboCaja.id,
           pagoEfectivo: dto.pagoEfectivo ?? 0,
           pagoTarjetaDebito: dto.pagoTarjetaDebito ?? 0,
           pagoTarjetaCredito: dto.pagoTarjetaCredito ?? 0,
@@ -606,7 +781,7 @@ export class PosService {
           estado: 'COMPLETADA',
           items: { create: itemsCalculados.map((it, i) => ({ ...it, orden: i })) },
         },
-        include: { items: true },
+        include: { items: true, reciboCaja: true },
       })
 
       // 2. Movimientos de inventario (salida)
@@ -687,6 +862,14 @@ export class PosService {
         where: { id: ventaId },
         data: { estado: 'ANULADA', motivoAnulacion: motivo },
       })
+
+      // Anular Recibo de Caja vinculado si existe
+      if (venta.reciboCajaId) {
+        await tx.reciboCaja.update({
+          where: { id: venta.reciboCajaId },
+          data: { estado: 'ANULADO' },
+        })
+      }
 
       // Revertir inventario
       for (const item of venta.items) {
@@ -1248,6 +1431,19 @@ export class PosService {
         descripcion: `${desc} - Descuento en venta`,
         debito: Number(venta.descuento),
         credito: 0,
+        terceroNit: venta.clienteDoc,
+        terceroNombre: venta.clienteNombre,
+      })
+    }
+
+    // Crédito a Ingresos por Recargo en Medio de Pago si aplica
+    if (Number(venta.recargoMedioPago) > 0) {
+      const cRecargo = await this.resolverCuentaPUC(tx, empresaId, ['42100501', '421005', '4210'], '42') || cIngresos
+      lineas.push({
+        cuentaId: cRecargo,
+        descripcion: `${desc} - Recargo por medio de pago`,
+        debito: 0,
+        credito: Number(venta.recargoMedioPago),
         terceroNit: venta.clienteDoc,
         terceroNombre: venta.clienteNombre,
       })

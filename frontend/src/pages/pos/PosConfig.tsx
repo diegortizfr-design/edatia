@@ -16,6 +16,8 @@ const EMPTY = {
   bodegaId: '',
   cajaBancoId: '',
   documentoConfigId: '',
+  documentoReciboConfigId: '',
+  documentoCierreConfigId: '',
   vendedorId: '',
   vendedorNombre: '',
   clienteDefaultId: '',
@@ -46,6 +48,16 @@ export function PosConfig() {
   // Filtrar documentos tipo POS / FVP o FVE (Facturación de punto de venta)
   const docPosOptions = (documentosConfig as any[]).filter(d =>
     d.sigla?.toLowerCase() === 'pos' || d.sigla?.toLowerCase() === 'fvp' || d.prefijo?.toLowerCase().includes('pos') || d.prefijo?.toLowerCase().includes('fvp')
+  )
+
+  // Filtrar documentos tipo Recibo de Caja (RC / Tesorería)
+  const docRcOptions = (documentosConfig as any[]).filter(d =>
+    d.sigla?.toLowerCase() === 'rc' || d.prefijo?.toLowerCase().includes('rc') || d.tipoOperacion === 'TESORERIA'
+  )
+
+  // Filtrar documentos tipo Comprobante de Cierre (CF / Contabilidad)
+  const docCierreOptions = (documentosConfig as any[]).filter(d =>
+    d.sigla?.toLowerCase() === 'cf' || d.prefijo?.toLowerCase().includes('cf') || d.nombre?.toLowerCase().includes('cierre')
   )
 
   const [modalDelete, setModalDelete] = useState<{ open: boolean; caja: any; code: string }>({
@@ -92,6 +104,8 @@ export function PosConfig() {
       bodegaId: caja.bodegaId ? String(caja.bodegaId) : (caja.bodega?.id ? String(caja.bodega.id) : ''),
       cajaBancoId: caja.cajaBancoId ? String(caja.cajaBancoId) : '',
       documentoConfigId: caja.documentoConfigId ? String(caja.documentoConfigId) : '',
+      documentoReciboConfigId: caja.documentoReciboConfigId ? String(caja.documentoReciboConfigId) : (caja.documentoReciboConfig?.id ? String(caja.documentoReciboConfig.id) : ''),
+      documentoCierreConfigId: caja.documentoCierreConfigId ? String(caja.documentoCierreConfigId) : (caja.documentoCierreConfig?.id ? String(caja.documentoCierreConfig.id) : ''),
       vendedorId: caja.vendedorId ? String(caja.vendedorId) : '',
       vendedorNombre: caja.vendedorNombre ?? '',
       clienteDefaultId: caja.clienteDefaultId ? String(caja.clienteDefaultId) : '',
@@ -113,6 +127,8 @@ export function PosConfig() {
       bodegaId: form.bodegaId ? +form.bodegaId : null,
       cajaBancoId: form.cajaBancoId ? +form.cajaBancoId : null,
       documentoConfigId: form.documentoConfigId ? +form.documentoConfigId : null,
+      documentoReciboConfigId: form.documentoReciboConfigId ? +form.documentoReciboConfigId : null,
+      documentoCierreConfigId: form.documentoCierreConfigId ? +form.documentoCierreConfigId : null,
       vendedorId: form.vendedorId ? +form.vendedorId : null,
       clienteDefaultId: form.clienteDefaultId ? +form.clienteDefaultId : null,
       anchoPapel: +form.anchoPapel,
@@ -183,9 +199,9 @@ export function PosConfig() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bodega de Despacho (Por Defecto) *</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bodega (Por Defecto) *</label>
               <select
                 required
                 value={form.bodegaId}
@@ -200,12 +216,12 @@ export function PosConfig() {
                 ))}
               </select>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Solo se mostrarán y descontarán productos de esta bodega.
+                Solo productos de esta bodega.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Documento POS por Defecto *</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Documento POS *</label>
               <select
                 required
                 value={form.documentoConfigId}
@@ -220,18 +236,58 @@ export function PosConfig() {
                 ))}
               </select>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Resolución o tirilla POS fiscal DIAN.
+                Tirilla POS fiscal DIAN.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Caja / Banco Contable (PUC) (Opcional)</label>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Documento Recibo de Caja *</label>
+              <select
+                required
+                value={form.documentoReciboConfigId}
+                onChange={set('documentoReciboConfigId')}
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
+              >
+                <option value="">Seleccionar recibo...</option>
+                {docRcOptions.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo})
+                  </option>
+                ))}
+              </select>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Obligatorio para respaldar los cobros.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Comprobante de Cierre (CF) *</label>
+              <select
+                required
+                value={form.documentoCierreConfigId}
+                onChange={set('documentoCierreConfigId')}
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
+              >
+                <option value="">Seleccionar comprobante de cierre...</option>
+                {docCierreOptions.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.nombre} ({d.prefijo})
+                  </option>
+                ))}
+              </select>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Obligatorio para respaldar el cierre de caja.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Caja / Banco PUC</label>
               <select
                 value={form.cajaBancoId}
                 onChange={set('cajaBancoId')}
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
               >
-                <option value="">Seleccionar cuenta contable...</option>
+                <option value="">Seleccionar cuenta...</option>
                 {cajasBancos.map((cb: any) => (
                   <option key={cb.id} value={cb.id}>
                     {cb.nombre} (PUC: {cb.cuentaPUC || 'Sin PUC'})
@@ -239,7 +295,7 @@ export function PosConfig() {
                 ))}
               </select>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Cuenta de tesorería para recaudos en efectivo.
+                Cuenta de tesorería para efectivo.
               </span>
             </div>
           </div>
@@ -445,7 +501,37 @@ export function PosConfig() {
                 </div>
                 <div className="flex items-center gap-2">
                   <FileCheck size={12} className="text-slate-400 shrink-0" />
-                  <span><strong>Resolución / Prefijo:</strong> {caja.documentoConfig?.nombre || 'Ninguno'} ({caja.documentoConfig?.prefijo || '—'})</span>
+                  <span><strong>Resolución / Prefijo POS:</strong> {caja.documentoConfig?.nombre || 'Ninguno'} ({caja.documentoConfig?.prefijo || '—'})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileCheck size={12} className={caja.documentoReciboConfig ? 'text-indigo-500 shrink-0' : 'text-rose-500 shrink-0'} />
+                  <span>
+                    <strong>Recibo de Caja (RC):</strong>{' '}
+                    {caja.documentoReciboConfig ? (
+                      <span className="font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                        {caja.documentoReciboConfig.nombre} ({caja.documentoReciboConfig.prefijo})
+                      </span>
+                    ) : (
+                      <span className="font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                        ⚠️ Sin anclar (Requerido para cobrar)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileCheck size={12} className={caja.documentoCierreConfig ? 'text-amber-500 shrink-0' : 'text-rose-500 shrink-0'} />
+                  <span>
+                    <strong>Comprobante Cierre (CF):</strong>{' '}
+                    {caja.documentoCierreConfig ? (
+                      <span className="font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                        {caja.documentoCierreConfig.nombre} ({caja.documentoCierreConfig.prefijo})
+                      </span>
+                    ) : (
+                      <span className="font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                        ⚠️ Sin anclar (Requerido para cierre)
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <User size={12} className="text-slate-400 shrink-0" />

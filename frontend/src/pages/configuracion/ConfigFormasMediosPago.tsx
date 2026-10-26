@@ -28,6 +28,7 @@ interface MedioPago {
   codigo: string;
   nombre: string;
   activo: boolean;
+  recargoPct?: number | null;
   cajaBancoId?: number | null;
   cajaBanco?: { id: number; nombre: string } | null;
 }
@@ -80,7 +81,7 @@ export default function ConfigFormasMediosPago() {
   const [modalType, setModalType] = useState<'forma' | 'medio' | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [form, setForm] = useState({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
+  const [form, setForm] = useState({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '', recargoPct: '' })
 
   // Mutations - Formas de Pago
   const createFormaMutation = useMutation({
@@ -154,17 +155,18 @@ export default function ConfigFormasMediosPago() {
         activo: item.activo,
         generaCartera: item.generaCartera ?? true,
         cajaBancoId: item.cajaBancoId ? String(item.cajaBancoId) : '',
+        recargoPct: item.recargoPct != null ? String(item.recargoPct) : '',
       })
     } else {
       setEditingItem(null)
-      setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
+      setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '', recargoPct: '' })
     }
   }
 
   const closeModal = () => {
     setModalType(null)
     setEditingItem(null)
-    setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '' })
+    setForm({ codigo: '', nombre: '', activo: true, generaCartera: true, cajaBancoId: '', recargoPct: '' })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -189,6 +191,7 @@ export default function ConfigFormasMediosPago() {
       }
     } else if (modalType === 'medio') {
       payload.cajaBancoId = form.cajaBancoId ? Number(form.cajaBancoId) : null
+      payload.recargoPct = form.recargoPct !== '' ? Number(form.recargoPct) : 0
       if (modalMode === 'edit' && editingItem) {
         updateMedioMutation.mutate({ id: editingItem.id, dto: payload })
       } else {
@@ -347,6 +350,7 @@ export default function ConfigFormasMediosPago() {
                     <th className="p-4 pl-6">Código</th>
                     <th className="p-4">Nombre</th>
                     <th className="p-4">Caja / Banco</th>
+                    <th className="p-4 text-center">% Recargo</th>
                     <th className="p-4 text-center">Estado</th>
                     <th className="p-4 pr-6 text-right">Acciones</th>
                   </tr>
@@ -363,6 +367,15 @@ export default function ConfigFormasMediosPago() {
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400 italic font-medium">Caja General (Por Defecto)</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-center">
+                        {Number(item.recargoPct) > 0 ? (
+                          <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            +{Number(item.recargoPct)}%
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 font-mono">0%</span>
                         )}
                       </td>
                       <td className="p-4 text-center">
@@ -462,23 +475,43 @@ export default function ConfigFormasMediosPago() {
               )}
 
               {modalType === 'medio' && (
-                <Field
-                  label="Caja o Banco de Tesorería"
-                  hint="Determina la cuenta PUC que se debitará en ventas de contado."
-                >
-                  <select
-                    value={form.cajaBancoId}
-                    onChange={e => setForm(prev => ({ ...prev, cajaBancoId: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                <>
+                  <Field
+                    label="Caja o Banco de Tesorería"
+                    hint="Determina la cuenta PUC que se debitará en ventas de contado."
                   >
-                    <option value="">-- No vinculada (Caja General) --</option>
-                    {cajasBancos.map((cb: any) => (
-                      <option key={cb.id} value={cb.id}>
-                        {cb.nombre} ({cb.tipo === 'CAJA' ? 'Caja' : `Banco: ${cb.banco ?? ''}`} - {cb.cuentaPUC ?? 'Sin PUC'})
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                    <select
+                      value={form.cajaBancoId}
+                      onChange={e => setForm(prev => ({ ...prev, cajaBancoId: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+                    >
+                      <option value="">-- No vinculada (Caja General) --</option>
+                      {cajasBancos.map((cb: any) => (
+                        <option key={cb.id} value={cb.id}>
+                          {cb.nombre} ({cb.tipo === 'CAJA' ? 'Caja' : `Banco: ${cb.banco ?? ''}`} - {cb.cuentaPUC ?? 'Sin PUC'})
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field
+                    label="% Recargo o Comisión al Cliente (Opcional)"
+                    hint="Recargo porcentual adicional al cobrar por este medio (ej: 10 para Addi/Sistecredito, 5 para Tarjetas)."
+                  >
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={form.recargoPct}
+                        onChange={(v: string) => setForm(prev => ({ ...prev, recargoPct: v }))}
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3.5 top-2.5 text-slate-400 font-bold text-sm pointer-events-none">%</span>
+                    </div>
+                  </Field>
+                </>
               )}
 
               <div className="flex items-center gap-3 select-none cursor-pointer pt-2">

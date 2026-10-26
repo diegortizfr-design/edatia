@@ -269,7 +269,7 @@ export class ConfiguracionService {
     })
   }
 
-  async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; cajaBancoId?: number }) {
+  async createMedioPago(empresaId: number, dto: { codigo: string; nombre: string; activo?: boolean; cajaBancoId?: number; recargoPct?: number }) {
     return this.prisma.medioPago.create({
       data: {
         empresaId,
@@ -277,16 +277,18 @@ export class ConfiguracionService {
         nombre: dto.nombre.trim(),
         activo: dto.activo ?? true,
         cajaBancoId: dto.cajaBancoId ?? null,
+        recargoPct: dto.recargoPct !== undefined ? Number(dto.recargoPct) : 0,
       },
       include: { cajaBanco: { select: { id: true, nombre: true } } },
     })
   }
 
-  async updateMedioPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean; cajaBancoId?: number }) {
+  async updateMedioPago(id: number, empresaId: number, dto: { codigo?: string; nombre?: string; activo?: boolean; cajaBancoId?: number; recargoPct?: number }) {
     await this.prisma.medioPago.findFirstOrThrow({ where: { id, empresaId } })
     const data: any = { ...dto }
     if (data.codigo) data.codigo = data.codigo.toUpperCase().trim()
     if (data.nombre) data.nombre = data.nombre.trim()
+    if (data.recargoPct !== undefined) data.recargoPct = Number(data.recargoPct)
     return this.prisma.medioPago.update({
       where: { id },
       data,

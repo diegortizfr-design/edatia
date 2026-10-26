@@ -13,6 +13,7 @@ import {
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
 import { getMediaUrl } from '../../services/api'
+import toast from 'react-hot-toast'
 
 const IVA_RATES: Record<string, number> = {
   IVA_19: 0.19, GRAVADO_19: 0.19,
@@ -296,13 +297,31 @@ export function PosScreen() {
     return sum
   }, [activeMedios, pagosPorMedio])
 
-  const cambio = useMemo(() => {
-    if (totalPago <= totales.total) return 0
-    const excedente = totalPago - totales.total
-    return Math.min(excedente, efectivoRecibido)
-  }, [totalPago, totales.total, efectivoRecibido])
+  const recargoTotal = useMemo(() => {
+    let rec = 0
+    activeMedios.forEach((m: any) => {
+      const val = Number(pagosPorMedio[m.codigo]) || 0
+      const pct = Number(m.recargoPct) || 0
+      if (val > 0 && pct > 0) {
+        rec += Math.round((val * pct) / 100)
+      }
+    })
+    return rec
+  }, [activeMedios, pagosPorMedio])
 
-  const saldoFaltante = Math.max(0, totales.total - totalPago)
+  const totalConRecargo = useMemo(() => {
+    return totales.total + recargoTotal
+  }, [totales.total, recargoTotal])
+
+  const cambio = useMemo(() => {
+    if (totalPago <= totalConRecargo) return 0
+    const excedente = totalPago - totalConRecargo
+    return Math.min(excedente, efectivoRecibido)
+  }, [totalPago, totalConRecargo, efectivoRecibido])
+
+  const saldoFaltante = Math.max(0, totalConRecargo - totalPago)
+
+  const tieneReciboCaja = Boolean(sesion?.caja?.documentoReciboConfig || sesion?.caja?.documentoReciboConfigId)
 
   const handleMontoChange = (codigo: string, rawText: string) => {
     const digits = rawText.replace(/\D/g, '')
@@ -310,15 +329,24 @@ export function PosScreen() {
     setPagosPorMedio(prev => ({ ...prev, [codigo]: val }))
   }
 
-  const setSinglePaymentMethod = (targetCodigo: string, amount: number) => {
+  const setSinglePaymentMethod = (targetCodigo: string, baseAmount: number) => {
+    const targetMedio = activeMedios.find((m: any) => m.codigo === targetCodigo)
+    const pct = Number(targetMedio?.recargoPct) || 0
+    const finalAmount = pct > 0 ? baseAmount + Math.round((baseAmount * pct) / 100) : baseAmount
+
     const next: Record<string, number> = {}
     activeMedios.forEach((m: any) => {
-      next[m.codigo] = m.codigo === targetCodigo ? amount : 0
+      next[m.codigo] = m.codigo === targetCodigo ? finalAmount : 0
     })
     setPagosPorMedio(next)
   }
 
   const handleOpenPagoModal = () => {
+    if (!tieneReciboCaja) {
+      toast.error('No se puede cobrar: Esta caja no tiene anclado un documento de Recibo de Caja (RC) obligatorio. Asigne el documento en la configuración de cajas.')
+      return
+    }
+
     const cashMethod = activeMedios.find((m: any) => {
       const code = (m.codigo || '').toUpperCase()
       const nom = (m.nombre || '').toUpperCase()
@@ -533,6 +561,11 @@ export function PosScreen() {
     if (cart.length === 0) return
     if (saldoFaltante > 0) return
 
+    if (!tieneReciboCaja) {
+      toast.error('No se puede cobrar: La caja no tiene anclado un documento de Recibo de Caja.')
+      return
+    }
+
     let pagoEfectivo = 0
     let pagoTarjetaDebito = 0
     let pagoTarjetaCredito = 0
@@ -565,6 +598,7 @@ export function PosScreen() {
       clienteNombre: selectedCliente?.nombre || 'Consumidor Final',
       clienteDoc: selectedCliente?.numeroDocumento || undefined,
       descuento: descuentoExtra,
+      recargoMedioPago: recargoTotal,
       pagoEfectivo,
       pagoTarjetaDebito,
       pagoTarjetaCredito,
@@ -612,6 +646,7 @@ export function PosScreen() {
         <div class="line"></div>
         
         <div class="row"><span>Ticket:</span><span class="bold">${venta.numero}</span></div>
+        ${venta.reciboCaja?.numero ? `<div class="row"><span>Recibo Caja:</span><span class="bold">${venta.reciboCaja.numero}</span></div>` : ''}
         <div class="row"><span>Fecha:</span><span>${new Date(venta.fecha ?? Date.now()).toLocaleString('es-CO')}</span></div>
         <div class="row"><span>Cliente:</span><span>${venta.clienteNombre}</span></div>
         <div class="row"><span>Vendedor:</span><span>${sesion?.vendedorNombre ?? '-'}</span></div>
@@ -629,6 +664,7 @@ export function PosScreen() {
         ${Number(venta.descuento) > 0 ? `<div class="row"><span>Descuento:</span><span>-${fmtVal(venta.descuento)}</span></div>` : ''}
         ${Number(venta.iva19) > 0 ? `<div class="row"><span>IVA 19%:</span><span>${fmtVal(venta.iva19)}</span></div>` : ''}
         ${Number(venta.iva5) > 0 ? `<div class="row"><span>IVA 5%:</span><span>${fmtVal(venta.iva5)}</span></div>` : ''}
+        ${Number(venta.recargoMedioPago) > 0 ? `<div class="row"><span>Recargo Medio Pago:</span><span>+${fmtVal(venta.recargoMedioPago)}</span></div>` : ''}
         <div class="line"></div>
         <div class="row big"><span>TOTAL:</span><span>${fmtVal(venta.total)}</span></div>
         <div class="line"></div>
@@ -1123,9 +1159,15 @@ export function PosScreen() {
                 </div>
               </div>
             )}
+            {!tieneReciboCaja && (
+              <div className="mb-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-semibold">
+                <AlertCircle size={16} className="shrink-0 text-rose-600" />
+                <span>La caja no tiene anclado un Recibo de Caja (RC) obligatorio. Configure en POS &gt; Cajas para poder cobrar.</span>
+              </div>
+            )}
             <button
               onClick={handleOpenPagoModal}
-              disabled={cart.length === 0 || !selectedCliente?.id}
+              disabled={cart.length === 0 || !selectedCliente?.id || !tieneReciboCaja}
               className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-base transition-colors flex items-center justify-center gap-2 shadow-sm">
               <CreditCard size={20} />
               Cobrar {cart.length > 0 ? fmt(totales.total) : ''}
@@ -1160,10 +1202,22 @@ export function PosScreen() {
                   <div className={`rounded-xl p-4 text-center transition-colors duration-200 ${
                     isDark ? 'bg-slate-700/50' : 'bg-slate-100'
                   }`}>
-                    <div className={isDark ? 'text-slate-400 text-sm' : 'text-slate-500 text-sm font-medium'}>Total a cobrar</div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={isDark ? 'text-slate-400 text-sm' : 'text-slate-500 text-sm font-medium'}>Total a cobrar</span>
+                      {recargoTotal > 0 && (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                          +{fmt(recargoTotal)} Recargo
+                        </span>
+                      )}
+                    </div>
                     <div className={`font-black text-3xl mt-1 transition-colors duration-200 ${
                       isDark ? 'text-green-400' : 'text-green-600'
-                    }`}>{fmt(totales.total)}</div>
+                    }`}>{fmt(totalConRecargo)}</div>
+                    {recargoTotal > 0 && (
+                      <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        (Base compra: {fmt(totales.total)} + Recargo: {fmt(recargoTotal)})
+                      </div>
+                    )}
                   </div>
 
                   {/* Payment Inputs */}
@@ -1180,6 +1234,8 @@ export function PosScreen() {
                           : (isDark ? 'text-cyan-400' : 'text-cyan-600'))
 
                       const monto = Number(pagosPorMedio[m.codigo]) || 0
+                      const pct = Number(m.recargoPct) || 0
+                      const recargoItem = pct > 0 && monto > 0 ? Math.round((monto * pct) / 100) : 0
 
                       return (
                         <div key={m.codigo} className={`flex items-center justify-between p-2 rounded-xl transition-all border ${
@@ -1187,14 +1243,28 @@ export function PosScreen() {
                             ? isDark ? 'bg-slate-700/60 border-indigo-500/50' : 'bg-indigo-50/50 border-indigo-200'
                             : isDark ? 'bg-slate-700/20 border-transparent hover:bg-slate-700/40' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                         }`}>
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                             <div className={`${color} shrink-0`}>{icon}</div>
-                            <span className="text-xs font-bold truncate">{m.nombre}</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold truncate">{m.nombre}</span>
+                                {pct > 0 && (
+                                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 shrink-0">
+                                    +{pct}%
+                                  </span>
+                                )}
+                              </div>
+                              {recargoItem > 0 && (
+                                <div className="text-[10px] text-amber-500 font-semibold">
+                                  +Recargo: {fmt(recargoItem)} (Cobrar: {fmt(monto + recargoItem)})
+                                </div>
+                              )}
+                            </div>
                             <button
                               type="button"
                               onClick={() => setSinglePaymentMethod(m.codigo, totales.total)}
                               title="Pagar el total con este medio"
-                              className="px-1.5 py-0.5 rounded text-[10px] font-bold opacity-60 hover:opacity-100 bg-slate-500/20 hover:bg-indigo-600 hover:text-white transition-all shrink-0"
+                              className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold opacity-60 hover:opacity-100 bg-slate-500/20 hover:bg-indigo-600 hover:text-white transition-all shrink-0"
                             >
                               Todo
                             </button>
@@ -1399,11 +1469,17 @@ export function PosScreen() {
                       <span className="font-semibold">-{fmt(descuentoExtra)}</span>
                     </div>
                   )}
+                  {recargoTotal > 0 && (
+                    <div className="flex justify-between text-amber-500 font-semibold">
+                      <span>Recargo Medio de Pago</span>
+                      <span>+{fmt(recargoTotal)}</span>
+                    </div>
+                  )}
                   <div className={`flex justify-between font-bold text-base pt-2 border-t transition-colors duration-200 ${
                     isDark ? 'border-slate-700 text-white' : 'border-slate-200 text-slate-800'
                   }`}>
                     <span>TOTAL</span>
-                    <span className={isDark ? 'text-green-400' : 'text-green-600'}>{fmt(totales.total)}</span>
+                    <span className={isDark ? 'text-green-400' : 'text-green-600'}>{fmt(totalConRecargo)}</span>
                   </div>
                   {cambio > 0 && (
                     <div className={`flex justify-between font-bold text-sm pt-2 border-t border-dashed ${
@@ -1431,7 +1507,10 @@ export function PosScreen() {
           }`}>
             <CheckCircle2 size={56} className="text-green-400 mx-auto mb-4" />
             <h2 className="font-bold text-xl mb-1">¡Venta completada!</h2>
-            <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ventaOk.numero}</p>
+            <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ventaOk.numero}</p>
+            {ventaOk.reciboCaja?.numero && (
+              <p className="text-xs font-semibold text-indigo-400 mb-2">Recibo de Caja: {ventaOk.reciboCaja.numero}</p>
+            )}
             <p className={`font-bold text-2xl mb-1 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(ventaOk.total))}</p>
             {Number(ventaOk.cambio) > 0 && (
               <div className={`my-3 p-3 rounded-xl border text-center ${
