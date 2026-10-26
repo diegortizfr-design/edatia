@@ -31,18 +31,12 @@ type CartItem = {
   stock: number
 }
 
-type PayMethod = { efectivo: number; tarjetaDebito: number; tarjetaCredito: number; transferencia: number; nequi: number }
-
 const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
-const mapCodeToKey = (code: string): keyof PayMethod => {
-  const c = code.toUpperCase()
-  if (c === 'EFECTIVO') return 'efectivo'
-  if (c === 'TARJETA_DEBITO' || c.includes('DEBITO')) return 'tarjetaDebito'
-  if (c === 'TARJETA_CREDITO' || c.includes('CREDITO') || c.includes('TARJETA')) return 'tarjetaCredito'
-  if (c === 'TRANSFERENCIA') return 'transferencia'
-  if (c === 'NEQUI' || c === 'DAVIPLATA') return 'nequi'
-  return 'efectivo'
+// Helper para formatear valores monetarios con puntos de miles (ej: 20000 -> "20.000")
+const formatMonto = (num: number) => {
+  if (!num) return ''
+  return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(num)
 }
 
 export function PosScreen() {
@@ -59,7 +53,7 @@ export function PosScreen() {
   const [showAnular, setShowAnular] = useState<number | null>(null)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
   const [rotationTab, setRotationTab] = useState<'alta' | 'baja'>('alta')
-  const [pago, setPago] = useState<PayMethod>({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
+  const [pagosPorMedio, setPagosPorMedio] = useState<Record<string, number>>({})
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
@@ -125,8 +119,10 @@ export function PosScreen() {
   const mutVenta = useMutation({
     mutationFn: crearVentaPos,
     onSuccess: async (data) => {
+      const cambioFinal = cambio
       setVentaOk({
         ...data,
+        cambio: cambioFinal,
         items: cart.map(i => ({
           producto: { nombre: i.nombre },
           cantidad: i.cantidad,
@@ -140,7 +136,7 @@ export function PosScreen() {
         iva5: cart.filter(i => i.tipoIva === 'IVA_5' || i.tipoIva === 'GRAVADO_5').reduce((a, b) => a + calcItem(b).iva, 0),
       })
       setCart([])
-      setPago({ efectivo: 0, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
+      setPagosPorMedio({})
       setDescuentoExtra(0)
       if (sesion?.caja?.clienteDefault) {
         setSelectedCliente(sesion.caja.clienteDefault)
@@ -251,8 +247,59 @@ export function PosScreen() {
   }, { subtotal: 0, descuento: 0, iva: 0, total: 0 })
 
   totales.total -= descuentoExtra
-  const totalPago = pago.efectivo + pago.tarjetaDebito + pago.tarjetaCredito + pago.transferencia + pago.nequi
-  const cambio = Math.max(0, pago.efectivo - totales.total)
+
+  const totalPago = useMemo(() => {
+    return Object.values(pagosPorMedio).reduce((acc, val) => acc + (Number(val) || 0), 0)
+  }, [pagosPorMedio])
+
+  const efectivoRecibido = useMemo(() => {
+    let sum = 0
+    activeMedios.forEach((m: any) => {
+      const code = (m.codigo || '').toUpperCase()
+      const nom = (m.nombre || '').toUpperCase()
+      if (code === 'EFECTIVO' || nom.includes('EFECTIVO')) {
+        sum += Number(pagosPorMedio[m.codigo]) || 0
+      }
+    })
+    return sum
+  }, [activeMedios, pagosPorMedio])
+
+  const cambio = useMemo(() => {
+    if (totalPago <= totales.total) return 0
+    const excedente = totalPago - totales.total
+    return Math.min(excedente, efectivoRecibido)
+  }, [totalPago, totales.total, efectivoRecibido])
+
+  const saldoFaltante = Math.max(0, totales.total - totalPago)
+
+  const handleMontoChange = (codigo: string, rawText: string) => {
+    const digits = rawText.replace(/\D/g, '')
+    const val = digits ? parseInt(digits, 10) : 0
+    setPagosPorMedio(prev => ({ ...prev, [codigo]: val }))
+  }
+
+  const setSinglePaymentMethod = (targetCodigo: string, amount: number) => {
+    const next: Record<string, number> = {}
+    activeMedios.forEach((m: any) => {
+      next[m.codigo] = m.codigo === targetCodigo ? amount : 0
+    })
+    setPagosPorMedio(next)
+  }
+
+  const handleOpenPagoModal = () => {
+    const cashMethod = activeMedios.find((m: any) => {
+      const code = (m.codigo || '').toUpperCase()
+      const nom = (m.nombre || '').toUpperCase()
+      return code === 'EFECTIVO' || nom.includes('EFECTIVO')
+    })
+    const cashCode = cashMethod?.codigo || 'EFECTIVO'
+    const init: Record<string, number> = {}
+    activeMedios.forEach((m: any) => {
+      init[m.codigo] = m.codigo === cashCode ? totales.total : 0
+    })
+    setPagosPorMedio(init)
+    setShowPago(true)
+  }
 
   const addToCart = useCallback((prod: any) => {
     const resolvedTipoIva = prod.productoExentoIva
@@ -452,17 +499,45 @@ export function PosScreen() {
 
   const handleFinalizarVenta = () => {
     if (cart.length === 0) return
+    if (saldoFaltante > 0) return
+
+    let pagoEfectivo = 0
+    let pagoTarjetaDebito = 0
+    let pagoTarjetaCredito = 0
+    let pagoTransferencia = 0
+    let pagoNequi = 0
+
+    activeMedios.forEach((m: any) => {
+      const monto = Number(pagosPorMedio[m.codigo]) || 0
+      if (monto <= 0) return
+
+      const code = (m.codigo || '').toUpperCase()
+      const name = (m.nombre || '').toUpperCase()
+
+      if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
+        pagoEfectivo += monto
+      } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
+        pagoTarjetaDebito += monto
+      } else if (code.includes('CREDITO') || name.includes('CREDITO') || code.includes('TARJETA') || name.includes('TARJETA') || code.includes('DATAFONO') || name.includes('DATAFONO')) {
+        pagoTarjetaCredito += monto
+      } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
+        pagoNequi += monto
+      } else {
+        pagoTransferencia += monto
+      }
+    })
+
     mutVenta.mutate({
       sesionId: sesId,
       clienteId: selectedCliente?.id || undefined,
       clienteNombre: selectedCliente?.nombre || 'Consumidor Final',
       clienteDoc: selectedCliente?.numeroDocumento || undefined,
       descuento: descuentoExtra,
-      pagoEfectivo: pago.efectivo,
-      pagoTarjetaDebito: pago.tarjetaDebito,
-      pagoTarjetaCredito: pago.tarjetaCredito,
-      pagoTransferencia: pago.transferencia,
-      pagoNequi: pago.nequi,
+      pagoEfectivo,
+      pagoTarjetaDebito,
+      pagoTarjetaCredito,
+      pagoTransferencia,
+      pagoNequi,
       cambio,
       tipoDocumento: sesion?.caja?.documentoConfig?.sigla || 'POS',
       items: cart.map(i => ({
@@ -1017,11 +1092,7 @@ export function PosScreen() {
               </div>
             )}
             <button
-              onClick={() => {
-                // Pre-populate cash exact option default value
-                setPago({ efectivo: totales.total, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 })
-                setShowPago(true)
-              }}
+              onClick={handleOpenPagoModal}
               disabled={cart.length === 0 || !selectedCliente?.id}
               className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-base transition-colors flex items-center justify-center gap-2 shadow-sm">
               <CreditCard size={20} />
@@ -1064,56 +1135,131 @@ export function PosScreen() {
                   </div>
 
                   {/* Payment Inputs */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {activeMedios.map((m: any) => {
-                      const key = mapCodeToKey(m.codigo)
-                      const isEfectivo = m.codigo === 'EFECTIVO'
-                      const isTarjeta = m.codigo.includes('TARJETA')
-                      const icon = isEfectivo ? <Banknote size={16} /> : (isTarjeta ? <CreditCard size={16} /> : <Smartphone size={16} />)
+                      const isEfectivo = (m.codigo || '').toUpperCase() === 'EFECTIVO' || (m.nombre || '').toLowerCase().includes('efectivo')
+                      const isTarjeta = (m.codigo || '').includes('TARJETA') || (m.nombre || '').toLowerCase().includes('tarjeta') || (m.codigo || '').includes('DATAFONO') || (m.nombre || '').toLowerCase().includes('datafono')
+                      const isQr = (m.codigo || '').includes('QR') || (m.nombre || '').toLowerCase().includes('qr')
+                      const icon = isEfectivo ? <Banknote size={16} /> : (isTarjeta ? <CreditCard size={16} /> : (isQr ? <Scan size={16} /> : <Smartphone size={16} />))
                       const color = isEfectivo 
                         ? (isDark ? 'text-green-400' : 'text-green-600') 
-                        : (m.codigo.includes('DEBITO') 
-                          ? (isDark ? 'text-blue-450' : 'text-blue-600') 
-                          : (m.codigo.includes('CREDITO') 
-                            ? (isDark ? 'text-purple-450' : 'text-purple-600') 
-                            : (isDark ? 'text-cyan-450' : 'text-cyan-600')))
-                      
+                        : (isTarjeta
+                          ? (isDark ? 'text-blue-400' : 'text-blue-600') 
+                          : (isDark ? 'text-cyan-400' : 'text-cyan-600'))
+
+                      const monto = Number(pagosPorMedio[m.codigo]) || 0
+
                       return (
-                        <div key={m.codigo} className="flex items-center gap-3">
-                          <div className={`${color} w-8 shrink-0 flex justify-center`}>{icon}</div>
-                          <span className="text-sm font-semibold w-36 shrink-0">{m.nombre}</span>
-                          <input
-                            type="number" min={0}
-                            value={(pago as any)[key] || ''}
-                            onChange={e => setPago(prev => ({ ...prev, [key]: +e.target.value }))}
-                            placeholder="$ 0"
-                            className={`flex-1 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${
-                              isDark ? 'bg-slate-700 text-white placeholder-slate-500 border border-transparent' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-205'
-                            }`}
-                          />
+                        <div key={m.codigo} className={`flex items-center justify-between p-2 rounded-xl transition-all border ${
+                          monto > 0
+                            ? isDark ? 'bg-slate-700/60 border-indigo-500/50' : 'bg-indigo-50/50 border-indigo-200'
+                            : isDark ? 'bg-slate-700/20 border-transparent hover:bg-slate-700/40' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                        }`}>
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                            <div className={`${color} shrink-0`}>{icon}</div>
+                            <span className="text-xs font-bold truncate">{m.nombre}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSinglePaymentMethod(m.codigo, totales.total)}
+                              title="Pagar el total con este medio"
+                              className="px-1.5 py-0.5 rounded text-[10px] font-bold opacity-60 hover:opacity-100 bg-slate-500/20 hover:bg-indigo-600 hover:text-white transition-all shrink-0"
+                            >
+                              Todo
+                            </button>
+                          </div>
+                          
+                          {/* Formatted Currency Input with $ and thousands dots */}
+                          <div className="relative w-36 sm:w-44 shrink-0">
+                            <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-extrabold text-xs select-none ${
+                              isDark ? 'text-slate-400' : 'text-slate-400'
+                            }`}>$</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={pagosPorMedio[m.codigo] ? formatMonto(pagosPorMedio[m.codigo]) : ''}
+                              onChange={e => handleMontoChange(m.codigo, e.target.value)}
+                              placeholder="0"
+                              className={`w-full pl-7 pr-3 py-1.5 rounded-lg text-xs font-mono font-bold text-right outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                                monto > 0
+                                  ? isDark
+                                    ? 'bg-slate-600 text-green-300 border border-green-500/50 shadow-sm'
+                                    : 'bg-white text-green-700 border border-green-400 shadow-sm'
+                                  : isDark
+                                    ? 'bg-slate-700 text-white placeholder-slate-500 border border-slate-600'
+                                    : 'bg-white text-slate-800 placeholder-slate-400 border border-slate-300'
+                              }`}
+                            />
+                          </div>
                         </div>
                       )
                     })}
                   </div>
 
-                  {/* Fast Action exact cash button */}
-                  <button
-                    onClick={() => setPago(prev => ({ ...prev, efectivo: totales.total, tarjetaDebito: 0, tarjetaCredito: 0, transferencia: 0, nequi: 0 }))}
-                    className={`w-full text-xs py-2 rounded-lg font-bold transition-all transition-colors duration-200 ${
-                      isDark ? 'text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-650' : 'text-slate-600 hover:text-slate-850 bg-slate-100 hover:bg-slate-200'
-                    }`}>
-                    ⚡ Pago exacto en efectivo
-                  </button>
+                  {/* Fast Action Cash Denomination Shortcuts */}
+                  <div className={`p-2.5 rounded-xl border flex flex-col gap-1.5 ${
+                    isDark ? 'bg-slate-700/30 border-slate-700' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+                      <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Atajos de Efectivo</span>
+                      <span className="text-[10px] text-indigo-400 font-normal">Clic para asignar billete</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cashCode = activeMedios.find((m: any) => (m.codigo || '').toUpperCase() === 'EFECTIVO' || (m.nombre || '').toLowerCase().includes('efectivo'))?.codigo || 'EFECTIVO'
+                          setSinglePaymentMethod(cashCode, totales.total)
+                        }}
+                        className="px-2 py-1 rounded-lg text-[11px] font-bold bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white border border-indigo-500/30 transition-all flex items-center gap-1"
+                      >
+                        <Zap size={11} className="text-amber-400" />
+                        <span>Exacto ({fmt(totales.total)})</span>
+                      </button>
+                      {[10000, 20000, 50000, 100000].filter(d => d >= totales.total).map(denom => (
+                        <button
+                          key={denom}
+                          type="button"
+                          onClick={() => {
+                            const cashCode = activeMedios.find((m: any) => (m.codigo || '').toUpperCase() === 'EFECTIVO' || (m.nombre || '').toLowerCase().includes('efectivo'))?.codigo || 'EFECTIVO'
+                            setSinglePaymentMethod(cashCode, denom)
+                          }}
+                          className={`px-2 py-1 rounded-lg text-[11px] font-mono font-bold border transition-all ${
+                            isDark
+                              ? 'bg-slate-700 hover:bg-slate-650 text-slate-200 border-slate-600'
+                              : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300 shadow-sm'
+                          }`}
+                        >
+                          ${denom.toLocaleString('es-CO')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Change or Missing warnings */}
                 <div className="space-y-2 pt-2">
-                  {pago.efectivo > 0 && cambio > 0 && (
-                    <div className={`border rounded-xl p-3 flex items-center justify-between transition-colors duration-200 ${
-                      isDark ? 'bg-green-900/20 border-green-600 text-green-300' : 'bg-green-50 border-green-200 text-green-700'
+                  {cambio > 0 && (
+                    <div className={`border-2 rounded-2xl p-4 flex items-center justify-between transition-all shadow-md animate-in fade-in ${
+                      isDark
+                        ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300'
+                        : 'bg-emerald-50 border-emerald-500 text-emerald-900'
                     }`}>
-                      <span className="text-sm font-medium">Cambio a devolver</span>
-                      <span className="font-extrabold text-2xl">{fmt(cambio)}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                          <Banknote size={22} />
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                            Valor a Devolver (Cambio)
+                          </div>
+                          <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            Efectivo recibido: {fmt(efectivoRecibido)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="font-mono font-black text-2xl sm:text-3xl text-emerald-500 tracking-tight">
+                        {fmt(cambio)}
+                      </div>
                     </div>
                   )}
 
@@ -1122,7 +1268,18 @@ export function PosScreen() {
                       isDark ? 'bg-amber-900/20 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-700'
                     }`}>
                       <AlertCircle size={16} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
-                      <span className="text-sm font-medium">Falta por pagar: {fmt(totales.total - totalPago)}</span>
+                      <span className="text-sm font-medium">Falta por pagar: {fmt(saldoFaltante)}</span>
+                    </div>
+                  )}
+
+                  {totalPago === totales.total && totalPago > 0 && (
+                    <div className={`border rounded-xl p-2.5 flex items-center justify-between text-xs font-semibold ${
+                      isDark ? 'bg-slate-700/40 border-slate-600 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
+                    }`}>
+                      <span className="flex items-center gap-1.5 text-green-500 font-bold">
+                        <Check size={15} /> Pago exacto cubierto
+                      </span>
+                      <span>Total: {fmt(totales.total)}</span>
                     </div>
                   )}
 
@@ -1130,7 +1287,7 @@ export function PosScreen() {
                   <div className="flex gap-3 pt-4 border-t border-slate-700/50">
                     <button onClick={() => setShowPago(false)}
                       className={`flex-1 py-3 rounded-xl font-bold transition-colors duration-200 ${
-                        isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-205 text-slate-800'
+                        isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                       }`}>
                       Cancelar
                     </button>
@@ -1216,6 +1373,14 @@ export function PosScreen() {
                     <span>TOTAL</span>
                     <span className={isDark ? 'text-green-400' : 'text-green-600'}>{fmt(totales.total)}</span>
                   </div>
+                  {cambio > 0 && (
+                    <div className={`flex justify-between font-bold text-sm pt-2 border-t border-dashed ${
+                      isDark ? 'border-emerald-700/60 text-emerald-400' : 'border-emerald-300 text-emerald-600'
+                    }`}>
+                      <span>Cambio</span>
+                      <span className="font-mono">{fmt(cambio)}</span>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -1236,7 +1401,14 @@ export function PosScreen() {
             <h2 className="font-bold text-xl mb-1">¡Venta completada!</h2>
             <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ventaOk.numero}</p>
             <p className={`font-bold text-2xl mb-1 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(ventaOk.total))}</p>
-            {cambio > 0 && <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600 font-medium'}`}>Cambio: {fmt(cambio)}</p>}
+            {Number(ventaOk.cambio) > 0 && (
+              <div className={`my-3 p-3 rounded-xl border text-center ${
+                isDark ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300' : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+              }`}>
+                <div className="text-[11px] uppercase tracking-wider font-bold">Cambio a entregar al cliente</div>
+                <div className="text-2xl font-extrabold font-mono mt-0.5">{fmt(Number(ventaOk.cambio))}</div>
+              </div>
+            )}
             <div className="flex gap-3 mt-6">
               <button onClick={() => imprimirTirilla(ventaOk)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
