@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-24 (sesión 19)
+> Última actualización: 2026-10-25 (sesión 20)
 
 ---
 
@@ -33,6 +33,29 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 20) — 2026-10-25
+
+✅ **Feed de Catálogo para Meta Commerce Manager (Facebook / Instagram Shopping) y Deep-Linking en Tienda Virtual:**
+  - **Generador de Feed XML para Meta / Google Shopping (`backend/src/digital`):**
+    - Endpoints públicos creados: `GET /api/v1/public/tiendas/:slug/meta-feed.xml` y alias `GET :slug/feed.xml`.
+    - Cumplimiento 100% con especificación RSS 2.0 (`xmlns:g="http://base.google.com/ns/1.0"`): etiquetas obligatorias (`g:id`, `g:title`, `g:description`, `g:link`, `g:image_link`, `g:price`, `g:availability`, `g:condition`, `g:brand`) y enriquecidas (`g:sale_price`, `g:additional_image_link`, `g:product_type`, `g:custom_label_0`, `g:gtin`).
+    - Protección de caracteres mediante `CDATA` saneado y escape XML.
+  - **Filtro Inteligente de Alto Margen Comercial:**
+    - Exclusión automática por regla de negocio de artículos masivos de rotación y bajo margen (pañales desechables Winny/Huggies, toallitas húmedas, fórmulas infantiles).
+    - Priorización de juguetería de estimulación (caminadores Nobily, gimnasios sensoriales, pistas de carreras), calzado, ropa y combos de alto valor.
+    - Validación matemática de margen ($\ge 25\%$) para productos con costo registrado en el ERP.
+    - Soporte de modos: `?filtro=alto_margen` (134 productos, por defecto para campañas de Meta Ads) y `?filtro=todos` (164 productos con clasificación en `g:custom_label_0`).
+  - **Mecanismo de Caché en Memoria y Alto Desempeño:**
+    - Implementación de caché en memoria con TTL de 2 horas en NestJS, respondiendo en ~200 ms y evitando consultas masivas a PostgreSQL en cada escaneo del crawler de Meta.
+    - Cabeceras HTTP `Cache-Control: public, max-age=7200, s-maxage=7200` y soporte para forzar refresco con `?refresh=true`.
+  - **Deep-Linking y Sincronización de URLs en Frontend (`tiendas-virtuales/distribuidorababyworld`):**
+    - Sincronización bidireccional de rutas: la tienda ahora captura rutas directas `/producto/:slug` (o `?producto=...`), abre automáticamente la ficha del producto y actualiza dinámicamente el `<title>`.
+    - Integración con `window.history.pushState` y evento `popstate` para navegación fluida con botones Atrás y Adelante del navegador.
+  - **Reconstrucción y Verificación en Docker:**
+    - Compilación e imágenes de `edatia-backend` y `edatia-glowxir` actualizadas y verificadas en local.
+
+---
 
 ## Estado resuelto (sesión 19) — 2026-10-24
 
