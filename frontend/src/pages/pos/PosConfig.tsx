@@ -4,6 +4,7 @@ import { getCajas, createCaja, updateCaja, deleteCaja } from '../../services/pos
 import { getCajasBancos, getVendedores } from '../../services/erp.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getClientes } from '../../services/ventas.service'
+import { getBodegas } from '../../services/inventario.service'
 import { Monitor, Plus, X, Settings, Printer, Warehouse, Landmark, FileCheck, ArrowLeft, Tag, User, Users, Trash2, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getApiError } from '../../services/api'
@@ -12,6 +13,7 @@ const EMPTY = {
   nombre: '',
   codigo: '',
   referencia: '',
+  bodegaId: '',
   cajaBancoId: '',
   documentoConfigId: '',
   vendedorId: '',
@@ -34,6 +36,7 @@ export function PosConfig() {
   const set = (k: string) => (e: any) => setForm((f: any) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
 
   const { data: cajas = [] } = useQuery(['pos-cajas'], getCajas)
+  const { data: bodegas = [] } = useQuery(['bodegas'], getBodegas)
   const { data: cajasBancos = [] } = useQuery(['cajas-bancos'], getCajasBancos)
   const { data: documentosConfig = [] } = useQuery(['documentos-config'], getDocumentosConfig)
   const { data: vendedores = [] } = useQuery(['vendedores'], getVendedores)
@@ -85,6 +88,7 @@ export function PosConfig() {
       nombre: caja.nombre,
       codigo: caja.codigo ?? '',
       referencia: caja.referencia ?? '',
+      bodegaId: caja.bodegaId ? String(caja.bodegaId) : (caja.bodega?.id ? String(caja.bodega.id) : ''),
       cajaBancoId: caja.cajaBancoId ? String(caja.cajaBancoId) : '',
       documentoConfigId: caja.documentoConfigId ? String(caja.documentoConfigId) : '',
       vendedorId: caja.vendedorId ? String(caja.vendedorId) : '',
@@ -104,6 +108,7 @@ export function PosConfig() {
     e.preventDefault()
     const dto = {
       ...form,
+      bodegaId: form.bodegaId ? +form.bodegaId : null,
       cajaBancoId: form.cajaBancoId ? +form.cajaBancoId : null,
       documentoConfigId: form.documentoConfigId ? +form.documentoConfigId : null,
       vendedorId: form.vendedorId ? +form.vendedorId : null,
@@ -175,7 +180,27 @@ export function PosConfig() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Bodega de Despacho (Por Defecto) *</label>
+              <select
+                required
+                value={form.bodegaId}
+                onChange={set('bodegaId')}
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white cursor-pointer"
+              >
+                <option value="">Seleccionar bodega...</option>
+                {bodegas.map((b: any) => (
+                  <option key={b.id} value={b.id}>
+                    {b.nombre} ({b.codigo || `ID: ${b.id}`}) {b.esPrincipal ? '★ Principal' : ''}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Solo se mostrarán y descontarán productos de esta bodega.
+              </span>
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Documento POS por Defecto *</label>
               <select
@@ -191,6 +216,9 @@ export function PosConfig() {
                   </option>
                 ))}
               </select>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Resolución o tirilla POS fiscal DIAN.
+              </span>
             </div>
 
             <div>
@@ -207,6 +235,9 @@ export function PosConfig() {
                   </option>
                 ))}
               </select>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Cuenta de tesorería para recaudos en efectivo.
+              </span>
             </div>
           </div>
 
@@ -383,8 +414,14 @@ export function PosConfig() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Warehouse size={12} className="text-slate-400 shrink-0" />
-                  <span><strong>Sucursal:</strong> {caja.documentoConfig?.sucursal?.nombre || caja.bodega?.nombre || '—'}</span>
+                  <span><strong>Bodega de Despacho:</strong> <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/60">{caja.bodega?.nombre || 'Sin bodega'}</span></span>
                 </div>
+                {caja.documentoConfig?.sucursal?.nombre && (
+                  <div className="flex items-center gap-2">
+                    <Warehouse size={12} className="text-slate-400 shrink-0" />
+                    <span><strong>Sucursal:</strong> {caja.documentoConfig.sucursal.nombre}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Landmark size={12} className="text-slate-400 shrink-0" />
                   <span><strong>Caja / Banco Contable:</strong> {caja.cajaBanco?.nombre || 'Sin asignar'}</span>

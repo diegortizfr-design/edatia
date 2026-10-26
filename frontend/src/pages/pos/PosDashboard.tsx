@@ -124,7 +124,14 @@ export function PosDashboard() {
                     </div>
                     <div>
                       <h2 className="font-bold text-slate-800 text-sm">{caja.nombre}</h2>
-                      <p className="text-slate-450 text-[10px] font-mono mt-0.5">{caja.codigo || '—'}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-slate-450 text-[10px] font-mono">{caja.codigo || '—'}</span>
+                        {caja.bodega && (
+                          <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">
+                            {caja.bodega.nombre}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">

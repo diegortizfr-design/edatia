@@ -38,10 +38,10 @@ export class PosService {
   }
 
   async createCaja(empresaId: number, dto: any) {
-    const { cajaBancoId, documentoConfigId, clienteDefaultId, ...rest } = dto
-    let resolvedBodegaId = 1 // default fallback
+    const { cajaBancoId, documentoConfigId, clienteDefaultId, bodegaId, ...rest } = dto
+    let resolvedBodegaId = bodegaId ? +bodegaId : null
     
-    if (documentoConfigId) {
+    if (!resolvedBodegaId && documentoConfigId) {
       const doc = await this.prisma.documentoConfig.findUnique({
         where: { id: +documentoConfigId }
       })
@@ -54,6 +54,14 @@ export class PosService {
           resolvedBodegaId = bodega.id
         }
       }
+    }
+
+    if (!resolvedBodegaId) {
+      const principal = await this.prisma.bodega.findFirst({
+        where: { empresaId, activo: true },
+        orderBy: { esPrincipal: 'desc' }
+      })
+      resolvedBodegaId = principal ? principal.id : 1
     }
 
     return this.prisma.cajaPos.create({
@@ -80,14 +88,15 @@ export class PosService {
 
   async updateCaja(empresaId: number, cajaId: number, dto: any) {
     await this.findCaja(empresaId, cajaId)
-    const { cajaBancoId, documentoConfigId, clienteDefaultId, codigo, ...rest } = dto
+    const { cajaBancoId, documentoConfigId, clienteDefaultId, bodegaId, codigo, ...rest } = dto
     const updateData: any = { ...rest }
     
+    if (bodegaId !== undefined) updateData.bodegaId = bodegaId ? +bodegaId : undefined
     if (cajaBancoId !== undefined) updateData.cajaBancoId = cajaBancoId ? +cajaBancoId : null
     if (clienteDefaultId !== undefined) updateData.clienteDefaultId = clienteDefaultId ? +clienteDefaultId : null
     if (documentoConfigId !== undefined) {
       updateData.documentoConfigId = documentoConfigId ? +documentoConfigId : null
-      if (documentoConfigId) {
+      if (!bodegaId && documentoConfigId) {
         const doc = await this.prisma.documentoConfig.findUnique({
           where: { id: +documentoConfigId }
         })
@@ -453,12 +462,14 @@ export class PosService {
 
     // Verificar stock para cada ítem
     for (const item of dto.items) {
+      const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
+      if (prod && !prod.manejaBodega) continue // No validar stock para servicios o productos sin inventario
+
       const stock = await this.prisma.stock.findFirst({
         where: { productoId: item.productoId, bodegaId: sesion.caja.bodegaId },
       })
       const disponible = stock ? Number(stock.cantidad) - Number(stock.cantidadReservada) : 0
       if (disponible < item.cantidad) {
-        const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
         const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
         const permiteNegativo = (empresa?.permiteStockNegativo ?? false) && (sesion.caja.bodega?.permiteStockNegativo ?? false)
         if (!permiteNegativo) {
@@ -727,45 +738,73 @@ export class PosService {
   // ─── Búsqueda de productos para POS ──────────────────────────────────────────
 
   async buscarProductosPos(empresaId: number, q: string, bodegaId: number) {
+    const where: any = {
+      empresaId,
+      activo: true,
+      OR: [
+        { nombre: { contains: q, mode: 'insensitive' } },
+        { sku: { contains: q, mode: 'insensitive' } },
+        { codigoBarras: { equals: q } },
+      ],
+    }
+
+    // Filtrar estrictamente por la bodega anclada a la caja POS
+    if (bodegaId) {
+      where.AND = [
+        {
+          OR: [
+            { manejaBodega: false }, // Servicios que no manejan inventario físico
+            {
+              stock: {
+                some: {
+                  bodegaId,
+                  cantidad: { gt: 0 },
+                },
+              },
+            },
+          ],
+        },
+      ]
+    }
+
     const productos = await this.prisma.producto.findMany({
-      where: {
-        empresaId,
-        activo: true,
-        OR: [
-          { nombre: { contains: q, mode: 'insensitive' } },
-          { sku: { contains: q, mode: 'insensitive' } },
-          { codigoBarras: { equals: q } },
-        ],
-      },
+      where,
       include: {
         stock: { where: { bodegaId }, select: { cantidad: true, cantidadReservada: true } },
       },
-      take: 50,
+      take: 60,
     })
 
-    return productos.map(p => {
-      let effectiveTipoIva = p.tipoIva || 'GRAVADO_19';
-      if (p.productoExentoIva) {
-        effectiveTipoIva = 'EXENTO';
-      } else if (p.liquidarIva === false || (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length === 0)) {
-        effectiveTipoIva = 'EXCLUIDO';
-      }
+    return productos
+      .map(p => {
+        let effectiveTipoIva = p.tipoIva || 'GRAVADO_19';
+        if (p.productoExentoIva) {
+          effectiveTipoIva = 'EXENTO';
+        } else if (p.liquidarIva === false || (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length === 0)) {
+          effectiveTipoIva = 'EXCLUIDO';
+        }
 
-      return {
-        id: p.id,
-        nombre: p.nombre,
-        sku: p.sku,
-        codigoBarras: p.codigoBarras,
-        precioBase: Number(p.precioBase),
-        tipoIva: effectiveTipoIva,
-        liquidarIva: p.liquidarIva,
-        productoExentoIva: p.productoExentoIva,
-        appliedTaxIds: p.appliedTaxIds,
-        imagen: p.imagen,
-        claseAbc: p.claseAbc,
-        stock: p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada) : 0,
-      };
-    })
+        const stockDisponible = p.manejaBodega
+          ? (p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada ?? 0) : 0)
+          : 999;
+
+        return {
+          id: p.id,
+          nombre: p.nombre,
+          sku: p.sku,
+          codigoBarras: p.codigoBarras,
+          precioBase: Number(p.precioBase),
+          tipoIva: effectiveTipoIva,
+          liquidarIva: p.liquidarIva,
+          productoExentoIva: p.productoExentoIva,
+          appliedTaxIds: p.appliedTaxIds,
+          imagen: p.imagen,
+          claseAbc: p.claseAbc,
+          manejaBodega: p.manejaBodega,
+          stock: stockDisponible,
+        };
+      })
+      .filter(p => !p.manejaBodega || p.stock > 0);
   }
 
   // ─── Integración Contable ───────────────────────────────────────────────────

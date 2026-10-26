@@ -448,9 +448,18 @@ export function PosScreen() {
             className={`transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-855'}`}>
             <ChevronLeft size={20} />
           </button>
-          <div>
+          <div className="flex items-center gap-2">
             <span className={`font-bold text-sm transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{sesion.caja?.nombre}</span>
-            <span className={`text-xs ml-2 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>• {sesion.vendedorNombre}</span>
+            <span className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>• {sesion.vendedorNombre}</span>
+            {sesion.caja?.bodega && (
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
+                isDark 
+                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80' 
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                Bodega: {sesion.caja.bodega.nombre}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3">
