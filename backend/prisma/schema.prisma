@@ -244,6 +244,8 @@ model DocumentoConfig {
   facturasCompra        FacturaCompra[]
   recepcionesMercancia  RecepcionMercancia[]
   recibosCaja           ReciboCaja[]
+  facturasVenta         FacturaVenta[]   @relation("FacturaDocumentoConfig")
+  facturasVentaCxc      FacturaVenta[]   @relation("FacturaDocumentoCXC")
 
   @@unique([empresaId, prefijo])
   @@index([empresaId])
@@ -1531,6 +1533,16 @@ model FacturaVenta {
   direccion        String?
   sucursalCliente  String?
 
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation("FacturaDocumentoConfig", fields: [documentoConfigId], references: [id])
+
+  documentoCxcId    Int?
+  documentoCxc      DocumentoConfig? @relation("FacturaDocumentoCXC", fields: [documentoCxcId], references: [id])
+  numeroCxc         String?
+
+  reciboCajaId      Int?
+  reciboCaja        ReciboCaja?      @relation("FacturaReciboDirecto", fields: [reciboCajaId], references: [id])
+
   // DIAN
   resolucionId     Int?
   resolucion       ResolucionDIAN? @relation(fields: [resolucionId], references: [id])
@@ -1686,6 +1698,7 @@ model ReciboCaja {
   documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
 
   ventasPos         VentaPos[]
+  facturasDirectas  FacturaVenta[]   @relation("FacturaReciboDirecto")
 
   @@unique([empresaId, numero])
   @@index([empresaId])

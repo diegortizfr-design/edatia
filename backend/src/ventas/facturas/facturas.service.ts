@@ -7,12 +7,17 @@ import { MovimientosService } from '../../inventario/movimientos/movimientos.ser
 import { calcularItem, calcularTotales } from '../cotizaciones/cotizaciones.service'
 import { AuditoriaErpService } from '../../auditoria-erp/auditoria-erp.service'
 
+import { RecibosService } from '../recibos/recibos.service'
+
 const INCLUDE_FULL = {
   cliente: true,
   empresa: true,
   bodega: { select: { nombre: true, codigo: true } },
   resolucion: true,
   pedido: true,
+  documentoConfig: true,
+  documentoCxc: true,
+  reciboCaja: true,
   items: {
     include: { producto: { select: { sku: true, nombre: true, costoPromedio: true, unidadMedida: { select: { abreviatura: true } } } } },
     orderBy: { orden: 'asc' as const },
@@ -28,6 +33,7 @@ export class FacturasService {
     private ublService: UblService,
     private movimientos: MovimientosService,
     private auditoria: AuditoriaErpService,
+    private recibos: RecibosService,
   ) {}
 
   findAll(empresaId: number, params?: { clienteId?: number; estado?: string; desde?: string; hasta?: string }) {
@@ -46,6 +52,9 @@ export class FacturasService {
       include: {
         cliente: { select: { nombre: true, numeroDocumento: true } },
         _count: { select: { items: true } },
+        documentoConfig: { select: { nombre: true, prefijo: true, sigla: true } },
+        documentoCxc: { select: { nombre: true, prefijo: true, sigla: true } },
+        reciboCaja: { select: { numero: true, valor: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -62,18 +71,6 @@ export class FacturasService {
 
   async create(dto: CreateFacturaDto, empresaId: number, usuarioId: number) {
     const totales = calcularTotales(dto.items)
-
-    // ── 1. Cargar Configuración DIAN y resoluciones activas ──────────────────────
-    const config = await this.prisma.configuracionDIAN.findUnique({
-      where: { empresaId },
-      include: {
-        resoluciones: {
-          where: { tipoDocumento: '01', activo: true, fechaVigencia: { gte: new Date() } },
-          orderBy: { id: 'desc' },
-          take: 1,
-        },
-      },
-    })
 
     const nuevaFactura = await this.prisma.$transaction(async (tx) => {
       // Validar que el cliente pertenezca a la empresa y esté activo
@@ -93,28 +90,45 @@ export class FacturasService {
         }
       }
 
-      let cufe: string | null = null
-      let qrUrl: string | null = null
-      let xmlDIAN: string | null = null
-      let numeroDIAN: number | null = null
-      let prefijoDIAN: string | null = null
-      let resolucionId: number | null = null
+      // ── 1. Anclaje a DocumentoConfig (Por ahora exclusivamente FV) ─────────────
       let numero = dto.numero
+      let documentoConfigId: number | null = dto.documentoConfigId ?? null
 
-      if (config?.activo && config.resoluciones.length > 0) {
-        const res = config.resoluciones[0]
-        const updated = await tx.resolucionDIAN.update({
-          where: { id: res.id },
-          data: { numeroCurrent: { increment: 1 } },
+      if (documentoConfigId) {
+        const docConfig = await tx.documentoConfig.findFirst({
+          where: { id: documentoConfigId, empresaId, estado: 'ACTIVO' },
         })
-        numeroDIAN = updated.numeroCurrent
-        prefijoDIAN = res.prefijo
-        resolucionId = res.id
-        numero = `${prefijoDIAN}${numeroDIAN}`
-      }
-
-      if (!numero) {
-        numero = await this.generarNumero(empresaId, dto.tipoDocumento || 'FV', tx)
+        if (!docConfig) {
+          throw new BadRequestException('El documento de configuración seleccionado no existe o se encuentra inactivo')
+        }
+        if (docConfig.sigla !== 'FV') {
+          throw new BadRequestException('Por el momento solo es posible anclar facturas a documentos tipo FV (Factura de Venta)')
+        }
+        const pref = docConfig.prefijo || docConfig.sigla || 'FV'
+        const sigNum = docConfig.consecutivoSiguiente ?? docConfig.consecutivoInicial ?? 1
+        numero = `${pref}-${sigNum}`
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: sigNum + 1 },
+        })
+      } else {
+        // Si no se envió documentoConfigId, buscar el documento FV predeterminado
+        const defaultDoc = await tx.documentoConfig.findFirst({
+          where: { empresaId, sigla: 'FV', estado: 'ACTIVO' },
+          orderBy: { id: 'asc' },
+        })
+        if (defaultDoc) {
+          documentoConfigId = defaultDoc.id
+          const pref = defaultDoc.prefijo || defaultDoc.sigla || 'FV'
+          const sigNum = defaultDoc.consecutivoSiguiente ?? defaultDoc.consecutivoInicial ?? 1
+          numero = `${pref}-${sigNum}`
+          await tx.documentoConfig.update({
+            where: { id: defaultDoc.id },
+            data: { consecutivoSiguiente: sigNum + 1 },
+          })
+        } else if (!numero) {
+          numero = await this.generarNumero(empresaId, dto.tipoDocumento || 'FV', tx)
+        }
       }
 
       // Obtener costos actuales (CPP) para el asiento contable
@@ -147,12 +161,119 @@ export class FacturasService {
         }
       })
 
-      const saldo = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
+      const totalPagar = totales.total - Number(dto.retefuente ?? 0) - Number(dto.reteiva ?? 0) - Number(dto.reteica ?? 0)
+
+      // ── 2. Manejo de Formas de Pago, Cuentas por Cobrar (CXC) y Recibos de Caja (RC) ──
+      let estado = 'EMITIDA'
+      let saldo = totalPagar
+      let totalPagado = 0
+      let numeroCxc: string | null = null
+      let documentoCxcId: number | null = dto.documentoCxcId ?? null
+      let reciboCajaCreado: any = null
+
+      if (dto.formaPago === 'CREDITO') {
+        // En ventas a CRÉDITO: Generar documento de Cuenta por Cobrar [CXC]
+        if (documentoCxcId) {
+          const cxcDoc = await tx.documentoConfig.findFirst({
+            where: { id: documentoCxcId, empresaId, sigla: 'CXC', estado: 'ACTIVO' },
+          })
+          if (cxcDoc) {
+            const cxcPref = cxcDoc.prefijo || 'CXC'
+            const cxcNum = cxcDoc.consecutivoSiguiente ?? cxcDoc.consecutivoInicial ?? 1
+            numeroCxc = `${cxcPref}-${cxcNum}`
+            await tx.documentoConfig.update({
+              where: { id: cxcDoc.id },
+              data: { consecutivoSiguiente: cxcNum + 1 },
+            })
+          }
+        } else {
+          // Buscar si existe documento CXC configurado por defecto
+          const defaultCxc = await tx.documentoConfig.findFirst({
+            where: { empresaId, sigla: 'CXC', estado: 'ACTIVO' },
+            orderBy: { id: 'asc' },
+          })
+          if (defaultCxc) {
+            documentoCxcId = defaultCxc.id
+            const cxcPref = defaultCxc.prefijo || 'CXC'
+            const cxcNum = defaultCxc.consecutivoSiguiente ?? defaultCxc.consecutivoInicial ?? 1
+            numeroCxc = `${cxcPref}-${cxcNum}`
+            await tx.documentoConfig.update({
+              where: { id: defaultCxc.id },
+              data: { consecutivoSiguiente: cxcNum + 1 },
+            })
+          }
+        }
+        estado = 'EMITIDA'
+        saldo = totalPagar
+        totalPagado = 0
+      } else if (dto.formaPago === 'CONTADO') {
+        // En ventas a CONTADO: Opción de generar Recibo de Caja (RC) inmediatamente
+        if (dto.generarReciboCaja) {
+          let rcDocId: number | null = dto.documentoReciboConfigId ?? null
+          let rcDoc: any = null
+
+          if (rcDocId) {
+            rcDoc = await tx.documentoConfig.findFirst({
+              where: { id: rcDocId, empresaId, sigla: 'RC', estado: 'ACTIVO' },
+            })
+          }
+          if (!rcDoc) {
+            rcDoc = await tx.documentoConfig.findFirst({
+              where: { empresaId, sigla: 'RC', estado: 'ACTIVO' },
+              orderBy: { id: 'asc' },
+            })
+            if (rcDoc) rcDocId = rcDoc.id
+          }
+
+          let numeroRc = ''
+          if (rcDoc) {
+            const rcPref = rcDoc.prefijo || 'RC'
+            const rcNum = rcDoc.consecutivoSiguiente ?? rcDoc.consecutivoInicial ?? 1
+            numeroRc = `${rcPref}-${rcNum}`
+            await tx.documentoConfig.update({
+              where: { id: rcDoc.id },
+              data: { consecutivoSiguiente: rcNum + 1 },
+            })
+          } else {
+            const year = new Date().getFullYear()
+            const lastRc = await tx.reciboCaja.findFirst({ where: { empresaId }, orderBy: { id: 'desc' } })
+            const seq = lastRc ? parseInt(lastRc.numero.split('-').pop() ?? '0') + 1 : 1
+            numeroRc = `RC-${year}-${String(seq).padStart(5, '0')}`
+          }
+
+          reciboCajaCreado = await tx.reciboCaja.create({
+            data: {
+              empresaId,
+              numero: numeroRc,
+              clienteId: dto.clienteId,
+              valor: totalPagar,
+              medioPago: dto.medioPago || 'EFECTIVO',
+              concepto: `Pago Factura ${numero} Contado`,
+              documentoConfigId: rcDocId,
+              usuarioId,
+            },
+            include: { cliente: true },
+          })
+
+          estado = 'PAGADA'
+          saldo = 0
+          totalPagado = totalPagar
+        } else {
+          // Opción de NO generar RC ahora: La factura queda normal con saldo pendiente para cruzarse luego en tesorería
+          estado = 'EMITIDA'
+          saldo = totalPagar
+          totalPagado = 0
+        }
+      }
 
       const factura = await tx.facturaVenta.create({
         data: {
           empresaId,
           numero,
+          documentoConfigId,
+          documentoCxcId,
+          numeroCxc,
+          reciboCajaId: reciboCajaCreado ? reciboCajaCreado.id : null,
           clienteId: dto.clienteId,
           bodegaId: dto.bodegaId,
           cotizacionId: dto.cotizacionId,
@@ -166,8 +287,9 @@ export class FacturasService {
           reteica: dto.reteica ?? 0,
           notas: dto.notas,
           usuarioId,
-          estado: 'CREADA',
+          estado,
           saldo,
+          totalPagado,
           vendedorNombre: dto.vendedorNombre,
           vendedorId: dto.vendedorId,
           atendidoPor: dto.atendidoPor,
@@ -177,18 +299,30 @@ export class FacturasService {
           tipoDocumento: dto.tipoDocumento ?? 'FV',
           direccion: dto.direccion,
           sucursalCliente: dto.sucursalCliente,
-          cufe,
-          qrUrl,
-          xmlDIAN,
+          cufe: null,
+          qrUrl: null,
+          xmlDIAN: null,
           estadoDIAN: 'PENDIENTE',
-          numeroDIAN,
-          prefijoDIAN,
-          resolucionId,
+          numeroDIAN: null,
+          prefijoDIAN: null,
+          resolucionId: null,
           ...totales,
           items: { create: itemsConCosto },
         },
         include: INCLUDE_FULL,
       })
+
+      // Si se generó Recibo de Caja inmediatamente, vincular cruce y asiento contable de tesorería
+      if (reciboCajaCreado) {
+        await tx.reciboCajaFactura.create({
+          data: {
+            reciboId: reciboCajaCreado.id,
+            facturaId: factura.id,
+            valor: totalPagar,
+          },
+        })
+        await this.recibos.crearAsientoRecibo(tx, reciboCajaCreado, empresaId, usuarioId)
+      }
 
       // Si viene de cotización, marcarla como FACTURADA
       if (dto.cotizacionId) {
@@ -206,7 +340,7 @@ export class FacturasService {
         })
       }
 
-      // ── 3. Descontar inventario (Kardex) ───────────────────────────────────────
+      // ── 3. Descontar inventario (Kardex inmediato) ──────────────────────────────
       for (const item of factura.items as any[]) {
         await this.movimientos.registrarSalidaInterna(tx, {
           empresaId,
@@ -222,7 +356,7 @@ export class FacturasService {
         })
       }
 
-      // ── 4. Generar asiento contable automático ────────────────────────────────
+      // ── 4. Generar asiento contable automático inmediato ────────────────────────
       await this.crearAsientoFactura(factura as any, empresaId, usuarioId, tx)
 
       return factura

@@ -132,8 +132,49 @@ export function FacturaForm() {
   })
 
   const docConfigs = useMemo(() => {
-    return allDocs.filter((d: any) => (d.sigla === 'FV' || d.sigla === 'FVE') && d.estado === 'ACTIVO')
+    return (allDocs as any[]).filter((d: any) => {
+      const sigla = (d.sigla || d.codigo || '')?.toUpperCase()?.trim()
+      const estado = (d.estado || '')?.toUpperCase()?.trim()
+      const isActivo = estado === 'ACTIVO' || !d.estado || d.deletedAt === null
+      return isActivo && sigla === 'FV'
+    })
   }, [allDocs])
+
+  const cxcDocConfigs = useMemo(() => {
+    return (allDocs as any[]).filter((d: any) => {
+      const sigla = (d.sigla || d.codigo || '')?.toUpperCase()?.trim()
+      const estado = (d.estado || '')?.toUpperCase()?.trim()
+      const isActivo = estado === 'ACTIVO' || !d.estado || d.deletedAt === null
+      return isActivo && sigla === 'CXC'
+    })
+  }, [allDocs])
+
+  const rcDocConfigs = useMemo(() => {
+    return (allDocs as any[]).filter((d: any) => {
+      const sigla = (d.sigla || d.codigo || '')?.toUpperCase()?.trim()
+      const estado = (d.estado || '')?.toUpperCase()?.trim()
+      const isActivo = estado === 'ACTIVO' || !d.estado || d.deletedAt === null
+      return isActivo && sigla === 'RC'
+    })
+  }, [allDocs])
+
+  const [selectedCxcDocId, setSelectedCxcDocId] = useState<string>('')
+  const [generarRcInmediato, setGenerarRcInmediato] = useState<boolean>(true)
+  const [selectedRcDocId, setSelectedRcDocId] = useState<string>('')
+
+  // Auto-seleccionar documento CXC por defecto
+  useEffect(() => {
+    if (cxcDocConfigs.length > 0 && !selectedCxcDocId) {
+      setSelectedCxcDocId(String(cxcDocConfigs[0].id))
+    }
+  }, [cxcDocConfigs, selectedCxcDocId])
+
+  // Auto-seleccionar documento RC por defecto
+  useEffect(() => {
+    if (rcDocConfigs.length > 0 && !selectedRcDocId) {
+      setSelectedRcDocId(String(rcDocConfigs[0].id))
+    }
+  }, [rcDocConfigs, selectedRcDocId])
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
@@ -237,15 +278,12 @@ export function FacturaForm() {
   const mutCreate = useMutation({
     mutationFn: createFactura,
     onSuccess: async () => {
-      if (selectedDocId) {
-        try {
-          await mutIncrementConsecutive.mutateAsync(Number(selectedDocId))
-        } catch (e) {
-          console.error("Error updating consecutive on server:", e)
-        }
-      }
+      qc.invalidateQueries({ queryKey: ['documentos-config'] })
       qc.invalidateQueries({ queryKey: ['facturas'] })
       qc.invalidateQueries({ queryKey: ['pedidos'] })
+      qc.invalidateQueries({ queryKey: ['saldos-clientes'] })
+      qc.invalidateQueries({ queryKey: ['facturas-cxc-emitidas'] })
+      qc.invalidateQueries({ queryKey: ['facturas-cxc-parciales'] })
       navigate('/ventas/facturas')
     },
   })
@@ -268,27 +306,35 @@ export function FacturaForm() {
       : clientesAll as any[]
   , [clientesAll, clienteQ])
 
-  // Products quick search filtering
+  // Products filtered strictly to the selected bodega
+  const productosEnBodega = useMemo(() => {
+    if (!bodegaId) return []
+    return (productosAll as any[]).filter((p: any) => {
+      const stock = stockMap.get(p.id) ?? 0
+      return stock > 0 || p.manejaBodega === false
+    })
+  }, [productosAll, stockMap, bodegaId])
+
+  // Products quick search filtering (only products in the selected warehouse)
   const quickSearchProds = useMemo(() => {
     if (!quickSearchQ.trim()) return []
-    return (productosAll as any[]).filter((p: any) =>
-      p.nombre.toLowerCase().includes(quickSearchQ.toLowerCase()) ||
-      p.sku.toLowerCase().includes(quickSearchQ.toLowerCase())
+    const q = quickSearchQ.toLowerCase()
+    return productosEnBodega.filter((p: any) =>
+      p.nombre.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q) ||
+      (p.codigoBarras && p.codigoBarras.toLowerCase().includes(q))
     )
-  }, [productosAll, quickSearchQ])
+  }, [productosEnBodega, quickSearchQ])
 
   // Calculate invoice numbers / Draft sequence
   const computedConsecutive = useMemo(() => {
-    if (!tipoDocumento) return '—'
-    const doc = docConfigs.find((d: any) => String(d.id) === String(selectedDocId)) || docConfigs.find((d: any) => d.sigla === tipoDocumento)
-    const basePrefix = doc?.prefijo || tipoDocumento
-    const startSeq = doc?.consecutivoSiguiente || 1
-    
-    // Count how many matching invoices exist in the system
-    const matching = (listFacturas as any[]).filter(f => f.tipoDocumento === tipoDocumento)
-    const nextSeq = Math.max(startSeq, matching.length + 1)
-    return `${basePrefix}-${nextSeq}`
-  }, [listFacturas, tipoDocumento, selectedDocId, docConfigs])
+    if (!selectedDocId) return '—'
+    const doc = docConfigs.find((d: any) => String(d.id) === String(selectedDocId))
+    if (!doc) return '—'
+    const basePrefix = doc.prefijo || doc.sigla || 'FV'
+    const seq = doc.consecutivoSiguiente ?? 1
+    return `${basePrefix}-${seq}`
+  }, [selectedDocId, docConfigs])
 
   // Totals calculations
   const totals = useMemo(() => calcTotals(lines), [lines])
@@ -487,12 +533,25 @@ export function FacturaForm() {
   }
 
   const handleSubmit = () => {
+    if (!selectedDocId) return alert('Seleccione un documento tipo FV configurado')
     if (!clienteId) return alert('Seleccione un cliente')
     if (lines.length === 0 || lines.some(l => !l.productoId)) return alert('Debe agregar al menos un ítem con producto válido')
+
+    if (exigeVencimiento && cxcDocConfigs.length > 0 && !selectedCxcDocId) {
+      return alert('Debe seleccionar el documento de Cuenta por Cobrar (CXC) para la venta a crédito')
+    }
+
+    if (!exigeVencimiento && generarRcInmediato && rcDocConfigs.length > 0 && !selectedRcDocId) {
+      return alert('Debe seleccionar el documento de Recibo de Caja (RC) o elegir "No generar Recibo de Caja ahora"')
+    }
 
     const payload: any = {
       clienteId: Number(clienteId),
       bodegaId: Number(bodegaId),
+      documentoConfigId: Number(selectedDocId),
+      documentoCxcId: exigeVencimiento && selectedCxcDocId ? Number(selectedCxcDocId) : undefined,
+      generarReciboCaja: !exigeVencimiento ? generarRcInmediato : false,
+      documentoReciboConfigId: (!exigeVencimiento && generarRcInmediato && selectedRcDocId) ? Number(selectedRcDocId) : undefined,
       fecha,
       formaPago,
       medioPago,
@@ -503,7 +562,7 @@ export function FacturaForm() {
       canal,
       nivel,
       imprimeDcto,
-      tipoDocumento: tipoDocumento || 'FV',
+      tipoDocumento: 'FV',
       numero: computedConsecutive,
       pedidoId: pedidoId || undefined,
       direccion: direccion || undefined,
@@ -534,11 +593,11 @@ export function FacturaForm() {
       <div className="flex justify-between items-center border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Causación de Facturación</h1>
-          <p className="text-slate-500 text-xs mt-0.5 font-medium">Facturas de Venta Electrónicas (FVE) y Remisiones Internas (FV)</p>
+          <p className="text-slate-500 text-xs mt-0.5 font-medium">Factura de Venta / Remisión Interna (FV) con impacto contable e inventario inmediato</p>
         </div>
         <div className="flex gap-2">
           <span className={`text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full ${isInvoiceActive ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
-            {isInvoiceActive ? 'Facturación Habilitada' : 'Selecciona Tipo y Cliente'}
+            {isInvoiceActive ? 'Facturación Habilitada' : 'Selecciona Documento FV y Cliente'}
           </span>
         </div>
       </div>
@@ -563,37 +622,42 @@ export function FacturaForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Prefix Selector */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Prefijo / Tipo *</label>
+                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Documento FV *</label>
                 <select
                   value={selectedDocId}
-                  disabled={isInvoiceActive}
+                  disabled={isInvoiceActive || docConfigs.length === 0}
                   onChange={e => {
                     const docId = e.target.value
                     setSelectedDocId(docId)
                     const doc = docConfigs.find((d: any) => String(d.id) === String(docId))
                     if (doc) {
-                      setTipoDocumento(doc.sigla)
-                    } else if (docId === 'FV' || docId === 'FVE') {
-                      setTipoDocumento(docId)
+                      setTipoDocumento('FV')
                     } else {
                       setTipoDocumento('')
                     }
                   }}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white outline-none focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer"
                 >
-                  <option value="">Seleccione Prefijo...</option>
+                  <option value="">
+                    {docConfigs.length === 0 ? 'No hay documentos FV creados...' : 'Seleccione Documento FV...'}
+                  </option>
                   {docConfigs.map((doc: any) => (
                     <option key={doc.id} value={doc.id}>
-                      {doc.prefijo} - {doc.nombre} {doc.esElectronico ? '(Electrónico)' : ''}
+                      [{doc.sigla}] {doc.prefijo} - {doc.nombre}
                     </option>
                   ))}
-                  {docConfigs.length === 0 && (
-                    <>
-                      <option value="FV">FV (Remisión Interna / Venta)</option>
-                      <option value="FVE">FVE (Factura de Venta Electrónica)</option>
-                    </>
-                  )}
                 </select>
+                {docConfigs.length === 0 && (
+                  <p className="text-[10px] text-amber-600 mt-1.5 font-medium leading-snug">
+                    ⚠️ No hay documentos tipo FV activos en la base de datos. Para facturar debe crear uno en{' '}
+                    <span
+                      onClick={() => navigate('/configuracion/documentos')}
+                      className="underline cursor-pointer font-bold text-amber-700 hover:text-amber-900"
+                    >
+                      Configuración → Documentos
+                    </span>.
+                  </p>
+                )}
               </div>
 
               {/* Client Autocomplete Selector */}
@@ -957,7 +1021,9 @@ export function FacturaForm() {
                         >
                           <div>
                             <p className="font-bold text-slate-800">{p.nombre}</p>
-                            <p className="text-[10px] text-slate-400">SKU: {p.sku} | CPP: {fmt(Number(p.costoPromedio))}</p>
+                            <p className="text-[10px] text-slate-400">
+                              SKU: {p.sku} | Stock bodega: <strong className="text-emerald-700">{stockMap.get(p.id) ?? 0}</strong>
+                            </p>
                           </div>
                           <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-100">
                             Base: {fmt(Number(p.precioBase))}
@@ -991,9 +1057,10 @@ export function FacturaForm() {
                         const qKey = line._key
                         const prodQ = productoQ[qKey] ?? ''
                         const prodsFiltrados = prodQ
-                          ? (productosAll as any[]).filter((p: any) =>
+                          ? productosEnBodega.filter((p: any) =>
                               p.nombre.toLowerCase().includes(prodQ.toLowerCase()) ||
-                              p.sku.toLowerCase().includes(prodQ.toLowerCase()))
+                              p.sku.toLowerCase().includes(prodQ.toLowerCase()) ||
+                              (p.codigoBarras && p.codigoBarras.toLowerCase().includes(prodQ.toLowerCase())))
                           : []
 
                         const availableStock = line.productoId ? (stockMap.get(Number(line.productoId)) ?? 0) : 0
@@ -1018,12 +1085,18 @@ export function FacturaForm() {
                                     className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-200"
                                   />
                                   {prodQ && prodsFiltrados.length > 0 && (
-                                    <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[200px] max-h-36 overflow-y-auto">
+                                    <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[220px] max-h-36 overflow-y-auto">
                                       {prodsFiltrados.slice(0, 8).map((p: any) => (
                                         <button key={p.id} type="button"
                                           onClick={() => selectProductoForLine(line._key, p)}
-                                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100">
-                                          <p className="font-semibold">{p.nombre}</p>
+                                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100 flex justify-between items-center">
+                                          <div>
+                                            <p className="font-semibold text-slate-800">{p.nombre}</p>
+                                            <p className="text-[10px] text-slate-400">SKU: {p.sku}</p>
+                                          </div>
+                                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 shrink-0 ml-2">
+                                            Disp: {stockMap.get(p.id) ?? 0}
+                                          </span>
                                         </button>
                                       ))}
                                     </div>
@@ -1157,34 +1230,161 @@ export function FacturaForm() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Medio de Pago</label>
-                    <select
-                      value={medioPago}
-                      onChange={e => setMedioPago(e.target.value)}
-                      className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
-                    >
-                      {mediosPagoList
-                        .filter((m: any) => m.activo)
-                        .map((m: any) => (
-                          <option key={m.id} value={m.codigo}>
-                            {m.nombre}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  {exigeVencimiento && (
+                  {/* Si es crédito, seleccionamos documento CXC */}
+                  {exigeVencimiento ? (
+                    <>
+                      <div>
+                        <label className="block text-[10px] font-bold text-indigo-700 mb-1 uppercase tracking-wider">Documento Cuenta por Cobrar (CXC) *</label>
+                        <select
+                          value={selectedCxcDocId}
+                          onChange={e => setSelectedCxcDocId(e.target.value)}
+                          className="w-full p-2.5 border border-indigo-200 rounded-lg text-xs bg-indigo-50/20 font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-300"
+                        >
+                          <option value="">{cxcDocConfigs.length === 0 ? 'No hay documentos CXC configurados...' : 'Seleccione Documento CXC...'}</option>
+                          {cxcDocConfigs.map((c: any) => (
+                            <option key={c.id} value={c.id}>
+                              [{c.sigla}] {c.prefijo} - {c.nombre} (Sig: {c.prefijo}-{c.consecutivoSiguiente ?? c.consecutivoInicial ?? 1})
+                            </option>
+                          ))}
+                        </select>
+                        {cxcDocConfigs.length === 0 && (
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                            ⚠️ Debe configurar un documento [CXC] Cuenta por Cobrar en{' '}
+                            <span onClick={() => navigate('/configuracion/documentos')} className="underline cursor-pointer font-bold">
+                              Configuración → Documentos
+                            </span>.
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Vencimiento *</label>
+                        <input
+                          type="date"
+                          value={fechaVencimiento}
+                          onChange={e => setFechaVencimiento(e.target.value)}
+                          className="w-full p-2.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-100"
+                        />
+                      </div>
+                    </>
+                  ) : (
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Fecha Vencimiento *</label>
-                      <input
-                        type="date"
-                        value={fechaVencimiento}
-                        onChange={e => setFechaVencimiento(e.target.value)}
-                        className="w-full p-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-100"
-                      />
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Medio de Pago Principal</label>
+                      <select
+                        value={medioPago}
+                        onChange={e => setMedioPago(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
+                      >
+                        {mediosPagoList
+                          .filter((m: any) => m.activo)
+                          .map((m: any) => (
+                            <option key={m.id} value={m.codigo}>
+                              {m.nombre}
+                            </option>
+                          ))}
+                      </select>
                     </div>
                   )}
                 </div>
+
+                {/* Sub-panel para ventas a CRÉDITO: Información sobre cartera */}
+                {exigeVencimiento && (
+                  <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-start gap-3">
+                    <AlertCircle size={18} className="text-indigo-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Factura a Crédito con generación de Cuenta por Cobrar</p>
+                      <p className="text-[11px] text-indigo-700/90 mt-0.5">
+                        Al guardar la factura, se creará el documento de Cuenta por Cobrar respaldado por el consecutivo seleccionado y se enviará de inmediato al módulo de <strong>Cartera / Cuentas por Cobrar</strong> para su seguimiento por vencimiento y cobro.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-panel para ventas de CONTADO: Recibo de Caja */}
+                {!exigeVencimiento && (
+                  <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-5 space-y-4">
+                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <CreditCard size={15} className="text-indigo-600" />
+                      Gestión de Recibo de Caja (RC) para Venta de Contado
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Opción 1: Generar Recibo de Caja ahora */}
+                      <div
+                        onClick={() => setGenerarRcInmediato(true)}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          generarRcInmediato
+                            ? 'border-indigo-600 bg-white shadow-sm'
+                            : 'border-slate-200 bg-white/60 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="reciboCajaOption"
+                            checked={generarRcInmediato}
+                            onChange={() => setGenerarRcInmediato(true)}
+                            className="text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-xs font-bold text-slate-800">Generar Recibo de Caja (RC) inmediatamente</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 pl-5">
+                          La factura se marca como <strong>PAGADA (saldo $0)</strong> y se crea el documento de Recibo de Caja cruzado contablemente de forma inmediata.
+                        </p>
+
+                        {generarRcInmediato && (
+                          <div className="mt-3 pl-5 space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Documento Recibo de Caja (RC) *</label>
+                            <select
+                              value={selectedRcDocId}
+                              onChange={e => setSelectedRcDocId(e.target.value)}
+                              className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-100"
+                            >
+                              <option value="">{rcDocConfigs.length === 0 ? 'No hay documentos RC configurados...' : 'Seleccione Documento RC...'}</option>
+                              {rcDocConfigs.map((r: any) => (
+                                <option key={r.id} value={r.id}>
+                                  [{r.sigla}] {r.prefijo} - {r.nombre} (Sig: {r.prefijo}-{r.consecutivoSiguiente ?? r.consecutivoInicial ?? 1})
+                                </option>
+                              ))}
+                            </select>
+                            {rcDocConfigs.length === 0 && (
+                              <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                                ⚠️ Debe configurar un documento tipo [RC] Recibo de Caja en{' '}
+                                <span onClick={(e) => { e.stopPropagation(); navigate('/configuracion/documentos') }} className="underline cursor-pointer font-bold">
+                                  Configuración → Documentos
+                                </span>.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Opción 2: No generar Recibo de Caja ahora */}
+                      <div
+                        onClick={() => setGenerarRcInmediato(false)}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          !generarRcInmediato
+                            ? 'border-indigo-600 bg-white shadow-sm'
+                            : 'border-slate-200 bg-white/60 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="reciboCajaOption"
+                            checked={!generarRcInmediato}
+                            onChange={() => setGenerarRcInmediato(false)}
+                            className="text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-xs font-bold text-slate-800">No generar Recibo de Caja ahora</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 pl-5">
+                          La factura se creará normal con saldo pendiente. Más adelante en <strong>Tesorería o Contabilidad</strong> se emitirá el Recibo de Caja y se cruzará con esta factura.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Retenciones */}
                 {esAgente ? (

@@ -179,7 +179,7 @@ export class RecibosService {
     return `RC-${year}-${String(seq).padStart(5, '0')}`
   }
 
-  private async crearAsientoRecibo(tx: any, recibo: any, empresaId: number, usuarioId: number) {
+  async crearAsientoRecibo(tx: any, recibo: any, empresaId: number, usuarioId: number) {
     // 1. Obtener códigos contables básicos
     const codigos = ['1105', '1110', '1305']
     const cuentas = await tx.cuentaPUC.findMany({

@@ -47,6 +47,12 @@ export class CreateFacturaDto {
   @IsString() @IsOptional() direccion?: string
   @IsString() @IsOptional() sucursalCliente?: string
 
+  // Documentos configurados
+  @IsNumber() @IsOptional() @Type(() => Number) documentoConfigId?: number
+  @IsNumber() @IsOptional() @Type(() => Number) documentoCxcId?: number
+  @IsNumber() @IsOptional() @Type(() => Number) documentoReciboConfigId?: number
+  @IsBoolean() @IsOptional() generarReciboCaja?: boolean
+
   // Si true, genera CUFE y XML DIAN (requiere resolución activa configurada)
   @IsBoolean() @IsOptional() emitirDian?: boolean
 }

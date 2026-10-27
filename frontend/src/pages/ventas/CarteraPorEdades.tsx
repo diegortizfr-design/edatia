@@ -253,7 +253,12 @@ export function CarteraPorEdades() {
 
                                         return (
                                           <tr key={f.id} className="hover:bg-slate-50/50">
-                                            <td className="p-2 font-mono font-bold text-indigo-700">{f.numero}</td>
+                                            <td className="p-2 font-mono text-indigo-700">
+                                              <span className="font-bold">{f.numero}</span>
+                                              {f.numeroCxc && (
+                                                <span className="block text-[9px] text-slate-500 font-medium">CXC: {f.numeroCxc}</span>
+                                              )}
+                                            </td>
                                             <td className="p-2 text-slate-500">{new Date(f.fecha).toLocaleDateString('es-CO')}</td>
                                             <td className="p-2 font-medium">
                                               <span className={isV ? "text-rose-600 font-bold" : "text-slate-600"}>

@@ -226,7 +226,14 @@ export function CarteraCxC() {
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
-                        <td className="p-4 font-mono font-bold text-slate-800 text-xs">{item.numero}</td>
+                        <td className="p-4 font-mono text-xs">
+                          <span className="font-bold text-slate-800">{item.numero}</span>
+                          {item.numeroCxc && (
+                            <span className="block text-[10px] text-indigo-600 font-semibold mt-0.5">
+                              Doc CXC: {item.numeroCxc}
+                            </span>
+                          )}
+                        </td>
                         <td className="p-4 font-medium text-slate-700">{item.cliente?.nombre ?? '—'}</td>
                         <td className="p-4 text-slate-500 text-xs">{new Date(item.fecha).toLocaleDateString('es-CO')}</td>
                         <td className="p-4 text-xs">
