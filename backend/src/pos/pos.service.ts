@@ -696,7 +696,7 @@ export class PosService {
       const numeroRecibo = `${prefijoRc}-${consecutivoRc}`
 
       // B. Resolver Cliente válido para Recibo de Caja (requiere ID de Tercero)
-      let clienteRcId = dto.clienteId
+      let clienteRcId: number | null = dto.clienteId ?? null
       if (!clienteRcId && sesion.caja.clienteDefaultId) {
         clienteRcId = sesion.caja.clienteDefaultId
       }
@@ -736,7 +736,7 @@ export class PosService {
         data: {
           empresaId,
           numero: numeroRecibo,
-          clienteId: clienteRcId,
+          clienteId: clienteRcId as number,
           valor: total,
           medioPago: medioPagoText,
           referencia: numero,
