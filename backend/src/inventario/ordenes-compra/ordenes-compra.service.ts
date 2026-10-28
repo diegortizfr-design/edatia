@@ -5,7 +5,38 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto, AprobarOrdenCompraDto, RechazarOrdenCompraDto } from './dto/orden-compra.dto';
 
 const OC_INCLUDE = {
-  proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } },
+  empresa: {
+    select: {
+      id: true,
+      nombre: true,
+      nombreComercial: true,
+      nit: true,
+      digitoVerificacion: true,
+      regimenFiscal: true,
+      telefono: true,
+      email: true,
+      correoFacturacion: true,
+      direccion: true,
+      municipio: true,
+      departamento: true,
+      logo: true,
+    },
+  },
+  proveedor: {
+    select: {
+      id: true,
+      nombre: true,
+      nombreComercial: true,
+      tipoDocumento: true,
+      numeroDocumento: true,
+      digitoVerificacion: true,
+      email: true,
+      telefono: true,
+      celular: true,
+      direccion: true,
+      municipio: true,
+    },
+  },
   bodega: { select: { id: true, nombre: true, codigo: true, sucursalId: true } },
   documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
   aprobadoPor: { select: { id: true, nombre: true, usuario: true } },
@@ -147,6 +178,15 @@ export class OrdenesCompraService {
   async create(dto: CreateOrdenCompraDto, empresaId: number, usuarioId: number) {
     if (!dto.items?.length) throw new BadRequestException('La orden debe tener al menos un ítem');
 
+    if (dto.fechaEsperada) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const fechaEsp = new Date(dto.fechaEsperada);
+      if (fechaEsp < hoy) {
+        throw new BadRequestException('La fecha esperada de entrega no puede ser anterior a la fecha actual');
+      }
+    }
+
     // Verificar proveedor y bodega pertenecen a la empresa
     const [proveedor, bodega] = await Promise.all([
       this.prisma.tercero.findFirst({ where: { id: dto.proveedorId, empresaId, esProveedor: true } }),
@@ -240,6 +280,15 @@ export class OrdenesCompraService {
     const oc = await this.findOne(id, empresaId);
     if (oc.estado !== 'BORRADOR') {
       throw new BadRequestException('Solo se pueden editar órdenes en estado BORRADOR');
+    }
+
+    if (dto.fechaEsperada) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const fechaEsp = new Date(dto.fechaEsperada);
+      if (fechaEsp < hoy) {
+        throw new BadRequestException('La fecha esperada de entrega no puede ser anterior a la fecha actual');
+      }
     }
 
     return this.prisma.$transaction(async (tx: any) => {

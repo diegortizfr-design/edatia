@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getOrdenCompra, aprobarOrdenCompra, rechazarOrdenCompra, anularOrdenCompra, recibirOrdenCompra,
 } from '../../services/inventario.service'
-import { getDocumentosConfig } from '../../services/configuracion.service'
-import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText } from 'lucide-react'
+import { getDocumentosConfig, getEmpresaConfig } from '../../services/configuracion.service'
+import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText, Download, Loader2 } from 'lucide-react'
 import { getApiError } from '../../services/api'
 
 const ESTADOS: Record<string, { label: string; color: string }> = {
@@ -44,16 +44,55 @@ export function OrdenCompraDetalle() {
   const [notasRechazo, setNotasRechazo] = useState('')
   const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [documentoConfigId, setDocumentoConfigId] = useState('')
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   const { data: documentos = [] } = useQuery({
     queryKey: ['documentos-config'],
     queryFn: getDocumentosConfig,
   })
 
+  const { data: empresaConfig } = useQuery({
+    queryKey: ['empresa-config'],
+    queryFn: getEmpresaConfig,
+  })
+
   const { data: oc, isLoading } = useQuery({
     queryKey: ['orden-compra', id],
     queryFn: () => getOrdenCompra(Number(id)),
   })
+
+  const handleDescargarPDF = async () => {
+    const element = document.getElementById('printable-voucher')
+    if (!element) return
+
+    setIsGeneratingPdf(true)
+    try {
+      if (typeof (window as any).html2pdf === 'undefined') {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+          script.onload = () => resolve()
+          script.onerror = () => reject(new Error('No se pudo cargar la librería para exportar a PDF'))
+          document.body.appendChild(script)
+        })
+      }
+
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `Orden_Compra_${oc?.numero || id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }
+
+      await (window as any).html2pdf().set(opt).from(element).save()
+    } catch (err: any) {
+      console.error('Error generando PDF:', err)
+      setError('Hubo un inconveniente generando el archivo PDF. Puedes usar la opción Imprimir para Guardar como PDF.')
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
 
   const aprobar = useMutation({
     mutationFn: (data: { notasAprobacion?: string }) => aprobarOrdenCompra(Number(id), data),
@@ -162,6 +201,19 @@ export function OrdenCompraDetalle() {
     doc.estado === 'ACTIVO' &&
     (doc.sucursalId === null || doc.sucursalId === sucursalId)
   )
+
+  const empresaData = oc.empresa || empresaConfig || {
+    nombre: 'EDATIA S.A.S',
+    nit: '900.123.456',
+    digitoVerificacion: '7',
+    regimenFiscal: '48',
+    telefono: '(601) 555-0199',
+    email: 'info@edatia.com',
+    correoFacturacion: 'info@edatia.com',
+    direccion: '',
+    municipio: '',
+    logo: '',
+  }
 
   return (
     <>
@@ -503,8 +555,8 @@ export function OrdenCompraDetalle() {
 
       {/* Vista de Impresión / Formato Gráfico (Voucher) */}
       {showPrintPreview && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col justify-start items-center overflow-y-auto z-50 p-4 md:p-8 select-text">
-          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col justify-start items-center overflow-y-auto z-50 p-4 md:p-8 select-text print:p-0 print:bg-white print:static print:inset-auto">
+          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-4 print:shadow-none print:border-none print:my-0 print:max-w-none">
             
             {/* Modal Actions Bar */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0 print:hidden">
@@ -516,12 +568,25 @@ export function OrdenCompraDetalle() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                  title="Abrir vista de impresión del sistema"
                 >
-                  <Printer size={14} /> Imprimir / PDF
+                  <Printer size={14} /> Imprimir
                 </button>
                 <button
+                  type="button"
+                  onClick={handleDescargarPDF}
+                  disabled={isGeneratingPdf}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-60"
+                  title="Descargar orden como archivo PDF inmediatamente"
+                >
+                  {isGeneratingPdf ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  {isGeneratingPdf ? 'Generando PDF...' : 'Descargar PDF'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowPrintPreview(false)}
                   className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all"
                 >
@@ -534,13 +599,34 @@ export function OrdenCompraDetalle() {
             <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
               
               {/* Header Grid */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-6">
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-extrabold tracking-tight text-indigo-700">EDATIA S.A.S</h2>
-                  <p className="text-xs text-slate-500">NIT: 900.123.456-7 · Régimen Común</p>
-                  <p className="text-xs text-slate-400">Teléfono: (601) 555-0199 · info@edatia.com</p>
+              <div className="flex justify-between items-start border-b border-slate-200 pb-6 gap-4">
+                <div className="flex items-start gap-4">
+                  {empresaData.logo ? (
+                    <img src={empresaData.logo} alt={empresaData.nombre} className="h-14 max-w-[150px] object-contain rounded" />
+                  ) : (
+                    <div className="h-12 w-12 bg-indigo-600 text-white flex items-center justify-center rounded-xl font-black text-lg shadow-sm">
+                      {empresaData.nombre ? empresaData.nombre.charAt(0).toUpperCase() : 'E'}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-indigo-700 uppercase">
+                      {empresaData.nombre || 'EDATIA S.A.S'}
+                    </h2>
+                    <p className="text-xs text-slate-600 font-medium">
+                      NIT: {empresaData.nit}{empresaData.digitoVerificacion ? `-${empresaData.digitoVerificacion}` : ''}
+                      {empresaData.regimenFiscal ? ` · ${empresaData.regimenFiscal === '48' ? 'Responsable de IVA' : 'No Responsable de IVA'}` : ''}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {[
+                        empresaData.telefono ? `Teléfono: ${empresaData.telefono}` : null,
+                        empresaData.email || empresaData.correoFacturacion ? `Correo: ${empresaData.email || empresaData.correoFacturacion}` : null,
+                        empresaData.direccion ? `Dirección: ${empresaData.direccion}` : null,
+                        empresaData.municipio ? empresaData.municipio : null
+                      ].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right space-y-1">
+                <div className="text-right space-y-1 shrink-0">
                   <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-xs font-bold inline-block border border-indigo-150">
                     ORDEN DE COMPRA
                   </div>
@@ -555,10 +641,18 @@ export function OrdenCompraDetalle() {
                   <h4 className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mb-2">PROVEEDOR</h4>
                   <div className="space-y-1 text-slate-600">
                     <p className="font-bold text-slate-800 text-sm">{oc.proveedor?.nombre}</p>
-                    {oc.proveedor?.nombreComercial && <p className="italic text-xs">({oc.proveedor.nombreComercial})</p>}
-                    <p>Nit: {oc.proveedor?.numeroDocumento || 'N/A'}</p>
-                    <p>Correo: {oc.proveedor?.email || 'N/A'}</p>
-                    <p>Teléfono: {oc.proveedor?.telefono || 'N/A'}</p>
+                    {oc.proveedor?.nombreComercial && oc.proveedor.nombreComercial !== oc.proveedor.nombre && (
+                      <p className="italic text-xs text-slate-500">({oc.proveedor.nombreComercial})</p>
+                    )}
+                    <p>
+                      <strong>{oc.proveedor?.tipoDocumento || 'NIT/CC'}:</strong>{' '}
+                      {oc.proveedor?.numeroDocumento || 'N/A'}{oc.proveedor?.digitoVerificacion ? `-${oc.proveedor.digitoVerificacion}` : ''}
+                    </p>
+                    <p><strong>Correo:</strong> {oc.proveedor?.email || 'N/A'}</p>
+                    <p><strong>Teléfono:</strong> {oc.proveedor?.telefono || oc.proveedor?.celular || 'N/A'}</p>
+                    {(oc.proveedor?.direccion || oc.proveedor?.municipio) && (
+                      <p><strong>Dirección:</strong> {[oc.proveedor?.direccion, oc.proveedor?.municipio].filter(Boolean).join(', ')}</p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -655,6 +749,44 @@ export function OrdenCompraDetalle() {
 
             </div>
           </div>
+
+          {/* CSS de Impresión Dedicado para evitar solapamientos y ocultar elementos ajenos */}
+          <style>{`
+            @media print {
+              /* Ocultar toda la interfaz externa del ERP */
+              body * {
+                visibility: hidden !important;
+              }
+              aside, .print\\:hidden, button {
+                display: none !important;
+              }
+              /* Hacer visible única y exclusivamente el voucher de la orden */
+              #printable-voucher, #printable-voucher * {
+                visibility: visible !important;
+              }
+              #printable-voucher {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                background: white !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              thead {
+                display: table-header-group !important;
+              }
+              tr {
+                page-break-inside: avoid !important;
+              }
+              @page {
+                size: portrait;
+                margin: 8mm;
+              }
+            }
+          `}</style>
         </div>
       )}
     </>

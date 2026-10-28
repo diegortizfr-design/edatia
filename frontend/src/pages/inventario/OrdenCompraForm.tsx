@@ -174,6 +174,14 @@ export function OrdenCompraForm() {
   const totalIva = lineas.reduce((acc, l) => acc + l.ivaCalc, 0)
   const totalNeto = totalSubtotal + totalIva
 
+function getHoyLocal() {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -181,6 +189,11 @@ export function OrdenCompraForm() {
     if (!header.bodegaId) return setError('Selecciona una bodega destino')
     if (!documentoConfigId) return setError('Selecciona una resolución/documento para la orden de compra')
     if (items.length === 0) return setError('Agrega al menos un producto')
+
+    const hoyStr = getHoyLocal()
+    if (header.fechaEsperada && header.fechaEsperada < hoyStr) {
+      return setError('La fecha esperada de entrega no puede ser anterior a la fecha actual')
+    }
 
     mutation.mutate({
       documentoConfigId: Number(documentoConfigId),
@@ -257,7 +270,7 @@ export function OrdenCompraForm() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Fecha esperada de entrega</label>
-              <input type="date" value={header.fechaEsperada} onChange={e => setHeader(h => ({ ...h, fechaEsperada: e.target.value }))} className={inputCls} />
+              <input type="date" min={getHoyLocal()} value={header.fechaEsperada} onChange={e => setHeader(h => ({ ...h, fechaEsperada: e.target.value }))} className={inputCls} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Notas</label>

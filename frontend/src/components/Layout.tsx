@@ -131,7 +131,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* SIDEBAR */}
       <aside 
         className={`
-          flex flex-col bg-white border-r border-slate-200 shadow-xl z-50 transition-all duration-300 ease-in-out relative
+          flex flex-col bg-white border-r border-slate-200 shadow-xl z-50 transition-all duration-300 ease-in-out relative print:hidden
           ${isCollapsed ? 'w-20' : 'w-64'}
         `}
       >
@@ -366,7 +366,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <SupportButton />
+      <div className="print:hidden">
+        <SupportButton />
+      </div>
     </div>
   )
 }
