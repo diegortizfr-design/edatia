@@ -5,6 +5,7 @@ import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra,
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2 } from 'lucide-react'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
+import { CurrencyInput } from '../../components/CurrencyInput'
 import { getApiError } from '../../services/api'
 
 interface LineaItem {
@@ -103,8 +104,8 @@ export function NuevaFcForm() {
           productoId: ri.ordenCompraItem?.productoId || 0,
           productoNombre: prod.nombre || 'Producto recibido',
           productoSku: prod.sku || '',
-          cantidad: String(ri.cantidadRecibida),
-          costoUnitario: String(ri.costoUnitario),
+          cantidad: String(Math.round(Number(ri.cantidadRecibida)) || 1),
+          costoUnitario: String(Math.round(Number(ri.costoUnitario)) || 0),
           descuentoPct: '0',
           tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
         }
@@ -131,8 +132,8 @@ export function NuevaFcForm() {
           productoId: item.productoId,
           productoNombre: prod.nombre || 'Producto',
           productoSku: prod.sku || '',
-          cantidad: String(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)),
-          costoUnitario: String(item.costoUnitario),
+          cantidad: String(Math.round(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)) || 1),
+          costoUnitario: String(Math.round(Number(item.costoUnitario)) || 0),
           descuentoPct: String(item.descuentoPct || 0),
           tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
         }
@@ -168,7 +169,7 @@ export function NuevaFcForm() {
       productoNombre: producto.nombre,
       productoSku: producto.sku,
       cantidad: '1',
-      costoUnitario: String(costoSugerido),
+      costoUnitario: String(Math.round(costoSugerido) || 0),
       descuentoPct: '0',
       tipoIva: tipoIva,
     }])
@@ -503,21 +504,17 @@ export function NuevaFcForm() {
                       <td className="py-3 pl-2">
                         <input 
                           type="number" 
-                          min="0.001" 
-                          step="0.001" 
+                          min="1" 
+                          step="1" 
                           value={item.cantidad}
                           onChange={e => updateItem(idx, 'cantidad', e.target.value)}
-                          className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" 
+                          className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-mono" 
                         />
                       </td>
                       <td className="py-3 pl-2">
-                        <input 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <CurrencyInput
                           value={item.costoUnitario}
-                          onChange={e => updateItem(idx, 'costoUnitario', e.target.value)}
-                          className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" 
+                          onChange={val => updateItem(idx, 'costoUnitario', val)}
                         />
                       </td>
                       <td className="py-3 pl-2">

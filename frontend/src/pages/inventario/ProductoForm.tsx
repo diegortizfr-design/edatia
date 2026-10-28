@@ -6,6 +6,7 @@ import {
   getCategorias, getMarcas, getUnidades,
 } from '../../services/inventario.service'
 import { ArrowLeft, Save } from 'lucide-react'
+import { CurrencyInput } from '../../components/CurrencyInput'
 
 const TIPOS_IVA = [
   { value: 'GRAVADO_19', label: 'Gravado 19%' },
@@ -190,9 +191,10 @@ export function ProductoForm() {
           <h2 className="font-semibold text-slate-800 mb-4">Precios y tributario</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Precio de venta base">
-              <input type="number" min="0" step="0.01" value={form.precioBase}
-                onChange={e => setForm(f => ({ ...f, precioBase: e.target.value }))}
-                className={inputCls} />
+              <CurrencyInput
+                value={form.precioBase}
+                onChange={val => setForm(f => ({ ...f, precioBase: val }))}
+              />
             </Field>
             <Field label="Tipo de IVA">
               <select value={form.tipoIva} onChange={e => setForm(f => ({ ...f, tipoIva: e.target.value }))} className={inputCls}>
@@ -208,17 +210,17 @@ export function ProductoForm() {
           <h2 className="font-semibold text-slate-800 mb-4">Control de stock</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <Field label="Stock mínimo">
-              <input type="number" min="0" step="0.001" value={form.stockMinimo}
+              <input type="number" min="0" step="1" value={form.stockMinimo}
                 onChange={e => setForm(f => ({ ...f, stockMinimo: e.target.value }))}
                 className={inputCls} />
             </Field>
             <Field label="Stock máximo">
-              <input type="number" min="0" step="0.001" value={form.stockMaximo}
+              <input type="number" min="0" step="1" value={form.stockMaximo}
                 onChange={e => setForm(f => ({ ...f, stockMaximo: e.target.value }))}
                 className={inputCls} placeholder="Sin límite" />
             </Field>
             <Field label="Punto de reorden">
-              <input type="number" min="0" step="0.001" value={form.puntoReorden}
+              <input type="number" min="0" step="1" value={form.puntoReorden}
                 onChange={e => setForm(f => ({ ...f, puntoReorden: e.target.value }))}
                 className={inputCls} />
             </Field>

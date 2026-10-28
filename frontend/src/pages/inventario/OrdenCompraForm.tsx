@@ -9,6 +9,7 @@ import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getImpuestos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
+import { CurrencyInput } from '../../components/CurrencyInput'
 import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
 
 interface LineaItem {
@@ -135,7 +136,7 @@ export function OrdenCompraForm() {
       productoNombre: producto.nombre,
       productoSku: producto.sku,
       cantidad: '1',
-      costoUnitario: String(costoSugerido),
+      costoUnitario: String(Math.round(costoSugerido) || 0),
       descuentoPct: '0',
       ivaPct: ivaPct,
       tieneIvaOriginal: ivaPct > 0,
@@ -349,7 +350,7 @@ function getHoyLocal() {
                   <tr className="border-b border-slate-200">
                     <th className="text-left py-2.5 text-xs font-semibold text-slate-500 uppercase">Producto</th>
                     <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-24">Cantidad</th>
-                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-32">Costo unit.</th>
+                    <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-36">Costo unit.</th>
                     <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-20">Dto %</th>
                     <th className="text-center py-2.5 text-xs font-semibold text-slate-500 uppercase w-32">IVA</th>
                     <th className="text-right py-2.5 text-xs font-semibold text-slate-500 uppercase w-28">Subtotal</th>
@@ -365,14 +366,15 @@ function getHoyLocal() {
                         <p className="text-xs text-slate-400 font-mono">{item.productoSku}</p>
                       </td>
                       <td className="py-2.5 px-1">
-                        <input type="number" min="0.001" step="0.001" value={item.cantidad}
+                        <input type="number" min="1" step="1" value={item.cantidad}
                           onChange={e => updateItem(idx, 'cantidad', e.target.value)}
                           className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono" />
                       </td>
                       <td className="py-2.5 px-1">
-                        <input type="number" min="0" step="0.01" value={item.costoUnitario}
-                          onChange={e => updateItem(idx, 'costoUnitario', e.target.value)}
-                          className="w-full text-right px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono" />
+                        <CurrencyInput
+                          value={item.costoUnitario}
+                          onChange={val => updateItem(idx, 'costoUnitario', val)}
+                        />
                       </td>
                       <td className="py-2.5 px-1">
                         <input type="number" min="0" max="100" step="0.01" value={item.descuentoPct}

@@ -13,6 +13,7 @@ const OC_INCLUDE = {
       nit: true,
       digitoVerificacion: true,
       regimenFiscal: true,
+      responsabilidades: true,
       telefono: true,
       email: true,
       correoFacturacion: true,

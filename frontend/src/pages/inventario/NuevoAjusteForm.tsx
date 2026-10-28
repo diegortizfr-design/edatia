@@ -318,12 +318,12 @@ export function NuevoAjusteForm() {
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Cantidad *</label>
               <input
                 type="number"
-                min="0.001"
-                step="0.001"
+                min="1"
+                step="1"
                 required
                 value={cantidad}
                 onChange={e => setCantidad(e.target.value)}
-                placeholder="0.00"
+                placeholder="1"
                 className={inputCls}
               />
             </div>

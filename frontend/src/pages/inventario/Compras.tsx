@@ -7,6 +7,7 @@ import {
 } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
+import { fmtCantidad } from '../../lib/utils'
 import { 
   Plus, ShoppingCart, ChevronRight, Clock, CheckCircle, XCircle, 
   Package, FileText, Upload, Calendar, ArrowUpRight, CheckSquare, Library, X, AlertTriangle, Building2
@@ -556,21 +557,21 @@ export function Compras() {
                               <span className="font-mono text-[10px] font-bold text-slate-400 block">{item.producto?.sku}</span>
                               <span className="font-bold text-slate-800 text-xs truncate block">{item.producto?.nombre}</span>
                               <span className="text-[10px] text-slate-400 block mt-0.5">
-                                Facturado: <span className="font-bold text-slate-600">{cantFacturada.toFixed(3)}</span> · Previamente Recibido: <span className="font-bold text-emerald-600">{cantRecibidaPrev.toFixed(3)}</span> · Pendiente: <span className="font-bold text-amber-600">{pendiente.toFixed(3)}</span>
+                                Facturado: <span className="font-bold text-slate-600">{fmtCantidad(cantFacturada)}</span> · Previamente Recibido: <span className="font-bold text-emerald-600">{fmtCantidad(cantRecibidaPrev)}</span> · Pendiente: <span className="font-bold text-amber-600">{fmtCantidad(pendiente)}</span>
                               </span>
                             </div>
                             <div className="w-28 shrink-0 text-right">
                               <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cant. Recibir *</label>
                               <input
                                 type="number"
-                                step="0.001"
+                                step="1"
                                 min="0"
                                 max={pendiente}
                                 value={recItems[item.id] ?? ''}
                                 onChange={e => setRecItems(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                placeholder={String(pendiente.toFixed(3))}
+                                placeholder={String(fmtCantidad(pendiente))}
                                 required
-                                className="w-full text-right px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all"
+                                className="w-full text-right px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all font-mono"
                               />
                             </div>
                           </div>

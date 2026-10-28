@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
@@ -53,7 +53,25 @@ export class ConfiguracionService {
   }
 
   async updateEmpresa(empresaId: number, dto: any) {
-    const { nit, id, createdAt, ...data } = dto
+    const { id, createdAt, ...data } = dto
+
+    if (data.nit !== undefined) {
+      const cleanNit = String(data.nit).trim()
+      if (!cleanNit) {
+        throw new BadRequestException('El NIT no puede estar vacío')
+      }
+      const existing = await this.prisma.empresa.findFirst({
+        where: {
+          nit: cleanNit,
+          id: { not: empresaId },
+        },
+      })
+      if (existing) {
+        throw new ConflictException('Ya existe otra empresa registrada con este NIT')
+      }
+      data.nit = cleanNit
+    }
+
     if (typeof data.fechaMatriculaMercantil === 'string') {
       data.fechaMatriculaMercantil = data.fechaMatriculaMercantil.trim() === ''
         ? null

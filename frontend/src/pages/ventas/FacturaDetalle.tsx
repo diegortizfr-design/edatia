@@ -96,6 +96,24 @@ const DIAN_COLOR: Record<string, string> = {
   RECHAZADA:  'bg-red-100 text-red-700',
 }
 
+function formatNit(nit?: string, dv?: string) {
+  if (!nit) return ''
+  const trimmed = nit.trim()
+  if (!dv) return trimmed
+  if (trimmed.includes('-')) return trimmed
+  return `${trimmed}-${dv}`
+}
+
+function getRegimenFiscalLabel(empresa: any): string {
+  const resps: string[] = Array.isArray(empresa?.responsabilidades) ? empresa.responsabilidades : []
+  if (resps.includes('49') || resps.includes('R-49')) return 'No Responsable de IVA'
+  if (resps.includes('48') || resps.includes('O-48')) return 'Responsable de IVA'
+  if (resps.includes('O-47') || resps.includes('47') || empresa?.regimenFiscal === '47') return 'Régimen Simple de Tributación'
+  if (empresa?.regimenFiscal === '49') return 'No Responsable de IVA'
+  if (empresa?.regimenFiscal === '48') return 'Responsable de IVA'
+  return 'No Responsable de IVA'
+}
+
 export function FacturaDetalle() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -552,7 +570,7 @@ export function FacturaDetalle() {
                 {/* Company details */}
                 <div className="col-span-2 text-center text-[10px] text-slate-650 leading-tight space-y-0.5">
                   <h2 className="text-sm font-extrabold text-slate-800 uppercase">{empresa.nombre}</h2>
-                  <p className="font-bold">NIT {empresa.nit}{empresa.digitoVerificacion ? `-${empresa.digitoVerificacion}` : ''} · {empresa.regimenFiscal === '48' ? 'Responsable de IVA' : 'No Responsable de IVA'}</p>
+                  <p className="font-bold">NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}</p>
                   <p>Dirección: {empresa.direccion || '—'}</p>
                   <p>Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}</p>
                   <p>{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
@@ -748,7 +766,7 @@ export function FacturaDetalle() {
                   )}
                 </p>
                 <p className="font-bold">
-                  Responsable de IVA - Actividad Económica {empresa.actividadEconomica || '9329'} Otras actividades recreativas y de esparcimiento n.c.p. Tarifa ICA
+                  {getRegimenFiscalLabel(empresa)} · Actividad Económica {empresa.actividadEconomica || '—'}
                 </p>
                 {f.cufe && (
                   <p className="font-mono text-[9px] text-slate-650 select-all">

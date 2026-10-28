@@ -7,6 +7,7 @@ import {
 import { getDocumentosConfig, getEmpresaConfig } from '../../services/configuracion.service'
 import { ArrowLeft, CheckCircle, XCircle, Package, Clock, AlertTriangle, ChevronDown, ChevronUp, Printer, FileText, Download, Loader2 } from 'lucide-react'
 import { getApiError } from '../../services/api'
+import { fmtCantidad } from '../../lib/utils'
 
 const ESTADOS: Record<string, { label: string; color: string }> = {
   BORRADOR:         { label: 'Borrador',    color: 'bg-slate-100 text-slate-600' },
@@ -20,6 +21,36 @@ const ESTADOS: Record<string, { label: string; color: string }> = {
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+}
+
+function formatNit(nit?: string, dv?: string) {
+  if (!nit) return ''
+  const trimmed = nit.trim()
+  if (!dv) return trimmed
+  if (trimmed.includes('-')) return trimmed
+  return `${trimmed}-${dv}`
+}
+
+function getRegimenFiscalLabel(empresa: any): string {
+  const resps: string[] = Array.isArray(empresa?.responsabilidades) ? empresa.responsabilidades : []
+  
+  if (resps.includes('49') || resps.includes('R-49')) {
+    return 'No Responsable de IVA'
+  }
+  if (resps.includes('48') || resps.includes('O-48')) {
+    return 'Responsable de IVA'
+  }
+  if (resps.includes('O-47') || resps.includes('47') || empresa?.regimenFiscal === '47') {
+    return 'Régimen Simple de Tributación'
+  }
+
+  if (empresa?.regimenFiscal === '49') return 'No Responsable de IVA'
+  if (empresa?.regimenFiscal === '48') return 'Responsable de IVA'
+  if (empresa?.regimenFiscal === '05') {
+    return resps.includes('48') ? 'Responsable de IVA' : 'No Responsable de IVA'
+  }
+
+  return 'No Responsable de IVA'
 }
 
 export function OrdenCompraDetalle() {
@@ -206,7 +237,8 @@ export function OrdenCompraDetalle() {
     nombre: 'EDATIA S.A.S',
     nit: '900.123.456',
     digitoVerificacion: '7',
-    regimenFiscal: '48',
+    regimenFiscal: '49',
+    responsabilidades: ['49'],
     telefono: '(601) 555-0199',
     email: 'info@edatia.com',
     correoFacturacion: 'info@edatia.com',
@@ -302,10 +334,10 @@ export function OrdenCompraDetalle() {
                       <p className="font-medium text-slate-800">{item.producto?.nombre}</p>
                       <p className="text-xs text-slate-400">{item.producto?.sku}</p>
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-700">{parseFloat(String(item.cantidad)).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 font-mono">{fmtCantidad(item.cantidad)}</td>
                     <td className="px-4 py-3 text-right">
                       <span className={`text-xs font-semibold ${pct >= 100 ? 'text-green-600' : pct > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                        {parseFloat(String(item.cantidadRecibida)).toFixed(2)}
+                        {fmtCantidad(item.cantidadRecibida)}
                       </span>
                       <div className="w-16 bg-slate-100 rounded-full h-1 mt-1 ml-auto">
                         <div className={`h-1 rounded-full ${pct >= 100 ? 'bg-green-500' : 'bg-amber-400'}`} style={{ width: `${Math.min(pct, 100)}%` }} />
@@ -449,7 +481,7 @@ export function OrdenCompraDetalle() {
                     {rec.items.map(ri => (
                       <div key={ri.id} className="flex items-center justify-between text-xs text-slate-600">
                         <span>{ri.ordenCompraItem?.producto?.nombre ?? `Ítem #${ri.ordenCompraItemId}`}</span>
-                        <span className="font-semibold">{parseFloat(String(ri.cantidadRecibida)).toFixed(3)} · {fmt(Number(ri.costoUnitario))}/u</span>
+                        <span className="font-semibold">{fmtCantidad(ri.cantidadRecibida)} · {fmt(Number(ri.costoUnitario))}/u</span>
                       </div>
                     ))}
                   </div>
@@ -613,8 +645,7 @@ export function OrdenCompraDetalle() {
                       {empresaData.nombre || 'EDATIA S.A.S'}
                     </h2>
                     <p className="text-xs text-slate-600 font-medium">
-                      NIT: {empresaData.nit}{empresaData.digitoVerificacion ? `-${empresaData.digitoVerificacion}` : ''}
-                      {empresaData.regimenFiscal ? ` · ${empresaData.regimenFiscal === '48' ? 'Responsable de IVA' : 'No Responsable de IVA'}` : ''}
+                      NIT: {formatNit(empresaData.nit, empresaData.digitoVerificacion)} · {getRegimenFiscalLabel(empresaData)}
                     </p>
                     <p className="text-xs text-slate-400">
                       {[
@@ -693,7 +724,7 @@ export function OrdenCompraDetalle() {
                         <tr key={item.id} className="text-slate-700">
                           <td className="py-3 px-2 font-mono text-slate-500">{item.producto?.sku}</td>
                           <td className="py-3 px-2 font-semibold text-slate-800">{item.producto?.nombre}</td>
-                          <td className="py-3 px-2 text-right">{cant.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right">{fmtCantidad(cant)}</td>
                           <td className="py-3 px-2 text-right">{fmt(costo)}</td>
                           <td className="py-3 px-2 text-right">{dcto > 0 ? `${dcto.toFixed(1)}%` : '0%'}</td>
                           <td className="py-3 px-2 text-right">{tasaIva}%</td>

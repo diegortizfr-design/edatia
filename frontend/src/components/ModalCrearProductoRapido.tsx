@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { createProducto } from '../services/inventario.service'
 import { getImpuestos } from '../services/erp.service'
 import { getApiError } from '../services/api'
+import { formatMiles, parseMiles } from '../lib/utils'
 
 interface ModalCrearProductoRapidoProps {
   isOpen: boolean
@@ -205,16 +206,15 @@ export function ModalCrearProductoRapido({
                 Costo Unitario ($) *
               </label>
               <div className="relative">
-                <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="numeric"
                   required
-                  value={costo}
-                  onChange={e => setCosto(e.target.value)}
+                  value={formatMiles(costo)}
+                  onChange={e => setCosto(parseMiles(e.target.value))}
                   placeholder="0"
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-right"
                 />
               </div>
             </div>
@@ -224,16 +224,15 @@ export function ModalCrearProductoRapido({
                 Valor Venta Base ($) *
               </label>
               <div className="relative">
-                <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="numeric"
                   required
-                  value={precioVenta}
-                  onChange={e => setPrecioVenta(e.target.value)}
+                  value={formatMiles(precioVenta)}
+                  onChange={e => setPrecioVenta(parseMiles(e.target.value))}
                   placeholder="0"
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-right"
                 />
               </div>
             </div>

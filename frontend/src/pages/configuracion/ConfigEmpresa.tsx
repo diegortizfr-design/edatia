@@ -37,6 +37,20 @@ const RESPONSABILIDADES = [
   { code: 'R-99-PN', label: 'R-99-PN — No aplica — Otros' },
 ]
 
+function calcularDV(nit: string): string {
+  const v = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71]
+  const clean = nit.replace(/\D/g, '')
+  if (!clean) return ''
+  let total = 0
+  for (let i = 0; i < clean.length; i++) {
+    total += parseInt(clean[clean.length - 1 - i]) * v[i]
+  }
+  const mod = total % 11
+  if (mod === 0) return '0'
+  if (mod === 1) return '1'
+  return String(11 - mod)
+}
+
 // ─── Componentes Helper Estilizados ──────────────────────────────────────────
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -395,13 +409,26 @@ export function ConfigEmpresa() {
             <SectionCard title="Identificación Legal" icon={Building2}>
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-3">
-                  <Field label="NIT (No Editable)" hint="Contacta a soporte técnico para modificar el NIT oficial.">
-                    <Input value={form.nit} disabled placeholder="900123456" />
+                  <Field label="NIT *" hint="Ingresa el NIT sin dígito de verificación ni guiones.">
+                    <Input
+                      value={form.nit ?? ''}
+                      onChange={(val: string) => {
+                        const trimmed = val.trim()
+                        const cleanDigits = trimmed.replace(/\D/g, '')
+                        const suggestedDv = cleanDigits.length >= 5 ? calcularDV(cleanDigits) : ''
+                        setForm((f: any) => ({
+                          ...f,
+                          nit: trimmed,
+                          digitoVerificacion: suggestedDv || f.digitoVerificacion
+                        }))
+                      }}
+                      placeholder="900123456"
+                    />
                   </Field>
                 </div>
                 <div className="md:col-span-2">
-                  <Field label="Dígito de verificación">
-                    <Input value={form.digitoVerificacion} onChange={set('digitoVerificacion')} placeholder="7" />
+                  <Field label="Dígito de verificación" hint="Módulo 11 DIAN">
+                    <Input value={form.digitoVerificacion ?? ''} onChange={set('digitoVerificacion')} placeholder="1" />
                   </Field>
                 </div>
                 <div className="md:col-span-3">

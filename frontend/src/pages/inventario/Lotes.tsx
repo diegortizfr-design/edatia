@@ -124,10 +124,10 @@ export function Lotes() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Cantidad requerida</label>
-              <input type="number" min={0.001} step={0.001} value={fefoForm.cantidad}
+              <input type="number" min={1} step={1} value={fefoForm.cantidad}
                 onChange={e => setFefoForm(f => ({ ...f, cantidad: e.target.value }))}
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="0.000" />
+                placeholder="1" />
             </div>
           </div>
           <button onClick={buscarFefo}
@@ -316,7 +316,7 @@ function NuevoLoteModal({ productos, bodegas, onClose, onSubmit, isLoading, erro
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Cantidad inicial *</label>
-              <input required type="number" min={0.001} step={0.001} value={form.cantidadInicial} onChange={set('cantidadInicial')}
+              <input required type="number" min={1} step={1} value={form.cantidadInicial} onChange={set('cantidadInicial')}
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
             </div>
             <div>

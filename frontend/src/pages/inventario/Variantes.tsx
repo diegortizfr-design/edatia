@@ -336,7 +336,7 @@ function StockModal({ variante, bodegas, onClose, onSubmit, isLoading }: any) {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Cantidad *</label>
-            <input required type="number" min={0.001} step={0.001} value={form.cantidad}
+            <input required type="number" min={1} step={1} value={form.cantidad}
               onChange={e => setForm(f => ({ ...f, cantidad: e.target.value }))}
               className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
           </div>
