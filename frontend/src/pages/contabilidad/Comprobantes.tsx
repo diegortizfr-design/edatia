@@ -270,7 +270,7 @@ function NuevoComprobanteModal({ onClose, onSuccess }: any) {
           <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Tipo *</label>
               <select value={tipo} onChange={e => setTipo(e.target.value)}

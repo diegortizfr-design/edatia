@@ -71,50 +71,52 @@ export function OrdenesCompra() {
             </Link>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">N° OC</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Proveedor</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Bodega</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Fecha</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.map(oc => {
-                const cfg = ESTADOS[oc.estado] ?? ESTADOS.BORRADOR
-                return (
-                  <tr key={oc.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">{oc.numero}</td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{oc.proveedor?.nombre}</p>
-                      {oc.proveedor?.nombreComercial && oc.proveedor.nombreComercial !== oc.proveedor.nombre && (
-                        <p className="text-xs text-slate-400">{oc.proveedor.nombreComercial}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-slate-500 text-xs">{oc.bodega?.nombre}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
-                        <cfg.Icon size={11} /> {cfg.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-800">{fmt(Number(oc.total))}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-400">
-                      {new Date(oc.fechaEmision).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/inventario/ordenes-compra/${oc.id}`} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                        Ver <ChevronRight size={14} />
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">N° OC</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Proveedor</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Bodega</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Fecha</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.map(oc => {
+                  const cfg = ESTADOS[oc.estado] ?? ESTADOS.BORRADOR
+                  return (
+                    <tr key={oc.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">{oc.numero}</td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-800">{oc.proveedor?.nombre}</p>
+                        {oc.proveedor?.nombreComercial && oc.proveedor.nombreComercial !== oc.proveedor.nombre && (
+                          <p className="text-xs text-slate-400">{oc.proveedor.nombreComercial}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell text-slate-500 text-xs">{oc.bodega?.nombre}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
+                          <cfg.Icon size={11} /> {cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-800">{fmt(Number(oc.total))}</td>
+                      <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-400">
+                        {new Date(oc.fechaEmision).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link to={`/inventario/ordenes-compra/${oc.id}`} className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                          Ver <ChevronRight size={14} />
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -809,7 +809,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cumpleaños</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input type="number" min={0} max={31} value={form.cumpleanosDia || ''} onChange={set('cumpleanosDia')} className={inputCls} placeholder="Día" />
                     <input type="number" min={0} max={12} value={form.cumpleanosMes || ''} onChange={set('cumpleanosMes')} className={inputCls} placeholder="Mes" />
                   </div>
@@ -1249,7 +1249,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
 
       {/* ── MODAL: Agregar/Editar Sucursal ── */}
       {showSucModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overflow-y-auto bg-black/40 z-50 flex items-start sm:items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-fadeIn">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -1262,7 +1262,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
             </div>
             
             <form onSubmit={handleSaveSucursal} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Código Sucursal" required>
                   <input
                     type="text"
@@ -1283,7 +1283,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 </Field>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Field label="País">
                   <select
                     value={sucForm.pais || ''}
@@ -1334,7 +1334,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 />
               </Field>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Contacto Autorizado">
                   <input
                     type="text"

@@ -1644,7 +1644,7 @@ export function ClienteForm() {
 
       {/* ─── MODAL DE SIMULACIÓN DE ENCUESTA DE SATISFACCIÓN ─── */}
       {showSurveyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-start sm:items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl p-5 space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/5 pb-2.5">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-wide flex items-center gap-1.5">

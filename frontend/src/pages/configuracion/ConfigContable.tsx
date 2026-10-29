@@ -334,7 +334,7 @@ export function ConfigContable() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-start sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider">

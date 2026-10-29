@@ -1115,7 +1115,7 @@ function TabCosteo({ producto, refetch }: { producto: any; refetch: () => void }
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">%</span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Moneda Compra</label>
                 <select value={data.monedaCompra} onChange={e => setData((p: any) => ({ ...p, monedaCompra: e.target.value }))}

@@ -333,7 +333,7 @@ export function Traslados() {
 
       {/* MODAL 1: Gestionar Recepción (Formulario sin diseño de impresión) */}
       {showGestionModal && selectedTraslado && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 overflow-y-auto z-[100] flex items-start sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">

@@ -9,6 +9,13 @@ import { useAuth } from '@/context/AuthContext';
 import { EdatiaLogo } from './EdatiaLogo';
 import { cn } from '@/lib/utils';
 
+interface SidebarProps {
+  /** Drawer abierto en movil. En escritorio se ignora: el sidebar es fijo. */
+  open?: boolean;
+  /** Cerrar el drawer (al navegar o tocar el fondo). */
+  onClose?: () => void;
+}
+
 interface NavItem {
   to: string;
   icon: React.ReactNode;
@@ -109,7 +116,7 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { colaborador, logout } = useAuth();
   const navigate = useNavigate();
   const rol = colaborador?.rol ?? '';
@@ -144,6 +151,7 @@ export function Sidebar() {
     return (
       <NavLink
         to={item.to}
+        onClick={onClose}
         className={({ isActive }) =>
           cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group',
@@ -167,7 +175,17 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex flex-col w-60 shrink-0 min-h-screen bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-white/5">
+    <aside
+      className={cn(
+        // Drawer deslizante bajo lg; columna fija desde lg.
+        'fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] flex-col overflow-y-auto',
+        'bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-white/5',
+        'transition-transform duration-300 ease-in-out',
+        open ? 'translate-x-0' : '-translate-x-full',
+        'lg:static lg:z-auto lg:w-60 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:overflow-visible lg:min-h-screen',
+      )}
+      aria-label="Menú del Manager"
+    >
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-200 dark:border-white/5">
         <EdatiaLogo size="md" />

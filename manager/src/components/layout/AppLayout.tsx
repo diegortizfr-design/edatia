@@ -1,12 +1,32 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Sidebar } from './Sidebar';
-import { Loader2, Moon, Sun } from 'lucide-react';
+import { Loader2, Menu, Moon, Sun } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export function AppLayout() {
   const { colaborador, isLoading } = useAuth();
   const { theme, toggle } = useTheme();
+  const location = useLocation();
+
+  // Drawer del celular. Sin esto el sidebar de 240px se come la pantalla.
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Al navegar se cierra solo; si no, tapa la pagina que acabas de abrir.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  // Escape tambien lo cierra.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
 
   if (isLoading) {
     return (
@@ -25,10 +45,28 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-navy-950">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">
+      {/* Fondo oscuro del drawer: solo en movil y con el drawer abierto */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <main className="flex-1 min-w-0 overflow-auto">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 h-14 flex items-center px-6 bg-white/80 dark:bg-navy-950/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5">
+        <div className="sticky top-0 z-30 h-14 flex items-center gap-2 px-4 sm:px-6 bg-white/80 dark:bg-navy-950/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="-ml-1 flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors lg:hidden"
+            aria-label="Abrir menú"
+            aria-expanded={mobileOpen}
+          >
+            <Menu size={20} />
+          </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
             {/* Theme toggle */}
@@ -48,7 +86,7 @@ export function AppLayout() {
         </div>
 
         {/* Page content */}
-        <div className="p-6 animate-fade-in">
+        <div className="p-4 sm:p-6 animate-fade-in">
           <Outlet />
         </div>
       </main>

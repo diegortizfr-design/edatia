@@ -11,6 +11,31 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { SupportButton } from './SupportButton'
 
+/**
+ * True a partir de lg (1024px), que es donde el sidebar deja de ser un drawer
+ * y pasa a ocupar su lugar en la fila flex.
+ *
+ * Hace falta en JS y no solo en CSS porque las etiquetas del menú se renderizan
+ * condicionalmente (`{!isCollapsed && <span>}`): sin esto, un usuario que dejó
+ * el sidebar colapsado en el escritorio abriría el drawer del celular y vería
+ * solo iconos.
+ */
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', onChange)
+    setIsDesktop(mq.matches)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return isDesktop
+}
+
 interface NavItemProps {
   to: string;
   icon: React.ReactNode;
@@ -84,10 +109,44 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
   
+  const isDesktop = useIsDesktop()
+
+  // Drawer del celular. En escritorio no se usa: el sidebar vive en la fila flex.
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar_collapsed')
     return saved !== null ? saved === 'true' : true
   })
+
+  // En el celular el drawer va siempre expandido: mide 288px, con iconos solos
+  // no se entiende nada.
+  const navCollapsed = isDesktop ? isCollapsed : false
+
+  // Al navegar, el drawer se cierra solo; si no, tapa la pantalla que acabás de abrir.
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
+
+  // Con el drawer abierto se bloquea el scroll del fondo.
+  useEffect(() => {
+    if (!mobileOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [mobileOpen])
+
+  // Escape cierra el drawer.
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileOpen])
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     inventario: location.pathname.startsWith('/inventario'),
@@ -127,13 +186,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="h-screen flex bg-slate-50 overflow-hidden font-sans">
+    <div className="h-screen supports-[height:100dvh]:h-[100dvh] flex bg-slate-50 overflow-hidden font-sans">
       {/* SIDEBAR */}
-      <aside 
+      {/* Fondo oscuro del drawer: solo existe en movil y con el drawer abierto */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* SIDEBAR — drawer deslizante bajo lg, columna fija desde lg */}
+      <aside
         className={`
-          flex flex-col bg-white border-r border-slate-200 shadow-xl z-50 transition-all duration-300 ease-in-out relative
-          ${isCollapsed ? 'w-20' : 'w-64'}
+          fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-xl
+          transition-transform duration-300 ease-in-out
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:static lg:max-w-none lg:translate-x-0 lg:transition-all
+          ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
         `}
+        aria-label="Menú principal"
       >
         {/* Logo Section */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 shrink-0 overflow-hidden">
@@ -165,7 +238,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <circle cx="74" cy="35" r="3" fill="#60A5FA" />
               </svg>
             </div>
-            {!isCollapsed && (
+            {!navCollapsed && (
               <div className="flex flex-col leading-none">
                 <span className="text-lg font-extrabold tracking-tight text-slate-800">EDATIA</span>
                 <span className="text-[10px] font-bold text-indigo-600 tracking-[0.2em] ml-0.5">SOFTWARE ERP</span>
@@ -177,104 +250,104 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Navigation Section */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-1 custom-scrollbar">
           <div className="pb-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">General</p>}
-            <NavItem to="/" icon={<LayoutDashboard size={18} />} label="Dashboard" isCollapsed={isCollapsed} end />
+            {!navCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">General</p>}
+            <NavItem to="/" icon={<LayoutDashboard size={18} />} label="Dashboard" isCollapsed={navCollapsed} end />
           </div>
 
           <div className="py-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
-            <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
-              <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/archivo" icon={<Archive size={14}/>} label="Archivo" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/formas-medios-pago" icon={<Coins size={14}/>} label="Formas / Medios de Pago" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={isCollapsed} />
-              <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />
+            {!navCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
+            <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
+              <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/archivo" icon={<Archive size={14}/>} label="Archivo" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/formas-medios-pago" icon={<Coins size={14}/>} label="Formas / Medios de Pago" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={navCollapsed} />
+              <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={navCollapsed} />
             </NavGroup>
 
-            <NavGroup label="Gestión de Terceros" icon={<Users size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.terceros} onClick={() => toggleGroup('terceros')}>
-              <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
-              <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Régimen Tributario" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Identificación DIAN" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Códigos CIIU" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
+            <NavGroup label="Gestión de Terceros" icon={<Users size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.terceros} onClick={() => toggleGroup('terceros')}>
+              <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={navCollapsed} end />
+              <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Régimen Tributario" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Identificación DIAN" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Códigos CIIU" isCollapsed={navCollapsed} />
+              <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={navCollapsed} />
             </NavGroup>
 
 
-            <NavGroup label="Productos" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.configProductos} onClick={() => toggleGroup('configProductos')}>
-              <NavItem to="/configuracion/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} end={true} />
-              <NavItem to="/configuracion/productos/maestros" icon={<SlidersHorizontal size={14}/>} label="Maestros" isCollapsed={isCollapsed} />
+            <NavGroup label="Productos" icon={<Package size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.configProductos} onClick={() => toggleGroup('configProductos')}>
+              <NavItem to="/configuracion/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={navCollapsed} end={true} />
+              <NavItem to="/configuracion/productos/maestros" icon={<SlidersHorizontal size={14}/>} label="Maestros" isCollapsed={navCollapsed} />
             </NavGroup>
 
-            <NavGroup label="Seguridad" icon={<ShieldAlert size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.seguridad} onClick={() => toggleGroup('seguridad')}>
-              <NavItem to="/seguridad/usuarios" icon={<Users size={14}/>} label="Usuarios" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/roles" icon={<Shield size={14}/>} label="Roles" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/notificaciones" icon={<Bell size={14}/>} label="Notificaciones" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/cierre-periodo" icon={<Lock size={14}/>} label="Cierre Periodo" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/auditoria" icon={<ClipboardList size={14}/>} label="Auditoría" isCollapsed={isCollapsed} />
+            <NavGroup label="Seguridad" icon={<ShieldAlert size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.seguridad} onClick={() => toggleGroup('seguridad')}>
+              <NavItem to="/seguridad/usuarios" icon={<Users size={14}/>} label="Usuarios" isCollapsed={navCollapsed} />
+              <NavItem to="/seguridad/roles" icon={<Shield size={14}/>} label="Roles" isCollapsed={navCollapsed} />
+              <NavItem to="/seguridad/notificaciones" icon={<Bell size={14}/>} label="Notificaciones" isCollapsed={navCollapsed} />
+              <NavItem to="/seguridad/cierre-periodo" icon={<Lock size={14}/>} label="Cierre Periodo" isCollapsed={navCollapsed} />
+              <NavItem to="/seguridad/auditoria" icon={<ClipboardList size={14}/>} label="Auditoría" isCollapsed={navCollapsed} />
             </NavGroup>
           </div>
 
           <div className="py-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Operaciones</p>}
+            {!navCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Operaciones</p>}
             
             {hasModule('inventario') && (
-              <NavGroup label="Inventario" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.inventario} onClick={() => toggleGroup('inventario')}>
-                <NavItem to="/inventario/proveedores" icon={<Truck size={14}/>} label="Proveedores" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/compras" icon={<ShoppingCart size={14}/>} label="Compras" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/control-existencias" icon={<Package size={14}/>} label="Control de Existencia" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos y Traslados" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Gestión de Bodegas" isCollapsed={isCollapsed} />
-                <NavItem to="/inventario/radian" icon={<ClipboardCheck size={14}/>} label="RADIAN" isCollapsed={isCollapsed} />
+              <NavGroup label="Inventario" icon={<Package size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.inventario} onClick={() => toggleGroup('inventario')}>
+                <NavItem to="/inventario/proveedores" icon={<Truck size={14}/>} label="Proveedores" isCollapsed={navCollapsed} />
+                <NavItem to="/inventario/compras" icon={<ShoppingCart size={14}/>} label="Compras" isCollapsed={navCollapsed} />
+                <NavItem to="/inventario/control-existencias" icon={<Package size={14}/>} label="Control de Existencia" isCollapsed={navCollapsed} />
+                <NavItem to="/inventario/movimientos" icon={<RotateCcw size={14}/>} label="Movimientos y Traslados" isCollapsed={navCollapsed} />
+                <NavItem to="/inventario/bodegas" icon={<Warehouse size={14}/>} label="Gestión de Bodegas" isCollapsed={navCollapsed} />
+                <NavItem to="/inventario/radian" icon={<ClipboardCheck size={14}/>} label="RADIAN" isCollapsed={navCollapsed} />
               </NavGroup>
             )}
 
             {hasModule('ventas') && (
               <>
-                <NavGroup label="Facturación" icon={<ShoppingCart size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
-                  <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
-                  <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={isCollapsed} end />
-                  <NavItem to="/pos/ventas" icon={<Receipt size={14}/>} label="Ventas POS" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Notas Crédito" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
+                <NavGroup label="Facturación" icon={<ShoppingCart size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.ventas} onClick={() => toggleGroup('ventas')}>
+                  <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={navCollapsed} />
+                  <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos" isCollapsed={navCollapsed} />
+                  <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={navCollapsed} />
+                  <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={navCollapsed} end />
+                  <NavItem to="/pos/ventas" icon={<Receipt size={14}/>} label="Ventas POS" isCollapsed={navCollapsed} />
+                  <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Notas Crédito" isCollapsed={navCollapsed} />
+                  <NavItem to="/ventas/dashboard" icon={<TrendingUp size={14}/>} label="Reportes" isCollapsed={navCollapsed} />
                 </NavGroup>
                 
-                <NavGroup label="Cartera" icon={<Coins size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.cartera} onClick={() => toggleGroup('cartera')}>
-                  <NavItem to="/ventas/cartera/cxc" icon={<Receipt size={14}/>} label="Cuentas por Cobrar" isCollapsed={isCollapsed} />
-                  <NavItem to="/ventas/cartera/por-edades" icon={<BarChart3 size={14}/>} label="Cartera por edades" isCollapsed={isCollapsed} />
+                <NavGroup label="Cartera" icon={<Coins size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.cartera} onClick={() => toggleGroup('cartera')}>
+                  <NavItem to="/ventas/cartera/cxc" icon={<Receipt size={14}/>} label="Cuentas por Cobrar" isCollapsed={navCollapsed} />
+                  <NavItem to="/ventas/cartera/por-edades" icon={<BarChart3 size={14}/>} label="Cartera por edades" isCollapsed={navCollapsed} />
                 </NavGroup>
               </>
             )}
             
             {hasModule('digital') && (
-              <NavGroup label="Digital" icon={<Globe size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.digital} onClick={() => toggleGroup('digital')}>
-                <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={isCollapsed} />
-                <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={isCollapsed} />
-                <NavItem to="/digital/visitas" icon={<BarChart3 size={14}/>} label="Visitas Tienda" isCollapsed={isCollapsed} />
-                <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={isCollapsed} />
+              <NavGroup label="Digital" icon={<Globe size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.digital} onClick={() => toggleGroup('digital')}>
+                <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={navCollapsed} />
+                <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={navCollapsed} />
+                <NavItem to="/digital/visitas" icon={<BarChart3 size={14}/>} label="Visitas Tienda" isCollapsed={navCollapsed} />
+                <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={navCollapsed} />
               </NavGroup>
             )}
           </div>
 
           {hasModule('contable') && (
             <div className="py-2">
-              {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Finanzas</p>}
-              <NavGroup label="Contabilidad" icon={<Calculator size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.contabilidad} onClick={() => toggleGroup('contabilidad')}>
-                <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={isCollapsed} />
-                <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={isCollapsed} />
+              {!navCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Finanzas</p>}
+              <NavGroup label="Contabilidad" icon={<Calculator size={18} />} isCollapsed={navCollapsed} isOpen={openGroups.contabilidad} onClick={() => toggleGroup('contabilidad')}>
+                <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={navCollapsed} />
+                <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={navCollapsed} />
                 <div className="h-px bg-slate-100 my-1 mx-2" />
-                <NavItem to="/contabilidad/tesoreria/pagos" icon={<ClipboardList size={14}/>} label="Gestionar Pagos" isCollapsed={isCollapsed} />
-                <NavItem to="/contabilidad/tesoreria/saldos" icon={<Wallet size={14}/>} label="Saldos Cajas/Bancos" isCollapsed={isCollapsed} />
+                <NavItem to="/contabilidad/tesoreria/pagos" icon={<ClipboardList size={14}/>} label="Gestionar Pagos" isCollapsed={navCollapsed} />
+                <NavItem to="/contabilidad/tesoreria/saldos" icon={<Wallet size={14}/>} label="Saldos Cajas/Bancos" isCollapsed={navCollapsed} />
               </NavGroup>
             </div>
           )}
@@ -283,7 +356,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Sidebar Footer (Profile + Logout + Collapse Trigger) */}
         <div className="p-4 border-t border-slate-100 space-y-3 shrink-0">
           {/* User Profile & Logout Box */}
-          {!isCollapsed ? (
+          {!navCollapsed ? (
             <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 font-bold text-sm">
@@ -326,7 +399,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Collapse Button */}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full flex items-center justify-center p-2 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            className="w-full hidden lg:flex items-center justify-center p-2 rounded-lg bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
           >
             {isCollapsed ? <ChevronRight size={18} /> : <div className="flex items-center gap-2"><ChevronLeft size={18} /><span className="text-xs font-semibold">Colapsar</span></div>}
           </button>
@@ -335,11 +408,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* BARRA SUPERIOR — solo movil: es la unica forma de abrir el drawer */}
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="-ml-1 flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+            aria-label="Abrir menú"
+            aria-expanded={mobileOpen}
+          >
+            <Menu size={22} />
+          </button>
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            <span className="text-base font-extrabold tracking-tight text-slate-800">EDATIA</span>
+            {user?.empresa?.nombre && (
+              <span className="truncate text-xs text-slate-400">· {user.empresa.nombre}</span>
+            )}
+          </Link>
+        </header>
+
         {/* CONTENT */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-6 lg:p-10 custom-scrollbar relative">
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-10 custom-scrollbar relative">
           {/* Marca de agua translúcida de EDATIA */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-[0.03] p-10">
-            <svg viewBox="0 0 100 100" className="w-80 h-80 max-w-full">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-[0.03] p-4 sm:p-10 overflow-hidden">
+            <svg viewBox="0 0 100 100" className="w-40 h-40 sm:w-64 sm:h-64 lg:w-80 lg:h-80 max-w-full">
               <defs>
                 <linearGradient id="watermarkGradient" x1="0%" y1="100%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#1E293B" />
@@ -357,7 +449,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <circle cx="59" cy="52" r="3" fill="#60A5FA" />
               <circle cx="74" cy="35" r="3" fill="#60A5FA" />
             </svg>
-            <span className="text-6xl font-black tracking-[0.25em] text-slate-800 mt-6 select-none">EDATIA</span>
+            <span className="text-2xl sm:text-4xl lg:text-6xl font-black tracking-[0.2em] lg:tracking-[0.25em] text-slate-800 mt-3 sm:mt-6 select-none">EDATIA</span>
           </div>
 
           <div className="w-full relative z-10">

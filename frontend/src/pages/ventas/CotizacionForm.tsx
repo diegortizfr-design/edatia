@@ -274,7 +274,7 @@ export function CotizacionForm() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Fecha *</label>
               <input type="date" required value={fecha} onChange={e => setFecha(e.target.value)}
@@ -287,7 +287,7 @@ export function CotizacionForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Bodega</label>
               <select value={bodegaId} onChange={e => setBodegaId(e.target.value)}

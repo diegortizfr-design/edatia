@@ -174,7 +174,7 @@ export function ModulosPage() {
 
       {/* Create / Edit Modal */}
       {(showCreate || editing) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-start sm:items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] animate-fade-in">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
               <h2 className="font-semibold text-gray-900 dark:text-white">

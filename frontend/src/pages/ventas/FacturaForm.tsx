@@ -970,157 +970,159 @@ export function FacturaForm() {
 
                 {/* Items Table */}
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 bg-slate-50">
-                        <th className="px-3 py-2.5 text-left font-semibold">SKU / Producto</th>
-                        <th className="px-3 py-2.5 text-left font-semibold">Descripción</th>
-                        <th className="px-3 py-2.5 text-left font-semibold w-16">Lote</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-14">Disp</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-16">Cant</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-24">Precio Unit</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-14">Dcto %</th>
-                        <th className="px-3 py-2.5 text-left font-semibold w-20">IVA</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-24">Total</th>
-                        <th className="px-2 py-2.5 w-6" />
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-150">
-                      {lines.map((line) => {
-                        const calcResult = calcLine(line)
-                        const qKey = line._key
-                        const prodQ = productoQ[qKey] ?? ''
-                        const prodsFiltrados = prodQ
-                          ? (productosAll as any[]).filter((p: any) =>
-                              p.nombre.toLowerCase().includes(prodQ.toLowerCase()) ||
-                              p.sku.toLowerCase().includes(prodQ.toLowerCase()))
-                          : []
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px] text-sm">
+                      <thead>
+                        <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 bg-slate-50">
+                          <th className="px-3 py-2.5 text-left font-semibold">SKU / Producto</th>
+                          <th className="px-3 py-2.5 text-left font-semibold">Descripción</th>
+                          <th className="px-3 py-2.5 text-left font-semibold w-16">Lote</th>
+                          <th className="px-3 py-2.5 text-right font-semibold w-14">Disp</th>
+                          <th className="px-3 py-2.5 text-right font-semibold w-16">Cant</th>
+                          <th className="px-3 py-2.5 text-right font-semibold w-24">Precio Unit</th>
+                          <th className="px-3 py-2.5 text-right font-semibold w-14">Dcto %</th>
+                          <th className="px-3 py-2.5 text-left font-semibold w-20">IVA</th>
+                          <th className="px-3 py-2.5 text-right font-semibold w-24">Total</th>
+                          <th className="px-2 py-2.5 w-6" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-150">
+                        {lines.map((line) => {
+                          const calcResult = calcLine(line)
+                          const qKey = line._key
+                          const prodQ = productoQ[qKey] ?? ''
+                          const prodsFiltrados = prodQ
+                            ? (productosAll as any[]).filter((p: any) =>
+                                p.nombre.toLowerCase().includes(prodQ.toLowerCase()) ||
+                                p.sku.toLowerCase().includes(prodQ.toLowerCase()))
+                            : []
 
-                        const availableStock = line.productoId ? (stockMap.get(Number(line.productoId)) ?? 0) : 0
+                          const availableStock = line.productoId ? (stockMap.get(Number(line.productoId)) ?? 0) : 0
 
-                        return (
-                          <tr key={line._key} className="align-top hover:bg-slate-50/50">
-                            {/* Product selector */}
-                            <td className="px-2 py-2 relative">
-                              {line.productoId ? (
-                                <div className="flex items-center gap-1 p-1 border border-slate-200 bg-slate-100 rounded text-[10px] font-bold">
-                                  <span className="truncate max-w-[100px]">
-                                    {(productosAll as any[]).find((p: any) => String(p.id) === String(line.productoId))?.nombre ?? `ID ${line.productoId}`}
-                                  </span>
-                                  <button onClick={() => updateLine(line._key, 'productoId', '')} className="text-slate-400 hover:text-red-500 font-bold ml-auto shrink-0">×</button>
-                                </div>
-                              ) : (
-                                <div className="relative">
-                                  <input
-                                    value={prodQ}
-                                    onChange={e => setProductoQ(prev => ({ ...prev, [qKey]: e.target.value }))}
-                                    placeholder="Buscar..."
-                                    className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-200"
-                                  />
-                                  {prodQ && prodsFiltrados.length > 0 && (
-                                    <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[200px] max-h-36 overflow-y-auto">
-                                      {prodsFiltrados.slice(0, 8).map((p: any) => (
-                                        <button key={p.id} type="button"
-                                          onClick={() => selectProductoForLine(line._key, p)}
-                                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100">
-                                          <p className="font-semibold">{p.nombre}</p>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </td>
+                          return (
+                            <tr key={line._key} className="align-top hover:bg-slate-50/50">
+                              {/* Product selector */}
+                              <td className="px-2 py-2 relative">
+                                {line.productoId ? (
+                                  <div className="flex items-center gap-1 p-1 border border-slate-200 bg-slate-100 rounded text-[10px] font-bold">
+                                    <span className="truncate max-w-[100px]">
+                                      {(productosAll as any[]).find((p: any) => String(p.id) === String(line.productoId))?.nombre ?? `ID ${line.productoId}`}
+                                    </span>
+                                    <button onClick={() => updateLine(line._key, 'productoId', '')} className="text-slate-400 hover:text-red-500 font-bold ml-auto shrink-0">×</button>
+                                  </div>
+                                ) : (
+                                  <div className="relative">
+                                    <input
+                                      value={prodQ}
+                                      onChange={e => setProductoQ(prev => ({ ...prev, [qKey]: e.target.value }))}
+                                      placeholder="Buscar..."
+                                      className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-200"
+                                    />
+                                    {prodQ && prodsFiltrados.length > 0 && (
+                                      <div className="absolute top-full left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-20 min-w-[200px] max-h-36 overflow-y-auto">
+                                        {prodsFiltrados.slice(0, 8).map((p: any) => (
+                                          <button key={p.id} type="button"
+                                            onClick={() => selectProductoForLine(line._key, p)}
+                                            className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[11px] border-b border-slate-100">
+                                            <p className="font-semibold">{p.nombre}</p>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
 
-                            {/* Desc */}
-                            <td className="px-2 py-2">
-                              <input
-                                value={line.descripcion}
-                                onChange={e => updateLine(line._key, 'descripcion', e.target.value)}
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100"
-                              />
-                            </td>
+                              {/* Desc */}
+                              <td className="px-2 py-2">
+                                <input
+                                  value={line.descripcion}
+                                  onChange={e => updateLine(line._key, 'descripcion', e.target.value)}
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100"
+                                />
+                              </td>
 
-                            {/* Lote */}
-                            <td className="px-2 py-2">
-                              <input
-                                value={line.loteNumero}
-                                onChange={e => updateLine(line._key, 'loteNumero', e.target.value)}
-                                placeholder="N/A"
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 w-16"
-                              />
-                            </td>
+                              {/* Lote */}
+                              <td className="px-2 py-2">
+                                <input
+                                  value={line.loteNumero}
+                                  onChange={e => updateLine(line._key, 'loteNumero', e.target.value)}
+                                  placeholder="N/A"
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 w-16"
+                                />
+                              </td>
 
-                            {/* Disp */}
-                            <td className="px-2 py-3 text-right text-[11px] font-semibold text-slate-500 pr-3">
-                              {availableStock}
-                            </td>
+                              {/* Disp */}
+                              <td className="px-2 py-3 text-right text-[11px] font-semibold text-slate-500 pr-3">
+                                {availableStock}
+                              </td>
 
-                            {/* Cant */}
-                            <td className="px-2 py-2">
-                              <input
-                                type="number"
-                                min={0.0001}
-                                step="any"
-                                value={line.cantidad}
-                                onChange={e => updateLine(line._key, 'cantidad', e.target.value)}
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                              />
-                            </td>
+                              {/* Cant */}
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  min={0.0001}
+                                  step="any"
+                                  value={line.cantidad}
+                                  onChange={e => updateLine(line._key, 'cantidad', e.target.value)}
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                                />
+                              </td>
 
-                            {/* Precio */}
-                            <td className="px-2 py-2">
-                              <input
-                                type="number"
-                                min={0}
-                                step="any"
-                                value={line.precioUnitario}
-                                onChange={e => updateLine(line._key, 'precioUnitario', e.target.value)}
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                              />
-                            </td>
+                              {/* Precio */}
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="any"
+                                  value={line.precioUnitario}
+                                  onChange={e => updateLine(line._key, 'precioUnitario', e.target.value)}
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                                />
+                              </td>
 
-                            {/* Descuento Pct */}
-                            <td className="px-2 py-2">
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={line.descuentoPct}
-                                onChange={e => updateLine(line._key, 'descuentoPct', e.target.value)}
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
-                              />
-                            </td>
+                              {/* Descuento Pct */}
+                              <td className="px-2 py-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={line.descuentoPct}
+                                  onChange={e => updateLine(line._key, 'descuentoPct', e.target.value)}
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] text-right outline-none focus:ring-1 focus:ring-indigo-100"
+                                />
+                              </td>
 
-                            {/* IVA */}
-                            <td className="px-2 py-2">
-                              <select
-                                value={line.tipoIva}
-                                onChange={e => updateLine(line._key, 'tipoIva', e.target.value)}
-                                className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 bg-white"
-                              >
-                                {TIPO_IVA_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                              </select>
-                            </td>
+                              {/* IVA */}
+                              <td className="px-2 py-2">
+                                <select
+                                  value={line.tipoIva}
+                                  onChange={e => updateLine(line._key, 'tipoIva', e.target.value)}
+                                  className="w-full p-1 border border-slate-200 rounded text-[11px] outline-none focus:ring-1 focus:ring-indigo-100 bg-white"
+                                >
+                                  {TIPO_IVA_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                </select>
+                              </td>
 
-                            {/* Total */}
-                            <td className="px-2 py-3 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">
-                              {fmt(calcResult.total)}
-                            </td>
+                              {/* Total */}
+                              <td className="px-2 py-3 text-right font-bold text-slate-700 text-[11px] whitespace-nowrap">
+                                {fmt(calcResult.total)}
+                              </td>
 
-                            {/* Delete */}
-                            <td className="px-1 py-3 text-center">
-                              {lines.length > 1 && (
-                                <button onClick={() => removeLine(line._key)} className="text-slate-300 hover:text-red-500 font-medium">
-                                  <Trash2 size={13} />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                              {/* Delete */}
+                              <td className="px-1 py-3 text-center">
+                                {lines.length > 1 && (
+                                  <button onClick={() => removeLine(line._key)} className="text-slate-300 hover:text-red-500 font-medium">
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className="flex justify-between">

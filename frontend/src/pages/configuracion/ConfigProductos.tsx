@@ -2020,7 +2020,7 @@ export function ConfigProductos() {
               
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 {/* Costos col */}
-                <div className="md:col-span-6 grid grid-cols-2 gap-4 border-r border-slate-100 pr-4">
+                <div className="md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border-r border-slate-100 pr-4">
                   <div className="col-span-2 text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-0.5">Estructura de Costos ($)</div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Costo Unitario Base</label>
@@ -2123,7 +2123,7 @@ export function ConfigProductos() {
                     </label>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descuento (%)</label>
                       <input
@@ -2362,7 +2362,7 @@ export function ConfigProductos() {
       )}
 
       {showBarcodeModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-6">
             <div className="text-center space-y-2">
               <div className="mx-auto w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">

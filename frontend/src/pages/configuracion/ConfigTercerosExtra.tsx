@@ -932,7 +932,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
 
       {/* ── MODAL: EDITAR / CREAR FICHA AUXILIAR ── */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+        <div className="fixed inset-0 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2">
@@ -947,7 +947,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               {/* VENDEDORES */}
               {section === 'vendedores' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código *</label>
                       <input
@@ -1032,7 +1032,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               {/* CIIU */}
               {section === 'ciiu' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código CIIU *</label>
                       <input
@@ -1105,7 +1105,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               {/* TIPOS IDENTIFICACION */}
               {section === 'tipos-identificacion' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código DIAN *</label>
                       <input
@@ -1182,7 +1182,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
               {/* REGIMEN TRIBUTARIO (IMPUESTOS) */}
               {section === 'regimen-tributario' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código Tributario *</label>
                       <input
@@ -1301,7 +1301,7 @@ export function ConfigTercerosExtra({ section }: { section: string }) {
       {selectedReport && REPORT_DATA[selectedReport] && (() => {
         const rep = REPORT_DATA[selectedReport]
         return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="fixed inset-0 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl shadow-2xl p-6 space-y-6">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2">

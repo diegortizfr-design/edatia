@@ -128,7 +128,7 @@ export function ModalCrearProductoRapido({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 overflow-y-auto z-50 flex items-start sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div 
         className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={e => e.stopPropagation()}
@@ -199,7 +199,7 @@ export function ModalCrearProductoRapido({
           </div>
 
           {/* Costo y Valor de Venta en 2 columnas */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Costo Unitario ($) *

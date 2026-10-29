@@ -1136,7 +1136,7 @@ export function Movimientos() {
 
       {/* Baja modal Simulation (Premium inline popup overlay) */}
       {bajaModalItem && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 overflow-y-auto z-[100] flex items-start sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-2.5 text-red-600">
               <AlertTriangle size={20} />

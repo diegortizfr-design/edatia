@@ -221,7 +221,7 @@ export function OperacionSACPage() {
 
       {/* Modal crear ticket */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 overflow-y-auto z-50 flex items-start sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/5">
               <h2 className="font-semibold text-gray-900 dark:text-white">Nuevo Ticket</h2>

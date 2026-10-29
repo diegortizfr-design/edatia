@@ -226,14 +226,14 @@ function NuevaCuentaModal({ onClose, onSuccess }: any) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 overflow-y-auto bg-black/40 z-50 flex items-start sm:items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen size={16} />Nueva Cuenta PUC</h2>
           <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-slate-600" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Código *</label>
               <input required value={form.codigo} onChange={set('codigo')} placeholder="ej: 11100505"
@@ -250,7 +250,7 @@ function NuevaCuentaModal({ onClose, onSuccess }: any) {
             <input required value={form.nombre} onChange={set('nombre')} placeholder="ej: Nequi"
               className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Nivel</label>
               <select value={form.nivel} onChange={set('nivel')}

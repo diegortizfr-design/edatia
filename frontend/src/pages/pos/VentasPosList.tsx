@@ -481,7 +481,7 @@ export function VentasPosList() {
 
       {/* Modal Anular */}
       {anularId && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overflow-y-auto bg-slate-900/40 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-4">
           <form onSubmit={handleAnular} className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
               <AlertTriangle className="text-red-550" size={20} />

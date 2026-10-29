@@ -201,7 +201,7 @@ export function ConfigFormatosImpresion() {
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <Settings2 size={13} /> Márgenes (mm)
               </h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {(['margenSup', 'margenInf', 'margenIzq', 'margenDer'] as const).map(key => (
                   <div key={key} className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase">

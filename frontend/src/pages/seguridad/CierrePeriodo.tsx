@@ -253,7 +253,7 @@ export function CierrePeriodo() {
 
           {/* Diálogo Flotante de Cierre */}
           {isClosingDialog && (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 overflow-y-auto bg-slate-900/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50">
               <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-xl">
                 <div className="flex items-center gap-2 text-rose-600">
                   <Lock size={20} />

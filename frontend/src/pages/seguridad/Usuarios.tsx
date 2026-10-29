@@ -400,7 +400,7 @@ export function Usuarios() {
                 {/* Opciones de Perfil */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Estados y Roles</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/60 cursor-pointer hover:bg-slate-100/50 transition-all">
                       <input
                         type="checkbox"

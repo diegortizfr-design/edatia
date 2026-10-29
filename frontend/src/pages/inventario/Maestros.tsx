@@ -99,35 +99,37 @@ function CategoriasTab() {
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Nombre</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Slug</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Padre</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Productos</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {data.map(c => (
-              <tr key={c.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-800">{c.nombre}</td>
-                <td className="px-4 py-3 text-slate-500 font-mono text-xs">{c.slug}</td>
-                <td className="px-4 py-3 hidden md:table-cell text-slate-500">{c.parent?.nombre ?? '—'}</td>
-                <td className="px-4 py-3 text-center text-slate-600">{c._count?.productos ?? 0}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${c.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{c.activo ? 'Activa' : 'Inactiva'}</span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => openEdit(c)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Nombre</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Slug</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Padre</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Productos</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-4 py-3"></th>
               </tr>
-            ))}
-            {data.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">No hay categorías aún</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.map(c => (
+                <tr key={c.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">{c.nombre}</td>
+                  <td className="px-4 py-3 text-slate-500 font-mono text-xs">{c.slug}</td>
+                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{c.parent?.nombre ?? '—'}</td>
+                  <td className="px-4 py-3 text-center text-slate-600">{c._count?.productos ?? 0}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${c.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{c.activo ? 'Activa' : 'Inactiva'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => openEdit(c)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
+                  </td>
+                </tr>
+              ))}
+              {data.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">No hay categorías aún</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -171,31 +173,33 @@ function MarcasTab() {
         </div>
       )}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Marca</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Productos</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {data.map(m => (
-              <tr key={m.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-800">{m.nombre}</td>
-                <td className="px-4 py-3 text-center text-slate-600">{m._count?.productos ?? 0}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${m.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{m.activo ? 'Activa' : 'Inactiva'}</span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => { setEditing(m); setNombre(m.nombre); setShowForm(true) }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Marca</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Productos</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-4 py-3"></th>
               </tr>
-            ))}
-            {data.length === 0 && <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-400">No hay marcas aún</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.map(m => (
+                <tr key={m.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">{m.nombre}</td>
+                  <td className="px-4 py-3 text-center text-slate-600">{m._count?.productos ?? 0}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${m.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{m.activo ? 'Activa' : 'Inactiva'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => { setEditing(m); setNombre(m.nombre); setShowForm(true) }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
+                  </td>
+                </tr>
+              ))}
+              {data.length === 0 && <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-400">No hay marcas aún</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -232,7 +236,7 @@ function UnidadesTab() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm mb-3">{error}</div>}
           <form onSubmit={e => { e.preventDefault(); mutation.mutate({ nombre: form.nombre, abreviatura: form.abreviatura, tipo: form.tipo, factorBase: +form.factorBase }) }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="sm:col-span-2"><label className="block text-xs font-semibold text-slate-500 mb-1">NOMBRE *</label>
               <input value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} required className={inputCls} placeholder="Unidad, Caja x12..." /></div>
             <div><label className="block text-xs font-semibold text-slate-500 mb-1">ABREVIATURA *</label>
@@ -249,34 +253,36 @@ function UnidadesTab() {
         </div>
       )}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Nombre</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Abreviatura</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Tipo</th>
-              <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {data.map(u => (
-              <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-800">{u.nombre}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-600">{u.abreviatura}</td>
-                <td className="px-4 py-3 hidden md:table-cell text-slate-500">{u.tipo}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${u.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{u.activo ? 'Activa' : 'Inactiva'}</span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => { setEditing(u); setForm({ nombre: u.nombre, abreviatura: u.abreviatura, tipo: u.tipo, factorBase: String(u.factorBase) }); setShowForm(true) }}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Nombre</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Abreviatura</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Tipo</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-4 py-3"></th>
               </tr>
-            ))}
-            {data.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">No hay unidades de medida aún</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.map(u => (
+                <tr key={u.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">{u.nombre}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{u.abreviatura}</td>
+                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{u.tipo}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${u.activo ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{u.activo ? 'Activa' : 'Inactiva'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => { setEditing(u); setForm({ nombre: u.nombre, abreviatura: u.abreviatura, tipo: u.tipo, factorBase: String(u.factorBase) }); setShowForm(true) }}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14} /></button>
+                  </td>
+                </tr>
+              ))}
+              {data.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">No hay unidades de medida aún</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

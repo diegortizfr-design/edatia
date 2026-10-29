@@ -140,7 +140,7 @@ function DevolucionProveedorForm({ productos, bodegas, onSubmit, isLoading, erro
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Producto *</label>
           <select required value={form.productoId} onChange={set('productoId')}
@@ -216,7 +216,7 @@ function DevolucionClienteForm({ productos, bodegas, onSubmit, isLoading, error 
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Producto *</label>
           <select required value={form.productoId} onChange={set('productoId')}
@@ -235,7 +235,7 @@ function DevolucionClienteForm({ productos, bodegas, onSubmit, isLoading, error 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Cantidad *</label>
           <input required type="number" min="0.01" step="any" value={form.cantidad} onChange={set('cantidad')}

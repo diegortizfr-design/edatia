@@ -170,76 +170,78 @@ export function Productos() {
             <p className="text-slate-400">No hay productos{q ? ` para "${q}"` : ''}</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Producto</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Categoría</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">IVA</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">CPP</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Precio</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Stock</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">ABC</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tienda Web</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredData.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                        <Package size={14} className="text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800">{p.nombre}</p>
-                        <p className="text-xs text-slate-400">{p.sku}{p.codigoBarras ? ` · ${p.codigoBarras}` : ''}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell text-slate-600">{p.categoria?.nombre ?? '—'}</td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-xs text-slate-500">{IVA_LABELS[p.tipoIva] ?? p.tipoIva}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-600">
-                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(p.costoPromedio))}
-                  </td>
-                  <td className="px-4 py-3 text-right text-slate-600">
-                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(p.precioBase))}
-                  </td>
-                  <td className="px-4 py-3 text-center"><StockBadge stock={p.stock} /></td>
-                  <td className="px-4 py-3 text-center hidden lg:table-cell">
-                    {p.claseAbc ? (
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ABC_COLORS[p.claseAbc] ?? ''}`}>{p.claseAbc}</span>
-                    ) : <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => toggleWeb.mutate({ id: p.id, val: !p.publicadoWeb, nombre: p.nombre })}
-                      disabled={toggleWeb.isPending}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer ${
-                        p.publicadoWeb
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                          : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                      }`}
-                      title={p.publicadoWeb ? "Publicado en Tienda Web. Clic para ocultar" : "Oculto en Tienda Web. Clic para publicar"}
-                    >
-                      {p.publicadoWeb ? <Globe size={11} className="text-emerald-600" /> : <EyeOff size={11} className="text-slate-400" />}
-                      <span>{p.publicadoWeb ? 'Publicado' : 'No publicado'}</span>
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link to={`/inventario/productos/${p.id}`}
-                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                      Editar <ChevronRight size={14} />
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Producto</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Categoría</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">IVA</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">CPP</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Precio</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Stock</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">ABC</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tienda Web</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredData.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                          <Package size={14} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{p.nombre}</p>
+                          <p className="text-xs text-slate-400">{p.sku}{p.codigoBarras ? ` · ${p.codigoBarras}` : ''}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell text-slate-600">{p.categoria?.nombre ?? '—'}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className="text-xs text-slate-500">{IVA_LABELS[p.tipoIva] ?? p.tipoIva}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-600">
+                      {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(p.costoPromedio))}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-600">
+                      {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(p.precioBase))}
+                    </td>
+                    <td className="px-4 py-3 text-center"><StockBadge stock={p.stock} /></td>
+                    <td className="px-4 py-3 text-center hidden lg:table-cell">
+                      {p.claseAbc ? (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ABC_COLORS[p.claseAbc] ?? ''}`}>{p.claseAbc}</span>
+                      ) : <span className="text-slate-300">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleWeb.mutate({ id: p.id, val: !p.publicadoWeb, nombre: p.nombre })}
+                        disabled={toggleWeb.isPending}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer ${
+                          p.publicadoWeb
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                        title={p.publicadoWeb ? "Publicado en Tienda Web. Clic para ocultar" : "Oculto en Tienda Web. Clic para publicar"}
+                      >
+                        {p.publicadoWeb ? <Globe size={11} className="text-emerald-600" /> : <EyeOff size={11} className="text-slate-400" />}
+                        <span>{p.publicadoWeb ? 'Publicado' : 'No publicado'}</span>
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link to={`/inventario/productos/${p.id}`}
+                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+                        Editar <ChevronRight size={14} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -952,7 +952,7 @@ export function PosScreen() {
 
       {/* ── Modal Venta Exitosa ─────────────────────────────────────────────── */}
       {ventaOk && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overflow-y-auto bg-black/70 z-50 flex items-start sm:items-center justify-center p-4">
           <div className={`rounded-2xl w-full max-w-sm border text-center p-8 transition-colors duration-200 ${
             isDark ? 'bg-slate-800 border-green-600 text-white shadow-2xl' : 'bg-white border-green-400 text-slate-800 shadow-xl'
           }`}>
@@ -979,7 +979,7 @@ export function PosScreen() {
 
       {/* ── Modal Creación Rápida de Producto (Express POS) ───────────────── */}
       {showQuickCreate && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 overflow-y-auto bg-black/75 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-4">
           <div className={`rounded-3xl w-full max-w-md border overflow-hidden shadow-2xl p-6 space-y-5 transition-colors duration-200 animate-in fade-in zoom-in-95 ${
             isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
           }`}>
@@ -1045,7 +1045,7 @@ export function PosScreen() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Precio de Venta ($) *

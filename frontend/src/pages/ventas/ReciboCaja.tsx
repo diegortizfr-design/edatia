@@ -274,7 +274,7 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Valor total *</label>
               <input type="number" min={1} required value={valor} onChange={e => setValor(e.target.value)}
@@ -290,7 +290,7 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Referencia</label>
               <input value={referencia} onChange={e => setReferencia(e.target.value)}
