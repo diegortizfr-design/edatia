@@ -288,18 +288,23 @@ export class ClientesService {
   async saldos(empresaId: number) {
     const facturas = await this.prisma.facturaVenta.groupBy({
       by: ['clienteId'],
-      where: { empresaId, estado: { in: ['EMITIDA', 'PARCIAL'] } },
+      where: { empresaId, estado: { in: ['EMITIDA', 'PARCIAL'] }, saldo: { gt: 0 } },
       _sum: { saldo: true, total: true },
     })
     const clienteIds = facturas.map(f => f.clienteId)
     const clientes = await this.prisma.tercero.findMany({
-      where: { id: { in: clienteIds }, esCliente: true },
+      where: { id: { in: clienteIds }, empresaId },
       select: { id: true, nombre: true, numeroDocumento: true },
     })
-    return facturas.map(f => ({
-      ...clientes.find(c => c.id === f.clienteId),
-      totalFacturado: f._sum.total,
-      saldo: f._sum.saldo,
-    }))
+    return facturas.map(f => {
+      const c = clientes.find(cli => cli.id === f.clienteId)
+      return {
+        id: f.clienteId,
+        nombre: c?.nombre ?? 'Cliente',
+        numeroDocumento: c?.numeroDocumento ?? '—',
+        totalFacturado: f._sum.total,
+        saldo: f._sum.saldo,
+      }
+    })
   }
 }

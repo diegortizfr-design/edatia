@@ -193,14 +193,36 @@ export class RecibosService {
       where: { empresaId, codigo: recibo.medioPago },
       include: { cajaBanco: true }
     })
-    let cCajaBancoId = mp?.cajaBanco?.cuentaPUCId
+    let cCajaBancoId: number | null = null
+
+    if (mp?.cajaBanco?.cuentaPUC) {
+      const dbCuentaCaja = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: mp.cajaBanco.cuentaPUC, activo: true },
+        select: { id: true },
+      })
+      if (dbCuentaCaja) cCajaBancoId = dbCuentaCaja.id
+    }
 
     if (!cCajaBancoId) {
       const fallbackCode = recibo.medioPago === 'EFECTIVO' ? '1105' : '1110'
-      cCajaBancoId = byCode.get(fallbackCode) || byCode.get('1105')
+      cCajaBancoId = byCode.get(fallbackCode) || byCode.get('1105') || null
+      if (!cCajaBancoId) {
+        const anyCaja = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: { startsWith: '11' }, activo: true },
+          select: { id: true },
+        })
+        cCajaBancoId = anyCaja?.id || null
+      }
     }
 
-    const cClientes = byCode.get('1305')
+    let cClientes = byCode.get('1305')
+    if (!cClientes) {
+      const anyCliente = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: { startsWith: '1305' }, activo: true },
+        select: { id: true },
+      })
+      cClientes = anyCliente?.id
+    }
 
     if (!cCajaBancoId || !cClientes) return // Sin parametrización contable básica, omitir
 

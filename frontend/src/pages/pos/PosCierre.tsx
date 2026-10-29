@@ -1,10 +1,29 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSesion, cerrarCaja } from '../../services/pos.service'
-import { ChevronLeft, Printer, CheckCircle2, TrendingUp, Banknote, CreditCard, Smartphone, AlertTriangle } from 'lucide-react'
+import { getMediosPago } from '../../services/configuracion.service'
+import { ChevronLeft, Printer, CheckCircle2, TrendingUp, Banknote, CreditCard, Smartphone, AlertTriangle, Building2, Coins } from 'lucide-react'
 
 const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+
+function getMedioIcon(codigo: string = '', nombre: string = '') {
+  const c = codigo.toUpperCase()
+  const n = nombre.toUpperCase()
+  if (c === 'EFECTIVO' || n.includes('EFECTIVO')) {
+    return <Banknote size={14} className="text-green-500" />
+  }
+  if (c.includes('DEBITO') || n.includes('DEBITO') || c.includes('CREDITO') || n.includes('CREDITO') || c.includes('TARJETA') || n.includes('TARJETA') || c.includes('DATAFONO') || n.includes('DATAFONO')) {
+    return <CreditCard size={14} className="text-blue-500" />
+  }
+  if (c.includes('NEQUI') || n.includes('NEQUI') || c.includes('DAVIPLATA') || n.includes('DAVIPLATA')) {
+    return <Smartphone size={14} className="text-pink-500" />
+  }
+  if (c.includes('TRANSFERENCIA') || n.includes('TRANSFERENCIA') || c.includes('BANCO') || n.includes('PSE')) {
+    return <Building2 size={14} className="text-cyan-500" />
+  }
+  return <Coins size={14} className="text-indigo-500" />
+}
 
 const BILLETES = [
   { key: 'b100000', label: '$100.000', valor: 100000 },
@@ -38,6 +57,55 @@ export function PosCierre() {
   const [cerrada, setCerrada] = useState<any>(null)
 
   const { data: sesion, isLoading } = useQuery(['sesion-pos', sesId], () => getSesion(sesId), { enabled: !!sesId })
+  const { data: mediosPago = [] } = useQuery(['config-medios-pago'], getMediosPago)
+
+  const resumenMedios = useMemo(() => {
+    if (sesion?.resumenMediosPago && Array.isArray(sesion.resumenMediosPago) && sesion.resumenMediosPago.length > 0) {
+      return sesion.resumenMediosPago
+    }
+
+    const active = (mediosPago || []).filter((mp: any) => mp.activo)
+    if (active.length > 0) {
+      const netEfectivo = Number(sesion?.totalEfectivo ?? 0)
+      const debito = (sesion?.ventas || []).reduce((acc: number, v: any) => acc + Number(v.pagoTarjetaDebito ?? 0), 0)
+      const credito = (sesion?.ventas || []).reduce((acc: number, v: any) => acc + Number(v.pagoTarjetaCredito ?? 0), 0)
+      const transferencia = Number(sesion?.totalTransferencia ?? 0)
+      const nequi = Number(sesion?.totalNequi ?? 0)
+      const totalTarjeta = debito + credito > 0 ? (debito + credito) : Number(sesion?.totalTarjeta ?? 0)
+
+      return active.map((m: any) => {
+        const code = (m.codigo || '').toUpperCase()
+        const name = (m.nombre || '').toUpperCase()
+        let val = 0
+        if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
+          val = netEfectivo
+        } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
+          val = debito
+        } else if (code.includes('CREDITO') || name.includes('CREDITO')) {
+          val = credito
+        } else if (code.includes('TARJETA') || name.includes('TARJETA') || code.includes('DATAFONO') || name.includes('DATAFONO')) {
+          val = totalTarjeta
+        } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
+          val = nequi
+        } else if (code.includes('TRANSFERENCIA') || name.includes('TRANSFERENCIA') || code.includes('BANCO') || name.includes('PSE')) {
+          val = transferencia
+        }
+        return {
+          id: m.id,
+          codigo: m.codigo,
+          nombre: m.nombre,
+          total: val,
+        }
+      })
+    }
+
+    return [
+      { codigo: 'EFECTIVO', nombre: 'Efectivo', total: Number(sesion?.totalEfectivo ?? 0) },
+      { codigo: 'TARJETA', nombre: 'Tarjeta', total: Number(sesion?.totalTarjeta ?? 0) },
+      { codigo: 'TRANSFERENCIA', nombre: 'Transferencia', total: Number(sesion?.totalTransferencia ?? 0) },
+      { codigo: 'NEQUI', nombre: 'Nequi', total: Number(sesion?.totalNequi ?? 0) },
+    ]
+  }, [sesion, mediosPago])
 
   const mutCerrar = useMutation({
     mutationFn: () => cerrarCaja(sesId, { arqueo, observaciones }),
@@ -72,10 +140,9 @@ export function PosCierre() {
         <div class="l"></div>
         <div class="r"><span>Transacciones:</span><span>${sesion.numTransacciones}</span></div>
         <div class="r"><span>Total ventas:</span><span>${fmt(Number(sesion.totalVentas))}</span></div>
-        <div class="r"><span>Efectivo:</span><span>${fmt(Number(sesion.totalEfectivo))}</span></div>
-        <div class="r"><span>Tarjeta:</span><span>${fmt(Number(sesion.totalTarjeta))}</span></div>
-        <div class="r"><span>Transferencia:</span><span>${fmt(Number(sesion.totalTransferencia))}</span></div>
-        <div class="r"><span>Nequi:</span><span>${fmt(Number(sesion.totalNequi))}</span></div>
+        <div class="l"></div>
+        <div class="c b" style="font-size:10px;margin:2px 0 3px">MEDIOS DE PAGO</div>
+        ${resumenMedios.map((m: any) => `<div class="r"><span>${m.nombre}:</span><span>${fmt(Number(m.total ?? 0))}</span></div>`).join('')}
         <div class="l"></div>
         <div class="r"><span>Monto inicial:</span><span>${fmt(Number(sesion.montoInicial))}</span></div>
         <div class="r"><span>Total sistema:</span><span>${fmt(totalSistema)}</span></div>
@@ -163,19 +230,22 @@ export function PosCierre() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <h2 className="font-semibold text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16} /> Resumen del turno</h2>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          {[
-            { label: 'Transacciones', value: sesion?.numTransacciones ?? 0, icon: null },
-            { label: 'Total ventas', value: fmt(Number(sesion?.totalVentas ?? 0)), icon: null, highlight: true },
-            { label: 'Efectivo recibido', value: fmt(Number(sesion?.totalEfectivo ?? 0)), icon: <Banknote size={14} className="text-green-500" /> },
-            { label: 'Tarjeta', value: fmt(Number(sesion?.totalTarjeta ?? 0)), icon: <CreditCard size={14} className="text-blue-500" /> },
-            { label: 'Transferencia', value: fmt(Number(sesion?.totalTransferencia ?? 0)), icon: <Smartphone size={14} className="text-cyan-500" /> },
-            { label: 'Nequi', value: fmt(Number(sesion?.totalNequi ?? 0)), icon: <Smartphone size={14} className="text-pink-500" /> },
-          ].map((item, i) => (
-            <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${item.highlight ? 'bg-green-50 border border-green-200' : 'bg-slate-50'}`}>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
+            <span className="text-slate-600">Transacciones</span>
+            <span className="font-bold text-slate-800">{sesion?.numTransacciones ?? 0}</span>
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
+            <span className="text-slate-600 font-medium">Total ventas</span>
+            <span className="font-bold text-green-700">{fmt(Number(sesion?.totalVentas ?? 0))}</span>
+          </div>
+
+          {resumenMedios.map((item: any, i: number) => (
+            <div key={item.id || item.codigo || i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
               <div className="flex items-center gap-2 text-slate-600">
-                {item.icon}{item.label}
+                {getMedioIcon(item.codigo, item.nombre)}
+                <span>{item.nombre}</span>
               </div>
-              <span className={`font-bold ${item.highlight ? 'text-green-700' : 'text-slate-800'}`}>{item.value}</span>
+              <span className="font-bold text-slate-800">{fmt(Number(item.total ?? 0))}</span>
             </div>
           ))}
         </div>

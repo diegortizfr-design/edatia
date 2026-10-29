@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Search, Users, Eye, Pencil, Trash2, SlidersHorizontal, Check, X, Building2, User } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTerceros, deleteTercero } from '../../services/erp.service'
+import { getFormasPago } from '../../services/configuracion.service'
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ export interface Tercero {
   cumpleanosMes: number
   cartera: string
   formaPago: string
+  plazoCredito?: number
   nivelPrecio: string
   clasificacion: string
   cupoCredito: boolean
@@ -280,6 +282,11 @@ export function ConfigTerceros() {
     queryFn: getTerceros,
   })
 
+  const { data: formasPagoList = [] } = useQuery({
+    queryKey: ['config-formas-pago'],
+    queryFn: getFormasPago,
+  })
+
   // Mutations
   const mutDeleteTercero = useMutation({
     mutationFn: (id: number) => deleteTercero(id),
@@ -322,7 +329,8 @@ export function ConfigTerceros() {
       cumpleanosDia: 0,
       cumpleanosMes: 0,
       cartera: t.esCliente ? 'CL - CLIENTES' : 'PR - PROVEEDORES',
-      formaPago: t.condicionesPago || '01 - EFECTIVO',
+      formaPago: t.condicionesPago || 'CONTADO',
+      plazoCredito: t.plazoCredito ? Number(t.plazoCredito) : 0,
       nivelPrecio: 'Precio Estándar',
       cupoCredito: !!t.cupoCredito,
       cupoCreditoValor: t.cupoCredito ? Number(t.cupoCredito) : 0,
@@ -529,9 +537,9 @@ export function ConfigTerceros() {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100"
             >
               <option value="">Todos</option>
-              <option value="01 - EFECTIVO">01 - EFECTIVO</option>
-              <option value="02 - CRÉDITO 30 DÍAS">02 - CRÉDITO 30 DÍAS</option>
-              <option value="03 - TRANSFERENCIA">03 - TRANSFERENCIA</option>
+              {formasPagoList.map((fp: any) => (
+                <option key={fp.id} value={fp.codigo}>{fp.nombre}</option>
+              ))}
             </select>
           </div>
           <div>

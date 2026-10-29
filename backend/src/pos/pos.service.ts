@@ -280,6 +280,7 @@ export class PosService {
             id: true, numero: true, clienteNombre: true,
             total: true, pagoEfectivo: true, pagoTarjetaDebito: true,
             pagoTarjetaCredito: true, pagoNequi: true, pagoTransferencia: true,
+            cambio: true,
             fecha: true, estado: true,
           },
         },
@@ -288,7 +289,72 @@ export class PosService {
       },
     })
     if (!sesion) throw new NotFoundException('Sesión no encontrada')
-    return sesion
+    const resumenMediosPago = await this.calcularResumenMediosPago(empresaId, sesionId, sesion)
+    return { ...sesion, resumenMediosPago }
+  }
+
+  private async calcularResumenMediosPago(empresaId: number, sesionId: number, sesion: any) {
+    const mediosConfig = await this.prisma.medioPago.findMany({
+      where: { empresaId, activo: true },
+      orderBy: { id: 'asc' },
+    })
+
+    const ventasAgg = await this.prisma.ventaPos.aggregate({
+      where: { sesionId, estado: 'COMPLETADA' },
+      _sum: {
+        total: true,
+        pagoEfectivo: true,
+        pagoTarjetaDebito: true,
+        pagoTarjetaCredito: true,
+        pagoTransferencia: true,
+        pagoNequi: true,
+        cambio: true,
+      },
+    })
+
+    const netEfectivo = Math.max(0, Number(ventasAgg._sum.pagoEfectivo ?? sesion.totalEfectivo ?? 0) - Number(ventasAgg._sum.cambio ?? 0))
+    const debito = Number(ventasAgg._sum.pagoTarjetaDebito ?? 0)
+    const credito = Number(ventasAgg._sum.pagoTarjetaCredito ?? 0)
+    const transferencia = Number(ventasAgg._sum.pagoTransferencia ?? sesion.totalTransferencia ?? 0)
+    const nequi = Number(ventasAgg._sum.pagoNequi ?? sesion.totalNequi ?? 0)
+    const totalTarjeta = debito + credito > 0 ? (debito + credito) : Number(sesion.totalTarjeta ?? 0)
+
+    if (mediosConfig.length > 0) {
+      return mediosConfig.map(m => {
+        const code = (m.codigo || '').toUpperCase()
+        const name = (m.nombre || '').toUpperCase()
+        let val = 0
+
+        if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
+          val = netEfectivo
+        } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
+          val = debito
+        } else if (code.includes('CREDITO') || name.includes('CREDITO')) {
+          val = credito
+        } else if (code.includes('TARJETA') || name.includes('TARJETA') || code.includes('DATAFONO') || name.includes('DATAFONO')) {
+          val = totalTarjeta
+        } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
+          val = nequi
+        } else if (code.includes('TRANSFERENCIA') || name.includes('TRANSFERENCIA') || code.includes('BANCO') || name.includes('PSE')) {
+          val = transferencia
+        }
+
+        return {
+          id: m.id,
+          codigo: m.codigo,
+          nombre: m.nombre,
+          total: val,
+        }
+      })
+    }
+
+    return [
+      { codigo: 'EFECTIVO', nombre: 'Efectivo', total: netEfectivo },
+      { codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta Débito', total: debito },
+      { codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta Crédito', total: credito },
+      { codigo: 'TRANSFERENCIA', nombre: 'Transferencia', total: transferencia },
+      { codigo: 'NEQUI', nombre: 'Nequi / Daviplata', total: nequi },
+    ]
   }
 
   async abrirCaja(empresaId: number, dto: { cajaId: number; montoInicial: number; vendedorId?: number; vendedorNombre?: string }, userId?: number) {
@@ -447,7 +513,8 @@ export class PosService {
       },
     })
 
-    return sesionCerrada
+    const resumenMediosPago = await this.calcularResumenMediosPago(empresaId, sesionId, sesionCerrada)
+    return { ...sesionCerrada, resumenMediosPago }
   }
 
   async movimientoCaja(empresaId: number, sesionId: number, dto: { tipo: 'INGRESO' | 'RETIRO'; concepto: string; monto: number }) {

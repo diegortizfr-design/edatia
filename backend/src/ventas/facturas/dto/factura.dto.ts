@@ -22,9 +22,8 @@ export class CreateFacturaDto {
   @IsDateString() fecha!: string
   @IsDateString() @IsOptional() fechaVencimiento?: string
 
-  @IsIn(['CONTADO', 'CREDITO']) formaPago!: string
-  @IsIn(['EFECTIVO', 'TRANSFERENCIA', 'CHEQUE', 'TARJETA_CREDITO', 'TARJETA_DEBITO'])
-  medioPago!: string
+  @IsString() formaPago!: string
+  @IsString() medioPago!: string
 
   // Retenciones aplicadas por el cliente agente retenedor
   @IsNumber() @IsOptional() @Type(() => Number) retefuente?: number

@@ -171,7 +171,12 @@ export class FacturasService {
       let documentoCxcId: number | null = dto.documentoCxcId ?? null
       let reciboCajaCreado: any = null
 
-      if (dto.formaPago === 'CREDITO') {
+      const fpConfig = await tx.formaPago.findFirst({
+        where: { empresaId, codigo: dto.formaPago },
+      })
+      const esCredito = fpConfig ? fpConfig.generaCartera : (dto.formaPago === 'CREDITO')
+
+      if (esCredito) {
         // En ventas a CRÉDITO: Generar documento de Cuenta por Cobrar [CXC]
         if (documentoCxcId) {
           const cxcDoc = await tx.documentoConfig.findFirst({
@@ -206,7 +211,7 @@ export class FacturasService {
         estado = 'EMITIDA'
         saldo = totalPagar
         totalPagado = 0
-      } else if (dto.formaPago === 'CONTADO') {
+      } else {
         // En ventas a CONTADO: Opción de generar Recibo de Caja (RC) inmediatamente
         if (dto.generarReciboCaja) {
           let rcDocId: number | null = dto.documentoReciboConfigId ?? null

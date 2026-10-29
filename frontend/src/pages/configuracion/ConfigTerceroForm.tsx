@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tercero, Sucursal } from './ConfigTerceros'
 import { getTercero, createTercero, updateTercero, getVendedores } from '../../services/erp.service'
-import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState, getTiposIdentificacion } from '../../services/configuracion.service'
+import { getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState, getTiposIdentificacion, getFormasPago } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
 const TIPO_PERSONA_OPTIONS = ['NATURAL', 'JURIDICA']
 const REGIMEN_OPTIONS = [
@@ -51,7 +51,8 @@ const DEFAULT_TERCERO: Tercero = {
   cumpleanosDia: 0,
   cumpleanosMes: 0,
   cartera: 'CL - CLIENTES',
-  formaPago: '01 - EFECTIVO',
+  formaPago: 'CONTADO',
+  plazoCredito: 0,
   nivelPrecio: 'Precio Estándar',
   clasificacion: 'General',
   cupoCredito: false,
@@ -131,7 +132,8 @@ const mapDbTerceroToForm = (t: any): Tercero => ({
   cumpleanosDia: 0,
   cumpleanosMes: 0,
   cartera: t.esCliente ? 'CL - CLIENTES' : 'PR - PROVEEDORES',
-  formaPago: t.condicionesPago || '01 - EFECTIVO',
+  formaPago: t.condicionesPago || 'CONTADO',
+  plazoCredito: t.plazoCredito ? Number(t.plazoCredito) : 0,
   nivelPrecio: 'Precio Estándar',
   clasificacion: 'Ninguna',
   cupoCredito: !!t.cupoCredito,
@@ -172,12 +174,12 @@ const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
     esColaborador: !!f.empleado,
     esVendedor: !!f.empleado,
 
-    plazoCredito: (f.formaPago || '').includes('30') ? 30 : 0,
+    plazoCredito: Number(f.plazoCredito || 0),
     cupoCredito: f.cupoCredito && f.cupoCreditoValor ? Number(f.cupoCreditoValor) : null,
     vendedorAsignadoId: vendId && vendId > 0 ? vendId : null,
     
     contactoNombre: finalNombre || null,
-    condicionesPago: f.formaPago || '01 - EFECTIVO',
+    condicionesPago: f.formaPago || 'CONTADO',
     monedaProveedor: 'COP',
 
     activo: f.activo !== false,
@@ -253,6 +255,11 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
     queryFn: getVendedores,
+  })
+
+  const { data: formasPagoList = [] } = useQuery({
+    queryKey: ['config-formas-pago'],
+    queryFn: getFormasPago,
   })
 
   const { data: geoData } = useQuery({
@@ -822,11 +829,44 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                   </select>
                 </Field>
                 <Field label="Forma de Pago">
-                  <select value={form.formaPago || ''} onChange={set('formaPago')} className={inputCls}>
-                    <option value="01 - EFECTIVO">01 - EFECTIVO</option>
-                    <option value="02 - CRÉDITO 30 DÍAS">02 - CRÉDITO 30 DÍAS</option>
-                    <option value="03 - TRANSFERENCIA">03 - TRANSFERENCIA</option>
+                  <select
+                    value={form.formaPago || ''}
+                    onChange={e => {
+                      const val = e.target.value
+                      const fp = formasPagoList.find((item: any) => item.codigo === val)
+                      const isCred = fp ? fp.generaCartera : val === 'CREDITO'
+                      setForm((prev: any) => ({
+                        ...prev,
+                        formaPago: val,
+                        plazoCredito: isCred && (!prev.plazoCredito || prev.plazoCredito === 0) ? 30 : (isCred ? prev.plazoCredito : 0)
+                      }))
+                    }}
+                    className={inputCls}
+                  >
+                    {formasPagoList
+                      .filter((f: any) => f.activo)
+                      .map((f: any) => (
+                        <option key={f.id} value={f.codigo}>
+                          {f.nombre}
+                        </option>
+                      ))}
+                    {formasPagoList.length === 0 && (
+                      <>
+                        <option value="CONTADO">Contado</option>
+                        <option value="CREDITO">Crédito</option>
+                      </>
+                    )}
                   </select>
+                </Field>
+                <Field label="Plazo de Crédito (Días)">
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.plazoCredito ?? 0}
+                    onChange={set('plazoCredito')}
+                    className={`${inputCls} text-right font-mono font-bold text-slate-700`}
+                    placeholder="0"
+                  />
                 </Field>
                 <Field label="Nivel de Precio">
                   <select value={form.nivelPrecio || ''} onChange={set('nivelPrecio')} className={inputCls}>

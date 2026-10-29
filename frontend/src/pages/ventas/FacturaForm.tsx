@@ -351,17 +351,21 @@ export function FacturaForm() {
     if (clienteFull) {
       setSucursalCliente('Principal')
       setDireccion(clienteFull.direccion || '')
-      if (clienteFull.plazoCredito > 0) {
-        setFormaPago('CREDITO')
+      const fpCli = clienteFull.condicionesPago || (clienteFull.plazoCredito > 0 ? 'CREDITO' : 'CONTADO')
+      const fpObj = formasPagoList.find((f: any) => f.codigo === fpCli)
+      const isCredit = fpObj ? fpObj.generaCartera : (clienteFull.plazoCredito > 0 || fpCli === 'CREDITO')
+      if (isCredit) {
+        setFormaPago(fpCli)
+        const days = Number(clienteFull.plazoCredito || 30)
         const limitDate = new Date()
-        limitDate.setDate(limitDate.getDate() + Number(clienteFull.plazoCredito))
+        limitDate.setDate(limitDate.getDate() + days)
         setFechaVencimiento(limitDate.toISOString().slice(0, 10))
       } else {
-        setFormaPago('CONTADO')
+        setFormaPago(fpCli || 'CONTADO')
         setFechaVencimiento('')
       }
     }
-  }, [clienteFull])
+  }, [clienteFull, formasPagoList])
 
   const handleSucursalChange = (val: string) => {
     setSucursalCliente(val)
@@ -539,6 +543,10 @@ export function FacturaForm() {
 
     if (exigeVencimiento && cxcDocConfigs.length > 0 && !selectedCxcDocId) {
       return alert('Debe seleccionar el documento de Cuenta por Cobrar (CXC) para la venta a crédito')
+    }
+
+    if (exigeVencimiento && !fechaVencimiento) {
+      return alert('Debe indicar la Fecha de Vencimiento para la venta a crédito')
     }
 
     if (!exigeVencimiento && generarRcInmediato && rcDocConfigs.length > 0 && !selectedRcDocId) {
@@ -1217,7 +1225,17 @@ export function FacturaForm() {
                     <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Forma de Pago *</label>
                     <select
                       value={formaPago}
-                      onChange={e => setFormaPago(e.target.value)}
+                      onChange={e => {
+                        const newFp = e.target.value
+                        setFormaPago(newFp)
+                        const fpObj = formasPagoList.find((f: any) => f.codigo === newFp)
+                        const isCred = fpObj ? fpObj.generaCartera : newFp !== 'CONTADO'
+                        if (isCred && !fechaVencimiento) {
+                          const d = new Date()
+                          d.setDate(d.getDate() + Number(clienteFull?.plazoCredito || 30))
+                          setFechaVencimiento(d.toISOString().slice(0, 10))
+                        }
+                      }}
                       className="w-full p-2.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-100"
                     >
                       {formasPagoList

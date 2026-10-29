@@ -74,7 +74,7 @@ export function CarteraPorEdades() {
     client.facturas.push(f)
 
     // Clasificar deuda
-    const isVencido = new Date(f.fechaVencimiento).getTime() < Date.now()
+    const isVencido = f.fechaVencimiento ? new Date(f.fechaVencimiento).getTime() < Date.now() : false
     if (!isVencido) {
       ranges.corriente.val += saldoVal
       client.corriente += saldoVal
