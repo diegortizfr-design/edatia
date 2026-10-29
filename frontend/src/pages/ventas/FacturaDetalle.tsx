@@ -23,7 +23,6 @@ function fmtDec(n: number) {
   }).format(n)
 }
 
-
 function numeroALetras(num: number): string {
   const unidades = ['cero', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve']
   const decenas = ['', 'diez', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa']
@@ -119,7 +118,6 @@ export function FacturaDetalle() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [confirmAnular, setConfirmAnular] = useState(false)
-  const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [showNcModal, setShowNcModal] = useState(false)
 
   const { data: configEmpresaLive } = useQuery({
@@ -163,18 +161,7 @@ export function FacturaDetalle() {
     logo: configEmpresaLive?.logo || rawEmpresa.logo || '',
     slogan: configEmpresaLive?.slogan || rawEmpresa.slogan || '',
   }
-  const _dummy = {
-    nombre: 'EDATIA S.A.S',
-    nit: '900.123.456',
-    digitoVerificacion: '7',
-    direccion: 'Calle 100 #15-30, Bogotá D.C.',
-    telefono: '(601) 555-0199',
-    email: 'info@edatia.com',
-    regimenFiscal: '48',
-    municipio: 'Bogotá',
-    pais: 'CO',
-    logo: ''
-  }
+
   const retefuente = Number(f.retefuente ?? 0)
   const reteiva    = Number(f.reteiva ?? 0)
   const reteica    = Number(f.reteica ?? 0)
@@ -183,9 +170,55 @@ export function FacturaDetalle() {
 
   const xmlUrl = `/api/ventas/facturas/${id}/xml`
 
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+
+  const handlePrint = () => {
+    const prevTitle = document.title
+    document.title = `Factura_${f.numero}`
+    window.print()
+    setTimeout(() => { document.title = prevTitle }, 1000)
+  }
+
+  const handleDownloadPdf = () => {
+    const el = document.getElementById('printable-voucher')
+    if (!el) return
+
+    setDownloadingPdf(true)
+    const win = window as any
+
+    const generatePdf = () => {
+      const opt = {
+        margin:       [8, 8, 8, 8],
+        filename:     `Factura_${f.numero}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+      }
+      win.html2pdf().set(opt).from(el).save().then(() => {
+        setDownloadingPdf(false)
+      }).catch(() => {
+        setDownloadingPdf(false)
+        handlePrint()
+      })
+    }
+
+    if (win.html2pdf) {
+      generatePdf()
+    } else {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+      script.onload = () => generatePdf()
+      script.onerror = () => {
+        setDownloadingPdf(false)
+        handlePrint()
+      }
+      document.head.appendChild(script)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Top Bar / Actions Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/ventas/facturas')}
@@ -215,12 +248,24 @@ export function FacturaDetalle() {
           )}
         </div>
 
-        {/* Acciones */}
+        {/* Acciones: Imprimir, Descargar PDF, Emitir, Anular, etc. */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowPrintPreview(true)}
+          <button onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 bg-white rounded-lg text-sm hover:bg-slate-50 font-medium transition-all active:scale-95 shadow-sm">
-            <Printer size={15} /> Ver/Descargar PDF
+            <Printer size={15} className="text-indigo-600" />
+            Imprimir
           </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+            title="Descargar documento en PDF"
+          >
+            <Download size={15} />
+            {downloadingPdf ? 'Generando PDF...' : 'Descargar PDF'}
+          </button>
+
           {f.estado === 'CREADA' && (
             <button onClick={() => mutEmitir.mutate()} disabled={mutEmitir.isPending}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
@@ -228,24 +273,28 @@ export function FacturaDetalle() {
               {mutEmitir.isPending ? 'Emitiendo...' : 'Emitir Factura'}
             </button>
           )}
+
           {f.xmlDIAN && (
             <a href={xmlUrl} target="_blank" rel="noreferrer"
               className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
               <Download size={15} /> XML DIAN
             </a>
           )}
+
           {f.estado === 'EMITIDA' && (
             <button onClick={() => setShowNcModal(true)}
               className="flex items-center gap-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg text-sm hover:bg-orange-50 font-medium transition-all active:scale-95">
               <Plus size={15} /> Crear Nota Crédito
             </button>
           )}
+
           {['CREADA', 'EMITIDA'].includes(f.estado) && !confirmAnular && (
             <button onClick={() => setConfirmAnular(true)}
               className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
               <XCircle size={15} /> Anular
             </button>
           )}
+
           {confirmAnular && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               <AlertTriangle size={14} className="text-red-500" />
@@ -269,802 +318,309 @@ export function FacturaDetalle() {
           </span>
         </div>
       )}
-        <div className="flex flex-col gap-6">
-        {/* Información cabecera (Compact Full-Width Grid) */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Información General</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Cliente</p>
-              <p className="font-semibold text-slate-800">{f.cliente?.nombre || '—'}</p>
-              {f.cliente && (
-                <p className="text-xs text-slate-500">{f.cliente.tipoDocumento} {f.cliente.numeroDocumento}</p>
+
+      {/* Banner de Cartera / Saldo Pendiente */}
+      {saldoPendiente > 0 && (
+        <div className="flex items-center justify-between p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium print:hidden">
+          <span>Factura con saldo pendiente: <strong>{fmt(saldoPendiente)}</strong></span>
+          <Link to={`/ventas/recibos?clienteId=${f.clienteId}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shadow-sm">
+            <CreditCard size={14} /> Registrar Recibo de Caja
+          </Link>
+        </div>
+      )}
+
+      {/* Vista Principal de Documento Gráfico Oficial */}
+      <div className="flex justify-center bg-slate-100/70 p-3 sm:p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-inner">
+        <div id="printable-voucher" className="w-full max-w-4xl bg-white rounded-2xl shadow-xl border border-slate-200/90 p-6 sm:p-8 md:p-12 space-y-6 text-slate-800 select-text">
+          {/* Header Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-4 text-slate-800">
+            {/* Logo */}
+            <div className="col-span-1 flex items-center justify-start">
+              {empresa.logo ? (
+                <img src={empresa.logo} alt="Logo" className="max-h-20 max-w-[180px] object-contain drop-shadow-sm" />
+              ) : (
+                <div className="h-14 w-14 bg-slate-800 text-white flex items-center justify-center rounded-xl font-black text-xl shadow-sm">ED</div>
               )}
             </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Ciudad</p>
-              <p className="font-semibold text-slate-850">
-                {f.cliente?.municipio 
-                  ? `${f.cliente.municipio}${f.cliente.departamento ? `, ${f.cliente.departamento}` : ''}` 
-                  : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Dirección de Despacho</p>
-              <p className="font-semibold text-slate-850">{f.direccion || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Teléfono</p>
-              <p className="font-semibold text-slate-850">{f.cliente?.telefono || f.cliente?.celular || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Forma de pago</p>
-              <p className="font-semibold text-slate-850">{f.formaPago || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Medio de pago</p>
-              <p className="font-semibold text-slate-850">{f.medioPago?.replace('_', ' ') || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Vencimiento</p>
-              <p className="font-semibold text-slate-850">
-                {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Bodega</p>
-              <p className="font-semibold text-slate-850">{f.bodega?.nombre || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Vendedor</p>
-              <p className="font-semibold text-slate-850">{f.vendedorNombre || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Canal de venta</p>
-              <p className="font-semibold text-slate-850">{f.canal || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Nivel de precio</p>
-              <p className="font-semibold text-slate-850">{f.nivel || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Sucursal Cliente</p>
-              <p className="font-semibold text-slate-850">{f.sucursalCliente || '—'}</p>
-            </div>
-            <div className="col-span-2 md:col-span-4 lg:col-span-6 border-t border-slate-100 pt-3 mt-1">
-              <p className="text-xs text-slate-400 mb-0.5">Observación / Notas</p>
-              <p className="text-slate-600 text-xs italic bg-slate-50 border border-slate-100 rounded-xl p-3">
-                {f.notas || 'Sin observaciones'}
-              </p>
-            </div>
-          </div>
-          
-          {f.resolucion && (
-            <div className="mt-4 bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-500">
-              <p className="font-bold text-[10px] text-slate-400 uppercase tracking-widest mb-1">Autorización de Facturación DIAN</p>
-              <p>
-                Resolución No. <span className="font-semibold text-slate-700">{f.resolucion.numeroResolucion}</span> del {new Date(f.resolucion.fechaResolucion).toLocaleDateString('es-CO')}. 
-                Vigente hasta {new Date(f.resolucion.fechaVigencia).toLocaleDateString('es-CO')}. Prefijo <span className="font-semibold text-slate-700">{f.resolucion.prefijo || 'Ninguno'}</span>, Rango desde No. <span className="font-semibold text-slate-700">{f.resolucion.numeroInicial}</span> al No. <span className="font-semibold text-slate-700">{f.resolucion.numeroFinal}</span>.
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Tabla de ítems (Full Width) */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-800">Ítems ({f.items?.length ?? 0})</h2>
+            {/* Company details */}
+            <div className="col-span-2 text-center space-y-0.5">
+              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">{empresa.nombre}</h2>
+              {empresa.slogan && <p className="text-[10px] italic text-slate-500 font-medium">{empresa.slogan}</p>}
+              <p className="text-[11px] font-extrabold text-slate-800">
+                NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}
+              </p>
+              <p className="text-[10px] text-slate-600">Dirección: {empresa.direccion || '—'}</p>
+              <p className="text-[10px] text-slate-600">
+                Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}
+              </p>
+              <p className="text-[10px] text-slate-600">{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
+            </div>
+
+            {/* QR code and Invoice card (Stacked) */}
+            <div className="col-span-1 flex flex-col items-end gap-1.5 justify-center">
+              {f.qrUrl ? (
+                <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(f.qrUrl)}`} 
+                    alt="QR DIAN" 
+                    className="w-12 h-12" 
+                  />
+                </div>
+              ) : (
+                <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
+                  <div className="w-12 h-12 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
+                </div>
+              )}
+              <div className="border-2 border-slate-800 p-2 text-center bg-white rounded-lg w-full max-w-[170px] shadow-sm">
+                <p className="text-[8px] font-extrabold text-slate-600 uppercase tracking-wider leading-none">
+                  {f.tipoDocumento === 'FVE' ? 'Factura electrónica de venta' : 'Factura de Venta'}
+                </p>
+                <p className="text-sm font-black text-slate-900 mt-1 font-mono tracking-tight">No. {f.numero}</p>
+              </div>
+            </div>
           </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                  <th className="px-4 py-2.5 text-left font-semibold">Producto</th>
-                  <th className="px-4 py-2.5 text-left font-semibold">Descripción</th>
-                  <th className="px-4 py-2.5 text-right font-semibold w-16">Cant.</th>
-                  <th className="px-4 py-2.5 text-right font-semibold w-28">Precio</th>
-                  <th className="px-4 py-2.5 text-right font-semibold w-16">Dto %</th>
-                  <th className="px-4 py-2.5 text-left font-semibold w-24">IVA</th>
-                  <th className="px-4 py-2.5 text-right font-semibold w-28">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {(f.items ?? []).map((item: any) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <p className="text-xs font-medium text-slate-800">{item.producto?.nombre}</p>
-                      <p className="text-xs text-slate-400">{item.producto?.sku}</p>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-660">{item.descripcion}</td>
-                    <td className="px-4 py-3 text-xs text-right text-slate-700">{item.cantidad} {item.unidad || 'UND'}</td>
-                    <td className="px-4 py-3 text-xs text-right text-slate-700">{fmt(Number(item.precioUnitario))}</td>
-                    <td className="px-4 py-3 text-xs text-right text-slate-600">{item.descuentoPct}%</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                        {item.tipoIva}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-right font-semibold text-slate-700">
-                      {fmt(Number(item.total))}
+
+          {/* Informative 2-Column Block */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
+            {/* Columna 1: Información del Cliente */}
+            <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+              <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
+                Información del Cliente
+              </div>
+              <table className="w-full border-collapse">
+                <tbody className="divide-y divide-slate-100">
+                  <tr>
+                    <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nombre / Razón Social:</td>
+                    <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.cliente?.nombre || 'Consumidor Final'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Tipo de Documento:</td>
+                    <td className="px-3 py-1.5 font-medium text-slate-800 uppercase">{f.cliente?.tipoDocumento || 'Cédula / NIT'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Número de Documento:</td>
+                    <td className="px-3 py-1.5 font-mono font-bold text-slate-900">
+                      {f.cliente?.numeroDocumento || '222222222222'}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Dirección:</td>
+                    <td className="px-3 py-1.5 text-slate-800">
+                      {f.cliente?.direccion || f.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Ciudad:</td>
+                    <td className="px-3 py-1.5 text-slate-800">
+                      {f.cliente?.municipio || '—'}{f.cliente?.departamento ? ` · ${f.cliente.departamento}` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Teléfono:</td>
+                    <td className="px-3 py-1.5 font-medium text-slate-800">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-        {/* Bottom Section: Left (DIAN, Recibos) & Right (Totales) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-4">
-            {/* DIAN info */}
-            {f.cufe && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 space-y-3">
-                <h2 className="font-semibold text-indigo-800 text-sm flex items-center gap-2">
-                  <CheckCircle size={15} /> Información DIAN
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><Hash size={11} /> CUFE</p>
-                    <p className="font-mono text-[10px] text-indigo-900 break-all bg-white/60 rounded p-2">{f.cufe}</p>
-                  </div>
-                  {f.qrUrl && (
-                    <div>
-                      <p className="text-xs text-indigo-500 mb-0.5 flex items-center gap-1"><QrCode size={11} /> QR DIAN</p>
-                      <a href={f.qrUrl} target="_blank" rel="noreferrer"
-                        className="text-[10px] text-indigo-700 underline break-all">
-                        {f.qrUrl}
-                      </a>
-                    </div>
-                  )}
-                </div>
+            {/* Columna 2: Información del Documento */}
+            <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+              <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
+                Información del Documento
               </div>
-            )}
-
-            {/* Historial de recibos */}
-            {f.recibos?.length > 0 && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                  <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                    <CreditCard size={15} className="text-green-600" /> Pagos recibidos
-                  </h2>
-                  <span className="text-xs text-slate-400">{f.recibos.length} pago(s)</span>
-                </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100 bg-slate-50">
-                      <th className="px-4 py-2.5 text-left font-semibold">Recibo</th>
-                      <th className="px-4 py-2.5 text-left font-semibold">Fecha</th>
-                      <th className="px-4 py-2.5 text-right font-semibold">Valor</th>
+              <table className="w-full border-collapse">
+                <tbody className="divide-y divide-slate-100">
+                  <tr>
+                    <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nro. de Documento:</td>
+                    <td className="px-3 py-1.5 font-mono font-black text-slate-900">{f.numero}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Expedición:</td>
+                    <td className="px-3 py-1.5 font-medium text-slate-800">
+                      {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Vencimiento:</td>
+                    <td className="px-3 py-1.5 font-medium text-slate-800">
+                      {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : 'Misma fecha (Contado)'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Forma de Pago:</td>
+                    <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.formaPago || 'CONTADO'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Medio de Pago:</td>
+                    <td className="px-3 py-1.5 font-semibold text-slate-900 uppercase">
+                      {f.medioPago ? f.medioPago.replace('_', ' ') : 'EFECTIVO'}
+                    </td>
+                  </tr>
+                  {f.vendedorNombre && (
+                    <tr>
+                      <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
+                      <td className="px-3 py-1.5 text-slate-800">{f.vendedorNombre}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {f.recibos.map((r: any) => (
-                      <tr key={r.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-mono text-xs text-indigo-700">{r.recibo?.numero}</td>
-                        <td className="px-4 py-3 text-xs text-slate-660">
-                          {r.recibo?.fecha ? new Date(r.recibo.fecha).toLocaleDateString('es-CO') : '—'}
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="space-y-1.5">
+            <h4 className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">Detalle de Productos Facturados</h4>
+            <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-extrabold uppercase tracking-wider text-[9px]">
+                    <th className="py-2.5 px-3 text-left w-28">Ref de Fábrica</th>
+                    <th className="py-2.5 px-3 text-left">Descripción</th>
+                    <th className="py-2.5 px-3 text-right w-20">Cantidad</th>
+                    <th className="py-2.5 px-3 text-right w-28">Valor Unitario</th>
+                    <th className="py-2.5 px-3 text-right w-16">IVA</th>
+                    <th className="py-2.5 px-3 text-right w-20">Descuento</th>
+                    <th className="py-2.5 px-3 text-right w-28">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {f.items?.map((item: any) => {
+                    const tasaIva = item.tipoIva === 'IVA_19' ? 19 : item.tipoIva === 'IVA_5' ? 5 : 0
+                    const cantNum = Number(item.cantidad)
+                    const cantFmt = cantNum % 1 === 0 ? cantNum.toString() : cantNum.toFixed(2)
+                    const refFabrica = item.producto?.referencia || item.producto?.sku || 'N/A'
+                    return (
+                      <tr key={item.id} className="text-slate-800 hover:bg-slate-50/50">
+                        <td className="py-2 px-3 font-mono text-[10px] text-slate-600 font-bold">{refFabrica}</td>
+                        <td className="py-2 px-3 font-bold text-slate-900">
+                          {item.producto?.nombre || item.descripcion}
+                          {item.producto?.nombre && item.descripcion && item.descripcion !== item.producto.nombre && (
+                            <span className="block text-[10px] text-slate-500 font-normal mt-0.5">{item.descripcion}</span>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-right font-semibold text-green-700">
-                          {fmt(Number(r.recibo?.valor ?? 0))}
-                        </td>
+                        <td className="py-2 px-3 text-right font-medium text-slate-800">{cantFmt} {item.unidad || 'UND'}</td>
+                        <td className="py-2 px-3 text-right font-medium text-slate-800">{fmtDec(Number(item.precioUnitario))}</td>
+                        <td className="py-2 px-3 text-right font-medium text-slate-800">{tasaIva > 0 ? `${tasaIva}%` : '0%'}</td>
+                        <td className="py-2 px-3 text-right font-medium text-slate-800">{Number(item.descuentoPct || 0) > 0 ? `${item.descuentoPct}%` : '0%'}</td>
+                        <td className="py-2 px-3 text-right font-black text-slate-900">{fmtDec(Number(item.total))}</td>
                       </tr>
-                    ))}
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Bottom Section: Totals, In-Letters & Notes */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-4 border-t-2 border-slate-800 text-xs items-start">
+            {/* Left Column: Valor en Letras, Total Items, Observaciones (spans 7 cols) */}
+            <div className="md:col-span-7 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Total ítems:</span>
+                <span className="text-slate-900 font-black px-2 py-0.5 bg-slate-100 rounded text-xs">{f.items?.length ?? 0}</span>
+              </div>
+
+              <div className="border border-slate-200 bg-slate-50/80 rounded-lg p-3 space-y-1">
+                <p className="font-bold text-slate-500 uppercase text-[9px] tracking-wider">Valor en Letras:</p>
+                <p className="text-xs font-black text-slate-900 uppercase leading-snug">
+                  {numeroALetras(Number(f.total ?? 0))}
+                </p>
+              </div>
+
+              {f.notas && (
+                <div className="text-[11px] text-slate-700 border-l-2 border-indigo-400 pl-2.5 py-0.5">
+                  <span className="font-bold text-slate-800">Observaciones: </span>
+                  <span className="whitespace-pre-line text-slate-600">{f.notas}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Financial Totals Box (spans 5 cols) */}
+            <div className="md:col-span-5">
+              <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                <table className="w-full border-collapse text-xs">
+                  <tbody className="divide-y divide-slate-200">
+                    <tr>
+                      <td className="px-3 py-2 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">Subtotal</td>
+                      <td className="px-3 py-2 text-right text-slate-900 font-semibold">{fmtDec(Number(f.subtotal ?? 0))}</td>
+                    </tr>
+                    {Number(f.descuento ?? 0) > 0 && (
+                      <tr>
+                        <td className="px-3 py-1.5 text-slate-600 font-bold bg-slate-50/70 border-r border-slate-200">Descuento</td>
+                        <td className="px-3 py-1.5 text-right text-red-600 font-semibold">-{fmtDec(Number(f.descuento))}</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td className="px-3 py-1.5 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">
+                        IVA {Number(f.iva19 ?? 0) > 0 ? '(19%)' : Number(f.iva5 ?? 0) > 0 ? '(5%)' : ''}
+                      </td>
+                      <td className="px-3 py-1.5 text-right text-slate-900 font-semibold">
+                        {fmtDec(Number((f.iva19 || 0) + (f.iva5 || 0) || f.iva || 0))}
+                      </td>
+                    </tr>
+                    {hayRetenciones && (
+                      <>
+                        {retefuente > 0 && (
+                          <tr className="text-amber-800">
+                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteFuente</td>
+                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(retefuente)}</td>
+                          </tr>
+                        )}
+                        {reteiva > 0 && (
+                          <tr className="text-amber-800">
+                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteIVA</td>
+                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteiva)}</td>
+                          </tr>
+                        )}
+                        {reteica > 0 && (
+                          <tr className="text-amber-800">
+                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteICA</td>
+                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteica)}</td>
+                          </tr>
+                        )}
+                      </>
+                    )}
+                    <tr className="bg-slate-900 text-white font-black text-sm">
+                      <td className="px-3 py-2.5 uppercase tracking-wide">Total a Pagar</td>
+                      <td className="px-3 py-2.5 text-right">{fmtDec(Number(f.total ?? 0))}</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          {/* DIAN Resolution Banner */}
+          <div className="bg-slate-100 border border-slate-200 p-4 text-[10px] text-slate-700 space-y-1.5 text-center mt-6 rounded-lg">
+            <p className="leading-relaxed">
+              A esta factura de venta aplican las normas relativas a la letra de cambio (artículo 5 Ley 1231 de 2008). Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título - Valor.
+              {f.resolucion && (
+                <>
+                  {" "}Número Autorización Electrónica <span className="font-bold">{f.resolucion.numeroResolucion}</span> aprobado en {new Date(f.resolucion.fechaResolucion).toLocaleDateString('es-CO')} prefijo <span className="font-bold">{f.resolucion.prefijo || 'Ninguno'}</span> desde el número {f.resolucion.numeroInicial} al {f.resolucion.numeroFinal} Vigencia: {new Date(f.resolucion.fechaVigencia).toLocaleDateString('es-CO')}.
+                </>
+              )}
+            </p>
+            <p className="font-bold">
+              {getRegimenFiscalLabel(empresa)} · Actividad Económica {empresa.actividadEconomica || '—'}
+            </p>
+            {f.cufe && (
+              <p className="font-mono text-[9px] text-slate-650 select-all">
+                CUFE: {f.cufe}
+              </p>
             )}
           </div>
 
-          {/* Columna derecha: totales */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sticky top-4">
-              <h2 className="font-semibold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Totales</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-slate-500">
-                  <span>Subtotal bruto</span>
-                  <span>{fmt(Number(f.subtotal ?? 0))}</span>
-                </div>
-                {Number(f.descuento ?? 0) > 0 && (
-                  <div className="flex justify-between text-slate-500">
-                    <span>Descuento</span>
-                    <span>-{fmt(Number(f.descuento))}</span>
-                  </div>
-                )}
-                {Number(f.iva19 ?? 0) > 0 && (
-                  <div className="flex justify-between text-slate-600 font-medium">
-                    <span>IVA 19%</span>
-                    <span>{fmt(Number(f.iva19))}</span>
-                  </div>
-                )}
-                {Number(f.iva5 ?? 0) > 0 && (
-                  <div className="flex justify-between text-slate-600 font-medium">
-                    <span>IVA 5%</span>
-                    <span>{fmt(Number(f.iva5))}</span>
-                  </div>
-                )}
-
-                {hayRetenciones && (
-                  <div className="border-t border-dashed border-slate-100 pt-2 mt-2 space-y-1.5">
-                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Retenciones</p>
-                    {retefuente > 0 && (
-                      <div className="flex justify-between text-amber-700">
-                        <span>ReteFuente</span>
-                        <span>-{fmt(retefuente)}</span>
-                      </div>
-                    )}
-                    {reteiva > 0 && (
-                      <div className="flex justify-between text-amber-700">
-                        <span>ReteIVA</span>
-                        <span>-{fmt(reteiva)}</span>
-                      </div>
-                    )}
-                    {reteica > 0 && (
-                      <div className="flex justify-between text-amber-700">
-                        <span>ReteICA</span>
-                        <span>-{fmt(reteica)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="border-t border-slate-200 pt-3 flex justify-between font-bold text-base">
-                  <span className="text-slate-800">TOTAL</span>
-                  <span className="text-indigo-700">{fmt(Number(f.total ?? 0))}</span>
-                </div>
-
-                {Number(f.total) !== saldoPendiente && (
-                  <>
-                    <div className="flex justify-between text-green-600 font-medium">
-                      <span>Pagado</span>
-                      <span>{fmt(Number(f.total) - saldoPendiente)}</span>
-                    </div>
-                    <div className={`flex justify-between font-bold ${saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      <span>Saldo</span>
-                      <span>{fmt(saldoPendiente)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Botón cobrar */}
-              {['EMITIDA', 'VENCIDA'].includes(f.estado) && saldoPendiente > 0 && (
-                <Link to={`/ventas/recibos?clienteId=${f.clienteId}`}
-                  className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
-                  <CreditCard size={15} /> Registrar pago
-                </Link>
-              )}
+          <div className="flex justify-between items-center text-[8px] text-slate-400 mt-4 px-2">
+            <div>
+              Firma electrónica: ver en el XML
+            </div>
+            <div>
+              Fabricante Software: Edatia Software
             </div>
           </div>
         </div>
       </div>
-
-
-      {/* Vista de Impresión / Formato Gráfico (Voucher) */}
-      {showPrintPreview && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col justify-start items-center overflow-y-auto z-50 p-4 md:p-8 select-text">
-          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-4">
-            
-            {/* Modal Actions Bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0 print:hidden">
-              <div className="flex items-center gap-2">
-                <FileText className="text-indigo-600" size={18} />
-                <h3 className="font-extrabold text-slate-800 text-sm">
-                  Formato Gráfico de Factura de Venta
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
-                >
-                  <Printer size={14} /> Imprimir / PDF
-                </button>
-                <button
-                  onClick={() => setShowPrintPreview(false)}
-                  className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Area */}
-            <div id="printable-voucher" className="p-8 md:p-12 bg-white space-y-6 text-slate-800 select-text overflow-y-auto">
-              {/* Header Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-4 text-slate-800">
-                {/* Logo */}
-                <div className="col-span-1 flex items-center justify-start">
-                  {empresa.logo ? (
-                    <img src={empresa.logo} alt="Logo" className="max-h-20 max-w-[180px] object-contain drop-shadow-sm" />
-                  ) : (
-                    <div className="h-14 w-14 bg-slate-800 text-white flex items-center justify-center rounded-xl font-black text-xl shadow-sm">ED</div>
-                  )}
-                </div>
-
-                {/* Company details */}
-                <div className="col-span-2 text-center space-y-0.5">
-                  <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">{empresa.nombre}</h2>
-                  {empresa.slogan && <p className="text-[10px] italic text-slate-500 font-medium">{empresa.slogan}</p>}
-                  <p className="text-[11px] font-extrabold text-slate-800">
-                    NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}
-                  </p>
-                  <p className="text-[10px] text-slate-600">Dirección: {empresa.direccion || '—'}</p>
-                  <p className="text-[10px] text-slate-600">
-                    Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}
-                  </p>
-                  <p className="text-[10px] text-slate-600">{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
-                </div>
-
-                {/* QR code and Invoice card (Stacked) */}
-                <div className="col-span-1 flex flex-col items-end gap-1.5 justify-center">
-                  {f.qrUrl ? (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(f.qrUrl)}`} 
-                        alt="QR DIAN" 
-                        className="w-12 h-12" 
-                      />
-                    </div>
-                  ) : (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
-                      <div className="w-12 h-12 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
-                    </div>
-                  )}
-                  <div className="border-2 border-slate-800 p-2 text-center bg-white rounded-lg w-full max-w-[170px] shadow-sm">
-                    <p className="text-[8px] font-extrabold text-slate-600 uppercase tracking-wider leading-none">
-                      {f.tipoDocumento === 'FVE' ? 'Factura electrónica de venta' : 'Factura de Venta'}
-                    </p>
-                    <p className="text-sm font-black text-slate-900 mt-1 font-mono tracking-tight">No. {f.numero}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden">
-                {/* Logo and Dates */}
-                <div className="col-span-1 flex flex-col items-start gap-1">
-                  {empresa.logo ? (
-                    <img src={empresa.logo} alt="Logo" className="max-h-16 max-w-[160px] object-contain" />
-                  ) : (
-                    <div className="h-12 w-12 bg-slate-800 text-white flex items-center justify-center rounded font-black text-lg">ED</div>
-                  )}
-                  <div className="text-[8px] text-slate-500 mt-2 space-y-0.5 leading-tight">
-                    <p><span className="font-bold text-slate-600">Gen:</span> {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}</p>
-                    <p><span className="font-bold text-slate-600">Exp:</span> {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}</p>
-                    {f.fechaVencimiento && (
-                      <p><span className="font-bold text-slate-600">Venc:</span> {new Date(f.fechaVencimiento).toLocaleDateString('es-CO')}</p>
-                    )}
-                  </div>
-                </div>
-                {/* Company details */}
-                <div className="col-span-2 text-center text-[10px] text-slate-650 leading-tight space-y-0.5">
-                  <h2 className="text-sm font-extrabold text-slate-800 uppercase">{empresa.nombre}</h2>
-                  {empresa.slogan && <p className="text-[9px] italic text-slate-500 font-medium">{empresa.slogan}</p>}
-                  <p className="font-bold">NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}</p>
-                  <p>Dirección: {empresa.direccion || '—'}</p>
-                  <p>Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}</p>
-                  <p>{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
-                </div>
-                {/* QR code and Invoice card (Stacked) */}
-                <div className="col-span-1 flex flex-col items-end gap-1.5">
-                  {f.qrUrl ? (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(f.qrUrl)}`} 
-                        alt="QR DIAN" 
-                        className="w-12 h-12" 
-                      />
-                    </div>
-                  ) : (
-                    <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
-                      <div className="w-12 h-12 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
-                    </div>
-                  )}
-                  <div className="border border-slate-300 p-1.5 text-center bg-white rounded-md w-full max-w-[170px] shadow-sm">
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none">
-                      {f.tipoDocumento === 'FVE' ? 'Factura electrónica de venta' : 'Factura de Venta'}
-                    </p>
-                    <p className="text-xs font-black text-slate-800 mt-1 font-mono">No. {f.numero}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informative Columns */}
-              {/* Informative 2-Column Block */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
-                {/* Columna 1: Información del Cliente */}
-                <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-                  <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
-                    Información del Cliente
-                  </div>
-                  <table className="w-full border-collapse">
-                    <tbody className="divide-y divide-slate-100">
-                      <tr>
-                        <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nombre / Razón Social:</td>
-                        <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.cliente?.nombre || 'Consumidor Final'}</td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Tipo de Documento:</td>
-                        <td className="px-3 py-1.5 font-medium text-slate-800 uppercase">{f.cliente?.tipoDocumento || 'Cédula / NIT'}</td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Número de Documento:</td>
-                        <td className="px-3 py-1.5 font-mono font-bold text-slate-900">
-                          {f.cliente?.numeroDocumento || '222222222222'}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Dirección:</td>
-                        <td className="px-3 py-1.5 text-slate-800">
-                          {f.cliente?.direccion || f.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Ciudad:</td>
-                        <td className="px-3 py-1.5 text-slate-800">
-                          {f.cliente?.municipio || '—'}{f.cliente?.departamento ? ` · ${f.cliente.departamento}` : ''}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Teléfono:</td>
-                        <td className="px-3 py-1.5 font-medium text-slate-800">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Columna 2: Información del Documento */}
-                <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-                  <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
-                    Información del Documento
-                  </div>
-                  <table className="w-full border-collapse">
-                    <tbody className="divide-y divide-slate-100">
-                      <tr>
-                        <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nro. de Documento:</td>
-                        <td className="px-3 py-1.5 font-mono font-black text-slate-900">{f.numero}</td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Expedición:</td>
-                        <td className="px-3 py-1.5 font-medium text-slate-800">
-                          {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Vencimiento:</td>
-                        <td className="px-3 py-1.5 font-medium text-slate-800">
-                          {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : 'Misma fecha (Contado)'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Forma de Pago:</td>
-                        <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.formaPago || 'CONTADO'}</td>
-                      </tr>
-                      <tr>
-                        <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Medio de Pago:</td>
-                        <td className="px-3 py-1.5 font-semibold text-slate-900 uppercase">
-                          {f.medioPago ? f.medioPago.replace('_', ' ') : 'EFECTIVO'}
-                        </td>
-                      </tr>
-                      {f.vendedorNombre && (
-                        <tr>
-                          <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
-                          <td className="px-3 py-1.5 text-slate-800">{f.vendedorNombre}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="hidden">
-                <table className="w-full border-collapse text-[11px]">
-                  <tbody>
-                    <tr className="border border-slate-200">
-                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Señores</td>
-                      <td className="px-2.5 py-1.5 font-semibold text-slate-800 border-r border-slate-200" colSpan={3}>{f.cliente?.nombre || '—'}</td>
-                    </tr>
-                    <tr className="border border-slate-200">
-                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">NIT</td>
-                      <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.numeroDocumento}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}</td>
-                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Teléfono</td>
-                      <td className="px-2.5 py-1.5 font-medium">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
-                    </tr>
-                    <tr className="border border-slate-200">
-                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Dirección</td>
-                      <td className="px-2.5 py-1.5 font-medium border-r border-slate-200 w-44">{f.cliente?.direccion || '—'}</td>
-                      <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-slate-600 border-r border-slate-200 w-24">Ciudad</td>
-                      <td className="px-2.5 py-1.5 font-medium">{f.cliente?.municipio || '—'} {f.cliente?.departamento ? `· ${f.cliente.departamento}` : ''}</td>
-                    </tr>
-                    {(f.direccion || f.sucursalCliente) && (
-                      <tr className="border border-slate-200">
-                        <td className="bg-slate-100/80 px-2.5 py-1.5 font-bold text-indigo-700 border-r border-slate-200 w-24">Dirección recepción</td>
-                        <td className="px-2.5 py-1.5 font-semibold text-indigo-900" colSpan={3}>
-                          {f.direccion || f.cliente?.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Items Table */}
-              <div className="space-y-2">
-</div>
-              {/* Items Table */}
-              <div className="space-y-1.5">
-                <h4 className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">Detalle de Productos Facturados</h4>
-                <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-                  <table className="w-full border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-extrabold uppercase tracking-wider text-[9px]">
-                        <th className="py-2.5 px-3 text-left w-28">Ref de Fábrica</th>
-                        <th className="py-2.5 px-3 text-left">Descripción</th>
-                        <th className="py-2.5 px-3 text-right w-20">Cantidad</th>
-                        <th className="py-2.5 px-3 text-right w-28">Valor Unitario</th>
-                        <th className="py-2.5 px-3 text-right w-16">IVA</th>
-                        <th className="py-2.5 px-3 text-right w-20">Descuento</th>
-                        <th className="py-2.5 px-3 text-right w-28">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {f.items?.map((item: any) => {
-                        const tasaIva = item.tipoIva === 'IVA_19' ? 19 : item.tipoIva === 'IVA_5' ? 5 : 0
-                        const cantNum = Number(item.cantidad)
-                        const cantFmt = cantNum % 1 === 0 ? cantNum.toString() : cantNum.toFixed(2)
-                        const refFabrica = item.producto?.referencia || item.producto?.sku || 'N/A'
-                        return (
-                          <tr key={item.id} className="text-slate-800 hover:bg-slate-50/50">
-                            <td className="py-2 px-3 font-mono text-[10px] text-slate-600 font-bold">{refFabrica}</td>
-                            <td className="py-2 px-3 font-bold text-slate-900">
-                              {item.producto?.nombre || item.descripcion}
-                              {item.producto?.nombre && item.descripcion && item.descripcion !== item.producto.nombre && (
-                                <span className="block text-[10px] text-slate-500 font-normal mt-0.5">{item.descripcion}</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-800">{cantFmt} {item.unidad || 'UND'}</td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-800">{fmtDec(Number(item.precioUnitario))}</td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-800">{tasaIva > 0 ? `${tasaIva}%` : '0%'}</td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-800">{Number(item.descuentoPct || 0) > 0 ? `${item.descuentoPct}%` : '0%'}</td>
-                            <td className="py-2 px-3 text-right font-black text-slate-900">{fmtDec(Number(item.total))}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="hidden">
-                <table className="w-full border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-y border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                      <th className="py-2 px-2 text-left w-24">SKU</th>
-                      <th className="py-2 px-2 text-left">Descripción del Producto</th>
-                      <th className="py-2 px-2 text-right w-16">Cant.</th>
-                      <th className="py-2 px-2 text-right w-24">Precio Unit.</th>
-                      <th className="py-2 px-2 text-right w-16">Dto %</th>
-                      <th className="py-2 px-2 text-right w-16">IVA %</th>
-                      <th className="py-2 px-2 text-right w-28">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {f.items?.map((item: any) => {
-                      const tasaIva = item.tipoIva === 'IVA_19' ? 19 : item.tipoIva === 'IVA_5' ? 5 : 0
-                      return (
-                        <tr key={item.id} className="text-slate-700 hover:bg-slate-50/50">
-                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{item.producto?.sku || 'N/A'}</td>
-                          <td className="py-2.5 px-2 font-semibold text-slate-800">
-                            {item.producto?.nombre || item.descripcion}
-                            {item.producto?.nombre && item.descripcion && item.descripcion !== item.producto.nombre && (
-                              <span className="block text-[10px] text-slate-450 font-normal mt-0.5">{item.descripcion}</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-2 text-right">{Number(item.cantidad).toFixed(2)} {item.unidad || 'UND'}</td>
-                          <td className="py-2.5 px-2 text-right">{fmtDec(Number(item.precioUnitario))}</td>
-                          <td className="py-2.5 px-2 text-right">{Number(item.descuentoPct || 0) > 0 ? `${item.descuentoPct}%` : '0%'}</td>
-                          <td className="py-2.5 px-2 text-right">{tasaIva}%</td>
-                          <td className="py-2.5 px-2 text-right font-semibold text-slate-900">{fmtDec(Number(item.total))}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Bottom Section: Totals, Payment Info & DIAN Banner */}
-              {/* Bottom Section: Totals, In-Letters & Notes */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-4 border-t-2 border-slate-800 text-xs items-start">
-                {/* Left Column: Valor en Letras, Total Items, Observaciones (spans 7 cols) */}
-                <div className="md:col-span-7 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Total ítems:</span>
-                    <span className="text-slate-900 font-black px-2 py-0.5 bg-slate-100 rounded text-xs">{f.items?.length ?? 0}</span>
-                  </div>
-
-                  <div className="border border-slate-200 bg-slate-50/80 rounded-lg p-3 space-y-1">
-                    <p className="font-bold text-slate-500 uppercase text-[9px] tracking-wider">Valor en Letras:</p>
-                    <p className="text-xs font-black text-slate-900 uppercase leading-snug">
-                      {numeroALetras(Number(f.total ?? 0))}
-                    </p>
-                  </div>
-
-                  {f.notas && (
-                    <div className="text-[11px] text-slate-700 border-l-2 border-indigo-400 pl-2.5 py-0.5">
-                      <span className="font-bold text-slate-800">Observaciones: </span>
-                      <span className="whitespace-pre-line text-slate-600">{f.notas}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: Financial Totals Box (spans 5 cols) */}
-                <div className="md:col-span-5">
-                  <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-                    <table className="w-full border-collapse text-xs">
-                      <tbody className="divide-y divide-slate-200">
-                        <tr>
-                          <td className="px-3 py-2 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">Subtotal</td>
-                          <td className="px-3 py-2 text-right text-slate-900 font-semibold">{fmtDec(Number(f.subtotal ?? 0))}</td>
-                        </tr>
-                        {Number(f.descuento ?? 0) > 0 && (
-                          <tr>
-                            <td className="px-3 py-1.5 text-slate-600 font-bold bg-slate-50/70 border-r border-slate-200">Descuento</td>
-                            <td className="px-3 py-1.5 text-right text-red-600 font-semibold">-{fmtDec(Number(f.descuento))}</td>
-                          </tr>
-                        )}
-                        <tr>
-                          <td className="px-3 py-1.5 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">
-                            IVA {Number(f.iva19 ?? 0) > 0 ? '(19%)' : Number(f.iva5 ?? 0) > 0 ? '(5%)' : ''}
-                          </td>
-                          <td className="px-3 py-1.5 text-right text-slate-900 font-semibold">
-                            {fmtDec(Number((f.iva19 || 0) + (f.iva5 || 0) || f.iva || 0))}
-                          </td>
-                        </tr>
-                        {hayRetenciones && (
-                          <>
-                            {retefuente > 0 && (
-                              <tr className="text-amber-800">
-                                <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteFuente</td>
-                                <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(retefuente)}</td>
-                              </tr>
-                            )}
-                            {reteiva > 0 && (
-                              <tr className="text-amber-800">
-                                <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteIVA</td>
-                                <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteiva)}</td>
-                              </tr>
-                            )}
-                            {reteica > 0 && (
-                              <tr className="text-amber-800">
-                                <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteICA</td>
-                                <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteica)}</td>
-                              </tr>
-                            )}
-                          </>
-                        )}
-                        <tr className="bg-slate-900 text-white font-black text-sm">
-                          <td className="px-3 py-2.5 uppercase tracking-wide">Total a Pagar</td>
-                          <td className="px-3 py-2.5 text-right">{fmtDec(Number(f.total ?? 0))}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden">
-                {/* Left Column: Payment Details & Observaciones (spans 2 columns) */}
-                <div className="md:col-span-2 space-y-3">
-                  <div>
-                    <span className="font-bold text-slate-600">Total items: </span>
-                    <span className="text-slate-800 font-semibold">{f.items?.length ?? 0}</span>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-600">Valor en Letras:</p>
-                    <p className="text-slate-800 font-medium">{numeroALetras(Number(f.total ?? 0))}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-600">Forma de pago:</p>
-                    <p className="text-slate-800 font-medium">{f.formaPago || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-600">Medio de pago:</p>
-                    <p className="text-slate-800 font-medium">
-                      {f.medioPago?.replace('_', ' ') || '—'} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $ {fmtDec(Number(f.total ?? 0))}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-600">Observaciones:</p>
-                    <p className="text-slate-800 font-medium whitespace-pre-line">{f.notas || '—'}</p>
-                  </div>
-                </div>
-
-                {/* Right Column: Totals Table (spans 1 column) */}
-                <div className="md:col-span-1">
-                  <table className="w-full border-collapse text-xs">
-                    <tbody>
-                      <tr className="border border-slate-200">
-                        <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">Total Bruto</td>
-                        <td className="px-3 py-2 text-right text-slate-800 font-semibold">{fmtDec(Number(f.subtotal ?? 0))}</td>
-                      </tr>
-                      {Number(f.descuento ?? 0) > 0 && (
-                        <tr className="border border-slate-200">
-                          <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">Descuento</td>
-                          <td className="px-3 py-2 text-right text-slate-800 font-semibold">-{fmtDec(Number(f.descuento))}</td>
-                        </tr>
-                      )}
-                      {Number(f.iva19 ?? 0) > 0 && (
-                        <tr className="border border-slate-200">
-                          <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">IVA 19%</td>
-                          <td className="px-3 py-2 text-right text-slate-800 font-semibold">{fmtDec(Number(f.iva19))}</td>
-                        </tr>
-                      )}
-                      {Number(f.iva5 ?? 0) > 0 && (
-                        <tr className="border border-slate-200">
-                          <td className="px-3 py-2 text-slate-700 font-medium border-r border-slate-200">IVA 5%</td>
-                          <td className="px-3 py-2 text-right text-slate-800 font-semibold">{fmtDec(Number(f.iva5))}</td>
-                        </tr>
-                      )}
-                      {hayRetenciones && (
-                        <>
-                          {retefuente > 0 && (
-                            <tr className="border border-slate-200 text-amber-800">
-                              <td className="px-3 py-2 font-medium border-r border-slate-200">ReteFuente</td>
-                              <td className="px-3 py-2 text-right font-semibold">-{fmtDec(retefuente)}</td>
-                            </tr>
-                          )}
-                          {reteiva > 0 && (
-                            <tr className="border border-slate-200 text-amber-800">
-                              <td className="px-3 py-2 font-medium border-r border-slate-200">ReteIVA</td>
-                              <td className="px-3 py-2 text-right font-semibold">-{fmtDec(reteiva)}</td>
-                            </tr>
-                          )}
-                          {reteica > 0 && (
-                            <tr className="border border-slate-200 text-amber-800">
-                              <td className="px-3 py-2 font-medium border-r border-slate-200">ReteICA</td>
-                              <td className="px-3 py-2 text-right font-semibold">-{fmtDec(reteica)}</td>
-                            </tr>
-                          )}
-                        </>
-                      )}
-                      <tr className="border border-slate-250 bg-slate-100 font-bold">
-                        <td className="px-3 py-2.5 text-slate-900 border-r border-slate-200">Total a Pagar</td>
-                        <td className="px-3 py-2.5 text-right text-slate-900">{fmtDec(Number(f.total ?? 0))}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* DIAN Resolution Banner */}
-              <div className="bg-slate-100 border border-slate-200 p-4 text-[10px] text-slate-700 space-y-1.5 text-center mt-6 rounded-lg">
-                <p className="leading-relaxed">
-                  A esta factura de venta aplican las normas relativas a la letra de cambio (artículo 5 Ley 1231 de 2008). Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título - Valor.
-                  {f.resolucion && (
-                    <>
-                      {" "}Número Autorización Electrónica <span className="font-bold">{f.resolucion.numeroResolucion}</span> aprobado en {new Date(f.resolucion.fechaResolucion).toLocaleDateString('es-CO')} prefijo <span className="font-bold">{f.resolucion.prefijo || 'Ninguno'}</span> desde el número {f.resolucion.numeroInicial} al {f.resolucion.numeroFinal} Vigencia: {new Date(f.resolucion.fechaVigencia).toLocaleDateString('es-CO')}.
-                    </>
-                  )}
-                </p>
-                <p className="font-bold">
-                  {getRegimenFiscalLabel(empresa)} · Actividad Económica {empresa.actividadEconomica || '—'}
-                </p>
-                {f.cufe && (
-                  <p className="font-mono text-[9px] text-slate-650 select-all">
-                    CUFE: {f.cufe}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center text-[8px] text-slate-400 mt-4 px-2">
-                <div>
-                  Firma electrónica: ver en el XML
-                </div>
-                <div>
-                  Fabricante Software: Edatia Software
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Global CSS Style Tag for printing (hides app layout, shows ONLY the voucher card) */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -1078,14 +634,15 @@ export function FacturaDetalle() {
           }
           
           #printable-voucher {
-            position: absolute !important;
+            position: fixed !important;
+            z-index: 9999999 !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             min-height: 0 !important;
             margin: 0 !important;
-            padding: 0px !important;
+            padding: 8mm 12mm !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
@@ -1096,7 +653,8 @@ export function FacturaDetalle() {
           }
           
           @page {
-            margin: 1.5cm;
+            size: letter portrait;
+            margin: 0;
           }
         }
       ` }} />
@@ -1464,6 +1022,3 @@ function CrearNotaCreditoModal({ factura, onClose }: { factura: any; onClose: ()
     </div>
   )
 }
-
-
-
