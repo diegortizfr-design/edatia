@@ -132,7 +132,7 @@ export function CoordinacionTicketsPage() {
           <div className="p-8 text-center text-gray-400 dark:text-slate-500 text-sm">Sin tickets con esos filtros</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-white/5 text-left">
                   {['Número','Asunto','Cliente','Prioridad','Estado','Asesor SAC','Desarrollador','Msgs','Creado',''].map((h) => (

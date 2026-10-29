@@ -131,7 +131,7 @@ export function ClientesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-white/5 text-left">
                   <th className="px-5 py-3 text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">Cliente</th>

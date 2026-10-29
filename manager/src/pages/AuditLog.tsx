@@ -262,7 +262,7 @@ export function AuditLogPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-white/3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                   <th className="px-4 py-3 text-left">Fecha / Hora</th>

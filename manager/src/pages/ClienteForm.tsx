@@ -1480,7 +1480,7 @@ export function ClienteForm() {
 
               {encuestas.length > 0 ? (
                 <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-white/5">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[480px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-navy-800/80 text-slate-500 font-extrabold uppercase tracking-wider">
                         <th className="p-3">Fecha</th>
