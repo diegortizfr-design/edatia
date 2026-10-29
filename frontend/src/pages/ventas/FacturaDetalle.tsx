@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getFactura, emitirFactura, anularFactura, createNotaCredito,
 } from '../../services/ventas.service'
-import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
+import { getDocumentosConfig, incrementarConsecutivo, getEmpresaConfig } from '../../services/configuracion.service'
 import {
   FileText, CheckCircle, XCircle, AlertTriangle, Send, Download,
   ArrowLeft, CreditCard, QrCode, Hash, Printer, RotateCcw, Plus, Trash2,
@@ -122,6 +122,11 @@ export function FacturaDetalle() {
   const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [showNcModal, setShowNcModal] = useState(false)
 
+  const { data: configEmpresaLive } = useQuery({
+    queryKey: ['config-empresa'],
+    queryFn: getEmpresaConfig,
+  })
+
   const { data: factura, isLoading, error } = useQuery({
     queryKey: ['factura', id],
     queryFn: () => getFactura(Number(id)),
@@ -142,7 +147,23 @@ export function FacturaDetalle() {
   if (error || !factura) return <div className="flex items-center justify-center py-24 text-red-500">Factura no encontrada</div>
 
   const f = factura as any
-  const empresa = f.empresa || {
+  const rawEmpresa = f.empresa || {}
+  const empresa: any = {
+    nombre: configEmpresaLive?.nombreComercial || configEmpresaLive?.nombre || rawEmpresa.nombre || 'EDATIA S.A.S',
+    nit: configEmpresaLive?.nit || rawEmpresa.nit || '900.123.456',
+    digitoVerificacion: configEmpresaLive?.digitoVerificacion ?? rawEmpresa.digitoVerificacion ?? '7',
+    direccion: configEmpresaLive?.direccion || rawEmpresa.direccion || 'Calle 100 #15-30, Bogotá D.C.',
+    telefono: configEmpresaLive?.telefono || rawEmpresa.telefono || '(601) 555-0199',
+    correoFacturacion: configEmpresaLive?.correoFacturacion || configEmpresaLive?.email || rawEmpresa.correoFacturacion || rawEmpresa.email || 'info@edatia.com',
+    email: configEmpresaLive?.correoFacturacion || configEmpresaLive?.email || rawEmpresa.email || 'info@edatia.com',
+    regimenFiscal: configEmpresaLive?.regimenFiscal || rawEmpresa.regimenFiscal || '48',
+    responsabilidades: configEmpresaLive?.responsabilidades || rawEmpresa.responsabilidades,
+    municipio: configEmpresaLive?.ciudad || configEmpresaLive?.municipio || rawEmpresa.municipio || 'Bogotá',
+    pais: configEmpresaLive?.pais || rawEmpresa.pais || 'CO',
+    logo: configEmpresaLive?.logo || rawEmpresa.logo || '',
+    slogan: configEmpresaLive?.slogan || rawEmpresa.slogan || '',
+  }
+  const _dummy = {
     nombre: 'EDATIA S.A.S',
     nit: '900.123.456',
     digitoVerificacion: '7',
@@ -555,7 +576,7 @@ export function FacturaDetalle() {
                 {/* Logo and Dates */}
                 <div className="col-span-1 flex flex-col items-start gap-1">
                   {empresa.logo ? (
-                    <img src={empresa.logo} alt="Logo" className="max-h-14 object-contain" />
+                    <img src={empresa.logo} alt="Logo" className="max-h-16 max-w-[160px] object-contain" />
                   ) : (
                     <div className="h-12 w-12 bg-slate-800 text-white flex items-center justify-center rounded font-black text-lg">ED</div>
                   )}
@@ -570,6 +591,7 @@ export function FacturaDetalle() {
                 {/* Company details */}
                 <div className="col-span-2 text-center text-[10px] text-slate-650 leading-tight space-y-0.5">
                   <h2 className="text-sm font-extrabold text-slate-800 uppercase">{empresa.nombre}</h2>
+                  {empresa.slogan && <p className="text-[9px] italic text-slate-500 font-medium">{empresa.slogan}</p>}
                   <p className="font-bold">NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}</p>
                   <p>Dirección: {empresa.direccion || '—'}</p>
                   <p>Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}</p>

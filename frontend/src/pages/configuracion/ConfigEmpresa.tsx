@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getEmpresaConfig, updateEmpresaConfig, getConfigERP, updateConfigERP, getRegimenesFiscales, getCodigosCIIU, getResponsabilidadesFiscales, getGeolocationState } from '../../services/configuracion.service'
 import { getBodegas, updateBodega } from '../../services/inventario.service'
@@ -6,7 +6,8 @@ import { TIPO_LABEL } from '../inventario/Bodegas'
 import {
   Building2, FileText, MapPin, Phone, Palette, ShieldCheck,
   Save, CheckCircle2, AlertCircle, ChevronRight, Info, Calculator,
-  Coins, Package, FileCheck2, Landmark, Shield, Lock, BellRing, Settings2
+  Coins, Package, FileCheck2, Landmark, Shield, Lock, BellRing, Settings2,
+  Upload, Trash2, X, Image as ImageIcon
 } from 'lucide-react'
 
 // ─── Tipos y Opciones de Configuración ────────────────────────────────────────
@@ -234,6 +235,94 @@ export function ConfigEmpresa() {
       ? current.filter(c => c !== code)
       : [...current, code]
     setForm((f: any) => ({ ...f, responsabilidades: next }))
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setLogoError(null)
+
+    if (!file.type.startsWith('image/')) {
+      setLogoError('Por favor selecciona una imagen válida (PNG, JPG, SVG o WebP).')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError('El archivo excede los 5MB de tamaño.')
+      return
+    }
+
+    setLogoUploading(true)
+    const reader = new FileReader()
+
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      if (!dataUrl) {
+        setLogoUploading(false)
+        return
+      }
+
+      if (file.type.includes('svg')) {
+        setForm((f: any) => ({ ...f, logo: dataUrl }))
+        setLogoUploading(false)
+        return
+      }
+
+      const img = new Image()
+      img.onload = () => {
+        const MAX_WIDTH = 1000
+        const MAX_HEIGHT = 500
+        let width = img.width
+        let height = img.height
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          if (width / MAX_WIDTH > height / MAX_HEIGHT) {
+            height = Math.round((height * MAX_WIDTH) / width)
+            width = MAX_WIDTH
+          } else {
+            width = Math.round((width * MAX_HEIGHT) / height)
+            height = MAX_HEIGHT
+          }
+
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height)
+            const optimized = canvas.toDataURL(file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.9)
+            setForm((f: any) => ({ ...f, logo: optimized }))
+          } else {
+            setForm((f: any) => ({ ...f, logo: dataUrl }))
+          }
+        } else {
+          setForm((f: any) => ({ ...f, logo: dataUrl }))
+        }
+        setLogoUploading(false)
+      }
+      img.onerror = () => {
+        setForm((f: any) => ({ ...f, logo: dataUrl }))
+        setLogoUploading(false)
+      }
+      img.src = dataUrl
+    }
+
+    reader.onerror = () => {
+      setLogoError('Error al leer el archivo.')
+      setLogoUploading(false)
+    }
+
+    reader.readAsDataURL(file)
+    const _noop = () => {
+  }
+
+
   }
 
   const mutSave = useMutation({
@@ -649,6 +738,125 @@ export function ConfigEmpresa() {
         {tab === 'digital' && (
           <div className="space-y-6 w-full">
             <SectionCard title="Branding e Identidad Corporativa" icon={Palette}>
+              {/* Logotipo de la Empresa con Carga Local */}
+              <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-indigo-600" />
+                      Logotipo Oficial de la Empresa
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Este logo se imprimirá en el encabezado de las facturas de venta (FV), cotizaciones y reportes.
+                    </p>
+                  </div>
+                  {form.logo && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Logo configurado
+                    </span>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoFileChange}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                />
+
+                {logoError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                    <span>{logoError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                  <div className="md:col-span-7">
+                    {form.logo ? (
+                      <div className="relative border-2 border-slate-200 rounded-xl p-4 bg-white flex items-center justify-center min-h-[140px] shadow-inner">
+                        <img
+                          src={form.logo}
+                          alt="Logo Empresa"
+                          className="max-h-24 max-w-full object-contain drop-shadow-sm"
+                        />
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={logoUploading}
+                            className="px-2.5 py-1.5 bg-white/95 hover:bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 hover:text-indigo-600"
+                            title="Cambiar imagen"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            Cambiar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm((f: any) => ({ ...f, logo: '' }))
+                              if (fileInputRef.current) fileInputRef.current.value = ''
+                            }}
+                            className="p-1.5 bg-white/95 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-500 hover:text-red-600 rounded-lg shadow-sm transition-all"
+                            title="Eliminar logo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 min-h-[140px]"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-1">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-700">
+                          {logoUploading ? 'Cargando imagen...' : 'Seleccionar logo desde este equipo'}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Formatos: PNG, JPG, SVG o WebP (Fondo transparente recomendado, máx 5MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={logoUploading}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {form.logo ? 'Subir otra imagen local' : 'Subir logo desde mi equipo'}
+                    </button>
+
+                    <div className="pt-2 border-t border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="text-[11px] font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1 transition-colors"
+                      >
+                        {showUrlInput ? '— Ocultar ingreso por URL' : '+ O ingresar URL pública de imagen'}
+                      </button>
+                      {showUrlInput && (
+                        <div className="mt-2">
+                          <Input
+                            value={form.logo}
+                            onChange={set('logo')}
+                            placeholder="https://miempresa.com/logo.png"
+                            className="text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-4">
                   <Field label="Eslogan corporativo" hint="Aparecerá impreso al pie de recibos e informes.">
@@ -671,8 +879,8 @@ export function ConfigEmpresa() {
                 </div>
 
                 <div className="md:col-span-4">
-                  <Field label="URL del logo" hint="Pegar link de imagen pública en formato PNG o SVG.">
-                    <Input value={form.logo} onChange={set('logo')} placeholder="https://cdn.empresa.com/logo.png" />
+                  <div className="hidden"><Field label="" hint="">
+                    <div />
                   </Field>
                 </div>
               </div>
