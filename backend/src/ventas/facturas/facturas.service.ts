@@ -19,7 +19,7 @@ const INCLUDE_FULL = {
   documentoCxc: true,
   reciboCaja: true,
   items: {
-    include: { producto: { select: { sku: true, nombre: true, costoPromedio: true, unidadMedida: { select: { abreviatura: true } } } } },
+    include: { producto: { select: { sku: true, referencia: true, nombre: true, costoPromedio: true, unidadMedida: { select: { abreviatura: true } } } } },
     orderBy: { orden: 'asc' as const },
   },
   recibos: { include: { recibo: { select: { numero: true, fecha: true, valor: true } } } },
