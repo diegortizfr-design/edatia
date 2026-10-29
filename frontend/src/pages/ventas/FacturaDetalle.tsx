@@ -171,7 +171,6 @@ export function FacturaDetalle() {
 
   const xmlUrl = `/api/ventas/facturas/${id}/xml`
 
-
   const handlePrint = () => {
     const prevTitle = document.title
     document.title = `Factura_${f.numero}`
@@ -187,17 +186,39 @@ export function FacturaDetalle() {
     const win = window as any
 
     const generatePdf = () => {
+      // Temporarily remove shadow and border so PDF has clean edges without card borders across page breaks
+      const prevShadow = el.style.boxShadow
+      const prevBorder = el.style.border
+      const prevRadius = el.style.borderRadius
+      el.style.boxShadow = 'none'
+      el.style.border = 'none'
+      el.style.borderRadius = '0'
+
       const opt = {
-        margin:       [8, 8, 8, 8],
+        margin:       [8, 6, 8, 6], // compact 8mm vertical, 6mm horizontal
         filename:     `Factura_${f.numero}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          scrollY: 0,
+        },
+        jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       }
+
+      const restoreStyles = () => {
+        el.style.boxShadow = prevShadow
+        el.style.border = prevBorder
+        el.style.borderRadius = prevRadius
+        setDownloadingPdf(false)
+      }
+
       win.html2pdf().set(opt).from(el).save().then(() => {
-        setDownloadingPdf(false)
+        restoreStyles()
       }).catch(() => {
-        setDownloadingPdf(false)
+        restoreStyles()
         handlePrint()
       })
     }
@@ -330,31 +351,31 @@ export function FacturaDetalle() {
       )}
 
       {/* Vista Principal de Documento Gráfico Oficial */}
-      <div className="flex justify-center bg-slate-100/70 p-3 sm:p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-inner">
-        <div id="printable-voucher" className="w-full max-w-4xl bg-white rounded-2xl shadow-xl border border-slate-200/90 p-6 sm:p-8 md:p-12 space-y-6 text-slate-800 select-text">
+      <div className="flex justify-center bg-slate-100/70 p-3 sm:p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-inner print:p-0 print:border-none print:bg-white">
+        <div id="printable-voucher" className="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-slate-200/90 p-5 sm:p-7 md:p-8 space-y-3.5 text-slate-800 select-text print:p-0 print:border-none print:shadow-none print:rounded-none">
           {/* Header Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-4 text-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-slate-800 pb-3 text-slate-800 no-break">
             {/* Logo */}
             <div className="col-span-1 flex items-center justify-start">
               {empresa.logo ? (
-                <img src={empresa.logo} alt="Logo" className="max-h-20 max-w-[180px] object-contain drop-shadow-sm" />
+                <img src={empresa.logo} alt="Logo" className="max-h-16 max-w-[170px] object-contain drop-shadow-sm" />
               ) : (
-                <div className="h-14 w-14 bg-slate-800 text-white flex items-center justify-center rounded-xl font-black text-xl shadow-sm">ED</div>
+                <div className="h-12 w-12 bg-slate-800 text-white flex items-center justify-center rounded-xl font-black text-lg shadow-sm">ED</div>
               )}
             </div>
 
             {/* Company details */}
             <div className="col-span-2 text-center space-y-0.5">
-              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">{empresa.nombre}</h2>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight leading-tight">{empresa.nombre}</h2>
               {empresa.slogan && <p className="text-[10px] italic text-slate-500 font-medium">{empresa.slogan}</p>}
-              <p className="text-[11px] font-extrabold text-slate-800">
+              <p className="text-[10.5px] font-extrabold text-slate-800">
                 NIT {formatNit(empresa.nit, empresa.digitoVerificacion)} · {getRegimenFiscalLabel(empresa)}
               </p>
-              <p className="text-[10px] text-slate-600">Dirección: {empresa.direccion || '—'}</p>
-              <p className="text-[10px] text-slate-600">
+              <p className="text-[9.5px] text-slate-600">Dirección: {empresa.direccion || '—'}</p>
+              <p className="text-[9.5px] text-slate-600">
                 Tel: {empresa.telefono || '—'} · Correo: {empresa.correoFacturacion || empresa.email || '—'}
               </p>
-              <p className="text-[10px] text-slate-600">{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
+              <p className="text-[9.5px] text-slate-600">{empresa.municipio || ''} - {empresa.pais || 'Colombia'}</p>
             </div>
 
             {/* QR code and Invoice card (Stacked) */}
@@ -364,61 +385,61 @@ export function FacturaDetalle() {
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(f.qrUrl)}`} 
                     alt="QR DIAN" 
-                    className="w-12 h-12" 
+                    className="w-11 h-11" 
                   />
                 </div>
               ) : (
                 <div className="shrink-0 border border-slate-200 p-0.5 bg-white rounded shadow-sm">
-                  <div className="w-12 h-12 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
+                  <div className="w-11 h-11 bg-slate-100 flex items-center justify-center text-[8px] text-slate-400">QR</div>
                 </div>
               )}
-              <div className="border-2 border-slate-800 p-2 text-center bg-white rounded-lg w-full max-w-[170px] shadow-sm">
+              <div className="border-2 border-slate-800 p-1.5 text-center bg-white rounded-lg w-full max-w-[160px] shadow-sm">
                 <p className="text-[8px] font-extrabold text-slate-600 uppercase tracking-wider leading-none">
                   {f.tipoDocumento === 'FVE' ? 'Factura electrónica de venta' : 'Factura de Venta'}
                 </p>
-                <p className="text-sm font-black text-slate-900 mt-1 font-mono tracking-tight">No. {f.numero}</p>
+                <p className="text-sm font-black text-slate-900 mt-0.5 font-mono tracking-tight">No. {f.numero}</p>
               </div>
             </div>
           </div>
 
           {/* Informative 2-Column Block */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10.5px] no-break">
             {/* Columna 1: Información del Cliente */}
             <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-              <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
+              <div className="bg-slate-100 px-3 py-1 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[9px]">
                 Información del Cliente
               </div>
               <table className="w-full border-collapse">
                 <tbody className="divide-y divide-slate-100">
                   <tr>
-                    <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nombre / Razón Social:</td>
-                    <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.cliente?.nombre || 'Consumidor Final'}</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Nombre / Razón Social:</td>
+                    <td className="px-2.5 py-1 font-bold text-slate-900 uppercase">{f.cliente?.nombre || 'Consumidor Final'}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Tipo de Documento:</td>
-                    <td className="px-3 py-1.5 font-medium text-slate-800 uppercase">{f.cliente?.tipoDocumento || 'Cédula / NIT'}</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Tipo de Documento:</td>
+                    <td className="px-2.5 py-1 font-medium text-slate-800 uppercase">{f.cliente?.tipoDocumento || 'Cédula / NIT'}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Número de Documento:</td>
-                    <td className="px-3 py-1.5 font-mono font-bold text-slate-900">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Número de Documento:</td>
+                    <td className="px-2.5 py-1 font-mono font-bold text-slate-900">
                       {f.cliente?.numeroDocumento || '222222222222'}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Dirección:</td>
-                    <td className="px-3 py-1.5 text-slate-800">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Dirección:</td>
+                    <td className="px-2.5 py-1 text-slate-800">
                       {f.cliente?.direccion || f.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Ciudad:</td>
-                    <td className="px-3 py-1.5 text-slate-800">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Ciudad:</td>
+                    <td className="px-2.5 py-1 text-slate-800">
                       {f.cliente?.municipio || '—'}{f.cliente?.departamento ? ` · ${f.cliente.departamento}` : ''}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Teléfono:</td>
-                    <td className="px-3 py-1.5 font-medium text-slate-800">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Teléfono:</td>
+                    <td className="px-2.5 py-1 font-medium text-slate-800">{f.cliente?.celular || f.cliente?.telefono || '—'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -426,41 +447,41 @@ export function FacturaDetalle() {
 
             {/* Columna 2: Información del Documento */}
             <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-              <div className="bg-slate-100/90 px-3 py-1.5 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[10px]">
+              <div className="bg-slate-100 px-3 py-1 font-extrabold text-slate-800 border-b border-slate-300 uppercase tracking-wider text-[9px]">
                 Información del Documento
               </div>
               <table className="w-full border-collapse">
                 <tbody className="divide-y divide-slate-100">
                   <tr>
-                    <td className="w-36 px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Nro. de Documento:</td>
-                    <td className="px-3 py-1.5 font-mono font-black text-slate-900">{f.numero}</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Nro. de Documento:</td>
+                    <td className="px-2.5 py-1 font-mono font-black text-slate-900">{f.numero}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Expedición:</td>
-                    <td className="px-3 py-1.5 font-medium text-slate-800">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Fecha de Expedición:</td>
+                    <td className="px-2.5 py-1 font-medium text-slate-800">
                       {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Fecha de Vencimiento:</td>
-                    <td className="px-3 py-1.5 font-medium text-slate-800">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Fecha de Vencimiento:</td>
+                    <td className="px-2.5 py-1 font-medium text-slate-800">
                       {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : 'Misma fecha (Contado)'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Forma de Pago:</td>
-                    <td className="px-3 py-1.5 font-bold text-slate-900 uppercase">{f.formaPago || 'CONTADO'}</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Forma de Pago:</td>
+                    <td className="px-2.5 py-1 font-bold text-slate-900 uppercase">{f.formaPago || 'CONTADO'}</td>
                   </tr>
                   <tr>
-                    <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Medio de Pago:</td>
-                    <td className="px-3 py-1.5 font-semibold text-slate-900 uppercase">
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Medio de Pago:</td>
+                    <td className="px-2.5 py-1 font-semibold text-slate-900 uppercase">
                       {f.medioPago ? f.medioPago.replace('_', ' ') : 'EFECTIVO'}
                     </td>
                   </tr>
                   {f.vendedorNombre && (
                     <tr>
-                      <td className="px-3 py-1.5 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
-                      <td className="px-3 py-1.5 text-slate-800">{f.vendedorNombre}</td>
+                      <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
+                      <td className="px-2.5 py-1 text-slate-800">{f.vendedorNombre}</td>
                     </tr>
                   )}
                 </tbody>
@@ -469,19 +490,19 @@ export function FacturaDetalle() {
           </div>
 
           {/* Items Table */}
-          <div className="space-y-1.5">
-            <h4 className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">Detalle de Productos Facturados</h4>
+          <div className="space-y-1 no-break">
+            <h4 className="font-extrabold text-slate-700 uppercase tracking-wider text-[9.5px]">Detalle de Productos Facturados</h4>
             <div className="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
-              <table className="w-full border-collapse text-xs">
+              <table className="w-full table-fixed border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-extrabold uppercase tracking-wider text-[9px]">
-                    <th className="py-2.5 px-3 text-left w-28">Ref de Fábrica</th>
-                    <th className="py-2.5 px-3 text-left">Descripción</th>
-                    <th className="py-2.5 px-3 text-right w-20">Cantidad</th>
-                    <th className="py-2.5 px-3 text-right w-28">Valor Unitario</th>
-                    <th className="py-2.5 px-3 text-right w-16">IVA</th>
-                    <th className="py-2.5 px-3 text-right w-20">Descuento</th>
-                    <th className="py-2.5 px-3 text-right w-28">Total</th>
+                    <th className="py-2 px-2.5 text-left w-[15%]">Ref de Fábrica</th>
+                    <th className="py-2 px-2.5 text-left w-[40%]">Descripción</th>
+                    <th className="py-2 px-2 text-center w-[8%]">Cant.</th>
+                    <th className="py-2 px-2.5 text-right w-[13%]">Valor Unitario</th>
+                    <th className="py-2 px-1 text-center w-[6%]">IVA</th>
+                    <th className="py-2 px-1 text-center w-[5%]">Dto</th>
+                    <th className="py-2 px-2.5 text-right w-[13%]">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -491,19 +512,19 @@ export function FacturaDetalle() {
                     const cantFmt = cantNum % 1 === 0 ? cantNum.toString() : cantNum.toFixed(2)
                     const refFabrica = item.producto?.referencia || item.producto?.sku || 'N/A'
                     return (
-                      <tr key={item.id} className="text-slate-800 hover:bg-slate-50/50">
-                        <td className="py-2 px-3 font-mono text-[10px] text-slate-600 font-bold">{refFabrica}</td>
-                        <td className="py-2 px-3 font-bold text-slate-900">
+                      <tr key={item.id} className="text-slate-800 hover:bg-slate-50/50 [page-break-inside:avoid] [break-inside:avoid]">
+                        <td className="py-1.5 px-2.5 font-mono text-[9.5px] text-slate-600 font-bold truncate">{refFabrica}</td>
+                        <td className="py-1.5 px-2.5 font-bold text-slate-900 leading-snug break-words">
                           {item.producto?.nombre || item.descripcion}
                           {item.producto?.nombre && item.descripcion && item.descripcion !== item.producto.nombre && (
-                            <span className="block text-[10px] text-slate-500 font-normal mt-0.5">{item.descripcion}</span>
+                            <span className="block text-[9.5px] text-slate-500 font-normal mt-0.5">{item.descripcion}</span>
                           )}
                         </td>
-                        <td className="py-2 px-3 text-right font-medium text-slate-800">{cantFmt} {item.unidad || 'UND'}</td>
-                        <td className="py-2 px-3 text-right font-medium text-slate-800">{fmtDec(Number(item.precioUnitario))}</td>
-                        <td className="py-2 px-3 text-right font-medium text-slate-800">{tasaIva > 0 ? `${tasaIva}%` : '0%'}</td>
-                        <td className="py-2 px-3 text-right font-medium text-slate-800">{Number(item.descuentoPct || 0) > 0 ? `${item.descuentoPct}%` : '0%'}</td>
-                        <td className="py-2 px-3 text-right font-black text-slate-900">{fmtDec(Number(item.total))}</td>
+                        <td className="py-1.5 px-2 text-center font-medium text-slate-800 whitespace-nowrap">{cantFmt} {item.unidad || 'UND'}</td>
+                        <td className="py-1.5 px-2.5 text-right font-medium text-slate-800 tabular-nums whitespace-nowrap">{fmtDec(Number(item.precioUnitario))}</td>
+                        <td className="py-1.5 px-1 text-center font-medium text-slate-800 whitespace-nowrap">{tasaIva > 0 ? `${tasaIva}%` : '0%'}</td>
+                        <td className="py-1.5 px-1 text-center font-medium text-slate-800 whitespace-nowrap">{Number(item.descuentoPct || 0) > 0 ? `${item.descuentoPct}%` : '0%'}</td>
+                        <td className="py-1.5 px-2.5 text-right font-black text-slate-900 tabular-nums whitespace-nowrap">{fmtDec(Number(item.total))}</td>
                       </tr>
                     )
                   })}
@@ -513,23 +534,23 @@ export function FacturaDetalle() {
           </div>
 
           {/* Bottom Section: Totals, In-Letters & Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-4 border-t-2 border-slate-800 text-xs items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3 border-t-2 border-slate-800 text-xs items-start no-break">
             {/* Left Column: Valor en Letras, Total Items, Observaciones (spans 7 cols) */}
-            <div className="md:col-span-7 space-y-3">
+            <div className="md:col-span-7 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-600 uppercase text-[10px] tracking-wider">Total ítems:</span>
-                <span className="text-slate-900 font-black px-2 py-0.5 bg-slate-100 rounded text-xs">{f.items?.length ?? 0}</span>
+                <span className="font-bold text-slate-600 uppercase text-[9.5px] tracking-wider">Total ítems:</span>
+                <span className="text-slate-900 font-black px-1.5 py-0.5 bg-slate-100 rounded text-xs">{f.items?.length ?? 0}</span>
               </div>
 
-              <div className="border border-slate-200 bg-slate-50/80 rounded-lg p-3 space-y-1">
-                <p className="font-bold text-slate-500 uppercase text-[9px] tracking-wider">Valor en Letras:</p>
-                <p className="text-xs font-black text-slate-900 uppercase leading-snug">
+              <div className="border border-slate-200 bg-slate-50/80 rounded-lg p-2.5 space-y-0.5">
+                <p className="font-bold text-slate-500 uppercase text-[8.5px] tracking-wider">Valor en Letras:</p>
+                <p className="text-[11px] font-black text-slate-900 uppercase leading-snug">
                   {numeroALetras(Number(f.total ?? 0))}
                 </p>
               </div>
 
               {f.notas && (
-                <div className="text-[11px] text-slate-700 border-l-2 border-indigo-400 pl-2.5 py-0.5">
+                <div className="text-[10px] text-slate-700 border-l-2 border-indigo-400 pl-2 py-0.5">
                   <span className="font-bold text-slate-800">Observaciones: </span>
                   <span className="whitespace-pre-line text-slate-600">{f.notas}</span>
                 </div>
@@ -542,20 +563,20 @@ export function FacturaDetalle() {
                 <table className="w-full border-collapse text-xs">
                   <tbody className="divide-y divide-slate-200">
                     <tr>
-                      <td className="px-3 py-2 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">Subtotal</td>
-                      <td className="px-3 py-2 text-right text-slate-900 font-semibold">{fmtDec(Number(f.subtotal ?? 0))}</td>
+                      <td className="px-2.5 py-1 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">Subtotal</td>
+                      <td className="px-2.5 py-1 text-right text-slate-900 font-semibold tabular-nums">{fmtDec(Number(f.subtotal ?? 0))}</td>
                     </tr>
                     {Number(f.descuento ?? 0) > 0 && (
                       <tr>
-                        <td className="px-3 py-1.5 text-slate-600 font-bold bg-slate-50/70 border-r border-slate-200">Descuento</td>
-                        <td className="px-3 py-1.5 text-right text-red-600 font-semibold">-{fmtDec(Number(f.descuento))}</td>
+                        <td className="px-2.5 py-1 text-slate-600 font-bold bg-slate-50/70 border-r border-slate-200">Descuento</td>
+                        <td className="px-2.5 py-1 text-right text-red-600 font-semibold tabular-nums">-{fmtDec(Number(f.descuento))}</td>
                       </tr>
                     )}
                     <tr>
-                      <td className="px-3 py-1.5 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">
+                      <td className="px-2.5 py-1 text-slate-700 font-bold bg-slate-50/70 border-r border-slate-200">
                         IVA {Number(f.iva19 ?? 0) > 0 ? '(19%)' : Number(f.iva5 ?? 0) > 0 ? '(5%)' : ''}
                       </td>
-                      <td className="px-3 py-1.5 text-right text-slate-900 font-semibold">
+                      <td className="px-2.5 py-1 text-right text-slate-900 font-semibold tabular-nums">
                         {fmtDec(Number((f.iva19 || 0) + (f.iva5 || 0) || f.iva || 0))}
                       </td>
                     </tr>
@@ -563,27 +584,27 @@ export function FacturaDetalle() {
                       <>
                         {retefuente > 0 && (
                           <tr className="text-amber-800">
-                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteFuente</td>
-                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(retefuente)}</td>
+                            <td className="px-2.5 py-1 font-bold bg-slate-50/70 border-r border-slate-200">ReteFuente</td>
+                            <td className="px-2.5 py-1 text-right font-semibold tabular-nums">-{fmtDec(retefuente)}</td>
                           </tr>
                         )}
                         {reteiva > 0 && (
                           <tr className="text-amber-800">
-                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteIVA</td>
-                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteiva)}</td>
+                            <td className="px-2.5 py-1 font-bold bg-slate-50/70 border-r border-slate-200">ReteIVA</td>
+                            <td className="px-2.5 py-1 text-right font-semibold tabular-nums">-{fmtDec(reteiva)}</td>
                           </tr>
                         )}
                         {reteica > 0 && (
                           <tr className="text-amber-800">
-                            <td className="px-3 py-1.5 font-bold bg-slate-50/70 border-r border-slate-200">ReteICA</td>
-                            <td className="px-3 py-1.5 text-right font-semibold">-{fmtDec(reteica)}</td>
+                            <td className="px-2.5 py-1 font-bold bg-slate-50/70 border-r border-slate-200">ReteICA</td>
+                            <td className="px-2.5 py-1 text-right font-semibold tabular-nums">-{fmtDec(reteica)}</td>
                           </tr>
                         )}
                       </>
                     )}
                     <tr className="bg-slate-900 text-white font-black text-sm">
-                      <td className="px-3 py-2.5 uppercase tracking-wide">Total a Pagar</td>
-                      <td className="px-3 py-2.5 text-right">{fmtDec(Number(f.total ?? 0))}</td>
+                      <td className="px-2.5 py-1.5 uppercase tracking-wide">Total a Pagar</td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums">{fmtDec(Number(f.total ?? 0))}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -592,8 +613,8 @@ export function FacturaDetalle() {
           </div>
 
           {/* DIAN Resolution Banner */}
-          <div className="bg-slate-100 border border-slate-200 p-4 text-[10px] text-slate-700 space-y-1.5 text-center mt-6 rounded-lg">
-            <p className="leading-relaxed">
+          <div className="bg-slate-100 border border-slate-200 p-2 text-[8.5px] text-slate-700 space-y-0.5 text-center mt-2.5 rounded-lg leading-snug no-break">
+            <p>
               A esta factura de venta aplican las normas relativas a la letra de cambio (artículo 5 Ley 1231 de 2008). Con esta el Comprador declara haber recibido real y materialmente las mercancías o prestación de servicios descritos en este título - Valor.
               {f.resolucion && (
                 <>
@@ -605,13 +626,13 @@ export function FacturaDetalle() {
               {getRegimenFiscalLabel(empresa)} · Actividad Económica {empresa.actividadEconomica || '—'}
             </p>
             {f.cufe && (
-              <p className="font-mono text-[9px] text-slate-650 select-all">
+              <p className="font-mono text-[8px] text-slate-600 select-all">
                 CUFE: {f.cufe}
               </p>
             )}
           </div>
 
-          <div className="flex justify-between items-center text-[8px] text-slate-400 mt-4 px-2">
+          <div className="flex justify-between items-center text-[7.5px] text-slate-400 mt-2 px-1 no-break">
             <div>
               Firma electrónica: ver en el XML
             </div>
@@ -634,22 +655,31 @@ export function FacturaDetalle() {
           }
           
           #printable-voucher {
-            position: fixed !important;
-            z-index: 9999999 !important;
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             min-height: 0 !important;
             margin: 0 !important;
-            padding: 8mm 12mm !important;
+            padding: 6mm 8mm !important;
             border: none !important;
             box-shadow: none !important;
             background: white !important;
           }
           
+          .no-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
           tr {
             page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          thead {
+            display: table-header-group !important;
           }
           
           @page {
