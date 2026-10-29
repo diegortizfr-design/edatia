@@ -219,7 +219,7 @@ export function Facturas() {
                       {f.fecha ? new Date(f.fecha).toLocaleDateString('es-CO') : '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
-                      {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : '—'}
+                      {new Date(f.fechaVencimiento || f.fecha).toLocaleDateString('es-CO')}
                     </td>
                     <td className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">
                       {fmt(Number(f.total ?? 0))}

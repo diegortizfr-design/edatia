@@ -465,7 +465,7 @@ export function FacturaDetalle() {
                   <tr>
                     <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Fecha de Vencimiento:</td>
                     <td className="px-2.5 py-1 font-medium text-slate-800">
-                      {f.fechaVencimiento ? new Date(f.fechaVencimiento).toLocaleDateString('es-CO') : 'Misma fecha (Contado)'}
+                      {new Date(f.fechaVencimiento || f.fecha).toLocaleDateString('es-CO')}
                     </td>
                   </tr>
                   <tr>

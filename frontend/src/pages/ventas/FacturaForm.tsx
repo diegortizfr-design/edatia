@@ -563,7 +563,7 @@ export function FacturaForm() {
       fecha,
       formaPago,
       medioPago,
-      fechaVencimiento: exigeVencimiento ? (fechaVencimiento || undefined) : undefined,
+      fechaVencimiento: exigeVencimiento ? (fechaVencimiento || fecha) : (fecha || new Date().toISOString().split('T')[0]),
       notas: notas || undefined,
       vendedorNombre: vendedorNombre || undefined,
       vendedorId: vendedorId ? Number(vendedorId) : undefined,

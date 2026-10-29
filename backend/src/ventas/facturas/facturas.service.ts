@@ -284,7 +284,7 @@ export class FacturasService {
           cotizacionId: dto.cotizacionId,
           pedidoId: dto.pedidoId,
           fecha: new Date(dto.fecha),
-          fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+          fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : new Date(dto.fecha),
           formaPago: dto.formaPago,
           medioPago: dto.medioPago,
           retefuente: dto.retefuente ?? 0,
