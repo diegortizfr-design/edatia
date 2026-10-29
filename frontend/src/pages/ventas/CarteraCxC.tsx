@@ -16,6 +16,7 @@ export function CarteraCxC() {
   const [search, setSearch] = useState('')
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null)
+  const [selectedFacturaId, setSelectedFacturaId] = useState<number | null>(null)
 
   // Consultar saldos acumulados por cliente
   const { data: saldosClientes = [], isLoading: loadingSaldos } = useQuery({
@@ -73,8 +74,9 @@ export function CarteraCxC() {
     (f.cliente?.nombre || '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const handleOpenReceipt = (clienteId: number) => {
+  const handleOpenReceipt = (clienteId: number, facturaId?: number) => {
     setSelectedClienteId(String(clienteId))
+    setSelectedFacturaId(facturaId ?? null)
     setShowReceiptModal(true)
   }
 
@@ -298,7 +300,7 @@ export function CarteraCxC() {
                         </td>
                         <td className="p-4 text-center">
                           <button
-                            onClick={() => handleOpenReceipt(item.clienteId)}
+                            onClick={() => handleOpenReceipt(item.clienteId, item.id)}
                             className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-100 hover:border-indigo-200 transition-all active:scale-[0.98]"
                           >
                             Recibir Pago
@@ -351,7 +353,7 @@ export function CarteraCxC() {
                       </td>
                       <td className="p-4 text-center">
                         <button
-                          onClick={() => handleOpenReceipt(item.clienteId)}
+                          onClick={() => handleOpenReceipt(item.clienteId, item.id)}
                           className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all active:scale-[0.98]"
                         >
                           Generar Recibo
@@ -376,9 +378,11 @@ export function CarteraCxC() {
       {showReceiptModal && (
         <ReciboCajaModalWrapper
           clienteId={selectedClienteId}
+          facturaId={selectedFacturaId}
           onClose={() => {
             setShowReceiptModal(false)
             setSelectedClienteId(null)
+            setSelectedFacturaId(null)
           }}
           onSuccess={() => {
             qc.invalidateQueries({ queryKey: ['saldos-clientes'] })
@@ -386,6 +390,7 @@ export function CarteraCxC() {
             qc.invalidateQueries({ queryKey: ['facturas-cxc-parciales'] })
             setShowReceiptModal(false)
             setSelectedClienteId(null)
+            setSelectedFacturaId(null)
           }}
         />
       )}
@@ -394,12 +399,13 @@ export function CarteraCxC() {
 }
 
 // Wrapper local para instanciar el modal importado
-function ReciboCajaModalWrapper({ clienteId, onClose, onSuccess }: any) {
+function ReciboCajaModalWrapper({ clienteId, facturaId, onClose, onSuccess }: any) {
   return (
     <NuevoReciboModal
       onClose={onClose}
       onSuccess={onSuccess}
       initialClienteId={clienteId}
+      initialFacturaId={facturaId}
     />
   )
 }

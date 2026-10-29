@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, DollarSign, X } from 'lucide-react'
 import {
   getRecibos, createRecibo, getFacturasPendientes, getClientes, getDocumentosTesoreria,
 } from '../../services/ventas.service'
+import { getMediosPago } from '../../services/configuracion.service'
+import { CurrencyInput } from '../../components/CurrencyInput'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', {
@@ -42,6 +44,20 @@ export function ReciboCaja() {
     queryKey: ['recibos'],
     queryFn: () => getRecibos(),
   })
+
+  // Medios de pago dinámicos desde configuración general
+  const { data: mediosPagoList = [] } = useQuery({
+    queryKey: ['config-medios-pago'],
+    queryFn: getMediosPago,
+  })
+
+  const mediosMap = useMemo(() => {
+    const map = new Map<string, string>()
+    ;(mediosPagoList as any[]).forEach((m: any) => {
+      map.set(m.codigo, m.nombre)
+    })
+    return map
+  }, [mediosPagoList])
 
   return (
     <div className="space-y-6">
@@ -90,7 +106,13 @@ export function ReciboCaja() {
                       {fmt(Number(r.valor ?? 0))}
                     </td>
                     <td className="px-5 py-3">
-                      {r.medioPago ? <Badge value={r.medioPago} config={MEDIO_PAGO_CONFIG} /> : <span className="text-slate-300 text-xs">—</span>}
+                      {r.medioPago ? (
+                        <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          {mediosMap.get(r.medioPago) || MEDIO_PAGO_CONFIG[r.medioPago]?.label || r.medioPago}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3">
                       <Badge value={r.estado ?? 'ACTIVO'} config={ESTADO_CONFIG} />
@@ -124,11 +146,11 @@ export function ReciboCaja() {
   )
 }
 
-export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) {
-  const [clienteId, setClienteId] = useState(initialClienteId || '')
+export function NuevoReciboModal({ onClose, onSuccess, initialClienteId, initialFacturaId }: any) {
+  const [clienteId, setClienteId] = useState(initialClienteId ? String(initialClienteId) : '')
   const [clienteQ, setClienteQ] = useState('')
   const [valor, setValor] = useState('')
-  const [medioPago, setMedioPago] = useState('EFECTIVO')
+  const [medioPago, setMedioPago] = useState('')
   const [referencia, setReferencia] = useState('')
   const [concepto, setConcepto] = useState('')
   const [documentoConfigId, setDocumentoConfigId] = useState('')
@@ -149,6 +171,30 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
     queryFn: () => getDocumentosTesoreria(),
   })
 
+  // Medios de pago dinámicos desde configuración general
+  const { data: mediosPagoList = [] } = useQuery({
+    queryKey: ['config-medios-pago'],
+    queryFn: getMediosPago,
+  })
+
+  const mediosActivos = useMemo(() => {
+    const list = (mediosPagoList as any[]).filter((m: any) => m.activo !== false)
+    if (list.length > 0) return list
+    return [
+      { id: 1, codigo: 'EFECTIVO', nombre: 'Efectivo' },
+      { id: 2, codigo: 'TRANSFERENCIA', nombre: 'Transferencia Bancaria' },
+      { id: 3, codigo: 'CHEQUE', nombre: 'Cheque' },
+      { id: 4, codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta de Crédito' },
+      { id: 5, codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta de Débito' },
+    ]
+  }, [mediosPagoList])
+
+  useEffect(() => {
+    if (mediosActivos.length > 0 && (!medioPago || !mediosActivos.some((m: any) => m.codigo === medioPago))) {
+      setMedioPago(mediosActivos[0].codigo)
+    }
+  }, [mediosActivos, medioPago])
+
   useEffect(() => {
     if (documentos.length > 0 && !documentoConfigId) {
       setDocumentoConfigId(String(documentos[0].id))
@@ -163,15 +209,31 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
     }
   }, [clienteId])
 
+  // Si viene con initialFacturaId, pre-seleccionar automáticamente la factura y sugerir saldo
+  useEffect(() => {
+    if (initialFacturaId && facturasPendientes.length > 0) {
+      const fid = Number(initialFacturaId)
+      const fact = (facturasPendientes as any[]).find((f: any) => f.id === fid)
+      if (fact) {
+        setSeleccionadas(new Set([fid]))
+        const saldoStr = String(Math.round(Number(fact.saldo ?? 0)))
+        setAplicaciones({ [fid]: saldoStr })
+        if (!valor) {
+          setValor(saldoStr)
+        }
+      }
+    }
+  }, [initialFacturaId, facturasPendientes])
+
   const mutCreate = useMutation({ mutationFn: createRecibo, onSuccess })
 
   const clientesFiltrados = clienteQ
     ? (clientes as any[]).filter((c: any) =>
-        c.nombre.toLowerCase().includes(clienteQ.toLowerCase()) ||
+        c.nombre?.toLowerCase().includes(clienteQ.toLowerCase()) ||
         c.numeroDocumento?.includes(clienteQ))
-    : clientes as any[]
+    : (clientes as any[])
 
-  const clienteSeleccionado = (clientes as any[]).find((c: any) => String(c.id) === clienteId)
+  const clienteSeleccionado = (clientes as any[]).find((c: any) => String(c.id) === String(clienteId))
 
   const totalAplicado = Array.from(seleccionadas).reduce(
     (sum, fid) => sum + Number(aplicaciones[fid] ?? 0), 0
@@ -182,8 +244,26 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
   const toggleFactura = (fid: number) => {
     setSeleccionadas(prev => {
       const next = new Set(prev)
-      if (next.has(fid)) { next.delete(fid); setAplicaciones(a => { const n = { ...a }; delete n[fid]; return n }) }
-      else next.add(fid)
+      if (next.has(fid)) {
+        next.delete(fid)
+        setAplicaciones(a => {
+          const n = { ...a }
+          delete n[fid]
+          return n
+        })
+      } else {
+        next.add(fid)
+        const fact = (facturasPendientes as any[]).find((f: any) => f.id === fid)
+        if (fact) {
+          const saldo = Math.round(Number(fact.saldo ?? 0))
+          const yaAplicado = Array.from(next).filter(id => id !== fid).reduce(
+            (sum, id) => sum + Number(aplicaciones[id] ?? 0), 0
+          )
+          const restante = Math.max(0, valorNum - yaAplicado)
+          const sugerido = (valorNum > 0 && restante > 0) ? Math.min(saldo, restante) : saldo
+          setAplicaciones(a => ({ ...a, [fid]: String(sugerido) }))
+        }
+      }
       return next
     })
   }
@@ -191,8 +271,16 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
   const handleSubmit = (e: any) => {
     e.preventDefault()
     if (!clienteId) return alert('Seleccione un cliente')
-    if (!valor || valorNum <= 0) return alert('Ingrese un valor válido')
-    if (excede) return alert('El total aplicado supera el valor del recibo')
+    if (!valor || valorNum <= 0) return alert('Ingrese un valor válido para el recibo')
+    if (excede) return alert('El total aplicado a las facturas supera el valor del recibo')
+
+    for (const fid of seleccionadas) {
+      const valAp = Number(aplicaciones[fid] ?? 0)
+      const fact = (facturasPendientes as any[]).find((f: any) => f.id === fid)
+      if (fact && valAp > Number(fact.saldo ?? 0)) {
+        return alert(`El valor a aplicar en la factura ${fact.prefijo || ''}${fact.numero} supera su saldo (${fmt(Number(fact.saldo))})`)
+      }
+    }
 
     const aplicacionesArr = Array.from(seleccionadas).map(fid => ({
       facturaId: fid,
@@ -214,31 +302,45 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-slate-800">Nuevo Recibo de Caja</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+              <DollarSign size={18} />
+            </div>
+            <h2 className="font-bold text-slate-800">Nuevo Recibo de Caja</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <X size={20} />
+          </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Cliente */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Cliente *</label>
             {clienteSeleccionado ? (
-              <div className="flex items-center gap-3 p-2.5 border border-indigo-200 bg-indigo-50 rounded-lg">
-                <p className="flex-1 text-sm font-medium text-indigo-800">{clienteSeleccionado.nombre}</p>
+              <div className="flex items-center gap-3 p-2.5 border border-indigo-200 bg-indigo-50/70 rounded-lg">
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-indigo-900">{clienteSeleccionado.nombre}</p>
+                  <p className="text-xs text-indigo-600 font-medium">
+                    {clienteSeleccionado.tipoDocumento} {clienteSeleccionado.numeroDocumento}
+                  </p>
+                </div>
                 <button type="button" onClick={() => { setClienteId(''); setClienteQ(''); setSeleccionadas(new Set()); setAplicaciones({}) }}
-                  className="text-xs text-red-500 hover:text-red-700">Cambiar</button>
+                  className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 hover:bg-red-50 rounded">
+                  Cambiar
+                </button>
               </div>
             ) : (
               <div className="relative">
                 <input value={clienteQ} onChange={e => setClienteQ(e.target.value)}
-                  placeholder="Buscar cliente..."
+                  placeholder="Buscar cliente por nombre o identificación..."
                   className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
                 {clienteQ && clientesFiltrados.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-40 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto mt-1">
                     {clientesFiltrados.slice(0, 8).map((c: any) => (
                       <button key={c.id} type="button"
                         onClick={() => { setClienteId(String(c.id)); setClienteQ(c.nombre) }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm">
-                        <p className="font-medium">{c.nombre}</p>
+                        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm border-b border-slate-100 last:border-0">
+                        <p className="font-semibold text-slate-800">{c.nombre}</p>
                         <p className="text-xs text-slate-400">{c.tipoDocumento} {c.numeroDocumento}</p>
                       </button>
                     ))}
@@ -276,16 +378,31 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Valor total *</label>
-              <input type="number" min={1} required value={valor} onChange={e => setValor(e.target.value)}
+              <CurrencyInput
+                value={valor}
+                onChange={setValor}
                 placeholder="0"
-                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
+                required
+                className="w-full !pl-7 !pr-3 !py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 font-bold text-slate-800"
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Medio de pago *</label>
-              <select required value={medioPago} onChange={e => setMedioPago(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white">
-                {Object.entries(MEDIO_PAGO_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              <select
+                required
+                value={medioPago}
+                onChange={e => setMedioPago(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
+              >
+                {mediosActivos.map((m: any) => (
+                  <option key={m.id || m.codigo} value={m.codigo}>
+                    {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
+                  </option>
+                ))}
               </select>
+              {mediosActivos.length === 0 && (
+                <p className="text-[10px] text-amber-600 mt-1">Cargando medios de pago...</p>
+              )}
             </div>
           </div>
 
@@ -299,6 +416,7 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Concepto</label>
               <input value={concepto} onChange={e => setConcepto(e.target.value)}
+                placeholder="Pago factura, abono a cartera..."
                 className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-200" />
             </div>
           </div>
@@ -315,7 +433,9 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
                 )}
               </label>
               {(facturasPendientes as any[]).length === 0 ? (
-                <p className="text-xs text-slate-400 py-2">No hay facturas pendientes para este cliente</p>
+                <p className="text-xs text-slate-400 py-3 italic bg-slate-50 p-3 rounded-lg border border-dashed border-slate-200 text-center">
+                  No hay facturas pendientes para este cliente (el recibo quedará como anticipo / saldo a favor)
+                </p>
               ) : (
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
                   <table className="w-full text-xs">
@@ -325,32 +445,29 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
                         <th className="px-3 py-2 text-left font-semibold">Factura</th>
                         <th className="px-3 py-2 text-right font-semibold">Total</th>
                         <th className="px-3 py-2 text-right font-semibold">Saldo</th>
-                        <th className="px-3 py-2 text-right font-semibold w-28">A aplicar</th>
+                        <th className="px-3 py-2 text-right font-semibold w-36">A aplicar</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {(facturasPendientes as any[]).map((f: any) => (
-                        <tr key={f.id} className={seleccionadas.has(f.id) ? 'bg-indigo-50' : 'hover:bg-slate-50'}>
+                        <tr key={f.id} className={seleccionadas.has(f.id) ? 'bg-indigo-50/60' : 'hover:bg-slate-50'}>
                           <td className="px-3 py-2 text-center">
                             <input type="checkbox" checked={seleccionadas.has(f.id)}
                               onChange={() => toggleFactura(f.id)}
-                              className="rounded border-slate-300 accent-indigo-600" />
+                              className="rounded border-slate-300 accent-indigo-600 cursor-pointer" />
                           </td>
                           <td className="px-3 py-2 font-mono font-semibold text-indigo-700">
                             {f.prefijo}{f.numero}
                           </td>
-                          <td className="px-3 py-2 text-right">{fmt(Number(f.total ?? 0))}</td>
-                          <td className="px-3 py-2 text-right font-semibold text-amber-700">{fmt(Number(f.saldo ?? 0))}</td>
+                          <td className="px-3 py-2 text-right text-slate-500">{fmt(Number(f.total ?? 0))}</td>
+                          <td className="px-3 py-2 text-right font-bold text-amber-700">{fmt(Number(f.saldo ?? 0))}</td>
                           <td className="px-3 py-2">
                             {seleccionadas.has(f.id) && (
-                              <input
-                                type="number"
-                                min={0}
-                                max={f.saldo}
+                              <CurrencyInput
                                 value={aplicaciones[f.id] ?? ''}
-                                onChange={e => setAplicaciones(prev => ({ ...prev, [f.id]: e.target.value }))}
+                                onChange={raw => setAplicaciones(prev => ({ ...prev, [f.id]: raw }))}
                                 placeholder="0"
-                                className="w-full p-1.5 border border-slate-200 rounded text-xs text-right outline-none focus:ring-1 focus:ring-indigo-200"
+                                className="!py-1 !pl-6 !pr-2 !text-xs font-mono font-medium"
                               />
                             )}
                           </td>
@@ -374,13 +491,13 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId }: any) 
             </p>
           )}
 
-          <div className="flex gap-3 justify-end pt-2">
+          <div className="flex gap-3 justify-end pt-2 border-t border-slate-100">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+              className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
               Cancelar
             </button>
             <button type="submit" disabled={mutCreate.isPending || excede}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm">
               {mutCreate.isPending ? 'Guardando...' : 'Crear recibo'}
             </button>
           </div>
