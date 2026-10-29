@@ -879,7 +879,7 @@ export function ConfigEmpresa() {
                 </div>
 
                 <div className="md:col-span-4">
-                  <div className="hidden"><Field label="" hint="">
+                  <Field label="" hint="">
                     <div />
                   </Field>
                 </div>
