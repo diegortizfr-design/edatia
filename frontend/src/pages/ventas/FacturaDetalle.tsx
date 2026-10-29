@@ -416,19 +416,16 @@ export function FacturaDetalle() {
                     <td className="px-2.5 py-1 font-bold text-slate-900 uppercase">{f.cliente?.nombre || 'Consumidor Final'}</td>
                   </tr>
                   <tr>
-                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Tipo de Documento:</td>
-                    <td className="px-2.5 py-1 font-medium text-slate-800 uppercase">{f.cliente?.tipoDocumento || 'Cédula / NIT'}</td>
-                  </tr>
-                  <tr>
-                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Número de Documento:</td>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Tipo/Nro Documento:</td>
                     <td className="px-2.5 py-1 font-mono font-bold text-slate-900">
+                      <span className="uppercase font-sans font-semibold text-slate-800 mr-1.5">{f.cliente?.tipoDocumento || 'CC'}</span>
                       {f.cliente?.numeroDocumento || '222222222222'}{f.cliente?.digitoVerificacion ? `-${f.cliente.digitoVerificacion}` : ''}
                     </td>
                   </tr>
                   <tr>
                     <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Dirección:</td>
                     <td className="px-2.5 py-1 text-slate-800">
-                      {f.cliente?.direccion || f.direccion || '—'} {f.sucursalCliente ? `(${f.sucursalCliente})` : ''}
+                      {f.cliente?.direccion || f.direccion || '—'}
                     </td>
                   </tr>
                   <tr>
@@ -453,10 +450,6 @@ export function FacturaDetalle() {
               <table className="w-full border-collapse">
                 <tbody className="divide-y divide-slate-100">
                   <tr>
-                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Nro. de Documento:</td>
-                    <td className="px-2.5 py-1 font-mono font-black text-slate-900">{f.numero}</td>
-                  </tr>
-                  <tr>
                     <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Fecha de Expedición:</td>
                     <td className="px-2.5 py-1 font-medium text-slate-800">
                       {new Date(f.fecha).toLocaleDateString('es-CO')} {new Date(f.fecha).toTimeString().slice(0, 5)}
@@ -478,12 +471,10 @@ export function FacturaDetalle() {
                       {f.medioPago ? f.medioPago.replace('_', ' ') : 'EFECTIVO'}
                     </td>
                   </tr>
-                  {f.vendedorNombre && (
-                    <tr>
-                      <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
-                      <td className="px-2.5 py-1 text-slate-800">{f.vendedorNombre}</td>
-                    </tr>
-                  )}
+                  <tr>
+                    <td className="w-32 px-2.5 py-1 font-bold text-slate-600 bg-slate-50/50">Vendedor:</td>
+                    <td className="px-2.5 py-1 text-slate-800">{f.vendedorNombre || 'Directo'}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
