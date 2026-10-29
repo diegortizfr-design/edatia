@@ -119,6 +119,7 @@ export function FacturaDetalle() {
   const qc = useQueryClient()
   const [confirmAnular, setConfirmAnular] = useState(false)
   const [showNcModal, setShowNcModal] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   const { data: configEmpresaLive } = useQuery({
     queryKey: ['config-empresa'],
@@ -170,7 +171,6 @@ export function FacturaDetalle() {
 
   const xmlUrl = `/api/ventas/facturas/${id}/xml`
 
-  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   const handlePrint = () => {
     const prevTitle = document.title
