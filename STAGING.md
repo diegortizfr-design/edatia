@@ -98,13 +98,15 @@ deploy.
 Probadas contra `POST /api/v1/auth/login`, no deducidas del código. El form
 pide **NIT + usuario + contraseña**.
 
-| NIT | Usuario | Contraseña | Empresa |
-|---|---|---|---|
-| `900000000-0` | `admin` | `Staging123!` | Edatia Demo SAS |
-| `1143875756-0` | `admin_diego` | `Admin123` | Diego Ortiz - Pruebas ERP |
+| NIT | Usuario | Empresa |
+|---|---|---|
+| `900000000-0` | `admin` | Edatia Demo SAS |
+| `1143875756-0` | `admin_diego` | Diego Ortiz - Pruebas ERP |
 
-La primera sale de `SEED_ADMIN_PASSWORD`. La segunda está **hardcodeada** en
-`prisma/seed.ts` (`Admin123`, sin `!`) y ninguna variable la cambia.
+**Las contraseñas no se escriben acá.** La del primero sale de
+`SEED_ADMIN_PASSWORD`, cargada en las variables de entorno del recurso en
+Coolify. La del segundo está **hardcodeada** en `prisma/seed.ts` y ninguna
+variable la cambia: si hace falta rotarla, hay que tocar ese archivo.
 
 Manager: `admin@edatia.com` / `MANAGER_ADMIN_PASSWORD`. Todavía no es
 alcanzable: `manager.edatia.matriz.cloud` **no existe en DNS** (no hay
