@@ -19,12 +19,59 @@ import {
   UpdateCajaMenorDto,
   CreateGastoCajaMenorDto,
   ReembolsoCajaMenorDto,
+  CreateCategoriaGastoDto,
+  UpdateCategoriaGastoDto,
 } from './dto/tesoreria.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('contabilidad/tesoreria')
 export class TesoreriaController {
   constructor(private readonly tesoreria: TesoreriaService) {}
+
+  // ─── Categorías de Gasto (Configuración Tesorería) ─────────────────────────
+
+  @Get('categorias')
+  findAllCategorias(@GetUser() user: JwtPayload) {
+    return this.tesoreria.findAllCategorias(user.empresaId!);
+  }
+
+  @Get('categorias/:id')
+  findOneCategoria(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.tesoreria.findOneCategoria(id, user.empresaId!);
+  }
+
+  @Post('categorias')
+  createCategoria(
+    @GetUser() user: JwtPayload,
+    @Body() dto: CreateCategoriaGastoDto,
+  ) {
+    return this.tesoreria.createCategoria(user.empresaId!, dto);
+  }
+
+  @Patch('categorias/:id')
+  updateCategoria(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() user: JwtPayload,
+    @Body() dto: UpdateCategoriaGastoDto,
+  ) {
+    return this.tesoreria.updateCategoria(id, user.empresaId!, dto);
+  }
+
+  @Delete('categorias/:id')
+  deleteCategoria(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.tesoreria.deleteCategoria(id, user.empresaId!);
+  }
+
+  @Get('cuentas-gasto')
+  getCuentasGastoPUC(@GetUser() user: JwtPayload) {
+    return this.tesoreria.getCuentasGastoPUC(user.empresaId!);
+  }
 
   // ─── Egresos / Gastos ────────────────────────────────────────────────────────
 

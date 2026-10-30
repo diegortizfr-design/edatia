@@ -94,6 +94,42 @@ export interface ReembolsoCajaMenor {
   createdAt: string;
 }
 
+export interface CategoriaGasto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  cuentaPUCId?: number;
+  cuentaPUC?: { id: number; codigo: string; nombre: string };
+  activo: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CuentaGastoPUC {
+  id: number;
+  codigo: string;
+  nombre: string;
+  nivel: number;
+  tipo: string;
+}
+
+// ─── Categorías de Gasto (Configuración Tesorería) ─────────────────────────
+
+export const getCategoriasTesoreria = () =>
+  api.get<CategoriaGasto[]>('/contabilidad/tesoreria/categorias').then(r => r.data);
+
+export const createCategoriaTesoreria = (data: { nombre: string; descripcion?: string; cuentaPUCId?: number; activo?: boolean }) =>
+  api.post<CategoriaGasto>('/contabilidad/tesoreria/categorias', data).then(r => r.data);
+
+export const updateCategoriaTesoreria = (id: number, data: Partial<{ nombre: string; descripcion?: string; cuentaPUCId?: number; activo?: boolean }>) =>
+  api.patch<CategoriaGasto>(`/contabilidad/tesoreria/categorias/${id}`, data).then(r => r.data);
+
+export const deleteCategoriaTesoreria = (id: number) =>
+  api.delete(`/contabilidad/tesoreria/categorias/${id}`).then(r => r.data);
+
+export const getCuentasGastoPUC = () =>
+  api.get<CuentaGastoPUC[]>('/contabilidad/tesoreria/cuentas-gasto').then(r => r.data);
+
 // ─── Egresos / Gastos ─────────────────────────────────────────────────────────
 
 export const getEgresos = (params?: { desde?: string; hasta?: string; categoria?: string; cajaBancoId?: number; query?: string }) =>

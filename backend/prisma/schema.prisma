@@ -166,6 +166,7 @@ model Empresa {
   mediosPago           MedioPago[]
   egresos              Egreso[]
   cajasMenores         CajaMenor[]
+  categoriasGasto      CategoriaGasto[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1748,6 +1749,7 @@ model CuentaPUC {
   egresosGasto     Egreso[]           @relation("EgresoCuentaGasto")
   egresosRetencion Egreso[]           @relation("EgresoCuentaRetencion")
   gastosCajaMenor  GastoCajaMenor[]
+  categoriasGasto  CategoriaGasto[]
   activo           Boolean  @default(true)
 
   lineas           ComprobanteLinea[]
@@ -2662,7 +2664,9 @@ model Egreso {
   beneficiarioNombre String?
   beneficiarioDoc   String?
 
-  categoriaGasto    String       // ARRIENDO | SERVICIOS | HONORARIOS | MANTENIMIENTO | DIVERSOS | CAJA_MENOR | OTRO
+  categoriaGasto    String       // Nombre de la categoría
+  categoriaGastoId  Int?
+  categoriaRel      CategoriaGasto? @relation(fields: [categoriaGastoId], references: [id])
   concepto          String
   referencia        String?      // N° Factura de servicios, cuenta de cobro, etc.
 
@@ -2780,4 +2784,25 @@ model ReembolsoCajaMenor {
   createdAt         DateTime         @default(now())
 
   @@index([cajaMenorId])
+}
+
+
+model CategoriaGasto {
+  id          Int        @id @default(autoincrement())
+  empresaId   Int
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+
+  nombre      String     // Ej: "Arriendo Local", "Energía Eléctrica", "Servicios Contables"
+  descripcion String?
+  cuentaPUCId Int?       // Cuenta PUC Clase 5/6 que DEBE existir en el catálogo PUC del usuario
+  cuentaPUC   CuentaPUC? @relation(fields: [cuentaPUCId], references: [id])
+  activo      Boolean    @default(true)
+
+  egresos     Egreso[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
 }

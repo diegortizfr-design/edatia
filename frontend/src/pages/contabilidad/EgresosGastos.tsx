@@ -19,12 +19,17 @@ import {
   ShieldCheck,
   Percent,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   getEgresos,
   createEgreso,
   anularEgreso,
   getCategoriasGasto,
+  getCategoriasTesoreria,
+  getCuentasGastoPUC,
   Egreso,
+  CategoriaGasto,
+  CuentaGastoPUC,
 } from '../../services/tesoreria.service';
 import { getCajasBancos } from '../../services/erp.service';
 import { getClientes } from '../../services/ventas.service';
@@ -610,13 +615,13 @@ export function EgresosGastos() {
 
 function ModalNuevoEgreso({
   onClose,
-  categoriasData,
+  categoriasData: _categoriasData,
   cajasBancos,
   terceros,
   onSuccess,
 }: {
   onClose: () => void;
-  categoriasData: any;
+  categoriasData?: any;
   cajasBancos: any[];
   terceros: any[];
   onSuccess: (nuevo: Egreso) => void;
@@ -626,7 +631,8 @@ function ModalNuevoEgreso({
   const [terceroId, setTerceroId] = useState<string>('');
   const [beneficiarioNombre, setBeneficiarioNombre] = useState('');
   const [beneficiarioDoc, setBeneficiarioDoc] = useState('');
-  const [categoriaGasto, setCategoriaGasto] = useState('ARRIENDO');
+  const [categoriaGastoId, setCategoriaGastoId] = useState<string>('');
+  const [categoriaGastoNombre, setCategoriaGastoNombre] = useState<string>('');
   const [concepto, setConcepto] = useState('');
   const [referencia, setReferencia] = useState('');
   const [cuentaGastoId, setCuentaGastoId] = useState<number | null>(null);
@@ -640,43 +646,69 @@ function ModalNuevoEgreso({
   const [notas, setNotas] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // ── Documentos Configuración CE (No quemado) ──
-  const { data: documentos = [] } = useQuery({
+  // ── Documentos Configuración CE estrictos (sigla CE únicamente) ──
+  const { data: documentos = [], isLoading: loadingDocs } = useQuery({
     queryKey: ['documentos-config'],
     queryFn: getDocumentosConfig,
   });
 
   const resolucionesCE = useMemo(() => {
     return (documentos as any[]).filter((d: any) => {
-      if (d.estado !== 'ACTIVO') return false;
+      if (d.estado !== 'ACTIVO' || d.deletedAt) return false;
       const sigla = (d.sigla || '').trim().toUpperCase();
-      const nombre = (d.nombre || '').trim().toLowerCase();
-      // Excluir cualquier documento de venta, pos, recibo o ingreso
-      if (
-        sigla === 'RC' ||
-        sigla === 'RCP' ||
-        sigla === 'POS' ||
-        sigla === 'DPE' ||
-        sigla === 'FV' ||
-        sigla === 'FVE' ||
-        sigla === 'NC' ||
-        sigla === 'ND' ||
-        sigla === 'CI' ||
-        nombre.includes('recibo') ||
-        nombre.includes('ingreso') ||
-        nombre.includes('venta')
-      ) {
-        return false;
-      }
-      return sigla === 'CE' || nombre.includes('egreso') || nombre.includes('pago');
+      return sigla === 'CE';
     });
   }, [documentos]);
 
   useEffect(() => {
-    if (resolucionesCE.length > 0 && !documentoConfigId) {
-      setDocumentoConfigId(String(resolucionesCE[0].id));
+    if (resolucionesCE.length > 0) {
+      if (!documentoConfigId || !resolucionesCE.some((d: any) => String(d.id) === String(documentoConfigId))) {
+        setDocumentoConfigId(String(resolucionesCE[0].id));
+      }
+    } else {
+      setDocumentoConfigId('');
     }
   }, [resolucionesCE, documentoConfigId]);
+
+  // ── Categorías Dinámicas de Tesorería (no quemadas) ──
+  const { data: categoriasLista = [], isLoading: loadingCats } = useQuery<CategoriaGasto[]>({
+    queryKey: ['categoriasTesoreria'],
+    queryFn: getCategoriasTesoreria,
+  });
+
+  // ── Cuentas Contables PUC de Gasto reales de la empresa ──
+  const { data: cuentasGastoLista = [], isLoading: loadingCuentas } = useQuery<CuentaGastoPUC[]>({
+    queryKey: ['cuentasGastoPUC'],
+    queryFn: getCuentasGastoPUC,
+  });
+
+  // Auto-seleccionar primera categoría activa
+  useEffect(() => {
+    if (categoriasLista.length > 0 && !categoriaGastoId) {
+      const activeCat = categoriasLista.find((c) => c.activo) || categoriasLista[0];
+      setCategoriaGastoId(String(activeCat.id));
+      setCategoriaGastoNombre(activeCat.nombre);
+      if (activeCat.cuentaPUCId) {
+        setCuentaGastoId(activeCat.cuentaPUCId);
+      } else if (cuentasGastoLista.length > 0) {
+        setCuentaGastoId(cuentasGastoLista[0].id);
+      }
+    }
+  }, [categoriasLista, categoriaGastoId, cuentasGastoLista]);
+
+  // Cambio de categoría: sincroniza nombre y cuenta PUC predeterminada
+  const handleCategoriaChange = (idStr: string) => {
+    setCategoriaGastoId(idStr);
+    const cat = categoriasLista.find((c) => String(c.id) === idStr);
+    if (cat) {
+      setCategoriaGastoNombre(cat.nombre);
+      if (cat.cuentaPUCId) {
+        setCuentaGastoId(cat.cuentaPUCId);
+      }
+    } else {
+      setCategoriaGastoNombre('');
+    }
+  };
 
   // ── Medios de Pago desde Configuración General ──
   const { data: mediosPagoData = [] } = useQuery({
@@ -702,19 +734,6 @@ function ModalNuevoEgreso({
     }
   }, [mediosPagoActivos, medioPago]);
 
-  // Sincronizar cuenta contable recomendada cuando cambia la categoría
-  useMemo(() => {
-    const cat = categoriasData?.categorias?.find((c: any) => c.id === categoriaGasto);
-    if (cat && categoriasData?.cuentasPUC) {
-      const match = categoriasData.cuentasPUC.find((cp: any) => cp.codigo.startsWith(cat.prefijoPUC));
-      if (match) {
-        setCuentaGastoId(match.id);
-      } else if (categoriasData.cuentasPUC.length > 0) {
-        setCuentaGastoId(categoriasData.cuentasPUC[0].id);
-      }
-    }
-  }, [categoriaGasto, categoriasData]);
-
   // Si selecciona tercero del listado, auto-llenar datos
   const handleSelectTercero = (idStr: string) => {
     setTerceroId(idStr);
@@ -726,6 +745,11 @@ function ModalNuevoEgreso({
       }
     }
   };
+
+  // Caja / Banco seleccionada
+  const selectedCajaBanco = useMemo(() => {
+    return cajasBancos.find((cb: any) => String(cb.id) === String(cajaBancoId));
+  }, [cajasBancos, cajaBancoId]);
 
   // Cálculo neto
   const valorRetencion = aplicaRetencion ? Math.round(monto * (tarifaRetencion / 100)) : 0;
@@ -745,6 +769,22 @@ function ModalNuevoEgreso({
     e.preventDefault();
     setErrorMsg('');
 
+    if (!documentoConfigId) {
+      setErrorMsg('Debe seleccionar la resolución del documento Comprobante de Egreso (CE). Configure una en Configuración ➔ Documentos.');
+      return;
+    }
+    if (!cajaBancoId) {
+      setErrorMsg('Debe seleccionar la Caja o Banco desde donde se realiza el pago');
+      return;
+    }
+    if (selectedCajaBanco && !selectedCajaBanco.cuentaPUC) {
+      setErrorMsg(`La caja/banco "${selectedCajaBanco.nombre}" no tiene una cuenta contable PUC asignada. Vaya a Configuración ➔ Cajas y Bancos para vincularla.`);
+      return;
+    }
+    if (!cuentaGastoId) {
+      setErrorMsg('Debe seleccionar la cuenta contable de gasto PUC');
+      return;
+    }
     if (monto <= 0) {
       setErrorMsg('El monto del egreso debe ser mayor a 0');
       return;
@@ -753,22 +793,19 @@ function ModalNuevoEgreso({
       setErrorMsg('Debe especificar el concepto del gasto');
       return;
     }
-    if (!cuentaGastoId) {
-      setErrorMsg('Debe seleccionar la cuenta contable de gasto PUC');
-      return;
-    }
 
     mutCrear.mutate({
-      documentoConfigId: documentoConfigId ? Number(documentoConfigId) : undefined,
+      documentoConfigId: Number(documentoConfigId),
       fecha,
       terceroId: terceroId ? Number(terceroId) : undefined,
       beneficiarioNombre: beneficiarioNombre.trim() || undefined,
       beneficiarioDoc: beneficiarioDoc.trim() || undefined,
-      categoriaGasto,
+      categoriaGasto: categoriaGastoNombre || 'Gasto Operacional',
+      categoriaGastoId: categoriaGastoId ? Number(categoriaGastoId) : undefined,
       concepto: concepto.trim(),
       referencia: referencia.trim() || undefined,
       cuentaGastoId,
-      cajaBancoId: cajaBancoId ? Number(cajaBancoId) : undefined,
+      cajaBancoId: Number(cajaBancoId),
       medioPago,
       monto,
       aplicaRetencion,
@@ -810,214 +847,337 @@ function ModalNuevoEgreso({
                 <span>{errorMsg}</span>
               </div>
             )}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
-            {/* Documento / Prefijo CE (DocumentoConfig) */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                Documento / Resolución CE *
-              </label>
-              <select
-                value={documentoConfigId}
-                onChange={(e) => setDocumentoConfigId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                {resolucionesCE.length === 0 && (
-                  <option value="">Comprobante de Egreso (CE)</option>
-                )}
-                {resolucionesCE.map((doc: any) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.nombre} ({doc.prefijo}) — Consecutivo sig: {doc.consecutivoSiguiente}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            {/* Fecha */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Fecha de Pago *</label>
-              <input
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Categoría de Gasto */}
-            <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Categoría del Gasto *</label>
-              <select
-                value={categoriaGasto}
-                onChange={(e) => setCategoriaGasto(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                {categoriasData?.categorias.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} ({c.descripcion})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Beneficiario / Tercero guardado */}
-            <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Tercero / Proveedor Registrado (Opcional)</label>
-              <select
-                value={terceroId}
-                onChange={(e) => handleSelectTercero(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                <option value="">— Seleccionar tercero o diligenciar abajo —</option>
-                {terceros.map((t: any) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre} ({t.numeroDocumento})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Nombre manual / documento */}
-            <div className="md:col-span-8">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Nombre / Razón Social Beneficiario *</label>
-              <input
-                type="text"
-                placeholder="Ej. Inmobiliaria Central SAS / Enel Colombia"
-                value={beneficiarioNombre}
-                onChange={(e) => setBeneficiarioNombre(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            <div className="md:col-span-4">
-              <label className="block text-xs font-bold text-slate-600 mb-1">C.C. o NIT</label>
-              <input
-                type="text"
-                placeholder="900123456"
-                value={beneficiarioDoc}
-                onChange={(e) => setBeneficiarioDoc(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Concepto del gasto */}
-            <div className="md:col-span-8">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Concepto / Motivo del Pago *</label>
-              <input
-                type="text"
-                placeholder="Ej. Pago arriendo local mes Octubre 2026"
-                value={concepto}
-                onChange={(e) => setConcepto(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* N° Factura / Referencia */}
-            <div className="md:col-span-4">
-              <label className="block text-xs font-bold text-slate-600 mb-1">N° Factura / Cuenta de Cobro</label>
-              <input
-                type="text"
-                placeholder="Ej. FAC-9912 o NIC-4421"
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Cuenta PUC Gasto */}
-            <div className="md:col-span-12">
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                Cuenta PUC de Gasto (Débito) *
-              </label>
-              <select
-                value={cuentaGastoId || ''}
-                onChange={(e) => setCuentaGastoId(Number(e.target.value))}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-mono text-xs focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                {categoriasData?.cuentasPUC?.map((cp: any) => (
-                  <option key={cp.id} value={cp.id}>
-                    {cp.codigo} — {cp.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Origen de fondos: Caja o Banco */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Pagar Desde (Caja / Banco) *</label>
-              <select
-                value={cajaBancoId}
-                onChange={(e) => setCajaBancoId(e.target.value)}
-                required
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                {cajasBancos.map((cb: any) => (
-                  <option key={cb.id} value={cb.id}>
-                    {cb.nombre} — Saldo: {cop(Number(cb.saldoContable ?? 0))}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Medio de Pago (dinámico desde Configuración) */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Medio de Pago</label>
-              <select
-                value={medioPago}
-                onChange={(e) => setMedioPago(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              >
-                {mediosPagoActivos.map((mp: any) => (
-                  <option key={mp.id || mp.codigo} value={mp.codigo}>
-                    {mp.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Monto del Gasto */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Valor Total del Gasto ($) *</label>
-              <CurrencyInput
-                value={monto}
-                onChange={(val) => setMonto(val)}
-                placeholder="0"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Retención Toggle */}
-            <div className="md:col-span-6 flex flex-col justify-end">
-              <label className="flex items-center gap-2 cursor-pointer p-2.5 bg-slate-50 border border-slate-200 rounded-xl select-none">
-                <input
-                  type="checkbox"
-                  checked={aplicaRetencion}
-                  onChange={(e) => setAplicaRetencion(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                />
-                <span className="text-xs font-bold text-slate-700">Aplicar Retención en la Fuente</span>
-              </label>
-            </div>
-
-            {/* Parámetros de Retención si aplica */}
-            {aplicaRetencion && (
-              <div className="md:col-span-12 p-3 bg-amber-50/60 border border-amber-200 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="block font-bold text-amber-900 mb-1">Tarifa de Retención (%)</label>
-                  <select
-                    value={tarifaRetencion}
-                    onChange={(e) => setTarifaRetencion(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-amber-900"
+            {/* Alerta de bloqueo si no hay documento CE en configuración */}
+            {!loadingDocs && resolucionesCE.length === 0 && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold">No existe ningún documento con sigla "CE" configurado</p>
+                  <p className="text-amber-800">
+                    No puede emitir comprobantes de egreso sin antes crear una resolución de documento con sigla <strong>CE</strong> en su configuración de documentos.
+                  </p>
+                  <Link
+                    to="/configuracion/documentos"
+                    className="inline-flex items-center gap-1 font-bold text-indigo-700 hover:underline pt-0.5"
                   >
-                    <option value={3.5}>3.5% — Arrendamiento de Bienes Raíces</option>
-                    <option value={4.0}>4.0% — Servicios en General</option>
-                    <option value={6.0}>6.0% — Servicios no declarantes</option>
-                    <option value={10.0}>10.0% — Honorarios declarantes</option>
-                    <option value={11.0}>11.0% — Honorarios no declarantes</option>
-                    <option value={2.5}>2.5% — Compras generales</option>
+                    <span>Ir a Configuración ➔ Documentos</span>
+                    <ArrowDownRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+              {/* Documento / Prefijo CE (DocumentoConfig) */}
+              <div className="md:col-span-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-600">
+                    Documento / Resolución CE *
+                  </label>
+                  <Link
+                    to="/configuracion/documentos"
+                    className="text-[11px] text-indigo-600 hover:underline font-semibold"
+                  >
+                    Configurar
+                  </Link>
+                </div>
+                <select
+                  value={documentoConfigId}
+                  onChange={(e) => setDocumentoConfigId(e.target.value)}
+                  disabled={resolucionesCE.length === 0}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  {resolucionesCE.length === 0 ? (
+                    <option value="">— No hay resoluciones CE configuradas —</option>
+                  ) : (
+                    <>
+                      <option value="">— Seleccionar Resolución CE —</option>
+                      {resolucionesCE.map((doc: any) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.nombre} ({doc.prefijo ? `${doc.prefijo}-` : 'CE-'}{doc.consecutivoSiguiente})
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Fecha */}
+              <div className="md:col-span-6">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Fecha de Pago *</label>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Categoría de Gasto Dinámica */}
+              <div className="md:col-span-12">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-600">Categoría del Gasto *</label>
+                  <Link
+                    to="/configuracion/tesoreria"
+                    className="text-[11px] text-indigo-600 hover:underline font-semibold"
+                  >
+                    + Gestionar Categorías
+                  </Link>
+                </div>
+
+                {categoriasLista.length === 0 && !loadingCats ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2 mb-2">
+                    <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">No hay categorías de gasto configuradas</p>
+                      <p>Cree categorías como "Arriendo", "Servicios Públicos", etc. en <Link to="/configuracion/tesoreria" className="underline font-bold text-indigo-700">Configuración ➔ Tesorería</Link>.</p>
+                    </div>
+                  </div>
+                ) : null}
+
+                <select
+                  value={categoriaGastoId}
+                  onChange={(e) => handleCategoriaChange(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                >
+                  <option value="">— Seleccionar Categoría de Gasto —</option>
+                  {categoriasLista
+                    .filter((c) => c.activo)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre} {c.descripcion ? `(${c.descripcion})` : ''}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Beneficiario / Tercero guardado */}
+              <div className="md:col-span-12">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Tercero / Proveedor Registrado (Opcional)</label>
+                <select
+                  value={terceroId}
+                  onChange={(e) => handleSelectTercero(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                >
+                  <option value="">— Seleccionar tercero o diligenciar abajo —</option>
+                  {terceros.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre} ({t.numeroDocumento})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Nombre manual / documento */}
+              <div className="md:col-span-8">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Nombre / Razón Social Beneficiario *</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Inmobiliaria Central SAS / Enel Colombia"
+                  value={beneficiarioNombre}
+                  onChange={(e) => setBeneficiarioNombre(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="md:col-span-4">
+                <label className="block text-xs font-bold text-slate-600 mb-1">C.C. o NIT</label>
+                <input
+                  type="text"
+                  placeholder="900123456"
+                  value={beneficiarioDoc}
+                  onChange={(e) => setBeneficiarioDoc(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Concepto del gasto */}
+              <div className="md:col-span-8">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Concepto / Motivo del Pago *</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Pago arriendo local mes Octubre 2026"
+                  value={concepto}
+                  onChange={(e) => setConcepto(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* N° Factura / Referencia */}
+              <div className="md:col-span-4">
+                <label className="block text-xs font-bold text-slate-600 mb-1">N° Factura / Cuenta de Cobro</label>
+                <input
+                  type="text"
+                  placeholder="Ej. FAC-9912 o NIC-4421"
+                  value={referencia}
+                  onChange={(e) => setReferencia(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Cuenta PUC Gasto real */}
+              <div className="md:col-span-12">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-600">
+                    Cuenta PUC de Gasto (Débito) *
+                  </label>
+                  <span className="text-[11px] text-indigo-600 font-semibold font-mono">
+                    {cuentasGastoLista.length} cuentas en PUC
+                  </span>
+                </div>
+                <select
+                  value={cuentaGastoId || ''}
+                  onChange={(e) => setCuentaGastoId(e.target.value ? Number(e.target.value) : null)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-mono text-xs focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                >
+                  <option value="">— Seleccionar cuenta contable de gasto de su catálogo PUC —</option>
+                  {cuentasGastoLista.map((cp) => (
+                    <option key={cp.id} value={cp.id}>
+                      {cp.codigo} — {cp.nombre} ({cp.tipo})
+                    </option>
+                  ))}
+                </select>
+                {cuentasGastoLista.length === 0 && !loadingCuentas && (
+                  <p className="text-[11px] text-rose-600 font-semibold mt-1">
+                    ⚠️ No hay cuentas de gasto (Clase 5/6) en su catálogo PUC. Vaya a Contabilidad ➔ PUC para crearlas.
+                  </p>
+                )}
+              </div>
+
+              {/* Origen de fondos: Caja o Banco */}
+              <div className="md:col-span-6">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Pagar Desde (Caja / Banco) *</label>
+                <select
+                  value={cajaBancoId}
+                  onChange={(e) => setCajaBancoId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                >
+                  <option value="">— Seleccionar Caja o Banco —</option>
+                  {cajasBancos.map((cb: any) => (
+                    <option key={cb.id} value={cb.id}>
+                      {cb.nombre} — Saldo: {cop(Number(cb.saldoContable ?? 0))} {cb.cuentaPUC ? `[PUC: ${cb.cuentaPUC}]` : '[Sin cuenta PUC]'}
+                    </option>
+                  ))}
+                </select>
+                {selectedCajaBanco && !selectedCajaBanco.cuentaPUC && (
+                  <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                    ⚠️ Esta caja/banco no tiene una cuenta PUC configurada en Cajas y Bancos.
+                  </p>
+                )}
+              </div>
+
+              {/* Medio de Pago (dinámico desde Configuración) */}
+              <div className="md:col-span-6">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Medio de Pago *</label>
+                <select
+                  value={medioPago}
+                  onChange={(e) => setMedioPago(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                >
+                  {mediosPagoActivos.map((mp: any) => (
+                    <option key={mp.id || mp.codigo} value={mp.codigo}>
+                      {mp.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Monto del Gasto */}
+              <div className="md:col-span-6">
+                <label className="block text-xs font-bold text-slate-600 mb-1">Valor Total del Gasto ($) *</label>
+                <CurrencyInput
+                  value={monto}
+                  onChange={(val) => setMonto(val)}
+                  placeholder="0"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Retención Toggle */}
+              <div className="md:col-span-6 flex flex-col justify-end">
+                <label className="flex items-center gap-2 cursor-pointer p-2.5 bg-slate-50 border border-slate-200 rounded-xl select-none">
+                  <input
+                    type="checkbox"
+                    checked={aplicaRetencion}
+                    onChange={(e) => setAplicaRetencion(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                  />
+                  <span className="text-xs font-bold text-slate-700">Aplicar Retención en la Fuente</span>
+                </label>
+              </div>
+
+              {/* Parámetros de Retención si aplica */}
+              {aplicaRetencion && (
+                <div className="md:col-span-12 p-3 bg-amber-50/60 border border-amber-200 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">Tarifa de Retención (%)</label>
+                    <select
+                      value={tarifaRetencion}
+                      onChange={(e) => setTarifaRetencion(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-amber-900"
+                    >
+                      <option value={3.5}>3.5% — Arrendamiento de Bienes Raíces</option>
+                      <option value={4.0}>4.0% — Servicios en General</option>
+                      <option value={6.0}>6.0% — Servicios no declarantes</option>
+                      <option value={10.0}>10.0% — Honorarios declarantes</option>
+                      <option value={11.0}>11.0% — Honorarios no declarantes</option>
+                      <option value={2.5}>2.5% — Compras generales</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-amber-700 font-semibold">Valor Retenido:</span>
+                    <span className="text-base font-bold text-red-600">-{cop(valorRetencion)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Pie Fijo: Resumen y Botones (Siempre visibles en pantalla) */}
+          <div className="px-5 sm:px-6 py-3.5 border-t border-slate-100 bg-slate-50/90 shrink-0 space-y-3">
+            {/* Resumen Final Neto */}
+            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-indigo-700 font-semibold block">Total Neto a Desembolsar</span>
+                <span className="text-lg sm:text-xl font-extrabold text-indigo-950">{cop(neto)}</span>
+              </div>
+              <div className="text-right text-[11px] text-indigo-600 font-medium">
+                Genera Comprobante [CE] y asiento balanceado
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={mutCrear.isLoading || resolucionesCE.length === 0 || !documentoConfigId}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {mutCrear.isLoading ? 'Generando Comprobante...' : 'Guardar y Emitir Egreso [CE]'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
                   </select>
                 </div>
                 <div className="flex flex-col justify-center">

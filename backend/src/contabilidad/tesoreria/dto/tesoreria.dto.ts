@@ -1,9 +1,9 @@
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
 
 export class CreateEgresoDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
-  documentoConfigId?: number;
+  documentoConfigId: number;
 
   @IsNotEmpty()
   @IsString()
@@ -23,7 +23,11 @@ export class CreateEgresoDto {
 
   @IsNotEmpty()
   @IsString()
-  categoriaGasto: string; // ARRIENDO | SERVICIOS | HONORARIOS | MANTENIMIENTO | DIVERSOS | CAJA_MENOR | OTRO
+  categoriaGasto: string;
+
+  @IsOptional()
+  @IsNumber()
+  categoriaGastoId?: number;
 
   @IsNotEmpty()
   @IsString()
@@ -37,9 +41,9 @@ export class CreateEgresoDto {
   @IsNumber()
   cuentaGastoId: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
-  cajaBancoId?: number;
+  cajaBancoId: number;
 
   @IsOptional()
   @IsString()
@@ -182,3 +186,40 @@ export class ReembolsoCajaMenorDto {
   observaciones?: string;
 }
 
+
+
+export class CreateCategoriaGastoDto {
+  @IsNotEmpty()
+  @IsString()
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsOptional()
+  @IsNumber()
+  cuentaPUCId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
+}
+
+export class UpdateCategoriaGastoDto {
+  @IsOptional()
+  @IsString()
+  nombre?: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsOptional()
+  @IsNumber()
+  cuentaPUCId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
+}

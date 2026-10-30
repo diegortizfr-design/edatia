@@ -72,6 +72,7 @@ import { ConfigTerceroForm } from './pages/configuracion/ConfigTerceroForm'
 import { ConfigTercerosExtra } from './pages/configuracion/ConfigTercerosExtra'
 import { ConfigArchivo } from './pages/configuracion/ConfigArchivo'
 import ConfigFormasMediosPago from './pages/configuracion/ConfigFormasMediosPago'
+import ConfigTesoreria from './pages/configuracion/ConfigTesoreria'
 
 
 
@@ -191,6 +192,7 @@ function App() {
         <Route path="/configuracion/formas-medios-pago" element={<P><ConfigFormasMediosPago /></P>} />
         <Route path="/configuracion/sucursales" element={<P><ConfigSucursales /></P>} />
         <Route path="/configuracion/cajas-bancos" element={<P><ConfigCajasBancos /></P>} />
+        <Route path="/configuracion/tesoreria" element={<P><ConfigTesoreria /></P>} />
         <Route path="/configuracion/productos" element={<P><ConfigProductos /></P>} />
         <Route path="/configuracion/productos/maestros" element={<P><ConfigProductosMaestros /></P>} />
         <Route path="/configuracion/productos/:id/detalle" element={<P><ConfigProductoDetalle /></P>} />

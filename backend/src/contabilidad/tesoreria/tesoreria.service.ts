@@ -8,6 +8,8 @@ import {
   UpdateCajaMenorDto,
   CreateGastoCajaMenorDto,
   ReembolsoCajaMenorDto,
+  CreateCategoriaGastoDto,
+  UpdateCategoriaGastoDto,
 } from './dto/tesoreria.dto';
 
 @Injectable()
@@ -88,7 +90,19 @@ export class TesoreriaService implements OnModuleInit {
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS "CategoriaGasto" (
+            "id" SERIAL NOT NULL PRIMARY KEY,
+            "empresaId" INTEGER NOT NULL,
+            "nombre" TEXT NOT NULL,
+            "descripcion" TEXT,
+            "cuentaPUCId" INTEGER,
+            "activo" BOOLEAN NOT NULL DEFAULT true,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
         ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER;
+        ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "categoriaGastoId" INTEGER;
       `);
     } catch (err) {
       console.warn('Advertencia asegurando tablas de Tesorería:', err);
@@ -194,38 +208,33 @@ export class TesoreriaService implements OnModuleInit {
       }
     }
 
-    // 3. Resolver cuenta de salida (Caja / Banco)
-    let cuentaSalidaId: number | null = null;
-    let cajaBanco = null;
-
-    if (dto.cajaBancoId) {
-      cajaBanco = await this.prisma.cajaBanco.findFirst({
-        where: { id: dto.cajaBancoId, empresaId, activo: true },
-      });
-      if (cajaBanco && cajaBanco.cuentaPUC) {
-        const cPuc = await this.prisma.cuentaPUC.findFirst({
-          where: { empresaId, codigo: cajaBanco.cuentaPUC, activo: true },
-        });
-        if (cPuc) cuentaSalidaId = cPuc.id;
-      }
+    // 3. Resolver cuenta de salida (Caja / Banco) estrictamente desde CajaBanco.cuentaPUC
+    if (!dto.cajaBancoId) {
+      throw new BadRequestException('Debe seleccionar la Caja o Banco desde donde se realiza el egreso.');
     }
 
-    if (!cuentaSalidaId) {
-      // Buscar cuenta de banco (111005) o caja general (110505) por defecto
-      const cuentaDefault = await this.prisma.cuentaPUC.findFirst({
-        where: {
-          empresaId,
-          codigo: { in: ['111005', '110505', '1110', '1105'] },
-          activo: true,
-        },
-      });
-      if (!cuentaDefault) {
-        throw new BadRequestException(
-          'No se encontró una cuenta contable de Caja (1105) o Banco (1110) en su PUC para registrar la salida de dinero.'
-        );
-      }
-      cuentaSalidaId = cuentaDefault.id;
+    const cajaBanco = await this.prisma.cajaBanco.findFirst({
+      where: { id: dto.cajaBancoId, empresaId, activo: true },
+    });
+    if (!cajaBanco) {
+      throw new NotFoundException('La cuenta de Caja o Banco seleccionada no existe o no está activa.');
     }
+
+    if (!cajaBanco.cuentaPUC || !cajaBanco.cuentaPUC.trim()) {
+      throw new BadRequestException(
+        `La caja/banco "${cajaBanco.nombre}" no tiene configurada una cuenta PUC contable. Por favor configúrela en Configuración ➔ Cajas y Bancos.`
+      );
+    }
+
+    const cuentaSalida = await this.prisma.cuentaPUC.findFirst({
+      where: { empresaId, codigo: cajaBanco.cuentaPUC.trim(), activo: true },
+    });
+    if (!cuentaSalida) {
+      throw new BadRequestException(
+        `La cuenta contable PUC ${cajaBanco.cuentaPUC} asignada a "${cajaBanco.nombre}" no existe en su catálogo de cuentas PUC o está inactiva.`
+      );
+    }
+    const cuentaSalidaId = cuentaSalida.id;
 
     // 4. Calcular Retención en la fuente si aplica
     const tarifaRet = dto.aplicaRetencion ? Number(dto.tarifaRetencion || 0) : 0;
@@ -261,56 +270,36 @@ export class TesoreriaService implements OnModuleInit {
       const anio = fecha.getFullYear();
       const mes = fecha.getMonth() + 1;
 
-      // Resolver Configuración de Documento (DocumentoConfig) desde configuración, sin quemar
-      let docConfig = null;
-      if (dto.documentoConfigId) {
-        docConfig = await tx.documentoConfig.findFirst({
-          where: { id: dto.documentoConfigId, empresaId, deletedAt: null },
-        });
-        if (!docConfig) {
-          throw new NotFoundException('Configuración de documento de egreso no encontrada');
-        }
-      } else {
-        // Buscar configuración activa de Comprobante de Egreso (sigla CE o tipoOperacion TESORERIA)
-        docConfig = await tx.documentoConfig.findFirst({
-          where: {
-            empresaId,
-            sigla: 'CE',
-            estado: 'ACTIVO',
-            deletedAt: null,
-          },
-          orderBy: { id: 'asc' },
-        });
+      // Resolver Configuración de Documento (DocumentoConfig) con sigla CE estricta desde configuración
+      if (!dto.documentoConfigId) {
+        throw new BadRequestException('Debe seleccionar la resolución del documento Comprobante de Egreso (CE).');
+      }
 
-        if (!docConfig) {
-          docConfig = await tx.documentoConfig.findFirst({
-            where: {
-              empresaId,
-              tipoOperacion: 'TESORERIA',
-              sigla: { in: ['CE', 'EG', 'CPE'] },
-              estado: 'ACTIVO',
-              deletedAt: null,
-            },
-            orderBy: { id: 'asc' },
-          });
-        }
+      const docConfig = await tx.documentoConfig.findFirst({
+        where: {
+          id: dto.documentoConfigId,
+          empresaId,
+          sigla: 'CE',
+          estado: 'ACTIVO',
+          deletedAt: null,
+        },
+      });
 
-        // Si la empresa aún no tiene creada una configuración de CE, registrarla en DocumentoConfig
-        if (!docConfig) {
-          docConfig = await tx.documentoConfig.create({
-            data: {
-              empresaId,
-              nombre: 'Comprobante de Egreso',
-              sigla: 'CE',
-              prefijo: 'CE',
-              tipoOperacion: 'TESORERIA',
-              plantillaImpresion: 'CARTA',
-              esElectronico: false,
-              estado: 'ACTIVO',
-              consecutivoInicial: 1,
-              consecutivoSiguiente: 1,
-            },
-          });
+      if (!docConfig) {
+        throw new BadRequestException(
+          'La resolución seleccionada no corresponde a un Comprobante de Egreso (sigla CE) activo. Verifique en Configuración ➔ Documentos.'
+        );
+      }
+
+      // Resolver categoría de gasto
+      let categoriaNombre = dto.categoriaGasto;
+      let categoriaGastoId: number | null = dto.categoriaGastoId || null;
+      if (categoriaGastoId) {
+        const cat = await tx.categoriaGasto.findFirst({
+          where: { id: categoriaGastoId, empresaId, activo: true },
+        });
+        if (cat) {
+          categoriaNombre = cat.nombre;
         }
       }
 
@@ -399,7 +388,8 @@ export class TesoreriaService implements OnModuleInit {
           terceroId: dto.terceroId || null,
           beneficiarioNombre: terceroNombre,
           beneficiarioDoc: terceroDoc,
-          categoriaGasto: dto.categoriaGasto,
+          categoriaGasto: categoriaNombre,
+          categoriaGastoId: categoriaGastoId,
           concepto: dto.concepto,
           referencia: dto.referencia,
           cuentaGastoId: cuentaGasto.id,
@@ -467,34 +457,157 @@ export class TesoreriaService implements OnModuleInit {
     });
   }
 
-  // Sugerir catálogo de categorías de gastos operacionales y cuentas PUC
-  async getCategoriasGasto(empresaId: number) {
-    const cuentasGasto = await this.prisma.cuentaPUC.findMany({
-      where: {
-        empresaId,
-        codigo: { startsWith: '5' },
-        activo: true,
+  // ─── Categorías de Gasto Dinámicas (Configuración Tesorería) ───────────────
+
+  async findAllCategorias(empresaId: number) {
+    return this.prisma.categoriaGasto.findMany({
+      where: { empresaId },
+      include: {
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
       },
-      orderBy: { codigo: 'asc' },
-      take: 100,
+      orderBy: { nombre: 'asc' },
+    });
+  }
+
+  async findOneCategoria(id: number, empresaId: number) {
+    const cat = await this.prisma.categoriaGasto.findFirst({
+      where: { id, empresaId },
+      include: {
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+      },
+    });
+    if (!cat) throw new NotFoundException('Categoría de gasto no encontrada');
+    return cat;
+  }
+
+  async createCategoria(empresaId: number, dto: CreateCategoriaGastoDto) {
+    const nombre = dto.nombre?.trim();
+    if (!nombre) throw new BadRequestException('El nombre de la categoría es requerido');
+
+    const existe = await this.prisma.categoriaGasto.findFirst({
+      where: { empresaId, nombre: { equals: nombre, mode: 'insensitive' } },
+    });
+    if (existe) throw new BadRequestException(`Ya existe una categoría de gasto con el nombre "${nombre}"`);
+
+    if (dto.cuentaPUCId) {
+      const cPuc = await this.prisma.cuentaPUC.findFirst({
+        where: { id: dto.cuentaPUCId, empresaId, activo: true },
+      });
+      if (!cPuc) {
+        throw new NotFoundException('La cuenta contable PUC asignada no existe en su catálogo o está inactiva');
+      }
+    }
+
+    return this.prisma.categoriaGasto.create({
+      data: {
+        empresaId,
+        nombre,
+        descripcion: dto.descripcion?.trim() || null,
+        cuentaPUCId: dto.cuentaPUCId || null,
+        activo: dto.activo !== undefined ? dto.activo : true,
+      },
+      include: {
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+      },
+    });
+  }
+
+  async updateCategoria(id: number, empresaId: number, dto: UpdateCategoriaGastoDto) {
+    const cat = await this.prisma.categoriaGasto.findFirst({
+      where: { id, empresaId },
+    });
+    if (!cat) throw new NotFoundException('Categoría de gasto no encontrada');
+
+    if (dto.nombre) {
+      const nombre = dto.nombre.trim();
+      const existe = await this.prisma.categoriaGasto.findFirst({
+        where: {
+          empresaId,
+          nombre: { equals: nombre, mode: 'insensitive' },
+          id: { not: id },
+        },
+      });
+      if (existe) throw new BadRequestException(`Ya existe otra categoría de gasto con el nombre "${nombre}"`);
+    }
+
+    if (dto.cuentaPUCId) {
+      const cPuc = await this.prisma.cuentaPUC.findFirst({
+        where: { id: dto.cuentaPUCId, empresaId, activo: true },
+      });
+      if (!cPuc) {
+        throw new NotFoundException('La cuenta contable PUC asignada no existe en su catálogo o está inactiva');
+      }
+    }
+
+    return this.prisma.categoriaGasto.update({
+      where: { id },
+      data: {
+        ...(dto.nombre ? { nombre: dto.nombre.trim() } : {}),
+        ...(dto.descripcion !== undefined ? { descripcion: dto.descripcion?.trim() || null } : {}),
+        ...(dto.cuentaPUCId !== undefined ? { cuentaPUCId: dto.cuentaPUCId || null } : {}),
+        ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
+      },
+      include: {
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+      },
+    });
+  }
+
+  async deleteCategoria(id: number, empresaId: number) {
+    const cat = await this.prisma.categoriaGasto.findFirst({
+      where: { id, empresaId },
+    });
+    if (!cat) throw new NotFoundException('Categoría de gasto no encontrada');
+
+    const egresosCount = await this.prisma.egreso.count({
+      where: { categoriaGastoId: id },
     });
 
-    const CATEGORIAS_DEFAULT = [
-      { id: 'ARRIENDO', nombre: 'Arrendamientos y Alquileres', prefijoPUC: '5120', descripcion: 'Locales, oficinas, bodegas' },
-      { id: 'SERVICIOS_LUZ', nombre: 'Energía Eléctrica', prefijoPUC: '513530', descripcion: 'Factura de luz del establecimiento' },
-      { id: 'SERVICIOS_AGUA', nombre: 'Agua y Acueducto', prefijoPUC: '513525', descripcion: 'Factura de agua y alcantarillado' },
-      { id: 'SERVICIOS_INTERNET', nombre: 'Internet y Telefonía', prefijoPUC: '513535', descripcion: 'Planes de conectividad y líneas' },
-      { id: 'HONORARIOS', nombre: 'Honorarios y Asesorías', prefijoPUC: '5110', descripcion: 'Contabilidad, jurídicos, técnicos' },
-      { id: 'MANTENIMIENTO', nombre: 'Mantenimiento y Reparaciones', prefijoPUC: '5145', descripcion: 'Reparaciones locativas y equipos' },
-      { id: 'TRANSPORTE', nombre: 'Fletes, Taxis y Transportes', prefijoPUC: '513550', descripcion: 'Envíos, mensajería y traslados' },
-      { id: 'PAPELERIA', nombre: 'Útiles, Papelería y Fotocopias', prefijoPUC: '519530', descripcion: 'Papel, tintas y suministros de oficina' },
-      { id: 'CAFETERIA_ASEO', nombre: 'Cafetería y Aseo', prefijoPUC: '519525', descripcion: 'Café, azúcar, implementos de limpieza' },
-      { id: 'DIVERSOS', nombre: 'Otros Gastos Generales', prefijoPUC: '519595', descripcion: 'Gastos menores de operación' },
-    ];
+    if (egresosCount > 0) {
+      // Si tiene egresos asociados, desactivar en lugar de borrar para preservar integridad
+      return this.prisma.categoriaGasto.update({
+        where: { id },
+        data: { activo: false },
+      });
+    }
+
+    return this.prisma.categoriaGasto.delete({
+      where: { id },
+    });
+  }
+
+  async getCuentasGastoPUC(empresaId: number) {
+    return this.prisma.cuentaPUC.findMany({
+      where: {
+        empresaId,
+        activo: true,
+        OR: [
+          { tipo: { in: ['GASTO', 'COSTO'] } },
+          { codigo: { startsWith: '5' } },
+          { codigo: { startsWith: '6' } },
+        ],
+      },
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        nivel: true,
+        tipo: true,
+      },
+      orderBy: { codigo: 'asc' },
+    });
+  }
+
+  // Catálogo dinámico de categorías y cuentas PUC para Tesorería
+  async getCategoriasGasto(empresaId: number) {
+    const [categorias, cuentasPUC] = await Promise.all([
+      this.findAllCategorias(empresaId),
+      this.getCuentasGastoPUC(empresaId),
+    ]);
 
     return {
-      categorias: CATEGORIAS_DEFAULT,
-      cuentasPUC: cuentasGasto,
+      categorias,
+      cuentasPUC,
     };
   }
 

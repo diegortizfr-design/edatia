@@ -640,29 +640,25 @@ function ModalNuevoGastoMenor({
   const [numeroRecibo, setNumeroRecibo] = useState('');
   const [beneficiario, setBeneficiario] = useState('');
   const [beneficiarioDoc, setBeneficiarioDoc] = useState('');
-  const [categoriaGasto, setCategoriaGasto] = useState('CAFETERIA_ASEO');
+  const [categoriaGasto, setCategoriaGasto] = useState(
+    categoriasData?.categorias?.[0]?.nombre || 'Cafetería y Aseo'
+  );
   const [concepto, setConcepto] = useState('');
   const [cuentaGastoId, setCuentaGastoId] = useState<number | null>(null);
   const [valor, setValor] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Sincronizar cuenta contable recomendada
-  useMemo(() => {
-    const prefijo =
-      categoriaGasto === 'CAFETERIA_ASEO'
-        ? '519525'
-        : categoriaGasto === 'TRANSPORTE'
-        ? '519545'
-        : categoriaGasto === 'PAPELERIA'
-        ? '519530'
-        : categoriaGasto === 'MANTENIMIENTO'
-        ? '5145'
-        : '519595';
-
-    if (categoriasData?.cuentasPUC) {
-      const match = categoriasData.cuentasPUC.find((cp: any) => cp.codigo.startsWith(prefijo));
-      if (match) setCuentaGastoId(match.id);
-      else if (categoriasData.cuentasPUC.length > 0) setCuentaGastoId(categoriasData.cuentasPUC[0].id);
+  useEffect(() => {
+    if (categoriasData?.categorias && categoriasData.categorias.length > 0) {
+      const found = categoriasData.categorias.find((c: any) => c.nombre === categoriaGasto || String(c.id) === categoriaGasto);
+      if (found && found.cuentaPUCId) {
+        setCuentaGastoId(found.cuentaPUCId);
+        return;
+      }
+    }
+    if (categoriasData?.cuentasPUC && categoriasData.cuentasPUC.length > 0 && !cuentaGastoId) {
+      setCuentaGastoId(categoriasData.cuentasPUC[0].id);
     }
   }, [categoriaGasto, categoriasData]);
 
@@ -764,14 +760,31 @@ function ModalNuevoGastoMenor({
             <label className="block text-xs font-bold text-slate-600 mb-1">Categoría del Gasto *</label>
             <select
               value={categoriaGasto}
-              onChange={(e) => setCategoriaGasto(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCategoriaGasto(val);
+                const found = categoriasData?.categorias?.find((c: any) => c.nombre === val || String(c.id) === val);
+                if (found && found.cuentaPUCId) {
+                  setCuentaGastoId(found.cuentaPUCId);
+                }
+              }}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium"
             >
-              <option value="CAFETERIA_ASEO">Cafetería, tintos y aseo</option>
-              <option value="TRANSPORTE">Transporte, taxis y mensajería</option>
-              <option value="PAPELERIA">Papelería, fotocopias y útiles</option>
-              <option value="MANTENIMIENTO">Mantenimiento menor locativo</option>
-              <option value="DIVERSOS">Otros gastos diversos</option>
+              {categoriasData?.categorias && categoriasData.categorias.length > 0 ? (
+                categoriasData.categorias.map((c: any) => (
+                  <option key={c.id} value={c.nombre}>
+                    {c.nombre} {c.descripcion ? `— ${c.descripcion}` : ''}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Cafetería y Aseo">Cafetería, tintos y aseo</option>
+                  <option value="Transporte y Movilidad">Transporte, taxis y mensajería</option>
+                  <option value="Papelería y Útiles">Papelería, fotocopias y útiles</option>
+                  <option value="Mantenimiento Menor">Mantenimiento menor locativo</option>
+                  <option value="Gastos Generales">Otros gastos diversos</option>
+                </>
+              )}
             </select>
           </div>
 
