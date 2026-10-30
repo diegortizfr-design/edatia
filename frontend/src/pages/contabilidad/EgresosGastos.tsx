@@ -647,9 +647,29 @@ function ModalNuevoEgreso({
   });
 
   const resolucionesCE = useMemo(() => {
-    return (documentos as any[]).filter(
-      (d: any) => (d.sigla === 'CE' || d.tipoOperacion === 'TESORERIA') && d.estado === 'ACTIVO'
-    );
+    return (documentos as any[]).filter((d: any) => {
+      if (d.estado !== 'ACTIVO') return false;
+      const sigla = (d.sigla || '').trim().toUpperCase();
+      const nombre = (d.nombre || '').trim().toLowerCase();
+      // Excluir cualquier documento de venta, pos, recibo o ingreso
+      if (
+        sigla === 'RC' ||
+        sigla === 'RCP' ||
+        sigla === 'POS' ||
+        sigla === 'DPE' ||
+        sigla === 'FV' ||
+        sigla === 'FVE' ||
+        sigla === 'NC' ||
+        sigla === 'ND' ||
+        sigla === 'CI' ||
+        nombre.includes('recibo') ||
+        nombre.includes('ingreso') ||
+        nombre.includes('venta')
+      ) {
+        return false;
+      }
+      return sigla === 'CE' || nombre.includes('egreso') || nombre.includes('pago');
+    });
   }, [documentos]);
 
   useEffect(() => {
@@ -759,32 +779,37 @@ function ModalNuevoEgreso({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-5 animate-in fade-in zoom-in duration-150 my-8">
-        {/* Cabecera */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
+        {/* Cabecera Fija */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0 bg-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
               <CreditCard size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Registrar Comprobante de Egreso</h2>
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-tight">Registrar Comprobante de Egreso</h2>
               <p className="text-xs text-slate-400">Pagar arriendos, servicios públicos o gastos operacionales</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg">
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {errorMsg && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-            <AlertTriangle size={16} className="shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Formulario con cuerpo scrollable y pie fijo */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          {/* Cuerpo Scrollable */}
+          <div className="overflow-y-auto px-5 sm:px-6 py-4 space-y-4 flex-1">
+            {errorMsg && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             {/* Documento / Prefijo CE (DocumentoConfig) */}
             <div className="md:col-span-6">
@@ -835,15 +860,15 @@ function ModalNuevoEgreso({
               </select>
             </div>
 
-            {/* Beneficiario / Tercero */}
-            <div className="md:col-span-6">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Beneficiario / Tercero</label>
+            {/* Beneficiario / Tercero guardado */}
+            <div className="md:col-span-12">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Tercero / Proveedor Registrado (Opcional)</label>
               <select
                 value={terceroId}
                 onChange={(e) => handleSelectTercero(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-white font-medium focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
               >
-                <option value="">— Seleccionar tercero guardado o escribir abajo —</option>
+                <option value="">— Seleccionar tercero o diligenciar abajo —</option>
                 {terceros.map((t: any) => (
                   <option key={t.id} value={t.id}>
                     {t.nombre} ({t.numeroDocumento})
@@ -853,11 +878,11 @@ function ModalNuevoEgreso({
             </div>
 
             {/* Nombre manual / documento */}
-            <div className="md:col-span-3">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Nombre Beneficiario *</label>
+            <div className="md:col-span-8">
+              <label className="block text-xs font-bold text-slate-600 mb-1">Nombre / Razón Social Beneficiario *</label>
               <input
                 type="text"
-                placeholder="Ej. Inmobiliaria / Enel"
+                placeholder="Ej. Inmobiliaria Central SAS / Enel Colombia"
                 value={beneficiarioNombre}
                 onChange={(e) => setBeneficiarioNombre(e.target.value)}
                 required
@@ -865,7 +890,7 @@ function ModalNuevoEgreso({
               />
             </div>
 
-            <div className="md:col-span-3">
+            <div className="md:col-span-4">
               <label className="block text-xs font-bold text-slate-600 mb-1">C.C. o NIT</label>
               <input
                 type="text"
@@ -1003,33 +1028,38 @@ function ModalNuevoEgreso({
             )}
           </div>
 
-          {/* Resumen Final Neto */}
-          <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-2xl flex items-center justify-between">
-            <div>
-              <span className="text-xs text-indigo-700 font-semibold block">Total Neto a Desembolsar</span>
-              <span className="text-xl font-extrabold text-indigo-950">{cop(neto)}</span>
-            </div>
-            <div className="text-right text-xs text-indigo-600 font-medium">
-              Genera Comprobante [CE] y asiento contable balanceado
-            </div>
           </div>
 
-          {/* Botones */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={mutCrear.isLoading}
-              className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {mutCrear.isLoading ? 'Generando Comprobante...' : 'Guardar y Emitir Egreso [CE]'}
-            </button>
+          {/* Pie Fijo: Resumen y Botones (Siempre visibles en pantalla) */}
+          <div className="px-5 sm:px-6 py-3.5 border-t border-slate-100 bg-slate-50/90 shrink-0 space-y-3">
+            {/* Resumen Final Neto */}
+            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-indigo-700 font-semibold block">Total Neto a Desembolsar</span>
+                <span className="text-lg sm:text-xl font-extrabold text-indigo-950">{cop(neto)}</span>
+              </div>
+              <div className="text-right text-[11px] text-indigo-600 font-medium">
+                Genera Comprobante [CE] y asiento balanceado
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={mutCrear.isLoading}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {mutCrear.isLoading ? 'Generando Comprobante...' : 'Guardar y Emitir Egreso [CE]'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

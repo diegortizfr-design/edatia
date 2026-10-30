@@ -287,6 +287,7 @@ export class TesoreriaService implements OnModuleInit {
             where: {
               empresaId,
               tipoOperacion: 'TESORERIA',
+              sigla: { in: ['CE', 'EG', 'CPE'] },
               estado: 'ACTIVO',
               deletedAt: null,
             },
