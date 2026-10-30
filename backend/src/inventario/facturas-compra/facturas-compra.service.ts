@@ -633,8 +633,4 @@ export class FacturasCompraService implements OnModuleInit {
       },
     });
   }
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
 }
