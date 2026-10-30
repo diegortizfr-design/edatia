@@ -7,13 +7,25 @@ import { ComprobantesController } from './comprobantes/comprobantes.controller'
 import { ComprobantesService } from './comprobantes/comprobantes.service'
 import { ContReportesController } from './reportes/cont-reportes.controller'
 import { ContReportesService } from './reportes/cont-reportes.service'
+import { TesoreriaController } from './tesoreria/tesoreria.controller'
+import { TesoreriaService } from './tesoreria/tesoreria.service'
 
 import { AuditoriaErpModule } from '../auditoria-erp/auditoria-erp.module'
 
 @Module({
   imports: [AuthModule, AuditoriaErpModule],
-  controllers: [PucController, ComprobantesController, ContReportesController],
-  providers: [PucService, ComprobantesService, ContReportesService],
-  exports: [PucService, ComprobantesService],
+  controllers: [
+    PucController,
+    ComprobantesController,
+    ContReportesController,
+    TesoreriaController,
+  ],
+  providers: [
+    PucService,
+    ComprobantesService,
+    ContReportesService,
+    TesoreriaService,
+  ],
+  exports: [PucService, ComprobantesService, TesoreriaService],
 })
 export class ContabilidadModule {}

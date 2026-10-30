@@ -164,6 +164,8 @@ model Empresa {
   notificaciones       Notificacion[]
   formasPago           FormaPago[]
   mediosPago           MedioPago[]
+  egresos              Egreso[]
+  cajasMenores         CajaMenor[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,6 +246,7 @@ model DocumentoConfig {
   facturasCompra        FacturaCompra[]
   recepcionesMercancia  RecepcionMercancia[]
   recibosCaja           ReciboCaja[]
+  egresos               Egreso[]
   facturasVenta         FacturaVenta[]   @relation("FacturaDocumentoConfig")
   facturasVentaCxc      FacturaVenta[]   @relation("FacturaDocumentoCXC")
 
@@ -1379,6 +1382,7 @@ model Tercero {
   updatedAt           DateTime          @updatedAt
 
   proveedoresRel      ProductoProveedor[]
+  egresos             Egreso[]
 
   @@unique([empresaId, tipoDocumento, numeroDocumento])
   @@index([empresaId])
@@ -1741,9 +1745,14 @@ model CuentaPUC {
   ajustable        Boolean  @default(false)
   requiereNit      Boolean  @default(false)
   requiereCentro   Boolean  @default(false)
+  egresosGasto     Egreso[]           @relation("EgresoCuentaGasto")
+  egresosRetencion Egreso[]           @relation("EgresoCuentaRetencion")
+  gastosCajaMenor  GastoCajaMenor[]
   activo           Boolean  @default(true)
 
   lineas           ComprobanteLinea[]
+
+
 
   @@unique([empresaId, codigo])
   @@index([empresaId, nivel])
@@ -1783,10 +1792,14 @@ model Comprobante {
   // Referencia al documento origen
   referenciaId     Int?
   referenciaTipo   String?  // FACTURA_VENTA | NOTA_CREDITO | RECIBO_CAJA | etc.
+  egresos          Egreso[]
+  reembolsosCajaMenor ReembolsoCajaMenor[]
 
   usuarioId        Int?
 
   lineas           ComprobanteLinea[]
+
+
 
   @@unique([empresaId, numero])
   @@index([empresaId, tipo])
@@ -2151,6 +2164,9 @@ model CajaBanco {
 
   mediosPago      MedioPago[]
   cajasPos        CajaPos[]
+  egresos         Egreso[]
+  reembolsosCajaMenor ReembolsoCajaMenor[]
+  cajasMenores    CajaMenor[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -2627,3 +2643,141 @@ model MedioPago {
 }
 
 
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO TESORERÍA (Egresos, Gastos Operativos y Caja Menor)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Egreso {
+  id                Int          @id @default(autoincrement())
+  empresaId         Int
+  empresa           Empresa      @relation(fields: [empresaId], references: [id])
+
+  numero            String       // Ej: CE-2026-00001
+  fecha             DateTime     @default(now())
+
+  terceroId         Int?
+  tercero           Tercero?     @relation(fields: [terceroId], references: [id])
+  beneficiarioNombre String?
+  beneficiarioDoc   String?
+
+  categoriaGasto    String       // ARRIENDO | SERVICIOS | HONORARIOS | MANTENIMIENTO | DIVERSOS | CAJA_MENOR | OTRO
+  concepto          String
+  referencia        String?      // N° Factura de servicios, cuenta de cobro, etc.
+
+  cuentaGastoId     Int
+  cuentaGasto       CuentaPUC    @relation("EgresoCuentaGasto", fields: [cuentaGastoId], references: [id])
+
+  cajaBancoId       Int?
+  cajaBanco         CajaBanco?   @relation(fields: [cajaBancoId], references: [id])
+
+  medioPago         String       @default("TRANSFERENCIA") // EFECTIVO | TRANSFERENCIA | CHEQUE | etc.
+  monto             Decimal      @db.Decimal(15, 2)
+
+  // Retención en la fuente opcional
+  aplicaRetencion   Boolean      @default(false)
+  tarifaRetencion   Decimal      @default(0) @db.Decimal(5, 2)
+  valorRetencion    Decimal      @default(0) @db.Decimal(15, 2)
+  cuentaRetencionId Int?
+  cuentaRetencion   CuentaPUC?   @relation("EgresoCuentaRetencion", fields: [cuentaRetencionId], references: [id])
+
+  montoNeto         Decimal      @db.Decimal(15, 2)
+
+  comprobanteId     Int?
+  comprobante       Comprobante? @relation(fields: [comprobanteId], references: [id])
+
+  documentoConfigId Int?
+  documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+
+  estado            String       @default("APROBADO") // APROBADO | ANULADO
+  notas             String?
+
+  usuarioId         Int?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@unique([empresaId, numero])
+  @@index([empresaId, fecha])
+  @@index([empresaId, categoriaGasto])
+  @@index([empresaId, estado])
+}
+
+model CajaMenor {
+  id            Int                  @id @default(autoincrement())
+  empresaId     Int
+  empresa       Empresa              @relation(fields: [empresaId], references: [id])
+
+  nombre        String               // Ej: "Caja Menor Principal"
+  codigo        String               // Ej: "CM-01"
+  responsable   String               // Persona encargada
+  montoAsignado Decimal              @db.Decimal(15, 2) // Fondo fijo
+
+  cuentaPUC     String               @default("110510") // Cuenta PUC Caja Menor
+  cajaBancoId   Int?                 // Caja/Banco origen
+  cajaBanco     CajaBanco?           @relation(fields: [cajaBancoId], references: [id])
+
+  activo        Boolean              @default(true)
+  notas         String?
+
+  gastos        GastoCajaMenor[]
+  reembolsos    ReembolsoCajaMenor[]
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model GastoCajaMenor {
+  id              Int                 @id @default(autoincrement())
+  cajaMenorId     Int
+  cajaMenor       CajaMenor           @relation(fields: [cajaMenorId], references: [id], onDelete: Cascade)
+
+  fecha           DateTime            @default(now())
+  numeroRecibo    String?             // N° vale o recibo menor
+  beneficiario    String              // A quién se le pagó
+  beneficiarioDoc String?
+
+  concepto        String
+  categoriaGasto  String              // TRANSPORTE | CAFETERIA_ASEO | PAPELERIA | MANTENIMIENTO | DIVERSOS | OTRO
+
+  cuentaGastoId   Int
+  cuentaGasto     CuentaPUC           @relation(fields: [cuentaGastoId], references: [id])
+
+  valor           Decimal             @db.Decimal(15, 2)
+  estado          String              @default("PENDIENTE") // PENDIENTE | REEMBOLSADO | ANULADO
+
+  reembolsoId     Int?
+  reembolso       ReembolsoCajaMenor? @relation(fields: [reembolsoId], references: [id])
+
+  createdAt       DateTime            @default(now())
+
+  @@index([cajaMenorId, estado])
+  @@index([cajaMenorId, fecha])
+}
+
+model ReembolsoCajaMenor {
+  id                Int              @id @default(autoincrement())
+  cajaMenorId       Int
+  cajaMenor         CajaMenor        @relation(fields: [cajaMenorId], references: [id], onDelete: Cascade)
+
+  consecutivo       String           // Ej: REEM-2026-0001
+  fecha             DateTime         @default(now())
+  totalReembolsado  Decimal          @db.Decimal(15, 2)
+
+  origenCajaBancoId Int?
+  origenCajaBanco   CajaBanco?       @relation(fields: [origenCajaBancoId], references: [id])
+
+  comprobanteId     Int?
+  comprobante       Comprobante?     @relation(fields: [comprobanteId], references: [id])
+
+  gastos            GastoCajaMenor[]
+  observaciones     String?
+
+  usuarioId         Int?
+  createdAt         DateTime         @default(now())
+
+  @@index([cajaMenorId])
+}

@@ -94,6 +94,8 @@ import { PUC } from './pages/contabilidad/PUC'
 import { Comprobantes } from './pages/contabilidad/Comprobantes'
 import { ContReportes } from './pages/contabilidad/ContReportes'
 import { CajasBancosList } from './pages/contabilidad/CajasBancosList'
+import { EgresosGastos } from './pages/contabilidad/EgresosGastos'
+import { CajaMenor } from './pages/contabilidad/CajaMenor'
 
 function P({ children }: { children: React.ReactNode }) {
   return (
@@ -234,7 +236,9 @@ function App() {
         <Route path="/contabilidad/puc"           element={<P><PUC /></P>} />
         <Route path="/contabilidad/comprobantes"  element={<P><Comprobantes /></P>} />
         <Route path="/contabilidad/reportes"      element={<P><ContReportes /></P>} />
-        <Route path="/contabilidad/tesoreria/pagos"  element={<P><ReciboCaja /></P>} />
+        <Route path="/contabilidad/tesoreria/egresos" element={<P><EgresosGastos /></P>} />
+        <Route path="/contabilidad/tesoreria/caja-menor" element={<P><CajaMenor /></P>} />
+        <Route path="/contabilidad/tesoreria/pagos" element={<Navigate to="/contabilidad/tesoreria/egresos" replace />} />
         <Route path="/contabilidad/tesoreria/saldos" element={<P><CajasBancosList /></P>} />
 
         <Route path="/404" element={<NotFound />} />
