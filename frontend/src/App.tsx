@@ -51,6 +51,7 @@ import { NotaCreditoDetalle } from './pages/ventas/NotaCreditoDetalle'
 import { ReciboCaja } from './pages/ventas/ReciboCaja'
 import { ConfigDian } from './pages/ventas/ConfigDian'
 import { CarteraCxC } from './pages/ventas/CarteraCxC'
+import { CarteraCxP } from './pages/ventas/CarteraCxP'
 import { CarteraPorEdades } from './pages/ventas/CarteraPorEdades'
 
 // ── Configuración ──
@@ -173,6 +174,7 @@ function App() {
         <Route path="/ventas/recibos"       element={<P><ReciboCaja /></P>} />
         <Route path="/ventas/config-dian"   element={<P><ConfigDian /></P>} />
         <Route path="/ventas/cartera/cxc"   element={<P><CarteraCxC /></P>} />
+        <Route path="/ventas/cartera/cxp"   element={<P><CarteraCxP /></P>} />
         <Route path="/ventas/cartera/por-edades" element={<P><CarteraPorEdades /></P>} />
 
         {/* ── Configuración ── */}

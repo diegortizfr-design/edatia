@@ -21,6 +21,11 @@ export class FacturasCompraController {
     });
   }
 
+  @Get('saldos-proveedores')
+  getSaldosProveedores(@GetUser() user: JwtPayload) {
+    return this.svc.saldosProveedores(user.empresaId!);
+  }
+
   @Get('recepciones/todas')
   getRecepciones(@GetUser() user: JwtPayload) {
     return this.svc.getRecepciones(user.empresaId!);
@@ -34,6 +39,15 @@ export class FacturasCompraController {
   @Post()
   create(@Body() dto: CreateFacturaCompraDto, @GetUser() user: JwtPayload) {
     return this.svc.create(dto, user.empresaId!, user.sub);
+  }
+
+  @Post(':id/pagos')
+  registrarPago(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { valor: number; medioPago?: string; referencia?: string; notas?: string },
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.registrarPago(id, user.empresaId!, dto, user.sub);
   }
 
   @Post(':id/recepciones')

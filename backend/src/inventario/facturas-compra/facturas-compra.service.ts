@@ -1,10 +1,23 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ComprobantesService } from '../../contabilidad/comprobantes/comprobantes.service';
 import { CreateFacturaCompraDto, UpdateFacturaCompraDto, CreateRecepcionProductoDto } from './dto/factura-compra.dto';
 
 @Injectable()
-export class FacturasCompraService {
+export class FacturasCompraService implements OnModuleInit {
+  async onModuleInit() {
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "formaPago" TEXT DEFAULT 'CONTADO';
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "medioPago" TEXT;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0;
+      `);
+    } catch (err) {
+      console.warn('Advertencia asegurando columnas FacturaCompra:', err);
+    }
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly comprobantes: ComprobantesService,
@@ -97,6 +110,25 @@ export class FacturasCompraService {
         numero = await this.generarConsecutivoInterno(empresaId, tx);
       }
 
+      // 1. Determinar condiciones de pago y vencimiento
+      const isCredito = dto.formaPago === 'CREDITO';
+      const totalNum = Number(dto.total);
+      const saldoNum = isCredito ? totalNum : 0;
+      const totalPagadoNum = isCredito ? 0 : totalNum;
+
+      let fechaVenc: Date | null = null;
+      if (isCredito) {
+        if (dto.fechaVencimiento) {
+          fechaVenc = new Date(dto.fechaVencimiento);
+        } else {
+          const emision = new Date(dto.fechaEmision);
+          emision.setDate(emision.getDate() + (Number(dto.diasCredito) || 30));
+          fechaVenc = emision;
+        }
+      } else {
+        fechaVenc = new Date(dto.fechaEmision);
+      }
+
       // 1. Persistir la factura de compra
       const fc = await tx.facturaCompra.create({
         data: {
@@ -108,14 +140,19 @@ export class FacturasCompraService {
           proveedorId: dto.proveedorId,
           ordenCompraId: dto.ordenCompraId,
           fechaEmision: new Date(dto.fechaEmision),
-          fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+          fechaVencimiento: fechaVenc,
+          formaPago: dto.formaPago || (dto.fechaVencimiento ? 'CREDITO' : 'CONTADO'),
+          medioPago: dto.medioPago || undefined,
+          diasCredito: dto.diasCredito !== undefined ? Number(dto.diasCredito) : (isCredito ? 30 : 0),
+          saldo: saldoNum,
+          totalPagado: totalPagadoNum,
           subtotal: dto.subtotal,
           descuento: dto.descuento ?? 0,
           iva: dto.iva ?? 0,
           total: dto.total,
           xmlAdjunto: dto.xmlAdjunto,
           notas: dto.notas,
-          estado: 'REGISTRADA',
+          estado: isCredito ? 'REGISTRADA' : 'PAGADA',
           estadoRecepcion: 'PENDIENTE',
           items: dto.items && dto.items.length > 0 ? {
             create: dto.items.map(item => ({
@@ -521,6 +558,81 @@ export class FacturasCompraService {
         ordenCompra: { select: { id: true, numero: true } },
         bodega: { select: { id: true, nombre: true, codigo: true } },
         items: { include: { producto: { select: { id: true, nombre: true, sku: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async saldosProveedores(empresaId: number) {
+    const facturas = await this.prisma.facturaCompra.findMany({
+      where: {
+        empresaId,
+        estado: { notIn: ['PAGADA', 'ANULADA'] },
+      },
+      include: {
+        proveedor: { select: { id: true, nombre: true, numeroDocumento: true, telefono: true } },
+      },
+      orderBy: { fechaEmision: 'desc' },
+    });
+
+    const proveedorMap = new Map<number, any>();
+    for (const f of facturas) {
+      const provId = f.proveedorId;
+      const fSaldo = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : (f.formaPago === 'CONTADO' ? 0 : Number(f.total));
+      if (fSaldo <= 0) continue;
+
+      if (!proveedorMap.has(provId)) {
+        proveedorMap.set(provId, {
+          id: provId,
+          nombre: f.proveedor?.nombre ?? 'Proveedor',
+          numeroDocumento: f.proveedor?.numeroDocumento ?? '—',
+          telefono: f.proveedor?.telefono ?? '—',
+          totalFacturado: 0,
+          saldo: 0,
+          facturasPendientes: 0,
+        });
+      }
+
+      const item = proveedorMap.get(provId);
+      item.totalFacturado += Number(f.total);
+      item.saldo += fSaldo;
+      item.facturasPendientes += 1;
+    }
+
+    return Array.from(proveedorMap.values());
+  }
+
+  async registrarPago(
+    id: number,
+    empresaId: number,
+    dto: { valor: number; medioPago?: string; referencia?: string; notas?: string },
+    usuarioId: number,
+  ) {
+    const fc = await this.findOne(id, empresaId);
+    const valorNum = Number(dto.valor);
+    if (valorNum <= 0) throw new BadRequestException('El valor del pago debe ser mayor a 0');
+
+    const saldoActual = fc.saldo !== null && fc.saldo !== undefined ? Number(fc.saldo) : (fc.formaPago === 'CONTADO' ? 0 : Number(fc.total));
+    if (valorNum > saldoActual) {
+      throw new BadRequestException(`El valor del pago (${valorNum}) supera el saldo pendiente (${saldoActual})`);
+    }
+
+    const nuevoSaldo = Math.max(0, saldoActual - valorNum);
+    const nuevoTotalPagado = Number(fc.totalPagado ?? 0) + valorNum;
+    const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PARCIAL';
+
+    return this.prisma.facturaCompra.update({
+      where: { id },
+      data: {
+        saldo: nuevoSaldo,
+        totalPagado: nuevoTotalPagado,
+        estado: nuevoEstado,
+      },
+      include: {
+        proveedor: true,
+      },
+    });
+  }
       },
       orderBy: { createdAt: 'desc' },
     });

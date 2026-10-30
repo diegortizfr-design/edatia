@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
-import { getDocumentosConfig } from '../../services/configuracion.service'
-import { ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2 } from 'lucide-react'
+import { getDocumentosConfig, getFormasPago, getMediosPago } from '../../services/configuracion.service'
+import { 
+  ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2, 
+  Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2 
+} from 'lucide-react'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
 import { CurrencyInput } from '../../components/CurrencyInput'
 import { getApiError } from '../../services/api'
@@ -47,12 +50,91 @@ export function NuevaFcForm() {
   const [proveedorId, setProveedorId] = useState('')
   const [prefijo, setPrefijo] = useState('')
   const [consecutivo, setConsecutivo] = useState('')
-  const [fechaEmision, setFechaEmision] = useState('')
+  const [fechaEmision, setFechaEmision] = useState(() => new Date().toISOString().split('T')[0])
   const [ordenCompraId, setOrdenCompraId] = useState('')
   const [recepcionId, setRecepcionId] = useState('')
   const [xmlFile, setXmlFile] = useState<File | null>(null)
   const [xmlNombre, setXmlNombre] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
+
+  // ── Formas y Medios de Pago Dinámicos (Configuración General) ──
+  const [formaPago, setFormaPago] = useState('CONTADO')
+  const [medioPago, setMedioPago] = useState('')
+  const [diasCredito, setDiasCredito] = useState(30)
+  const [fechaVencimiento, setFechaVencimiento] = useState(() => new Date().toISOString().split('T')[0])
+
+  const { data: formasPagoList = [] } = useQuery({
+    queryKey: ['config-formas-pago'],
+    queryFn: getFormasPago,
+  })
+
+  const { data: mediosPagoList = [] } = useQuery({
+    queryKey: ['config-medios-pago'],
+    queryFn: getMediosPago,
+  })
+
+  const formasPagoActivas = useMemo(() => {
+    const list = (formasPagoList as any[]).filter((f: any) => f.activo !== false)
+    if (list.length > 0) return list
+    return [
+      { id: 1, codigo: 'CONTADO', nombre: 'Contado', generaCartera: false },
+      { id: 2, codigo: 'CREDITO', nombre: 'Crédito', generaCartera: true },
+    ]
+  }, [formasPagoList])
+
+  const mediosPagoActivos = useMemo(() => {
+    const list = (mediosPagoList as any[]).filter((m: any) => m.activo !== false)
+    if (list.length > 0) return list
+    return [
+      { id: 1, codigo: 'EFECTIVO', nombre: 'Efectivo' },
+      { id: 2, codigo: 'TRANSFERENCIA', nombre: 'Transferencia Bancaria' },
+    ]
+  }, [mediosPagoList])
+
+  // Inicializar forma de pago
+  useEffect(() => {
+    if (formasPagoActivas.length > 0 && !formasPagoActivas.some((f: any) => f.codigo === formaPago)) {
+      setFormaPago(formasPagoActivas[0].codigo)
+    }
+  }, [formasPagoActivas, formaPago])
+
+  // Inicializar medio de pago
+  useEffect(() => {
+    if (mediosPagoActivos.length > 0 && (!medioPago || !mediosPagoActivos.some((m: any) => m.codigo === medioPago))) {
+      setMedioPago(mediosPagoActivos[0].codigo)
+    }
+  }, [mediosPagoActivos, medioPago])
+
+  const formaPagoObj = useMemo(() => {
+    return formasPagoActivas.find((f: any) => f.codigo === formaPago)
+  }, [formasPagoActivas, formaPago])
+
+  const esCredito = formaPagoObj ? (formaPagoObj.generaCartera || formaPago === 'CREDITO') : formaPago === 'CREDITO'
+
+  // Sincronizar fecha de vencimiento según fecha de emisión y días de crédito
+  useEffect(() => {
+    const baseDateStr = fechaEmision || new Date().toISOString().split('T')[0]
+    if (esCredito) {
+      const d = new Date(baseDateStr)
+      d.setDate(d.getDate() + Number(diasCredito || 0))
+      setFechaVencimiento(d.toISOString().split('T')[0])
+    } else {
+      setFechaVencimiento(baseDateStr)
+    }
+  }, [fechaEmision, diasCredito, esCredito])
+
+  // Si el usuario cambia manualmente la fecha de vencimiento, recalcular días
+  const handleFechaVencChange = (vencStr: string) => {
+    setFechaVencimiento(vencStr)
+    if (vencStr && fechaEmision) {
+      const em = new Date(fechaEmision).getTime()
+      const ve = new Date(vencStr).getTime()
+      const diffDays = Math.round((ve - em) / (1000 * 60 * 60 * 24))
+      if (!isNaN(diffDays)) {
+        setDiasCredito(Math.max(0, diffDays))
+      }
+    }
+  }
 
   // Items list
   const [items, setItems] = useState<LineaItem[]>([])
@@ -63,6 +145,23 @@ export function NuevaFcForm() {
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
   const { data: ocs = [] } = useQuery({ queryKey: ['ordenes-compra'], queryFn: () => getOrdenesCompra() })
   
+  // Si cambia el proveedor y tiene plazo parametrizado, precargarlo
+  useEffect(() => {
+    if (proveedorId && proveedores.length > 0) {
+      const prov = (proveedores as any[]).find((p: any) => String(p.id) === String(proveedorId))
+      if (prov) {
+        const dias = Number(prov.plazoCredito) || Number(prov.plazoEntregaDias) || 0
+        if (dias > 0) {
+          setDiasCredito(dias)
+          const formaCredito = formasPagoActivas.find((f: any) => f.generaCartera || f.codigo === 'CREDITO')
+          if (formaCredito) {
+            setFormaPago(formaCredito.codigo)
+          }
+        }
+      }
+    }
+  }, [proveedorId, proveedores, formasPagoActivas])
+
   useEffect(() => {
     if (queryOcId && ocs.length > 0) {
       handleSelectOC(queryOcId)
@@ -95,7 +194,6 @@ export function NuevaFcForm() {
       setProveedorId(String(rpObj.proveedorId))
       setOrdenCompraId(String(rpObj.ocId))
       
-      // Map RP items to lines
       const mappedItems = rpObj.items.map((ri: any) => {
         const prod = ri.ordenCompraItem?.producto || {}
         const ivaItemValor = Number(ri.ordenCompraItem?.ivaValor) || 0
@@ -119,11 +217,10 @@ export function NuevaFcForm() {
   // Auto-fill from selected OC
   const handleSelectOC = (ocIdStr: string) => {
     setOrdenCompraId(ocIdStr)
-    setRecepcionId('') // Clear RP selection since we are selecting OC directly
+    setRecepcionId('')
     const ocObj = ocs.find((o: any) => String(o.id) === ocIdStr)
     if (ocObj) {
       setProveedorId(String(ocObj.proveedorId))
-      // Map OC items to lines
       const mappedItems = ocObj.items.map((item: any) => {
         const prod = item.producto || {}
         const ivaItemValor = Number(item.ivaValor) || 0
@@ -151,7 +248,6 @@ export function NuevaFcForm() {
       const file = e.target.files[0]
       setXmlFile(file)
       setXmlNombre(file.name)
-      // Simulate reading XML data - automatically fill fields for demonstration
       setPrefijo('FVPROV')
       setConsecutivo(String(Math.floor(1000 + Math.random() * 9000)))
       setFechaEmision(new Date().toISOString().split('T')[0])
@@ -210,6 +306,7 @@ export function NuevaFcForm() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['facturas-compra'] })
       qc.invalidateQueries({ queryKey: ['ordenes-compra'] })
+      qc.invalidateQueries({ queryKey: ['saldos-proveedores'] })
       navigate('/inventario/compras')
     },
     onError: (err: any) => {
@@ -232,6 +329,10 @@ export function NuevaFcForm() {
       prefijoProveedor: prefijo || undefined,
       consecutivoProveedor: consecutivo,
       fechaEmision: fechaEmision || new Date().toISOString().split('T')[0],
+      fechaVencimiento: fechaVencimiento || undefined,
+      formaPago,
+      medioPago: !esCredito ? medioPago : undefined,
+      diasCredito: esCredito ? Number(diasCredito) : 0,
       subtotal: totalSubtotal,
       descuento: 0,
       iva: totalIva,
@@ -259,7 +360,7 @@ export function NuevaFcForm() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-800">Registrar Factura de Compra (FC)</h1>
-          <p className="text-xs text-slate-400">Documento que formaliza el cobro del proveedor y cruza con la recepción física</p>
+          <p className="text-xs text-slate-400">Documento que formaliza el cobro del proveedor, genera la cuenta por pagar y cruza con la recepción física</p>
         </div>
       </div>
 
@@ -434,6 +535,123 @@ export function NuevaFcForm() {
           </div>
         </div>
 
+        {/* ── Condiciones de Pago y Cartera (CXP) ── */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <CreditCard size={16} className="text-indigo-600" />
+              Condiciones de Pago y Cartera (Cuentas por Pagar)
+            </h2>
+            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${esCredito ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+              {esCredito ? 'Genera Cuenta por Pagar (CXP)' : 'Pago Inmediato de Contado'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {/* Forma de Pago (desde Configuración General) */}
+            <div className="md:col-span-4">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                Forma de Pago *
+              </label>
+              <select
+                value={formaPago}
+                onChange={e => setFormaPago(e.target.value)}
+                required
+                className={inputCls}
+              >
+                {formasPagoActivas.map((f: any) => (
+                  <option key={f.id || f.codigo} value={f.codigo}>
+                    {f.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Si es Crédito: Plazo en Días */}
+            {esCredito ? (
+              <>
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Plazo de Crédito (Días) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      value={diasCredito}
+                      onChange={e => setDiasCredito(Math.max(0, parseInt(e.target.value || '0', 10)))}
+                      className={inputCls}
+                      required
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                      días
+                    </span>
+                  </div>
+                </div>
+
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Fecha de Vencimiento *
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaVencimiento}
+                    onChange={e => handleFechaVencChange(e.target.value)}
+                    required
+                    className={inputCls}
+                  />
+                </div>
+              </>
+            ) : (
+              /* Si es Contado: Medio de Pago */
+              <div className="md:col-span-8">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Medio de Pago Principal *
+                </label>
+                <select
+                  value={medioPago}
+                  onChange={e => setMedioPago(e.target.value)}
+                  required
+                  className={inputCls}
+                >
+                  {mediosPagoActivos.map((m: any) => (
+                    <option key={m.id || m.codigo} value={m.codigo}>
+                      {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Banner explicativo del impacto en Cartera */}
+          <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+            esCredito ? 'bg-indigo-50/70 border-indigo-200 text-indigo-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+          }`}>
+            {esCredito ? (
+              <>
+                <Clock size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Factura de Compra a Crédito (CXP)</p>
+                  <p className="text-[11px] text-indigo-700 mt-0.5">
+                    Esta compra creará una obligación en el módulo de <strong>Cartera / Cuentas por Pagar (CXP)</strong> con vencimiento el <strong>{new Date(fechaVencimiento + 'T00:00:00').toLocaleDateString('es-CO')}</strong> ({diasCredito} días de plazo) para su programación y control de abonos.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Factura de Compra de Contado</p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    Esta compra quedará registrada como cancelada inmediatamente vía <strong>{mediosPagoActivos.find((m: any) => m.codigo === medioPago)?.nombre || medioPago || 'Contado'}</strong> (saldo $0).
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Listado de Productos */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
@@ -448,20 +666,33 @@ export function NuevaFcForm() {
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               placeholder="Buscar producto para agregar..."
-              className="w-full pl-9 pr-3.5 py-2.5 border border-dashed border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
-            {busqueda.length >= 2 && !buscando && sugerencias.length > 0 && (
-              <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                {sugerencias.map(p => (
-                  <button key={p.id} type="button" onClick={() => addItem(p)}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{p.nombre}</p>
-                      <p className="text-[10px] font-mono text-slate-400">{p.sku}</p>
-                    </div>
-                    <span className="text-xs font-bold text-indigo-600 flex items-center gap-1"><Plus size={12} /> Agregar</span>
-                  </button>
-                ))}
+
+            {busqueda.length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto divide-y divide-slate-100">
+                {buscando ? (
+                  <div className="p-3 text-xs text-slate-400 text-center">Buscando productos...</div>
+                ) : sugerencias.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-400 text-center">No se encontraron productos con ese término</div>
+                ) : (
+                  sugerencias.map((prod: any) => (
+                    <button
+                      key={prod.id}
+                      type="button"
+                      onClick={() => addItem(prod)}
+                      className="w-full text-left p-3 hover:bg-slate-50 flex items-center justify-between transition-colors"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{prod.nombre}</p>
+                        <p className="text-[10px] font-mono text-slate-400">SKU: {prod.sku}</p>
+                      </div>
+                      <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                        Costo: {fmt(Number(prod.costoPromedio) || Number(prod.costo) || 0)}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -470,33 +701,33 @@ export function NuevaFcForm() {
             <button
               type="button"
               onClick={() => setShowModalCrear(true)}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
             >
-              <Plus size={12} /> ¿El producto no existe? Crear Producto nuevo
+              + ¿El producto no existe? Crear Producto nuevo
             </button>
           </div>
 
           {/* Tabla de ítems */}
           {items.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs font-semibold">
+            <div className="border-2 border-dashed border-slate-100 rounded-xl p-8 text-center text-slate-400 text-xs">
               Busca y agrega productos arriba, o selecciona una Recepción (RP) para cruzar automáticamente
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 uppercase text-[10px] tracking-wider">
-                    <th className="text-left py-3">Producto</th>
-                    <th className="text-right py-3 w-28">Cantidad</th>
-                    <th className="text-right py-3 w-36">Costo unitario</th>
-                    <th className="text-right py-3 w-24">Dto %</th>
-                    <th className="text-right py-3 w-32">Subtotal</th>
-                    <th className="py-3 w-10"></th>
+                  <tr className="text-slate-400 uppercase font-semibold text-[10px] border-b border-slate-100 pb-2">
+                    <th className="text-left pb-2">Producto</th>
+                    <th className="text-right pb-2 w-24">Cantidad</th>
+                    <th className="text-right pb-2 w-32">Costo Unitario</th>
+                    <th className="text-right pb-2 w-24">Descuento %</th>
+                    <th className="text-right pb-2 w-32">Subtotal</th>
+                    <th className="pb-2 w-8"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-100">
                   {lineas.map((item, idx) => (
-                    <tr key={item.productoId}>
+                    <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="py-3">
                         <p className="font-semibold text-slate-800">{item.productoNombre}</p>
                         <p className="text-[10px] font-mono text-slate-400">{item.productoSku}</p>

@@ -5,7 +5,7 @@ import {
   BarChart2, Hash, Layers, RotateCcw, Archive, FileText, Receipt, 
   Settings, Calculator, ClipboardList, TrendingUp, ClipboardCheck, 
   Monitor, Building2, Globe, ChevronLeft, ChevronRight, Menu, Percent, Coins, Store, Wallet,
-  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal, LayoutTemplate, ArrowLeftRight
+  Shield, Lock, Bell, ShieldAlert, Tag, Palette, SlidersHorizontal, LayoutTemplate, ArrowLeftRight, CreditCard
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -251,6 +251,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 
                 <NavGroup label="Cartera" icon={<Coins size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.cartera} onClick={() => toggleGroup('cartera')}>
                   <NavItem to="/ventas/cartera/cxc" icon={<Receipt size={14}/>} label="Cuentas por Cobrar" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/cartera/cxp" icon={<CreditCard size={14}/>} label="Cuentas por Pagar" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/cartera/por-edades" icon={<BarChart3 size={14}/>} label="Cartera por edades" isCollapsed={isCollapsed} />
                 </NavGroup>
               </>

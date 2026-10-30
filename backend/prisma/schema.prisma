@@ -1030,6 +1030,12 @@ model FacturaCompra {
   fechaEmision          DateTime
   fechaVencimiento      DateTime?
 
+  formaPago             String?       @default("CONTADO")
+  medioPago             String?
+  diasCredito           Int?          @default(0)
+  saldo                 Decimal?      @default(0) @db.Decimal(14, 2)
+  totalPagado           Decimal?      @default(0) @db.Decimal(14, 2)
+
   subtotal              Decimal       @db.Decimal(14, 2)
   descuento             Decimal       @default(0) @db.Decimal(14, 2)
   iva                   Decimal       @default(0) @db.Decimal(14, 2)

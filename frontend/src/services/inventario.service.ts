@@ -306,6 +306,11 @@ export interface FacturaCompra {
   proveedor: { id: number; nombre: string; numeroDocumento?: string };
   fechaEmision: string;
   fechaVencimiento?: string;
+  formaPago?: string;
+  medioPago?: string;
+  diasCredito?: number;
+  saldo?: number;
+  totalPagado?: number;
   subtotal: number;
   descuento: number;
   iva: number;
@@ -339,6 +344,12 @@ export const deleteFacturaCompra = (id: number) =>
 
 export const createRecepcionProducto = (facturaCompraId: number, data: any) =>
   api.post(`/inventario/facturas-compra/${facturaCompraId}/recepciones`, data).then(r => r.data)
+export const getSaldosProveedores = () =>
+  api.get('/inventario/facturas-compra/saldos-proveedores').then(r => r.data)
+
+export const registrarPagoFacturaCompra = (id: number, data: { valor: number; medioPago?: string; referencia?: string; notas?: string }) =>
+  api.post(`/inventario/facturas-compra/${id}/pagos`, data).then(r => r.data)
+
 export const getRecepcionesProducto = () =>
   api.get('/inventario/facturas-compra/recepciones/todas').then(r => r.data)
 

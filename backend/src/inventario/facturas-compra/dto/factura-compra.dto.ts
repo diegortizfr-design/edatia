@@ -31,6 +31,15 @@ export class CreateFacturaCompraDto {
   @IsOptional() @IsDateString()
   fechaVencimiento?: string;
 
+  @IsOptional() @IsString()
+  formaPago?: string;
+
+  @IsOptional() @IsString()
+  medioPago?: string;
+
+  @IsOptional() @IsInt()
+  diasCredito?: number;
+
   @IsNumber() @Min(0)
   subtotal!: number;
 
@@ -109,6 +118,15 @@ export class UpdateFacturaCompraDto {
 
   @IsOptional() @IsDateString()
   fechaVencimiento?: string;
+
+  @IsOptional() @IsString()
+  formaPago?: string;
+
+  @IsOptional() @IsString()
+  medioPago?: string;
+
+  @IsOptional() @IsInt()
+  diasCredito?: number;
 
   @IsOptional() @IsNumber() @Min(0)
   subtotal?: number;
