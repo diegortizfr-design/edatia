@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSesion, cerrarCaja } from '../../services/pos.service'
 import { getMediosPago } from '../../services/configuracion.service'
-import { ChevronLeft, Printer, CheckCircle2, TrendingUp, Banknote, CreditCard, Smartphone, AlertTriangle, Building2, Coins } from 'lucide-react'
+import { ChevronLeft, Printer, CheckCircle2, TrendingUp, Banknote, CreditCard, Smartphone, AlertTriangle, Building2, Coins, QrCode } from 'lucide-react'
 
 const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 
@@ -18,6 +18,9 @@ function getMedioIcon(codigo: string = '', nombre: string = '') {
   }
   if (c.includes('NEQUI') || n.includes('NEQUI') || c.includes('DAVIPLATA') || n.includes('DAVIPLATA')) {
     return <Smartphone size={14} className="text-pink-500" />
+  }
+  if (c.includes('QR') || n.includes('QR')) {
+    return <QrCode size={14} className="text-purple-600" />
   }
   if (c.includes('TRANSFERENCIA') || n.includes('TRANSFERENCIA') || c.includes('BANCO') || n.includes('PSE')) {
     return <Building2 size={14} className="text-cyan-500" />
@@ -66,6 +69,21 @@ export function PosCierre() {
 
     const active = (mediosPago || []).filter((mp: any) => mp.activo)
     if (active.length > 0) {
+      const detalleTotals: Record<string, number> = {}
+      let totalDetalle = 0
+      ;(sesion?.ventas || []).forEach((v: any) => {
+        if (v.pagosDetalle && typeof v.pagosDetalle === 'object') {
+          Object.entries(v.pagosDetalle).forEach(([k, amt]) => {
+            const num = Number(amt) || 0
+            if (num > 0) {
+              const ku = k.toUpperCase()
+              detalleTotals[ku] = (detalleTotals[ku] || 0) + num
+              totalDetalle += num
+            }
+          })
+        }
+      })
+
       const netEfectivo = Number(sesion?.totalEfectivo ?? 0)
       const debito = (sesion?.ventas || []).reduce((acc: number, v: any) => acc + Number(v.pagoTarjetaDebito ?? 0), 0)
       const credito = (sesion?.ventas || []).reduce((acc: number, v: any) => acc + Number(v.pagoTarjetaCredito ?? 0), 0)
@@ -77,7 +95,13 @@ export function PosCierre() {
         const code = (m.codigo || '').toUpperCase()
         const name = (m.nombre || '').toUpperCase()
         let val = 0
-        if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
+        if (totalDetalle > 0) {
+          if (detalleTotals[code] !== undefined) val = detalleTotals[code]
+          else if (detalleTotals[name] !== undefined) val = detalleTotals[name]
+          else if (detalleTotals[String(m.id)] !== undefined) val = detalleTotals[String(m.id)]
+        }
+        if (val === 0) {
+          if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
           val = netEfectivo
         } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
           val = debito
@@ -87,8 +111,16 @@ export function PosCierre() {
           val = totalTarjeta
         } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
           val = nequi
-        } else if (code.includes('TRANSFERENCIA') || name.includes('TRANSFERENCIA') || code.includes('BANCO') || name.includes('PSE')) {
+        } else if (
+          code.includes('TRANSFERENCIA') || name.includes('TRANSFERENCIA') ||
+          code.includes('BANCO') || name.includes('PSE') ||
+          code.includes('QR') || name.includes('QR') ||
+          code.includes('BOLD') || name.includes('BOLD') ||
+          code.includes('ADDI') || name.includes('ADDI') ||
+          code.includes('SISTECREDITO') || name.includes('SISTECREDITO')
+        ) {
           val = transferencia
+        }
         }
         return {
           id: m.id,

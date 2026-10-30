@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException, OnModuleInit } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -6,7 +6,16 @@ import { ComprobantesService } from '../contabilidad/comprobantes/comprobantes.s
 import { MovimientosService } from '../inventario/movimientos/movimientos.service'
 
 @Injectable()
-export class PosService {
+export class PosService implements OnModuleInit {
+  async onModuleInit() {
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        ALTER TABLE "VentaPos" ADD COLUMN IF NOT EXISTS "pagosDetalle" JSONB;
+      `);
+    } catch (err) {
+      console.warn('Advertencia asegurando columna pagosDetalle en VentaPos:', err);
+    }
+  }
   constructor(
     private prisma: PrismaService,
     private comprobantes: ComprobantesService,
@@ -281,6 +290,7 @@ export class PosService {
             total: true, pagoEfectivo: true, pagoTarjetaDebito: true,
             pagoTarjetaCredito: true, pagoNequi: true, pagoTransferencia: true,
             cambio: true,
+            pagosDetalle: true,
             fecha: true, estado: true,
           },
         },
@@ -294,6 +304,120 @@ export class PosService {
   }
 
   private async calcularResumenMediosPago(empresaId: number, sesionId: number, sesion: any) {
+    const mediosConfig = await this.prisma.medioPago.findMany({
+      where: { empresaId, activo: true },
+      orderBy: { id: 'asc' },
+    })
+
+    const ventas = await this.prisma.ventaPos.findMany({
+      where: { sesionId, estado: 'COMPLETADA' },
+      select: {
+        id: true,
+        total: true,
+        pagoEfectivo: true,
+        pagoTarjetaDebito: true,
+        pagoTarjetaCredito: true,
+        pagoTransferencia: true,
+        pagoNequi: true,
+        cambio: true,
+        pagosDetalle: true,
+      },
+    })
+
+    const detalleTotals: Record<string, number> = {}
+    let totalDetalleAcumulado = 0
+
+    for (const v of ventas) {
+      if (v.pagosDetalle && typeof v.pagosDetalle === 'object') {
+        const pd = v.pagosDetalle as Record<string, number>
+        for (const [k, amount] of Object.entries(pd)) {
+          const num = Number(amount) || 0
+          if (num > 0) {
+            const keyUpper = k.toUpperCase()
+            detalleTotals[keyUpper] = (detalleTotals[keyUpper] || 0) + num
+            totalDetalleAcumulado += num
+          }
+        }
+      }
+    }
+
+    const netEfectivo = Math.max(
+      0,
+      ventas.reduce((acc, v) => acc + Number(v.pagoEfectivo ?? 0) - Number(v.cambio ?? 0), 0) || Number(sesion.totalEfectivo ?? 0)
+    )
+    const debito = ventas.reduce((acc, v) => acc + Number(v.pagoTarjetaDebito ?? 0), 0)
+    const credito = ventas.reduce((acc, v) => acc + Number(v.pagoTarjetaCredito ?? 0), 0)
+    const transferencia = ventas.reduce((acc, v) => acc + Number(v.pagoTransferencia ?? 0), 0) || Number(sesion.totalTransferencia ?? 0)
+    const nequi = ventas.reduce((acc, v) => acc + Number(v.pagoNequi ?? 0), 0) || Number(sesion.totalNequi ?? 0)
+    const totalTarjeta = debito + credito > 0 ? (debito + credito) : Number(sesion.totalTarjeta ?? 0)
+
+    if (mediosConfig.length > 0) {
+      const hasSpecificTransfer = mediosConfig.some(m => {
+        const nom = (m.nombre || '').toUpperCase()
+        const cod = (m.codigo || '').toUpperCase()
+        return nom.includes('TRANSFERENCIA') || cod.includes('TRANSFERENCIA') || nom.includes('BANCO') || cod.includes('BANCO') || nom.includes('PSE') || cod.includes('PSE')
+      })
+
+      return mediosConfig.map(m => {
+        const code = (m.codigo || '').toUpperCase()
+        const name = (m.nombre || '').toUpperCase()
+        let val = 0
+
+        if (totalDetalleAcumulado > 0) {
+          if (detalleTotals[code] !== undefined) {
+            val = detalleTotals[code]
+          } else if (detalleTotals[name] !== undefined) {
+            val = detalleTotals[name]
+          } else if (detalleTotals[String(m.id)] !== undefined) {
+            val = detalleTotals[String(m.id)]
+          } else {
+            for (const [k, amount] of Object.entries(detalleTotals)) {
+              if (k.includes(code) || code.includes(k) || k.includes(name) || name.includes(k)) {
+                val += amount
+              }
+            }
+          }
+        }
+
+        if (val === 0) {
+          if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
+            val = netEfectivo
+          } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
+            val = debito
+          } else if (code.includes('DATAFONO') || name.includes('DATAFONO')) {
+            val = totalTarjeta
+          } else if (code.includes('CREDITO') || name.includes('CREDITO')) {
+            val = credito
+          } else if (code.includes('TARJETA') || name.includes('TARJETA')) {
+            val = totalTarjeta
+          } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
+            val = nequi
+          } else if (code.includes('TRANSFERENCIA') || name.includes('TRANSFERENCIA') || code.includes('BANCO') || name.includes('PSE')) {
+            val = transferencia
+          } else if ((code.includes('QR') || name.includes('QR') || code.includes('BOLD') || name.includes('BOLD')) && !hasSpecificTransfer) {
+            val = transferencia
+          }
+        }
+
+        return {
+          id: m.id,
+          codigo: m.codigo,
+          nombre: m.nombre,
+          total: val,
+        }
+      })
+    }
+
+    return [
+      { codigo: 'EFECTIVO', nombre: 'Efectivo', total: netEfectivo },
+      { codigo: 'TARJETA_DEBITO', nombre: 'Tarjeta Débito', total: debito },
+      { codigo: 'TARJETA_CREDITO', nombre: 'Tarjeta Crédito', total: credito },
+      { codigo: 'TRANSFERENCIA', nombre: 'Transferencia', total: transferencia },
+      { codigo: 'NEQUI', nombre: 'Nequi / Daviplata', total: nequi },
+    ]
+  }
+
+  /*
     const mediosConfig = await this.prisma.medioPago.findMany({
       where: { empresaId, activo: true },
       orderBy: { id: 'asc' },
@@ -357,6 +481,7 @@ export class PosService {
     ]
   }
 
+  */
   async abrirCaja(empresaId: number, dto: { cajaId: number; montoInicial: number; vendedorId?: number; vendedorNombre?: string }, userId?: number) {
     const caja = await this.findCaja(empresaId, dto.cajaId)
 
@@ -599,6 +724,7 @@ export class PosService {
     pagoTransferencia?: number
     pagoNequi?: number
     cambio?: number
+    pagosDetalle?: Record<string, number>
     items: {
       productoId: number
       cantidad: number
@@ -791,11 +917,28 @@ export class PosService {
 
       // C. Medios de pago utilizados para descripción del Recibo
       const mediosList: string[] = []
-      if ((dto.pagoEfectivo ?? 0) > 0) mediosList.push('EFECTIVO')
-      if ((dto.pagoTarjetaDebito ?? 0) > 0) mediosList.push('TARJETA_DEBITO')
-      if ((dto.pagoTarjetaCredito ?? 0) > 0) mediosList.push('TARJETA_CREDITO')
-      if ((dto.pagoTransferencia ?? 0) > 0) mediosList.push('TRANSFERENCIA')
-      if ((dto.pagoNequi ?? 0) > 0) mediosList.push('NEQUI')
+      if (dto.pagosDetalle && typeof dto.pagosDetalle === 'object') {
+        for (const [k, amt] of Object.entries(dto.pagosDetalle)) {
+          if ((Number(amt) || 0) > 0) mediosList.push(k)
+        }
+      }
+      if (mediosList.length === 0) {
+        if ((dto.pagoEfectivo ?? 0) > 0) mediosList.push('EFECTIVO')
+        if ((dto.pagoTarjetaDebito ?? 0) > 0) mediosList.push('TARJETA_DEBITO')
+        if ((dto.pagoTarjetaCredito ?? 0) > 0) mediosList.push('TARJETA_CREDITO')
+        if ((dto.pagoTransferencia ?? 0) > 0) mediosList.push('TRANSFERENCIA')
+        if ((dto.pagoNequi ?? 0) > 0) mediosList.push('NEQUI')
+  
+  
+  
+        
+        
+      }
+
+
+
+      
+      
       const medioPagoText = mediosList.length === 1 ? mediosList[0] : (mediosList.length > 1 ? 'MIXTO' : 'EFECTIVO')
 
       // D. Crear Recibo de Caja oficial respaldado por DocumentoConfig
@@ -845,6 +988,7 @@ export class PosService {
           pagoTransferencia: dto.pagoTransferencia ?? 0,
           pagoNequi: dto.pagoNequi ?? 0,
           cambio: dto.cambio ?? 0,
+          pagosDetalle: dto.pagosDetalle ? (dto.pagosDetalle as any) : undefined,
           estado: 'COMPLETADA',
           items: { create: itemsCalculados.map((it, i) => ({ ...it, orden: i })) },
         },

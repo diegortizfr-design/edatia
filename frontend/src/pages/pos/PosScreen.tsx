@@ -605,6 +605,7 @@ export function PosScreen() {
       pagoTransferencia,
       pagoNequi,
       cambio,
+      pagosDetalle: pagosPorMedio,
       tipoDocumento: sesion?.caja?.documentoConfig?.sigla || 'POS',
       items: cart.map(i => ({
         productoId: i.productoId,
@@ -669,11 +670,25 @@ export function PosScreen() {
         <div class="row big"><span>TOTAL:</span><span>${fmtVal(venta.total)}</span></div>
         <div class="line"></div>
         
-        ${Number(venta.pagoEfectivo) > 0 ? `<div class="row"><span>Efectivo:</span><span>${fmtVal(venta.pagoEfectivo)}</span></div>` : ''}
-        ${Number(venta.pagoTarjetaDebito) > 0 ? `<div class="row"><span>T. Débito:</span><span>${fmtVal(venta.pagoTarjetaDebito)}</span></div>` : ''}
-        ${Number(venta.pagoTarjetaCredito) > 0 ? `<div class="row"><span>T. Crédito:</span><span>${fmtVal(venta.pagoTarjetaCredito)}</span></div>` : ''}
-        ${Number(venta.pagoTransferencia) > 0 ? `<div class="row"><span>Transferencia:</span><span>${fmtVal(venta.pagoTransferencia)}</span></div>` : ''}
-        ${Number(venta.pagoNequi) > 0 ? `<div class="row"><span>Nequi:</span><span>${fmtVal(venta.pagoNequi)}</span></div>` : ''}
+        ${venta.pagosDetalle && typeof venta.pagosDetalle === 'object' && Object.keys(venta.pagosDetalle).length > 0
+          ? Object.entries(venta.pagosDetalle)
+              .filter(([_, amt]) => Number(amt) > 0)
+              .map(([code, amt]) => {
+                const medioObj = activeMedios.find((m: any) => m.codigo === code || m.nombre === code)
+                const nombre = medioObj?.nombre || code
+                return `<div class="row"><span>${nombre}:</span><span>${fmtVal(amt)}</span></div>`
+              }).join('')
+          : [
+              Number(venta.pagoEfectivo) > 0 ? `<div class="row"><span>Efectivo:</span><span>${fmtVal(venta.pagoEfectivo)}</span></div>` : '',
+              Number(venta.pagoTarjetaDebito) > 0 ? `<div class="row"><span>T. Débito:</span><span>${fmtVal(venta.pagoTarjetaDebito)}</span></div>` : '',
+              Number(venta.pagoTarjetaCredito) > 0 ? `<div class="row"><span>T. Crédito:</span><span>${fmtVal(venta.pagoTarjetaCredito)}</span></div>` : '',
+              Number(venta.pagoTransferencia) > 0 ? `<div class="row"><span>Transferencia:</span><span>${fmtVal(venta.pagoTransferencia)}</span></div>` : '',
+              Number(venta.pagoNequi) > 0 ? `<div class="row"><span>Nequi:</span><span>${fmtVal(venta.pagoNequi)}</span></div>` : '',
+            ].filter(Boolean).join('')}
+
+
+
+
         ${Number(venta.cambio) > 0 ? `<div class="row bold"><span>Cambio:</span><span>${fmtVal(venta.cambio)}</span></div>` : ''}
         
         ${docConfig?.resolucionDian ? `

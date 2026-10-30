@@ -1943,6 +1943,7 @@ model VentaPos {
   pagoTransferencia Decimal   @default(0) @db.Decimal(15,2)
   pagoNequi        Decimal     @default(0) @db.Decimal(15,2)
   cambio           Decimal     @default(0) @db.Decimal(15,2)
+  pagosDetalle     Json?
 
   estado           String      @default("COMPLETADA") // COMPLETADA | ANULADA
   motivoAnulacion  String?
