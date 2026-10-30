@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { 
   Receipt, Plus, Search, Trash2, Edit3, CheckCircle2, 
-  XCircle, AlertCircle, BookOpen, Layers, Lightbulb, ArrowRight
+  XCircle, AlertCircle, BookOpen, Layers, Lightbulb, ArrowRight,
+  Users, Building2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -12,8 +13,10 @@ import {
   updateCategoriaTesoreria, 
   deleteCategoriaTesoreria, 
   getCuentasGastoPUC,
+  getProveedoresTesoreria,
   CategoriaGasto,
-  CuentaGastoPUC
+  CuentaGastoPUC,
+  ProveedorTesoreria
 } from '../../services/tesoreria.service';
 
 export default function ConfigTesoreria() {
@@ -31,6 +34,11 @@ export default function ConfigTesoreria() {
   const { data: cuentasPUC = [], isLoading: loadingCuentas } = useQuery<CuentaGastoPUC[]>({
     queryKey: ['cuentasGastoPUC'],
     queryFn: getCuentasGastoPUC,
+  });
+
+  const { data: proveedores = [], isLoading: loadingProveedores } = useQuery<ProveedorTesoreria[]>({
+    queryKey: ['proveedoresTesoreria'],
+    queryFn: getProveedoresTesoreria,
   });
 
   // Mutations
@@ -75,7 +83,8 @@ export default function ConfigTesoreria() {
     return categorias.filter(c => 
       c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.descripcion && c.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (c.cuentaPUC && (c.cuentaPUC.codigo.includes(searchTerm) || c.cuentaPUC.nombre.toLowerCase().includes(searchTerm.toLowerCase())))
+      (c.cuentaPUC && (c.cuentaPUC.codigo.includes(searchTerm) || c.cuentaPUC.nombre.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+      (c.tercero && (c.tercero.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || c.tercero.numeroDocumento?.includes(searchTerm)))
     );
   }, [categorias, searchTerm]);
 
@@ -106,7 +115,7 @@ export default function ConfigTesoreria() {
           <div>
             <h1 className="text-xl font-black text-slate-800 tracking-tight">Tesorería: Categorías de Gasto</h1>
             <p className="text-sm text-slate-500 font-medium">
-              Configure las clasificaciones de egreso y gastos fijos enlazadas a sus cuentas contables reales del PUC.
+              Configure clasificaciones de egreso enlazadas a un Proveedor habitual y a su cuenta PUC real.
             </p>
           </div>
         </div>
@@ -148,7 +157,7 @@ export default function ConfigTesoreria() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por categoría, concepto o código PUC..."
+            placeholder="Buscar por categoría, proveedor, NIT o cuenta PUC..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -176,7 +185,7 @@ export default function ConfigTesoreria() {
             </div>
             <p className="text-base font-bold text-slate-700">No hay categorías de gasto registradas</p>
             <p className="text-sm text-slate-400 max-w-md mx-auto">
-              Cree categorías como "Arriendo de Local", "Energía Eléctrica", "Internet", "Aseo y Cafetería" y asócielas a sus cuentas PUC correspondientes para emitir egresos organizados.
+              Cree categorías como "Arriendo Local", "Energía Eléctrica", "Internet", "Aseo y Cafetería", ancle su proveedor habitual y asócielas a sus cuentas PUC correspondientes para emitir egresos de forma automática.
             </p>
             <button
               onClick={handleOpenCreate}
@@ -192,7 +201,7 @@ export default function ConfigTesoreria() {
               <thead className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-6">Categoría de Gasto</th>
-                  <th className="py-3.5 px-6">Descripción</th>
+                  <th className="py-3.5 px-6">Tercero / Proveedor Anclado</th>
                   <th className="py-3.5 px-6">Cuenta PUC Asignada (Débito)</th>
                   <th className="py-3.5 px-6">Estado</th>
                   <th className="py-3.5 px-6 text-right">Acciones</th>
@@ -204,11 +213,28 @@ export default function ConfigTesoreria() {
                     <td className="py-3.5 px-6 font-bold text-slate-800">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                        <span>{cat.nombre}</span>
+                        <div>
+                          <span>{cat.nombre}</span>
+                          {cat.descripcion && (
+                            <p className="text-xs text-slate-400 font-normal mt-0.5">{cat.descripcion}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-6 text-slate-500 text-xs">
-                      {cat.descripcion || <span className="text-slate-300 italic">Sin descripción</span>}
+                    <td className="py-3.5 px-6 text-xs">
+                      {cat.tercero ? (
+                        <div className="flex items-center gap-1.5">
+                          <Building2 size={14} className="text-indigo-600 shrink-0" />
+                          <div>
+                            <span className="font-semibold text-slate-800">{cat.tercero.nombre}</span>
+                            <span className="text-[11px] text-slate-400 block font-mono">
+                              {cat.tercero.tipoDocumento || 'NIT'}: {cat.tercero.numeroDocumento}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic text-xs">Sin proveedor predeterminado</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-6 font-mono text-xs">
                       {cat.cuentaPUC ? (
@@ -221,7 +247,7 @@ export default function ConfigTesoreria() {
                       ) : (
                         <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px] font-sans font-medium flex items-center gap-1 w-max">
                           <AlertCircle size={12} />
-                          Sin cuenta predeterminada
+                          Sin cuenta fija
                         </span>
                       )}
                     </td>
@@ -270,6 +296,8 @@ export default function ConfigTesoreria() {
           category={editingCategory}
           cuentasPUC={cuentasPUC}
           loadingCuentas={loadingCuentas}
+          proveedores={proveedores}
+          loadingProveedores={loadingProveedores}
           onClose={() => setIsModalOpen(false)}
           onSave={(data) => {
             if (editingCategory) {
@@ -291,6 +319,8 @@ interface ModalCategoriaProps {
   category: CategoriaGasto | null;
   cuentasPUC: CuentaGastoPUC[];
   loadingCuentas: boolean;
+  proveedores: ProveedorTesoreria[];
+  loadingProveedores: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
   isLoading: boolean;
@@ -300,15 +330,30 @@ function ModalCategoria({
   category,
   cuentasPUC,
   loadingCuentas,
+  proveedores,
+  loadingProveedores,
   onClose,
   onSave,
   isLoading,
 }: ModalCategoriaProps) {
   const [nombre, setNombre] = useState(category?.nombre || '');
   const [descripcion, setDescripcion] = useState(category?.descripcion || '');
+  const [terceroId, setTerceroId] = useState<number | ''>(category?.terceroId || '');
   const [cuentaPUCId, setCuentaPUCId] = useState<number | ''>(category?.cuentaPUCId || '');
   const [activo, setActivo] = useState(category ? category.activo : true);
+
+  const [filtroTercero, setFiltroTercero] = useState('');
   const [filtroCuenta, setFiltroCuenta] = useState('');
+
+  const proveedoresFiltrados = useMemo(() => {
+    if (!filtroTercero.trim()) return proveedores;
+    const term = filtroTercero.toLowerCase();
+    return proveedores.filter(p =>
+      p.nombre.toLowerCase().includes(term) ||
+      (p.nombreComercial && p.nombreComercial.toLowerCase().includes(term)) ||
+      (p.numeroDocumento && p.numeroDocumento.includes(term))
+    );
+  }, [proveedores, filtroTercero]);
 
   const cuentasFiltradas = useMemo(() => {
     if (!filtroCuenta.trim()) return cuentasPUC;
@@ -326,6 +371,7 @@ function ModalCategoria({
     onSave({
       nombre: nombre.trim(),
       descripcion: descripcion.trim() || undefined,
+      terceroId: terceroId ? Number(terceroId) : undefined,
       cuentaPUCId: cuentaPUCId ? Number(cuentaPUCId) : undefined,
       activo,
     });
@@ -364,7 +410,7 @@ function ModalCategoria({
             <input
               type="text"
               required
-              placeholder="Ej. Arrendamiento Sede Principal, Energía Eléctrica, Aseo"
+              placeholder="Ej. Arriendo Local, Energía Eléctrica, Agua, Internet, Aseo"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -377,20 +423,69 @@ function ModalCategoria({
             </label>
             <textarea
               rows={2}
-              placeholder="Ej. Pago mensual de canon de arrendamiento según contrato de alquiler"
+              placeholder="Ej. Canon de arrendamiento mensual local comercial / Bodega principal"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
             />
           </div>
 
+          {/* Tercero / Proveedor Anclado */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Cuenta PUC de Gasto Predeterminada (Débito)
+                Tercero / Proveedor Anclado (Opcional)
               </label>
               <span className="text-[11px] text-indigo-600 font-semibold flex items-center gap-1">
-                <BookOpen size={12} /> Catálogo PUC real
+                <Users size={12} /> Proveedores reales ({proveedores.length})
+              </span>
+            </div>
+
+            {loadingProveedores ? (
+              <p className="text-xs text-slate-400 italic">Cargando proveedores...</p>
+            ) : proveedores.length === 0 ? (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 space-y-1">
+                <p>No se encontraron proveedores registrados.</p>
+                <p>
+                  Puede registrar sus proveedores en <Link to="/inventario/proveedores" className="underline font-bold text-indigo-600">Inventario ➔ Proveedores</Link> o en Terceros.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Filtrar proveedor por nombre o NIT..."
+                  value={filtroTercero}
+                  onChange={(e) => setFiltroTercero(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <select
+                  value={terceroId}
+                  onChange={(e) => setTerceroId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition bg-white"
+                >
+                  <option value="">— Sin tercero predeterminado (se elegirá al momento del egreso) —</option>
+                  {proveedoresFiltrados.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} {p.nombreComercial ? `(${p.nombreComercial})` : ''} — {p.tipoDocumento || 'NIT'}: {p.numeroDocumento} {p.esProveedor ? '★ Proveedor' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-400">
+                  Al anclar un tercero, cada vez que emita un Comprobante de Egreso con esta categoría se seleccionará este proveedor y su NIT automáticamente.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Cuenta PUC */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Cuenta PUC Predeterminada (Débito)
+              </label>
+              <span className="text-[11px] text-indigo-600 font-semibold flex items-center gap-1 font-mono">
+                <BookOpen size={12} /> Cuentas en PUC ({cuentasPUC.length})
               </span>
             </div>
 
@@ -398,9 +493,9 @@ function ModalCategoria({
               <p className="text-xs text-slate-400 italic">Cargando catálogo contable PUC...</p>
             ) : cuentasPUC.length === 0 ? (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
-                <p className="font-bold">No se encontraron cuentas de gasto (Clase 5 / 6) en su PUC.</p>
+                <p className="font-bold">No se encontraron cuentas contables en su catálogo PUC.</p>
                 <p>
-                  Puede crear sus cuentas de gastos en <Link to="/contabilidad/puc" className="underline font-bold text-indigo-600">Contabilidad ➔ PUC</Link>.
+                  Puede crear sus cuentas en <Link to="/contabilidad/puc" className="underline font-bold text-indigo-600">Contabilidad ➔ PUC</Link>.
                 </p>
               </div>
             ) : (
@@ -467,4 +562,3 @@ function ModalCategoria({
     </div>
   );
 }
-

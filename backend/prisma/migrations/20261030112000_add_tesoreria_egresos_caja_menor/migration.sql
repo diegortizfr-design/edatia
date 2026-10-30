@@ -198,6 +198,7 @@ CREATE TABLE IF NOT EXISTS "CategoriaGasto" (
     "nombre" TEXT NOT NULL,
     "descripcion" TEXT,
     "cuentaPUCId" INTEGER,
+    "terceroId" INTEGER,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -205,8 +206,11 @@ CREATE TABLE IF NOT EXISTS "CategoriaGasto" (
     CONSTRAINT "CategoriaGasto_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "terceroId" INTEGER;
+
 CREATE UNIQUE INDEX IF NOT EXISTS "CategoriaGasto_empresaId_nombre_key" ON "CategoriaGasto"("empresaId", "nombre");
 CREATE INDEX IF NOT EXISTS "CategoriaGasto_empresaId_idx" ON "CategoriaGasto"("empresaId");
+CREATE INDEX IF NOT EXISTS "CategoriaGasto_terceroId_idx" ON "CategoriaGasto"("terceroId");
 
 DO $$ BEGIN
     ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -216,6 +220,12 @@ END $$;
 
 DO $$ BEGIN
     ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_cuentaPUCId_fkey" FOREIGN KEY ("cuentaPUCId") REFERENCES "CuentaPUC"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_terceroId_fkey" FOREIGN KEY ("terceroId") REFERENCES "Tercero"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

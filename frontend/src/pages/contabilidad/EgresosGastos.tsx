@@ -693,10 +693,17 @@ function ModalNuevoEgreso({
       } else if (cuentasGastoLista.length > 0) {
         setCuentaGastoId(cuentasGastoLista[0].id);
       }
+      if (activeCat.terceroId) {
+        setTerceroId(String(activeCat.terceroId));
+        if (activeCat.tercero) {
+          setBeneficiarioNombre(activeCat.tercero.nombre);
+          setBeneficiarioDoc(activeCat.tercero.numeroDocumento || '');
+        }
+      }
     }
   }, [categoriasLista, categoriaGastoId, cuentasGastoLista]);
 
-  // Cambio de categoría: sincroniza nombre y cuenta PUC predeterminada
+  // Cambio de categoría: sincroniza nombre, cuenta PUC predeterminada y tercero/proveedor anclado
   const handleCategoriaChange = (idStr: string) => {
     setCategoriaGastoId(idStr);
     const cat = categoriasLista.find((c) => String(c.id) === idStr);
@@ -704,6 +711,19 @@ function ModalNuevoEgreso({
       setCategoriaGastoNombre(cat.nombre);
       if (cat.cuentaPUCId) {
         setCuentaGastoId(cat.cuentaPUCId);
+      }
+      if (cat.terceroId) {
+        setTerceroId(String(cat.terceroId));
+        if (cat.tercero) {
+          setBeneficiarioNombre(cat.tercero.nombre);
+          setBeneficiarioDoc(cat.tercero.numeroDocumento || '');
+        } else {
+          const t = terceros.find((x) => String(x.id) === String(cat.terceroId));
+          if (t) {
+            setBeneficiarioNombre(t.nombre);
+            setBeneficiarioDoc(t.numeroDocumento || '');
+          }
+        }
       }
     } else {
       setCategoriaGastoNombre('');
@@ -949,7 +969,7 @@ function ModalNuevoEgreso({
                     .filter((c) => c.activo)
                     .map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.nombre} {c.descripcion ? `(${c.descripcion})` : ''}
+                        {c.nombre} {c.tercero ? `[${c.tercero.nombre}]` : ''} {c.cuentaPUC ? `[PUC: ${c.cuentaPUC.codigo}]` : ''}
                       </option>
                     ))}
                 </select>

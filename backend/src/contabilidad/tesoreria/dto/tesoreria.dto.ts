@@ -202,6 +202,10 @@ export class CreateCategoriaGastoDto {
   cuentaPUCId?: number;
 
   @IsOptional()
+  @IsNumber()
+  terceroId?: number;
+
+  @IsOptional()
   @IsBoolean()
   activo?: boolean;
 }
@@ -218,6 +222,10 @@ export class UpdateCategoriaGastoDto {
   @IsOptional()
   @IsNumber()
   cuentaPUCId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  terceroId?: number;
 
   @IsOptional()
   @IsBoolean()

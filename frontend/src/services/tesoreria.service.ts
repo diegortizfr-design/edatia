@@ -100,9 +100,22 @@ export interface CategoriaGasto {
   descripcion?: string;
   cuentaPUCId?: number;
   cuentaPUC?: { id: number; codigo: string; nombre: string };
+  terceroId?: number;
+  tercero?: { id: number; nombre: string; nombreComercial?: string; tipoDocumento?: string; numeroDocumento?: string; telefono?: string; esProveedor?: boolean };
   activo: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProveedorTesoreria {
+  id: number;
+  nombre: string;
+  nombreComercial?: string;
+  tipoDocumento?: string;
+  numeroDocumento: string;
+  telefono?: string;
+  email?: string;
+  esProveedor?: boolean;
 }
 
 export interface CuentaGastoPUC {
@@ -118,10 +131,10 @@ export interface CuentaGastoPUC {
 export const getCategoriasTesoreria = () =>
   api.get<CategoriaGasto[]>('/contabilidad/tesoreria/categorias').then(r => r.data);
 
-export const createCategoriaTesoreria = (data: { nombre: string; descripcion?: string; cuentaPUCId?: number; activo?: boolean }) =>
+export const createCategoriaTesoreria = (data: { nombre: string; descripcion?: string; cuentaPUCId?: number; terceroId?: number; activo?: boolean }) =>
   api.post<CategoriaGasto>('/contabilidad/tesoreria/categorias', data).then(r => r.data);
 
-export const updateCategoriaTesoreria = (id: number, data: Partial<{ nombre: string; descripcion?: string; cuentaPUCId?: number; activo?: boolean }>) =>
+export const updateCategoriaTesoreria = (id: number, data: Partial<{ nombre: string; descripcion?: string; cuentaPUCId?: number; terceroId?: number; activo?: boolean }>) =>
   api.patch<CategoriaGasto>(`/contabilidad/tesoreria/categorias/${id}`, data).then(r => r.data);
 
 export const deleteCategoriaTesoreria = (id: number) =>
@@ -129,6 +142,9 @@ export const deleteCategoriaTesoreria = (id: number) =>
 
 export const getCuentasGastoPUC = () =>
   api.get<CuentaGastoPUC[]>('/contabilidad/tesoreria/cuentas-gasto').then(r => r.data);
+
+export const getProveedoresTesoreria = () =>
+  api.get<ProveedorTesoreria[]>('/contabilidad/tesoreria/proveedores').then(r => r.data);
 
 // ─── Egresos / Gastos ─────────────────────────────────────────────────────────
 

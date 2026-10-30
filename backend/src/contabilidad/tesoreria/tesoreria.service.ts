@@ -103,6 +103,7 @@ export class TesoreriaService implements OnModuleInit {
 
         ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER;
         ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "categoriaGastoId" INTEGER;
+        ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "terceroId" INTEGER;
       `);
     } catch (err) {
       console.warn('Advertencia asegurando tablas de Tesorería:', err);
@@ -463,7 +464,8 @@ export class TesoreriaService implements OnModuleInit {
     return this.prisma.categoriaGasto.findMany({
       where: { empresaId },
       include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true, esProveedor: true } },
       },
       orderBy: { nombre: 'asc' },
     });
@@ -473,7 +475,8 @@ export class TesoreriaService implements OnModuleInit {
     const cat = await this.prisma.categoriaGasto.findFirst({
       where: { id, empresaId },
       include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cuentaPUC: true,
+        tercero: true,
       },
     });
     if (!cat) throw new NotFoundException('Categoría de gasto no encontrada');
@@ -498,16 +501,27 @@ export class TesoreriaService implements OnModuleInit {
       }
     }
 
+    if (dto.terceroId) {
+      const ter = await this.prisma.tercero.findFirst({
+        where: { id: dto.terceroId, empresaId, activo: true },
+      });
+      if (!ter) {
+        throw new NotFoundException('El tercero/proveedor seleccionado no existe en su base de datos o está inactivo');
+      }
+    }
+
     return this.prisma.categoriaGasto.create({
       data: {
         empresaId,
         nombre,
         descripcion: dto.descripcion?.trim() || null,
         cuentaPUCId: dto.cuentaPUCId || null,
+        terceroId: dto.terceroId || null,
         activo: dto.activo !== undefined ? dto.activo : true,
       },
       include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
       },
     });
   }
@@ -539,16 +553,27 @@ export class TesoreriaService implements OnModuleInit {
       }
     }
 
+    if (dto.terceroId) {
+      const ter = await this.prisma.tercero.findFirst({
+        where: { id: dto.terceroId, empresaId, activo: true },
+      });
+      if (!ter) {
+        throw new NotFoundException('El tercero/proveedor seleccionado no existe en su base de datos o está inactivo');
+      }
+    }
+
     return this.prisma.categoriaGasto.update({
       where: { id },
       data: {
         ...(dto.nombre ? { nombre: dto.nombre.trim() } : {}),
         ...(dto.descripcion !== undefined ? { descripcion: dto.descripcion?.trim() || null } : {}),
         ...(dto.cuentaPUCId !== undefined ? { cuentaPUCId: dto.cuentaPUCId || null } : {}),
+        ...(dto.terceroId !== undefined ? { terceroId: dto.terceroId || null } : {}),
         ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
       },
       include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true } },
+        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
       },
     });
   }
@@ -576,16 +601,12 @@ export class TesoreriaService implements OnModuleInit {
     });
   }
 
+  // Lista completa de cuentas PUC activas de la empresa (sin cuentas quemadas ni filtros restrictivos)
   async getCuentasGastoPUC(empresaId: number) {
     return this.prisma.cuentaPUC.findMany({
       where: {
         empresaId,
         activo: true,
-        OR: [
-          { tipo: { in: ['GASTO', 'COSTO'] } },
-          { codigo: { startsWith: '5' } },
-          { codigo: { startsWith: '6' } },
-        ],
       },
       select: {
         id: true,
@@ -595,6 +616,30 @@ export class TesoreriaService implements OnModuleInit {
         tipo: true,
       },
       orderBy: { codigo: 'asc' },
+    });
+  }
+
+  // Lista de Terceros / Proveedores para Tesorería
+  async getProveedores(empresaId: number) {
+    return this.prisma.tercero.findMany({
+      where: {
+        empresaId,
+        activo: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        nombreComercial: true,
+        tipoDocumento: true,
+        numeroDocumento: true,
+        telefono: true,
+        email: true,
+        esProveedor: true,
+      },
+      orderBy: [
+        { esProveedor: 'desc' },
+        { nombre: 'asc' },
+      ],
     });
   }
 

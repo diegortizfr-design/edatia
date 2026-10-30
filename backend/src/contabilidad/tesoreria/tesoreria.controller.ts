@@ -73,6 +73,11 @@ export class TesoreriaController {
     return this.tesoreria.getCuentasGastoPUC(user.empresaId!);
   }
 
+  @Get('proveedores')
+  getProveedores(@GetUser() user: JwtPayload) {
+    return this.tesoreria.getProveedores(user.empresaId!);
+  }
+
   // ─── Egresos / Gastos ────────────────────────────────────────────────────────
 
   @Get('egresos/categorias')

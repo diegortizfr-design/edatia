@@ -1384,6 +1384,7 @@ model Tercero {
 
   proveedoresRel      ProductoProveedor[]
   egresos             Egreso[]
+  categoriasGasto     CategoriaGasto[]
 
   @@unique([empresaId, tipoDocumento, numeroDocumento])
   @@index([empresaId])
@@ -2794,8 +2795,10 @@ model CategoriaGasto {
 
   nombre      String     // Ej: "Arriendo Local", "Energía Eléctrica", "Servicios Contables"
   descripcion String?
-  cuentaPUCId Int?       // Cuenta PUC Clase 5/6 que DEBE existir en el catálogo PUC del usuario
+  cuentaPUCId Int?       // Cuenta PUC que DEBE existir en el catálogo PUC del usuario
   cuentaPUC   CuentaPUC? @relation(fields: [cuentaPUCId], references: [id])
+  terceroId   Int?       // Proveedor / Tercero anclado opcionalmente
+  tercero     Tercero?   @relation(fields: [terceroId], references: [id])
   activo      Boolean    @default(true)
 
   egresos     Egreso[]
@@ -2805,4 +2808,5 @@ model CategoriaGasto {
 
   @@unique([empresaId, nombre])
   @@index([empresaId])
+  @@index([terceroId])
 }
