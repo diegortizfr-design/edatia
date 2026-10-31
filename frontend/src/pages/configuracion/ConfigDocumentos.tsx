@@ -78,6 +78,7 @@ const CATALOGO_PLANTILLAS: PlantillaDocumento[] = [
   { codigo: 'RP', documento: 'Recepción de Producto', area: 'Inventario', obligatorioDian: 'NO', operativamenteRecomendado: 'Muy recomendado', funcionPrincipal: 'Confirmar recepción física de mercancía (3-Way Match)' },
   // Contabilidad
   { codigo: 'CC', documento: 'Comprobante Contable', area: 'Contabilidad', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Soporte contable general' },
+  { codigo: 'CE', documento: 'Comprobante de Egreso', area: 'Contabilidad', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar pagos y egresos realizados' },
   { codigo: 'AJ', documento: 'Comprobante de Ajuste', area: 'Contabilidad', obligatorioDian: 'SI', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Ajustes contables y cierres' },
   { codigo: 'CI', documento: 'Comprobante de Ingreso', area: 'Contabilidad', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Registrar ingresos contables' },
   { codigo: 'CD', documento: 'Comprobante Diario', area: 'Contabilidad', obligatorioDian: 'NO', operativamenteRecomendado: 'Sí', funcionPrincipal: 'Movimientos contables diarios' },
@@ -334,6 +335,19 @@ const DEFAULT_DOCUMENTS: DocumentoConfig[] = [
     sucursalId: 'suc_principal'
   },
   {
+    id: 'comprobante_egreso',
+    nombre: 'Comprobante de Egreso',
+    sigla: 'CE',
+    prefijo: 'CE',
+    consecutivoInicial: 1,
+    consecutivoSiguiente: 1,
+    tipoOperacion: 'TESORERIA',
+    plantillaImpresion: 'CARTA',
+    esElectronico: false,
+    estado: 'ACTIVO',
+    sucursalId: 'suc_principal'
+  },
+  {
     id: 'cotizacion',
     nombre: 'Cotización',
     sigla: 'COT',
@@ -520,7 +534,8 @@ export function ConfigDocumentos() {
       ...f,
       nombre: plantilla.documento,
       sigla: plantilla.codigo,
-      tipoOperacion: operacion as any,
+      prefijo: f.prefijo || plantilla.codigo,
+      tipoOperacion: (plantilla.codigo === 'CE' ? 'TESORERIA' : operacion) as any,
       esElectronico: esDian,
       resolucionDian: esDian ? (f.resolucionDian || '') : '',
       fechaResolucion: esDian ? (f.fechaResolucion || '') : '',
@@ -869,7 +884,7 @@ export function ConfigDocumentos() {
                         {Array.from(new Set(CATALOGO_PLANTILLAS.map(p => p.area))).map(areaName => (
                           <optgroup key={areaName} label={areaName}>
                             {CATALOGO_PLANTILLAS.filter(p => p.area === areaName).map(p => (
-                              <option key={p.codigo} value={p.codigo}>
+                              <option key={`${areaName}_${p.codigo}`} value={p.codigo}>
                                 [{p.codigo}] {p.documento}
                               </option>
                             ))}
@@ -893,11 +908,12 @@ export function ConfigDocumentos() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <Field label="Sigla (No Editable) *">
+                  <Field label="Sigla *" hint={editingId ? 'No editable' : undefined}>
                     <Input
                       value={form.sigla}
-                      disabled={true}
-                      placeholder="Ej. FV"
+                      disabled={!!editingId}
+                      onChange={(v: string) => setForm(f => ({ ...f, sigla: v.toUpperCase() }))}
+                      placeholder="Ej. CE"
                     />
                   </Field>
                 </div>
