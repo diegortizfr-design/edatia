@@ -50,7 +50,9 @@ export default function ConfigTesoreria() {
       setIsModalOpen(false);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Error al crear la categoría');
+      const msg = err?.response?.data?.message;
+      const errorText = Array.isArray(msg) ? msg.join(', ') : (msg || 'Error al crear la categoría');
+      toast.error(errorText);
     },
   });
 
@@ -63,7 +65,9 @@ export default function ConfigTesoreria() {
       setEditingCategory(null);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Error al actualizar la categoría');
+      const msg = err?.response?.data?.message;
+      const errorText = Array.isArray(msg) ? msg.join(', ') : (msg || 'Error al actualizar la categoría');
+      toast.error(errorText);
     },
   });
 

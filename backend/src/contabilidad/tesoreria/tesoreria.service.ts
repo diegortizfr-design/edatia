@@ -14,100 +14,131 @@ import {
 
 @Injectable()
 export class TesoreriaService implements OnModuleInit {
-  async onModuleInit() {
-    try {
-      await this.prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS "Egreso" (
-            "id" SERIAL NOT NULL PRIMARY KEY,
-            "empresaId" INTEGER NOT NULL,
-            "numero" TEXT NOT NULL,
-            "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "terceroId" INTEGER,
-            "beneficiarioNombre" TEXT,
-            "beneficiarioDoc" TEXT,
-            "categoriaGasto" TEXT NOT NULL,
-            "concepto" TEXT NOT NULL,
-            "referencia" TEXT,
-            "cuentaGastoId" INTEGER NOT NULL,
-            "cajaBancoId" INTEGER,
-            "medioPago" TEXT NOT NULL DEFAULT 'TRANSFERENCIA',
-            "monto" DECIMAL(15,2) NOT NULL,
-            "aplicaRetencion" BOOLEAN NOT NULL DEFAULT false,
-            "tarifaRetencion" DECIMAL(5,2) NOT NULL DEFAULT 0,
-            "valorRetencion" DECIMAL(15,2) NOT NULL DEFAULT 0,
-            "cuentaRetencionId" INTEGER,
-            "montoNeto" DECIMAL(15,2) NOT NULL,
-            "comprobanteId" INTEGER,
-            "documentoConfigId" INTEGER,
-            "estado" TEXT NOT NULL DEFAULT 'APROBADO',
-            "notas" TEXT,
-            "usuarioId" INTEGER,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
+  async ensureTables() {
+    const ddl = [
+      `CREATE TABLE IF NOT EXISTS "Egreso" (
+          "id" SERIAL NOT NULL PRIMARY KEY,
+          "empresaId" INTEGER NOT NULL,
+          "numero" TEXT NOT NULL,
+          "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "terceroId" INTEGER,
+          "beneficiarioNombre" TEXT,
+          "beneficiarioDoc" TEXT,
+          "categoriaGasto" TEXT NOT NULL,
+          "concepto" TEXT NOT NULL,
+          "referencia" TEXT,
+          "cuentaGastoId" INTEGER NOT NULL,
+          "cajaBancoId" INTEGER,
+          "medioPago" TEXT NOT NULL DEFAULT 'TRANSFERENCIA',
+          "monto" DECIMAL(15,2) NOT NULL,
+          "aplicaRetencion" BOOLEAN NOT NULL DEFAULT false,
+          "tarifaRetencion" DECIMAL(5,2) NOT NULL DEFAULT 0,
+          "valorRetencion" DECIMAL(15,2) NOT NULL DEFAULT 0,
+          "cuentaRetencionId" INTEGER,
+          "montoNeto" DECIMAL(15,2) NOT NULL,
+          "comprobanteId" INTEGER,
+          "documentoConfigId" INTEGER,
+          "categoriaGastoId" INTEGER,
+          "estado" TEXT NOT NULL DEFAULT 'APROBADO',
+          "notas" TEXT,
+          "usuarioId" INTEGER,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
 
-        CREATE TABLE IF NOT EXISTS "CajaMenor" (
-            "id" SERIAL NOT NULL PRIMARY KEY,
-            "empresaId" INTEGER NOT NULL,
-            "nombre" TEXT NOT NULL,
-            "codigo" TEXT NOT NULL,
-            "responsable" TEXT NOT NULL,
-            "montoAsignado" DECIMAL(15,2) NOT NULL,
-            "cuentaPUC" TEXT NOT NULL DEFAULT '110510',
-            "cajaBancoId" INTEGER,
-            "activo" BOOLEAN NOT NULL DEFAULT true,
-            "notas" TEXT,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
+      `CREATE TABLE IF NOT EXISTS "CajaMenor" (
+          "id" SERIAL NOT NULL PRIMARY KEY,
+          "empresaId" INTEGER NOT NULL,
+          "nombre" TEXT NOT NULL,
+          "codigo" TEXT NOT NULL,
+          "responsable" TEXT NOT NULL,
+          "montoAsignado" DECIMAL(15,2) NOT NULL,
+          "cuentaPUC" TEXT NOT NULL DEFAULT '110510',
+          "cajaBancoId" INTEGER,
+          "activo" BOOLEAN NOT NULL DEFAULT true,
+          "notas" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
 
-        CREATE TABLE IF NOT EXISTS "GastoCajaMenor" (
-            "id" SERIAL NOT NULL PRIMARY KEY,
-            "cajaMenorId" INTEGER NOT NULL,
-            "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "numeroRecibo" TEXT,
-            "beneficiario" TEXT NOT NULL,
-            "beneficiarioDoc" TEXT,
-            "concepto" TEXT NOT NULL,
-            "categoriaGasto" TEXT NOT NULL,
-            "cuentaGastoId" INTEGER NOT NULL,
-            "valor" DECIMAL(15,2) NOT NULL,
-            "estado" TEXT NOT NULL DEFAULT 'PENDIENTE',
-            "reembolsoId" INTEGER,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
+      `CREATE TABLE IF NOT EXISTS "GastoCajaMenor" (
+          "id" SERIAL NOT NULL PRIMARY KEY,
+          "cajaMenorId" INTEGER NOT NULL,
+          "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "numeroRecibo" TEXT,
+          "beneficiario" TEXT NOT NULL,
+          "beneficiarioDoc" TEXT,
+          "concepto" TEXT NOT NULL,
+          "categoriaGasto" TEXT NOT NULL,
+          "cuentaGastoId" INTEGER NOT NULL,
+          "valor" DECIMAL(15,2) NOT NULL,
+          "estado" TEXT NOT NULL DEFAULT 'PENDIENTE',
+          "reembolsoId" INTEGER,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
 
-        CREATE TABLE IF NOT EXISTS "ReembolsoCajaMenor" (
-            "id" SERIAL NOT NULL PRIMARY KEY,
-            "cajaMenorId" INTEGER NOT NULL,
-            "consecutivo" TEXT NOT NULL,
-            "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "totalReembolsado" DECIMAL(15,2) NOT NULL,
-            "origenCajaBancoId" INTEGER,
-            "comprobanteId" INTEGER,
-            "observaciones" TEXT,
-            "usuarioId" INTEGER,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
+      `CREATE TABLE IF NOT EXISTS "ReembolsoCajaMenor" (
+          "id" SERIAL NOT NULL PRIMARY KEY,
+          "cajaMenorId" INTEGER NOT NULL,
+          "consecutivo" TEXT NOT NULL,
+          "fecha" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "totalReembolsado" DECIMAL(15,2) NOT NULL,
+          "origenCajaBancoId" INTEGER,
+          "comprobanteId" INTEGER,
+          "observaciones" TEXT,
+          "usuarioId" INTEGER,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
 
-        CREATE TABLE IF NOT EXISTS "CategoriaGasto" (
-            "id" SERIAL NOT NULL PRIMARY KEY,
-            "empresaId" INTEGER NOT NULL,
-            "nombre" TEXT NOT NULL,
-            "descripcion" TEXT,
-            "cuentaPUCId" INTEGER,
-            "activo" BOOLEAN NOT NULL DEFAULT true,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
+      `CREATE TABLE IF NOT EXISTS "CategoriaGasto" (
+          "id" SERIAL NOT NULL PRIMARY KEY,
+          "empresaId" INTEGER NOT NULL,
+          "nombre" TEXT NOT NULL,
+          "descripcion" TEXT,
+          "cuentaPUCId" INTEGER,
+          "terceroId" INTEGER,
+          "activo" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
 
-        ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER;
-        ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "categoriaGastoId" INTEGER;
-        ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "terceroId" INTEGER;
-      `);
-    } catch (err) {
-      console.warn('Advertencia asegurando tablas de Tesorería:', err);
+      `ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER;`,
+      `ALTER TABLE "Egreso" ADD COLUMN IF NOT EXISTS "categoriaGastoId" INTEGER;`,
+      `ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "terceroId" INTEGER;`,
+      `ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "cuentaPUCId" INTEGER;`,
+      `ALTER TABLE "CategoriaGasto" ADD COLUMN IF NOT EXISTS "activo" BOOLEAN NOT NULL DEFAULT true;`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "CategoriaGasto_empresaId_nombre_key" ON "CategoriaGasto"("empresaId", "nombre");`,
+      `CREATE INDEX IF NOT EXISTS "CategoriaGasto_empresaId_idx" ON "CategoriaGasto"("empresaId");`,
+      `CREATE INDEX IF NOT EXISTS "CategoriaGasto_terceroId_idx" ON "CategoriaGasto"("terceroId");`,
+
+      `DO $$ BEGIN
+         ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+       EXCEPTION WHEN duplicate_object THEN null; WHEN others THEN null; END $$;`,
+
+      `DO $$ BEGIN
+         ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_cuentaPUCId_fkey" FOREIGN KEY ("cuentaPUCId") REFERENCES "CuentaPUC"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+       EXCEPTION WHEN duplicate_object THEN null; WHEN others THEN null; END $$;`,
+
+      `DO $$ BEGIN
+         ALTER TABLE "CategoriaGasto" ADD CONSTRAINT "CategoriaGasto_terceroId_fkey" FOREIGN KEY ("terceroId") REFERENCES "Tercero"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+       EXCEPTION WHEN duplicate_object THEN null; WHEN others THEN null; END $$;`,
+
+      `DO $$ BEGIN
+         ALTER TABLE "Egreso" ADD CONSTRAINT "Egreso_categoriaGastoId_fkey" FOREIGN KEY ("categoriaGastoId") REFERENCES "CategoriaGasto"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+       EXCEPTION WHEN duplicate_object THEN null; WHEN others THEN null; END $$;`,
+    ];
+
+    for (const sql of ddl) {
+      try {
+        await this.prisma.$executeRawUnsafe(sql);
+      } catch (err: any) {
+        console.warn('Advertencia asegurando esquema de Tesorería:', err?.message || err);
+      }
     }
+  }
+
+  async onModuleInit() {
+    await this.ensureTables();
   }
 
   constructor(
@@ -461,14 +492,29 @@ export class TesoreriaService implements OnModuleInit {
   // ─── Categorías de Gasto Dinámicas (Configuración Tesorería) ───────────────
 
   async findAllCategorias(empresaId: number) {
-    return this.prisma.categoriaGasto.findMany({
-      where: { empresaId },
-      include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
-        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true, esProveedor: true } },
-      },
-      orderBy: { nombre: 'asc' },
-    });
+    try {
+      return await this.prisma.categoriaGasto.findMany({
+        where: { empresaId },
+        include: {
+          cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+          tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true, esProveedor: true } },
+        },
+        orderBy: { nombre: 'asc' },
+      });
+    } catch (e: any) {
+      if (e?.code === 'P2021' || e?.code === 'P2022' || String(e?.message).includes('does not exist')) {
+        await this.ensureTables();
+        return await this.prisma.categoriaGasto.findMany({
+          where: { empresaId },
+          include: {
+            cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+            tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true, esProveedor: true } },
+          },
+          orderBy: { nombre: 'asc' },
+        });
+      }
+      throw e;
+    }
   }
 
   async findOneCategoria(id: number, empresaId: number) {
@@ -487,10 +533,18 @@ export class TesoreriaService implements OnModuleInit {
     const nombre = dto.nombre?.trim();
     if (!nombre) throw new BadRequestException('El nombre de la categoría es requerido');
 
-    const existe = await this.prisma.categoriaGasto.findFirst({
-      where: { empresaId, nombre: { equals: nombre, mode: 'insensitive' } },
-    });
-    if (existe) throw new BadRequestException(`Ya existe una categoría de gasto con el nombre "${nombre}"`);
+    try {
+      const existe = await this.prisma.categoriaGasto.findFirst({
+        where: { empresaId, nombre: { equals: nombre, mode: 'insensitive' } },
+      });
+      if (existe) throw new BadRequestException(`Ya existe una categoría de gasto con el nombre "${nombre}"`);
+    } catch (e: any) {
+      if (e?.code === 'P2021' || e?.code === 'P2022' || String(e?.message).includes('does not exist')) {
+        await this.ensureTables();
+      } else {
+        throw e;
+      }
+    }
 
     if (dto.cuentaPUCId) {
       const cPuc = await this.prisma.cuentaPUC.findFirst({
@@ -510,20 +564,42 @@ export class TesoreriaService implements OnModuleInit {
       }
     }
 
-    return this.prisma.categoriaGasto.create({
-      data: {
-        empresaId,
-        nombre,
-        descripcion: dto.descripcion?.trim() || null,
-        cuentaPUCId: dto.cuentaPUCId || null,
-        terceroId: dto.terceroId || null,
-        activo: dto.activo !== undefined ? dto.activo : true,
-      },
-      include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
-        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
-      },
-    });
+    try {
+      return await this.prisma.categoriaGasto.create({
+        data: {
+          empresaId,
+          nombre,
+          descripcion: dto.descripcion?.trim() || null,
+          cuentaPUCId: dto.cuentaPUCId || null,
+          terceroId: dto.terceroId || null,
+          activo: dto.activo !== undefined ? dto.activo : true,
+        },
+        include: {
+          cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+          tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
+        },
+      });
+    } catch (dbError: any) {
+      console.error('Error al crear categoría de gasto en BD:', dbError);
+      if (dbError?.code === 'P2021' || dbError?.code === 'P2022' || String(dbError?.message).includes('does not exist')) {
+        await this.ensureTables();
+        return await this.prisma.categoriaGasto.create({
+          data: {
+            empresaId,
+            nombre,
+            descripcion: dto.descripcion?.trim() || null,
+            cuentaPUCId: dto.cuentaPUCId || null,
+            terceroId: dto.terceroId || null,
+            activo: dto.activo !== undefined ? dto.activo : true,
+          },
+          include: {
+            cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+            tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
+          },
+        });
+      }
+      throw new BadRequestException(dbError?.message || 'Error al guardar la categoría de gasto');
+    }
   }
 
   async updateCategoria(id: number, empresaId: number, dto: UpdateCategoriaGastoDto) {
@@ -562,20 +638,25 @@ export class TesoreriaService implements OnModuleInit {
       }
     }
 
-    return this.prisma.categoriaGasto.update({
-      where: { id },
-      data: {
-        ...(dto.nombre ? { nombre: dto.nombre.trim() } : {}),
-        ...(dto.descripcion !== undefined ? { descripcion: dto.descripcion?.trim() || null } : {}),
-        ...(dto.cuentaPUCId !== undefined ? { cuentaPUCId: dto.cuentaPUCId || null } : {}),
-        ...(dto.terceroId !== undefined ? { terceroId: dto.terceroId || null } : {}),
-        ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
-      },
-      include: {
-        cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
-        tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
-      },
-    });
+    try {
+      return await this.prisma.categoriaGasto.update({
+        where: { id },
+        data: {
+          ...(dto.nombre ? { nombre: dto.nombre.trim() } : {}),
+          ...(dto.descripcion !== undefined ? { descripcion: dto.descripcion?.trim() || null } : {}),
+          ...(dto.cuentaPUCId !== undefined ? { cuentaPUCId: dto.cuentaPUCId || null } : {}),
+          ...(dto.terceroId !== undefined ? { terceroId: dto.terceroId || null } : {}),
+          ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
+        },
+        include: {
+          cuentaPUC: { select: { id: true, codigo: true, nombre: true, nivel: true, tipo: true } },
+          tercero: { select: { id: true, nombre: true, nombreComercial: true, tipoDocumento: true, numeroDocumento: true, telefono: true } },
+        },
+      });
+    } catch (dbError: any) {
+      console.error('Error al actualizar categoría de gasto en BD:', dbError);
+      throw new BadRequestException(dbError?.message || 'Error al actualizar la categoría de gasto');
+    }
   }
 
   async deleteCategoria(id: number, empresaId: number) {

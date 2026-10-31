@@ -100,7 +100,7 @@ docker compose exec api npx prisma generate --schema prisma/herramientas.prisma
 # 9. Ejecutar migraciones y sincronización de base de datos
 log "Sincronizando bases de datos..."
 # Main DB (Migraciones)
-docker compose exec api npx prisma migrate deploy --schema prisma/schema.prisma || warn "Fallo en migraciones ERP."
+docker compose exec api npx prisma migrate deploy --schema prisma/schema.prisma || docker compose exec api npx prisma db push --schema prisma/schema.prisma --accept-data-loss || warn "Fallo en sincronización ERP."
 # Herramientas DB (Push directo para agilidad inicial)
 docker compose exec api npx prisma db push --schema prisma/herramientas.prisma --accept-data-loss || warn "Fallo en sincronización Herramientas."
 
