@@ -1,7 +1,6 @@
-import { useState, useMemo } from 'react';
 import { 
   Receipt, Plus, Search, Trash2, Edit3, CheckCircle2, 
-  XCircle, AlertCircle, BookOpen, Layers, Lightbulb, ArrowRight,
+  XCircle, AlertCircle, BookOpen, Layers, ArrowRight,
   Users, Building2
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -139,19 +138,6 @@ export default function ConfigTesoreria() {
             <Plus size={18} />
             <span>Nueva Categoría</span>
           </button>
-        </div>
-      </div>
-
-      {/* Tip Box: Opción A - Bolsillo de Provisiones */}
-      <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/70 rounded-2xl flex items-start gap-3">
-        <div className="p-2 bg-amber-100 text-amber-700 rounded-xl mt-0.5 shrink-0">
-          <Lightbulb size={20} />
-        </div>
-        <div className="text-xs text-amber-900 leading-relaxed space-y-1">
-          <span className="font-bold text-sm text-amber-950 block">Provisión Diaria para Gastos Fijos (Arriendos, Servicios, Nómina)</span>
-          <p>
-            Para apartar dinero diariamente sin alterar la utilidad del mes prematuramente: Cree una cuenta de caja llamada <strong className="text-amber-950">"Provisión Gastos Fijos"</strong> en <em>Configuración ➔ Cajas / Bancos</em>. Cada día realice un traslado interno desde su caja principal a esa caja de provisión. Cuando llegue el recibo o fecha de pago del arriendo/servicio, registre el <strong>Comprobante de Egreso (CE)</strong> seleccionando la categoría correspondiente y pagando desde esa caja.
-          </p>
         </div>
       </div>
 
