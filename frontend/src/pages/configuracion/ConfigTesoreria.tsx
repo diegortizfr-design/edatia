@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { 
   Receipt, Plus, Search, Trash2, Edit3, CheckCircle2, 
   XCircle, AlertCircle, BookOpen, Layers, ArrowRight,
