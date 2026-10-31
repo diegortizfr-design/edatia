@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiCall } from '../../utils/api';
 import type { ClientFullDetails, Loan } from './clientDetailTypes';
 import { RefreshCw, Sparkles, X } from 'lucide-react';
@@ -28,7 +28,7 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
   useEffect(() => {
     if (show && activeLoan) {
       const suggestedAmount = Math.ceil(activeLoan.balance / 100000) * 100000 + 200000;
-      setRenewPrincipal(String(suggestedAmount));
+      setRenewPrincipal(suggestedAmount.toLocaleString('es-CO'));
       setError('');
     }
   }, [show, activeLoan]);
@@ -36,7 +36,7 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
   if (!show || !activeLoan) return null;
 
   const currentBalance = activeLoan.balance;
-  const p = parseFloat(renewPrincipal) || 0;
+  const p = parseFloat(renewPrincipal.replace(/\D/g, '')) || 0;
   const excedente = p >= currentBalance ? p - currentBalance : 0;
   const r = parseFloat(renewInterestRate) || 0;
   const inst = parseInt(renewInstallments) || 1;
@@ -49,7 +49,7 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
     setError('');
 
     if (p < currentBalance) {
-      setError(`El nuevo crédito ($${p.toLocaleString()}) debe ser mayor o igual al saldo pendiente ($${currentBalance.toLocaleString()}).`);
+      setError(`El nuevo crédito ($${p.toLocaleString('es-CO')}) debe ser mayor o igual al saldo pendiente ($${currentBalance.toLocaleString('es-CO')}).`);
       return;
     }
 
@@ -119,23 +119,29 @@ export const RenewLoanModal: React.FC<RenewLoanModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Monto del Nuevo Crédito ($) *</label>
-              <input
-                type="number"
-                required
-                min={currentBalance}
-                step="1"
-                value={renewPrincipal}
-                onChange={e => setRenewPrincipal(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono transition"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-slate-500 font-bold">$</span>
+                <input
+                  type="text"
+                  required
+                  value={renewPrincipal}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setRenewPrincipal(val ? Number(val).toLocaleString('es-CO') : '');
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono transition"
+                  placeholder={`Mínimo $${Math.ceil(currentBalance).toLocaleString('es-CO')}`}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Tasa de Interés (%) *</label>
               <input
                 type="number"
                 required
-                min="1"
+                min="0.1"
                 max="100"
+                step="any"
                 value={renewInterestRate}
                 onChange={e => setRenewInterestRate(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono transition"
