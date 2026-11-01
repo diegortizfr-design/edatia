@@ -163,7 +163,7 @@ export function Compras() {
   })
 
   // 2. Facturas de Compra (FC) from backend
-  const { data: fcs = [], isLoading: cargandoFC } = useQuery({
+  const { data: fcs = [], isLoading: cargandoFC, isError: errorFC, refetch: refetchFC } = useQuery({
     queryKey: ['facturas-compra'],
     queryFn: () => getFacturasCompra(),
   })
@@ -336,6 +336,17 @@ export function Compras() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {cargandoFC ? (
             <div className="text-center py-16 text-slate-400">Cargando facturas de compra...</div>
+          ) : errorFC ? (
+            <div className="text-center py-16 text-rose-500">
+              <AlertTriangle size={40} className="mx-auto text-rose-400 mb-3" />
+              <p className="text-rose-600 font-bold text-sm">Error al cargar las facturas de compra del servidor.</p>
+              <button 
+                onClick={() => refetchFC()} 
+                className="mt-3 px-4 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-100 transition-all active:scale-95"
+              >
+                Reintentar carga
+              </button>
+            </div>
           ) : fcs.length === 0 ? (
             <div className="text-center py-16">
               <FileText size={40} className="mx-auto text-slate-300 mb-3" />

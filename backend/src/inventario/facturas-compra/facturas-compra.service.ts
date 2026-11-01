@@ -5,24 +5,34 @@ import { CreateFacturaCompraDto, UpdateFacturaCompraDto, CreateRecepcionProducto
 
 @Injectable()
 export class FacturasCompraService implements OnModuleInit {
-  async onModuleInit() {
-    try {
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "formaPago" TEXT DEFAULT 'CONTADO';
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "medioPago" TEXT;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCxpId" INTEGER;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCxp" TEXT;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCeId" INTEGER;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCe" TEXT;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "cajaBancoId" INTEGER;
-        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "egresoId" INTEGER;
-      `);
-    } catch (err) {
-      console.warn('Advertencia asegurando columnas FacturaCompra:', err);
+  async asegurarColumnas() {
+    const statements = [
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "formaPago" TEXT DEFAULT 'CONTADO'`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "medioPago" TEXT`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCxpId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCxp" TEXT`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCeId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCe" TEXT`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "cajaBancoId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "egresoId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "ordenCompraId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "estadoRecepcion" TEXT DEFAULT 'PENDIENTE'`,
+    ];
+
+    for (const sql of statements) {
+      try {
+        await this.prisma.$executeRawUnsafe(sql);
+      } catch (err: any) {
+        // Ignorar si ya existe
+      }
     }
+  }
+
+  async onModuleInit() {
+    await this.asegurarColumnas();
   }
   constructor(
     private readonly prisma: PrismaService,
@@ -44,36 +54,83 @@ export class FacturasCompraService implements OnModuleInit {
       ];
     }
 
-    return this.prisma.facturaCompra.findMany({
-      where,
-      include: {
-        proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
-        items: { include: { producto: { select: { nombre: true, sku: true } } } },
-        ordenCompra: { select: { id: true, numero: true } },
-        documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
-        documentoCxp: { select: { id: true, nombre: true, prefijo: true } },
-        documentoCe: { select: { id: true, nombre: true, prefijo: true } },
-        cajaBanco: { select: { id: true, nombre: true, tipo: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      return await this.prisma.facturaCompra.findMany({
+        where,
+        include: {
+          proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
+          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          ordenCompra: { select: { id: true, numero: true } },
+          documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (err: any) {
+      console.warn('[FacturasCompraService.findAll] Error inicial, asegurando columnas y reintentando:', err?.message);
+      await this.asegurarColumnas();
+      try {
+        return await this.prisma.facturaCompra.findMany({
+          where,
+          include: {
+            proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
+            items: { include: { producto: { select: { nombre: true, sku: true } } } },
+            ordenCompra: { select: { id: true, numero: true } },
+            documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+      } catch (retryErr: any) {
+        console.error('[FacturasCompraService.findAll] Fallback por consulta cruda para proteger facturas:', retryErr?.message);
+        const rows: any[] = await this.prisma.$queryRawUnsafe(`
+          SELECT 
+            fc.id, fc.numero, fc."consecutivoProveedor", fc."prefijoProveedor",
+            fc."fechaEmision", fc."fechaVencimiento", fc.subtotal, fc.descuento, fc.iva, fc.total,
+            COALESCE(fc.saldo, 0) as saldo, 
+            COALESCE(fc."totalPagado", 0) as "totalPagado", 
+            COALESCE(fc."formaPago", 'CONTADO') as "formaPago", 
+            fc."medioPago", fc.estado,
+            COALESCE(fc."estadoRecepcion", 'PENDIENTE') as "estadoRecepcion", 
+            fc."xmlAdjunto", fc."notas", fc."createdAt",
+            fc."numeroCxp", fc."numeroCe",
+            json_build_object('id', t.id, 'nombre', t.nombre, 'numeroDocumento', t."numeroDocumento") as proveedor
+          FROM "FacturaCompra" fc
+          LEFT JOIN "Tercero" t ON fc."proveedorId" = t.id
+          WHERE fc."empresaId" = ${empresaId}
+          ORDER BY fc."createdAt" DESC
+        `);
+        return rows;
+      }
+    }
   }
 
   async findOne(id: number, empresaId: number) {
-    const fc = await this.prisma.facturaCompra.findFirst({
-      where: { id, empresaId },
-      include: {
-        proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
-        items: { include: { producto: { select: { nombre: true, sku: true } } } },
-        ordenCompra: { select: { id: true, numero: true } },
-        documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
-        documentoCxp: { select: { id: true, nombre: true, prefijo: true } },
-        documentoCe: { select: { id: true, nombre: true, prefijo: true } },
-        cajaBanco: { select: { id: true, nombre: true, tipo: true } },
-      },
-    });
-    if (!fc) throw new NotFoundException('Factura de compra no encontrada');
-    return fc;
+    try {
+      const fc = await this.prisma.facturaCompra.findFirst({
+        where: { id, empresaId },
+        include: {
+          proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
+          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          ordenCompra: { select: { id: true, numero: true } },
+          documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+        },
+      });
+      if (!fc) throw new NotFoundException('Factura de compra no encontrada');
+      return fc;
+    } catch (err: any) {
+      if (err instanceof NotFoundException) throw err;
+      await this.asegurarColumnas();
+      const fc = await this.prisma.facturaCompra.findFirst({
+        where: { id, empresaId },
+        include: {
+          proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
+          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          ordenCompra: { select: { id: true, numero: true } },
+          documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+        },
+      });
+      if (!fc) throw new NotFoundException('Factura de compra no encontrada');
+      return fc;
+    }
   }
 
   private async generarConsecutivoInterno(empresaId: number, tx?: any): Promise<string> {
