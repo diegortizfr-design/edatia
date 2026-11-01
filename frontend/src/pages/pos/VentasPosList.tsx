@@ -194,17 +194,22 @@ export function VentasPosList() {
         <div class="row"><span>Cliente:</span><span>${v.clienteNombre}</span></div>
         ${v.clienteDoc ? `<div class="row"><span>Doc/NIT:</span><span>${v.clienteDoc}</span></div>` : ''}
         <div class="line"></div>
+        ${v.reciboCaja?.numero ? `<div class="row"><span>Recibo Caja (RC):</span><span class="bold">${v.reciboCaja.numero}</span></div>` : ''}
+        <div class="line"></div>
         <div class="bold" style="margin-bottom:2px">PRODUCTOS</div>
         ${v.items?.map((it: any) => `
-          <div class="row">
-            <span>${it.cantidad}x ${it.nombre}</span>
-            <span>${cop(Number(it.subtotal))}</span>
+          <div style="margin-bottom: 2px;">
+            <div class="bold">${it.descripcion || it.producto?.nombre || 'Producto'}</div>
+            <div class="row">
+              <span>${Number(it.cantidad)} x ${cop(Number(it.precioUnitario || 0))}</span>
+              <span>${cop(Number(it.subtotal || it.total || 0))}</span>
+            </div>
           </div>
         `).join('')}
         <div class="line"></div>
         <div class="row"><span>Subtotal:</span><span>${cop(Number(v.subtotal))}</span></div>
         ${Number(v.descuento) > 0 ? `<div class="row"><span>Descuento:</span><span>-${cop(Number(v.descuento))}</span></div>` : ''}
-        <div class="row"><span>IVA / Impuestos:</span><span>${cop(Number(v.iva))}</span></div>
+        <div class="row"><span>IVA / Impuestos:</span><span>${cop(Number(v.iva19 || 0) + Number(v.iva5 || 0) + Number(v.iva || 0))}</span></div>
         <div class="row big" style="margin: 4px 0;"><span>TOTAL:</span><span>${cop(Number(v.total))}</span></div>
         <div class="line"></div>
         <div class="bold" style="margin-bottom:2px">PAGOS</div>
@@ -841,11 +846,20 @@ export function VentasPosList() {
 
               <div className="border-t border-slate-100 pt-3">
                 <span className="font-bold text-slate-800 block mb-2">Productos</span>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {selectedVenta.items?.map((it: any, idx: number) => (
-                    <div key={idx} className="flex justify-between text-slate-600">
-                      <span>{it.cantidad}x {it.nombre}</span>
-                      <span className="font-mono font-semibold">{cop(Number(it.subtotal))}</span>
+                    <div key={idx} className="flex justify-between items-start text-slate-700 py-1.5 border-b border-slate-50 last:border-0">
+                      <div>
+                        <span className="font-semibold text-slate-800 block text-xs">
+                          {it.descripcion || it.producto?.nombre || 'Producto'}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {Number(it.cantidad)} x {cop(Number(it.precioUnitario || 0))} {it.sku || it.producto?.sku ? `· SKU: ${it.sku || it.producto?.sku}` : ''}
+                        </span>
+                      </div>
+                      <span className="font-mono font-bold text-slate-800 text-xs">
+                        {cop(Number(it.subtotal || it.total || 0))}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -854,7 +868,7 @@ export function VentasPosList() {
               <div className="border-t border-slate-100 pt-3 space-y-1">
                 <div className="flex justify-between text-slate-500">
                   <span>Subtotal:</span>
-                  <span>{cop(Number(selectedVenta.subtotal))}</span>
+                  <span>{cop(Number(selectedVenta.subtotal || 0))}</span>
                 </div>
                 {Number(selectedVenta.descuento) > 0 && (
                   <div className="flex justify-between text-slate-500">
@@ -863,51 +877,70 @@ export function VentasPosList() {
                   </div>
                 )}
                 <div className="flex justify-between text-slate-500">
-                  <span>Impuestos:</span>
-                  <span>{cop(Number(selectedVenta.iva))}</span>
+                  <span>Impuestos (IVA):</span>
+                  <span>{cop(Number(selectedVenta.iva19 || 0) + Number(selectedVenta.iva5 || 0) + Number(selectedVenta.iva || 0))}</span>
                 </div>
+                {Number(selectedVenta.recargoMedioPago) > 0 && (
+                  <div className="flex justify-between text-slate-500">
+                    <span>Recargo Medio de Pago:</span>
+                    <span>+{cop(Number(selectedVenta.recargoMedioPago))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-sm text-slate-800 pt-1 border-t border-slate-100">
                   <span>TOTAL:</span>
-                  <span className="text-indigo-650 font-extrabold">{cop(Number(selectedVenta.total))}</span>
+                  <span className="text-indigo-650 font-extrabold">{cop(Number(selectedVenta.total || 0))}</span>
                 </div>
               </div>
 
               <div className="border-t border-slate-100 pt-3 space-y-1">
                 <span className="font-bold text-slate-800 block mb-1">Medios de Pago</span>
-                {Number(selectedVenta.pagoEfectivo) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Efectivo:</span>
-                    <span className="font-mono">{cop(Number(selectedVenta.pagoEfectivo))}</span>
-                  </div>
+                {selectedVenta.pagosDetalle && typeof selectedVenta.pagosDetalle === 'object' && Object.keys(selectedVenta.pagosDetalle).length > 0 ? (
+                  Object.entries(selectedVenta.pagosDetalle)
+                    .filter(([_, amt]) => Number(amt) > 0)
+                    .map(([medio, amt]: any) => (
+                      <div key={medio} className="flex justify-between text-slate-600">
+                        <span>{medio}:</span>
+                        <span className="font-mono font-semibold">{cop(Number(amt))}</span>
+                      </div>
+                    ))
+                ) : (
+                  <>
+                    {Number(selectedVenta.pagoEfectivo) > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Efectivo:</span>
+                        <span className="font-mono">{cop(Number(selectedVenta.pagoEfectivo))}</span>
+                      </div>
+                    )}
+                    {Number(selectedVenta.pagoTarjetaDebito) > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Tarjeta Débito:</span>
+                        <span className="font-mono">{cop(Number(selectedVenta.pagoTarjetaDebito))}</span>
+                      </div>
+                    )}
+                    {Number(selectedVenta.pagoTarjetaCredito) > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Tarjeta Crédito:</span>
+                        <span className="font-mono">{cop(Number(selectedVenta.pagoTarjetaCredito))}</span>
+                      </div>
+                    )}
+                    {Number(selectedVenta.pagoTransferencia) > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Transferencia:</span>
+                        <span className="font-mono">{cop(Number(selectedVenta.pagoTransferencia))}</span>
+                      </div>
+                    )}
+                    {Number(selectedVenta.pagoNequi) > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Nequi / Daviplata:</span>
+                        <span className="font-mono">{cop(Number(selectedVenta.pagoNequi))}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 {Number(selectedVenta.cambio) > 0 && (
-                  <div className="flex justify-between text-slate-500 text-[11px]">
+                  <div className="flex justify-between text-slate-500 text-[11px] pt-1 border-t border-slate-100">
                     <span>Cambio Devuelto:</span>
-                    <span className="font-mono text-emerald-600">-{cop(Number(selectedVenta.cambio))}</span>
-                  </div>
-                )}
-                {Number(selectedVenta.pagoTarjetaDebito) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tarjeta Débito:</span>
-                    <span className="font-mono">{cop(Number(selectedVenta.pagoTarjetaDebito))}</span>
-                  </div>
-                )}
-                {Number(selectedVenta.pagoTarjetaCredito) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tarjeta Crédito:</span>
-                    <span className="font-mono">{cop(Number(selectedVenta.pagoTarjetaCredito))}</span>
-                  </div>
-                )}
-                {Number(selectedVenta.pagoTransferencia) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Transferencia:</span>
-                    <span className="font-mono">{cop(Number(selectedVenta.pagoTransferencia))}</span>
-                  </div>
-                )}
-                {Number(selectedVenta.pagoNequi) > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Nequi / Daviplata:</span>
-                    <span className="font-mono">{cop(Number(selectedVenta.pagoNequi))}</span>
+                    <span className="font-mono text-emerald-600 font-bold">-{cop(Number(selectedVenta.cambio))}</span>
                   </div>
                 )}
               </div>
