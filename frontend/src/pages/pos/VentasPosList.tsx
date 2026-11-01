@@ -816,11 +816,11 @@ export function VentasPosList() {
                   <div>
                     <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Asiento Tesorería</span>
                     <span className="font-mono font-bold text-indigo-900 text-xs">
-                      {selectedVenta.comprobante?.numero || 'Generado'}
+                      {selectedVenta.comprobanteId ? `CMP-#${selectedVenta.comprobanteId}` : 'Generado en POS'}
                     </span>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
-                    {selectedVenta.comprobante?.estado || 'CONTABILIZADO'}
+                    {selectedVenta.comprobanteId ? 'CONTABILIZADO' : 'PENDIENTE'}
                   </span>
                 </div>
               </div>

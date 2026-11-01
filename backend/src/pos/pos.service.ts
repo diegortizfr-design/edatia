@@ -718,9 +718,6 @@ export class PosService implements OnModuleInit {
         reciboCaja: {
           select: { id: true, numero: true, estado: true, valor: true, createdAt: true }
         },
-        comprobante: {
-          select: { id: true, numero: true, estado: true }
-        },
         sesion: {
           include: {
             caja: {
