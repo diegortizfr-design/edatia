@@ -54,9 +54,10 @@ export class ContReportesService {
   async estadoResultados(empresaId: number, desde: string, hasta: string) {
     const balance = await this.balanceComprobacion(empresaId, desde, hasta)
 
-    const ingresos = balance.filter(c => c.tipo === 'INGRESO')
-    const costos   = balance.filter(c => c.tipo === 'COSTO')
-    const gastos   = balance.filter(c => c.tipo === 'GASTO')
+    // Filtro resiliente por tipo o por clase PUC estándar (4=Ingresos, 5=Gastos, 6/7=Costos)
+    const ingresos = balance.filter(c => c.tipo?.toUpperCase().startsWith('INGRES') || c.codigo.startsWith('4'))
+    const costos   = balance.filter(c => c.tipo?.toUpperCase().startsWith('COST') || c.codigo.startsWith('6') || c.codigo.startsWith('7'))
+    const gastos   = balance.filter(c => c.tipo?.toUpperCase().startsWith('GAST') || c.codigo.startsWith('5'))
 
     const totalIngresos = ingresos.reduce((a, c) => a + c.saldo, 0)
     const totalCostos   = costos.reduce((a, c) => a + c.saldo, 0)
@@ -79,24 +80,51 @@ export class ContReportesService {
 
   /**
    * Balance General (Balance Sheet)
-   * Activos = Pasivos + Patrimonio
+   * Activos = Pasivos + Patrimonio (incluyendo Resultado del Ejercicio en curso)
    */
   async balanceGeneral(empresaId: number, hasta: string) {
     const balance = await this.balanceComprobacion(empresaId, '2000-01-01', hasta)
 
-    const activos    = balance.filter(c => c.tipo === 'ACTIVO')
-    const pasivos    = balance.filter(c => c.tipo === 'PASIVO')
-    const patrimonio = balance.filter(c => c.tipo === 'PATRIMONIO')
+    const activos    = balance.filter(c => c.tipo === 'ACTIVO' || c.codigo.startsWith('1'))
+    const pasivos    = balance.filter(c => c.tipo === 'PASIVO' || c.codigo.startsWith('2'))
+    const patrimonio = balance.filter(c => c.tipo === 'PATRIMONIO' || c.codigo.startsWith('3'))
+
+    // Cuentas de resultados acumuladas para integrar Utilidad/Pérdida en curso en Patrimonio
+    const ingresos = balance.filter(c => c.tipo?.toUpperCase().startsWith('INGRES') || c.codigo.startsWith('4'))
+    const costos   = balance.filter(c => c.tipo?.toUpperCase().startsWith('COST') || c.codigo.startsWith('6') || c.codigo.startsWith('7'))
+    const gastos   = balance.filter(c => c.tipo?.toUpperCase().startsWith('GAST') || c.codigo.startsWith('5'))
+
+    const totalIngresos = ingresos.reduce((a, c) => a + c.saldo, 0)
+    const totalCostos   = costos.reduce((a, c) => a + c.saldo, 0)
+    const totalGastos   = gastos.reduce((a, c) => a + c.saldo, 0)
+    const utilidadEjercicio = totalIngresos - totalCostos - totalGastos
+
+    // Agregar la línea del resultado del ejercicio al patrimonio para balancear el Balance General
+    const patrimonioConResultado = [...patrimonio]
+    if (Math.abs(utilidadEjercicio) > 0.001) {
+      patrimonioConResultado.push({
+        codigo: '3605',
+        nombre: 'Resultado del Ejercicio (Utilidad / Pérdida en curso)',
+        tipo: 'PATRIMONIO',
+        naturaleza: utilidadEjercicio >= 0 ? 'CREDITO' : 'DEBITO',
+        debitos: 0,
+        creditos: 0,
+        saldo: utilidadEjercicio,
+        saldoDebito: utilidadEjercicio < 0 ? Math.abs(utilidadEjercicio) : 0,
+        saldoCredito: utilidadEjercicio >= 0 ? utilidadEjercicio : 0,
+      })
+    }
 
     const totalActivos    = activos.reduce((a, c) => a + c.saldo, 0)
     const totalPasivos    = pasivos.reduce((a, c) => a + c.saldo, 0)
-    const totalPatrimonio = patrimonio.reduce((a, c) => a + c.saldo, 0)
+    const totalPatrimonio = patrimonioConResultado.reduce((a, c) => a + c.saldo, 0)
 
     return {
       fecha: hasta,
       activos,
       pasivos,
-      patrimonio,
+      patrimonio: patrimonioConResultado,
+      utilidadEjercicio,
       totalActivos,
       totalPasivos,
       totalPatrimonio,

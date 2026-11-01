@@ -12,8 +12,16 @@ const ESTADO_CFG: Record<string, string> = {
   ANULADO:  'bg-red-100 text-red-700',
 }
 const TIPO_LABELS: Record<string, string> = {
-  FV:'Factura Venta', FP:'Factura Proveedor', RC:'Recibo Caja',
-  CP:'Comprobante Pago', AJ:'Ajuste', NC:'Nota Contabilidad', NI:'Nota Interna',
+  FV: 'Factura Venta',
+  FP: 'Factura Proveedor',
+  RC: 'Recibo Caja',
+  CP: 'Comprobante Pago',
+  AJ: 'Ajuste',
+  NC: 'Nota Contabilidad',
+  NI: 'Nota Interna',
+  POS: 'Venta POS',
+  CE: 'Comprobante Egreso',
+  CC: 'Comprobante Contable',
 }
 
 const cop = (n: number) => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n)
@@ -98,7 +106,12 @@ export function Comprobantes() {
                             {TIPO_LABELS[c.tipo] ?? c.tipo}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600 text-xs max-w-[160px] truncate">{c.concepto}</td>
+                        <td className="px-4 py-3 text-slate-600 text-xs">
+    <div className="font-medium text-slate-700 max-w-[240px] truncate" title={c.concepto}>{c.concepto}</div>
+    {c.referenciaTipo && (
+      <span className="text-[10px] text-indigo-500 font-mono">Ref: {c.referenciaTipo} #{c.referenciaId}</span>
+    )}
+  </td>
                         <td className="px-4 py-3 text-slate-500 text-xs">{new Date(c.fecha).toLocaleDateString('es-CO')}</td>
                         <td className="px-4 py-3 text-slate-700 text-xs font-medium">{cop(totalDB)}</td>
                         <td className="px-4 py-3">
