@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
 import { getDocumentosConfig, getFormasPago, getMediosPago } from '../../services/configuracion.service'
+import { getCajasBancos } from '../../services/erp.service'
 import { 
   ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2, 
   Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2 
@@ -45,6 +46,51 @@ export function NuevaFcForm() {
     doc.sigla === 'FC' && 
     doc.estado === 'ACTIVO'
   )
+
+  const documentosFiltradosCE = documentos.filter((doc: any) => 
+    doc.sigla === 'CE' && 
+    doc.estado === 'ACTIVO'
+  )
+
+  const documentosFiltradosCXP = documentos.filter((doc: any) => 
+    doc.sigla === 'CXP' && 
+    doc.estado === 'ACTIVO'
+  )
+
+  // Cajas y Bancos para salida de dinero en compras de contado
+  const { data: cajasBancos = [] } = useQuery({
+    queryKey: ['cajas-bancos'],
+    queryFn: getCajasBancos,
+  })
+
+  const cajasBancosActivos = useMemo(() => {
+    return (cajasBancos as any[]).filter((cb: any) => cb.activo !== false)
+  }, [cajasBancos])
+
+  // Estados de documentos específicos
+  const [documentoCeId, setDocumentoCeId] = useState('')
+  const [cajaBancoId, setCajaBancoId] = useState('')
+  const [documentoCxpId, setDocumentoCxpId] = useState('')
+
+  // Preselección automática
+  useEffect(() => {
+    if (documentosFiltradosCE.length > 0 && !documentoCeId) {
+      setDocumentoCeId(String(documentosFiltradosCE[0].id))
+    }
+  }, [documentosFiltradosCE, documentoCeId])
+
+  useEffect(() => {
+    if (documentosFiltradosCXP.length > 0 && !documentoCxpId) {
+      setDocumentoCxpId(String(documentosFiltradosCXP[0].id))
+    }
+  }, [documentosFiltradosCXP, documentoCxpId])
+
+  useEffect(() => {
+    if (cajasBancosActivos.length > 0 && !cajaBancoId) {
+      const preferida = cajasBancosActivos.find((cb: any) => cb.aplicaPagos) || cajasBancosActivos[0]
+      if (preferida) setCajaBancoId(String(preferida.id))
+    }
+  }, [cajasBancosActivos, cajaBancoId])
 
   // Header states
   const [proveedorId, setProveedorId] = useState('')
@@ -358,6 +404,9 @@ export function NuevaFcForm() {
     if (!proveedorId) return setError('Selecciona un proveedor')
     if (!consecutivo) return setError('Ingresa el consecutivo de factura del proveedor')
     if (items.length === 0) return setError('Agrega al menos un ítem a la factura')
+    if (!esCredito && cajasBancosActivos.length > 0 && !cajaBancoId) {
+      return setError('Selecciona la Caja o Banco desde donde se realiza el pago de contado')
+    }
 
     mutation.mutate({
       proveedorId: Number(proveedorId),
@@ -369,6 +418,9 @@ export function NuevaFcForm() {
       formaPago,
       medioPago: !esCredito ? medioPago : undefined,
       diasCredito: esCredito ? Number(diasCredito) : 0,
+      documentoCxpId: esCredito && documentoCxpId ? Number(documentoCxpId) : undefined,
+      documentoCeId: !esCredito && documentoCeId ? Number(documentoCeId) : undefined,
+      cajaBancoId: !esCredito && cajaBancoId ? Number(cajaBancoId) : undefined,
       subtotal: totalSubtotal,
       descuento: 0,
       iva: totalIva,
@@ -612,9 +664,27 @@ export function NuevaFcForm() {
               </select>
             </div>
 
-            {/* Si es Crédito: Plazo en Días */}
+            {/* Si es Crédito: Documento CXP + Plazo + Fecha Vencimiento */}
             {esCredito ? (
               <>
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Documento CXP (Cuenta por Pagar)
+                  </label>
+                  <select
+                    value={documentoCxpId}
+                    onChange={e => setDocumentoCxpId(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">— Consecutivo CXP Automático —</option>
+                    {documentosFiltradosCXP.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} ({d.prefijo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="md:col-span-4">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                     Plazo de Crédito (Días) *
@@ -648,24 +718,63 @@ export function NuevaFcForm() {
                 </div>
               </>
             ) : (
-              /* Si es Contado: Medio de Pago */
-              <div className="md:col-span-8">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                  Medio de Pago Principal *
-                </label>
-                <select
-                  value={medioPago}
-                  onChange={e => setMedioPago(e.target.value)}
-                  required
-                  className={inputCls}
-                >
-                  {mediosPagoActivos.map((m: any) => (
-                    <option key={m.id || m.codigo} value={m.codigo}>
-                      {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              /* Si es Contado: Documento CE + Caja/Banco + Medio de Pago */
+              <>
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Documento CE (Comprobante de Egreso)
+                  </label>
+                  <select
+                    value={documentoCeId}
+                    onChange={e => setDocumentoCeId(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">— Consecutivo CE Automático —</option>
+                    {documentosFiltradosCE.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.nombre} ({d.prefijo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Caja o Banco de Pago (Salida Fondos) *
+                  </label>
+                  <select
+                    value={cajaBancoId}
+                    onChange={e => setCajaBancoId(e.target.value)}
+                    required
+                    className={inputCls}
+                  >
+                    <option value="">— Seleccionar Caja o Banco —</option>
+                    {cajasBancosActivos.map((cb: any) => (
+                      <option key={cb.id} value={cb.id}>
+                        [{cb.tipo}] {cb.nombre} {cb.cuentaPUC ? `(${cb.cuentaPUC})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-4">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Medio de Pago Principal *
+                  </label>
+                  <select
+                    value={medioPago}
+                    onChange={e => setMedioPago(e.target.value)}
+                    required
+                    className={inputCls}
+                  >
+                    {mediosPagoActivos.map((m: any) => (
+                      <option key={m.id || m.codigo} value={m.codigo}>
+                        {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
           </div>
 

@@ -61,6 +61,15 @@ export class CreateFacturaCompraDto {
   @IsOptional() @IsInt()
   documentoConfigId?: number;
 
+  @IsOptional() @IsInt()
+  documentoCxpId?: number;
+
+  @IsOptional() @IsInt()
+  documentoCeId?: number;
+
+  @IsOptional() @IsInt()
+  cajaBancoId?: number;
+
   @IsOptional() @IsString()
   recepcionId?: string;
 

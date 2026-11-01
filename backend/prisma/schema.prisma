@@ -245,6 +245,8 @@ model DocumentoConfig {
   movimientosInventario MovimientoInventario[]
   ordenesCompra         OrdenCompra[]
   facturasCompra        FacturaCompra[]
+  facturasCompraCxp     FacturaCompra[]  @relation("FacturaCompraDocumentoCxp")
+  facturasCompraCe      FacturaCompra[]  @relation("FacturaCompraDocumentoCe")
   recepcionesMercancia  RecepcionMercancia[]
   recibosCaja           ReciboCaja[]
   egresos               Egreso[]
@@ -1024,6 +1026,20 @@ model FacturaCompra {
 
   documentoConfigId     Int?
   documentoConfig       DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+
+  documentoCxpId        Int?
+  documentoCxp          DocumentoConfig? @relation("FacturaCompraDocumentoCxp", fields: [documentoCxpId], references: [id])
+  numeroCxp             String?
+
+  documentoCeId         Int?
+  documentoCe           DocumentoConfig? @relation("FacturaCompraDocumentoCe", fields: [documentoCeId], references: [id])
+  numeroCe              String?
+
+  cajaBancoId           Int?
+  cajaBanco             CajaBanco?       @relation(fields: [cajaBancoId], references: [id])
+
+  egresoId              Int?
+  egreso                Egreso?          @relation("FacturaCompraEgresoDirecto", fields: [egresoId], references: [id])
 
   numero                String
   prefijoProveedor      String?
@@ -2170,6 +2186,7 @@ model CajaBanco {
   egresos         Egreso[]
   reembolsosCajaMenor ReembolsoCajaMenor[]
   cajasMenores    CajaMenor[]
+  facturasCompra  FacturaCompra[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -2694,6 +2711,8 @@ model Egreso {
 
   documentoConfigId Int?
   documentoConfig   DocumentoConfig? @relation(fields: [documentoConfigId], references: [id])
+
+  facturasCompra    FacturaCompra[]  @relation("FacturaCompraEgresoDirecto")
 
   estado            String       @default("APROBADO") // APROBADO | ANULADO
   notas             String?

@@ -13,6 +13,12 @@ export class FacturasCompraService implements OnModuleInit {
         ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0;
         ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0;
         ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCxpId" INTEGER;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCxp" TEXT;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCeId" INTEGER;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCe" TEXT;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "cajaBancoId" INTEGER;
+        ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "egresoId" INTEGER;
       `);
     } catch (err) {
       console.warn('Advertencia asegurando columnas FacturaCompra:', err);
@@ -45,6 +51,9 @@ export class FacturasCompraService implements OnModuleInit {
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
         ordenCompra: { select: { id: true, numero: true } },
         documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+        documentoCxp: { select: { id: true, nombre: true, prefijo: true } },
+        documentoCe: { select: { id: true, nombre: true, prefijo: true } },
+        cajaBanco: { select: { id: true, nombre: true, tipo: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -58,6 +67,9 @@ export class FacturasCompraService implements OnModuleInit {
         items: { include: { producto: { select: { nombre: true, sku: true } } } },
         ordenCompra: { select: { id: true, numero: true } },
         documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
+        documentoCxp: { select: { id: true, nombre: true, prefijo: true } },
+        documentoCe: { select: { id: true, nombre: true, prefijo: true } },
+        cajaBanco: { select: { id: true, nombre: true, tipo: true } },
       },
     });
     if (!fc) throw new NotFoundException('Factura de compra no encontrada');
@@ -110,13 +122,21 @@ export class FacturasCompraService implements OnModuleInit {
         numero = await this.generarConsecutivoInterno(empresaId, tx);
       }
 
-      // 1. Determinar condiciones de pago y vencimiento
+      // 1. Determinar condiciones de pago, vencimiento y documentos de soporte (CXP / CE)
       const isCredito = dto.formaPago === 'CREDITO';
       const totalNum = Number(dto.total);
       const saldoNum = isCredito ? totalNum : 0;
       const totalPagadoNum = isCredito ? 0 : totalNum;
 
       let fechaVenc: Date | null = null;
+      let numeroCxp: string | null = null;
+      let docCxpId: number | null = null;
+
+      let numeroCe: string | null = null;
+      let docCeId: number | null = null;
+      let cuentaTesoreriaPuc: any = null;
+      let cajaBancoObj: any = null;
+
       if (isCredito) {
         if (dto.fechaVencimiento) {
           fechaVenc = new Date(dto.fechaVencimiento);
@@ -125,8 +145,83 @@ export class FacturasCompraService implements OnModuleInit {
           emision.setDate(emision.getDate() + (Number(dto.diasCredito) || 30));
           fechaVenc = emision;
         }
+
+        // Resolución de CXP (Cuenta por Pagar)
+        if (dto.documentoCxpId) {
+          const docCxp = await tx.documentoConfig.findFirst({
+            where: { id: dto.documentoCxpId, empresaId, sigla: 'CXP' },
+          });
+          if (docCxp) {
+            numeroCxp = `${docCxp.prefijo}-${String(docCxp.consecutivoSiguiente).padStart(5, '0')}`;
+            await tx.documentoConfig.update({
+              where: { id: docCxp.id },
+              data: { consecutivoSiguiente: { increment: 1 } },
+            });
+            docCxpId = docCxp.id;
+          }
+        } else {
+          const docCxp = await tx.documentoConfig.findFirst({
+            where: { empresaId, sigla: 'CXP', estado: 'ACTIVO' },
+          });
+          if (docCxp) {
+            numeroCxp = `${docCxp.prefijo}-${String(docCxp.consecutivoSiguiente).padStart(5, '0')}`;
+            await tx.documentoConfig.update({
+              where: { id: docCxp.id },
+              data: { consecutivoSiguiente: { increment: 1 } },
+            });
+            docCxpId = docCxp.id;
+          }
+        }
       } else {
         fechaVenc = new Date(dto.fechaEmision);
+
+        // Resolución de CE (Comprobante de Egreso)
+        if (dto.documentoCeId) {
+          const docCe = await tx.documentoConfig.findFirst({
+            where: { id: dto.documentoCeId, empresaId, sigla: 'CE' },
+          });
+          if (docCe) {
+            numeroCe = `${docCe.prefijo}-${String(docCe.consecutivoSiguiente).padStart(5, '0')}`;
+            await tx.documentoConfig.update({
+              where: { id: docCe.id },
+              data: { consecutivoSiguiente: { increment: 1 } },
+            });
+            docCeId = docCe.id;
+          }
+        } else {
+          const docCe = await tx.documentoConfig.findFirst({
+            where: { empresaId, sigla: 'CE', estado: 'ACTIVO' },
+          });
+          if (docCe) {
+            numeroCe = `${docCe.prefijo}-${String(docCe.consecutivoSiguiente).padStart(5, '0')}`;
+            await tx.documentoConfig.update({
+              where: { id: docCe.id },
+              data: { consecutivoSiguiente: { increment: 1 } },
+            });
+            docCeId = docCe.id;
+          } else {
+            numeroCe = `CE-${new Date(dto.fechaEmision).getFullYear()}-00001`;
+          }
+        }
+
+        // Resolver Caja / Banco de salida
+        if (dto.cajaBancoId) {
+          cajaBancoObj = await tx.cajaBanco.findFirst({
+            where: { id: dto.cajaBancoId, empresaId },
+          });
+          if (cajaBancoObj?.cuentaPUC) {
+            cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: cajaBancoObj.cuentaPUC },
+            });
+          }
+        }
+
+        if (!cuentaTesoreriaPuc) {
+          const defCod = cajaBancoObj?.tipo === 'CAJA' ? '110505' : '111005';
+          cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
+          });
+        }
       }
 
       // 1. Persistir la factura de compra
@@ -135,6 +230,11 @@ export class FacturasCompraService implements OnModuleInit {
           empresaId,
           numero,
           documentoConfigId: dto.documentoConfigId,
+          documentoCxpId: docCxpId,
+          numeroCxp: numeroCxp,
+          documentoCeId: docCeId,
+          numeroCe: numeroCe,
+          cajaBancoId: dto.cajaBancoId || undefined,
           prefijoProveedor: dto.prefijoProveedor,
           consecutivoProveedor: dto.consecutivoProveedor,
           proveedorId: dto.proveedorId,
@@ -356,6 +456,85 @@ export class FacturasCompraService implements OnModuleInit {
         },
       });
 
+      // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Pago (CP)
+      if (!isCredito && cuentaTesoreriaPuc && cuentaProveedores) {
+        const egreso = await tx.egreso.create({
+          data: {
+            empresaId,
+            numero: numeroCe || `CE-${anio}-${String(fc.id).padStart(5, '0')}`,
+            fecha,
+            terceroId: dto.proveedorId,
+            beneficiarioNombre: proveedor.nombre,
+            beneficiarioDoc: proveedor.numeroDocumento,
+            categoriaGasto: 'COMPRA MERCANCIA',
+            concepto: `Pago Factura Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+            referencia: fc.numero,
+            cuentaGastoId: cuentaProveedores.id,
+            cajaBancoId: dto.cajaBancoId || undefined,
+            medioPago: dto.medioPago || 'TRANSFERENCIA',
+            monto: totalNum,
+            montoNeto: totalNum,
+            estado: 'APROBADO',
+            usuarioId,
+            documentoConfigId: docCeId || undefined,
+          },
+        });
+
+        // Consecutivo del comprobante de egreso
+        const lastCompEgreso = await tx.comprobante.findFirst({
+          where: { empresaId, tipo: 'CP' },
+          orderBy: { id: 'desc' },
+        });
+        const seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
+        const numCompEgreso = `CP-${anio}-${String(seqCompEgreso).padStart(5, '0')}`;
+
+        const compEgreso = await tx.comprobante.create({
+          data: {
+            empresaId,
+            numero: numCompEgreso,
+            tipo: 'CP',
+            concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+            fecha,
+            periodoId: periodo.id,
+            referenciaId: egreso.id,
+            referenciaTipo: 'EGRESO',
+            usuarioId,
+            lineas: {
+              create: [
+                {
+                  cuentaId: cuentaProveedores.id,
+                  descripcion: `Cancelación proveedor - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+                  debito: totalNum,
+                  credito: 0,
+                  terceroNit: proveedor.numeroDocumento,
+                  terceroNombre: proveedor.nombre,
+                  orden: 0,
+                },
+                {
+                  cuentaId: cuentaTesoreriaPuc.id,
+                  descripcion: `Salida fondos ${cajaBancoObj?.nombre || 'Tesorería'} - ${egreso.numero}`,
+                  debito: 0,
+                  credito: totalNum,
+                  terceroNit: proveedor.numeroDocumento,
+                  terceroNombre: proveedor.nombre,
+                  orden: 1,
+                },
+              ],
+            },
+          },
+        });
+
+        await tx.egreso.update({
+          where: { id: egreso.id },
+          data: { comprobanteId: compEgreso.id },
+        });
+
+        await tx.facturaCompra.update({
+          where: { id: fc.id },
+          data: { egresoId: egreso.id },
+        });
+      }
+
       return fc;
     });
   }
@@ -378,13 +557,44 @@ export class FacturasCompraService implements OnModuleInit {
       throw new BadRequestException('No se puede anular la factura de compra porque ya tiene recepciones registradas en inventario.');
     }
 
-    const totalPagado = Number(fc.totalPagado ?? 0);
-    if (totalPagado > 0) {
-      throw new BadRequestException(`No se puede anular la factura de compra porque registra abonos o pagos por valor de $${totalPagado.toLocaleString('es-CO')}. Debe anular primero los comprobantes de egreso asociados.`);
-    }
+    // Buscar si existe un Egreso contable real en la tabla Egreso
+    const egresoAsociado = (fc as any).egresoId
+      ? await this.prisma.egreso.findFirst({ where: { id: (fc as any).egresoId, empresaId } })
+      : await this.prisma.egreso.findFirst({
+          where: {
+            empresaId,
+            OR: [
+              { referencia: fc.numero },
+              { concepto: { contains: fc.consecutivoProveedor } },
+            ],
+            estado: { not: 'ANULADO' },
+          },
+        });
 
     return this.prisma.$transaction(async (tx) => {
-      // 1. Anular comprobantes contables vinculados (FP causación)
+      // 1. Si hay un Egreso contable real asociado, anularlo automáticamente
+      if (egresoAsociado && egresoAsociado.estado !== 'ANULADO') {
+        await tx.egreso.update({
+          where: { id: egresoAsociado.id },
+          data: {
+            estado: 'ANULADO',
+            notas: motivo ? `[ANULADO POR ANULACIÓN FC: ${motivo}]` : '[ANULADO POR ANULACIÓN FC]',
+          },
+        });
+
+        // Anular también comprobantes contables vinculados al egreso
+        const compEgresos = await tx.comprobante.findMany({
+          where: { empresaId, referenciaId: egresoAsociado.id, referenciaTipo: 'EGRESO' },
+        });
+        for (const ceComp of compEgresos) {
+          await tx.comprobante.update({
+            where: { id: ceComp.id },
+            data: { estado: 'ANULADO' },
+          });
+        }
+      }
+
+      // 2. Anular comprobantes contables vinculados a la causación de la FC (FP)
       const comprobantes = await tx.comprobante.findMany({
         where: { empresaId, referenciaId: id, referenciaTipo: 'FACTURA_COMPRA' },
       });
@@ -393,12 +603,12 @@ export class FacturasCompraService implements OnModuleInit {
           where: { id: comp.id },
           data: {
             estado: 'ANULADO',
-            concepto: motivo ? `${comp.concepto} [ANULADO: ${motivo}]` : `${comp.concepto} [ANULADO]`
+            concepto: motivo ? `${comp.concepto} [ANULADO: ${motivo}]` : `${comp.concepto} [ANULADO]`,
           },
         });
       }
 
-      // 2. Si vino vinculada a una Orden de Compra, revertir estado de OC a 'APROBADA'
+      // 3. Si vino vinculada a una Orden de Compra, revertir estado de OC a 'APROBADA'
       if (fc.ordenCompraId) {
         await tx.ordenCompra.update({
           where: { id: fc.ordenCompraId },
@@ -406,7 +616,7 @@ export class FacturasCompraService implements OnModuleInit {
         });
       }
 
-      // 3. Anulación lógica de factura de compra
+      // 4. Anulación lógica de factura de compra
       const notaAnulacion = motivo ? `[ANULADA: ${motivo}]` : '[ANULADA]';
       const notasActualizadas = fc.notas ? `${fc.notas} | ${notaAnulacion}` : notaAnulacion;
 
@@ -415,6 +625,7 @@ export class FacturasCompraService implements OnModuleInit {
         data: {
           estado: 'ANULADA',
           saldo: 0,
+          totalPagado: 0,
           notas: notasActualizadas,
         },
         include: {

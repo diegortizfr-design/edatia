@@ -369,10 +369,20 @@ export function Compras() {
                         <td className="px-6 py-4 font-mono font-bold text-slate-700">
                           <Link 
                             to={`/inventario/movimientos?ver=${fc.numero}`}
-                            className="text-indigo-600 hover:text-indigo-850 hover:underline"
+                            className="text-indigo-600 hover:text-indigo-850 hover:underline block"
                           >
                             {fc.numero}
                           </Link>
+                          {fc.numeroCxp && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              CXP: {fc.numeroCxp}
+                            </span>
+                          )}
+                          {fc.numeroCe && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              CE: {fc.numeroCe}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-800">
                           {fc.prefijoProveedor ? `${fc.prefijoProveedor}-` : ''}{fc.consecutivoProveedor}
