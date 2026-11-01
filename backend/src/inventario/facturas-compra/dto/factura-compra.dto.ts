@@ -13,6 +13,15 @@ export class FacturaCompraItemDto {
 
   @IsNumber() @Min(0)
   subtotal!: number;
+
+  @IsOptional() @IsNumber()
+  ivaValor?: number;
+
+  @IsOptional() @IsNumber()
+  ivaPct?: number;
+
+  @IsOptional() @IsNumber()
+  descuentoPct?: number;
 }
 
 export class CreateFacturaCompraDto {

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
 import { getDocumentosConfig, getFormasPago, getMediosPago } from '../../services/configuracion.service'
-import { getCajasBancos } from '../../services/erp.service'
+import { getCajasBancos, getImpuestos } from '../../services/erp.service'
 import { 
   ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2, 
   Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2 
@@ -19,7 +19,8 @@ interface LineaItem {
   cantidad: string
   costoUnitario: string
   descuentoPct: string
-  tipoIva: string
+  ivaPct: number
+  tipoIva?: string
 }
 
 function fmt(n: number) {
@@ -66,6 +67,60 @@ export function NuevaFcForm() {
   const cajasBancosActivos = useMemo(() => {
     return (cajasBancos as any[]).filter((cb: any) => cb.activo !== false)
   }, [cajasBancos])
+
+  // Impuestos del sistema (Configuración > General > Contable / Impuestos)
+  const { data: impuestos = [] } = useQuery({
+    queryKey: ['impuestos'],
+    queryFn: getImpuestos,
+  })
+
+  const impuestosIva = useMemo(() => {
+    return (impuestos as any[]).filter((imp: any) =>
+      (imp.tipo === 'IVA' || imp.tipo === 'CONSUMO') &&
+      imp.activo !== false &&
+      imp.estado !== 'INACTIVO' &&
+      imp.retencionCompra !== true
+    )
+  }, [impuestos])
+
+  function resolveProductoIva(producto: any): number {
+    const isExento = producto.productoExentoIva === true || 
+                     producto.liquidarIva === false || 
+                     producto.tipoIva === 'EXENTO' || 
+                     producto.tipoIva === 'EXCLUIDO' ||
+                     (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
+    if (isExento) return 0
+
+    // 1. Resolver por appliedTaxIds buscando en los impuestos del sistema
+    if (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length > 0) {
+      for (const taxId of producto.appliedTaxIds) {
+        const matching = (impuestos as any[]).find((t: any) => 
+          String(t.id) === String(taxId) || 
+          (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
+          (taxId === 'iva_5' && Number(t.tarifa) === 5)
+        )
+        if (matching && Number(matching.tarifa) >= 0) {
+          return Number(matching.tarifa)
+        }
+      }
+    }
+
+    // 2. Resolver por tipoIva estándar
+    if (producto.tipoIva === 'GRAVADO_5' || producto.tipoIva === 'IVA_5') return 5
+    if (producto.tipoIva === 'GRAVADO_19' || producto.tipoIva === 'IVA_19') return 19
+    if (typeof producto.tipoIva === 'string' && producto.tipoIva.startsWith('GRAVADO_')) {
+      const parsed = parseFloat(producto.tipoIva.replace('GRAVADO_', ''))
+      if (!isNaN(parsed)) return parsed
+    }
+
+    // 3. Fallback a impuesto por defecto configurado
+    if (impuestosIva.length > 0) {
+      const def = impuestosIva.find((t: any) => t.esDefecto) || impuestosIva[0]
+      return Number(def.tarifa) || 0
+    }
+
+    return 19
+  }
 
   // Estados de documentos específicos
   const [documentoCeId, setDocumentoCeId] = useState('')
@@ -242,8 +297,17 @@ export function NuevaFcForm() {
       
       const mappedItems = rpObj.items.map((ri: any) => {
         const prod = ri.ordenCompraItem?.producto || {}
-        const ivaItemValor = Number(ri.ordenCompraItem?.ivaValor) || 0
-        const esExento = ivaItemValor === 0 || prod.productoExentoIva || prod.liquidarIva === false || prod.tipoIva === 'EXENTO' || prod.tipoIva === 'EXCLUIDO'
+        let ivaTarifa = 19
+        if (ri.ordenCompraItem?.ivaPct !== undefined) {
+          ivaTarifa = Number(ri.ordenCompraItem.ivaPct)
+        } else if (Number(ri.ordenCompraItem?.ivaValor) === 0) {
+          ivaTarifa = 0
+        } else if (Number(ri.ordenCompraItem?.subtotal) > 0 && Number(ri.ordenCompraItem?.ivaValor) > 0) {
+          ivaTarifa = Math.round((Number(ri.ordenCompraItem.ivaValor) / Number(ri.ordenCompraItem.subtotal)) * 100)
+        } else {
+          ivaTarifa = resolveProductoIva(prod)
+        }
+
         return {
           productoId: ri.ordenCompraItem?.productoId || 0,
           productoNombre: prod.nombre || 'Producto recibido',
@@ -251,7 +315,8 @@ export function NuevaFcForm() {
           cantidad: String(Math.round(Number(ri.cantidadRecibida)) || 1),
           costoUnitario: String(Math.round(Number(ri.costoUnitario)) || 0),
           descuentoPct: '0',
-          tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
+          ivaPct: ivaTarifa,
+          tipoIva: ivaTarifa === 0 ? 'EXCLUIDO' : `IVA_${ivaTarifa}`,
         }
       })
       setItems(mappedItems)
@@ -269,8 +334,17 @@ export function NuevaFcForm() {
       setProveedorId(String(ocObj.proveedorId))
       const mappedItems = ocObj.items.map((item: any) => {
         const prod = item.producto || {}
-        const ivaItemValor = Number(item.ivaValor) || 0
-        const esExento = ivaItemValor === 0 || prod.productoExentoIva || prod.liquidarIva === false || prod.tipoIva === 'EXENTO' || prod.tipoIva === 'EXCLUIDO'
+        let ivaTarifa = 19
+        if (item.ivaPct !== undefined) {
+          ivaTarifa = Number(item.ivaPct)
+        } else if (Number(item.ivaValor) === 0) {
+          ivaTarifa = 0
+        } else if (Number(item.subtotal) > 0 && Number(item.ivaValor) > 0) {
+          ivaTarifa = Math.round((Number(item.ivaValor) / Number(item.subtotal)) * 100)
+        } else {
+          ivaTarifa = resolveProductoIva(prod)
+        }
+
         return {
           productoId: item.productoId,
           productoNombre: prod.nombre || 'Producto',
@@ -278,7 +352,8 @@ export function NuevaFcForm() {
           cantidad: String(Math.round(parseFloat(item.cantidad) - parseFloat(item.cantidadRecibida || 0)) || 1),
           costoUnitario: String(Math.round(Number(item.costoUnitario)) || 0),
           descuentoPct: String(item.descuentoPct || 0),
-          tipoIva: esExento ? 'EXCLUIDO' : (prod.tipoIva === 'GRAVADO_5' || prod.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
+          ivaPct: ivaTarifa,
+          tipoIva: ivaTarifa === 0 ? 'EXCLUIDO' : `IVA_${ivaTarifa}`,
         }
       })
       setItems(mappedItems.filter((i: any) => parseFloat(i.cantidad) > 0))
@@ -309,8 +384,7 @@ export function NuevaFcForm() {
       return
     }
     const costoSugerido = Number(producto.costo) || Number(producto.costoPromedio) || Number(producto.costoUltimo) || 0
-    const esExento = producto.productoExentoIva || !producto.liquidarIva || producto.tipoIva === 'EXENTO' || producto.tipoIva === 'EXCLUIDO' || (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
-    const tipoIva = esExento ? 'EXCLUIDO' : (producto.tipoIva === 'GRAVADO_5' || producto.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
+    const ivaTarifa = resolveProductoIva(producto)
     setItems(prev => [...prev, {
       productoId: producto.id,
       productoNombre: producto.nombre,
@@ -318,7 +392,8 @@ export function NuevaFcForm() {
       cantidad: '1',
       costoUnitario: String(Math.round(costoSugerido) || 0),
       descuentoPct: '0',
-      tipoIva: tipoIva,
+      ivaPct: ivaTarifa,
+      tipoIva: ivaTarifa === 0 ? 'EXCLUIDO' : `IVA_${ivaTarifa}`,
     }])
     setBusqueda('')
   }
@@ -358,7 +433,7 @@ export function NuevaFcForm() {
     setItems(prev => prev.filter((_, i) => i !== idx))
   }
 
-  function updateItem(idx: number, field: keyof LineaItem, val: string) {
+  function updateItem(idx: number, field: keyof LineaItem, val: any) {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item))
   }
 
@@ -368,16 +443,19 @@ export function NuevaFcForm() {
     const dto = parseFloat(item.descuentoPct) || 0
     const subtotal = cant * costo * (1 - dto / 100)
 
-    let tasaIva = 0.19
-    if (item.tipoIva === 'EXENTO' || item.tipoIva === 'EXCLUIDO') tasaIva = 0
-    else if (item.tipoIva === 'IVA_5' || item.tipoIva === 'GRAVADO_5') tasaIva = 0.05
-    else if (typeof item.tipoIva === 'string' && item.tipoIva.startsWith('GRAVADO_')) {
-      const p = parseFloat(item.tipoIva.replace('GRAVADO_', ''))
-      if (!isNaN(p)) tasaIva = p / 100
-    }
-    const ivaCalc = subtotal * tasaIva
+    let tasaIva = (item.ivaPct !== undefined ? item.ivaPct : 19) / 100
+    if (isNaN(tasaIva) || tasaIva < 0) tasaIva = 0
 
-    return { ...item, subtotalCalc: subtotal, ivaCalc }
+    const ivaCalc = subtotal * tasaIva
+    const totalCalc = subtotal + ivaCalc
+
+    return { 
+      ...item, 
+      ivaPct: item.ivaPct !== undefined ? item.ivaPct : Math.round(tasaIva * 100),
+      subtotalCalc: subtotal, 
+      ivaCalc, 
+      totalCalc 
+    }
   })
   const totalSubtotal = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
   const totalIva = lineas.reduce((acc, l) => acc + l.ivaCalc, 0)
@@ -873,21 +951,24 @@ export function NuevaFcForm() {
                 <thead>
                   <tr className="text-slate-400 uppercase font-semibold text-[10px] border-b border-slate-100 pb-2">
                     <th className="text-left pb-2">Producto</th>
-                    <th className="text-right pb-2 w-24">Cantidad</th>
+                    <th className="text-right pb-2 w-20">Cantidad</th>
                     <th className="text-right pb-2 w-32">Costo Unitario</th>
-                    <th className="text-right pb-2 w-24">Descuento %</th>
-                    <th className="text-right pb-2 w-32">Subtotal</th>
+                    <th className="text-right pb-2 w-20">Descuento %</th>
+                    <th className="text-right pb-2 w-28">Subtotal</th>
+                    <th className="text-center pb-2 w-36">% Impuesto</th>
+                    <th className="text-right pb-2 w-28">$ Impuesto</th>
+                    <th className="text-right pb-2 w-28">Total</th>
                     <th className="pb-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {lineas.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-3">
+                      <td className="py-3 pr-2">
                         <p className="font-semibold text-slate-800">{item.productoNombre}</p>
                         <p className="text-[10px] font-mono text-slate-400">{item.productoSku}</p>
                       </td>
-                      <td className="py-3 pl-2">
+                      <td className="py-3 pl-1">
                         <input 
                           type="number" 
                           min="1" 
@@ -897,13 +978,13 @@ export function NuevaFcForm() {
                           className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-mono" 
                         />
                       </td>
-                      <td className="py-3 pl-2">
+                      <td className="py-3 pl-1">
                         <CurrencyInput
                           value={item.costoUnitario}
                           onChange={val => updateItem(idx, 'costoUnitario', val)}
                         />
                       </td>
-                      <td className="py-3 pl-2">
+                      <td className="py-3 pl-1">
                         <input 
                           type="number" 
                           min="0" 
@@ -911,10 +992,43 @@ export function NuevaFcForm() {
                           step="0.01" 
                           value={item.descuentoPct}
                           onChange={e => updateItem(idx, 'descuentoPct', e.target.value)}
-                          className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" 
+                          className="w-full text-right px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-mono" 
                         />
                       </td>
-                      <td className="py-3 text-right font-extrabold text-slate-700">{fmt(item.subtotalCalc)}</td>
+                      <td className="py-3 pl-2 text-right font-medium text-slate-700 font-mono">
+                        {fmt(item.subtotalCalc)}
+                      </td>
+                      <td className="py-3 px-1">
+                        <select
+                          value={item.ivaPct}
+                          onChange={e => {
+                            const val = Number(e.target.value)
+                            updateItem(idx, 'ivaPct', val)
+                            updateItem(idx, 'tipoIva', val === 0 ? 'EXCLUIDO' : `IVA_${val}`)
+                          }}
+                          className={`w-full px-2 py-1.5 border rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer ${
+                            item.ivaPct > 0 
+                              ? 'border-indigo-200 bg-indigo-50/60 text-indigo-700' 
+                              : 'border-slate-200 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <option value={0}>0% (Exento)</option>
+                          {impuestosIva.map((imp: any) => (
+                            <option key={imp.id} value={Number(imp.tarifa)}>
+                              {imp.tarifa}% ({imp.nombre})
+                            </option>
+                          ))}
+                          {item.ivaPct > 0 && !impuestosIva.some((imp: any) => Number(imp.tarifa) === Number(item.ivaPct)) && (
+                            <option value={item.ivaPct}>{item.ivaPct}% (IVA {item.ivaPct}%)</option>
+                          )}
+                        </select>
+                      </td>
+                      <td className="py-3 pl-2 text-right font-bold text-indigo-600 font-mono">
+                        {fmt(item.ivaCalc)}
+                      </td>
+                      <td className="py-3 pl-2 text-right font-extrabold text-slate-800 font-mono">
+                        {fmt(item.totalCalc)}
+                      </td>
                       <td className="py-3 text-right">
                         <button type="button" onClick={() => removeItem(idx)} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
                           <Trash2 size={14} />
@@ -925,18 +1039,18 @@ export function NuevaFcForm() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-100">
-                    <td colSpan={4} className="pt-4 text-right text-xs font-bold text-slate-500">Subtotal Factura:</td>
-                    <td className="pt-4 text-right text-sm font-extrabold text-slate-800">{fmt(totalSubtotal)}</td>
+                    <td colSpan={7} className="pt-4 text-right text-xs font-bold text-slate-500">Subtotal Factura:</td>
+                    <td className="pt-4 text-right text-sm font-extrabold text-slate-800 font-mono">{fmt(totalSubtotal)}</td>
                     <td></td>
                   </tr>
                   <tr>
-                    <td colSpan={4} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (IVA calculado):</td>
-                    <td className="pt-1 text-right text-sm font-extrabold text-slate-800">{fmt(totalIva)}</td>
+                    <td colSpan={7} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (IVA calculado):</td>
+                    <td className="pt-1 text-right text-sm font-extrabold text-indigo-600 font-mono">{fmt(totalIva)}</td>
                     <td></td>
                   </tr>
                   <tr className="border-t border-dashed border-slate-200">
-                    <td colSpan={4} className="pt-2 text-right text-xs font-bold text-slate-600">Total Factura Proveedor:</td>
-                    <td className="pt-2 text-right text-base font-black text-indigo-600">{fmt(totalFactura)}</td>
+                    <td colSpan={7} className="pt-2 text-right text-xs font-bold text-slate-600">Total Factura Proveedor:</td>
+                    <td className="pt-2 text-right text-base font-black text-indigo-600 font-mono">{fmt(totalFactura)}</td>
                     <td></td>
                   </tr>
                 </tfoot>
