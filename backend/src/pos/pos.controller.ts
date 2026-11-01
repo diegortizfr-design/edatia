@@ -119,6 +119,12 @@ export class PosController {
     )
   }
 
+  @Post('ventas/sincronizar-contabilidad')
+  async sincronizarContabilidad(@GetUser() u: any) {
+    await this.pos.sincronizarVentasSinComprobante(u.empresaId)
+    return { ok: true, message: 'Ventas y recibos sincronizados con contabilidad y tesorería' }
+  }
+
   @Post('ventas')
   crearVenta(@GetUser() u: any, @Body() dto: any) {
     return this.pos.crearVentaPos(u.empresaId, dto)

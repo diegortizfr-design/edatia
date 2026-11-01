@@ -91,7 +91,21 @@ export function ReciboCaja() {
                 {(recibos as any[]).map((r: any) => (
                   <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3 font-mono text-xs font-semibold text-indigo-700">
-                      {r.numero}
+                      <div className="flex items-center gap-1.5">
+                        <span>{r.numero}</span>
+                        {r.documentoConfig?.sigla && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                            {r.documentoConfig.sigla}
+                          </span>
+                        )}
+                      </div>
+                      {(r.ventasPos?.[0]?.numero || (r.referencia && (r.referencia.startsWith('FVP') || r.referencia.startsWith('POS')))) && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Ticket POS: {r.ventasPos?.[0]?.numero || r.referencia}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 font-medium text-slate-800 max-w-[140px] truncate">
                       {r.cliente?.nombre ?? '—'}

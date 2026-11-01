@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getVentasPos, anularVentaPos, getCajas, getSesiones, getSesion } from '../../services/pos.service'
+import { getVentasPos, anularVentaPos, getCajas, getSesiones, getSesion, sincronizarContabilidadPos } from '../../services/pos.service'
 import { Link } from 'react-router-dom'
 import { 
   Search, Printer, Eye, XCircle, Calendar, CreditCard, Banknote, Smartphone, 
   CheckCircle, AlertTriangle, FileText, Send, Lock, ArrowUpRight, TrendingUp, 
-  Coins, User, CheckCircle2, Clock, ShieldCheck, X
+  Coins, User, CheckCircle2, Clock, ShieldCheck, X, Receipt, RefreshCw
 } from 'lucide-react'
 
 const cop = (n: number) =>
@@ -98,6 +98,18 @@ export function VentasPosList() {
     },
     onError: (err: any) => {
       alert(err?.response?.data?.message || 'Error al anular la venta')
+    }
+  })
+
+  const mutSync = useMutation({
+    mutationFn: sincronizarContabilidadPos,
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['ventas-pos'] })
+      qc.invalidateQueries({ queryKey: ['sesiones-pos'] })
+      alert(data?.message || 'Ventas y recibos sincronizados exitosamente con Tesorería')
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.message || 'Error al sincronizar con tesorería')
     }
   })
 
@@ -292,6 +304,16 @@ export function VentasPosList() {
             </button>
           </div>
 
+          <button
+            onClick={() => mutSync.mutate()}
+            disabled={mutSync.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-colors shadow-sm disabled:opacity-50"
+            title="Sincronizar ventas y recibos con tesorería"
+          >
+            <RefreshCw size={13} className={mutSync.isPending ? 'animate-spin' : ''} />
+            {mutSync.isPending ? 'Sincronizando...' : 'Sincronizar Tesorería'}
+          </button>
+
           <Link to="/ventas/facturas/pendientes-emitir"
             className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold hover:bg-orange-100 transition-colors shadow-sm"
           >
@@ -427,7 +449,7 @@ export function VentasPosList() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-slate-400 uppercase tracking-wider font-bold border-b border-slate-100 bg-slate-50/20">
-                      <th className="px-6 py-3.5 text-left">Número</th>
+                      <th className="px-6 py-3.5 text-left">Ticket / Recibo Caja</th>
                       <th className="px-6 py-3.5 text-left">Caja POS</th>
                       <th className="px-6 py-3.5 text-left">Fecha</th>
                       <th className="px-6 py-3.5 text-left">Cliente</th>
@@ -444,7 +466,25 @@ export function VentasPosList() {
                       const hasTransfer = Number(v.pagoTransferencia) + Number(v.pagoNequi) > 0
                       return (
                         <tr key={v.id} className="hover:bg-slate-50/30 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-xs text-indigo-700">{v.numero}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-mono font-bold text-xs text-indigo-700 flex items-center gap-1.5">
+                              <FileText size={13} className="text-indigo-400" />
+                              <span>{v.numero}</span>
+                            </div>
+                            {v.reciboCaja?.numero ? (
+                              <div className="mt-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <Receipt size={10} /> RC: {v.reciboCaja.numero}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="mt-1">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-slate-400 bg-slate-100">
+                                  Sin RC
+                                </span>
+                              </div>
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             <span className="font-bold text-slate-800 text-xs">{v.sesion?.caja?.nombre || '—'}</span>
                           </td>
@@ -753,6 +793,33 @@ export function VentasPosList() {
             </div>
 
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              {/* Recibo de Caja y Comprobante Contable Vinculados */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Recibo de Caja (RC)</span>
+                    <span className="font-mono font-bold text-emerald-900 text-xs">
+                      {selectedVenta.reciboCaja?.numero || 'Generado en POS'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    {selectedVenta.reciboCaja?.estado || 'ACTIVO'}
+                  </span>
+                </div>
+
+                <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Asiento Tesorería</span>
+                    <span className="font-mono font-bold text-indigo-900 text-xs">
+                      {selectedVenta.comprobante?.numero || 'Generado'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                    {selectedVenta.comprobante?.estado || 'CONTABILIZADO'}
+                  </span>
+                </div>
+              </div>
+
               <div className="flex justify-between text-slate-500">
                 <span>Fecha y Hora:</span>
                 <span className="font-semibold text-slate-800">{new Date(selectedVenta.fecha).toLocaleString('es-CO')}</span>

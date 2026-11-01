@@ -17,15 +17,24 @@ export class CajasBancosService {
       list.map(async (cb) => {
         let saldoContable = 0;
         if (cb.cuentaPUC) {
-          const cuenta = await this.prisma.cuentaPUC.findFirst({
-            where: { empresaId, codigo: cb.cuentaPUC, activo: true },
+          // Buscar cuenta exacta o todas las subcuentas que comiencen por este código PUC
+          const cuentas = await this.prisma.cuentaPUC.findMany({
+            where: {
+              empresaId,
+              OR: [
+                { codigo: cb.cuentaPUC },
+                { codigo: { startsWith: cb.cuentaPUC } }
+              ],
+              activo: true,
+            },
             select: { id: true },
           });
 
-          if (cuenta) {
+          if (cuentas.length > 0) {
+            const cuentaIds = cuentas.map(c => c.id);
             const aggregates = await this.prisma.comprobanteLinea.aggregate({
               where: {
-                cuentaId: cuenta.id,
+                cuentaId: { in: cuentaIds },
                 comprobante: { empresaId, estado: { not: 'ANULADO' } },
               },
               _sum: { debito: true, credito: true },

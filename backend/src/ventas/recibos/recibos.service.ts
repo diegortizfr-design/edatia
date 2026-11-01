@@ -20,6 +20,8 @@ export class RecibosService {
       where: { empresaId, ...(clienteId ? { clienteId } : {}) },
       include: {
         cliente: { select: { nombre: true } },
+        documentoConfig: { select: { sigla: true, prefijo: true, nombre: true } },
+        ventasPos: { select: { id: true, numero: true, total: true } },
         aplicaciones: {
           include: { factura: { select: { numero: true, total: true } } },
         },
@@ -33,6 +35,8 @@ export class RecibosService {
       where: { id, empresaId },
       include: {
         cliente: true,
+        documentoConfig: true,
+        ventasPos: true,
         aplicaciones: { include: { factura: true } },
       },
     })

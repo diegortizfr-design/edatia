@@ -59,6 +59,9 @@ export const getVentasPos = (params?: {
 
 export const crearVentaPos = (dto: any) => api.post('/pos/ventas', dto).then(r => r.data)
 
+export const sincronizarContabilidadPos = () =>
+  api.post('/pos/ventas/sincronizar-contabilidad').then(r => r.data)
+
 export const anularVentaPos = (id: number, motivo: string) =>
   api.patch(`/pos/ventas/${id}/anular`, { motivo }).then(r => r.data)
 
