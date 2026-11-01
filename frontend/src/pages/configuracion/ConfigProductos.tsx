@@ -215,30 +215,7 @@ const DEFAULT_FORM = {
   appliedTaxIds: [] as string[],
 }
 
-const DEFAULT_SYSTEM_IMPUESTOS = [
-  {
-    id: 'iva_19',
-    codigo: '0',
-    nombre: 'IVA 19%',
-    sigla: 'IVA19',
-    tipo: 'IVA',
-    dianCod: '01',
-    tipoCalculo: 'PORCENTAJE',
-    tarifa: 19,
-    estado: 'ACTIVO',
-  },
-  {
-    id: 'iva_5',
-    codigo: '1',
-    nombre: 'IVA 5%',
-    sigla: 'IVA5',
-    tipo: 'IVA',
-    dianCod: '01',
-    tipoCalculo: 'PORCENTAJE',
-    tarifa: 5,
-    estado: 'ACTIVO',
-  }
-]
+const DEFAULT_SYSTEM_IMPUESTOS: any[] = []
 
 function getLocalMaster(key: string): MasterItem[] {
   const data = localStorage.getItem(key)
@@ -314,22 +291,22 @@ export function ConfigProductos() {
   const tallas: MasterItem[] = talData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
   const clasificaciones: MasterItem[] = clasifData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true, extra: x.pucCuenta }))
   const tags: MasterItem[] = tagData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
-  const systemTaxes: any[] = taxData.length > 0 ? taxData : DEFAULT_SYSTEM_IMPUESTOS
+  // Impuestos cargados dinámicamente desde Configuración Contable (/impuestos)
+  const systemTaxes: any[] = Array.isArray(taxData) ? taxData : []
 
-  // Helper para verificar si un impuesto está seleccionado considerando id o aliases legados
+  // Helper para verificar si un impuesto está seleccionado por su ID real de la base de datos
   const isTaxSelected = (taxId: string | number, selectedList: string[]) => {
+    if (!selectedList || !Array.isArray(selectedList)) return false
     const sId = String(taxId)
     if (selectedList.includes(sId)) return true
     const taxObj = systemTaxes.find(t => String(t.id) === sId)
-    if (!taxObj) return false
-    if (selectedList.includes('iva_19') && Number(taxObj.tarifa) === 19) return true
-    if (selectedList.includes('iva_5') && Number(taxObj.tarifa) === 5) return true
+    if (taxObj && selectedList.includes(taxObj.nombre)) return true
     return false
   }
 
-  // Obtener IDs de impuestos por defecto del sistema
+  // Obtener IDs de impuestos por defecto configurados en el sistema contable
   const getDefaultTaxIds = () => {
-    const activeIva = systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.estado === 'ACTIVO' || t.activo !== false))
+    const activeIva = systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO'))
     if (activeIva.length === 0) return []
     const def = activeIva.find(t => t.esDefecto) || activeIva[0]
     return [String(def.id)]
@@ -337,19 +314,14 @@ export function ConfigProductos() {
 
   const getAppliedTaxRate = (pForm: any) => {
     if (!pForm) return 0
-    if (pForm.productoExentoIva) return 0 // Exento de todo impuesto -> 0%
-    if (!pForm.liquidarIva) return 0 // No liquidar impuestos seleccionados -> 0%
+    if (pForm.productoExentoIva) return 0 // Exento de todo impuesto en ventas -> 0%
+    if (pForm.liquidarIva === false) return 0 // No liquidar impuestos seleccionados -> 0%
 
     let rate = 0
-    if (!pForm.appliedTaxIds || !Array.isArray(pForm.appliedTaxIds)) return 0
-    pForm.appliedTaxIds.forEach((taxId: string) => {
-      const tax = systemTaxes.find(t => 
-        String(t.id) === String(taxId) || 
-        String(t.nombre) === String(taxId) ||
-        (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
-        (taxId === 'iva_5' && Number(t.tarifa) === 5)
-      )
-      if (tax && tax.activo !== false) {
+    const taxesList = Array.isArray(pForm.appliedTaxIds) ? pForm.appliedTaxIds : []
+    taxesList.forEach((taxId: string) => {
+      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
+      if (tax && (tax.activo !== false && tax.estado !== 'INACTIVO')) {
         rate += Number(tax.tarifa || tax.porcentaje) || 0
       }
     })
@@ -461,29 +433,22 @@ export function ConfigProductos() {
     }))
   }, [formData.pacaAlto, formData.pacaAncho, formData.pacaProfundidad])
 
-  // Auto-calculate Costo IVA Integrado based on Costo Unitario Base and selected cost taxes
+  // Auto-calcular Costo IVA Integrado basado estrictamente en el Costo Unitario Base y los impuestos de compra seleccionados
   useEffect(() => {
     const baseCost = Number(formData.costo) || 0
     let rate = 0
-    if (!formData.productoExentoIva && formData.liquidarIva !== false) {
-      costTaxIds.forEach((taxId) => {
-        const tax = systemTaxes.find(t => 
-          String(t.id) === String(taxId) || 
-          String(t.nombre) === String(taxId) ||
-          (taxId === 'iva_19' && Number(t.tarifa) === 19) ||
-          (taxId === 'iva_5' && Number(t.tarifa) === 5)
-        )
-        if (tax && tax.activo !== false) {
-          rate += Number(tax.tarifa || tax.porcentaje) || 0
-        }
-      })
-    }
+    costTaxIds.forEach((taxId) => {
+      const tax = systemTaxes.find(t => String(t.id) === String(taxId) || String(t.nombre) === String(taxId))
+      if (tax && (tax.activo !== false && tax.estado !== 'INACTIVO')) {
+        rate += Number(tax.tarifa || tax.porcentaje) || 0
+      }
+    })
     const integratedCost = baseCost * (1 + rate / 100)
     setFormData(prev => ({
       ...prev,
       costoI: Math.round(integratedCost)
     }))
-  }, [formData.costo, formData.productoExentoIva, formData.liquidarIva, costTaxIds, systemTaxes])
+  }, [formData.costo, costTaxIds, systemTaxes])
 
   const showNotification = (msg: string) => {
     setSuccessMsg(msg)
@@ -778,7 +743,7 @@ export function ConfigProductos() {
       liquidarIva: defTaxes.length > 0,
       precios: Array(11).fill(0)
     })
-    setCostTaxIds(defTaxes)
+    setCostTaxIds([]) // Impuestos de compra inician limpios para que el usuario seleccione
     setError(null)
     setBarcodeInput('')
     setShowBarcodeModal(true)
@@ -796,23 +761,49 @@ export function ConfigProductos() {
 
   const handleOpenEdit = (p: any) => {
     setEditingId(p.id)
-    let initialTaxes: string[] = []
-    const isExempt = p.extData?.productoExentoIva || p.productoExentoIva || p.liquidarIva === false || p.tipoIva === 'EXENTO' || p.tipoIva === 'EXCLUIDO'
+    
+    // 1. Impuestos de VENTA (appliedTaxIds)
+    let initialSalesTaxes: string[] = []
+    const isExempt = p.extData?.productoExentoIva || p.productoExentoIva || p.tipoIva === 'EXENTO'
     if (!isExempt) {
       const savedTaxes = Array.isArray(p.extData?.appliedTaxIds) && p.extData.appliedTaxIds.length > 0
         ? p.extData.appliedTaxIds
         : (Array.isArray(p.appliedTaxIds) && p.appliedTaxIds.length > 0 ? p.appliedTaxIds : [])
 
       if (savedTaxes.length > 0) {
-        initialTaxes = savedTaxes.map(String)
+        initialSalesTaxes = savedTaxes.map(String)
       } else if (p.tipoIva === 'GRAVADO_5' || p.tipoIva === 'IVA_5') {
         const t5 = systemTaxes.find(t => Number(t.tarifa) === 5)
-        if (t5) initialTaxes = [String(t5.id)]
+        if (t5) initialSalesTaxes = [String(t5.id)]
+      } else if (p.tipoIva === 'GRAVADO_19' || p.tipoIva === 'IVA_19') {
+        const t19 = systemTaxes.find(t => Number(t.tarifa) === 19)
+        if (t19) initialSalesTaxes = [String(t19.id)]
       } else {
-        const def = systemTaxes.find(t => t.esDefecto) || systemTaxes.find(t => Number(t.tarifa) === 19) || systemTaxes[0]
-        if (def) initialTaxes = [String(def.id)]
+        const def = systemTaxes.find(t => t.esDefecto) || systemTaxes[0]
+        if (def) initialSalesTaxes = [String(def.id)]
       }
     }
+
+    // 2. Impuestos de COSTO / COMPRA (costTaxIds) cargados de costeo o inferidos de costoI vs costo
+    let initialCostTaxes: string[] = []
+    const costeoObj = p.costeo || p.extData?.costeo
+    if (costeoObj && typeof costeoObj === 'object' && Array.isArray(costeoObj.costTaxIds)) {
+      initialCostTaxes = costeoObj.costTaxIds.map(String)
+    } else {
+      const cBase = Number(p.costo || p.extData?.costo || 0)
+      const cIva = Number(p.costoI || p.extData?.costoI || 0)
+      if (cBase > 0 && cIva > cBase) {
+        const diffRate = Math.round(((cIva / cBase) - 1) * 100)
+        const match = systemTaxes.find(t => Number(t.tarifa) === diffRate)
+        if (match) initialCostTaxes = [String(match.id)]
+      }
+    }
+
+    const currentPrecios = (Array.isArray(p.precios) && p.precios.length > 0)
+      ? p.precios
+      : ((Array.isArray(p.extData?.precios) && p.extData.precios.length > 0)
+          ? p.extData.precios
+          : [p.precioBase || 0, ...Array(10).fill(0)])
 
     setFormData({
       ...DEFAULT_FORM,
@@ -822,12 +813,13 @@ export function ConfigProductos() {
       referencia: p.referencia || '',
       activo: p.activo,
       publicadoWeb: !!p.publicadoWeb,
-      precioWeb: p.precioWeb || 0,
-      appliedTaxIds: initialTaxes,
-      liquidarIva: !isExempt && initialTaxes.length > 0,
+      precioWeb: p.precioWeb || p.precioBase || currentPrecios[0] || 0,
+      precios: currentPrecios,
+      appliedTaxIds: initialSalesTaxes,
+      liquidarIva: !isExempt && (p.extData?.liquidarIva !== false && p.liquidarIva !== false && initialSalesTaxes.length > 0),
       productoExentoIva: !!isExempt,
     })
-    setCostTaxIds(initialTaxes)
+    setCostTaxIds(initialCostTaxes)
     setError(null)
     setViewMode('form')
   }
@@ -906,15 +898,18 @@ export function ConfigProductos() {
       selectedTags: formData.selectedTags || [],
       precios: formData.precios || Array(11).fill(0),
       observacion: formData.observacion || null,
-      liquidarIva: !formData.productoExentoIva && costTaxIds.length > 0,
+      costeo: {
+        costTaxIds: costTaxIds
+      },
+      liquidarIva: !formData.productoExentoIva && formData.liquidarIva && (formData.appliedTaxIds || []).length > 0,
       productoExentoIva: !!formData.productoExentoIva,
-      appliedTaxIds: costTaxIds,
+      appliedTaxIds: formData.appliedTaxIds || [],
       tipoIva: formData.productoExentoIva 
         ? 'EXENTO' 
-        : (costTaxIds.length === 0 || !formData.liquidarIva) 
+        : (!formData.liquidarIva || (formData.appliedTaxIds || []).length === 0) 
           ? 'EXCLUIDO' 
           : (() => {
-              const selectedTaxes = systemTaxes.filter(t => isTaxSelected(t.id, costTaxIds))
+              const selectedTaxes = systemTaxes.filter(t => isTaxSelected(t.id, formData.appliedTaxIds))
               const rate = selectedTaxes.reduce((acc, t) => acc + (Number(t.tarifa) || 0), 0)
               if (rate === 5) return 'GRAVADO_5'
               if (rate === 19) return 'GRAVADO_19'
@@ -1606,32 +1601,13 @@ export function ConfigProductos() {
                   </label>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Precio de Venta (Base) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
-                    <input
-                      type="text"
-                      required
-                      value={formatCOP(formData.precios[0])}
-                      onChange={e => {
-                        const newPrecios = [...formData.precios]
-                        const newPrice = parseCOP(e.target.value)
-                        newPrecios[0] = newPrice
-                        setFormData(prev => ({ ...prev, precios: newPrecios, precioWeb: newPrice }))
-                      }}
-                      placeholder="0"
-                      className="w-full pl-6 pr-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-400 transition-all font-mono shadow-inner"
-                    />
-                  </div>
-                </div>
-                <div className="md:col-span-2">
+                <div className="md:col-span-4">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descripción Comercial / Alterna</label>
                   <input
                     type="text"
                     value={formData.descripcionAlterna}
                     onChange={e => setFormData(prev => ({ ...prev, descripcionAlterna: e.target.value }))}
-                    placeholder="Nombre corto o comercial"
+                    placeholder="Nombre corto o comercial de visualización"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
                   />
                 </div>
@@ -2044,9 +2020,20 @@ export function ConfigProductos() {
                   </div>
 
                   <div className="col-span-2 space-y-1">
-                    <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Impuestos Aplicados al Costo</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        Impuestos Aplicados al Costo (Compras / Factura Proveedor)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/configuracion/impuestos')}
+                        className="text-[9px] font-bold text-indigo-600 hover:underline"
+                      >
+                        Gestionar en Configuración Contable
+                      </button>
+                    </div>
                     <div className="flex flex-wrap gap-1.5 mt-0.5">
-                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').map(tax => {
+                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO')).map(tax => {
                         const isChecked = isTaxSelected(tax.id, costTaxIds)
                         const sId = String(tax.id)
                         return (
@@ -2055,18 +2042,13 @@ export function ConfigProductos() {
                             type="button"
                             onClick={() => {
                               const updated = isChecked
-                                ? costTaxIds.filter(id => id !== sId && id !== 'iva_19' && id !== 'iva_5' && id !== tax.nombre)
-                                : [...costTaxIds.filter(id => id !== 'iva_19' && id !== 'iva_5'), sId]
+                                ? costTaxIds.filter(id => id !== sId && id !== tax.nombre)
+                                : [...costTaxIds, sId]
                               setCostTaxIds(updated)
-                              setFormData(prev => ({
-                                ...prev,
-                                appliedTaxIds: updated,
-                                liquidarIva: updated.length > 0
-                              }))
                             }}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
                               isChecked
-                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/60'
                             }`}
                           >
@@ -2076,12 +2058,21 @@ export function ConfigProductos() {
                               readOnly
                               className="rounded text-indigo-600 focus:ring-indigo-500 h-3 w-3 pointer-events-none"
                             />
-                            {tax.sigla || tax.nombre} ({tax.tarifa || tax.porcentaje}%)
+                            {tax.nombre} ({tax.tarifa || tax.porcentaje}%)
                           </button>
                         )
                       })}
-                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').length === 0 && (
-                        <span className="text-[10px] text-slate-400 italic">No hay impuestos configurados.</span>
+                      {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO')).length === 0 && (
+                        <div className="text-[10px] text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 flex items-center justify-between w-full">
+                          <span>No hay impuestos de IVA o Consumo creados en Configuración Contable.</span>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/configuracion/impuestos')}
+                            className="font-bold underline text-indigo-600 ml-2"
+                          >
+                            Crear Impuestos
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2173,15 +2164,20 @@ export function ConfigProductos() {
               </div>
             </div>
 
-            {/* SECTION 6: MATRIZ DE PRECIOS */}
-            <div className="bg-white border border-slate-200/85 rounded-2xl shadow-sm p-6 space-y-5">
+            {/* SECTION 6: IMPUESTOS Y MATRIZ DE PRECIOS DE VENTA */}
+            <div className="bg-white border border-slate-200/85 rounded-2xl shadow-sm p-6 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                  <Tag size={16} className="text-indigo-600" />
-                  6. Impuestos y Precios Adicionales (Mayorista)
-                </h2>
-                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100 flex items-center gap-1.5 animate-pulse">
-                  <Percent size={12} /> Tasa de Impuestos Aplicada: {getAppliedTaxRate(formData)}%
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Tag size={16} className="text-indigo-600" />
+                    6. Impuestos y Niveles de Precios de Venta
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    Configure la estructura tributaria de salida y los niveles de precio al público y por mayor
+                  </p>
+                </div>
+                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 flex items-center gap-1.5 shadow-sm">
+                  <Percent size={12} /> IVA Venta Aplicado: {getAppliedTaxRate(formData)}%
                 </span>
               </div>
 
@@ -2190,7 +2186,7 @@ export function ConfigProductos() {
                 
                 {/* Column 1: Checkboxes de Control */}
                 <div className="md:col-span-4 space-y-3">
-                  <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Control Tributario</span>
+                  <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Control Tributario de Venta</span>
                   
                   <label className={`flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition-all shadow-sm ${
                     formData.productoExentoIva ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-50'
@@ -2204,7 +2200,7 @@ export function ConfigProductos() {
                     />
                     <div className="leading-tight">
                       <p className="text-xs font-bold text-slate-700">Liquidar impuestos seleccionados</p>
-                      <p className="text-[9px] text-slate-400">Aplica las tarifas de los impuestos marcados al precio</p>
+                      <p className="text-[9px] text-slate-400">Aplica las tarifas de los impuestos marcados a la facturación</p>
                     </div>
                   </label>
 
@@ -2221,18 +2217,29 @@ export function ConfigProductos() {
                     />
                     <div className="leading-tight">
                       <p className="text-xs font-bold text-slate-700">Producto exento de impuestos</p>
-                      <p className="text-[9px] text-slate-400">El producto no está sujeto a ningún impuesto (Bloquea selección)</p>
+                      <p className="text-[9px] text-slate-400">El producto no está gravado con IVA en venta (Tarifa 0%)</p>
                     </div>
                   </label>
                 </div>
 
                 {/* Column 2: Checklist de Impuestos del Sistema */}
                 <div className="md:col-span-8 space-y-3">
-                  <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Impuestos Aplicables (Configuración)</span>
+                  <div className="flex items-center justify-between">
+                    <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Impuestos Aplicables a la Venta (Configuración Contable)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/configuracion/impuestos')}
+                      className="text-[9px] font-bold text-indigo-600 hover:underline"
+                    >
+                      Ver Catálogo de Impuestos
+                    </button>
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').map(tax => {
-                      const isChecked = isTaxSelected(tax.id, costTaxIds)
+                    {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO')).map(tax => {
+                      const isChecked = isTaxSelected(tax.id, formData.appliedTaxIds)
                       const isExempt = formData.productoExentoIva
                       const isNotLiquidated = !formData.liquidarIva
                       const displayRate = isExempt || isNotLiquidated ? 0 : (tax.tarifa || tax.porcentaje)
@@ -2245,7 +2252,7 @@ export function ConfigProductos() {
                             isExempt 
                               ? 'opacity-40 cursor-not-allowed border-slate-100' 
                               : isChecked 
-                                ? 'border-indigo-200 bg-indigo-50/20 cursor-pointer hover:bg-indigo-50/10' 
+                                ? 'border-indigo-300 bg-indigo-50/30 cursor-pointer hover:bg-indigo-50/50' 
                                 : 'border-slate-200 cursor-pointer hover:bg-slate-50'
                           }`}
                         >
@@ -2254,36 +2261,43 @@ export function ConfigProductos() {
                             disabled={isExempt}
                             checked={isChecked && !isExempt}
                             onChange={() => {
+                              const currentTaxes = Array.isArray(formData.appliedTaxIds) ? formData.appliedTaxIds : []
                               const updated = isChecked
-                                ? costTaxIds.filter(id => id !== sId && id !== 'iva_19' && id !== 'iva_5' && id !== tax.nombre)
-                                : [...costTaxIds.filter(id => id !== 'iva_19' && id !== 'iva_5'), sId]
+                                ? currentTaxes.filter(id => id !== sId && id !== tax.nombre)
+                                : [...currentTaxes, sId]
                               setFormData(prev => ({ 
                                 ...prev, 
                                 appliedTaxIds: updated,
                                 liquidarIva: updated.length > 0
                               }))
-                              setCostTaxIds(updated)
                             }}
                             className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-40"
                           />
                           <div className="leading-tight">
-                            <span className="text-xs font-bold text-slate-700">{tax.nombre}</span>
+                            <span className="text-xs font-bold text-slate-800">{tax.nombre}</span>
                             <span className="text-[9px] block text-slate-400">
-                              {tax.sigla} • Tarifa: {tax.tarifa}% {
+                              Tarifa: {tax.tarifa}% {
                                 isExempt 
                                   ? <span className="text-rose-500 font-bold">(Exento)</span> 
                                   : isNotLiquidated 
                                     ? <span className="text-amber-500 font-bold">(No liquidado)</span> 
-                                    : <span className="text-emerald-500 font-bold">(Liquidando: {displayRate}%)</span>
+                                    : <span className="text-emerald-600 font-bold">(Liquidando: {displayRate}%)</span>
                               }
                             </span>
                           </div>
                         </label>
                       )
                     })}
-                    {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && t.estado === 'ACTIVO').length === 0 && (
-                      <div className="text-xs text-slate-400 italic col-span-2 py-3 bg-white p-3 rounded-xl border border-dashed border-slate-200">
-                        No hay impuestos de IVA o Consumo activos configurados.
+                    {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO')).length === 0 && (
+                      <div className="text-xs text-amber-700 bg-amber-50 col-span-2 py-3 px-4 rounded-xl border border-amber-200 flex items-center justify-between">
+                        <span>No hay impuestos de IVA o Consumo creados en la configuración contable.</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/configuracion/impuestos')}
+                          className="text-xs font-bold text-indigo-600 underline ml-2 hover:text-indigo-800"
+                        >
+                          Crear en Configuración &gt; Impuestos
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2291,37 +2305,140 @@ export function ConfigProductos() {
 
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {formData.precios.slice(1, 2).map((precio, slicedIdx) => {
-                  const idx = slicedIdx + 1;
-                  const taxRate = getAppliedTaxRate(formData)
-                  const valorConImpuestos = (precio || 0) * (1 + taxRate / 100)
-                  return (
-                    <div key={idx} className="p-3.5 bg-slate-50/75 border border-slate-200/60 rounded-2xl space-y-1.5 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Precio Mayorista (P2)</span>
+              {/* NIVELES DE PRECIO (MÍNIMO 2 NIVELES: BASE / DETAL Y MAYORISTA) */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Tag size={15} className="text-indigo-600" />
+                      Niveles de Precios de Venta
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      (Precios oficiales para POS, Facturación y E-commerce)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* NIVEL 1: PRECIO BASE / DETAL */}
+                  {(() => {
+                    const p1 = Number(formData.precios[0]) || 0
+                    const taxRate = getAppliedTaxRate(formData)
+                    const p1ConIva = p1 * (1 + taxRate / 100)
+                    const costoRef = Number(formData.costoI) || Number(formData.costo) || 0
+                    const margenValor = p1 - costoRef
+                    const margenPct = p1 > 0 ? ((margenValor / p1) * 100).toFixed(1) : '0'
+
+                    return (
+                      <div className="p-4 bg-emerald-50/40 border-2 border-emerald-200/80 rounded-2xl space-y-3 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-extrabold rounded-md uppercase tracking-wider">
+                              Nivel 1
+                            </span>
+                            <span className="text-xs font-extrabold text-slate-800 uppercase tracking-tight">
+                              Precio de Venta Base (Detal / Público) *
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
+                            Principal
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Precio de Venta (Antes de Impuestos) *
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-emerald-700">$</span>
+                            <input
+                              type="text"
+                              required
+                              value={formatCOP(p1)}
+                              onChange={e => handlePriceChange(0, parseCOP(e.target.value))}
+                              placeholder="0"
+                              className="w-full pl-8 pr-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-sm font-bold text-emerald-950 outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 transition-all font-mono shadow-inner"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-200/60 text-xs">
+                          <div className="p-2 bg-white/80 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Margen Ganancia</span>
+                            <span className={`font-mono font-extrabold text-xs ${margenValor >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              ${formatCOP(margenValor)} ({margenPct}%)
+                            </span>
+                          </div>
+                          <div className="p-2 bg-emerald-100/40 rounded-xl border border-emerald-200/80">
+                            <span className="text-[10px] font-bold text-emerald-800 block uppercase">Precio Final + Impuesto</span>
+                            <span className="font-mono font-extrabold text-sm text-emerald-900">
+                              ${Math.round(p1ConIva).toLocaleString('es-CO')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
-                        <input
-                          type="text"
-                          value={formatCOP(precio)}
-                          onChange={e => handlePriceChange(idx, parseCOP(e.target.value))}
-                          placeholder="0"
-                          className="w-full pl-6 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
-                        />
+                    )
+                  })()}
+
+                  {/* NIVEL 2: PRECIO MAYORISTA */}
+                  {(() => {
+                    const p2 = Number(formData.precios[1]) || 0
+                    const taxRate = getAppliedTaxRate(formData)
+                    const p2ConIva = p2 * (1 + taxRate / 100)
+                    const costoRef = Number(formData.costoI) || Number(formData.costo) || 0
+                    const margenValor = p2 - costoRef
+                    const margenPct = p2 > 0 ? ((margenValor / p2) * 100).toFixed(1) : '0'
+
+                    return (
+                      <div className="p-4 bg-indigo-50/40 border-2 border-indigo-200/80 rounded-2xl space-y-3 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-extrabold rounded-md uppercase tracking-wider">
+                              Nivel 2
+                            </span>
+                            <span className="text-xs font-extrabold text-slate-800 uppercase tracking-tight">
+                              Precio Mayorista (P2 / Distribuidor)
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/60 px-2 py-0.5 rounded-full">
+                            Por Mayor
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Precio Mayorista (Antes de Impuestos)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-indigo-700">$</span>
+                            <input
+                              type="text"
+                              value={formatCOP(p2)}
+                              onChange={e => handlePriceChange(1, parseCOP(e.target.value))}
+                              placeholder="0"
+                              className="w-full pl-8 pr-3 py-2.5 bg-white border border-indigo-300 rounded-xl text-sm font-bold text-indigo-950 outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition-all font-mono shadow-inner"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-indigo-200/60 text-xs">
+                          <div className="p-2 bg-white/80 rounded-xl border border-indigo-100">
+                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Margen Ganancia</span>
+                            <span className={`font-mono font-extrabold text-xs ${margenValor >= 0 ? 'text-indigo-700' : 'text-rose-600'}`}>
+                              ${formatCOP(margenValor)} ({margenPct}%)
+                            </span>
+                          </div>
+                          <div className="p-2 bg-indigo-100/40 rounded-xl border border-indigo-200/80">
+                            <span className="text-[10px] font-bold text-indigo-800 block uppercase">Precio Final + Impuesto</span>
+                            <span className="font-mono font-extrabold text-sm text-indigo-900">
+                              ${Math.round(p2ConIva).toLocaleString('es-CO')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between text-[10px] border-t border-slate-200/40 pt-1">
-                        <span className="text-slate-400 font-bold">P + Impuesto:</span>
-                        <span className="font-mono font-bold text-indigo-600 text-xs">
-                          ${valorConImpuestos.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })()}
+                </div>
               </div>
             </div>
 
