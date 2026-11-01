@@ -63,10 +63,20 @@ export class PosController {
   @Get('sesiones')
   getSesiones(
     @GetUser() u: any,
-    @Query('cajaId') cajaId: string,
-    @Query('estado') estado: string,
+    @Query('cajaId') cajaId?: string,
+    @Query('estado') estado?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+    @Query('numeroCierre') numeroCierre?: string,
   ) {
-    return this.pos.getSesiones(u.empresaId, cajaId ? +cajaId : undefined, estado)
+    return this.pos.getSesiones(
+      u.empresaId,
+      cajaId ? +cajaId : undefined,
+      estado,
+      desde,
+      hasta,
+      numeroCierre,
+    )
   }
 
   @Get('sesiones/:id')

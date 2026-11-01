@@ -10,7 +10,7 @@ export const deleteCaja = (id: number, codigoAutorizacion: string) =>
 
 // ─── Sesiones ────────────────────────────────────────────────────────────────
 
-export const getSesiones = (params?: { cajaId?: number; estado?: string }) =>
+export const getSesiones = (params?: { cajaId?: number; estado?: string; desde?: string; hasta?: string; numeroCierre?: string }) =>
   api.get('/pos/sesiones', { params }).then(r => r.data)
 
 export const getSesion = (id: number) => api.get(`/pos/sesiones/${id}`).then(r => r.data)

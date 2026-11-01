@@ -195,19 +195,39 @@ export class PosService implements OnModuleInit {
 
   // ─── Sesiones ────────────────────────────────────────────────────────────────
 
-  async getSesiones(empresaId: number, cajaId?: number, estado?: string) {
+  async getSesiones(
+    empresaId: number,
+    cajaId?: number,
+    estado?: string,
+    desde?: string,
+    hasta?: string,
+    numeroCierre?: string,
+  ) {
+    const where: any = { empresaId }
+    if (cajaId) where.cajaId = cajaId
+    if (estado) where.estado = estado
+    if (numeroCierre) {
+      where.numeroCierre = { contains: numeroCierre, mode: 'insensitive' }
+    }
+    if (desde || hasta) {
+      const dateFilter: any = {}
+      if (desde) dateFilter.gte = new Date(`${desde}T00:00:00.000Z`)
+      if (hasta) dateFilter.lte = new Date(`${hasta}T23:59:59.999Z`)
+      where.OR = [
+        { cerradaAt: dateFilter },
+        { abiertaAt: dateFilter },
+      ]
+    }
+
     return this.prisma.sesionCaja.findMany({
-      where: {
-        empresaId,
-        ...(cajaId ? { cajaId } : {}),
-        ...(estado ? { estado } : {}),
-      },
+      where,
       include: {
         caja: { select: { id: true, nombre: true } },
         arqueo: true,
+        documentoCierreConfig: { select: { id: true, nombre: true, prefijo: true } },
       },
       orderBy: { abiertaAt: 'desc' },
-      take: 50,
+      take: 100,
     })
   }
 
