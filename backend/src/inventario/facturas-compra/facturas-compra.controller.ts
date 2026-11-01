@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { FacturasCompraService } from './facturas-compra.service';
 import { CreateFacturaCompraDto } from './dto/factura-compra.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -57,6 +57,15 @@ export class FacturasCompraController {
     @GetUser() user: JwtPayload,
   ) {
     return this.svc.createRecepcion(id, dto, user.empresaId!, user.sub);
+  }
+
+  @Patch(':id/anular')
+  anular(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { motivo?: string },
+    @GetUser() user: JwtPayload,
+  ) {
+    return this.svc.anular(id, user.empresaId!, body?.motivo, user.sub);
   }
 
   @Delete(':id')

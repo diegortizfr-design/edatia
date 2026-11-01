@@ -360,27 +360,73 @@ export class FacturasCompraService implements OnModuleInit {
     });
   }
 
-  async remove(id: number, empresaId: number) {
-    const fc = await this.findOne(id, empresaId);
+  async anular(id: number, empresaId: number, motivo?: string, usuarioId?: number) {
+    const fc = await this.prisma.facturaCompra.findFirst({
+      where: { id, empresaId },
+      include: { recepciones: true, items: true },
+    });
+    if (!fc) throw new NotFoundException('Factura de compra no encontrada');
+    if (fc.estado === 'ANULADA') {
+      throw new BadRequestException('Esta factura de compra ya se encuentra anulada');
+    }
+
+    if (fc.recepciones && fc.recepciones.length > 0) {
+      throw new BadRequestException('No se puede anular la factura de compra porque ya cuenta con recepciones físicas de mercancía en bodega (RP). Debe anular o revertir los ingresos a almacén primero.');
+    }
+
+    if (fc.estadoRecepcion && fc.estadoRecepcion !== 'PENDIENTE') {
+      throw new BadRequestException('No se puede anular la factura de compra porque ya tiene recepciones registradas en inventario.');
+    }
+
+    const totalPagado = Number(fc.totalPagado ?? 0);
+    if (totalPagado > 0) {
+      throw new BadRequestException(`No se puede anular la factura de compra porque registra abonos o pagos por valor de $${totalPagado.toLocaleString('es-CO')}. Debe anular primero los comprobantes de egreso asociados.`);
+    }
 
     return this.prisma.$transaction(async (tx) => {
-      // Anular comprobantes contables vinculados
+      // 1. Anular comprobantes contables vinculados (FP causación)
       const comprobantes = await tx.comprobante.findMany({
         where: { empresaId, referenciaId: id, referenciaTipo: 'FACTURA_COMPRA' },
       });
       for (const comp of comprobantes) {
         await tx.comprobante.update({
           where: { id: comp.id },
-          data: { estado: 'ANULADO' },
+          data: {
+            estado: 'ANULADO',
+            concepto: motivo ? `${comp.concepto} [ANULADO: ${motivo}]` : `${comp.concepto} [ANULADO]`
+          },
         });
       }
 
-      // Anulación lógica de factura de compra
+      // 2. Si vino vinculada a una Orden de Compra, revertir estado de OC a 'APROBADA'
+      if (fc.ordenCompraId) {
+        await tx.ordenCompra.update({
+          where: { id: fc.ordenCompraId },
+          data: { estado: 'APROBADA' },
+        });
+      }
+
+      // 3. Anulación lógica de factura de compra
+      const notaAnulacion = motivo ? `[ANULADA: ${motivo}]` : '[ANULADA]';
+      const notasActualizadas = fc.notas ? `${fc.notas} | ${notaAnulacion}` : notaAnulacion;
+
       return tx.facturaCompra.update({
         where: { id },
-        data: { estado: 'ANULADA' },
+        data: {
+          estado: 'ANULADA',
+          saldo: 0,
+          notas: notasActualizadas,
+        },
+        include: {
+          proveedor: true,
+          items: true,
+        },
       });
     });
+  }
+
+  async remove(id: number, empresaId: number) {
+    return this.anular(id, empresaId);
   }
 
   async createRecepcion(facturaCompraId: number, dto: CreateRecepcionProductoDto, empresaId: number, usuarioId: number) {

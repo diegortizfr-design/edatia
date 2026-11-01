@@ -341,6 +341,8 @@ export const createFacturaCompra = (data: any) =>
   api.post<FacturaCompra>('/inventario/facturas-compra', data).then(r => r.data)
 export const deleteFacturaCompra = (id: number) =>
   api.delete(`/inventario/facturas-compra/${id}`).then(r => r.data)
+export const anularFacturaCompra = (id: number, motivo?: string) =>
+  api.patch(`/inventario/facturas-compra/${id}/anular`, { motivo }).then(r => r.data)
 
 export const createRecepcionProducto = (facturaCompraId: number, data: any) =>
   api.post(`/inventario/facturas-compra/${facturaCompraId}/recepciones`, data).then(r => r.data)

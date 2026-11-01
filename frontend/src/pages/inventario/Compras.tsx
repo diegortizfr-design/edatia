@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   getOrdenesCompra, getFacturasCompra, FacturaCompra, getOrdenCompra, 
-  getBodegas, createRecepcionProducto, getRecepcionesProducto 
+  getBodegas, createRecepcionProducto, getRecepcionesProducto, anularFacturaCompra 
 } from '../../services/inventario.service'
 import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getApiError } from '../../services/api'
@@ -40,6 +40,27 @@ export function Compras() {
   const [recNotas, setRecNotas] = useState('')
   const [recItems, setRecItems] = useState<Record<number, string>>({})
   const [errorRecepcion, setErrorRecepcion] = useState<string | null>(null)
+
+  // Anular Factura de Compra state
+  const [fcParaAnular, setFcParaAnular] = useState<any | null>(null)
+  const [motivoAnulacion, setMotivoAnulacion] = useState('')
+  const [errorAnular, setErrorAnular] = useState<string | null>(null)
+
+  const mutationAnularFc = useMutation({
+    mutationFn: (data: { id: number; motivo: string }) => anularFacturaCompra(data.id, data.motivo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facturas-compra'] })
+      queryClient.invalidateQueries({ queryKey: ['ordenes-compra'] })
+      queryClient.invalidateQueries({ queryKey: ['saldos-proveedores'] })
+      queryClient.invalidateQueries({ queryKey: ['comprobantes'] })
+      setFcParaAnular(null)
+      setMotivoAnulacion('')
+      setErrorAnular(null)
+    },
+    onError: (err: any) => {
+      setErrorAnular(getApiError(err, 'Error al anular la factura de compra'))
+    }
+  })
 
   // Bodegas query
   const { data: bodegas = [] } = useQuery({
@@ -334,9 +355,10 @@ export function Compras() {
                     <th className="text-left px-6 py-4">Orden de Compra (OC)</th>
                     <th className="text-left px-6 py-4 hidden md:table-cell">Fecha Emisión</th>
                     <th className="text-center px-6 py-4">Soporte XML</th>
+                    <th className="text-center px-6 py-4">Estado</th>
                     <th className="text-center px-6 py-4">Estado Recepción</th>
                     <th className="text-right px-6 py-4">Total</th>
-                    <th className="px-6 py-4"></th>
+                    <th className="text-right px-6 py-4">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -378,6 +400,25 @@ export function Compras() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-center">
+                          {fc.estado === 'ANULADA' ? (
+                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <XCircle size={10} /> ANULADA
+                            </span>
+                          ) : fc.estado === 'PAGADA' ? (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <CheckCircle size={10} /> Pagada
+                            </span>
+                          ) : fc.estado === 'PARCIAL' ? (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <Clock size={10} /> Parcial
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                              <Clock size={10} /> Registrada
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
                           {estRec === 'RECIBIDO' ? (
                             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
                               <CheckCircle size={10} /> Recibido
@@ -394,14 +435,30 @@ export function Compras() {
                         </td>
                         <td className="px-6 py-4 text-right font-extrabold text-slate-800">{fmt(fc.total)}</td>
                         <td className="px-6 py-4 text-right">
-                          {estRec !== 'RECIBIDO' && fc.estado !== 'ANULADA' && (
-                            <button
-                              onClick={() => setSelectedFcForRecepcion(fc)}
-                              className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm active:scale-95"
-                            >
-                              <Package size={12} /> Recibir Mercancía (RP)
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end gap-2">
+                            {estRec !== 'RECIBIDO' && fc.estado !== 'ANULADA' && (
+                              <button
+                                onClick={() => setSelectedFcForRecepcion(fc)}
+                                className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                                title="Recibir mercancía en almacén"
+                              >
+                                <Package size={12} /> Recibir (RP)
+                              </button>
+                            )}
+                            {fc.estado !== 'ANULADA' && (
+                              <button
+                                onClick={() => {
+                                  setFcParaAnular(fc)
+                                  setMotivoAnulacion('')
+                                  setErrorAnular(null)
+                                }}
+                                className="inline-flex items-center gap-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all active:scale-95"
+                                title="Anular Factura de Compra"
+                              >
+                                <XCircle size={12} /> Anular
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )
@@ -628,6 +685,86 @@ export function Compras() {
                 </button>
               </div>
 
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Anular Factura de Compra */}
+      {fcParaAnular && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-rose-100 text-rose-700 rounded-xl">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">Anular Factura de Compra</h3>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    {fcParaAnular.numero} {fcParaAnular.consecutivoProveedor ? `(Prov: ${fcParaAnular.consecutivoProveedor})` : ''}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setFcParaAnular(null)}
+                className="p-1 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              if (!motivoAnulacion.trim()) {
+                setErrorAnular('Debe ingresar el motivo de anulación.')
+                return
+              }
+              mutationAnularFc.mutate({ id: fcParaAnular.id, motivo: motivoAnulacion.trim() })
+            }} className="p-6 space-y-4">
+              {errorAnular && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{errorAnular}</span>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                ¿Está seguro de que desea anular esta factura de compra? 
+                Esta acción <span className="font-bold text-slate-800">anulará el comprobante contable de causación (FP)</span> y restablecerá el saldo pendiente con el proveedor.
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  Motivo de anulación *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={motivoAnulacion}
+                  onChange={(e) => setMotivoAnulacion(e.target.value)}
+                  placeholder="Ej. Factura cargada por error, error en precios o cantidades..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setFcParaAnular(null)}
+                  disabled={mutationAnularFc.isPending}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={mutationAnularFc.isPending}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-200 disabled:opacity-50 active:scale-95"
+                >
+                  <XCircle size={14} />
+                  {mutationAnularFc.isPending ? 'Anulando...' : 'Confirmar Anulación'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

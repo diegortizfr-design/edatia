@@ -255,8 +255,13 @@ export function NuevaFcForm() {
   }
 
   function addItem(producto: any) {
-    const ya = items.find(i => i.productoId === producto.id)
-    if (ya) { setBusqueda(''); return }
+    const yaIdx = items.findIndex(i => i.productoId === producto.id)
+    if (yaIdx >= 0) {
+      // Si el producto ya está en la factura, incrementar la cantidad en 1
+      setItems(prev => prev.map((item, idx) => idx === yaIdx ? { ...item, cantidad: String((parseFloat(item.cantidad) || 0) + 1) } : item))
+      setBusqueda('')
+      return
+    }
     const costoSugerido = Number(producto.costo) || Number(producto.costoPromedio) || Number(producto.costoUltimo) || 0
     const esExento = producto.productoExentoIva || !producto.liquidarIva || producto.tipoIva === 'EXENTO' || producto.tipoIva === 'EXCLUIDO' || (Array.isArray(producto.appliedTaxIds) && producto.appliedTaxIds.length === 0)
     const tipoIva = esExento ? 'EXCLUIDO' : (producto.tipoIva === 'GRAVADO_5' || producto.tipoIva === 'IVA_5' ? 'IVA_5' : 'IVA_19')
@@ -270,6 +275,37 @@ export function NuevaFcForm() {
       tipoIva: tipoIva,
     }])
     setBusqueda('')
+  }
+
+  const handleKeyDownBusqueda = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      const term = busqueda.trim()
+      if (!term) return
+
+      if (sugerencias.length > 0) {
+        const exactMatch = sugerencias.find((p: any) => 
+          p.sku?.toUpperCase() === term.toUpperCase() || 
+          p.codigoBarras?.toUpperCase() === term.toUpperCase()
+        )
+        addItem(exactMatch || sugerencias[0])
+        return
+      }
+
+      try {
+        const prods = await buscarProductos(term)
+        if (prods && prods.length > 0) {
+          const exactMatch = prods.find((p: any) => 
+            p.sku?.toUpperCase() === term.toUpperCase() || 
+            p.codigoBarras?.toUpperCase() === term.toUpperCase()
+          )
+          addItem(exactMatch || prods[0])
+        }
+      } catch (err) {
+        console.error('Error buscando producto al presionar Enter/Scanner:', err)
+      }
+    }
   }
 
   function removeItem(idx: number) {
@@ -370,7 +406,16 @@ export function NuevaFcForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form 
+        onSubmit={handleSubmit} 
+        onKeyDown={(e) => {
+          // Prevenir que el lector de código de barras o la tecla Enter envíe la factura accidentalmente
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+            e.preventDefault()
+          }
+        }}
+        className="space-y-6"
+      >
         
         {/* Cruce y XML (Sección Primaria Premium) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -665,7 +710,8 @@ export function NuevaFcForm() {
             <input
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
-              placeholder="Buscar producto para agregar..."
+              onKeyDown={handleKeyDownBusqueda}
+              placeholder="Buscar producto para agregar o escanear código de barras..."
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
 
