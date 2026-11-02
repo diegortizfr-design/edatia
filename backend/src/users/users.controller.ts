@@ -8,6 +8,7 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,6 +36,9 @@ export class UsersController {
     @Body() dto: CreateUserDto,
     @GetUser() user: JwtPayload,
   ) {
+    if (user.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden crear usuarios');
+    }
     return this.usersService.create(dto, user.empresaId!);
   }
 
@@ -79,6 +83,9 @@ export class UsersController {
     @Body() dto: UpdateUserRolDto,
     @GetUser() user: JwtPayload,
   ) {
+    if (user.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden modificar roles');
+    }
     return this.usersService.updateRol(id, dto, user.empresaId!);
   }
 
@@ -89,6 +96,9 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @GetUser() user: JwtPayload,
   ) {
+    if (user.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden eliminar usuarios');
+    }
     return this.usersService.remove(id, user.empresaId!);
   }
 }

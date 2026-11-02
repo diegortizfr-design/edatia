@@ -11,6 +11,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -40,6 +41,9 @@ export class RolesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Req() req: Request, @Body() dto: CreateRolDto) {
+    if ((req.user as any)?.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden crear roles');
+    }
     const empresaId: number = (req.user as any).empresaId;
     return this.rolesService.create(empresaId, dto);
   }
@@ -55,6 +59,9 @@ export class RolesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRolDto,
   ) {
+    if ((req.user as any)?.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden modificar roles');
+    }
     const empresaId: number = (req.user as any).empresaId;
     return this.rolesService.update(id, empresaId, dto);
   }
@@ -67,6 +74,9 @@ export class RolesController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   remove(@Req() req: Request, @Param('id', ParseIntPipe) id: number) {
+    if ((req.user as any)?.rol !== 'admin') {
+      throw new ForbiddenException('Solo los administradores pueden eliminar roles');
+    }
     const empresaId: number = (req.user as any).empresaId;
     return this.rolesService.remove(id, empresaId);
   }

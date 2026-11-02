@@ -137,8 +137,8 @@ export function Usuarios() {
       toast.error('La contraseña es obligatoria para usuarios nuevos.')
       return
     }
-    if (password && password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.')
+    if (password && password.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres.')
       return
     }
 
@@ -388,7 +388,7 @@ export function Usuarios() {
                     <Input
                       value={password}
                       onChange={setPassword}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       type="password"
                     />
                   </Field>

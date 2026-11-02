@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
@@ -104,6 +104,14 @@ function P({ children }: { children: React.ReactNode }) {
       <Layout>{children}</Layout>
     </ProtectedRoute>
   )
+}
+
+function AdminP({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  if (user && user.rol !== 'admin') {
+    return <Navigate to="/" replace />
+  }
+  return <P>{children}</P>
 }
 
 // POS pantalla completa (sin Layout normal)
@@ -212,12 +220,12 @@ function App() {
 
 
 
-        {/* ── Seguridad ── */}
-        <Route path="/seguridad/usuarios" element={<P><Usuarios /></P>} />
-        <Route path="/seguridad/roles" element={<P><Roles /></P>} />
-        <Route path="/seguridad/notificaciones" element={<P><Notificaciones /></P>} />
-        <Route path="/seguridad/cierre-periodo" element={<P><CierrePeriodo /></P>} />
-        <Route path="/seguridad/auditoria" element={<P><Auditoria /></P>} />
+        {/* ── Seguridad (Solo Administradores) ── */}
+        <Route path="/seguridad/usuarios" element={<AdminP><Usuarios /></AdminP>} />
+        <Route path="/seguridad/roles" element={<AdminP><Roles /></AdminP>} />
+        <Route path="/seguridad/notificaciones" element={<AdminP><Notificaciones /></AdminP>} />
+        <Route path="/seguridad/cierre-periodo" element={<AdminP><CierrePeriodo /></AdminP>} />
+        <Route path="/seguridad/auditoria" element={<AdminP><Auditoria /></AdminP>} />
 
         {/* ── Digital ── */}
         <Route path="/digital" element={<Navigate to="/digital/dashboard" replace />} />

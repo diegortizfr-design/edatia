@@ -181,48 +181,49 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavItem to="/" icon={<LayoutDashboard size={18} />} label="Dashboard" isCollapsed={isCollapsed} end />
           </div>
 
-          <div className="py-2">
-            {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
-            <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
-              <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/archivo" icon={<Archive size={14}/>} label="Archivo" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/formas-medios-pago" icon={<Coins size={14}/>} label="Formas / Medios de Pago" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/tesoreria" icon={<Receipt size={14}/>} label="Tesorería" isCollapsed={isCollapsed} />
-              <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />
-            </NavGroup>
+          {user?.rol === 'admin' && (
+            <div className="py-2">
+              {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Configuración</p>}
+              <NavGroup label="General" icon={<Settings size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.config} onClick={() => toggleGroup('config')}>
+                <NavItem to="/configuracion/empresa" icon={<Building2 size={14}/>} label="Empresa" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/contable" icon={<Calculator size={14}/>} label="Contable" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/formatos-impresion" icon={<LayoutTemplate size={14}/>} label="Formatos de Impresión" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/documentos" icon={<FileText size={14}/>} label="Documentos" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/archivo" icon={<Archive size={14}/>} label="Archivo" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/impuestos" icon={<Percent size={14}/>} label="Impuestos" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/geolocalizacion" icon={<Globe size={14}/>} label="Geolocalización" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/monedas" icon={<Coins size={14}/>} label="Monedas" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/formas-medios-pago" icon={<Coins size={14}/>} label="Formas / Medios de Pago" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/sucursales" icon={<Store size={14}/>} label="Sucursales" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/cajas-bancos" icon={<Wallet size={14}/>} label="Cajas / Bancos" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/tesoreria" icon={<Receipt size={14}/>} label="Tesorería" isCollapsed={isCollapsed} />
+                <NavItem to="/ventas/config-dian" icon={<FileText size={14}/>} label="Facturación DIAN" isCollapsed={isCollapsed} />
+              </NavGroup>
 
-            <NavGroup label="Gestión de Terceros" icon={<Users size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.terceros} onClick={() => toggleGroup('terceros')}>
-              <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
-              <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Régimen Tributario" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Identificación DIAN" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Códigos CIIU" isCollapsed={isCollapsed} />
-              <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
-            </NavGroup>
+              <NavGroup label="Gestión de Terceros" icon={<Users size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.terceros} onClick={() => toggleGroup('terceros')}>
+                <NavItem to="/configuracion/terceros" icon={<Users size={14}/>} label="Terceros" isCollapsed={isCollapsed} end />
+                <NavItem to="/configuracion/terceros/vendedores" icon={<User size={14}/>} label="Vendedores" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/terceros/unificar" icon={<RotateCcw size={14}/>} label="Unificar Terceros" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/terceros/regimen-tributario" icon={<Lock size={14}/>} label="Régimen Tributario" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/terceros/tipos-identificacion" icon={<ClipboardList size={14}/>} label="Identificación DIAN" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/terceros/ciiu" icon={<FileText size={14}/>} label="Códigos CIIU" isCollapsed={isCollapsed} />
+                <NavItem to="/configuracion/terceros/reportes" icon={<BarChart3 size={14}/>} label="Reportes" isCollapsed={isCollapsed} />
+              </NavGroup>
 
+              <NavGroup label="Productos" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.configProductos} onClick={() => toggleGroup('configProductos')}>
+                <NavItem to="/configuracion/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} end={true} />
+                <NavItem to="/configuracion/productos/maestros" icon={<SlidersHorizontal size={14}/>} label="Maestros" isCollapsed={isCollapsed} />
+              </NavGroup>
 
-            <NavGroup label="Productos" icon={<Package size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.configProductos} onClick={() => toggleGroup('configProductos')}>
-              <NavItem to="/configuracion/productos" icon={<Package size={14}/>} label="Productos" isCollapsed={isCollapsed} end={true} />
-              <NavItem to="/configuracion/productos/maestros" icon={<SlidersHorizontal size={14}/>} label="Maestros" isCollapsed={isCollapsed} />
-            </NavGroup>
-
-            <NavGroup label="Seguridad" icon={<ShieldAlert size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.seguridad} onClick={() => toggleGroup('seguridad')}>
-              <NavItem to="/seguridad/usuarios" icon={<Users size={14}/>} label="Usuarios" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/roles" icon={<Shield size={14}/>} label="Roles" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/notificaciones" icon={<Bell size={14}/>} label="Notificaciones" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/cierre-periodo" icon={<Lock size={14}/>} label="Cierre Periodo" isCollapsed={isCollapsed} />
-              <NavItem to="/seguridad/auditoria" icon={<ClipboardList size={14}/>} label="Auditoría" isCollapsed={isCollapsed} />
-            </NavGroup>
-          </div>
+              <NavGroup label="Seguridad" icon={<ShieldAlert size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.seguridad} onClick={() => toggleGroup('seguridad')}>
+                <NavItem to="/seguridad/usuarios" icon={<Users size={14}/>} label="Usuarios" isCollapsed={isCollapsed} />
+                <NavItem to="/seguridad/roles" icon={<Shield size={14}/>} label="Roles" isCollapsed={isCollapsed} />
+                <NavItem to="/seguridad/notificaciones" icon={<Bell size={14}/>} label="Notificaciones" isCollapsed={isCollapsed} />
+                <NavItem to="/seguridad/cierre-periodo" icon={<Lock size={14}/>} label="Cierre Periodo" isCollapsed={isCollapsed} />
+                <NavItem to="/seguridad/auditoria" icon={<ClipboardList size={14}/>} label="Auditoría" isCollapsed={isCollapsed} />
+              </NavGroup>
+            </div>
+          )}
 
           <div className="py-2">
             {!isCollapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">Operaciones</p>}
