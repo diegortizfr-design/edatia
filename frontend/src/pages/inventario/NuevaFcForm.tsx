@@ -1,13 +1,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra } from '../../services/inventario.service'
+import { 
+  getProveedores, getOrdenesCompra, buscarProductos, createFacturaCompra, FacturaCompra,
+  getProductos, createProducto, createProveedor 
+} from '../../services/inventario.service'
 import { getDocumentosConfig, getFormasPago, getMediosPago } from '../../services/configuracion.service'
 import { getCajasBancos, getImpuestos } from '../../services/erp.service'
 import { 
   ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2, 
-  Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2 
+  Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2,
+  Loader2, Check, FileCheck, X
 } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { parseDianXml, DianParsedInvoice } from '../../lib/dianXmlParser'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
 import { CurrencyInput } from '../../components/CurrencyInput'
 import { getApiError } from '../../services/api'
@@ -129,6 +135,12 @@ export function NuevaFcForm() {
 
   // Preselección automática
   useEffect(() => {
+    if (documentosFiltradosFC.length > 0 && !documentoConfigId) {
+      setDocumentoConfigId(String(documentosFiltradosFC[0].id))
+    }
+  }, [documentosFiltradosFC, documentoConfigId])
+
+  useEffect(() => {
     if (documentosFiltradosCE.length > 0 && !documentoCeId) {
       setDocumentoCeId(String(documentosFiltradosCE[0].id))
     }
@@ -156,6 +168,8 @@ export function NuevaFcForm() {
   const [recepcionId, setRecepcionId] = useState('')
   const [xmlFile, setXmlFile] = useState<File | null>(null)
   const [xmlNombre, setXmlNombre] = useState<string | null>(null)
+  const [procesandoXml, setProcesandoXml] = useState(false)
+  const [xmlParsedData, setXmlParsedData] = useState<DianParsedInvoice | null>(null)
   const [notas, setNotas] = useState('')
 
   // ── Formas y Medios de Pago Dinámicos (Configuración General) ──
@@ -363,15 +377,165 @@ export function NuevaFcForm() {
     }
   }
 
-  // XML File change
-  const handleXmlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setXmlFile(file)
-      setXmlNombre(file.name)
-      setPrefijo('FVPROV')
-      setConsecutivo(String(Math.floor(1000 + Math.random() * 9000)))
-      setFechaEmision(new Date().toISOString().split('T')[0])
+  // Limpiar XML cargado
+  const handleClearXml = () => {
+    setXmlFile(null)
+    setXmlNombre(null)
+    setXmlParsedData(null)
+  }
+
+  // XML File change (Procesamiento completo de Factura Electrónica UBL 2.1)
+  const handleXmlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return
+    const file = e.target.files[0]
+    setXmlFile(file)
+    setXmlNombre(file.name)
+    setProcesandoXml(true)
+    setError(null)
+
+    try {
+      const xmlText = await file.text()
+      const parsed = parseDianXml(xmlText)
+
+      if (!parsed.consecutivo && !parsed.numeroCompleto) {
+        throw new Error('No se pudo identificar el número de factura en el XML. Asegúrate de adjuntar una Factura Electrónica de Venta válida de la DIAN.')
+      }
+
+      setXmlParsedData(parsed)
+
+      // 1. Datos del Documento (Prefijo y Consecutivo)
+      setPrefijo(parsed.prefijo || '')
+      setConsecutivo(parsed.consecutivo || parsed.numeroCompleto)
+
+      if (parsed.fechaEmision) {
+        setFechaEmision(parsed.fechaEmision)
+      }
+      if (parsed.fechaVencimiento) {
+        setFechaVencimiento(parsed.fechaVencimiento)
+      }
+      if (parsed.formaPago) {
+        setFormaPago(parsed.formaPago)
+      }
+      if (parsed.notas) {
+        setNotas(prev => prev ? `${prev} | ${parsed.notas}` : (parsed.notas || ''))
+      }
+
+      // 2. Resolver o Crear Proveedor automáticamente
+      let provIdFinal = ''
+      if (parsed.proveedor && (parsed.proveedor.nit || parsed.proveedor.nombre)) {
+        const cleanNit = parsed.proveedor.nit?.replace(/[^0-9]/g, '') || ''
+        const provNorm = parsed.proveedor.nombre?.toLowerCase().trim() || ''
+
+        const provExistente = (proveedores as any[]).find((p: any) => {
+          const pNit = p.numeroDocumento?.replace(/[^0-9]/g, '') || ''
+          const pNom = p.nombre?.toLowerCase().trim() || ''
+          return (cleanNit && pNit === cleanNit) || (provNorm && pNom === provNorm)
+        })
+
+        if (provExistente) {
+          provIdFinal = String(provExistente.id)
+          setProveedorId(provIdFinal)
+          toast.success(`Proveedor identificado: ${provExistente.nombre}`)
+        } else if (parsed.proveedor.nombre) {
+          try {
+            const nuevoProv = await createProveedor({
+              nombre: parsed.proveedor.nombre,
+              numeroDocumento: parsed.proveedor.nit || `NIT-${Date.now().toString().slice(-6)}`,
+              tipoDocumento: 'NIT',
+              email: parsed.proveedor.email || undefined,
+              telefono: parsed.proveedor.telefono || undefined,
+              direccion: parsed.proveedor.direccion || undefined,
+              ciudad: parsed.proveedor.ciudad || undefined,
+              pais: 'Colombia',
+              activo: true,
+            })
+            qc.invalidateQueries({ queryKey: ['proveedores'] })
+            provIdFinal = String(nuevoProv.id)
+            setProveedorId(provIdFinal)
+            toast.success(`Proveedor registrado automáticamente: ${nuevoProv.nombre}`)
+          } catch (errProv) {
+            console.warn('[handleXmlChange] No se pudo registrar proveedor automático:', errProv)
+            toast.error(`Proveedor ${parsed.proveedor.nombre} no encontrado en el sistema. Puedes seleccionarlo o crearlo manualmente.`)
+          }
+        }
+      }
+
+      // 3. Resolver o Crear Productos del catálogo y agregarlos
+      if (parsed.items && parsed.items.length > 0) {
+        let catalogo: any[] = []
+        try {
+          catalogo = await getProductos({ activo: true })
+        } catch (e) {
+          catalogo = []
+        }
+
+        const itemsMapeados: LineaItem[] = []
+        let productosCreadosCount = 0
+
+        for (const itemXml of parsed.items) {
+          const skuBusq = itemXml.sku?.trim().toUpperCase()
+          const descBusq = itemXml.descripcion?.trim().toLowerCase()
+
+          // Buscar coincidencia en catálogo por SKU, Código de barras o Nombre exacto
+          let prodEncontrado = catalogo.find((p: any) => {
+            const pSku = p.sku?.trim().toUpperCase()
+            const pBar = p.codigoBarras?.trim().toUpperCase()
+            const pNom = p.nombre?.trim().toLowerCase()
+            return (skuBusq && (pSku === skuBusq || pBar === skuBusq)) || (descBusq && pNom === descBusq)
+          })
+
+          // Si el producto no existe en el catálogo, crearlo automáticamente para no truncar la importación
+          if (!prodEncontrado) {
+            try {
+              const skuGenerado = itemXml.sku?.trim().toUpperCase() || `PROD-${Date.now().toString().slice(-6)}`
+              const nuevoProducto = await createProducto({
+                sku: skuGenerado,
+                nombre: itemXml.descripcion.trim(),
+                costoPromedio: itemXml.precioUnitario,
+                precioBase: Math.round(itemXml.precioUnitario * 1.3),
+                tipoIva: itemXml.ivaPct === 0 ? 'EXCLUIDO' : (itemXml.ivaPct === 5 ? 'GRAVADO_5' : 'GRAVADO_19'),
+                manejaBodega: true,
+                activo: true,
+              })
+              prodEncontrado = nuevoProducto
+              productosCreadosCount++
+              catalogo.push(nuevoProducto)
+            } catch (errProd) {
+              console.warn('[handleXmlChange] Error autocreando producto:', errProd)
+            }
+          }
+
+          if (prodEncontrado) {
+            itemsMapeados.push({
+              productoId: prodEncontrado.id,
+              productoNombre: prodEncontrado.nombre,
+              productoSku: prodEncontrado.sku,
+              cantidad: String(itemXml.cantidad || 1),
+              costoUnitario: String(Math.round(itemXml.precioUnitario || 0)),
+              descuentoPct: String(itemXml.descuentoPct || 0),
+              ivaPct: itemXml.ivaPct !== undefined ? itemXml.ivaPct : resolveProductoIva(prodEncontrado),
+              tipoIva: itemXml.ivaPct === 0 ? 'EXCLUIDO' : `IVA_${itemXml.ivaPct}`,
+            })
+          }
+        }
+
+        setItems(itemsMapeados)
+        qc.invalidateQueries({ queryKey: ['productos'] })
+
+        let resumenMsg = `Factura cargada: ${itemsMapeados.length} productos procesados`
+        if (productosCreadosCount > 0) {
+          resumenMsg += ` (${productosCreadosCount} creados en catálogo)`
+        }
+        toast.success(resumenMsg)
+      } else {
+        toast.error('El XML no contiene ítems de producto válidos')
+      }
+    } catch (err: any) {
+      console.error('[handleXmlChange] Error parsing XML:', err)
+      setError(err?.message || 'Error al procesar el archivo XML de la factura electrónica')
+      toast.error('Error al procesar el archivo XML de la factura')
+    } finally {
+      setProcesandoXml(false)
     }
   }
 
@@ -562,19 +726,66 @@ export function NuevaFcForm() {
               </p>
             </div>
             
-            <div className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-4 bg-slate-50/50 flex flex-col items-center justify-center cursor-pointer transition-colors relative">
-              <input 
-                type="file" 
-                accept=".xml" 
-                onChange={handleXmlChange}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-              <FileText size={32} className={xmlNombre ? 'text-indigo-600 mb-2' : 'text-slate-300 mb-2'} />
-              <span className="text-xs font-bold text-slate-600">
-                {xmlNombre ?? 'Seleccionar archivo XML de proveedor'}
-              </span>
-              <span className="text-[10px] text-slate-400 mt-1">Soporta formato UBL 2.1</span>
-            </div>
+            {procesandoXml ? (
+              <div className="border-2 border-dashed border-indigo-300 rounded-xl p-6 bg-indigo-50/40 flex flex-col items-center justify-center">
+                <Loader2 size={32} className="text-indigo-600 animate-spin mb-2" />
+                <span className="text-xs font-bold text-indigo-700">Analizando Factura DIAN...</span>
+                <span className="text-[10px] text-indigo-500 mt-1">Identificando proveedor, retenciones e ítems</span>
+              </div>
+            ) : xmlParsedData ? (
+              <div className="border border-emerald-200 rounded-xl p-4 bg-emerald-50/40 relative">
+                <button 
+                  type="button" 
+                  onClick={handleClearXml} 
+                  title="Quitar XML"
+                  className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-red-500 rounded-lg hover:bg-white transition-colors"
+                >
+                  <X size={15} />
+                </button>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg shrink-0 mt-0.5">
+                    <FileCheck size={20} />
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-slate-800">
+                        {xmlParsedData.prefijo ? `${xmlParsedData.prefijo}-${xmlParsedData.consecutivo}` : xmlParsedData.consecutivo}
+                      </span>
+                      <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">
+                        {xmlParsedData.formaPago}
+                      </span>
+                    </div>
+                    <p className="text-slate-750 font-semibold">{xmlParsedData.proveedor.nombre}</p>
+                    <p className="text-slate-400 text-[10px]">
+                      NIT: {xmlParsedData.proveedor.nit} • {xmlParsedData.items.length} productos identificados • Total: {fmt(xmlParsedData.totales.total)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-emerald-100 flex items-center justify-between text-[11px]">
+                  <span className="text-emerald-700 font-semibold truncate max-w-[220px]" title={xmlNombre || ''}>
+                    📄 {xmlNombre}
+                  </span>
+                  <label className="text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer">
+                    Cambiar archivo
+                    <input type="file" accept=".xml" onChange={handleXmlChange} className="hidden" />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-4 bg-slate-50/50 flex flex-col items-center justify-center cursor-pointer transition-colors relative">
+                <input 
+                  type="file" 
+                  accept=".xml" 
+                  onChange={handleXmlChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <FileText size={32} className="text-slate-300 mb-2" />
+                <span className="text-xs font-bold text-slate-600">
+                  Seleccionar archivo XML de proveedor
+                </span>
+                <span className="text-[10px] text-slate-400 mt-1">Soporta formato UBL 2.1 (AttachedDocument e Invoice)</span>
+              </div>
+            )}
           </div>
 
           {/* Vínculo con Orden de Compra (OC) */}
@@ -890,6 +1101,17 @@ export function NuevaFcForm() {
             <h2 className="font-bold text-slate-800 text-sm">Productos de la Factura</h2>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{items.length} ítems</span>
           </div>
+
+          {xmlParsedData && (
+            <div className="mb-4 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>
+                  <strong>Ítems autocompletados desde el XML:</strong> Se cargaron {items.length} productos con sus cantidades, costos unitarios e impuestos según la factura electrónica de {xmlParsedData.proveedor.nombre}.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Buscador de producto */}
           <div className="relative mb-4">
