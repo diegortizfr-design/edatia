@@ -885,63 +885,93 @@ export class DigitalService {
       },
     });
 
+    // Términos estrictos de commodities masivos de muy bajo margen (leches y pañales sueltos)
     const isLowMarginCommodity = (nombre: string, mainCat: string, subcat: string) => {
-      const text = `${nombre} ${mainCat} ${subcat}`.toLowerCase();
+      const textNombre = nombre.toLowerCase();
       const lowMarginTerms = [
         'pañal', 'panal', 'huggies', 'pampers', 'winny', 'babysec', 'pequeñin', 'pequenin',
-        'toallitas', 'toallita', 'panitos', 'pañitos', 'shampoo', 'jabon bebe', 'jabón',
-        'formula infantil', 'fórmula', 'leche en polvo', 'enfamil', 'similac', 'nan pro',
+        'toallitas', 'toallita', 'panitos', 'pañitos', 'shampoo', 'jabon', 'jabón',
+        'formula infantil', 'fórmula', 'formula', 'leche en polvo', 'klim',
+        'enfamil', 'similac', 'nan pro', 'nan optipro', 'nestógeno', 'nestogeno',
         'crema antipañalitis', 'crema antipanalitis', 'desitin', 'bepanthen',
       ];
-      return lowMarginTerms.some((term) => text.includes(term));
+      return lowMarginTerms.some((term) => textNombre.includes(term));
     };
+
+    // Palabras clave de juguetería, estimulación y caminadores (SIEMPRE DENTRO)
+    const toyTerms = [
+      'caminador', 'nobily', 'pista', 'gimnasio', 'piano', 'montable', 'triciclo',
+      'carro', 'patineta', 'juguete', 'juguetes', 'muñeca', 'muñecas', 'barbie',
+      'cocina', 'cocinita', 'tocador', 'bloques', 'camion', 'camión', 'didactico',
+      'didáctico', 'peluche', 'figura', 'dinosaurio', 'avión', 'avion', 'sonajero',
+      'mordedor', 'balancin', 'balancín', 'alberca', 'burbuja', 'drone', 'control remoto',
+    ];
+
+    // Confort materno, sueño y descanso (SIEMPRE DENTRO - alta conversión y margen)
+    const comfortMaternalTerms = [
+      'nido', 'reductor', 'cojin', 'cojín', 'lactancia', 'toldillo', 'colchoneta',
+      'fular', 'canguro', 'porteo', 'bacin', 'bacenilla', 'bañera', 'banera',
+      'organizador', 'almohada', 'almohadita', 'cuna', 'corral', 'coche', 'silla',
+      'extractor', 'esterilizador', 'ajuar', 'revelacion', 'revelación', 'humo',
+    ];
+
+    // Moda infantil y calzado (SIEMPRE DENTRO)
+    const fashionTerms = [
+      'zapato', 'zapatos', 'sandalia', 'sandalias', 'tenis', 'bota', 'botas',
+      'conjunto', 'ropa', 'vestido', 'mameluco', 'pijama', 'semanario', 'calzado',
+    ];
 
     const isHighMarginProduct = (prod: any) => {
       const precio = Number(prod.precioWeb || prod.precioBase || 0);
       const costo = Number(prod.costo || prod.costoPromedio || 0);
-      const nombre = prod.nombre || '';
-      const cat = prod.categoria?.nombre || '';
-      const parentCat = prod.categoria?.parent?.nombre || '';
+      const nombre = (prod.nombre || '').toLowerCase();
+      const cat = (prod.categoria?.nombre || '').toLowerCase();
+      const parentCat = (prod.categoria?.parent?.nombre || '').toLowerCase();
       const subcat = parentCat ? cat : '';
       const mainCat = parentCat || cat;
 
-      // 1. Si tiene costo registrado y el margen es >= 25%
+      // 1. Destacados por el administrador
+      if (prod.esDestacado) return true;
+
+      // 2. Juguetes y caminadores: PRIORIDAD ABSOLUTA (entran siempre)
+      if (toyTerms.some((t) => nombre.includes(t) || cat.includes(t))) {
+        return true;
+      }
+
+      // 3. Confort, sueño y maternidad: PRIORIDAD ABSOLUTA (entran siempre)
+      if (comfortMaternalTerms.some((t) => nombre.includes(t) || cat.includes(t))) {
+        return true;
+      }
+
+      // 4. Calzado y Moda infantil: PRIORIDAD ABSOLUTA (entran siempre)
+      if (fashionTerms.some((t) => nombre.includes(t) || cat.includes(t) || mainCat.includes(t))) {
+        return true;
+      }
+
+      // 5. Si tiene costo registrado y el margen es >= 25%
       if (precio > 0 && costo > 0) {
         const marginPct = (precio - costo) / precio;
         if (marginPct >= 0.25) return true;
         if (marginPct < 0.15) return false;
       }
 
-      // 2. Si es producto de rotación masiva y bajo margen (pañales, toallitas, leches)
+      // 6. Excluir commodities masivos (leches, pañales sueltos, toallas masivas)
       if (isLowMarginCommodity(nombre, mainCat, subcat)) {
-        // Excepción: Kits artesanales premium de alto valor (como tortas de pañales con peluche de $145.000)
-        if (nombre.toLowerCase().includes('torta') || precio >= 120000) {
+        // Excepción: Kits artesanales premium de alto valor (como tortas de pañales con peluche de $120.000+)
+        if (nombre.includes('torta') || precio >= 120000) {
           return true;
         }
         return false;
       }
 
-      // 3. Categorías típicamente rentables (Juguetes, Calzado, Ropa, Sillas, Accesorios)
+      // 7. Categorías complementarias típicamente rentables
       const highMarginCategories = ['juguetería', 'juguetes', 'calzado', 'ropa', 'variedades', 'accesorios'];
-      if (highMarginCategories.some((c) => mainCat.toLowerCase().includes(c))) {
+      if (highMarginCategories.some((c) => mainCat.includes(c))) {
         return true;
       }
 
-      // 4. Palabras clave de productos rentables (caminadores, pistas, gimnasios, montables, etc.)
-      const highMarginTerms = [
-        'caminador', 'nobily', 'pista', 'gimnasio', 'piano', 'montable', 'triciclo',
-        'coche', 'silla', 'cuna', 'corral', 'extractor', 'esterilizador', 'ajuar',
-        'revelacion', 'revelación', 'humo', 'alberca', 'carro', 'patineta',
-      ];
-      if (highMarginTerms.some((t) => nombre.toLowerCase().includes(t))) {
-        return true;
-      }
-
-      // 5. Destacados por el administrador
-      if (prod.esDestacado) return true;
-
-      // Por defecto, productos superiores a $40.000 COP que no sean pañales/aseo masivo
-      return precio >= 40000;
+      // 8. Por defecto, productos superiores a $35.000 COP que no sean pañales/aseo masivo
+      return precio >= 35000;
     };
 
     // Filtrar según parámetro

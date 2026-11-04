@@ -65,7 +65,7 @@ export function App() {
 
   // Analítica: producto visto al abrir su detalle
   useEffect(() => {
-    if (selectedProduct) analytics.verProducto(selectedProduct.id, selectedProduct.nombre, selectedProduct.precio)
+    if (selectedProduct) analytics.verProducto(selectedProduct.id, selectedProduct.nombre, selectedProduct.precio, selectedProduct.sku)
   }, [selectedProduct?.id])
 
   // Retorno desde Mercado Pago (?pago=exito|pendiente|fallido&pedido=PED-xxxx)
@@ -237,7 +237,7 @@ export function App() {
   })
 
   const handleAddToCart = (product: Product, quantity = 1) => {
-    analytics.agregarCarrito(product.id, product.nombre, product.precio, quantity)
+    analytics.agregarCarrito(product.id, product.nombre, product.precio, quantity, product.sku)
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id)
       if (existing) {
