@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-25 (sesión 20)
+> Última actualización: 2026-11-04 (sesión 21)
 
 ---
 
@@ -33,6 +33,29 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 21) — 2026-11-04
+
+✅ **Culminación Integral del Ecosistema Meta: Commerce Manager, Feed de Alto Margen y Meta Pixel con Embudo de Conversión:**
+  - **Enriquecimiento del Feed de Alto Margen (`backend/src/digital`):**
+    - **Prioridad Absoluta a Toda la Juguetería y Caminadores:** Blindaje de todas las subcategorías lúdicas (caminadores didácticos Nobily, Dulces Sueños, pistas de carreras, carros acrobáticos RC, muñecas interactivas MayMay, sets de Barbie, cocinas y juguetes didácticos) sin importar si tienen costo $0 o precio < $40.000 COP.
+    - **Línea de Confort Materno y Sueño del Bebé:** Protección y prioridad para nidos reductores de cuna antivuelco, colchonetas de camping con toldillo, fulares y canguros ergonómicos de porteo y cojines dona de lactancia.
+    - **Filtro Estricto de Protección de Pauta:** Exclusión definitiva de leches masivas de farmacia (*Klim*, *Nan*, *Nestógeno*) y pañales desechables sueltos (*Winny*, *Babysec*) para optimizar el retorno de inversión publicitaria (ROAS).
+    - **Sincronización:** Catálogo `Catalogo_Baby_World` (ID: `1460423996272361`) activo en Meta Commerce Manager con 116 productos sincronizados automáticamente cada hora vía `https://api.edatia.com/api/v1/public/tiendas/distribuidorababyworld/meta-feed.xml?filtro=alto_margen`.
+  - **Instalación y Cableado del Meta Pixel en la Tienda Virtual (`tiendas-virtuales/distribuidorababyworld`):**
+    - **Script Oficial y Coincidencias Avanzadas:** Inserción del script oficial de Meta Pixel (`Pixel Baby World` con ID `1530333682271437`) en el `<head>` de `index.html` con fallback `<noscript>` validado para el parser parse5/HTML5 de Vite.
+    - **Cableado Completo del Embudo en `analytics.ts` y `App.tsx`:**
+      - `PageView`: Al ingresar al sitio web.
+      - `ViewContent`: Al abrir el detalle del producto, transmitiendo `content_ids` (con el SKU sincronizado con `g:id` del catálogo XML) y valor en COP.
+      - `AddToCart`: Al añadir artículos al carrito de compras con cantidad y SKU.
+      - `InitiateCheckout`: Al abrir el drawer o modal de checkout.
+      - `Purchase`: Al completar la compra o pedido por WhatsApp/Contraentrega/Mercado Pago.
+  - **Vinculación Oficial Catálogo + Píxel:**
+    - Conjunto de datos `Pixel Baby World` enlazado con éxito a `Catalogo_Baby_World` en Commerce Manager para habilitar campañas de anuncios de catálogo dinámico (**Advantage+ Catalog Ads**) y retargeting automatizado.
+  - **Recompilación y Despliegue en Docker:**
+    - Contenedores `edatia-backend` y `edatia-glowxir` reconstruidos y verificados en producción.
+
+---
 
 ## Estado resuelto (sesión 20) — 2026-10-25
 
