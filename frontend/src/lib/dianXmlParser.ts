@@ -247,3 +247,4 @@ export function parseDianXml(content: string): DianParsedInvoice {
     items,
   }
 }
+
