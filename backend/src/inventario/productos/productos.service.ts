@@ -14,7 +14,8 @@ const PRODUCTO_INCLUDE = {
   clasificacion: { select: { id: true, nombre: true, pucCuenta: true } },
   proveedoresRel: {
     include: {
-      proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } }
+      proveedor: { select: { id: true, nombre: true, nombreComercial: true, email: true, telefono: true } },
+      impuesto: { select: { id: true, nombre: true, tarifa: true, tipo: true } }
     }
   },
   codigosBarrasRel: true,
@@ -168,6 +169,22 @@ export class ProductosService {
       productData.precioWeb = productData.precioBase;
     }
 
+    // Normalizar slug: si está vacío o solo espacios, asignarlo como null para evitar colisión de unique constraint en Postgres
+    if (productData.slug !== undefined) {
+      const cleanSlug = productData.slug ? String(productData.slug).trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/(^-|-$)/g, '') : null;
+      if (cleanSlug && cleanSlug.length > 0) {
+        const slugConflict = await (this.prisma as any).producto.findFirst({
+          where: { empresaId, slug: cleanSlug },
+        });
+        if (slugConflict) {
+          throw new ConflictException(`Ya existe un producto con el slug "${cleanSlug}". Usa uno diferente.`);
+        }
+        productData.slug = cleanSlug;
+      } else {
+        productData.slug = null;
+      }
+    }
+
     const p = await (this.prisma as any).producto.create({
       data: {
         ...productData,
@@ -195,6 +212,8 @@ export class ProductosService {
           proveedorId: Number(prov.id || prov.proveedorId),
           codigoProveedor: prov.codigoProveedor || null,
           precioCompra: Number(prov.precioCompra || prov.precioAcordado) || 0,
+          impuestoId: prov.impuestoId ? Number(prov.impuestoId) : null,
+          notas: prov.notas || null,
           tiempoEntregaDias: Number(prov.tiempoEntregaDias || prov.plazoEntrega) || 0,
           prioridad: prov.esPrincipal ? 1 : 2,
           empresaId,
@@ -277,6 +296,22 @@ export class ProductosService {
       productData.precioWeb = productData.precioBase;
     }
 
+    // Normalizar slug: si está vacío o solo espacios, asignarlo como null para evitar colisión de unique constraint en Postgres
+    if (productData.slug !== undefined) {
+      const cleanSlug = productData.slug ? String(productData.slug).trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/(^-|-$)/g, '') : null;
+      if (cleanSlug && cleanSlug.length > 0) {
+        const slugConflict = await (this.prisma as any).producto.findFirst({
+          where: { empresaId, slug: cleanSlug, NOT: { id } },
+        });
+        if (slugConflict) {
+          throw new ConflictException(`Ya existe otro producto con el slug "${cleanSlug}". Usa uno diferente.`);
+        }
+        productData.slug = cleanSlug;
+      } else {
+        productData.slug = null;
+      }
+    }
+
     const p = await (this.prisma as any).producto.update({
       where: { id },
       data: productData,
@@ -292,6 +327,8 @@ export class ProductosService {
           proveedorId: Number(prov.id || prov.proveedorId),
           codigoProveedor: prov.codigoProveedor || null,
           precioCompra: Number(prov.precioCompra || prov.precioAcordado) || 0,
+          impuestoId: prov.impuestoId ? Number(prov.impuestoId) : null,
+          notas: prov.notas || null,
           tiempoEntregaDias: Number(prov.tiempoEntregaDias || prov.plazoEntrega) || 0,
           prioridad: prov.esPrincipal ? 1 : 2,
           empresaId,

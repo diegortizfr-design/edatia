@@ -2127,6 +2127,7 @@ model Impuesto {
   tarifaFija       Decimal?           @db.Decimal(14, 2) // Para bolsa/saludable
 
   productos        ProductoImpuesto[]
+  productoProveedores ProductoProveedor[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -2604,7 +2605,10 @@ model ProductoProveedor {
   proveedor         Tercero  @relation(fields: [proveedorId], references: [id])
   codigoProveedor   String?  // SKU del proveedor
   precioCompra      Decimal  @db.Decimal(14, 2)
+  impuestoId        Int?
+  impuesto          Impuesto? @relation(fields: [impuestoId], references: [id])
   tiempoEntregaDias Int?
+  notas             String?
   prioridad         Int      @default(1) // 1: Primario, 2: Secundario
 
   @@unique([productoId, proveedorId])
