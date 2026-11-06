@@ -14,6 +14,7 @@ import {
 import {
   getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
 } from '../../services/inventario.service'
+import { getImpuestos } from '../../services/erp.service'
 
 const Barcode = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
   <svg
@@ -96,6 +97,16 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     })
   }, [producto])
 
+  const buildPayload = (currentData: typeof data, newImages?: string[]) => {
+    const imgs = newImages !== undefined ? newImages : currentData.imagenes
+    return {
+      ...currentData,
+      slug: currentData.slug?.trim() ? currentData.slug.trim() : null,
+      imagenes: imgs,
+      imagen: imgs.length > 0 ? imgs[0] : null,
+    }
+  }
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -109,13 +120,15 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       })
       const { url } = response.data
       const updatedImgs = [...data.imagenes, url]
-      const nextData = { ...data, imagenes: updatedImgs }
-      setData(nextData)
-      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
+      setData(prev => ({ ...prev, imagenes: updatedImgs }))
+      const payload = buildPayload(data, updatedImgs)
+      await updateProducto(producto.id, payload)
       refetch()
       toast.success('Imagen subida y guardada exitosamente ✓')
     } catch (err: any) {
-      toast.error('Error al subir la imagen')
+      console.error('Error al subir imagen:', err)
+      const msg = err?.response?.data?.message || 'Error al subir la imagen'
+      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen')
     } finally {
       setUploadingImg(false)
       if (e.target) e.target.value = ''
@@ -153,13 +166,15 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       });
       const { url } = response.data;
       const updatedImgs = [...data.imagenes, url];
-      const nextData = { ...data, imagenes: updatedImgs };
-      setData(nextData);
-      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null });
+      setData(prev => ({ ...prev, imagenes: updatedImgs }));
+      const payload = buildPayload(data, updatedImgs);
+      await updateProducto(producto.id, payload);
       refetch();
       toast.success('Imagen subida y guardada exitosamente ✓');
     } catch (err: any) {
-      toast.error('Error al subir la imagen');
+      console.error('Error al subir imagen:', err);
+      const msg = err?.response?.data?.message || 'Error al subir la imagen';
+      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen');
     } finally {
       setUploadingImg(false);
     }
@@ -167,13 +182,15 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
 
   const save = async () => {
     try {
-      await updateProducto(producto.id, { ...data, imagen: data.imagenes[0] || null })
+      const payload = buildPayload(data)
+      await updateProducto(producto.id, payload)
       setSaved(true)
       refetch()
       toast.success('Configuración web guardada ✓')
       setTimeout(() => setSaved(false), 2500)
-    } catch (err) {
-      alert('Error al guardar configuración web')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al guardar configuración web'
+      toast.error(typeof msg === 'string' ? msg : 'Error al guardar configuración web')
     }
   }
 
@@ -183,25 +200,26 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const addImagen = async () => {
     if (!newImagen.trim()) return
     const updatedImgs = [...data.imagenes, newImagen.trim()]
-    const nextData = { ...data, imagenes: updatedImgs }
-    setData(nextData)
+    setData(prev => ({ ...prev, imagenes: updatedImgs }))
     setNewImagen('')
     try {
-      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
+      const payload = buildPayload(data, updatedImgs)
+      await updateProducto(producto.id, payload)
       refetch()
       toast.success('Imagen agregada y guardada ✓')
-    } catch (err) {
-      toast.error('Error al guardar imagen')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al guardar imagen'
+      toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
     }
   }
 
   const removeImagen = async (i: number) => {
     const imageToDelete = data.imagenes[i];
     const updatedImgs = data.imagenes.filter((_, j) => j !== i)
-    const nextData = { ...data, imagenes: updatedImgs }
-    setData(nextData)
+    setData(prev => ({ ...prev, imagenes: updatedImgs }))
     try {
-      await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null })
+      const payload = buildPayload(data, updatedImgs)
+      await updateProducto(producto.id, payload)
       
       // Eliminar físicamente de Cloudinary
       if (imageToDelete && imageToDelete.includes('res.cloudinary.com')) {
@@ -214,8 +232,9 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
 
       refetch()
       toast.success('Imagen eliminada ✓')
-    } catch (err) {
-      toast.error('Error al eliminar imagen')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al eliminar imagen'
+      toast.error(typeof msg === 'string' ? msg : 'Error al eliminar imagen')
     }
   }
 
@@ -354,14 +373,15 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
                   const updatedImgs = [...data.imagenes];
                   const [moved] = updatedImgs.splice(fromIndex, 1);
                   updatedImgs.splice(toIndex, 0, moved);
-                  const nextData = { ...data, imagenes: updatedImgs };
-                  setData(nextData);
+                  setData(prev => ({ ...prev, imagenes: updatedImgs }));
                   try {
-                    await updateProducto(producto.id, { ...nextData, imagen: updatedImgs[0] || null });
+                    const payload = buildPayload(data, updatedImgs);
+                    await updateProducto(producto.id, payload);
                     refetch();
                     toast.success('Orden de imágenes actualizado ✓');
-                  } catch (err) {
-                    toast.error('Error al actualizar el orden');
+                  } catch (err: any) {
+                    const msg = err?.response?.data?.message || 'Error al actualizar el orden';
+                    toast.error(typeof msg === 'string' ? msg : 'Error al actualizar el orden');
                   }
                 }}
                 className="group flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 hover:border-indigo-400 hover:shadow-md cursor-grab active:cursor-grabbing rounded-xl text-xs text-slate-600 relative overflow-hidden transition-all"
@@ -667,6 +687,12 @@ function TabCompras({ productoId, sku }: { productoId: number; sku: string }) {
 
 /* ---- TAB: Proveedores ---- */
 function TabProveedores({ producto, refetch }: { producto: any; refetch: () => void }) {
+  // Impuestos desde Configuración - Contable (/impuestos)
+  const { data: rawImpuestos = [] } = useQuery({ queryKey: ['impuestos'], queryFn: getImpuestos })
+  const impuestosDisponibles = Array.isArray(rawImpuestos)
+    ? rawImpuestos.filter((t: any) => t.activo !== false && t.estado !== 'INACTIVO' && t.retencionCompra !== true)
+    : []
+
   const [vinculados, setVinculados] = useState<any[]>(() => {
     return (producto.proveedoresRel || []).map((rel: any) => ({
       id: rel.proveedor?.id || rel.proveedorId,
@@ -676,6 +702,7 @@ function TabProveedores({ producto, refetch }: { producto: any; refetch: () => v
       telefono: rel.proveedor?.telefono || '',
       esPrincipal: rel.prioridad === 1 || rel.esPrincipal || false,
       precioAcordado: Number(rel.precioCompra || 0),
+      impuestoId: rel.impuestoId ? String(rel.impuestoId) : (rel.impuesto?.id ? String(rel.impuesto.id) : ''),
       plazoEntrega: Number(rel.tiempoEntregaDias || 0),
       notas: rel.notas || ''
     }))
@@ -695,14 +722,16 @@ function TabProveedores({ producto, refetch }: { producto: any; refetch: () => v
     try {
       await updateProducto(producto.id, { proveedores: listToSave })
       setSaved(true)
+      toast.success('Proveedores y condiciones guardados correctamente')
       refetch()
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      alert('Error al guardar proveedores')
+      toast.error('Error al guardar los proveedores')
     }
   }
 
   const vincular = (prov: any) => {
+    const defaultTax = impuestosDisponibles.find((t: any) => t.esDefecto) || impuestosDisponibles[0]
     const updated = [...vinculados, {
       id: prov.id,
       nombre: prov.nombre,
@@ -711,6 +740,7 @@ function TabProveedores({ producto, refetch }: { producto: any; refetch: () => v
       telefono: prov.telefono,
       esPrincipal: vinculados.length === 0,
       precioAcordado: 0,
+      impuestoId: defaultTax ? String(defaultTax.id) : '',
       plazoEntrega: prov.plazoEntregaDias || 0,
       notas: ''
     }]
@@ -742,7 +772,7 @@ function TabProveedores({ producto, refetch }: { producto: any; refetch: () => v
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Building2 size={18} className="text-indigo-600" /> Proveedores del Producto</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Vincula los proveedores habituales y marca el principal.</p>
+          <p className="text-xs text-slate-400 mt-0.5">Vincula los proveedores habituales, su precio acordado con impuesto contable y marca el principal.</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowSearch(!showSearch)} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
@@ -782,50 +812,84 @@ function TabProveedores({ producto, refetch }: { producto: any; refetch: () => v
       {/* Lista vinculados */}
       {vinculados.length > 0 ? (
         <div className="space-y-4">
-          {vinculados.map(v => (
-            <div key={v.id} className={`bg-white border-2 rounded-2xl p-5 shadow-sm transition-colors ${v.esPrincipal ? 'border-indigo-200' : 'border-slate-200/80'}`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-sm ${v.esPrincipal ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    {v.nombre.charAt(0)}
+          {vinculados.map(v => {
+            const taxObj = impuestosDisponibles.find((t: any) => String(t.id) === String(v.impuestoId))
+            const taxRate = taxObj ? Number(taxObj.tarifa || 0) : 0
+            const precioBase = Number(v.precioAcordado || 0)
+            const totalConImpuesto = Math.round(precioBase * (1 + taxRate / 100))
+
+            return (
+              <div key={v.id} className={`bg-white border-2 rounded-2xl p-5 shadow-sm transition-colors ${v.esPrincipal ? 'border-indigo-200' : 'border-slate-200/80'}`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-sm ${v.esPrincipal ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {v.nombre.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-extrabold text-slate-800">{v.nombre}</p>
+                        {v.esPrincipal && <span className="flex items-center gap-1 text-[9px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full uppercase"><Star size={9} /> Principal</span>}
+                      </div>
+                      {v.nombreComercial && <p className="text-[10px] text-slate-400">{v.nombreComercial}</p>}
+                      {v.email && <p className="text-[10px] text-slate-400">{v.email}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!v.esPrincipal && (
+                      <button onClick={() => marcarPrincipal(v.id)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-500 rounded-lg text-[10px] font-bold transition-all">
+                        <Star size={11} /> Marcar Principal
+                      </button>
+                    )}
+                    <button onClick={() => desvincular(v.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Precio Acordado ($)</label>
+                    <input type="number" min="0" step="any" value={v.precioAcordado} onChange={e => updateVinculado(v.id, 'precioAcordado', Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-extrabold text-slate-800">{v.nombre}</p>
-                      {v.esPrincipal && <span className="flex items-center gap-1 text-[9px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full uppercase"><Star size={9} /> Principal</span>}
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase">Impuesto (Contable)</label>
+                      {taxRate > 0 && (
+                        <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded">
+                          +{taxRate}%
+                        </span>
+                      )}
                     </div>
-                    {v.nombreComercial && <p className="text-[10px] text-slate-400">{v.nombreComercial}</p>}
-                    {v.email && <p className="text-[10px] text-slate-400">{v.email}</p>}
+                    <select
+                      value={v.impuestoId || ''}
+                      onChange={e => updateVinculado(v.id, 'impuestoId', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                    >
+                      <option value="">Sin impuesto (0%)</option>
+                      {impuestosDisponibles.map((imp: any) => (
+                        <option key={imp.id} value={imp.id}>
+                          {imp.nombre} ({Number(imp.tarifa)}%)
+                        </option>
+                      ))}
+                    </select>
+                    {precioBase > 0 && taxRate > 0 && (
+                      <p className="text-[10px] text-emerald-600 font-bold mt-1">
+                        Total c/Impuesto: ${totalConImpuesto.toLocaleString('es-CO')}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Plazo de Entrega (días)</label>
+                    <input type="number" min="0" value={v.plazoEntrega} onChange={e => updateVinculado(v.id, 'plazoEntrega', Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Notas de Negociación</label>
+                    <input type="text" value={v.notas || ''} onChange={e => updateVinculado(v.id, 'notas', e.target.value)} placeholder="Condiciones, descuentos..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!v.esPrincipal && (
-                    <button onClick={() => marcarPrincipal(v.id)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-500 rounded-lg text-[10px] font-bold transition-all">
-                      <Star size={11} /> Marcar Principal
-                    </button>
-                  )}
-                  <button onClick={() => desvincular(v.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={14} /></button>
-                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Precio Acordado ($)</label>
-                  <input type="number" min="0" value={v.precioAcordado} onChange={e => updateVinculado(v.id, 'precioAcordado', Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Plazo de Entrega (días)</label>
-                  <input type="number" min="0" value={v.plazoEntrega} onChange={e => updateVinculado(v.id, 'plazoEntrega', Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Notas de Negociación</label>
-                  <input type="text" value={v.notas} onChange={e => updateVinculado(v.id, 'notas', e.target.value)} placeholder="Condiciones, descuentos..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : !showSearch ? (
         <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
