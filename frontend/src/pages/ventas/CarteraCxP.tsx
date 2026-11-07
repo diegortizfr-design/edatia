@@ -477,9 +477,15 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
     }
   })
 
+  const qc = useQueryClient()
+
   const mutPago = useMutation({
     mutationFn: (data: { fcId: number; payload: any }) => registrarPagoFacturaCompra(data.fcId, data.payload),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['saldos-proveedores'] })
+      qc.invalidateQueries({ queryKey: ['facturas-compra'] })
+      qc.invalidateQueries({ queryKey: ['egresos'] })
+      qc.invalidateQueries({ queryKey: ['comprobantes'] })
       onSuccess()
     },
     onError: (err: any) => {
@@ -497,11 +503,14 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
       return setErrorMsg(`El valor a pagar (${fmt(valNum)}) supera el saldo de la factura (${fmt(saldoPendienteFc)})`)
     }
 
+    const selMedio = mediosActivos.find((m: any) => m.codigo === medioPago)
+
     mutPago.mutate({
       fcId: activeFc.id,
       payload: {
         valor: valNum,
         medioPago,
+        cajaBancoId: selMedio?.cajaBancoId || undefined,
         referencia: referencia || undefined,
         notas: notas || undefined,
       }

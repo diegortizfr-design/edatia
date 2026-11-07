@@ -159,7 +159,7 @@ export class ComprobantesService {
     })
     const year = new Date().getFullYear()
     const seq = last ? parseInt(last.numero.split('-').pop() ?? '0') + 1 : 1
-    return `${tipo}-${year}-${String(seq).padStart(5, '0')}`
+    return `${tipo}-${year}-${seq}`
   }
 
   // ── Libro Mayor de una cuenta ──────────────────────────────────────────────

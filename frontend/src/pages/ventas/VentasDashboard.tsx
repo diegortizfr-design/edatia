@@ -203,7 +203,7 @@ export function VentasDashboard() {
           { to: '/ventas/clientes',      label: 'Clientes',       icon: <Users size={18} /> },
           { to: '/ventas/facturas',      label: 'Facturas',       icon: <FileText size={18} /> },
           { to: '/ventas/notas-credito', label: 'Notas crédito',  icon: <TrendingUp size={18} /> },
-          { to: '/ventas/recibo-caja',   label: 'Recibos de caja',icon: <DollarSign size={18} /> },
+          { to: '/ventas/recibos',       label: 'Recibos de caja',icon: <DollarSign size={18} /> },
         ].map(link => (
           <Link key={link.to} to={link.to}
             className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm">

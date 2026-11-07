@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrdenCompraDto, UpdateOrdenCompraDto, RecibirOrdenCompraDto, AprobarOrdenCompraDto, RechazarOrdenCompraDto } from './dto/orden-compra.dto';
+import { calcularNuevoCPP } from '../common/costo-promedio.helper';
 
 const OC_INCLUDE = {
   empresa: {
@@ -535,14 +536,16 @@ export class OrdenesCompraService {
           }
 
           const cantAnterior = parseFloat(stock.cantidad.toString());
-          const cppAnterior = parseFloat(producto.costoPromedio.toString());
           const cantNueva = ri.cantidadRecibida;
           const cantTotal = cantAnterior + cantNueva;
 
-          // Recalcular CPP
-          const nuevoCPP = cantTotal > 0
-            ? (cantAnterior * cppAnterior + cantNueva * costoUnitario) / cantTotal
-            : costoUnitario;
+          // Recalcular CPP ponderado multi-bodega con prevención de saldo negativo
+          const { nuevoCPP } = await calcularNuevoCPP(tx, {
+            productoId,
+            empresaId,
+            cantNueva,
+            costoUnitario,
+          });
 
           // Actualizar stock
           await tx.stock.update({
@@ -550,10 +553,13 @@ export class OrdenesCompraService {
             data: { cantidad: { increment: cantNueva } },
           });
 
-          // Actualizar CPP del producto
+          // Actualizar CPP y Costo Última Compra del producto
           await tx.producto.update({
             where: { id: productoId },
-            data: { costoPromedio: nuevoCPP },
+            data: {
+              costoPromedio: nuevoCPP,
+              costoUltimo: costoUnitario,
+            },
           });
 
           // Procesar Lote si maneja lotes

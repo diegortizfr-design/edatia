@@ -350,6 +350,51 @@ export function FacturaDetalle() {
         </div>
       )}
 
+      {/* Relación de Pagos / Recibos de Caja Aplicados */}
+      {((f.recibos && f.recibos.length > 0) || f.reciboCaja) && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2 print:hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+              <CheckCircle size={15} className="text-emerald-600" />
+              Recibos de Caja (RC) Aplicados a esta Factura
+            </span>
+            <Link
+              to={`/ventas/recibos`}
+              className="text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold underline"
+            >
+              Ver todos los Recibos de Caja
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {f.reciboCaja && (
+              <Link
+                to={`/ventas/recibos`}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs text-slate-800 shadow-xs hover:bg-emerald-50/50"
+              >
+                <span className="font-mono font-bold text-emerald-700">RC: {f.reciboCaja.numero}</span>
+                <span className="text-slate-400">·</span>
+                <span className="font-semibold">{fmt(Number(f.reciboCaja.valor || f.total))}</span>
+                <span className="text-[10px] text-slate-400">({f.reciboCaja.medioPago || 'Contado'})</span>
+              </Link>
+            )}
+            {f.recibos?.map((rf: any) => (
+              <Link
+                key={rf.id}
+                to={`/ventas/recibos`}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs text-slate-800 shadow-xs hover:bg-emerald-50/50"
+              >
+                <span className="font-mono font-bold text-emerald-700">RC: {rf.recibo?.numero}</span>
+                <span className="text-slate-400">·</span>
+                <span className="font-semibold">{fmt(Number(rf.montoAplicado || rf.recibo?.valor || 0))}</span>
+                {rf.recibo?.fecha && (
+                  <span className="text-[10px] text-slate-400">({new Date(rf.recibo.fecha).toLocaleDateString('es-CO')})</span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Vista Principal de Documento Gráfico Oficial */}
       <div className="flex justify-center bg-slate-100/70 p-3 sm:p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-inner print:p-0 print:border-none print:bg-white">
         <div id="printable-voucher" className="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-slate-200/90 p-5 sm:p-7 md:p-8 space-y-3.5 text-slate-800 select-text print:p-0 print:border-none print:shadow-none print:rounded-none">

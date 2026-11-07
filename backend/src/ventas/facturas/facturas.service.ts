@@ -243,7 +243,7 @@ export class FacturasService {
             const year = new Date().getFullYear()
             const lastRc = await tx.reciboCaja.findFirst({ where: { empresaId }, orderBy: { id: 'desc' } })
             const seq = lastRc ? parseInt(lastRc.numero.split('-').pop() ?? '0') + 1 : 1
-            numeroRc = `RC-${year}-${String(seq).padStart(5, '0')}`
+            numeroRc = `RC-${year}-${seq}`
           }
 
           reciboCajaCreado = await tx.reciboCaja.create({
@@ -714,12 +714,12 @@ export class FacturasService {
       select: { numero: true },
     })
     const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() ?? '0') + 1 : 1
-    const numero = `VTA-${anio}-${String(seq).padStart(5, '0')}`
+    const numero = `FV-${anio}-${seq}`
 
     await client.comprobante.create({
       data: {
         empresaId,
-        tipo: 'VENTA',
+        tipo: 'FV',
         numero,
         fecha,
         concepto: `Factura de venta ${factura.numero}`,
@@ -740,6 +740,6 @@ export class FacturasService {
     const year = new Date().getFullYear()
     const seq = last ? parseInt(last.numero.split('-').pop() ?? '0') + 1 : 1
     const prefix = tipoDocumento === 'FVE' ? 'FVE' : 'FV'
-    return `${prefix}-${year}-${String(seq).padStart(5, '0')}`
+    return `${prefix}-${year}-${seq}`
   }
 }
