@@ -624,6 +624,8 @@ export function NuevaFcForm() {
   const totalSubtotal = lineas.reduce((acc, l) => acc + l.subtotalCalc, 0)
   const totalIva = lineas.reduce((acc, l) => acc + l.ivaCalc, 0)
   const totalFactura = totalSubtotal + totalIva
+  const baseGravada = lineas.filter(l => l.ivaPct > 0).reduce((acc, l) => acc + l.subtotalCalc, 0)
+  const baseExenta = lineas.filter(l => l.ivaPct === 0).reduce((acc, l) => acc + l.subtotalCalc, 0)
 
   const mutation = useMutation({
     mutationFn: (data: any) => createFacturaCompra(data),
@@ -671,11 +673,14 @@ export function NuevaFcForm() {
       ordenCompraId: ordenCompraId ? Number(ordenCompraId) : undefined,
       recepcionId: recepcionId || undefined,
       notas: notas || undefined,
-      items: items.map(item => ({
+      items: lineas.map(item => ({
         productoId: item.productoId,
-        cantidad: parseFloat(item.cantidad),
-        costoUnitario: parseFloat(item.costoUnitario),
-        subtotal: parseFloat(item.cantidad) * parseFloat(item.costoUnitario),
+        cantidad: parseFloat(item.cantidad) || 0,
+        costoUnitario: parseFloat(item.costoUnitario) || 0,
+        subtotal: item.subtotalCalc,
+        ivaPct: item.ivaPct,
+        ivaValor: item.ivaCalc,
+        descuentoPct: parseFloat(item.descuentoPct) || 0,
       }))
     })
   }
@@ -1176,9 +1181,9 @@ export function NuevaFcForm() {
                     <th className="text-right pb-2 w-20">Cantidad</th>
                     <th className="text-right pb-2 w-32">Costo Unitario</th>
                     <th className="text-right pb-2 w-20">Descuento %</th>
-                    <th className="text-right pb-2 w-28">Subtotal</th>
+                    <th className="text-right pb-2 w-28">$ Subtotal</th>
                     <th className="text-center pb-2 w-36">% Impuesto</th>
-                    <th className="text-right pb-2 w-28">$ Impuesto</th>
+                    <th className="text-right pb-2 w-28">$ IVA Línea</th>
                     <th className="text-right pb-2 w-28">Total</th>
                     <th className="pb-2 w-8"></th>
                   </tr>
@@ -1246,7 +1251,12 @@ export function NuevaFcForm() {
                         </select>
                       </td>
                       <td className="py-3 pl-2 text-right font-bold text-indigo-600 font-mono">
-                        {fmt(item.ivaCalc)}
+                        <div>{fmt(item.ivaCalc)}</div>
+                        {parseFloat(item.cantidad) > 1 && item.ivaPct > 0 && (
+                          <div className="text-[10px] text-slate-400 font-normal">
+                            ({fmt(Math.round(item.ivaCalc / (parseFloat(item.cantidad) || 1)))} c/u)
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 pl-2 text-right font-extrabold text-slate-800 font-mono">
                         {fmt(item.totalCalc)}
@@ -1261,12 +1271,30 @@ export function NuevaFcForm() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-100">
-                    <td colSpan={7} className="pt-4 text-right text-xs font-bold text-slate-500">Subtotal Factura:</td>
-                    <td className="pt-4 text-right text-sm font-extrabold text-slate-800 font-mono">{fmt(totalSubtotal)}</td>
+                    <td colSpan={7} className="pt-3 text-right text-xs font-bold text-slate-500">Subtotal Factura (Base Total):</td>
+                    <td className="pt-3 text-right text-sm font-extrabold text-slate-800 font-mono">{fmt(totalSubtotal)}</td>
                     <td></td>
                   </tr>
+                  {baseExenta > 0 && (
+                    <tr>
+                      <td colSpan={7} className="pt-1 text-right text-[11px] font-semibold text-slate-400">
+                        Subtotal Exento / 0% IVA (sin impuesto):
+                      </td>
+                      <td className="pt-1 text-right text-xs font-bold text-slate-500 font-mono">{fmt(baseExenta)}</td>
+                      <td></td>
+                    </tr>
+                  )}
+                  {baseGravada > 0 && (
+                    <tr>
+                      <td colSpan={7} className="pt-1 text-right text-[11px] font-semibold text-slate-400">
+                        Base Gravada (con IVA):
+                      </td>
+                      <td className="pt-1 text-right text-xs font-bold text-slate-700 font-mono">{fmt(baseGravada)}</td>
+                      <td></td>
+                    </tr>
+                  )}
                   <tr>
-                    <td colSpan={7} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (IVA calculado):</td>
+                    <td colSpan={7} className="pt-1 text-right text-xs font-bold text-slate-500">Impuestos (IVA liquidado):</td>
                     <td className="pt-1 text-right text-sm font-extrabold text-indigo-600 font-mono">{fmt(totalIva)}</td>
                     <td></td>
                   </tr>

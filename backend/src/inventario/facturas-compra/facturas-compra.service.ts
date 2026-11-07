@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { PrismaService } from '../../prisma/prisma.service';
 import { ComprobantesService } from '../../contabilidad/comprobantes/comprobantes.service';
 import { CreateFacturaCompraDto, UpdateFacturaCompraDto, CreateRecepcionProductoDto } from './dto/factura-compra.dto';
+import { calcularNuevoCPP } from '../common/costo-promedio.helper';
 
 @Injectable()
 export class FacturasCompraService implements OnModuleInit {
@@ -139,7 +140,7 @@ export class FacturasCompraService implements OnModuleInit {
     const count = await db.facturaCompra.count({
       where: { empresaId, numero: { startsWith: `FC-${year}-` } },
     });
-    return `FC-${year}-${String(count + 1).padStart(5, '0')}`;
+    return `FC-${year}-${count + 1}`;
   }
   async create(dto: CreateFacturaCompraDto, empresaId: number, usuarioId: number) {
     const proveedor = await this.prisma.tercero.findFirst({
@@ -209,7 +210,7 @@ export class FacturasCompraService implements OnModuleInit {
             where: { id: dto.documentoCxpId, empresaId, sigla: 'CXP' },
           });
           if (docCxp) {
-            numeroCxp = `${docCxp.prefijo}-${String(docCxp.consecutivoSiguiente).padStart(5, '0')}`;
+            numeroCxp = `${docCxp.prefijo}-${docCxp.consecutivoSiguiente}`;
             await tx.documentoConfig.update({
               where: { id: docCxp.id },
               data: { consecutivoSiguiente: { increment: 1 } },
@@ -221,7 +222,7 @@ export class FacturasCompraService implements OnModuleInit {
             where: { empresaId, sigla: 'CXP', estado: 'ACTIVO' },
           });
           if (docCxp) {
-            numeroCxp = `${docCxp.prefijo}-${String(docCxp.consecutivoSiguiente).padStart(5, '0')}`;
+            numeroCxp = `${docCxp.prefijo}-${docCxp.consecutivoSiguiente}`;
             await tx.documentoConfig.update({
               where: { id: docCxp.id },
               data: { consecutivoSiguiente: { increment: 1 } },
@@ -238,7 +239,7 @@ export class FacturasCompraService implements OnModuleInit {
             where: { id: dto.documentoCeId, empresaId, sigla: 'CE' },
           });
           if (docCe) {
-            numeroCe = `${docCe.prefijo}-${String(docCe.consecutivoSiguiente).padStart(5, '0')}`;
+            numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
             await tx.documentoConfig.update({
               where: { id: docCe.id },
               data: { consecutivoSiguiente: { increment: 1 } },
@@ -250,14 +251,14 @@ export class FacturasCompraService implements OnModuleInit {
             where: { empresaId, sigla: 'CE', estado: 'ACTIVO' },
           });
           if (docCe) {
-            numeroCe = `${docCe.prefijo}-${String(docCe.consecutivoSiguiente).padStart(5, '0')}`;
+            numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
             await tx.documentoConfig.update({
               where: { id: docCe.id },
               data: { consecutivoSiguiente: { increment: 1 } },
             });
             docCeId = docCe.id;
           } else {
-            numeroCe = `CE-${new Date(dto.fechaEmision).getFullYear()}-00001`;
+            numeroCe = `CE-${new Date(dto.fechaEmision).getFullYear()}-1`;
           }
         }
 
@@ -485,7 +486,7 @@ export class FacturasCompraService implements OnModuleInit {
         orderBy: { id: 'desc' },
       });
       const seqComp = lastComp ? parseInt(lastComp.numero.split('-').pop() ?? '0') + 1 : 1;
-      const numComp = `FP-${anio}-${String(seqComp).padStart(5, '0')}`;
+      const numComp = `FP-${anio}-${seqComp}`;
 
       // Crear el comprobante contable directamente
       await tx.comprobante.create({
@@ -513,12 +514,12 @@ export class FacturasCompraService implements OnModuleInit {
         },
       });
 
-      // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Pago (CP)
+      // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Egreso (CE)
       if (!isCredito && cuentaTesoreriaPuc && cuentaProveedores) {
         const egreso = await tx.egreso.create({
           data: {
             empresaId,
-            numero: numeroCe || `CE-${anio}-${String(fc.id).padStart(5, '0')}`,
+            numero: numeroCe || `CE-${anio}-${fc.id}`,
             fecha,
             terceroId: dto.proveedorId,
             beneficiarioNombre: proveedor.nombre,
@@ -537,19 +538,19 @@ export class FacturasCompraService implements OnModuleInit {
           },
         });
 
-        // Consecutivo del comprobante de egreso
+        // Consecutivo del comprobante de egreso (CE)
         const lastCompEgreso = await tx.comprobante.findFirst({
-          where: { empresaId, tipo: 'CP' },
+          where: { empresaId, tipo: 'CE' },
           orderBy: { id: 'desc' },
         });
         const seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
-        const numCompEgreso = `CP-${anio}-${String(seqCompEgreso).padStart(5, '0')}`;
+        const numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
 
         const compEgreso = await tx.comprobante.create({
           data: {
             empresaId,
-            numero: numCompEgreso,
-            tipo: 'CP',
+            numero: numeroCe || numCompEgreso,
+            tipo: 'CE',
             concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
             fecha,
             periodoId: periodo.id,
@@ -780,23 +781,29 @@ export class FacturasCompraService implements OnModuleInit {
         }
 
         const cantAnterior = Number(stock.cantidad);
-        const cppAnterior = Number(producto.costoPromedio);
         const cantTotal = cantAnterior + cantNueva;
 
-        const nuevoCPP = cantTotal > 0
-          ? (cantAnterior * cppAnterior + cantNueva * costoUnitario) / cantTotal
-          : costoUnitario;
+        // Recalcular CPP ponderado multi-bodega con prevención de saldo negativo
+        const { nuevoCPP } = await calcularNuevoCPP(tx, {
+          productoId,
+          empresaId,
+          cantNueva,
+          costoUnitario,
+        });
 
-        // Actualizar Stock
+        // Actualizar Stock de la bodega destino
         await tx.stock.update({
           where: { id: stock.id },
           data: { cantidad: { increment: cantNueva } },
         });
 
-        // Actualizar CPP en Producto
+        // Actualizar CPP y Costo Última Compra en Producto
         await tx.producto.update({
           where: { id: productoId },
-          data: { costoPromedio: nuevoCPP },
+          data: {
+            costoPromedio: nuevoCPP,
+            costoUltimo: costoUnitario,
+          },
         });
 
         // Actualizar cantidadRecibida en FacturaCompraItem si aplica
@@ -919,7 +926,7 @@ export class FacturasCompraService implements OnModuleInit {
   async registrarPago(
     id: number,
     empresaId: number,
-    dto: { valor: number; medioPago?: string; referencia?: string; notas?: string },
+    dto: { valor: number; medioPago?: string; referencia?: string; notas?: string; cajaBancoId?: number; documentoCeId?: number },
     usuarioId: number,
   ) {
     const fc = await this.findOne(id, empresaId);
@@ -935,16 +942,156 @@ export class FacturasCompraService implements OnModuleInit {
     const nuevoTotalPagado = Number(fc.totalPagado ?? 0) + valorNum;
     const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PARCIAL';
 
-    return this.prisma.facturaCompra.update({
-      where: { id },
-      data: {
-        saldo: nuevoSaldo,
-        totalPagado: nuevoTotalPagado,
-        estado: nuevoEstado,
-      },
-      include: {
-        proveedor: true,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const fecha = new Date();
+      const anio = fecha.getFullYear();
+      const mes = fecha.getMonth() + 1;
+
+      // 1. Obtener o resolver documento CE
+      let docCe = null;
+      if (dto.documentoCeId) {
+        docCe = await tx.documentoConfig.findFirst({
+          where: { id: dto.documentoCeId, empresaId, sigla: 'CE', estado: 'ACTIVO' },
+        });
+      }
+      if (!docCe) {
+        docCe = await tx.documentoConfig.findFirst({
+          where: { empresaId, sigla: 'CE', estado: 'ACTIVO' },
+        });
+      }
+
+      let numeroCe: string;
+      if (docCe) {
+        numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
+        await tx.documentoConfig.update({
+          where: { id: docCe.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
+      } else {
+        const lastEgreso = await tx.egreso.findFirst({
+          where: { empresaId },
+          orderBy: { id: 'desc' },
+        });
+        const seqEgreso = lastEgreso ? parseInt(lastEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
+        numeroCe = `CE-${anio}-${seqEgreso}`;
+      }
+
+      // 2. Resolver Cuentas Contables (2205 Proveedores y 1105/1110 Tesorería)
+      let cuentaProveedores = await tx.cuentaPUC.findFirst({
+        where: { empresaId, codigo: { in: ['220505', '2205'] } },
+      });
+      if (!cuentaProveedores) {
+        cuentaProveedores = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: { startsWith: '2205' } },
+        });
+      }
+
+      let cajaBancoObj: any = null;
+      let cuentaTesoreriaPuc: any = null;
+      if (dto.cajaBancoId) {
+        cajaBancoObj = await tx.cajaBanco.findFirst({
+          where: { id: dto.cajaBancoId, empresaId },
+        });
+        if (cajaBancoObj?.cuentaPUC) {
+          cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: cajaBancoObj.cuentaPUC },
+          });
+        }
+      }
+      if (!cuentaTesoreriaPuc) {
+        const defCod = cajaBancoObj?.tipo === 'CAJA' ? '110505' : '111005';
+        cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
+        });
+      }
+
+      // 3. Crear Egreso en Tesorería
+      const egreso = await tx.egreso.create({
+        data: {
+          empresaId,
+          numero: numeroCe,
+          fecha,
+          terceroId: fc.proveedorId,
+          beneficiarioNombre: fc.proveedor?.nombre,
+          beneficiarioDoc: fc.proveedor?.numeroDocumento,
+          categoriaGasto: 'PAGO PROVEEDOR',
+          concepto: `Abono a Factura Compra ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} (${fc.numero})`,
+          referencia: fc.numero,
+          cuentaGastoId: cuentaProveedores ? cuentaProveedores.id : undefined,
+          cajaBancoId: dto.cajaBancoId || undefined,
+          medioPago: dto.medioPago || 'TRANSFERENCIA',
+          monto: valorNum,
+          montoNeto: valorNum,
+          estado: 'APROBADO',
+          usuarioId,
+          documentoConfigId: docCe ? docCe.id : undefined,
+        },
+      });
+
+      // 4. Crear Comprobante Contable CE
+      if (cuentaProveedores && cuentaTesoreriaPuc) {
+        const periodo = await tx.periodoContable.upsert({
+          where: { empresaId_anio_mes: { empresaId, anio, mes } },
+          create: { empresaId, anio, mes },
+          update: {},
+        });
+
+        const compEgreso = await tx.comprobante.create({
+          data: {
+            empresaId,
+            numero: numeroCe,
+            tipo: 'CE',
+            concepto: `Egreso ${numeroCe} - Pago FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
+            fecha,
+            periodoId: periodo.id,
+            referenciaId: egreso.id,
+            referenciaTipo: 'EGRESO',
+            usuarioId,
+            lineas: {
+              create: [
+                {
+                  cuentaId: cuentaProveedores.id,
+                  descripcion: `Abono proveedor - FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
+                  debito: valorNum,
+                  credito: 0,
+                  terceroNit: fc.proveedor?.numeroDocumento,
+                  terceroNombre: fc.proveedor?.nombre,
+                  orden: 0,
+                },
+                {
+                  cuentaId: cuentaTesoreriaPuc.id,
+                  descripcion: `Salida fondos ${cajaBancoObj?.nombre || 'Tesorería'} - ${numeroCe}`,
+                  debito: 0,
+                  credito: valorNum,
+                  terceroNit: fc.proveedor?.numeroDocumento,
+                  terceroNombre: fc.proveedor?.nombre,
+                  orden: 1,
+                },
+              ],
+            },
+          },
+        });
+
+        await tx.egreso.update({
+          where: { id: egreso.id },
+          data: { comprobanteId: compEgreso.id },
+        });
+      }
+
+      // 5. Actualizar FacturaCompra
+      return tx.facturaCompra.update({
+        where: { id },
+        data: {
+          saldo: nuevoSaldo,
+          totalPagado: nuevoTotalPagado,
+          estado: nuevoEstado,
+          numeroCe: fc.numeroCe ? fc.numeroCe : numeroCe,
+          egresoId: egreso.id,
+        },
+        include: {
+          proveedor: true,
+        },
+      });
     });
   }
 }

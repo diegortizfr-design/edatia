@@ -390,9 +390,13 @@ export function Compras() {
                             </span>
                           )}
                           {fc.numeroCe && (
-                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Link
+                              to={`/contabilidad/tesoreria/egresos?query=${encodeURIComponent(fc.numeroCe)}`}
+                              className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900 transition-colors cursor-pointer"
+                              title="Ver Comprobante de Egreso (CE) en Tesorería"
+                            >
                               CE: {fc.numeroCe}
-                            </span>
+                            </Link>
                           )}
                         </td>
                         <td className="px-6 py-4 font-semibold text-slate-800">

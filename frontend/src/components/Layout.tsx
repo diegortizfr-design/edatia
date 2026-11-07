@@ -245,6 +245,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <NavItem to="/ventas/clientes" icon={<Users size={14}/>} label="Clientes" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/pedidos" icon={<ClipboardList size={14}/>} label="Pedidos" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/facturas" icon={<FileText size={14}/>} label="Facturas" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/recibos" icon={<Receipt size={14}/>} label="Recibos de Caja" isCollapsed={isCollapsed} />
                   <NavItem to="/pos" icon={<Monitor size={14}/>} label="Punto de Venta" isCollapsed={isCollapsed} end />
                   <NavItem to="/pos/ventas" icon={<Receipt size={14}/>} label="Ventas POS" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/notas-credito" icon={<RotateCcw size={14}/>} label="Notas Crédito" isCollapsed={isCollapsed} />
@@ -253,6 +254,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 
                 <NavGroup label="Cartera" icon={<Coins size={18} />} isCollapsed={isCollapsed} isOpen={openGroups.cartera} onClick={() => toggleGroup('cartera')}>
                   <NavItem to="/ventas/cartera/cxc" icon={<Receipt size={14}/>} label="Cuentas por Cobrar" isCollapsed={isCollapsed} />
+                  <NavItem to="/ventas/recibos" icon={<Receipt size={14}/>} label="Recibos de Caja" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/cartera/cxp" icon={<CreditCard size={14}/>} label="Cuentas por Pagar" isCollapsed={isCollapsed} />
                   <NavItem to="/ventas/cartera/por-edades" icon={<BarChart3 size={14}/>} label="Cartera por edades" isCollapsed={isCollapsed} />
                 </NavGroup>
@@ -276,7 +278,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NavItem to="/contabilidad/puc" icon={<BookOpen size={14}/>} label="PUC" isCollapsed={isCollapsed} />
                 <NavItem to="/contabilidad/comprobantes" icon={<ClipboardList size={14}/>} label="Comprobantes" isCollapsed={isCollapsed} />
                 <div className="h-px bg-slate-100 my-1 mx-2" />
-                <NavItem to="/contabilidad/tesoreria/egresos" icon={<CreditCard size={14}/>} label="Gastos y Egresos" isCollapsed={isCollapsed} />
+                <NavItem to="/contabilidad/tesoreria/egresos" icon={<CreditCard size={14}/>} label="Egresos / Gastos (CE)" isCollapsed={isCollapsed} />
                 <NavItem to="/contabilidad/tesoreria/caja-menor" icon={<Coins size={14}/>} label="Caja Menor" isCollapsed={isCollapsed} />
                 <NavItem to="/contabilidad/tesoreria/saldos" icon={<Wallet size={14}/>} label="Saldos Cajas/Bancos" isCollapsed={isCollapsed} />
               </NavGroup>

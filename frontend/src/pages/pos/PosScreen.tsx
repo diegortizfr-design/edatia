@@ -171,6 +171,10 @@ export function PosScreen() {
       }
       setShowPago(false)
     },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || 'Error al procesar la venta'
+      toast.error(msg)
+    },
   })
 
   const handleNuevaVenta = () => {
@@ -281,9 +285,11 @@ export function PosScreen() {
 
   totales.total -= descuentoExtra
 
-  const totalPago = useMemo(() => {
+  const totalBaseCubierto = useMemo(() => {
     return Object.values(pagosPorMedio).reduce((acc, val) => acc + (Number(val) || 0), 0)
   }, [pagosPorMedio])
+
+  const totalPago = totalBaseCubierto
 
   const efectivoRecibido = useMemo(() => {
     let sum = 0
@@ -313,13 +319,13 @@ export function PosScreen() {
     return totales.total + recargoTotal
   }, [totales.total, recargoTotal])
 
-  const cambio = useMemo(() => {
-    if (totalPago <= totalConRecargo) return 0
-    const excedente = totalPago - totalConRecargo
-    return Math.min(excedente, efectivoRecibido)
-  }, [totalPago, totalConRecargo, efectivoRecibido])
+  const saldoFaltante = Math.max(0, totales.total - totalBaseCubierto)
 
-  const saldoFaltante = Math.max(0, totalConRecargo - totalPago)
+  const cambio = useMemo(() => {
+    if (totalBaseCubierto <= totales.total) return 0
+    const excedente = totalBaseCubierto - totales.total
+    return Math.min(excedente, efectivoRecibido)
+  }, [totalBaseCubierto, totales.total, efectivoRecibido])
 
   const tieneReciboCaja = Boolean(sesion?.caja?.documentoReciboConfig || sesion?.caja?.documentoReciboConfigId)
 
@@ -330,13 +336,9 @@ export function PosScreen() {
   }
 
   const setSinglePaymentMethod = (targetCodigo: string, baseAmount: number) => {
-    const targetMedio = activeMedios.find((m: any) => m.codigo === targetCodigo)
-    const pct = Number(targetMedio?.recargoPct) || 0
-    const finalAmount = pct > 0 ? baseAmount + Math.round((baseAmount * pct) / 100) : baseAmount
-
     const next: Record<string, number> = {}
     activeMedios.forEach((m: any) => {
-      next[m.codigo] = m.codigo === targetCodigo ? finalAmount : 0
+      next[m.codigo] = m.codigo === targetCodigo ? baseAmount : 0
     })
     setPagosPorMedio(next)
   }
@@ -558,8 +560,14 @@ export function PosScreen() {
   }
 
   const handleFinalizarVenta = () => {
-    if (cart.length === 0) return
-    if (saldoFaltante > 0) return
+    if (cart.length === 0) {
+      toast.error('El carrito de compras está vacío')
+      return
+    }
+    if (saldoFaltante > 0) {
+      toast.error(`Falta por cubrir ${fmt(saldoFaltante)} para completar la venta`)
+      return
+    }
 
     if (!tieneReciboCaja) {
       toast.error('No se puede cobrar: La caja no tiene anclado un documento de Recibo de Caja.')
@@ -571,24 +579,31 @@ export function PosScreen() {
     let pagoTarjetaCredito = 0
     let pagoTransferencia = 0
     let pagoNequi = 0
+    const pagosDetalleFinal: Record<string, number> = {}
 
     activeMedios.forEach((m: any) => {
-      const monto = Number(pagosPorMedio[m.codigo]) || 0
-      if (monto <= 0) return
+      const base = Number(pagosPorMedio[m.codigo]) || 0
+      if (base <= 0) return
+
+      const pct = Number(m.recargoPct) || 0
+      const recargo = pct > 0 ? Math.round((base * pct) / 100) : 0
+      const montoCobrado = base + recargo
+
+      pagosDetalleFinal[m.codigo] = montoCobrado
 
       const code = (m.codigo || '').toUpperCase()
       const name = (m.nombre || '').toUpperCase()
 
       if (code === 'EFECTIVO' || name.includes('EFECTIVO')) {
-        pagoEfectivo += monto
+        pagoEfectivo += montoCobrado
       } else if (code.includes('DEBITO') || name.includes('DEBITO')) {
-        pagoTarjetaDebito += monto
+        pagoTarjetaDebito += montoCobrado
       } else if (code.includes('CREDITO') || name.includes('CREDITO') || code.includes('TARJETA') || name.includes('TARJETA') || code.includes('DATAFONO') || name.includes('DATAFONO')) {
-        pagoTarjetaCredito += monto
+        pagoTarjetaCredito += montoCobrado
       } else if (code.includes('NEQUI') || name.includes('NEQUI') || code.includes('DAVIPLATA') || name.includes('DAVIPLATA')) {
-        pagoNequi += monto
+        pagoNequi += montoCobrado
       } else {
-        pagoTransferencia += monto
+        pagoTransferencia += montoCobrado
       }
     })
 
@@ -605,7 +620,7 @@ export function PosScreen() {
       pagoTransferencia,
       pagoNequi,
       cambio,
-      pagosDetalle: pagosPorMedio,
+      pagosDetalle: pagosDetalleFinal,
       tipoDocumento: sesion?.caja?.documentoConfig?.sigla || 'POS',
       items: cart.map(i => ({
         productoId: i.productoId,
@@ -1380,23 +1395,23 @@ export function PosScreen() {
                     </div>
                   )}
 
-                  {totalPago > 0 && totalPago < totales.total && (
+                  {saldoFaltante > 0 && totalBaseCubierto > 0 && (
                     <div className={`border rounded-xl p-3 flex items-center gap-2 transition-colors duration-200 ${
                       isDark ? 'bg-amber-900/20 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-700'
                     }`}>
                       <AlertCircle size={16} className={isDark ? 'text-amber-400' : 'text-amber-600'} />
-                      <span className="text-sm font-medium">Falta por pagar: {fmt(saldoFaltante)}</span>
+                      <span className="text-sm font-medium">Falta por cubrir: {fmt(saldoFaltante)}</span>
                     </div>
                   )}
 
-                  {totalPago === totales.total && totalPago > 0 && (
+                  {totalBaseCubierto >= totales.total && totalBaseCubierto > 0 && (
                     <div className={`border rounded-xl p-2.5 flex items-center justify-between text-xs font-semibold ${
                       isDark ? 'bg-slate-700/40 border-slate-600 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
                     }`}>
                       <span className="flex items-center gap-1.5 text-green-500 font-bold">
                         <Check size={15} /> Pago exacto cubierto
                       </span>
-                      <span>Total: {fmt(totales.total)}</span>
+                      <span>Total a cobrar: {fmt(totalConRecargo)}</span>
                     </div>
                   )}
 
@@ -1410,9 +1425,9 @@ export function PosScreen() {
                     </button>
                     <button
                       onClick={handleFinalizarVenta}
-                      disabled={!selectedCliente?.id || totalPago < totales.total || mutVenta.isLoading}
+                      disabled={!selectedCliente?.id || totalBaseCubierto < totales.total || mutVenta.isPending || mutVenta.isLoading}
                       className="flex-2 flex-grow bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
-                      {mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
+                      {mutVenta.isPending || mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
                     </button>
                   </div>
                   {mutVenta.isError && (

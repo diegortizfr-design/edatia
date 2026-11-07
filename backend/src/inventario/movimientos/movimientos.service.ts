@@ -9,6 +9,7 @@ import {
   DevolucionProveedorDto, DevolucionClienteDto, ModificarKardexManualDto,
 } from './dto/movimiento.dto';
 import { Decimal } from '@prisma/client/runtime/library';
+import { calcularNuevoCPP } from '../common/costo-promedio.helper';
 
 @Injectable()
 export class MovimientosService {
@@ -294,10 +295,14 @@ export class MovimientosService {
       ? data.costoUnitario
       : cppAnterior;
 
-    const totalAnterior = cantAnterior * cppAnterior;
-    const totalNuevo    = cantNueva * costoNuevo;
+    // Recalcular CPP ponderado multi-bodega
+    const { nuevoCPP } = await calcularNuevoCPP(tx, {
+      productoId: data.productoId,
+      empresaId: data.empresaId,
+      cantNueva,
+      costoUnitario: costoNuevo,
+    });
     const cantTotal     = cantAnterior + cantNueva;
-    const nuevoCPP      = cantTotal > 0 ? (totalAnterior + totalNuevo) / cantTotal : costoNuevo;
     const saldoCantidad = cantTotal;
 
     // 1. Actualizar stock
@@ -306,10 +311,13 @@ export class MovimientosService {
       data: { cantidad: { increment: cantNueva } },
     });
 
-    // 2. Actualizar CPP del producto
+    // 2. Actualizar CPP y Costo Última Compra del producto
     await tx.producto.update({
       where: { id: data.productoId },
-      data: { costoPromedio: nuevoCPP },
+      data: {
+        costoPromedio: nuevoCPP,
+        ...(data.costoUnitario !== undefined && data.costoUnitario !== null ? { costoUltimo: data.costoUnitario } : {}),
+      },
     });
 
     // 3. Crear movimiento
@@ -478,16 +486,18 @@ export class MovimientosService {
       const stock = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, tx);
 
       const cantAnterior = parseFloat(stock.cantidad.toString());
-      const cppAnterior = parseFloat(producto.costoPromedio.toString());
       const cantNueva = dto.cantidad;
       const costoNuevo = dto.costoUnitario;
 
-      // Recalcular CPP
-      const totalAnterior = cantAnterior * cppAnterior;
-      const totalNuevo = cantNueva * costoNuevo;
-      const cantidadTotal = cantAnterior + cantNueva;
-      const nuevoCPP = cantidadTotal > 0 ? (totalAnterior + totalNuevo) / cantidadTotal : costoNuevo;
+      // Recalcular CPP ponderado multi-bodega
+      const { nuevoCPP } = await calcularNuevoCPP(tx, {
+        productoId: dto.productoId,
+        empresaId,
+        cantNueva,
+        costoUnitario: costoNuevo,
+      });
 
+      const cantidadTotal = cantAnterior + cantNueva;
       const saldoCantidad = cantidadTotal;
       const saldoCostoTotal = saldoCantidad * nuevoCPP;
 
@@ -497,10 +507,13 @@ export class MovimientosService {
         data: { cantidad: { increment: cantNueva } },
       });
 
-      // 2. Actualizar CPP del producto
+      // 2. Actualizar CPP y Costo Última Compra del producto
       await tx.producto.update({
         where: { id: dto.productoId },
-        data: { costoPromedio: nuevoCPP },
+        data: {
+          costoPromedio: nuevoCPP,
+          costoUltimo: costoNuevo,
+        },
       });
 
       // 3. Procesar Lote
@@ -860,19 +873,20 @@ export class MovimientosService {
       let nuevoCPP = cppAnterior;
       if (dto.cantidad >= 0) {
         const costoNuevo = dto.costoUnitario ?? cppAnterior;
-        const stockGlobal = await tx.stock.findMany({
-          where: { productoId: dto.productoId, empresaId },
+        const res = await calcularNuevoCPP(tx, {
+          productoId: dto.productoId,
+          empresaId,
+          cantNueva: dto.cantidad,
+          costoUnitario: costoNuevo,
         });
-        const cantTotalAnterior = stockGlobal.reduce((acc: number, s: any) => acc + parseFloat(s.cantidad.toString()), 0) - dto.cantidad;
-        const cantTotalNueva = cantTotalAnterior + dto.cantidad;
-
-        nuevoCPP = cantTotalNueva > 0
-          ? (cantTotalAnterior * cppAnterior + dto.cantidad * costoNuevo) / cantTotalNueva
-          : costoNuevo;
+        nuevoCPP = res.nuevoCPP;
 
         await tx.producto.update({
           where: { id: dto.productoId },
-          data: { costoPromedio: nuevoCPP },
+          data: {
+            costoPromedio: nuevoCPP,
+            ...(dto.costoUnitario ? { costoUltimo: dto.costoUnitario } : {}),
+          },
         });
       }
 
@@ -1756,11 +1770,14 @@ export class MovimientosService {
         ? dto.costoUnitario
         : cppAnterior;
 
-      // Recalcula CPP ponderado
-      const totalAnterior = cantAnterior * cppAnterior;
-      const totalNuevo    = cantNueva * costoNuevo;
+      // Recalcula CPP ponderado multi-bodega
+      const { nuevoCPP } = await calcularNuevoCPP(tx, {
+        productoId: dto.productoId,
+        empresaId,
+        cantNueva,
+        costoUnitario: costoNuevo,
+      });
       const cantTotal     = cantAnterior + cantNueva;
-      const nuevoCPP      = cantTotal > 0 ? (totalAnterior + totalNuevo) / cantTotal : costoNuevo;
       const saldoCantidad = cantTotal;
 
       await tx.stock.update({

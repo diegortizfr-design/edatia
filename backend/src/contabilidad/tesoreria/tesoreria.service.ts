@@ -399,7 +399,7 @@ export class TesoreriaService implements OnModuleInit {
         data: {
           empresaId,
           numero: numero,
-          tipo: 'CP', // Comprobante de Pago / Egreso
+          tipo: 'CE', // Comprobante de Egreso
           concepto: `Egreso ${numero} - ${dto.concepto} [${dto.categoriaGasto}]`,
           fecha,
           periodoId: periodo.id,

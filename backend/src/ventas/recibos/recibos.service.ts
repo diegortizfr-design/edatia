@@ -180,7 +180,7 @@ export class RecibosService {
     })
     const year = new Date().getFullYear()
     const seq = last ? parseInt(last.numero.split('-').pop() ?? '0') + 1 : 1
-    return `RC-${year}-${String(seq).padStart(5, '0')}`
+    return `RC-${year}-${seq}`
   }
 
   async crearAsientoRecibo(tx: any, recibo: any, empresaId: number, usuarioId: number) {
@@ -274,7 +274,7 @@ export class RecibosService {
       select: { numero: true },
     })
     const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() ?? '0') + 1 : 1
-    const numeroComp = `RC-${anio}-${String(seq).padStart(5, '0')}`
+    const numeroComp = `RC-${anio}-${seq}`
 
     await tx.comprobante.create({
       data: {

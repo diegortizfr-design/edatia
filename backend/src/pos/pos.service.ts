@@ -1975,7 +1975,7 @@ export class PosService implements OnModuleInit {
       select: { numero: true }
     })
     const seq = ultimo ? parseInt(ultimo.numero.split('-').pop() || '0') + 1 : 1
-    const numeroComp = `POS-${anio}-${String(seq).padStart(5, '0')}`
+    const numeroComp = `POS-${anio}-${seq}`
 
     const comprobante = await tx.comprobante.create({
       data: {
