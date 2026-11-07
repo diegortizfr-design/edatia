@@ -45,3 +45,4 @@ export async function calcularNuevoCPP(
 
   return { nuevoCPP, cantTotalGlobal: cantTotal };
 }
+
