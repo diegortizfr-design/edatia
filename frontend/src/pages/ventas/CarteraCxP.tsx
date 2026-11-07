@@ -477,8 +477,6 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
     }
   })
 
-  const qc = useQueryClient()
-
   const mutPago = useMutation({
     mutationFn: (data: { fcId: number; payload: any }) => registrarPagoFacturaCompra(data.fcId, data.payload),
     onSuccess: () => {
