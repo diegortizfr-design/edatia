@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { 
-  DollarSign, Truck, AlertCircle, FileText, Search, CreditCard, 
-  Clock, CheckCircle2, X, Plus, Calendar, ShieldCheck 
+import {
+  DollarSign, Truck, AlertCircle, FileText, Search, CreditCard,
+  Clock, CheckCircle2, X, Plus, Calendar, ShieldCheck
 } from 'lucide-react'
-import { 
-  getSaldosProveedores, getFacturasCompra, registrarPagoFacturaCompra, FacturaCompra 
+import {
+  getSaldosProveedores, getFacturasCompra, registrarPagoFacturaCompra, FacturaCompra
 } from '../../services/inventario.service'
 import { getMediosPago } from '../../services/configuracion.service'
 import { CurrencyInput } from '../../components/CurrencyInput'
@@ -180,21 +180,19 @@ export function CarteraCxP() {
         <div className="flex gap-1.5 p-1 bg-slate-100/70 border border-slate-200/50 rounded-xl overflow-x-auto w-full sm:w-auto">
           <button
             onClick={() => { setActiveTab('proveedores'); setSearch('') }}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'proveedores'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === 'proveedores'
+              ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             Saldos por Proveedor
           </button>
           <button
             onClick={() => { setActiveTab('facturas'); setSearch('') }}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'facturas'
-                ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'facturas'
+              ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             <span>Facturas de Compra a Crédito</span>
             {facturasCredito.length > 0 && (
@@ -205,11 +203,10 @@ export function CarteraCxP() {
           </button>
           <button
             onClick={() => { setActiveTab('contado'); setSearch('') }}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'contado'
-                ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'contado'
+              ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/50'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             <span>Facturas Contado Pagadas</span>
             {facturasContado.length > 0 && (
@@ -327,11 +324,10 @@ export function CarteraCxP() {
                         <td className="p-4 text-right text-slate-600 font-medium">{fmt(Number(fc.total ?? 0))}</td>
                         <td className="p-4 text-right font-black text-indigo-900">{fmt(saldo)}</td>
                         <td className="p-4 text-center">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                            totalPagado > 0
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                          }`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${totalPagado > 0
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            }`}>
                             {totalPagado > 0 ? 'Abonada' : 'Pendiente'}
                           </span>
                         </td>
@@ -476,8 +472,6 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
       setMedioPago(mediosActivos[0].codigo)
     }
   })
-
-  const qc = useQueryClient()
 
   const mutPago = useMutation({
     mutationFn: (data: { fcId: number; payload: any }) => registrarPagoFacturaCompra(data.fcId, data.payload),
