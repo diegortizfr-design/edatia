@@ -24,6 +24,20 @@ export class FacturaCompraItemDto {
   descuentoPct?: number;
 }
 
+export class PagoFacturaCompraDto {
+  @IsInt()
+  cajaBancoId!: number;
+
+  @IsString()
+  medioPago!: string;
+
+  @IsNumber() @Min(0.01)
+  monto!: number;
+
+  @IsOptional() @IsString()
+  referencia?: string;
+}
+
 export class CreateFacturaCompraDto {
   @IsOptional() @IsString()
   prefijoProveedor?: string;
@@ -89,6 +103,11 @@ export class CreateFacturaCompraDto {
   @ValidateNested({ each: true })
   @Type(() => FacturaCompraItemDto)
   items?: FacturaCompraItemDto[];
+
+  @IsOptional() @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PagoFacturaCompraDto)
+  pagos?: PagoFacturaCompraDto[];
 }
 
 export class CreateRecepcionItemDto {

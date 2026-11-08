@@ -29,6 +29,14 @@ interface LineaItem {
   tipoIva?: string
 }
 
+interface PagoMixtoItem {
+  id: string
+  cajaBancoId: string
+  medioPago: string
+  monto: string
+  referencia: string
+}
+
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
 }
@@ -237,6 +245,10 @@ export function NuevaFcForm() {
       setFechaVencimiento(baseDateStr)
     }
   }, [fechaEmision, diasCredito, esCredito])
+
+  // ── Pago Mixto (Contado multi-cuenta) ──
+  const [esPagoMixto, setEsPagoMixto] = useState(false)
+  const [pagosMixtos, setPagosMixtos] = useState<PagoMixtoItem[]>([])
 
   // Si el usuario cambia manualmente la fecha de vencimiento, recalcular días
   const handleFechaVencChange = (vencStr: string) => {
@@ -627,6 +639,74 @@ export function NuevaFcForm() {
   const baseGravada = lineas.filter(l => l.ivaPct > 0).reduce((acc, l) => acc + l.subtotalCalc, 0)
   const baseExenta = lineas.filter(l => l.ivaPct === 0).reduce((acc, l) => acc + l.subtotalCalc, 0)
 
+  // ── Cálculos y Handlers de Pago Mixto ──
+  const totalAsignadoMixto = useMemo(() => {
+    return pagosMixtos.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0)
+  }, [pagosMixtos])
+
+  const diferenciaMixto = Math.round(totalFactura - totalAsignadoMixto)
+
+  const handleTogglePagoMixto = (checked: boolean) => {
+    setEsPagoMixto(checked)
+    if (checked && pagosMixtos.length === 0) {
+      const cajaDefault = cajasBancosActivos.find((cb: any) => cb.tipo === 'CAJA') || cajasBancosActivos[0]
+      const bancoDefault = cajasBancosActivos.find((cb: any) => cb.tipo === 'BANCO') || (cajasBancosActivos.length > 1 ? cajasBancosActivos[1] : cajasBancosActivos[0])
+
+      const medioEfectivo = mediosPagoActivos.find((m: any) => m.codigo?.toUpperCase().includes('EFECTIVO') || m.nombre?.toLowerCase().includes('efectivo'))?.codigo || 'EFECTIVO'
+      const medioBanco = mediosPagoActivos.find((m: any) => m.codigo?.toUpperCase().includes('TRANS') || m.nombre?.toLowerCase().includes('transferencia'))?.codigo || 'TRANSFERENCIA'
+
+      setPagosMixtos([
+        {
+          id: 'pago-1',
+          cajaBancoId: cajaDefault ? String(cajaDefault.id) : '',
+          medioPago: medioEfectivo,
+          monto: '',
+          referencia: '',
+        },
+        {
+          id: 'pago-2',
+          cajaBancoId: bancoDefault ? String(bancoDefault.id) : '',
+          medioPago: medioBanco,
+          monto: '',
+          referencia: '',
+        },
+      ])
+    }
+  }
+
+  const handleAddPagoMixto = () => {
+    const nextIdx = pagosMixtos.length + 1
+    const cb = cajasBancosActivos[nextIdx % cajasBancosActivos.length] || cajasBancosActivos[0]
+    setPagosMixtos(prev => [
+      ...prev,
+      {
+        id: `pago-${Date.now()}`,
+        cajaBancoId: cb ? String(cb.id) : '',
+        medioPago: mediosPagoActivos[0]?.codigo || 'EFECTIVO',
+        monto: '',
+        referencia: '',
+      }
+    ])
+  }
+
+  const handleRemovePagoMixto = (index: number) => {
+    if (pagosMixtos.length <= 2) {
+      toast.error('El pago mixto debe contener al menos 2 medios de pago')
+      return
+    }
+    setPagosMixtos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleUpdatePagoMixto = (index: number, field: keyof PagoMixtoItem, value: string) => {
+    setPagosMixtos(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
+  }
+
+  const handleAsignarRestante = (index: number) => {
+    const otrosSuma = pagosMixtos.reduce((acc, p, i) => i !== index ? acc + (parseFloat(p.monto) || 0) : acc, 0)
+    const restante = Math.max(0, totalFactura - otrosSuma)
+    handleUpdatePagoMixto(index, 'monto', String(Math.round(restante)))
+  }
+
   const mutation = useMutation({
     mutationFn: (data: any) => createFacturaCompra(data),
     onSuccess: () => {
@@ -648,8 +728,28 @@ export function NuevaFcForm() {
     if (!proveedorId) return setError('Selecciona un proveedor')
     if (!consecutivo) return setError('Ingresa el consecutivo de factura del proveedor')
     if (items.length === 0) return setError('Agrega al menos un ítem a la factura')
-    if (!esCredito && cajasBancosActivos.length > 0 && !cajaBancoId) {
-      return setError('Selecciona la Caja o Banco desde donde se realiza el pago de contado')
+    if (!esCredito) {
+      if (esPagoMixto) {
+        if (pagosMixtos.length < 2) {
+          return setError('El pago mixto debe contener al menos 2 medios de pago')
+        }
+        const sumPagos = pagosMixtos.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0)
+        if (Math.abs(sumPagos - totalFactura) > 1) {
+          return setError(`La suma de los medios de pago (${fmt(sumPagos)}) debe ser exactamente igual al total de la factura (${fmt(totalFactura)})`)
+        }
+        for (let i = 0; i < pagosMixtos.length; i++) {
+          if (!pagosMixtos[i].cajaBancoId) {
+            return setError(`Selecciona la Caja o Banco para la cuenta de salida #${i + 1}`)
+          }
+          if ((parseFloat(pagosMixtos[i].monto) || 0) <= 0) {
+            return setError(`Ingresa un monto válido mayor a 0 para el medio de pago #${i + 1}`)
+          }
+        }
+      } else {
+        if (cajasBancosActivos.length > 0 && !cajaBancoId) {
+          return setError('Selecciona la Caja o Banco desde donde se realiza el pago de contado')
+        }
+      }
     }
 
     mutation.mutate({
@@ -660,11 +760,17 @@ export function NuevaFcForm() {
       fechaEmision: fechaEmision || new Date().toISOString().split('T')[0],
       fechaVencimiento: fechaVencimiento || undefined,
       formaPago,
-      medioPago: !esCredito ? medioPago : undefined,
+      medioPago: !esCredito ? (esPagoMixto ? 'MIXTO' : medioPago) : undefined,
       diasCredito: esCredito ? Number(diasCredito) : 0,
       documentoCxpId: esCredito && documentoCxpId ? Number(documentoCxpId) : undefined,
       documentoCeId: !esCredito && documentoCeId ? Number(documentoCeId) : undefined,
-      cajaBancoId: !esCredito && cajaBancoId ? Number(cajaBancoId) : undefined,
+      cajaBancoId: !esCredito ? (esPagoMixto && pagosMixtos[0] ? Number(pagosMixtos[0].cajaBancoId) : (cajaBancoId ? Number(cajaBancoId) : undefined)) : undefined,
+      pagos: (!esCredito && esPagoMixto) ? pagosMixtos.map(p => ({
+        cajaBancoId: Number(p.cajaBancoId),
+        medioPago: p.medioPago,
+        monto: parseFloat(p.monto) || 0,
+        referencia: p.referencia || undefined,
+      })) : undefined,
       subtotal: totalSubtotal,
       descuento: 0,
       iva: totalIva,
@@ -1012,7 +1118,7 @@ export function NuevaFcForm() {
                 </div>
               </>
             ) : (
-              /* Si es Contado: Documento CE + Caja/Banco + Medio de Pago */
+              /* Si es Contado: Documento CE + Caja/Banco + Medio de Pago O Pago Mixto */
               <>
                 <div className="md:col-span-4">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
@@ -1032,42 +1138,204 @@ export function NuevaFcForm() {
                   </select>
                 </div>
 
-                <div className="md:col-span-4">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                    Caja o Banco de Pago (Salida Fondos) *
+                {/* Switch / Checkbox para Habilitar Pago Mixto */}
+                <div className="md:col-span-8 flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl mt-auto">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={esPagoMixto}
+                      onChange={e => handleTogglePagoMixto(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">
+                        Habilitar Pago Mixto (Efectivo + Transferencia, etc.)
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">
+                        Desprende múltiples cuentas de tesorería dentro del mismo Comprobante de Egreso (CE)
+                      </span>
+                    </div>
                   </label>
-                  <select
-                    value={cajaBancoId}
-                    onChange={e => setCajaBancoId(e.target.value)}
-                    required
-                    className={inputCls}
-                  >
-                    <option value="">— Seleccionar Caja o Banco —</option>
-                    {cajasBancosActivos.map((cb: any) => (
-                      <option key={cb.id} value={cb.id}>
-                        [{cb.tipo}] {cb.nombre} {cb.cuentaPUC ? `(${cb.cuentaPUC})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${esPagoMixto ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                    {esPagoMixto ? 'Pago Mixto' : 'Medio Único'}
+                  </span>
                 </div>
 
-                <div className="md:col-span-4">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                    Medio de Pago Principal *
-                  </label>
-                  <select
-                    value={medioPago}
-                    onChange={e => setMedioPago(e.target.value)}
-                    required
-                    className={inputCls}
-                  >
-                    {mediosPagoActivos.map((m: any) => (
-                      <option key={m.id || m.codigo} value={m.codigo}>
-                        {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {!esPagoMixto ? (
+                  <>
+                    <div className="md:col-span-6">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                        Caja o Banco de Pago (Salida Fondos) *
+                      </label>
+                      <select
+                        value={cajaBancoId}
+                        onChange={e => setCajaBancoId(e.target.value)}
+                        required={!esPagoMixto}
+                        className={inputCls}
+                      >
+                        <option value="">— Seleccionar Caja o Banco —</option>
+                        {cajasBancosActivos.map((cb: any) => (
+                          <option key={cb.id} value={cb.id}>
+                            [{cb.tipo}] {cb.nombre} {cb.cuentaPUC ? `(${cb.cuentaPUC})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-6">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                        Medio de Pago Principal *
+                      </label>
+                      <select
+                        value={medioPago}
+                        onChange={e => setMedioPago(e.target.value)}
+                        required={!esPagoMixto}
+                        className={inputCls}
+                      >
+                        {mediosPagoActivos.map((m: any) => (
+                          <option key={m.id || m.codigo} value={m.codigo}>
+                            {m.nombre} {m.cajaBanco?.nombre ? `(${m.cajaBanco.nombre})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  /* Sección dinámica de Pago Mixto */
+                  <div className="md:col-span-12 space-y-3 bg-indigo-50/40 border border-indigo-100 p-4 rounded-2xl">
+                    <div className="flex items-center justify-between border-b border-indigo-100/80 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                        <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                          Distribución de Cuentas en el Comprobante de Egreso (CE)
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddPagoMixto}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline"
+                      >
+                        <Plus size={13} /> Agregar otro medio
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {pagosMixtos.map((pago, pIdx) => (
+                        <div key={pago.id || pIdx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center bg-white p-3 rounded-xl border border-indigo-100 shadow-sm">
+                          <div className="md:col-span-4">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Cuenta de Salida #{pIdx + 1} *
+                            </label>
+                            <select
+                              value={pago.cajaBancoId}
+                              onChange={e => handleUpdatePagoMixto(pIdx, 'cajaBancoId', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                              required
+                            >
+                              <option value="">— Seleccionar Caja o Banco —</option>
+                              {cajasBancosActivos.map((cb: any) => (
+                                <option key={cb.id} value={cb.id}>
+                                  [{cb.tipo}] {cb.nombre} {cb.cuentaPUC ? `(${cb.cuentaPUC})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                              Medio de Pago *
+                            </label>
+                            <select
+                              value={pago.medioPago}
+                              onChange={e => handleUpdatePagoMixto(pIdx, 'medioPago', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                              required
+                            >
+                              {mediosPagoActivos.map((m: any) => (
+                                <option key={m.id || m.codigo} value={m.codigo}>
+                                  {m.nombre}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                                Monto Pagado *
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => handleAsignarRestante(pIdx)}
+                                className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                                title="Asignar el saldo restante a este medio"
+                              >
+                                Asignar Restante
+                              </button>
+                            </div>
+                            <CurrencyInput
+                              value={pago.monto}
+                              onChange={val => handleUpdatePagoMixto(pIdx, 'monto', val)}
+                              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-indigo-700 font-mono text-right"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2 flex items-center gap-1">
+                            <div className="flex-1">
+                              <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                Referencia / Soporte
+                              </label>
+                              <input
+                                value={pago.referencia}
+                                onChange={e => handleUpdatePagoMixto(pIdx, 'referencia', e.target.value)}
+                                placeholder="ej: Transf. #1234"
+                                className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                              />
+                            </div>
+                            {pagosMixtos.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePagoMixto(pIdx)}
+                                className="p-1.5 text-slate-300 hover:text-red-500 transition-colors mt-3"
+                                title="Eliminar medio"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Barra de Cuadre de Pago Mixto */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2 px-1 text-xs">
+                      <div className="flex items-center gap-4">
+                        <span className="text-slate-500">
+                          Total Factura: <strong className="text-slate-800 font-mono">{fmt(totalFactura)}</strong>
+                        </span>
+                        <span className="text-slate-500">
+                          Total Asignado: <strong className="text-indigo-600 font-mono">{fmt(totalAsignadoMixto)}</strong>
+                        </span>
+                      </div>
+
+                      <div>
+                        {diferenciaMixto === 0 && totalFactura > 0 ? (
+                          <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg font-bold text-[11px]">
+                            <CheckCircle2 size={13} /> Monto cubierto exactamente (CE Balanceado)
+                          </span>
+                        ) : diferenciaMixto > 0 ? (
+                          <span className="inline-flex items-center gap-1.5 text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg font-bold text-[11px]">
+                            <AlertCircle size={13} /> Faltan {fmt(diferenciaMixto)} por asignar
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded-lg font-bold text-[11px]">
+                            <AlertCircle size={13} /> Excedido por {fmt(Math.abs(diferenciaMixto))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

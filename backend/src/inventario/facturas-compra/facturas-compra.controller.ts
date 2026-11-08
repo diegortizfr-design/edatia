@@ -44,7 +44,7 @@ export class FacturasCompraController {
   @Post(':id/pagos')
   registrarPago(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: { valor: number; medioPago?: string; referencia?: string; notas?: string; cajaBancoId?: number; documentoCeId?: number },
+    @Body() dto: { valor: number; medioPago?: string; referencia?: string; notas?: string; cajaBancoId?: number; documentoCeId?: number; pagos?: any[] },
     @GetUser() user: JwtPayload,
   ) {
     return this.svc.registrarPago(id, user.empresaId!, dto, user.sub);
