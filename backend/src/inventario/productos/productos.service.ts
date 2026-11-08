@@ -48,11 +48,19 @@ export class ProductosService {
     if (query?.categoriaId) where.categoriaId = query.categoriaId;
     if (query?.marcaId) where.marcaId = query.marcaId;
     if (query?.q) {
+      const qTrim = query.q.trim();
       where.OR = [
-        { nombre: { contains: query.q, mode: 'insensitive' } },
-        { sku: { contains: query.q, mode: 'insensitive' } },
-        { codigoBarras: { contains: query.q, mode: 'insensitive' } },
-        { referencia: { contains: query.q, mode: 'insensitive' } },
+        { nombre: { contains: qTrim, mode: 'insensitive' } },
+        { sku: { contains: qTrim, mode: 'insensitive' } },
+        { codigoBarras: { contains: qTrim, mode: 'insensitive' } },
+        { referencia: { contains: qTrim, mode: 'insensitive' } },
+        {
+          codigosBarrasRel: {
+            some: {
+              codigo: { contains: qTrim, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
 
@@ -80,6 +88,13 @@ export class ProductosService {
         { sku: { contains: query, mode: 'insensitive' } },
         { codigoBarras: { contains: query, mode: 'insensitive' } },
         { referencia: { contains: query, mode: 'insensitive' } },
+        {
+          codigosBarrasRel: {
+            some: {
+              codigo: { contains: query, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
 

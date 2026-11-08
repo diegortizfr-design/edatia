@@ -1181,15 +1181,27 @@ export class PosService implements OnModuleInit {
 
   async buscarProductosPos(empresaId: number, q: string, bodegaId: number) {
     const trimmedQ = (q || '').trim()
+    const orConditions: any[] = [
+      { nombre: { contains: trimmedQ, mode: 'insensitive' } },
+      { sku: { contains: trimmedQ, mode: 'insensitive' } },
+      { codigoBarras: { contains: trimmedQ, mode: 'insensitive' } },
+      { referencia: { contains: trimmedQ, mode: 'insensitive' } },
+    ]
+
+    if (trimmedQ.length > 0) {
+      orConditions.push({
+        codigosBarrasRel: {
+          some: {
+            codigo: { contains: trimmedQ, mode: 'insensitive' },
+          },
+        },
+      })
+    }
+
     const where: any = {
       empresaId,
       activo: true,
-      OR: [
-        { nombre: { contains: trimmedQ, mode: 'insensitive' } },
-        { sku: { contains: trimmedQ, mode: 'insensitive' } },
-        { codigoBarras: { contains: trimmedQ, mode: 'insensitive' } },
-        { referencia: { contains: trimmedQ, mode: 'insensitive' } },
-      ],
+      OR: orConditions,
     }
 
     let permiteNegativo = false
@@ -1227,6 +1239,7 @@ export class PosService implements OnModuleInit {
       where,
       include: {
         stock: { where: { bodegaId }, select: { cantidad: true, cantidadReservada: true } },
+        codigosBarrasRel: { select: { codigo: true, tipo: true, descripcion: true, esPrincipal: true } },
       },
       take: 60,
     })
@@ -1250,6 +1263,7 @@ export class PosService implements OnModuleInit {
           sku: p.sku,
           referencia: p.referencia,
           codigoBarras: p.codigoBarras,
+          codigosBarras: p.codigosBarrasRel?.map(c => c.codigo) ?? [],
           precioBase: Number(p.precioBase),
           tipoIva: effectiveTipoIva,
           liquidarIva: p.liquidarIva,

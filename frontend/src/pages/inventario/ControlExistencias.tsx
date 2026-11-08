@@ -228,7 +228,9 @@ export function ControlExistencias() {
       const matchNombre = p.nombre.toLowerCase().includes(qLower)
       const matchSku = p.sku.toLowerCase().includes(qLower)
       const matchBarcode = p.codigoBarras && p.codigoBarras.includes(q)
-      if (!matchNombre && !matchSku && !matchBarcode) return false
+      const matchRef = p.referencia && p.referencia.toLowerCase().includes(qLower)
+      const matchMultiBarcode = Array.isArray(p.codigosBarrasRel) && p.codigosBarrasRel.some((c: any) => c.codigo && c.codigo.includes(q))
+      if (!matchNombre && !matchSku && !matchBarcode && !matchRef && !matchMultiBarcode) return false
     }
 
     return true
