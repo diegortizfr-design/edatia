@@ -989,7 +989,7 @@ export class FacturasCompraService implements OnModuleInit {
   async registrarPago(
     id: number,
     empresaId: number,
-    dto: { valor: number; medioPago?: string; referencia?: string; notas?: string; cajaBancoId?: number; documentoCeId?: number },
+    dto: { valor: number; medioPago?: string; referencia?: string; notas?: string; cajaBancoId?: number; documentoCeId?: number; pagos?: any[] },
     usuarioId: number,
   ) {
     const fc = await this.findOne(id, empresaId);
