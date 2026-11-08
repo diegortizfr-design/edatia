@@ -922,6 +922,11 @@ export function PosScreen() {
                               Ref: {prod.referencia}
                             </span>
                           )}
+                          {Array.isArray(prod.codigosBarras) && prod.codigosBarras.length > 1 && (
+                            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded transition-colors duration-200 ${isDark ? 'bg-slate-700 text-slate-300 border border-slate-600' : 'bg-slate-100 text-slate-600 border border-slate-200'}`} title={`Códigos de barra registrados: ${prod.codigosBarras.join(', ')}`}>
+                              {prod.codigosBarras.length} cód.
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="mt-2">
