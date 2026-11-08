@@ -3,14 +3,16 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   getProductos, getBodegas, getOrdenesCompra, getKardex,
-  acomodarProducto, postAjusteManualKardex, postTraslado 
+  acomodarProducto, postAjusteManualKardex, postTraslado,
+  getCategorias
 } from '../../services/inventario.service'
 import { getEmpresaConfig, getDocumentosConfig } from '../../services/configuracion.service'
 import { 
   Search, Package, Warehouse, AlertTriangle, ArrowRight, 
   Layers, Hash, SlidersHorizontal, Plus, ArrowRightLeft,
   Lock, Eye, EyeOff, X, Check, History, MapPin, AlertCircle,
-  FileSpreadsheet, ArrowDownLeft, ArrowUpRight, Printer, FileText
+  FileSpreadsheet, ArrowDownLeft, ArrowUpRight, Printer, FileText,
+  Tag
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { getApiError } from '../../services/api'
@@ -20,6 +22,7 @@ export function ControlExistencias() {
   const qc = useQueryClient()
   const [q, setQ] = useState('')
   const [bodegaSeleccionada, setBodegaSeleccionada] = useState<string>('todas')
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas')
   const [modalPlanilla, setModalPlanilla] = useState(false)
   const [mostrarStockSistema, setMostrarStockSistema] = useState(true)
   const [soloConStock, setSoloConStock] = useState(true)
@@ -85,6 +88,11 @@ export function ControlExistencias() {
   const { data: bodegas = [], isLoading: cargandoBodegas } = useQuery({
     queryKey: ['bodegas-existencias'],
     queryFn: getBodegas
+  })
+
+  const { data: categorias = [] } = useQuery({
+    queryKey: ['categorias-existencias'],
+    queryFn: getCategorias,
   })
 
   const { data: empresa } = useQuery({
@@ -208,6 +216,11 @@ export function ControlExistencias() {
     if (bodegaSeleccionada !== 'todas') {
       const tieneEnBodega = p.stock && p.stock.some((s: any) => String(s.bodegaId) === bodegaSeleccionada)
       if (!tieneEnBodega) return false
+    }
+
+    // Filtrar por categoría seleccionada
+    if (categoriaSeleccionada !== 'todas') {
+      if (String(p.categoriaId) !== categoriaSeleccionada) return false
     }
 
     if (q) {
@@ -489,7 +502,7 @@ export function ControlExistencias() {
       <div className="flex gap-4 flex-wrap items-center justify-between">
         
         {/* Buscador */}
-        <div className="relative flex-1 min-w-[280px]">
+        <div className="relative flex-1 min-w-[240px]">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={q}
@@ -499,8 +512,25 @@ export function ControlExistencias() {
           />
         </div>
 
+        {/* Selector de Categoría */}
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[200px]">
+          <Tag size={16} className="text-indigo-600 shrink-0" />
+          <select
+            value={categoriaSeleccionada}
+            onChange={e => setCategoriaSeleccionada(e.target.value)}
+            className="w-full text-xs font-bold text-slate-700 focus:outline-none bg-transparent cursor-pointer outline-none"
+          >
+            <option value="todas">Todas las Categorías</option>
+            {categorias.filter((c: any) => c.activo !== false).map((c: any) => (
+              <option key={c.id} value={String(c.id)}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Selector de Bodega */}
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[240px]">
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[220px]">
           <Warehouse size={16} className="text-indigo-600 shrink-0" />
           <select
             value={bodegaSeleccionada}
@@ -540,9 +570,9 @@ export function ControlExistencias() {
           <div className="text-center py-16">
             <Package size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-slate-400 text-sm">
-              {bodegaSeleccionada !== 'todas'
-                ? `No se encontraron productos con existencias en ${bodegaSeleccionadaObj?.nombre || 'la bodega seleccionada'}.`
-                : 'No se encontraron productos en el inventario.'}
+              {q || categoriaSeleccionada !== 'todas' || bodegaSeleccionada !== 'todas'
+                ? 'No se encontraron productos que coincidan con los filtros aplicados.'
+                : 'No se encontraron productos con existencias disponibles en el inventario.'}
             </p>
           </div>
         ) : (
