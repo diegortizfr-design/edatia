@@ -22,7 +22,8 @@ export function ControlExistencias() {
   const [bodegaSeleccionada, setBodegaSeleccionada] = useState<string>('todas')
   const [modalPlanilla, setModalPlanilla] = useState(false)
   const [mostrarStockSistema, setMostrarStockSistema] = useState(true)
-  const [soloConStock, setSoloConStock] = useState(false)
+  const [soloConStock, setSoloConStock] = useState(true)
+  const [mostrarSinStock, setMostrarSinStock] = useState(false)
 
   // Modals state
   const [modalAcomodar, setModalAcomodar] = useState<{
@@ -196,8 +197,13 @@ export function ControlExistencias() {
     }
   })
 
-  // 3. Filtrar por buscador y bodega seleccionada
+  // 3. Filtrar por buscador, bodega seleccionada y existencias
   const existenciasFiltradas = existenciasProcesadas.filter(p => {
+    // Si no está activada la opción de mostrar sin stock, excluir productos sin stock disponible
+    if (!mostrarSinStock && Number(p.stockCalculado || 0) <= 0) {
+      return false
+    }
+
     // Si se selecciona una bodega específica, verificar si el producto tiene registro de stock en ella
     if (bodegaSeleccionada !== 'todas') {
       const tieneEnBodega = p.stock && p.stock.some((s: any) => String(s.bodegaId) === bodegaSeleccionada)
@@ -508,12 +514,21 @@ export function ControlExistencias() {
               </option>
             ))}
           </select>
-          {bodegaSeleccionada !== 'todas' && (
-            <span className="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-200" title="Referencias con existencias en esta bodega">
-              {existenciasFiltradas.length} con stock
-            </span>
-          )}
+          <span className="shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-200" title="Referencias mostradas">
+            {existenciasFiltradas.length} {mostrarSinStock ? 'referencias' : 'con stock'}
+          </span>
         </div>
+
+        {/* Checkbox opcional para incluir productos sin stock */}
+        <label className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-600 cursor-pointer select-none hover:bg-slate-50 transition-colors shadow-sm">
+          <input
+            type="checkbox"
+            checked={mostrarSinStock}
+            onChange={e => setMostrarSinStock(e.target.checked)}
+            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600 cursor-pointer"
+          />
+          <span>Mostrar sin stock</span>
+        </label>
 
       </div>
 
