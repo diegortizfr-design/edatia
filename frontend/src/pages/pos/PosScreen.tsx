@@ -794,17 +794,24 @@ export function PosScreen() {
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter' && filteredProducts.length === 0 && q.trim().length > 0) {
-                    e.preventDefault()
-                    setQuickSku(q.trim())
-                    setQuickNombre('')
-                    setQuickPrecio('')
-                    setQuickIva('EXCLUIDO')
-                    setQuickError(null)
-                    setShowQuickCreate(true)
+                  if (e.key === 'Enter') {
+                    if (filteredProducts.length === 1) {
+                      e.preventDefault()
+                      addToCart(filteredProducts[0])
+                      return
+                    }
+                    if (filteredProducts.length === 0 && q.trim().length > 0) {
+                      e.preventDefault()
+                      setQuickSku(q.trim())
+                      setQuickNombre('')
+                      setQuickPrecio('')
+                      setQuickIva('EXCLUIDO')
+                      setQuickError(null)
+                      setShowQuickCreate(true)
+                    }
                   }
                 }}
-                placeholder="Buscar por nombre, SKU o escanear código de barras (F2: Crear Rápido)..."
+                placeholder="Buscar por nombre, SKU, ref. fábrica o escanear código de barras (F2: Crear Rápido)..."
                 className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white placeholder-slate-400' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-200'}`}
                 autoFocus
               />
@@ -908,7 +915,14 @@ export function PosScreen() {
                           )}
                         </div>
                         <div className={`text-xs font-semibold leading-tight line-clamp-2 transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{prod.nombre}</div>
-                        {prod.sku && <div className={`text-[10px] font-mono mt-0.5 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{prod.sku}</div>}
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          {prod.sku && <span className={`text-[10px] font-mono transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{prod.sku}</span>}
+                          {prod.referencia && (
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded transition-colors duration-200 ${isDark ? 'bg-slate-700 text-indigo-300 border border-slate-600' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'}`} title="Referencia de fábrica">
+                              Ref: {prod.referencia}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="mt-2">
                         <div className={`font-extrabold text-sm transition-colors duration-200 ${isDark ? 'text-indigo-400' : 'text-indigo-650'}`}>{fmt(prod.precioBase)}</div>

@@ -78,7 +78,8 @@ export class ProductosService {
       where.OR = [
         { nombre: { contains: query, mode: 'insensitive' } },
         { sku: { contains: query, mode: 'insensitive' } },
-        { codigoBarras: query },
+        { codigoBarras: { contains: query, mode: 'insensitive' } },
+        { referencia: { contains: query, mode: 'insensitive' } },
       ];
     }
 

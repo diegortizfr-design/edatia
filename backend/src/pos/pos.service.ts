@@ -1180,13 +1180,15 @@ export class PosService implements OnModuleInit {
   // ─── Búsqueda de productos para POS ──────────────────────────────────────────
 
   async buscarProductosPos(empresaId: number, q: string, bodegaId: number) {
+    const trimmedQ = (q || '').trim()
     const where: any = {
       empresaId,
       activo: true,
       OR: [
-        { nombre: { contains: q, mode: 'insensitive' } },
-        { sku: { contains: q, mode: 'insensitive' } },
-        { codigoBarras: { equals: q } },
+        { nombre: { contains: trimmedQ, mode: 'insensitive' } },
+        { sku: { contains: trimmedQ, mode: 'insensitive' } },
+        { codigoBarras: { contains: trimmedQ, mode: 'insensitive' } },
+        { referencia: { contains: trimmedQ, mode: 'insensitive' } },
       ],
     }
 
@@ -1246,6 +1248,7 @@ export class PosService implements OnModuleInit {
           id: p.id,
           nombre: p.nombre,
           sku: p.sku,
+          referencia: p.referencia,
           codigoBarras: p.codigoBarras,
           precioBase: Number(p.precioBase),
           tipoIva: effectiveTipoIva,
