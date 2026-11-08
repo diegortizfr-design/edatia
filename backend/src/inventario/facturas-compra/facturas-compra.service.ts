@@ -283,6 +283,7 @@ export class FacturasCompraService implements OnModuleInit {
       }
 
       // 1. Persistir la factura de compra
+      const tienePagosMixtos = !isCredito && Array.isArray(dto.pagos) && dto.pagos.length > 0;
       const fc = await tx.facturaCompra.create({
         data: {
           empresaId,
@@ -292,7 +293,7 @@ export class FacturasCompraService implements OnModuleInit {
           numeroCxp: numeroCxp,
           documentoCeId: docCeId,
           numeroCe: numeroCe,
-          cajaBancoId: dto.cajaBancoId || undefined,
+          cajaBancoId: tienePagosMixtos ? dto.pagos![0].cajaBancoId : (dto.cajaBancoId || undefined),
           prefijoProveedor: dto.prefijoProveedor,
           consecutivoProveedor: dto.consecutivoProveedor,
           proveedorId: dto.proveedorId,
@@ -300,7 +301,7 @@ export class FacturasCompraService implements OnModuleInit {
           fechaEmision: new Date(dto.fechaEmision),
           fechaVencimiento: fechaVenc,
           formaPago: dto.formaPago || (dto.fechaVencimiento ? 'CREDITO' : 'CONTADO'),
-          medioPago: dto.medioPago || undefined,
+          medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || undefined),
           diasCredito: dto.diasCredito !== undefined ? Number(dto.diasCredito) : (isCredito ? 30 : 0),
           saldo: saldoNum,
           totalPagado: totalPagadoNum,
@@ -515,7 +516,67 @@ export class FacturasCompraService implements OnModuleInit {
       });
 
       // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Egreso (CE)
-      if (!isCredito && cuentaTesoreriaPuc && cuentaProveedores) {
+      let pagosProcesados: {
+        cajaBancoId?: number;
+        cajaBancoNombre: string;
+        medioPago: string;
+        monto: number;
+        referencia?: string;
+        cuentaPuc: any;
+      }[] = [];
+
+      if (tienePagosMixtos) {
+        for (const p of dto.pagos!) {
+          let cbObj: any = null;
+          let ctPuc: any = null;
+          if (p.cajaBancoId) {
+            cbObj = await tx.cajaBanco.findFirst({
+              where: { id: p.cajaBancoId, empresaId },
+            });
+            if (cbObj?.cuentaPUC) {
+              ctPuc = await tx.cuentaPUC.findFirst({
+                where: { empresaId, codigo: cbObj.cuentaPUC },
+              });
+            }
+          }
+          if (!ctPuc) {
+            const defCod = cbObj?.tipo === 'CAJA' ? '110505' : '111005';
+            ctPuc = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
+            });
+          }
+          if (!ctPuc) {
+            ctPuc = cuentaTesoreriaPuc || await tx.cuentaPUC.findFirst({ where: { empresaId, codigo: { startsWith: '11' } } });
+          }
+
+          pagosProcesados.push({
+            cajaBancoId: p.cajaBancoId,
+            cajaBancoNombre: cbObj?.nombre || 'Tesorería',
+            medioPago: p.medioPago || 'TRANSFERENCIA',
+            monto: Number(p.monto),
+            referencia: p.referencia,
+            cuentaPuc: ctPuc,
+          });
+        }
+      } else if (cuentaTesoreriaPuc) {
+        pagosProcesados.push({
+          cajaBancoId: dto.cajaBancoId || 0,
+          cajaBancoNombre: cajaBancoObj?.nombre || 'Tesorería',
+          medioPago: dto.medioPago || 'TRANSFERENCIA',
+          monto: totalNum,
+          cuentaPuc: cuentaTesoreriaPuc,
+        });
+      }
+
+      if (!isCredito && cuentaProveedores && pagosProcesados.length > 0) {
+        const detallePagosStr = tienePagosMixtos
+          ? pagosProcesados.map(p => `${p.medioPago} (${p.cajaBancoNombre}): $${Math.round(p.monto).toLocaleString('es-CO')}`).join(' | ')
+          : '';
+
+        const conceptoEgreso = tienePagosMixtos
+          ? `Pago FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor} [Pago Mixto: ${detallePagosStr}]`
+          : `Pago Factura Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`;
+
         const egreso = await tx.egreso.create({
           data: {
             empresaId,
@@ -525,11 +586,11 @@ export class FacturasCompraService implements OnModuleInit {
             beneficiarioNombre: proveedor.nombre,
             beneficiarioDoc: proveedor.numeroDocumento,
             categoriaGasto: 'COMPRA MERCANCIA',
-            concepto: `Pago Factura Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+            concepto: conceptoEgreso,
             referencia: fc.numero,
             cuentaGastoId: cuentaProveedores.id,
-            cajaBancoId: dto.cajaBancoId || undefined,
-            medioPago: dto.medioPago || 'TRANSFERENCIA',
+            cajaBancoId: pagosProcesados[0]?.cajaBancoId || dto.cajaBancoId || undefined,
+            medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || 'TRANSFERENCIA'),
             monto: totalNum,
             montoNeto: totalNum,
             estado: 'APROBADO',
@@ -546,38 +607,40 @@ export class FacturasCompraService implements OnModuleInit {
         const seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
         const numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
 
+        const lineasEgreso = [
+          {
+            cuentaId: cuentaProveedores.id,
+            descripcion: `Cancelación proveedor - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+            debito: totalNum,
+            credito: 0,
+            terceroNit: proveedor.numeroDocumento,
+            terceroNombre: proveedor.nombre,
+            orden: 0,
+          },
+          ...pagosProcesados.map((p, idx) => ({
+            cuentaId: p.cuentaPuc.id,
+            descripcion: `Salida fondos ${p.cajaBancoNombre} [${p.medioPago}] - ${egreso.numero}${p.referencia ? ` (Ref: ${p.referencia})` : ''}`,
+            debito: 0,
+            credito: p.monto,
+            terceroNit: proveedor.numeroDocumento,
+            terceroNombre: proveedor.nombre,
+            orden: idx + 1,
+          })),
+        ];
+
         const compEgreso = await tx.comprobante.create({
           data: {
             empresaId,
             numero: numeroCe || numCompEgreso,
             tipo: 'CE',
-            concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+            concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}${tienePagosMixtos ? ' [Pago Mixto]' : ''}`,
             fecha,
             periodoId: periodo.id,
             referenciaId: egreso.id,
             referenciaTipo: 'EGRESO',
             usuarioId,
             lineas: {
-              create: [
-                {
-                  cuentaId: cuentaProveedores.id,
-                  descripcion: `Cancelación proveedor - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-                  debito: totalNum,
-                  credito: 0,
-                  terceroNit: proveedor.numeroDocumento,
-                  terceroNombre: proveedor.nombre,
-                  orden: 0,
-                },
-                {
-                  cuentaId: cuentaTesoreriaPuc.id,
-                  descripcion: `Salida fondos ${cajaBancoObj?.nombre || 'Tesorería'} - ${egreso.numero}`,
-                  debito: 0,
-                  credito: totalNum,
-                  terceroNit: proveedor.numeroDocumento,
-                  terceroNombre: proveedor.nombre,
-                  orden: 1,
-                },
-              ],
+              create: lineasEgreso,
             },
           },
         });
@@ -1010,7 +1073,68 @@ export class FacturasCompraService implements OnModuleInit {
         });
       }
 
+      const tienePagosMixtos = Array.isArray(dto.pagos) && dto.pagos.length > 0;
+      let pagosProcesados: {
+        cajaBancoId?: number;
+        cajaBancoNombre: string;
+        medioPago: string;
+        monto: number;
+        referencia?: string;
+        cuentaPuc: any;
+      }[] = [];
+
+      if (tienePagosMixtos) {
+        for (const p of dto.pagos!) {
+          let cbObj: any = null;
+          let ctPuc: any = null;
+          if (p.cajaBancoId) {
+            cbObj = await tx.cajaBanco.findFirst({
+              where: { id: p.cajaBancoId, empresaId },
+            });
+            if (cbObj?.cuentaPUC) {
+              ctPuc = await tx.cuentaPUC.findFirst({
+                where: { empresaId, codigo: cbObj.cuentaPUC },
+              });
+            }
+          }
+          if (!ctPuc) {
+            const defCod = cbObj?.tipo === 'CAJA' ? '110505' : '111005';
+            ctPuc = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
+            });
+          }
+          if (!ctPuc) {
+            ctPuc = cuentaTesoreriaPuc || await tx.cuentaPUC.findFirst({ where: { empresaId, codigo: { startsWith: '11' } } });
+          }
+
+          pagosProcesados.push({
+            cajaBancoId: p.cajaBancoId,
+            cajaBancoNombre: cbObj?.nombre || 'Tesorería',
+            medioPago: p.medioPago || 'TRANSFERENCIA',
+            monto: Number(p.monto),
+            referencia: p.referencia,
+            cuentaPuc: ctPuc,
+          });
+        }
+      } else if (cuentaTesoreriaPuc) {
+        pagosProcesados.push({
+          cajaBancoId: dto.cajaBancoId || 0,
+          cajaBancoNombre: cajaBancoObj?.nombre || 'Tesorería',
+          medioPago: dto.medioPago || 'TRANSFERENCIA',
+          monto: valorNum,
+          cuentaPuc: cuentaTesoreriaPuc,
+        });
+      }
+
       // 3. Crear Egreso en Tesorería
+      const detallePagosStr = tienePagosMixtos
+        ? pagosProcesados.map(p => `${p.medioPago} (${p.cajaBancoNombre}): $${Math.round(p.monto).toLocaleString('es-CO')}`).join(' | ')
+        : '';
+
+      const conceptoEgreso = tienePagosMixtos
+        ? `Abono FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} [Pago Mixto: ${detallePagosStr}]`
+        : `Abono a Factura Compra ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} (${fc.numero})`;
+
       const egreso = await tx.egreso.create({
         data: {
           empresaId,
@@ -1020,11 +1144,11 @@ export class FacturasCompraService implements OnModuleInit {
           beneficiarioNombre: fc.proveedor?.nombre,
           beneficiarioDoc: fc.proveedor?.numeroDocumento,
           categoriaGasto: 'PAGO PROVEEDOR',
-          concepto: `Abono a Factura Compra ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} (${fc.numero})`,
+          concepto: conceptoEgreso,
           referencia: fc.numero,
           cuentaGastoId: cuentaProveedores ? cuentaProveedores.id : 1,
-          cajaBancoId: dto.cajaBancoId || undefined,
-          medioPago: dto.medioPago || 'TRANSFERENCIA',
+          cajaBancoId: pagosProcesados[0]?.cajaBancoId || dto.cajaBancoId || undefined,
+          medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || 'TRANSFERENCIA'),
           monto: valorNum,
           montoNeto: valorNum,
           estado: 'APROBADO',
@@ -1034,45 +1158,47 @@ export class FacturasCompraService implements OnModuleInit {
       });
 
       // 4. Crear Comprobante Contable CE
-      if (cuentaProveedores && cuentaTesoreriaPuc) {
+      if (cuentaProveedores && pagosProcesados.length > 0) {
         const periodo = await tx.periodoContable.upsert({
           where: { empresaId_anio_mes: { empresaId, anio, mes } },
           create: { empresaId, anio, mes },
           update: {},
         });
 
+        const lineasEgreso = [
+          {
+            cuentaId: cuentaProveedores.id,
+            descripcion: `Abono proveedor - FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
+            debito: valorNum,
+            credito: 0,
+            terceroNit: fc.proveedor?.numeroDocumento,
+            terceroNombre: fc.proveedor?.nombre,
+            orden: 0,
+          },
+          ...pagosProcesados.map((p, idx) => ({
+            cuentaId: p.cuentaPuc.id,
+            descripcion: `Salida fondos ${p.cajaBancoNombre} [${p.medioPago}] - ${numeroCe}${p.referencia ? ` (Ref: ${p.referencia})` : ''}`,
+            debito: 0,
+            credito: p.monto,
+            terceroNit: fc.proveedor?.numeroDocumento,
+            terceroNombre: fc.proveedor?.nombre,
+            orden: idx + 1,
+          })),
+        ];
+
         const compEgreso = await tx.comprobante.create({
           data: {
             empresaId,
             numero: numeroCe,
             tipo: 'CE',
-            concepto: `Egreso ${numeroCe} - Pago FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
+            concepto: `Egreso ${numeroCe} - Pago FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}${tienePagosMixtos ? ' [Pago Mixto]' : ''}`,
             fecha,
             periodoId: periodo.id,
             referenciaId: egreso.id,
             referenciaTipo: 'EGRESO',
             usuarioId,
             lineas: {
-              create: [
-                {
-                  cuentaId: cuentaProveedores.id,
-                  descripcion: `Abono proveedor - FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
-                  debito: valorNum,
-                  credito: 0,
-                  terceroNit: fc.proveedor?.numeroDocumento,
-                  terceroNombre: fc.proveedor?.nombre,
-                  orden: 0,
-                },
-                {
-                  cuentaId: cuentaTesoreriaPuc.id,
-                  descripcion: `Salida fondos ${cajaBancoObj?.nombre || 'Tesorería'} - ${numeroCe}`,
-                  debito: 0,
-                  credito: valorNum,
-                  terceroNit: fc.proveedor?.numeroDocumento,
-                  terceroNombre: fc.proveedor?.nombre,
-                  orden: 1,
-                },
-              ],
+              create: lineasEgreso,
             },
           },
         });
