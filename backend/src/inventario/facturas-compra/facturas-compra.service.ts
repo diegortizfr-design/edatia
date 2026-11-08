@@ -985,6 +985,11 @@ export class FacturasCompraService implements OnModuleInit {
           where: { empresaId, codigo: { startsWith: '2205' } },
         });
       }
+      if (!cuentaProveedores) {
+        cuentaProveedores = await tx.cuentaPUC.findFirst({
+          where: { empresaId },
+        });
+      }
 
       let cajaBancoObj: any = null;
       let cuentaTesoreriaPuc: any = null;
@@ -1017,7 +1022,7 @@ export class FacturasCompraService implements OnModuleInit {
           categoriaGasto: 'PAGO PROVEEDOR',
           concepto: `Abono a Factura Compra ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} (${fc.numero})`,
           referencia: fc.numero,
-          cuentaGastoId: cuentaProveedores ? cuentaProveedores.id : undefined,
+          cuentaGastoId: cuentaProveedores ? cuentaProveedores.id : 1,
           cajaBancoId: dto.cajaBancoId || undefined,
           medioPago: dto.medioPago || 'TRANSFERENCIA',
           monto: valorNum,
