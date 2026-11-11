@@ -132,11 +132,18 @@ export function Clientes() {
                       {c.nombreComercial && c.nombreComercial !== c.nombre && (
                         <p className="text-[10px] text-slate-400 font-medium">{c.nombreComercial}</p>
                       )}
-                      {c.sucursales && c.sucursales.length > 0 && (
-                        <span className="inline-block mt-1 text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
-                          {c.sucursales.length} {c.sucursales.length === 1 ? 'sucursal' : 'sucursales'}
-                        </span>
-                      )}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {c.cumpleanosDia > 0 && c.cumpleanosMes > 0 && (
+                          <span className="inline-block text-[9px] font-bold text-pink-700 bg-pink-50 border border-pink-100 px-1.5 py-0.5 rounded" title="Día y mes de cumpleaños">
+                            🎂 {String(c.cumpleanosDia).padStart(2, '0')}/{String(c.cumpleanosMes).padStart(2, '0')}
+                          </span>
+                        )}
+                        {c.sucursales && c.sucursales.length > 0 && (
+                          <span className="inline-block text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                            {c.sucursales.length} {c.sucursales.length === 1 ? 'sucursal' : 'sucursales'}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Documento */}
@@ -169,11 +176,11 @@ export function Clientes() {
                     {/* Ciudad */}
                     <td className="px-4 py-4 text-xs text-slate-600">
                       <div className="flex items-center gap-1">
-                        <MapPin size={12} className="text-slate-400" />
-                        <span>{c.municipio || '—'}</span>
+                        <MapPin size={12} className="text-slate-400 shrink-0" />
+                        <span>{c.municipio || '—'}{c.barrio ? ` • ${c.barrio}` : ''}</span>
                       </div>
                       {c.direccion && (
-                        <p className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">{c.direccion}</p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[160px] mt-0.5">{c.direccion}</p>
                       )}
                     </td>
 

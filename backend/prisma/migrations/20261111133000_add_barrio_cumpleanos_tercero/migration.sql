@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Tercero" ADD COLUMN IF NOT EXISTS "barrio" TEXT;
+ALTER TABLE "Tercero" ADD COLUMN IF NOT EXISTS "cumpleanosDia" INTEGER;
+ALTER TABLE "Tercero" ADD COLUMN IF NOT EXISTS "cumpleanosMes" INTEGER;
+

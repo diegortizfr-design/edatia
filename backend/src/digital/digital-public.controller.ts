@@ -47,6 +47,13 @@ export class DigitalPublicController {
     return this.digitalService.getProductosWebPublic(slug);
   }
 
+  // Registro de miembros al Club Familia Baby World (crea o actualiza Cliente en Tercero)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post(':slug/familia-registro')
+  async registrarClienteFamilia(@Param('slug') slug: string, @Body() body: any) {
+    return this.digitalService.registrarClienteFamilia(slug, body);
+  }
+
   // Límite estricto para evitar spam de pedidos falsos
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post(':slug/pedidos')

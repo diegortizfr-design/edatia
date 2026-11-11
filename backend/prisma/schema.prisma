@@ -1343,9 +1343,12 @@ model Tercero {
   pais                String            @default("CO")
   departamento        String?
   municipio           String?           // Ciudad
+  barrio              String?
   codigoDane          String?
   codigoPostal        String?
   direccion           String?           // Dirección fiscal / principal
+  cumpleanosDia       Int?
+  cumpleanosMes       Int?
 
   // Roles Simultáneos (Banderas booleanas)
   esCliente           Boolean           @default(false)

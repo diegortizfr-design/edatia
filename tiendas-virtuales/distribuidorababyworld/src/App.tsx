@@ -6,6 +6,7 @@ import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
 import { ProductDetailPage } from './components/ProductDetailPage'
+import { FamiliaRegistroPage } from './components/FamiliaRegistroPage'
 import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
 import { CartDrawer, CartItem } from './components/CartDrawer'
 import { CheckoutModal } from './components/CheckoutModal'
@@ -46,6 +47,10 @@ export function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [showFamiliaForm, setShowFamiliaForm] = useState<boolean>(() => {
+    const p = window.location.pathname.replace(/\/+$/, '')
+    return p === '/familia' || p === '/registro'
+  })
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
@@ -91,11 +96,20 @@ export function App() {
     window.history.replaceState({}, '', window.location.pathname)
   }, [])
 
-  // Deep linking: sincroniza el producto seleccionado con la URL (/producto/:slug o ?producto=:slug)
+  // Deep linking: sincroniza ruta (/familia, /registro, /producto/:slug) con la vista activa
   useEffect(() => {
-    if (!products.length) return
+    const syncFromUrl = () => {
+      const cleanPath = window.location.pathname.replace(/\/+$/, '')
+      if (cleanPath === '/familia' || cleanPath === '/registro') {
+        setShowFamiliaForm(true)
+        setSelectedProduct(null)
+        document.title = 'Familia Baby World | Regístrate y accede a beneficios'
+        return
+      }
+      setShowFamiliaForm(false)
 
-    const syncProductFromUrl = () => {
+      if (!products.length) return
+
       const pathname = window.location.pathname
       const params = new URLSearchParams(window.location.search)
       const querySlug = params.get('producto') || params.get('p')
@@ -130,14 +144,10 @@ export function App() {
       }
     }
 
-    syncProductFromUrl()
+    syncFromUrl()
 
-    const handlePopState = () => {
-      syncProductFromUrl()
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
   }, [products])
 
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
@@ -294,6 +304,7 @@ export function App() {
   }
 
   const handleOpenProduct = (product: Product) => {
+    setShowFamiliaForm(false)
     setSelectedProduct(product)
     const productSlug = product.slug || product.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || product.id
     if (window.location.pathname !== `/producto/${productSlug}`) {
@@ -311,8 +322,46 @@ export function App() {
     document.title = 'Distribuidora Baby World | Tienda Virtual'
   }
 
+  const handleOpenFamiliaRegistro = () => {
+    setSelectedProduct(null)
+    setShowFamiliaForm(true)
+    if (window.location.pathname !== '/familia') {
+      window.history.pushState({ view: 'familia' }, '', '/familia')
+    }
+    document.title = 'Familia Baby World | Regístrate y accede a beneficios'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCloseFamiliaRegistro = () => {
+    setShowFamiliaForm(false)
+    if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+      window.history.pushState({}, '', '/')
+    }
+    document.title = 'Distribuidora Baby World | Tienda Virtual'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSearchChange = (qVal: string) => {
+    setSearchQuery(qVal)
+    if (qVal && (showFamiliaForm || selectedProduct)) {
+      setShowFamiliaForm(false)
+      setSelectedProduct(null)
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/')
+      }
+      document.title = 'Distribuidora Baby World | Tienda Virtual'
+    }
+  }
+
   const handleCategorySelect = (category: string) => {
     handleCloseProduct()
+    if (showFamiliaForm) {
+      setShowFamiliaForm(false)
+      if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+        window.history.pushState({}, '', '/')
+      }
+      document.title = 'Distribuidora Baby World | Tienda Virtual'
+    }
     setActiveCategory(category)
     setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
@@ -332,7 +381,7 @@ export function App() {
   }, [products])
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 pb-20 md:pb-0">
+    <div className={`min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 ${!selectedProduct && !showFamiliaForm ? 'pb-20 md:pb-0' : ''}`}>
       {/* Toast notifications */}
       <Toaster position="bottom-right" toastOptions={{ className: 'text-xs font-bold' }} />
 
@@ -397,13 +446,19 @@ export function App() {
         activeCategory={activeCategory}
         setActiveCategory={handleCategorySelect}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchChange}
         categories={availableCategories}
         onOpenLocation={() => setIsLocationModalOpen(true)}
       />
 
-      {/* If a product is selected, display the full Dedicated Product View Page */}
-      {selectedProduct ? (
+      {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
+      {showFamiliaForm ? (
+        <FamiliaRegistroPage
+          onBack={handleCloseFamiliaRegistro}
+          API_BASE={API_BASE}
+          storeSlug={STORE_SLUG}
+        />
+      ) : selectedProduct ? (
         <ProductDetailPage
           product={selectedProduct}
           allProducts={products}
@@ -415,13 +470,10 @@ export function App() {
         />
       ) : (
         <>
-          {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
+          {/* Hero Banner Section (Banner Familia Baby World) */}
           {activeCategory === 'Todos' && !searchQuery && (
             <>
-              <HeroBanner 
-                onSelectCategory={handleCategorySelect} 
-                onOpenLocation={() => setIsLocationModalOpen(true)}
-              />
+              <HeroBanner onOpenFamiliaRegistro={handleOpenFamiliaRegistro} />
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
@@ -431,8 +483,8 @@ export function App() {
           )}
 
           {/* Main Catalog Section */}
-          <div className="bg-white rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full relative z-20">
+          <div className="bg-white rounded-t-[2.5rem] sm:rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 w-full relative z-20">
               {/* Section Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -672,11 +724,11 @@ export function App() {
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <FloatingWhatsAppButton phone="573023863380" />
+      {/* Floating WhatsApp Button (Oculto en la vista de formulario para no estorbar en móvil) */}
+      {!showFamiliaForm && <FloatingWhatsAppButton phone="573023863380" />}
 
       {/* Sticky Mobile Bottom Navigation (Only visible on smartphones in catalog view) */}
-      {!selectedProduct && (
+      {!selectedProduct && !showFamiliaForm && (
         <MobileBottomNav
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}
