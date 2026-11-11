@@ -176,3 +176,4 @@ export const MESES_CUMPLEANOS = [
   { value: 11, label: 'Noviembre', maxDays: 30 },
   { value: 12, label: 'Diciembre', maxDays: 31 },
 ] as const
+
