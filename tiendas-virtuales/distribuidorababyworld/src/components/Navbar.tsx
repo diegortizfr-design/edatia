@@ -82,7 +82,7 @@ export function Navbar({
               <span className="font-baby font-normal text-2xl tracking-tight leading-none mt-1">
                 <span className="text-blush-300">Baby</span> <span className="text-baby-300">World</span>
               </span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 ml-0.5">Pañalera Baby World</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 ml-0.5">Pañalera y Juguetería</span>
             </div>
           </div>
 
