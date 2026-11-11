@@ -45,9 +45,9 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     },
     {
       id: 'medios-pago',
-      src: '/banner-medios-pago.jpg?v=2',
-      alt: '¡Todos los medios de pago! Tarjetas de crédito y débito, efectivo, transferencias y compra a cuotas con Addi y Sistecrédito en 5 minutos.',
-      ariaLabel: 'Todos los medios de pago y crédito en 5 minutos con Addi y Sistecrédito. Descubre cómo funciona.',
+      src: '/banner-medios-pago.jpg?v=3',
+      alt: 'Todos los medios de pago. Compra a cuotas con Addi y Sistecrédito.',
+      ariaLabel: 'Todos los medios de pago. Compra a cuotas con Addi y Sistecrédito.',
       mobileText: 'Todos los medios de pago • Addi y Sistecrédito',
       mobileCta: 'Cómo pagar',
       mobileGradient: 'from-indigo-500 via-baby-500 to-emerald-500',
