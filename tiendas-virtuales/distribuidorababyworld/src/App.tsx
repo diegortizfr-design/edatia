@@ -473,7 +473,10 @@ export function App() {
           {/* Hero Banner Section (Banner Familia Baby World) */}
           {activeCategory === 'Todos' && !searchQuery && (
             <>
-              <HeroBanner onOpenFamiliaRegistro={handleOpenFamiliaRegistro} />
+              <HeroBanner
+                onOpenFamiliaRegistro={handleOpenFamiliaRegistro}
+                onOpenLocation={() => setIsLocationModalOpen(true)}
+              />
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
