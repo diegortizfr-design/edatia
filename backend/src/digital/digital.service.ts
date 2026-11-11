@@ -807,6 +807,167 @@ export class DigitalService {
     };
   }
 
+  /**
+   * Registro público de clientes en el club "Familia Baby World" desde la tienda virtual.
+   * Crea o actualiza el Tercero como cliente (tipoPersona NATURAL, CC) con barrio y fecha de cumpleaños.
+   */
+  async registrarClienteFamilia(slug: string, dto: any) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [{ slugTienda: slug }, { dominioPropio: slug }],
+      },
+    });
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    const empresaId = config.empresaId;
+
+    const identificacion = String(dto?.identificacion ?? '').replace(/\D/g, '');
+    if (!/^\d{5,15}$/.test(identificacion) || identificacion === '222222222222') {
+      throw new BadRequestException('Ingresa un número de identificación válido (solo números, entre 5 y 15 dígitos).');
+    }
+
+    const nombreCompleto = this.sanitizeText(dto?.nombreCompleto, 120).replace(/\s+/g, ' ');
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]{3,120}$/.test(nombreCompleto)) {
+      throw new BadRequestException('El nombre completo solo debe contener letras y espacios.');
+    }
+
+    const email = this.sanitizeText(dto?.email, 120).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      throw new BadRequestException('Ingresa un correo electrónico válido.');
+    }
+
+    const celular = String(dto?.celular ?? '').replace(/\D/g, '');
+    if (!/^\d{10,12}$/.test(celular)) {
+      throw new BadRequestException('Ingresa un número de celular válido (solo números, 10 dígitos).');
+    }
+
+    const departamento = this.sanitizeText(dto?.departamento, 80);
+    const ciudad = this.sanitizeText(dto?.ciudad, 80);
+    const barrio = this.sanitizeText(dto?.barrio, 80);
+    const direccion = this.sanitizeText(dto?.direccion, 250);
+
+    if (departamento.length < 2 || ciudad.length < 2 || barrio.length < 2 || direccion.length < 4) {
+      throw new BadRequestException('Completa todos los datos de ubicación (departamento, ciudad, barrio y dirección).');
+    }
+
+    const cumpleanosDia = Number(dto?.cumpleanosDia);
+    const cumpleanosMes = Number(dto?.cumpleanosMes);
+    const diasPorMes = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (
+      !Number.isInteger(cumpleanosMes) ||
+      cumpleanosMes < 1 ||
+      cumpleanosMes > 12 ||
+      !Number.isInteger(cumpleanosDia) ||
+      cumpleanosDia < 1 ||
+      cumpleanosDia > diasPorMes[cumpleanosMes - 1]
+    ) {
+      throw new BadRequestException('Selecciona un día y mes de cumpleaños válido.');
+    }
+
+    const mesesNombres = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    const cumpleTexto = `${cumpleanosDia} de ${mesesNombres[cumpleanosMes - 1]}`;
+    const marcaClub = `[Club Familia Baby World - Registro web | Barrio: ${barrio} | Cumpleaños: ${cumpleTexto}]`;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let existing = await tx.tercero.findUnique({
+        where: {
+          empresaId_tipoDocumento_numeroDocumento: {
+            empresaId,
+            tipoDocumento: 'CC',
+            numeroDocumento: identificacion,
+          },
+        },
+      });
+
+      if (!existing) {
+        existing = await tx.tercero.findFirst({
+          where: { empresaId, numeroDocumento: identificacion },
+        });
+      }
+
+      let esNuevo = true;
+      if (existing) {
+        esNuevo = false;
+        const notasPrevias = existing.notas || '';
+        const notasActualizadas = notasPrevias.includes('Club Familia Baby World')
+          ? notasPrevias
+          : (notasPrevias ? `${notasPrevias}\n${marcaClub}` : marcaClub);
+
+        await tx.tercero.update({
+          where: { id: existing.id },
+          data: {
+            nombre: nombreCompleto,
+            email,
+            celular,
+            telefono: existing.telefono || celular,
+            departamento,
+            municipio: ciudad,
+            barrio,
+            direccion,
+            cumpleanosDia,
+            cumpleanosMes,
+            esCliente: true,
+            activo: true,
+            notas: notasActualizadas,
+          },
+        });
+      } else {
+        await tx.tercero.create({
+          data: {
+            empresaId,
+            tipoPersona: 'NATURAL',
+            tipoDocumento: 'CC',
+            numeroDocumento: identificacion,
+            nombre: nombreCompleto,
+            nombreComercial: nombreCompleto,
+            email,
+            celular,
+            telefono: celular,
+            pais: 'CO',
+            departamento,
+            municipio: ciudad,
+            barrio,
+            direccion,
+            cumpleanosDia,
+            cumpleanosMes,
+            esCliente: true,
+            activo: true,
+            regimenFiscal: '49',
+            notas: marcaClub,
+          },
+        });
+      }
+
+      await (tx as any).notificacion.create({
+        data: {
+          empresaId,
+          tipo: 'INFO',
+          titulo: esNuevo ? '👶 Nuevo miembro Familia Baby World' : '👶 Registro actualizado Familia Baby World',
+          mensaje: `${nombreCompleto} (CC ${identificacion} • Cel ${celular}) de ${ciudad} (${barrio}) se registró para beneficios. Cumpleaños: ${cumpleTexto}.`,
+          leida: false,
+        },
+      });
+
+      return { esNuevo };
+    });
+
+    return {
+      success: true,
+      esNuevo: result.esNuevo,
+      nombre: nombreCompleto,
+      identificacion,
+      cumpleanosDia,
+      cumpleanosMes,
+    };
+  }
+
   // ── Feed XML para Meta Commerce Manager (Facebook / Instagram Catalog) ───────
   private readonly metaFeedCache = new Map<string, { xml: string; expiresAt: number }>();
 
