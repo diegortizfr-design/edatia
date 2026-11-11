@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, MapPin, CreditCard } from 'lucide-react'
 
 interface HeroBannerProps {
   onOpenFamiliaRegistro: () => void
   onOpenLocation?: () => void
+  onOpenBnplInfo?: () => void
 }
 
-export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation }: HeroBannerProps) {
+export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplInfo }: HeroBannerProps) {
   const [current, setCurrent] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
@@ -21,7 +22,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation }: HeroBanner
       mobileText: 'Toca aquí para registrarte y recibir beneficios',
       mobileCta: 'Ir',
       mobileGradient: 'from-baby-500 via-lavender-400 to-blush-500',
-      isLocation: false,
+      mobileIcon: 'sparkles' as const,
       onClick: onOpenFamiliaRegistro,
     },
     {
@@ -32,10 +33,28 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation }: HeroBanner
       mobileText: 'Este sábado 14 de nov • Poblado Campestre',
       mobileCta: 'Ver mapa',
       mobileGradient: 'from-blush-500 via-pink-400 to-baby-500',
-      isLocation: true,
+      mobileIcon: 'location' as const,
       onClick: () => {
         if (onOpenLocation) {
           onOpenLocation()
+        } else {
+          const el = document.getElementById('catalogo-section')
+          if (el) el.scrollIntoView({ behavior: 'smooth' })
+        }
+      },
+    },
+    {
+      id: 'medios-pago',
+      src: '/banner-medios-pago.jpg?v=1',
+      alt: '¡Todos los medios de pago! Tarjetas de crédito y débito, efectivo, transferencias y compra a cuotas con Addi y Sistecrédito en 5 minutos.',
+      ariaLabel: 'Todos los medios de pago y crédito en 5 minutos con Addi y Sistecrédito. Descubre cómo funciona.',
+      mobileText: 'Todos los medios de pago • Addi y Sistecrédito',
+      mobileCta: 'Cómo pagar',
+      mobileGradient: 'from-indigo-500 via-baby-500 to-emerald-500',
+      mobileIcon: 'credit' as const,
+      onClick: () => {
+        if (onOpenBnplInfo) {
+          onOpenBnplInfo()
         } else {
           const el = document.getElementById('catalogo-section')
           if (el) el.scrollIntoView({ behavior: 'smooth' })
@@ -132,8 +151,10 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation }: HeroBanner
                   {/* Barra táctil optimizada para smartphones (< 640px) */}
                   <div className={`sm:hidden bg-gradient-to-r ${slide.mobileGradient} text-white px-3.5 py-2 flex items-center justify-between gap-2`}>
                     <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-tight truncate">
-                      {slide.isLocation ? (
+                      {slide.mobileIcon === 'location' ? (
                         <MapPin size={13} className="text-white shrink-0" />
+                      ) : slide.mobileIcon === 'credit' ? (
+                        <CreditCard size={13} className="text-white shrink-0" />
                       ) : (
                         <Sparkles size={13} className="text-butter-200 shrink-0" />
                       )}

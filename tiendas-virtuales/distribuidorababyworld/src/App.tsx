@@ -476,6 +476,7 @@ export function App() {
               <HeroBanner
                 onOpenFamiliaRegistro={handleOpenFamiliaRegistro}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
+                onOpenBnplInfo={() => setIsBnplModalOpen(true)}
               />
               <FeaturedCarousel 
                 products={products} 
