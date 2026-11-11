@@ -16,8 +16,8 @@ export function HeroBanner({ onOpenFamiliaRegistro }: HeroBannerProps) {
           aria-label="Sé parte de la Familia Baby World. Registra tus datos y accede a muchos beneficios."
         >
           <img
-            src="/banner-familia.jpg"
-            alt="¡Sé parte de la Familia Baby World! Registra tus datos y accede a muchos beneficios. Regístrate aquí."
+            src="/banner-familia.jpg?v=2"
+            alt="¡Sé parte de la Familia Baby World! Registra tus datos para acceder a muchos beneficios. Regístrate aquí."
             className="w-full h-auto block select-none transition-transform duration-500 group-hover:scale-[1.015]"
             loading="eager"
             decoding="async"
