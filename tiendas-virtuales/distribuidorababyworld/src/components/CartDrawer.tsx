@@ -35,6 +35,8 @@ export function CartDrawer({
     }).format(val)
   }
 
+  const baseSubtotal = items.reduce((sum, item) => sum + item.product.precioSubtotal * item.quantity, 0)
+  const totalImpuesto = items.reduce((sum, item) => sum + item.product.impuesto * item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
   const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)
@@ -46,7 +48,9 @@ export function CartDrawer({
     items.forEach((it) => {
       message += `• *${it.quantity}x* ${it.product.nombre} (${fmtPrice(it.product.precio * it.quantity)})\n`
     })
-    message += `\n💰 *Total Estimado:* ${fmtPrice(subtotal)}\n`
+    message += `\n*Subtotal:* ${fmtPrice(baseSubtotal)}`
+    message += `\n*Impuesto (IVA):* ${fmtPrice(totalImpuesto)}`
+    message += `\n💰 *Total Productos:* ${fmtPrice(subtotal)}\n`
     message += `\n📍 Por favor indíquenme disponibilidad para coordinar el envío. ¡Gracias!`
 
     const encoded = encodeURIComponent(message)
@@ -158,15 +162,21 @@ export function CartDrawer({
                         </span>
                         <button
                           onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-                          className="p-0.5 hover:text-sky-600 text-slate-400 transition-colors"
+                          disabled={item.quantity >= item.product.stock}
+                          className="p-0.5 hover:text-sky-600 disabled:opacity-35 disabled:cursor-not-allowed text-slate-400 transition-colors"
                         >
                           <Plus size={11} />
                         </button>
                       </div>
-                      
-                      <span className="font-extrabold text-slate-900 text-xs">
-                        {fmtPrice(item.product.precio * item.quantity)}
-                      </span>
+
+                      <div className="text-right">
+                        <span className="font-extrabold text-slate-900 text-xs block">
+                          {fmtPrice(item.product.precio * item.quantity)}
+                        </span>
+                        <span className="text-[9.5px] text-slate-400 block">
+                          Sub: {fmtPrice(item.product.precioSubtotal * item.quantity)} + IVA: {fmtPrice(item.product.impuesto * item.quantity)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -182,13 +192,17 @@ export function CartDrawer({
             )}
           </div>
 
-          {/* Footer Subtotal & Checkouts */}
+          {/* Footer Subtotal, Impuesto & Checkouts */}
           {items.length > 0 && (
             <div className="border-t border-slate-100 p-4 sm:p-5 bg-slate-50/70 space-y-3">
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between text-slate-500">
                   <span>Subtotal productos:</span>
-                  <span className="font-bold text-slate-800">{fmtPrice(subtotal)}</span>
+                  <span className="font-bold text-slate-800">{fmtPrice(baseSubtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Impuesto (IVA):</span>
+                  <span className="font-bold text-slate-800">{fmtPrice(totalImpuesto)}</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-500">
                   <span className="flex items-center gap-1">
@@ -200,7 +214,7 @@ export function CartDrawer({
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
-                  <span className="text-slate-800 font-extrabold text-xs">Total estimado:</span>
+                  <span className="text-slate-800 font-extrabold text-xs">Total estimado (con IVA):</span>
                   <span className="font-black text-slate-900 text-base">
                     {fmtPrice(subtotal + (subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 8000))}
                   </span>

@@ -232,6 +232,79 @@ export class DigitalService {
     }
   }
 
+  /**
+   * Calcula las unidades reales disponibles según Control de Existencias (bodegas activas: cantidad - reservada).
+   * Si el producto no maneja bodega (ej. servicio), devuelve 999.
+   */
+  private calcularStockDisponible(prod: {
+    manejaBodega?: boolean | null;
+    stock?: Array<{ cantidad?: any; cantidadReservada?: any; bodega?: { activo?: boolean } | null }> | null;
+  }): number {
+    if (prod.manejaBodega === false) return 999;
+    return (prod.stock || []).reduce((sum, s) => {
+      if (s.bodega && s.bodega.activo === false) return sum;
+      const disponible = Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0));
+      return sum + disponible;
+    }, 0);
+  }
+
+  /**
+   * Resuelve el subtotal base, el porcentaje/tipo de IVA ERP y el total con impuestos incluidos.
+   * Sigue exactamente la misma regla tributaria del POS y Facturación del ERP.
+   */
+  private resolverPrecioYImpuesto(prod: {
+    precioBase?: any;
+    precioWeb?: any;
+    tipoIva?: string | null;
+    liquidarIva?: boolean | null;
+    productoExentoIva?: boolean | null;
+    appliedTaxIds?: any;
+  }) {
+    const web = Number(prod.precioWeb ?? 0);
+    const base = Number(prod.precioBase ?? 0);
+    const precioSubtotal = Math.round(web > 0 ? web : base);
+
+    const appliedTaxIds = Array.isArray(prod.appliedTaxIds) ? prod.appliedTaxIds.map((t: any) => String(t)) : null;
+    let effectiveTipoIva = String(prod.tipoIva || 'GRAVADO_19').toUpperCase();
+
+    if (prod.productoExentoIva === true) {
+      effectiveTipoIva = 'EXENTO';
+    } else if (prod.liquidarIva === false || (appliedTaxIds && appliedTaxIds.length === 0)) {
+      effectiveTipoIva = 'EXCLUIDO';
+    } else if (appliedTaxIds && appliedTaxIds.some((t) => t.toLowerCase().includes('5'))) {
+      effectiveTipoIva = 'GRAVADO_5';
+    }
+
+    let ivaPct = 0;
+    let pedidoTipoIva: 'IVA_19' | 'IVA_5' | 'IVA_0' | 'EXCLUIDO' = 'EXCLUIDO';
+
+    if (effectiveTipoIva === 'GRAVADO_19' || effectiveTipoIva === 'IVA_19') {
+      ivaPct = 19;
+      pedidoTipoIva = 'IVA_19';
+    } else if (effectiveTipoIva === 'GRAVADO_5' || effectiveTipoIva === 'IVA_5') {
+      ivaPct = 5;
+      pedidoTipoIva = 'IVA_5';
+    } else if (effectiveTipoIva === 'EXENTO' || effectiveTipoIva === 'IVA_0') {
+      ivaPct = 0;
+      pedidoTipoIva = 'IVA_0';
+    } else {
+      ivaPct = 0;
+      pedidoTipoIva = 'EXCLUIDO';
+    }
+
+    const impuesto = Math.round(precioSubtotal * (ivaPct / 100));
+    const precioTotal = precioSubtotal + impuesto;
+
+    return {
+      precioSubtotal,
+      impuesto,
+      precioTotal,
+      ivaPct,
+      tipoIva: effectiveTipoIva,
+      pedidoTipoIva,
+    };
+  }
+
   async getProductosWebPublic(slug: string) {
     await this.autoInitializeBabyWorld(slug);
 
@@ -247,14 +320,20 @@ export class DigitalService {
       throw new NotFoundException('Tienda no encontrada o inactiva');
     }
 
-    return this.prisma.producto.findMany({
+    const productos = await this.prisma.producto.findMany({
       where: { empresaId: config.empresaId, publicadoWeb: true, activo: true },
       select: {
         id: true,
         nombre: true,
         sku: true,
+        referencia: true,
         precioBase: true,
         precioWeb: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
         slug: true,
         imagen: true,
         descripcion: true,
@@ -271,8 +350,40 @@ export class DigitalService {
             }
           }
         },
+        marca: {
+          select: {
+            nombre: true
+          }
+        },
+        stock: {
+          select: {
+            cantidad: true,
+            cantidadReservada: true,
+            bodega: {
+              select: {
+                activo: true
+              }
+            }
+          }
+        }
       }
     });
+
+    return productos
+      .map((p) => {
+        const stockDisponible = this.calcularStockDisponible(p);
+        const pricing = this.resolverPrecioYImpuesto(p);
+        return {
+          ...p,
+          stockDisponible,
+          precioSubtotal: pricing.precioSubtotal,
+          impuesto: pricing.impuesto,
+          precioTotal: pricing.precioTotal,
+          ivaPct: pricing.ivaPct,
+          tipoIvaEfectivo: pricing.tipoIva,
+        };
+      })
+      .filter((p) => p.stockDisponible > 0);
   }
 
   // Zonas de cobertura local directa (Cali y alrededores con domiciliario propio)
@@ -356,21 +467,64 @@ export class DigitalService {
       cantidades.set(id, (cantidades.get(id) ?? 0) + cant);
     }
 
-    // Precios SIEMPRE desde la base de datos
+    // Precios, impuestos y stock real SIEMPRE desde la base de datos
     const productos = await this.prisma.producto.findMany({
       where: { id: { in: [...cantidades.keys()] }, empresaId, publicadoWeb: true, activo: true },
-      select: { id: true, nombre: true, precioWeb: true, precioBase: true },
+      select: {
+        id: true,
+        nombre: true,
+        precioWeb: true,
+        precioBase: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
+        stock: {
+          select: {
+            cantidad: true,
+            cantidadReservada: true,
+            bodega: {
+              select: {
+                activo: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (productos.length !== cantidades.size) {
       throw new BadRequestException('Uno o más productos ya no están disponibles');
     }
     const lineas = productos.map((p) => {
-      const web = Number(p.precioWeb ?? 0);
-      const precio = web > 0 ? web : Number(p.precioBase ?? 0);
       const cantidad = cantidades.get(p.id)!;
-      return { productoId: p.id, nombre: p.nombre, precio, cantidad, total: precio * cantidad };
+      const disponible = this.calcularStockDisponible(p);
+      if (disponible < cantidad) {
+        throw new BadRequestException(
+          disponible <= 0
+            ? `El producto "${p.nombre}" se encuentra agotado en inventario.`
+            : `Stock insuficiente para "${p.nombre}": solo hay ${disponible} unidad(es) disponible(s).`
+        );
+      }
+      const pricing = this.resolverPrecioYImpuesto(p);
+      const lineSubtotal = pricing.precioSubtotal * cantidad;
+      const lineIva = pricing.impuesto * cantidad;
+      const lineTotal = pricing.precioTotal * cantidad;
+      return {
+        productoId: p.id,
+        nombre: p.nombre,
+        cantidad,
+        precioSubtotal: pricing.precioSubtotal,
+        impuestoUnitario: pricing.impuesto,
+        precioTotal: pricing.precioTotal,
+        ivaPct: pricing.ivaPct,
+        pedidoTipoIva: pricing.pedidoTipoIva,
+        lineSubtotal,
+        lineIva,
+        lineTotal,
+      };
     });
-    if (lineas.some((l) => !(l.precio > 0))) {
+    if (lineas.some((l) => !(l.precioTotal > 0))) {
       throw new BadRequestException('Uno o más productos no tienen precio configurado');
     }
 
@@ -380,9 +534,14 @@ export class DigitalService {
       );
     }
 
-    const subtotal = lineas.reduce((s, l) => s + l.total, 0);
-    const envio = this.calcularEnvio(subtotal, ciudad);
-    const total = subtotal;
+    const subtotal = lineas.reduce((s, l) => s + l.lineSubtotal, 0);
+    const baseIva19 = lineas.filter((l) => l.ivaPct === 19).reduce((s, l) => s + l.lineSubtotal, 0);
+    const iva19 = lineas.filter((l) => l.ivaPct === 19).reduce((s, l) => s + l.lineIva, 0);
+    const baseIva5 = lineas.filter((l) => l.ivaPct === 5).reduce((s, l) => s + l.lineSubtotal, 0);
+    const iva5 = lineas.filter((l) => l.ivaPct === 5).reduce((s, l) => s + l.lineIva, 0);
+    const impuesto = iva19 + iva5;
+    const total = lineas.reduce((s, l) => s + l.lineTotal, 0);
+    const envio = this.calcularEnvio(total, ciudad);
 
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Encontrar o Crear el Tercero (Cliente)
@@ -530,20 +689,25 @@ export class DigitalService {
             condicionesPago,
             subtotal,
             total,
+            descuento: 0,
+            baseIva19,
+            iva19,
+            baseIva5,
+            iva5,
             items: {
               create: lineas.map((l, idx) => ({
                 productoId: l.productoId,
                 descripcion: l.nombre,
                 unidad: 'UND',
                 cantidad: l.cantidad,
-                precioUnitario: l.precio,
+                precioUnitario: l.precioSubtotal,
                 descuentoPct: 0,
                 descuentoValor: 0,
-                tipoIva: 'EXCLUIDO',
-                baseIva: l.total,
-                ivaValor: 0,
-                subtotal: l.total,
-                total: l.total,
+                tipoIva: l.pedidoTipoIva,
+                baseIva: l.lineSubtotal,
+                ivaValor: l.lineIva,
+                subtotal: l.lineSubtotal,
+                total: l.lineTotal,
                 orden: idx
               }))
             }
@@ -571,10 +735,10 @@ export class DigitalService {
             subtotal,
             total,
             descuento: 0,
-            baseIva19: 0,
-            iva19: 0,
-            baseIva5: 0,
-            iva5: 0,
+            baseIva19,
+            iva19,
+            baseIva5,
+            iva5,
             estado: 'PENDIENTE',
             items: {
               create: lineas.map((l, idx) => ({
@@ -582,14 +746,14 @@ export class DigitalService {
                 descripcion: l.nombre,
                 unidad: 'UND',
                 cantidad: l.cantidad,
-                precioUnitario: l.precio,
+                precioUnitario: l.precioSubtotal,
                 descuentoPct: 0,
                 descuentoValor: 0,
-                tipoIva: 'EXCLUIDO',
-                baseIva: l.total,
-                ivaValor: 0,
-                subtotal: l.total,
-                total: l.total,
+                tipoIva: l.pedidoTipoIva,
+                baseIva: l.lineSubtotal,
+                ivaValor: l.lineIva,
+                subtotal: l.lineSubtotal,
+                total: l.lineTotal,
                 orden: idx
               }))
             }
@@ -618,7 +782,7 @@ export class DigitalService {
         id: String(l.productoId),
         title: l.nombre.slice(0, 250),
         quantity: l.cantidad,
-        unit_price: l.precio,
+        unit_price: l.precioTotal,
       }));
       if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
 
@@ -638,6 +802,9 @@ export class DigitalService {
       orderId: result.orderId,
       numero: result.numero,
       subtotal,
+      impuesto,
+      iva19,
+      iva5,
       envio,
       total: total + envio,
       checkoutUrl,
@@ -779,12 +946,16 @@ export class DigitalService {
     let checkoutUrl: string | null = null;
     if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
       const envio = this.calcularEnvio(Number(pedido.total), pedido.cliente?.municipio);
-      const items = (pedido.items || []).map((it: any) => ({
-        id: String(it.productoId),
-        title: String(it.descripcion || 'Producto').slice(0, 250),
-        quantity: Number(it.cantidad || 1),
-        unit_price: Number(it.precioUnitario || 0),
-      }));
+      const items = (pedido.items || []).map((it: any) => {
+        const cant = Math.max(1, Number(it.cantidad || 1));
+        const unitTotal = Number(it.total || 0) > 0 ? Math.round(Number(it.total) / cant) : Number(it.precioUnitario || 0);
+        return {
+          id: String(it.productoId),
+          title: String(it.descripcion || 'Producto').slice(0, 250),
+          quantity: cant,
+          unit_price: unitTotal,
+        };
+      });
       if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
 
       const pref = await this.mp.createPreference({
@@ -1015,6 +1186,11 @@ export class DigitalService {
         codigoBarras: true,
         precioBase: true,
         precioWeb: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
         costo: true,
         costoPromedio: true,
         slug: true,
@@ -1041,6 +1217,12 @@ export class DigitalService {
         stock: {
           select: {
             cantidad: true,
+            cantidadReservada: true,
+            bodega: {
+              select: {
+                activo: true,
+              },
+            },
           },
         },
       },
@@ -1156,7 +1338,8 @@ export class DigitalService {
     };
 
     const itemsXml = productosFiltrados.map((p) => {
-      const precio = Number(p.precioWeb || p.precioBase || 0);
+      const pricing = this.resolverPrecioYImpuesto(p);
+      const precio = pricing.precioTotal;
       const precioAnterior = (p.metadataWeb as any)?.precioAnterior ? Number((p.metadataWeb as any).precioAnterior) : null;
 
       const slugProducto = p.slug || p.id.toString();
@@ -1184,10 +1367,9 @@ export class DigitalService {
         }
       }
 
-      // Stock
-      const stockTotal = (p.stock || []).reduce((sum, s) => sum + Number(s.cantidad || 0), 0);
-      const hasStock = p.stock && p.stock.length > 0 ? stockTotal > 0 : true;
-      const availability = hasStock ? 'in stock' : 'out of stock';
+      // Stock real desde Control de Existencias
+      const stockDisponible = this.calcularStockDisponible(p);
+      const availability = stockDisponible > 0 ? 'in stock' : 'out of stock';
 
       // Marca
       const brandName = p.marca?.nombre || (p.metadataWeb as any)?.marca || config.nombreTienda || 'Baby World';

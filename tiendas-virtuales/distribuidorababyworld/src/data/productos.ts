@@ -1,11 +1,17 @@
 export interface Product {
   id: number
   sku?: string
+  referencia?: string
+  marca?: string
   slug?: string
   nombre: string
   descripcion: string
   descripcionLarga: string
   precio: number
+  precioSubtotal: number
+  impuesto: number
+  ivaPct: number
+  tipoIva?: string
   precioAnterior?: number
   categoria: string
   subcategoria?: string

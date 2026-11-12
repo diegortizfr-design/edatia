@@ -123,6 +123,7 @@ export function CheckoutModal({
   const [isSwitchingMethod, setIsSwitchingMethod] = useState(false)
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
   const [serverSubtotal, setServerSubtotal] = useState<number | null>(null)
+  const [serverImpuesto, setServerImpuesto] = useState<number | null>(null)
   const [serverEnvio, setServerEnvio] = useState<number | null>(null)
   const [serverTotal, setServerTotal] = useState<number | null>(null)
   const [submitError, setSubmitError] = useState('')
@@ -150,6 +151,8 @@ export function CheckoutModal({
   }
 
   const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const productosSubtotal = cartItems.reduce((sum, item) => sum + item.product.precioSubtotal * item.quantity, 0)
+  const productosImpuesto = cartItems.reduce((sum, item) => sum + item.product.impuesto * item.quantity, 0)
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
   const shipping = isLocal ? (subtotal >= 150000 ? 0 : 8000) : 0
   const total = subtotal + shipping
@@ -157,7 +160,8 @@ export function CheckoutModal({
   // Congelamos datos para la vista de éxito
   const activeCartItems = savedCartItems.length > 0 ? savedCartItems : cartItems
   const displayItemsCount = savedItemsCount > 0 ? savedItemsCount : itemsCount
-  const finalSubtotal = serverSubtotal ?? subtotal
+  const finalSubtotal = serverSubtotal ?? productosSubtotal
+  const finalImpuesto = serverImpuesto ?? productosImpuesto
   const finalEnvio = serverEnvio ?? shipping
   const finalTotal = serverTotal ?? total
 
@@ -282,10 +286,12 @@ export function CheckoutModal({
       if (typeof data.orderId === 'number') setOrderId(data.orderId)
       setSavedItemsCount(itemsCount)
       setSavedCartItems([...cartItems])
-      const appliedSubtotal = typeof data.subtotal === 'number' ? data.subtotal : subtotal
+      const appliedSubtotal = typeof data.subtotal === 'number' ? data.subtotal : productosSubtotal
+      const appliedImpuesto = typeof data.impuesto === 'number' ? data.impuesto : productosImpuesto
       const appliedEnvio = typeof data.envio === 'number' ? data.envio : shipping
       const appliedTotal = typeof data.total === 'number' ? data.total : total
       if (typeof data.subtotal === 'number') setServerSubtotal(data.subtotal)
+      if (typeof data.impuesto === 'number') setServerImpuesto(data.impuesto)
       if (typeof data.envio === 'number') setServerEnvio(data.envio)
       if (typeof data.total === 'number') setServerTotal(data.total)
       if (paymentMethod === 'mercadopago' && typeof data.checkoutUrl === 'string' && isSafeMpUrl(data.checkoutUrl)) {
@@ -299,6 +305,7 @@ export function CheckoutModal({
         const waUrl = buildWhatsAppUrl(
           orderNum,
           appliedSubtotal,
+          appliedImpuesto,
           appliedEnvio,
           appliedTotal,
           paymentMethod,
@@ -320,6 +327,7 @@ export function CheckoutModal({
   const buildWhatsAppUrl = (
     ordNum: string,
     subTot: number,
+    taxVal: number,
     shipVal: number,
     totVal: number,
     method = paymentMethod,
@@ -335,6 +343,7 @@ export function CheckoutModal({
       msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
     })
     msg += `\n*Subtotal:* ${fmtPrice(subTot)}`
+    msg += `\n*Impuesto (IVA):* ${fmtPrice(taxVal)}`
     if (isLocal) {
       msg += `\n*Envío:* ${shipVal === 0 ? 'Gratis 🎉 (Domicilio Local)' : `${fmtPrice(shipVal)} (Domicilio Local)`}`
     } else {
@@ -366,6 +375,10 @@ export function CheckoutModal({
     setOrderNumber('')
     setSavedCartItems([])
     setSavedItemsCount(0)
+    setServerSubtotal(null)
+    setServerImpuesto(null)
+    setServerEnvio(null)
+    setServerTotal(null)
     setIsSuccess(false)
     onSuccess()
     onClose()
@@ -376,6 +389,10 @@ export function CheckoutModal({
     setOrderNumber('')
     setSavedCartItems([])
     setSavedItemsCount(0)
+    setServerSubtotal(null)
+    setServerImpuesto(null)
+    setServerEnvio(null)
+    setServerTotal(null)
     setIsSuccess(false)
     onClose()
   }
@@ -384,6 +401,7 @@ export function CheckoutModal({
     const waUrl = buildWhatsAppUrl(
       orderNumber,
       finalSubtotal,
+      finalImpuesto,
       finalEnvio,
       finalTotal,
       paymentMethod,
@@ -793,8 +811,12 @@ export function CheckoutModal({
             {/* Price breakdown transparente ANTES de confirmar */}
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5 mt-3 shadow-2xs">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal ({itemsCount} {itemsCount === 1 ? 'producto' : 'productos'})</span>
-                <span className="font-semibold text-slate-800">{fmtPrice(subtotal)}</span>
+                <span>Subtotal productos ({itemsCount} {itemsCount === 1 ? 'item' : 'items'})</span>
+                <span className="font-semibold text-slate-800">{fmtPrice(productosSubtotal)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Impuesto (IVA)</span>
+                <span className="font-semibold text-slate-800">{fmtPrice(productosImpuesto)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span className="flex items-center gap-1">
@@ -1014,8 +1036,12 @@ export function CheckoutModal({
                 {/* Desglose transparente */}
                 <div className="bg-white/95 rounded-xl p-3 border border-blue-100 space-y-1.5 shadow-2xs">
                   <div className="flex justify-between text-slate-600 text-[11px]">
-                    <span>Productos ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
+                    <span>Subtotal ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
                     <span className="font-semibold text-slate-800">{fmtPrice(finalSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Impuesto (IVA):</span>
+                    <span className="font-semibold text-slate-800">{fmtPrice(finalImpuesto)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 text-[11px]">
                     <span className="flex items-center gap-1">
@@ -1074,8 +1100,12 @@ export function CheckoutModal({
                 {/* Desglose transparente */}
                 <div className="bg-white/95 rounded-xl p-3 border border-sky-100 space-y-1.5 shadow-2xs">
                   <div className="flex justify-between text-slate-600 text-[11px]">
-                    <span>Productos ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
+                    <span>Subtotal ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
                     <span className="font-semibold text-slate-800">{fmtPrice(finalSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Impuesto (IVA):</span>
+                    <span className="font-semibold text-slate-800">{fmtPrice(finalImpuesto)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 text-[11px]">
                     <span className="flex items-center gap-1">
@@ -1247,8 +1277,12 @@ export function CheckoutModal({
                 {/* Desglose transparente */}
                 <div className="bg-white/95 rounded-xl p-3 border border-emerald-100 space-y-1.5 shadow-2xs">
                   <div className="flex justify-between text-slate-600 text-[11px]">
-                    <span>Productos ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
+                    <span>Subtotal ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
                     <span className="font-semibold text-slate-800">{fmtPrice(finalSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Impuesto (IVA):</span>
+                    <span className="font-semibold text-slate-800">{fmtPrice(finalImpuesto)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 text-[11px]">
                     <span className="flex items-center gap-1">
@@ -1293,8 +1327,12 @@ export function CheckoutModal({
                 {/* Desglose transparente */}
                 <div className="bg-white/95 rounded-xl p-3 border border-emerald-100 space-y-1.5 shadow-2xs">
                   <div className="flex justify-between text-slate-600 text-[11px]">
-                    <span>Productos ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
+                    <span>Subtotal ({displayItemsCount} {displayItemsCount === 1 ? 'item' : 'items'}):</span>
                     <span className="font-semibold text-slate-800">{fmtPrice(finalSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Impuesto (IVA):</span>
+                    <span className="font-semibold text-slate-800">{fmtPrice(finalImpuesto)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 text-[11px]">
                     <span className="flex items-center gap-1">
