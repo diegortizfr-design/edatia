@@ -18,7 +18,7 @@ import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
-import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
+import { Product, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -160,31 +160,56 @@ export function App() {
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
           const mapped: Product[] = data.map((p: any) => {
-            let cat = 'Variedades'
-            let subcat = 'Otros'
-            
+            let cat = 'Otros'
+            let subcat = ''
+
             if (p.categoria) {
               if (p.categoria.parent) {
-                cat = p.categoria.parent.nombre;
-                subcat = p.categoria.nombre;
+                cat = p.categoria.parent.nombre
+                subcat = p.categoria.nombre
               } else {
-                cat = p.categoria.nombre;
-                subcat = '';
+                cat = p.categoria.nombre
+                subcat = ''
               }
             }
 
+            const precioSubtotal = p.precioSubtotal !== undefined
+              ? Number(p.precioSubtotal)
+              : Math.round(Number(p.precioWeb || 0) > 0 ? Number(p.precioWeb) : Number(p.precioBase || 0))
+            const ivaPct = p.ivaPct !== undefined ? Number(p.ivaPct) : 0
+            const impuesto = p.impuesto !== undefined
+              ? Number(p.impuesto)
+              : Math.round(precioSubtotal * (ivaPct / 100))
+            const precioTotal = p.precioTotal !== undefined
+              ? Number(p.precioTotal)
+              : precioSubtotal + impuesto
+
+            const stockReal = p.stockDisponible !== undefined
+              ? Number(p.stockDisponible)
+              : Array.isArray(p.stock)
+                ? p.stock.reduce((sum: number, s: any) => sum + Math.max(0, Number(s?.cantidad || 0) - Number(s?.cantidadReservada || 0)), 0)
+                : Number(p.stock || 0)
+
             const imagenesMapeadas = Array.isArray(p.metadataWeb?.imagenes) && p.metadataWeb.imagenes.length > 0
               ? p.metadataWeb.imagenes
-              : p.imagen ? [p.imagen] : ['https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700'];
+              : p.imagen ? [p.imagen] : ['https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700']
+
+            const marcaNombre = typeof p.marca === 'object' ? p.marca?.nombre : (p.marca || p.metadataWeb?.marca)
 
             return {
               id: p.id,
               sku: p.sku,
+              referencia: p.referencia || undefined,
+              marca: marcaNombre || undefined,
               slug: p.slug,
               nombre: p.nombre,
               descripcion: p.descripcion || 'Producto de alta calidad para bebés.',
               descripcionLarga: p.descripcionWeb || p.descripcion || '',
-              precio: Number(p.precioWeb || p.precioBase || 0),
+              precio: precioTotal,
+              precioSubtotal,
+              impuesto,
+              ivaPct,
+              tipoIva: p.tipoIvaEfectivo || p.tipoIva,
               precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : undefined,
               categoria: cat,
               subcategoria: subcat,
@@ -193,7 +218,7 @@ export function App() {
               imagenes: imagenesMapeadas,
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
-              stock: p.stock || 30,
+              stock: stockReal,
               esDestacado: !!p.esDestacado,
               detalles: Array.isArray(p.metadataWeb?.detalles) && p.metadataWeb.detalles.length > 0
                 ? p.metadataWeb.detalles
@@ -203,16 +228,18 @@ export function App() {
                   "Despacho y entrega rápida garantizada"
                 ],
               especificaciones: {
+                ...(marcaNombre ? { 'Marca': marcaNombre } : {}),
                 ...(p.metadataWeb?.tallas ? { 'Tallas': Array.isArray(p.metadataWeb.tallas) ? p.metadataWeb.tallas.join(', ') : p.metadataWeb.tallas } : {}),
                 ...(p.metadataWeb?.tipoCierre ? { 'Tipo de Cierre': p.metadataWeb.tipoCierre } : {}),
                 ...(p.metadataWeb?.material ? { 'Material': p.metadataWeb.material } : {}),
+                ...(p.referencia ? { 'Referencia': p.referencia } : {}),
                 ...(p.sku ? { 'SKU': p.sku } : {})
               }
             }
-          })
+          }).filter((p: Product) => p.stock > 0)
           setProducts(mapped)
-        } else if (PRODUCTOS_BABY_WORLD.length > 0) {
-          setProducts(PRODUCTOS_BABY_WORLD)
+        } else {
+          setProducts([])
         }
       })
       .catch(err => {
@@ -226,13 +253,9 @@ export function App() {
       })
   }, [])
 
-  // Filter products by category, subcategory and search query
+  // Filter products by category, subcategory and search query (conectado 100% al ERP)
   const filteredProducts = products.filter(p => {
-    const isCare = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
-    const productIsCare = p.categoria === 'Pañales y Cuidado' || (p.categoria as any) === 'Pañalera'
-
-    const matchesCategory = activeCategory === 'Todos' ||
-      (isCare ? productIsCare : p.categoria === activeCategory)
+    const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
       (p.subcategoria && p.subcategoria.toLowerCase() === activeSubcategory.toLowerCase())
@@ -242,22 +265,42 @@ export function App() {
       p.nombre.toLowerCase().includes(q) ||
       p.descripcion.toLowerCase().includes(q) ||
       p.categoria.toLowerCase().includes(q) ||
-      (p.subcategoria && p.subcategoria.toLowerCase().includes(q))
+      (p.subcategoria && p.subcategoria.toLowerCase().includes(q)) ||
+      (p.sku && p.sku.toLowerCase().includes(q)) ||
+      (p.referencia && p.referencia.toLowerCase().includes(q)) ||
+      (p.marca && p.marca.toLowerCase().includes(q))
     return matchesCategory && matchesSubcategory && matchesSearch
   })
 
   const handleAddToCart = (product: Product, quantity = 1) => {
-    analytics.agregarCarrito(product.id, product.nombre, product.precio, quantity)
+    if (product.stock <= 0) {
+      toast.error(`"${product.nombre}" se encuentra agotado en inventario.`)
+      return
+    }
+    const existingItem = cart.find(item => item.product.id === product.id)
+    const currentQty = existingItem ? existingItem.quantity : 0
+    if (currentQty >= product.stock) {
+      toast.error(`Solo hay ${product.stock} unidad(es) disponible(s) de "${product.nombre}".`)
+      return
+    }
+    const allowedAdd = Math.min(quantity, product.stock - currentQty)
+
+    analytics.agregarCarrito(product.id, product.nombre, product.precio, allowedAdd)
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id)
       if (existing) {
-        toast.success(`Aumentaste ${quantity}x "${product.nombre}"`, {
-          icon: '🍼',
-          style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
-        })
+        const nextQty = Math.min(product.stock, existing.quantity + allowedAdd)
+        if (nextQty < existing.quantity + quantity) {
+          toast(`Ajustado al stock disponible (${product.stock} und)`, { icon: '📦' })
+        } else {
+          toast.success(`Aumentaste ${allowedAdd}x "${product.nombre}"`, {
+            icon: '🍼',
+            style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
+          })
+        }
         return prev.map(item =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, product, quantity: nextQty }
             : item
         )
       }
@@ -265,7 +308,7 @@ export function App() {
         icon: '🛍️',
         style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
       })
-      return [...prev, { product, quantity }]
+      return [...prev, { product, quantity: allowedAdd }]
     })
   }
 
@@ -275,11 +318,15 @@ export function App() {
       return
     }
     setCart(prev =>
-      prev.map(item =>
-        item.product.id === productId
-          ? { ...item, quantity: q }
-          : item
-      )
+      prev.map(item => {
+        if (item.product.id !== productId) return item
+        const maxStock = item.product.stock
+        if (q > maxStock) {
+          toast.error(`Solo hay ${maxStock} unidad(es) disponible(s) en inventario.`)
+          return { ...item, quantity: maxStock }
+        }
+        return { ...item, quantity: q }
+      })
     )
   }
 
@@ -371,14 +418,34 @@ export function App() {
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const isCareSection = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
 
   const availableCategories = useMemo(() => {
-    const hasCalzado = products.some(p => p.categoria === 'Calzado')
-    return hasCalzado
-      ? CATEGORIAS_PRODUCTOS
-      : CATEGORIAS_PRODUCTOS.filter(c => c !== 'Calzado')
+    const counts = new Map<string, number>()
+    for (const p of products) {
+      if (!p.categoria) continue
+      counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1)
+    }
+    const sorted = Array.from(counts.keys()).sort((a, b) => a.localeCompare(b, 'es'))
+    return ['Todos', ...sorted]
   }, [products])
+
+  const availableSubcategories = useMemo(() => {
+    if (activeCategory === 'Todos') return []
+    const subs = new Set<string>()
+    for (const p of products) {
+      if (p.categoria === activeCategory && p.subcategoria && p.subcategoria.trim()) {
+        subs.add(p.subcategoria.trim())
+      }
+    }
+    if (subs.size === 0) return []
+    return ['Todos', ...Array.from(subs).sort((a, b) => a.localeCompare(b, 'es'))]
+  }, [products, activeCategory])
+
+  useEffect(() => {
+    if (activeCategory !== 'Todos' && availableCategories.length > 1 && !availableCategories.includes(activeCategory)) {
+      setActiveCategory('Todos')
+    }
+  }, [availableCategories, activeCategory])
 
   return (
     <div className={`min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 ${!selectedProduct && !showFamiliaForm ? 'pb-20 md:pb-0' : ''}`}>
@@ -507,23 +574,19 @@ export function App() {
                       ? `Resultados para "${searchQuery}"`
                       : activeCategory === 'Todos'
                         ? 'Lo mejor para tu bebé'
-                        : isCareSection
-                          ? '🍼 Pañales y Cuidado para Bebés'
-                          : activeCategory === 'Juguetería'
-                            ? '🧸 Juguetería & Estimulación Temprana'
-                            : '🎀 Variedades, Ropa & Accesorios'}
+                        : activeCategory}
                   </h2>
                 </div>
 
               </div>
 
-              {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
-              {isCareSection && (
+              {/* Subcategories Filter Pills (Dinámico desde las subcategorías reales del ERP) */}
+              {availableSubcategories.length > 1 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
                     Filtrar:
                   </span>
-                  {SUBCATEGORIAS_CUIDADO.map((sub) => {
+                  {availableSubcategories.map((sub) => {
                     const isSelected = activeSubcategory === sub
                     return (
                       <button
@@ -597,27 +660,19 @@ export function App() {
               </p>
             </div>
 
-            {/* Quick Categories */}
+            {/* Quick Categories (Dinámico desde el ERP) */}
             <div className="space-y-2.5">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
                 Categorías Principales
               </p>
               <ul className="space-y-2 text-xs text-slate-500 font-medium">
-                <li>
-                  <button onClick={() => handleCategorySelect('Pañales y Cuidado')} className="hover:text-sky-600 transition-colors">
-                    🍼 Pañales & Cuidado (Huggies, Winny, Desitin, Cremas)
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => handleCategorySelect('Juguetería')} className="hover:text-sky-600 transition-colors">
-                    🧸 Juguetería Sensorial & Gimnasios
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => handleCategorySelect('Variedades')} className="hover:text-sky-600 transition-colors">
-                    🎀 Variedades, Ajuares & Accesorios
-                  </button>
-                </li>
+                {availableCategories.filter(c => c !== 'Todos').slice(0, 6).map(cat => (
+                  <li key={cat}>
+                    <button onClick={() => handleCategorySelect(cat)} className="hover:text-sky-600 transition-colors text-left">
+                      {cat}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -736,6 +791,7 @@ export function App() {
         <MobileBottomNav
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}
+          quickCategories={availableCategories.filter(c => c !== 'Todos')}
           cartCount={totalCartCount}
           onOpenCart={() => setIsCartOpen(true)}
           onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}

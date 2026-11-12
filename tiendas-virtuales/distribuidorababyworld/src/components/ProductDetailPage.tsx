@@ -203,21 +203,50 @@ export function ProductDetailPage({
                   {product.nombre}
                 </h1>
 
-                {/* In Stock Badge */}
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold px-2.5 py-0.5 rounded-md">
-                    <PackageCheck size={13} />
-                    <span>En Stock para Despacho Inmediato</span>
-                  </span>
+                {/* In Stock Badge (Conectado al Control de Existencias) */}
+                <div className="flex items-center gap-2 text-xs flex-wrap">
+                  {product.stock > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold px-2.5 py-0.5 rounded-md">
+                      <PackageCheck size={13} />
+                      <span>
+                        {product.stock < 999
+                          ? `En Stock (${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'})`
+                          : 'Disponible para Despacho Inmediato'}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-rose-600 bg-rose-50 border border-rose-100 font-bold px-2.5 py-0.5 rounded-md">
+                      Agotado temporalmente
+                    </span>
+                  )}
                   <span className="text-slate-400 font-medium">• Pago contra entrega</span>
                 </div>
 
-                {/* Clean Price (No strikethrough/discount) */}
-                <div className="py-2 flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                    {fmtPrice(product.precio)}
-                  </span>
-                  <span className="text-xs text-slate-400 font-bold uppercase">COP</span>
+                {/* Price Breakdown: Subtotal + Impuesto (IVA) = Total */}
+                <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>Subtotal producto:</span>
+                    <span className="font-bold text-slate-800">{fmtPrice(product.precioSubtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>
+                      {product.ivaPct > 0
+                        ? `Impuesto (IVA ${product.ivaPct}%):`
+                        : 'Impuesto (Exento / Excluido):'}
+                    </span>
+                    <span className="font-bold text-slate-800">{fmtPrice(product.impuesto)}</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-sky-700">
+                      Total (Precio + Impuesto)
+                    </span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                        {fmtPrice(product.precio)}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-bold uppercase">COP</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Simulador de Cuotas Addi y Sistecrédito */}
@@ -270,7 +299,8 @@ export function ProductDetailPage({
                   <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all"
+                      disabled={product.stock <= 0}
+                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
                       aria-label="Disminuir"
                     >
                       <Minus size={15} />
@@ -279,8 +309,9 @@ export function ProductDetailPage({
                       {quantity}
                     </span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all"
+                      onClick={() => setQuantity(Math.min(Math.max(1, product.stock), quantity + 1))}
+                      disabled={product.stock <= 0 || quantity >= product.stock}
+                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
                       aria-label="Aumentar"
                     >
                       <Plus size={15} />
@@ -290,7 +321,8 @@ export function ProductDetailPage({
                   {/* Add to Cart Button */}
                   <button
                     onClick={handleAdd}
-                    className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    disabled={product.stock <= 0}
+                    className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
                   >
                     <ShoppingBag size={17} />
                     <span>Añadir a mi Bolsa • {fmtPrice(product.precio * quantity)}</span>

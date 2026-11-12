@@ -25,13 +25,13 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
     : null
 
   const getCategoryBadgeColor = (cat: string) => {
-    switch (cat) {
-      case 'Pañales y Cuidado':
-      case 'Pañalera': return 'bg-sky-50 text-sky-600 border-sky-100'
-      case 'Juguetería': return 'bg-amber-50 text-amber-600 border-amber-100'
-      case 'Variedades': return 'bg-pink-50 text-pink-600 border-pink-100'
-      default: return 'bg-slate-50 text-slate-600 border-slate-100'
-    }
+    const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo')) return 'bg-sky-50 text-sky-600 border-sky-100'
+    if (c.includes('juguet')) return 'bg-amber-50 text-amber-600 border-amber-100'
+    if (c.includes('variedad') || c.includes('ropa')) return 'bg-pink-50 text-pink-600 border-pink-100'
+    if (c.includes('aliment')) return 'bg-emerald-50 text-emerald-600 border-emerald-100'
+    if (c.includes('calzado')) return 'bg-indigo-50 text-indigo-600 border-indigo-100'
+    return 'bg-slate-50 text-slate-600 border-slate-100'
   }
 
   return (
@@ -111,32 +111,53 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           </p>
         </div>
 
-        {/* Pricing & Add to Cart button */}
-        <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-1.5">
-          <div className="min-w-0">
-            {product.precioAnterior && (
-              <span className="text-[9px] sm:text-[10px] text-slate-400 line-through block font-medium leading-none mb-0.5">
-                {fmtPrice(product.precioAnterior)}
-              </span>
-            )}
-            <span className="font-extrabold text-slate-900 text-xs sm:text-base truncate block">
-              {fmtPrice(product.precio)}
+        {/* Pricing (Subtotal + Impuesto + Total) & Add to Cart button */}
+        <div className="pt-2 border-t border-slate-50 space-y-1.5">
+          <div className="flex items-center justify-between text-[9.5px] sm:text-[10px] text-slate-500">
+            <span>Sub: <b className="text-slate-700">{fmtPrice(product.precioSubtotal)}</b></span>
+            <span>
+              {product.ivaPct > 0
+                ? <>IVA {product.ivaPct}%: <b className="text-slate-700">{fmtPrice(product.impuesto)}</b></>
+                : <>IVA: <b className="text-slate-600">$0</b></>
+              }
             </span>
-            <BnplCreditSimulator price={product.precio} compact className="mt-0.5" />
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onAddToCart(product)
-            }}
-            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm active:scale-90 flex-shrink-0"
-            title="Agregar a la bolsa"
-            aria-label={`Agregar ${product.nombre} al carrito`}
-          >
-            <Plus size={15} />
-            <span className="hidden sm:inline text-xs font-bold">Añadir</span>
-          </button>
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="min-w-0">
+              {product.precioAnterior && (
+                <span className="text-[9px] sm:text-[10px] text-slate-400 line-through block font-medium leading-none mb-0.5">
+                  {fmtPrice(product.precioAnterior)}
+                </span>
+              )}
+              <div className="flex items-baseline gap-1">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-sky-600">Total</span>
+                <span className="font-extrabold text-slate-900 text-xs sm:text-base truncate">
+                  {fmtPrice(product.precio)}
+                </span>
+              </div>
+              <BnplCreditSimulator price={product.precio} compact className="mt-0.5" />
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onAddToCart(product)
+              }}
+              disabled={product.stock <= 0}
+              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3.5 bg-slate-900 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm active:scale-90 flex-shrink-0"
+              title={product.stock > 0 ? `Agregar a la bolsa (${product.stock} disp.)` : 'Agotado'}
+              aria-label={`Agregar ${product.nombre} al carrito`}
+            >
+              <Plus size={15} />
+              <span className="hidden sm:inline text-xs font-bold">Añadir</span>
+            </button>
+          </div>
+          {product.stock < 999 && (
+            <p className="text-[9px] font-semibold text-emerald-700">
+              ● Stock disponible: {product.stock} {product.stock === 1 ? 'und' : 'unds'}
+            </p>
+          )}
         </div>
       </div>
     </div>
