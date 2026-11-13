@@ -59,9 +59,46 @@ export interface Movimiento {
 
 export interface InvKpis {
   totalProductos: number; totalBodegas: number
-  movimientosRecientes: number; valorTotal: number
+  movimientosRecientes?: number; valorTotal: number
+  valorTotalCostoPromedio?: number
+  valorTotalUltimoCosto?: number
   productosAlertas: number
-  topProductos: Array<{ productoId: number; nombre: string; sku: string; cantidad: number; valor: number; claseAbc?: string }>
+  topProductos: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
+  topProductosUltimoCosto?: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
+  topProductosCostoPromedio?: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
   alertasCriticas: StockItem[]
   // Extended dashboard fields
   totalProveedores?: number

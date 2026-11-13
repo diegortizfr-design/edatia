@@ -324,6 +324,33 @@ export class FacturasCompraService implements OnModuleInit {
         },
       });
 
+      // Actualizar costos del producto al registrar la Factura de Compra (Último Costo, Costo Base y Costo Promedio CPP)
+      if (dto.items && dto.items.length > 0) {
+        for (const item of dto.items) {
+          const productoId = Number(item.productoId);
+          const costoUnit = Number(item.costoUnitario || 0);
+          const cantNueva = Math.max(0, Number(item.cantidad || 0));
+
+          if (productoId && costoUnit > 0) {
+            const { nuevoCPP } = await calcularNuevoCPP(tx, {
+              productoId,
+              empresaId,
+              cantNueva: cantNueva > 0 ? cantNueva : 1,
+              costoUnitario: costoUnit,
+            });
+
+            await tx.producto.update({
+              where: { id: productoId },
+              data: {
+                costoUltimo: costoUnit,
+                costo: costoUnit,
+                costoPromedio: nuevoCPP,
+              },
+            });
+          }
+        }
+      }
+
       // Si viene vinculada a una Orden de Compra, actualizamos el estado de la OC
       if (dto.ordenCompraId) {
         await tx.ordenCompra.update({
@@ -866,6 +893,7 @@ export class FacturasCompraService implements OnModuleInit {
           data: {
             costoPromedio: nuevoCPP,
             costoUltimo: costoUnitario,
+            costo: costoUnitario,
           },
         });
 
