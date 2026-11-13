@@ -36,6 +36,8 @@ export class InvDashboardService {
               nombre: true,
               sku: true,
               costoPromedio: true,
+              costoUltimo: true,
+              costo: true,
               puntoReorden: true,
               claseAbc: true,
             },
@@ -66,29 +68,70 @@ export class InvDashboardService {
       }),
     ]);
 
-    // ── Valor total inventario ─────────────────────────────────────────────
-    const valorTotal = stocks.reduce((acc: number, s: any) => {
-      return acc + parseFloat(s.cantidad) * parseFloat(s.producto.costoPromedio);
-    }, 0);
+    // ── Valor total inventario (ambos métodos: Costo Promedio CPP y Último Costo) ──
+    let valorTotalCostoPromedio = 0;
+    let valorTotalUltimoCosto = 0;
+
+    const productosMap = new Map<number, any>();
+
+    stocks.forEach((s: any) => {
+      const cant = Math.max(0, parseFloat(s.cantidad || 0));
+      const prod = s.producto;
+      if (!prod) return;
+
+      const cppRaw = parseFloat(prod.costoPromedio || 0);
+      const ultRaw = parseFloat(prod.costoUltimo || 0);
+      const baseCostRaw = parseFloat(prod.costo || 0);
+
+      // Si costoUltimo no está definido o es 0, usamos costo base o costoPromedio
+      const costoUlt = ultRaw > 0 ? ultRaw : (baseCostRaw > 0 ? baseCostRaw : cppRaw);
+      // Si costoPromedio no está definido o es 0, usamos costoUltimo o costo base
+      const costoProm = cppRaw > 0 ? cppRaw : costoUlt;
+
+      valorTotalCostoPromedio += cant * costoProm;
+      valorTotalUltimoCosto += cant * costoUlt;
+
+      if (!productosMap.has(prod.id)) {
+        productosMap.set(prod.id, {
+          productoId: prod.id,
+          nombre: prod.nombre,
+          sku: prod.sku,
+          cantidad: 0,
+          costoPromedio: costoProm,
+          costoUltimo: costoUlt,
+          valorCostoPromedio: 0,
+          valorUltimoCosto: 0,
+          claseAbc: prod.claseAbc,
+        });
+      }
+
+      const pData = productosMap.get(prod.id);
+      pData.cantidad += cant;
+      pData.valorCostoPromedio += cant * costoProm;
+      pData.valorUltimoCosto += cant * costoUlt;
+    });
+
+    const listaProductos = Array.from(productosMap.values());
+
+    const topProductosUltimoCosto = [...listaProductos]
+      .sort((a, b) => b.valorUltimoCosto - a.valorUltimoCosto)
+      .slice(0, 5)
+      .map((p) => ({ ...p, valor: p.valorUltimoCosto }));
+
+    const topProductosCostoPromedio = [...listaProductos]
+      .sort((a, b) => b.valorCostoPromedio - a.valorCostoPromedio)
+      .slice(0, 5)
+      .map((p) => ({ ...p, valor: p.valorCostoPromedio }));
+
+    // Valor total y top 5 base
+    const valorTotal = valorTotalUltimoCosto;
+    const topProductos = topProductosUltimoCosto;
 
     // ── Alertas ────────────────────────────────────────────────────────────
     const productosAlertas = stocks.filter((s: any) => {
       const disponible = parseFloat(s.cantidad) - parseFloat(s.cantidadReservada ?? 0);
       return disponible <= parseFloat(s.producto.puntoReorden);
     }).length;
-
-    // ── Top 5 por valor ────────────────────────────────────────────────────
-    const topProductos = stocks
-      .map((s: any) => ({
-        productoId: s.productoId,
-        nombre: s.producto.nombre,
-        sku: s.producto.sku,
-        cantidad: parseFloat(s.cantidad),
-        valor: parseFloat(s.cantidad) * parseFloat(s.producto.costoPromedio),
-        claseAbc: s.producto.claseAbc,
-      }))
-      .sort((a: any, b: any) => b.valor - a.valor)
-      .slice(0, 5);
 
     // ── Alertas críticas (stock = 0 o negativo) ────────────────────────────
     const alertasCriticas = stocks
@@ -125,9 +168,13 @@ export class InvDashboardService {
       totalProveedores,
       movimientosDelMes,
       valorTotal,
+      valorTotalCostoPromedio,
+      valorTotalUltimoCosto,
       productosAlertas,
       // Listas
       topProductos,
+      topProductosUltimoCosto,
+      topProductosCostoPromedio,
       alertasCriticas,
       ultimosMovimientos,
       // Análisis

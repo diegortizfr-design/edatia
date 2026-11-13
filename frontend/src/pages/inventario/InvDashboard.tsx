@@ -56,6 +56,7 @@ export function InvDashboard() {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({ queryKey: ['inv-kpis'], queryFn: getInvKpis })
   const [abcMsg, setAbcMsg] = useState<string | null>(null)
+  const [modoCosto, setModoCosto] = useState<'ultimo' | 'cpp'>('ultimo')
 
   const mutAbc = useMutation({
     mutationFn: clasificarAbc,
@@ -80,9 +81,38 @@ export function InvDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Dashboard de Inventario</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Resumen general</p>
+          <p className="text-slate-500 text-sm mt-0.5">Resumen general y valoración de existencias</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Selector de método de costo */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+            <span className="text-[11px] text-slate-500 font-bold px-2 hidden sm:inline">Valorar por:</span>
+            <button
+              type="button"
+              onClick={() => setModoCosto('ultimo')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                modoCosto === 'ultimo'
+                  ? 'bg-white text-indigo-700 shadow-xs font-bold ring-1 ring-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Calcular valor del inventario según el último costo de compra registrado"
+            >
+              Último costo
+            </button>
+            <button
+              type="button"
+              onClick={() => setModoCosto('cpp')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                modoCosto === 'cpp'
+                  ? 'bg-white text-indigo-700 shadow-xs font-bold ring-1 ring-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Calcular valor del inventario según el costo promedio ponderado (CPP)"
+            >
+              Costo promedio (CPP)
+            </button>
+          </div>
+
           <button
             onClick={() => mutAbc.mutate()}
             disabled={mutAbc.isPending}
@@ -111,7 +141,35 @@ export function InvDashboard() {
         <KpiCard icon={<Package size={20} />}      label="Productos activos"   value={formatNum(data.totalProductos)}     color="indigo" to="/inventario/productos" />
         <KpiCard icon={<Warehouse size={20} />}     label="Bodegas activas"     value={formatNum(data.totalBodegas)}       color="blue"   to="/inventario/bodegas" />
         <KpiCard icon={<Truck size={20} />}         label="Proveedores"         value={formatNum(data.totalProveedores ?? 0)}   color="teal"   to="/inventario/proveedores" />
-        <KpiCard icon={<TrendingUp size={20} />}    label="Valor inventario"    value={formatCOP(data.valorTotal)}                 color="green"  sub="CPP vigente" />
+
+        {/* Tarjeta interactiva de Valor Inventario */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Valor inventario</p>
+              <p className="text-2xl font-bold text-slate-800 mt-0.5 truncate" title={formatCOP(modoCosto === 'ultimo' ? (data.valorTotalUltimoCosto ?? data.valorTotal) : (data.valorTotalCostoPromedio ?? data.valorTotal))}>
+                {formatCOP(modoCosto === 'ultimo' ? (data.valorTotalUltimoCosto ?? data.valorTotal) : (data.valorTotalCostoPromedio ?? data.valorTotal))}
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg shrink-0 bg-green-50 text-green-600">
+              <TrendingUp size={20} />
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="font-semibold text-slate-600">
+              {modoCosto === 'ultimo' ? 'Último costo' : 'CPP vigente'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setModoCosto(m => m === 'ultimo' ? 'cpp' : 'ultimo')}
+              className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-colors cursor-pointer"
+              title="Cambiar método de valoración"
+            >
+              {modoCosto === 'ultimo' ? 'Ver CPP' : 'Ver Últ. Costo'}
+            </button>
+          </div>
+        </div>
+
         <KpiCard icon={<Activity size={20} />}      label="Movs. este mes"      value={formatNum(data.movimientosDelMes ?? 0)}  color="indigo" to="/inventario/movimientos" />
         <KpiCard
           icon={<AlertTriangle size={20} />}
@@ -199,29 +257,44 @@ export function InvDashboard() {
         {/* Top 5 por valor */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">Top 5 por valor</h2>
+            <div>
+              <h2 className="font-semibold text-slate-800">Top 5 por valor</h2>
+              <p className="text-[11px] text-slate-400">
+                Valorado a {modoCosto === 'ultimo' ? 'último costo' : 'costo promedio (CPP)'}
+              </p>
+            </div>
             <Link to="/inventario/reportes" className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
               Reportes <ArrowRight size={12} />
             </Link>
           </div>
           <div className="divide-y divide-slate-50">
-            {data.topProductos.map((p: any, i: number) => (
-              <div key={p.productoId} className="px-5 py-3 flex items-center gap-3">
-                <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{p.nombre}</p>
-                  <p className="text-xs text-slate-400">{p.sku} · {formatNum(p.cantidad)} und</p>
+            {(modoCosto === 'ultimo'
+              ? (data.topProductosUltimoCosto ?? data.topProductos)
+              : (data.topProductosCostoPromedio ?? data.topProductos)
+            ).map((p: any, i: number) => {
+              const costoMostrar = modoCosto === 'ultimo'
+                ? (p.costoUltimo ?? (p.cantidad > 0 ? p.valor / p.cantidad : 0))
+                : (p.costoPromedio ?? (p.cantidad > 0 ? p.valor / p.cantidad : 0))
+              return (
+                <div key={p.productoId} className="px-5 py-3 flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{p.nombre}</p>
+                    <p className="text-xs text-slate-400">
+                      {p.sku} · {formatNum(p.cantidad)} und · {modoCosto === 'ultimo' ? 'Últ. Costo' : 'CPP'}: {formatCOP(costoMostrar)}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-slate-700">{formatCOP(p.valor)}</p>
+                    {p.claseAbc && (
+                      <span className={`text-xs font-bold ${ABC_TEXT[p.claseAbc] ?? 'text-slate-500'}`}>
+                        Clase {p.claseAbc}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-slate-700">{formatCOP(p.valor)}</p>
-                  {p.claseAbc && (
-                    <span className={`text-xs font-bold ${ABC_TEXT[p.claseAbc] ?? 'text-slate-500'}`}>
-                      Clase {p.claseAbc}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
             {data.topProductos.length === 0 && (
               <p className="px-5 py-8 text-center text-slate-400 text-sm">Sin datos de stock aún</p>
             )}

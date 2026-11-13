@@ -26,7 +26,12 @@ export class ReportesService {
       const cantidad = parseFloat(s.cantidad);
       const reservada = parseFloat(s.cantidadReservada ?? 0);
       const disponible = cantidad - reservada;
-      const costo = parseFloat(s.producto.costoPromedio);
+      const cppRaw = parseFloat(s.producto.costoPromedio || 0);
+      const ultRaw = parseFloat(s.producto.costoUltimo || 0);
+      const baseCostRaw = parseFloat(s.producto.costo || 0);
+      const costoUlt = ultRaw > 0 ? ultRaw : (baseCostRaw > 0 ? baseCostRaw : cppRaw);
+      const costoProm = cppRaw > 0 ? cppRaw : costoUlt;
+
       return {
         sku: s.producto.sku,
         nombre: s.producto.nombre,
@@ -38,8 +43,11 @@ export class ReportesService {
         cantidad,
         cantidadReservada: reservada,
         disponible,
-        costoPromedio: costo,
-        valorTotal: disponible * costo,
+        costoPromedio: costoProm,
+        costoUltimo: costoUlt,
+        valorTotal: disponible * costoUlt,
+        valorTotalCPP: disponible * costoProm,
+        valorTotalUltimoCosto: disponible * costoUlt,
         puntoReorden: parseFloat(s.producto.puntoReorden),
         claseAbc: s.producto.claseAbc ?? '—',
         alerta: disponible <= parseFloat(s.producto.puntoReorden) ? (cantidad <= 0 ? 'CRITICO' : 'BAJO') : 'OK',
@@ -49,6 +57,8 @@ export class ReportesService {
     const resumen = {
       totalRegistros: rows.length,
       valorTotalInventario: rows.reduce((a: number, r: any) => a + r.valorTotal, 0),
+      valorTotalInventarioCPP: rows.reduce((a: number, r: any) => a + r.valorTotalCPP, 0),
+      valorTotalInventarioUltimoCosto: rows.reduce((a: number, r: any) => a + r.valorTotalUltimoCosto, 0),
       productosEnAlerta: rows.filter((r: any) => r.alerta !== 'OK').length,
       productosCriticos: rows.filter((r: any) => r.alerta === 'CRITICO').length,
     };
