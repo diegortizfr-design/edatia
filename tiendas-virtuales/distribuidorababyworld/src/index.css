@@ -49,12 +49,12 @@
 /* Hero banner: limita el tamaño para que no ocupe toda la primera pantalla.
    Proporción de las imágenes del banner: 1024x338 (≈ 3.03:1). */
 .hero-banner-frame {
-  max-width: 1040px;
+  max-width: 1080px;
 }
 @media (min-width: 640px) {
   .hero-banner-frame {
-    /* La altura del banner nunca supera ~38% del alto visible de la ventana */
-    max-width: min(1040px, calc(38vh * 3.03));
+    /* La altura del banner nunca supera ~40% del alto visible de la ventana */
+    max-width: min(1080px, calc(40vh * 3.03));
     min-width: min(100%, 560px);
   }
 }

@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-14 (sesión 22)
+> Última actualización: 2026-11-14 (sesión 23)
 
 ---
 
@@ -33,6 +33,34 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 23) — 2026-11-14
+
+✅ **Redes Sociales Oficiales, Barra de Confianza y Refinamiento Visual del Hero Banner (`tiendas-virtuales/distribuidorababyworld`):**
+  - **Componentes SVG Nativos y Seguros:**
+    - Creados `InstagramIcon.tsx` (con degradado oficial multicapa de Instagram) y `TikTokIcon.tsx` (nota musical con `fill="currentColor"`).
+    - Enlaces oficiales configurados con `target="_blank"` y atributos de seguridad `rel="noopener noreferrer"`:
+      - Instagram: `https://www.instagram.com/distribuidorababyworld`
+      - TikTok: `https://www.tiktok.com/@baby.world426`
+  - **Barra de Confianza Interactiva (`QuickTrustBar.tsx`):**
+    - Ubicada estratégicamente justo debajo del banner principal en la vista de inicio.
+    - Reúne 5 puntos de confianza (*trust badges*):
+      1. 📍 **Tienda Física Poblado Campestre**: Abre el modal interactivo `StoreLocationModal` (con mapa, Waze y horarios).
+      2. 📸 **Instagram**: Acceso directo con identificador `@distribuidorababyworld`.
+      3. 🎵 **TikTok**: Acceso directo con identificador `@baby.world426`.
+      4. 💳 **Crédito a Cuotas Addi & Sistecrédito**: Abre el modal de información de financiamiento.
+      5. 🚚 **Contra Entrega**: Indicador de seguridad para pedidos a nivel local y nacional.
+    - Diseño responsive: en smartphones permite desplazamiento horizontal táctil suave (*swipe*) en micro-píldoras (`active:scale-95`), y en computadores se muestra como una barra centrada y equilibrada.
+    - Presencia replicada en la columna de marca del pie de página (`Footer` en `App.tsx`).
+  - **Optimización y Simetría Visual del Hero Banner (`HeroBanner.tsx`, `index.css`):**
+    - **Solución al vacío lateral en pantallas grandes:** Halos ambientales difusos pastel (*Ambient Glows*: azul cielo a la izquierda, rosa algodón a la derecha y ámbar sutil superior) con `blur-3xl`.
+    - **Navegación exterior en pantallas XL+:** Botones circulares blancos de navegación flotando en los laterales (`w-11 h-11`), eliminando obstrucción sobre fotos de bebés y textos legales del banner.
+    - **Simetría limpia:** Retiro de ilustraciones superpuestas que colisionaban con las flechas laterales.
+    - **Ritmo vertical y proporciones:** Calibración de márgenes entre el carrusel, los indicadores (*dots*) y la barra de redes, junto a un ancho máx. armónico en `.hero-banner-frame` (`min(1080px, calc(40vh * 3.03))`).
+  - **Recompilación y Despliegue:**
+    - Contenedor `edatia-glowxir` reconstruido y validado con `docker compose up -d --build glowxir`.
+
+---
 
 ## Estado resuelto (sesión 22) — 2026-11-14
 
