@@ -291,7 +291,8 @@ export function NuevoReciboModal({ onClose, onSuccess, initialClienteId, initial
     for (const fid of seleccionadas) {
       const valAp = Number(aplicaciones[fid] ?? 0)
       const fact = (facturasPendientes as any[]).find((f: any) => f.id === fid)
-      if (fact && valAp > Number(fact.saldo ?? 0)) {
+      const diff = valAp - Number(fact.saldo ?? 0)
+      if (fact && diff > 1) {
         return alert(`El valor a aplicar en la factura ${fact.prefijo || ''}${fact.numero} supera su saldo (${fmt(Number(fact.saldo))})`)
       }
     }
