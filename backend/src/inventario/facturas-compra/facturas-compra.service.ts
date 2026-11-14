@@ -991,7 +991,7 @@ export class FacturasCompraService implements OnModuleInit {
     for (const f of facturas) {
       const provId = f.proveedorId;
       const fSaldo = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : (f.formaPago === 'CONTADO' ? 0 : Number(f.total));
-      if (fSaldo <= 0) continue;
+      if (fSaldo <= 0.05) continue;
 
       if (!proveedorMap.has(provId)) {
         proveedorMap.set(provId, {
@@ -1025,13 +1025,16 @@ export class FacturasCompraService implements OnModuleInit {
     if (valorNum <= 0) throw new BadRequestException('El valor del pago debe ser mayor a 0');
 
     const saldoActual = fc.saldo !== null && fc.saldo !== undefined ? Number(fc.saldo) : (fc.formaPago === 'CONTADO' ? 0 : Number(fc.total));
-    if (valorNum > saldoActual) {
+    const diff = valorNum - saldoActual;
+    // Tolerancia al peso: si la diferencia es <= 1 peso, se considera redondeo de centavos en COP
+    if (diff > 1) {
       throw new BadRequestException(`El valor del pago (${valorNum}) supera el saldo pendiente (${saldoActual})`);
     }
 
-    const nuevoSaldo = Math.max(0, saldoActual - valorNum);
-    const nuevoTotalPagado = Number(fc.totalPagado ?? 0) + valorNum;
-    const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PARCIAL';
+    const nuevoSaldoCalc = Math.max(0, Number((saldoActual - valorNum).toFixed(2)));
+    const nuevoEstado = nuevoSaldoCalc <= 0.05 ? 'PAGADA' : 'PARCIAL';
+    const nuevoSaldo = nuevoEstado === 'PAGADA' ? 0 : nuevoSaldoCalc;
+    const nuevoTotalPagado = Math.min(Number(fc.total), Number(fc.totalPagado ?? 0) + valorNum);
 
     return this.prisma.$transaction(async (tx) => {
       const fecha = new Date();
