@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-04 (sesión 21)
+> Última actualización: 2026-11-14 (sesión 22)
 
 ---
 
@@ -33,6 +33,24 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 22) — 2026-11-14
+
+✅ **Hero Banner de la Tienda Virtual Baby World: Alta Resolución y Tamaño Compacto (`tiendas-virtuales/distribuidorababyworld`):**
+  - **Super-resolución con IA de las 3 imágenes del carrusel (`public/`):**
+    - `banner-familia.jpg`, `banner-promociones.jpg` y `banner-medios-pago.jpg` escaladas de **1024×338 → 2048×676** (2x, nítidas en pantallas Retina/HiDPI y móviles).
+    - Proceso: Real-ESRGAN (`RealESRGAN_x4plus`, CPU, vía `spandrel` + PyTorch) a 4x → reducción Lanczos a 2048 px → unsharp mask suave → JPEG progresivo calidad 86 con subsampling 4:4:4 (sin halos de color en los textos). Peso final: 174–264 KB por imagen.
+    - Verificado visualmente: tipografías y logos (Addi / Sistecrédito) mucho más definidos; la fotografía de la niña conserva rasgos naturales sin artefactos.
+    - Cache-busting actualizado en `HeroBanner.tsx`: `banner-familia.jpg?v=3`, `banner-promociones.jpg?v=2`, `banner-medios-pago.jpg?v=5`.
+  - **Reducción del espacio ocupado por el banner:**
+    - Nueva clase `.hero-banner-frame` en `src/index.css`: ancho máx. **1040 px** centrado y, desde `sm` (≥640 px), `max-width: min(1040px, calc(38vh * 3.03))` → la altura del banner nunca supera ~**38% del alto visible** (proporción de imagen 3.03:1). Piso de legibilidad `min-width: min(100%, 560px)`.
+    - Padding vertical de la sección reducido (`sm:pt-6 sm:pb-7` → `sm:pt-4 sm:pb-4`).
+    - En móvil (<640 px) el banner se mantiene a ancho completo con su barra táctil inferior (sin cambios).
+  - **Especificación recomendada para futuros banners:** exportar desde el diseño original a ≥2048 px de ancho; para ocupar aún menos alto, migrar a formato **4:1 (2400×600)** y ajustar la constante `3.03` en `.hero-banner-frame`. Opcional: versión móvil dedicada (1080×600).
+  - **Pendiente:** retirar o reemplazar el slide `mega-promociones` (evento del sábado 14 de noviembre) una vez pase la fecha.
+  - **Compilación y Despliegue:** `tsc` sin errores, `vite build` OK; contenedor `edatia-glowxir` reconstruido (`docker compose up -d --build --no-deps glowxir`) y verificado sirviendo las imágenes 2048×676 y el nuevo CSS.
+
+---
 
 ## Estado resuelto (sesión 21) — 2026-11-04
 

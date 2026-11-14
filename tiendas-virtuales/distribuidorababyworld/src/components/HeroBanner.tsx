@@ -16,7 +16,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
   const slides = [
     {
       id: 'familia',
-      src: '/banner-familia.jpg?v=2',
+      src: '/banner-familia.jpg?v=3',
       alt: '¡Sé parte de la Familia Baby World! Registra tus datos para acceder a muchos beneficios. Regístrate aquí.',
       ariaLabel: 'Sé parte de la Familia Baby World. Registra tus datos para acceder a muchos beneficios.',
       mobileText: 'Toca aquí para registrarte y recibir beneficios',
@@ -27,7 +27,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     },
     {
       id: 'mega-promociones',
-      src: '/banner-promociones.jpg?v=1',
+      src: '/banner-promociones.jpg?v=2',
       alt: 'Este sábado 14 de noviembre Mega Promociones en Baby World Poblado Campestre. Muchas sorpresas y rifas.',
       ariaLabel: 'Este sábado 14 de noviembre Mega Promociones. Ver ubicación de nuestra tienda en Poblado Campestre.',
       mobileText: 'Este sábado 14 de nov • Poblado Campestre',
@@ -45,7 +45,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     },
     {
       id: 'medios-pago',
-      src: '/banner-medios-pago.jpg?v=4',
+      src: '/banner-medios-pago.jpg?v=5',
       alt: '¡Recibimos Addi y Sistecrédito! Accede a tu crédito en 5 minutos.',
       ariaLabel: '¡Recibimos Addi y Sistecrédito! Accede a tu crédito en 5 minutos.',
       mobileText: 'Recibimos Addi y Sistecrédito • En 5 min',
@@ -115,11 +115,15 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
   }
 
   return (
-    <section className="relative bg-gradient-to-b from-baby-50/50 via-blush-50/25 to-white border-b border-slate-100 pt-3 pb-4 sm:pt-6 sm:pb-7">
+    <section className="relative bg-gradient-to-b from-baby-50/50 via-blush-50/25 to-white border-b border-slate-100 pt-3 pb-3 sm:pt-4 sm:pb-4">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        {/* Slider Frame */}
+        {/* Slider Frame
+            Ancho limitado para que el banner no domine la pantalla:
+            - Máx. 1040px de ancho (en pantallas grandes).
+            - En desktop, la altura nunca supera ~38% del alto visible (sm: en adelante),
+              calculando el ancho a partir de la proporción de la imagen (1024x338 ≈ 3.03:1). */}
         <div
-          className="group relative rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white shadow-[0_10px_30px_-8px_rgba(14,165,233,0.22)] hover:shadow-[0_18px_42px_-10px_rgba(236,72,153,0.3)] transition-shadow duration-300 bg-white"
+          className="hero-banner-frame mx-auto group relative rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white shadow-[0_10px_30px_-8px_rgba(14,165,233,0.22)] hover:shadow-[0_18px_42px_-10px_rgba(236,72,153,0.3)] transition-shadow duration-300 bg-white"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
