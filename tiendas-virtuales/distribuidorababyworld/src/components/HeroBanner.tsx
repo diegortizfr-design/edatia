@@ -115,87 +115,122 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
   }
 
   return (
-    <section className="relative bg-gradient-to-b from-baby-50/50 via-blush-50/25 to-white border-b border-slate-100 pt-3 pb-3 sm:pt-4 sm:pb-4">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        {/* Slider Frame
-            Ancho limitado para que el banner no domine la pantalla:
-            - Máx. 1040px de ancho (en pantallas grandes).
-            - En desktop, la altura nunca supera ~38% del alto visible (sm: en adelante),
-              calculando el ancho a partir de la proporción de la imagen (1024x338 ≈ 3.03:1). */}
-        <div
-          className="hero-banner-frame mx-auto group relative rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white shadow-[0_10px_30px_-8px_rgba(14,165,233,0.22)] hover:shadow-[0_18px_42px_-10px_rgba(236,72,153,0.3)] transition-shadow duration-300 bg-white"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Slides Track */}
-          <div
-            className="flex transition-transform duration-700 ease-out"
-            style={{ transform: `translateX(-${current * 100}%)` }}
-          >
-            {slides.map((slide) => (
-              <div key={slide.id} className="w-full flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleSlideClick(slide.onClick)}
-                  className="block w-full text-left focus:outline-none cursor-pointer active:scale-[0.995] transition-transform"
-                  aria-label={slide.ariaLabel}
-                >
-                  <img
-                    src={slide.src}
-                    alt={slide.alt}
-                    className="w-full h-auto block select-none"
-                    loading="eager"
-                    decoding="async"
-                    draggable={false}
-                  />
+    <section className="relative overflow-hidden bg-gradient-to-b from-sky-50/50 via-pink-50/30 to-white border-b border-slate-100 pt-3 pb-3 sm:pt-4 sm:pb-4">
+      {/* Halos de Luz Ambiental Pastel Simétricos (Ambient Glows) */}
+      <div 
+        className="pointer-events-none absolute -left-20 top-1/2 -translate-y-1/2 w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-sky-200/40 via-baby-100/25 to-transparent blur-3xl opacity-70"
+        aria-hidden="true" 
+      />
+      <div 
+        className="pointer-events-none absolute -right-20 top-1/2 -translate-y-1/2 w-80 h-80 sm:w-96 sm:h-96 rounded-full bg-gradient-to-bl from-pink-200/40 via-blush-100/25 to-transparent blur-3xl opacity-70"
+        aria-hidden="true" 
+      />
+      <div 
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-12 w-96 h-36 rounded-full bg-amber-100/35 blur-2xl opacity-50"
+        aria-hidden="true" 
+      />
 
-                  {/* Barra táctil optimizada para smartphones (< 640px) */}
-                  <div className={`sm:hidden bg-gradient-to-r ${slide.mobileGradient} text-white px-3.5 py-2 flex items-center justify-between gap-2`}>
-                    <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-tight truncate">
-                      {slide.mobileIcon === 'location' ? (
-                        <MapPin size={13} className="text-white shrink-0" />
-                      ) : slide.mobileIcon === 'credit' ? (
-                        <CreditCard size={13} className="text-white shrink-0" />
-                      ) : (
-                        <Sparkles size={13} className="text-butter-200 shrink-0" />
-                      )}
-                      <span className="truncate">{slide.mobileText}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 bg-white/25 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide shrink-0">
-                      <span>{slide.mobileCta}</span>
-                      <ArrowRight size={11} />
-                    </span>
-                  </div>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Flechas laterales (Desktop / Tablet) */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10">
+        {/* Contenedor con flechas exteriores en monitores grandes (XL+) */}
+        <div className="relative flex items-center justify-center">
+          {/* Flecha Izquierda Exterior (Desktop XL+) */}
           <button
             type="button"
             onClick={goPrev}
             aria-label="Banner anterior"
-            className="hidden sm:flex items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-slate-700 hover:text-blush-500 shadow-md border border-white/80 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 cursor-pointer z-10"
+            className="hidden xl:flex items-center justify-center w-11 h-11 rounded-full bg-white/95 hover:bg-white text-slate-700 hover:text-blush-500 shadow-md hover:shadow-lg border border-slate-200/90 hover:border-blush-300 transition-all duration-200 active:scale-90 cursor-pointer z-20 shrink-0 mr-3 lg:mr-4 hover:scale-105"
+            title="Anterior"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={22} />
           </button>
 
+          {/* Slider Frame */}
+          <div
+            className="hero-banner-frame flex-1 group relative rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-white shadow-[0_10px_30px_-8px_rgba(14,165,233,0.22)] hover:shadow-[0_18px_42px_-10px_rgba(236,72,153,0.3)] transition-shadow duration-300 bg-white"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Slides Track */}
+            <div
+              className="flex transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${current * 100}%)` }}
+            >
+              {slides.map((slide) => (
+                <div key={slide.id} className="w-full flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleSlideClick(slide.onClick)}
+                    className="block w-full text-left focus:outline-none cursor-pointer active:scale-[0.995] transition-transform"
+                    aria-label={slide.ariaLabel}
+                  >
+                    <img
+                      src={slide.src}
+                      alt={slide.alt}
+                      className="w-full h-auto block select-none"
+                      loading="eager"
+                      decoding="async"
+                      draggable={false}
+                    />
+
+                    {/* Barra táctil optimizada para smartphones (< 640px) */}
+                    <div className={`sm:hidden bg-gradient-to-r ${slide.mobileGradient} text-white px-3.5 py-2 flex items-center justify-between gap-2`}>
+                      <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-tight truncate">
+                        {slide.mobileIcon === 'location' ? (
+                          <MapPin size={13} className="text-white shrink-0" />
+                        ) : slide.mobileIcon === 'credit' ? (
+                          <CreditCard size={13} className="text-white shrink-0" />
+                        ) : (
+                          <Sparkles size={13} className="text-butter-200 shrink-0" />
+                        )}
+                        <span className="truncate">{slide.mobileText}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-white/25 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide shrink-0">
+                        <span>{slide.mobileCta}</span>
+                        <ArrowRight size={11} />
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Flechas interiores para pantallas medianas (< xl) */}
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="Banner anterior"
+              className="hidden sm:flex xl:hidden items-center justify-center absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-slate-700 hover:text-blush-500 shadow-md border border-white/80 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 cursor-pointer z-10"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Siguiente banner"
+              className="hidden sm:flex xl:hidden items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-slate-700 hover:text-baby-500 shadow-md border border-white/80 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 cursor-pointer z-10"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Flecha Derecha Exterior (Desktop XL+) */}
           <button
             type="button"
             onClick={goNext}
             aria-label="Siguiente banner"
-            className="hidden sm:flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-slate-700 hover:text-baby-500 shadow-md border border-white/80 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90 cursor-pointer z-10"
+            className="hidden xl:flex items-center justify-center w-11 h-11 rounded-full bg-white/95 hover:bg-white text-slate-700 hover:text-baby-500 shadow-md hover:shadow-lg border border-slate-200/90 hover:border-baby-300 transition-all duration-200 active:scale-90 cursor-pointer z-20 shrink-0 ml-3 lg:ml-4 hover:scale-105"
+            title="Siguiente"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={22} />
           </button>
         </div>
 
-        {/* Indicadores (Dots) debajo del banner para no tapar textos legales */}
-        <div className="flex items-center justify-center gap-2 mt-2.5 sm:mt-3" role="tablist" aria-label="Selector de banners">
+        {/* Indicadores (Dots) debajo del banner con espaciado armónico */}
+        <div className="flex items-center justify-center gap-2 mt-3 sm:mt-3.5 mb-1.5 sm:mb-2" role="tablist" aria-label="Selector de banners">
           {slides.map((slide, idx) => {
             const active = idx === current
             return (

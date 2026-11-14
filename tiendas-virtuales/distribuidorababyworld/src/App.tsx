@@ -12,6 +12,9 @@ import { CartDrawer, CartItem } from './components/CartDrawer'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
+import { QuickTrustBar, INSTAGRAM_URL, TIKTOK_URL } from './components/QuickTrustBar'
+import { InstagramIcon } from './components/InstagramIcon'
+import { TikTokIcon } from './components/TikTokIcon'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
@@ -491,6 +494,10 @@ export function App() {
                 onOpenLocation={() => setIsLocationModalOpen(true)}
                 onOpenBnplInfo={() => setIsBnplModalOpen(true)}
               />
+              <QuickTrustBar
+                onOpenLocation={() => setIsLocationModalOpen(true)}
+                onOpenBnplInfo={() => setIsBnplModalOpen(true)}
+              />
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
@@ -604,6 +611,29 @@ export function App() {
               <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
                 <b>Baby-World</b>: Distribuidora líder de pañales, juguetes de estimulación y variedades para consentir y cuidar el crecimiento de tu bebé.
               </p>
+              {/* Redes Sociales Oficiales */}
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-300 text-slate-700 hover:text-pink-600 rounded-xl text-xs font-bold transition-all shadow-2xs group active:scale-95"
+                  title="Visita nuestro perfil de Instagram @distribuidorababyworld"
+                >
+                  <InstagramIcon size={14} className="group-hover:scale-110 transition-transform" />
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href={TIKTOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-400 text-slate-700 hover:text-slate-950 rounded-xl text-xs font-bold transition-all shadow-2xs group active:scale-95"
+                  title="Síguenos en TikTok @baby.world426"
+                >
+                  <TikTokIcon size={14} className="text-slate-900 group-hover:scale-110 transition-transform" />
+                  <span>TikTok</span>
+                </a>
+              </div>
             </div>
 
             {/* Quick Categories (Dinámico desde el ERP) */}
