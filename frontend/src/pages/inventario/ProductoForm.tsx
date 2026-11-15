@@ -672,8 +672,8 @@ export function ProductoForm() {
                       <thead>
                         <tr className="bg-slate-50/75 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                           <th className="p-4">Talla / Atributo</th>
-                          <th className="p-4">SKU Variante</th>
-                          <th className="p-4">Código Barras</th>
+                          <th className="p-4">Ref. Fábrica (Talla)</th>
+                          <th className="p-4">SKU / Código de Barras</th>
                           <th className="p-4 text-right">Precio Base</th>
                           <th className="p-4 text-center">Stock Físico</th>
                           <th className="p-4 text-center">Estado</th>
@@ -900,14 +900,14 @@ function ModalVarianteForm({ producto, baseSku, precioSugerido, variante, onClos
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">SKU Variante *</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Ref. de Fábrica (Talla) *</label>
             <input
               required
               type="text"
               value={sku}
               onChange={e => setSku(e.target.value)}
-              placeholder="Ej. ZAP-AZ-18"
-              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-mono"
+              placeholder="Ej. TG26-211-18 o REF-18"
+              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-mono font-bold"
             />
           </div>
 
@@ -920,12 +920,12 @@ function ModalVarianteForm({ producto, baseSku, precioSugerido, variante, onClos
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Código de Barras (Opcional)</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">SKU / Código de Barras (Opcional)</label>
             <input
               type="text"
               value={codigoBarras}
               onChange={e => setCodigoBarras(e.target.value)}
-              placeholder="EAN-13, UPC..."
+              placeholder="Ej. 7701234567890"
               className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-mono"
             />
           </div>

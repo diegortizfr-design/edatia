@@ -1964,8 +1964,8 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
               <thead>
                 <tr className="bg-slate-50/75 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="p-4">Talla / Atributo</th>
-                  <th className="p-4">SKU Variante</th>
-                  <th className="p-4">Código Barras</th>
+                  <th className="p-4">Ref. Fábrica (Talla)</th>
+                  <th className="p-4">SKU / Código de Barras</th>
                   <th className="p-4 text-right">Precio Base</th>
                   <th className="p-4 text-center">Stock Físico</th>
                   <th className="p-4 text-center">Estado</th>
@@ -2183,17 +2183,17 @@ function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante,
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SKU Variante *</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Ref. de Fábrica (Talla) *</label>
             <input
               type="text"
               required
               value={sku}
               onChange={e => setSku(e.target.value)}
-              placeholder="Ej: CALZ-001-18 o REF-18"
+              placeholder="Ej: TG26-211-18 o REF-18"
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none uppercase"
             />
             <p className="text-[10px] text-slate-400 mt-1">
-              Identificador único de inventario (puedes usar Referencia-Talla o SKU-Talla).
+              Referencia de fábrica de esta talla (se combina con la Ref principal).
             </p>
           </div>
 
@@ -2210,16 +2210,16 @@ function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante,
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Código de Barras (Opcional)</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SKU / Código de Barras (Opcional)</label>
             <input
               type="text"
               value={codigoBarras}
               onChange={e => setCodigoBarras(e.target.value)}
-              placeholder="Ej: 770123456789"
+              placeholder="Ej: 7701234567890"
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
             />
             <p className="text-[10px] text-slate-400 mt-1">
-              Código de barras impreso en la caja para escanear con la pistola lectora (opcional).
+              Código de barras impreso en la caja o etiqueta para la pistola lectora (opcional).
             </p>
           </div>
 
