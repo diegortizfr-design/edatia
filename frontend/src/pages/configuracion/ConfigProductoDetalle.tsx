@@ -2436,7 +2436,6 @@ function ModalAjustarStockVarianteDetalle({ productoId, variante, bodegas, onClo
     </div>
   )
 }
-}
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
