@@ -22,6 +22,12 @@ const PRODUCTO_INCLUDE = {
   stock: {
     include: { bodega: { select: { id: true, nombre: true, codigo: true } } },
   },
+  variantes: {
+    include: {
+      stock: { include: { bodega: { select: { id: true, nombre: true, codigo: true } } } },
+    },
+    orderBy: { sku: 'asc' },
+  },
 };
 
 @Injectable()

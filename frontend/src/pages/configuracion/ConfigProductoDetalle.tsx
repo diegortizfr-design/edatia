@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 import {
@@ -9,10 +9,13 @@ import {
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock, Loader2
+  BarChart3, Clock, Loader2,
+  Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle
 } from 'lucide-react'
 import {
-  getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
+  getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto,
+  getVariantes, createVariante, updateVariante, toggleVariante, deleteVariante,
+  ajustarStockVariante, getBodegas
 } from '../../services/inventario.service'
 import { getImpuestos } from '../../services/erp.service'
 
@@ -40,19 +43,27 @@ function fmtCOP(val: number) {
   return `$${(val || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-// Local storage helpers removed. Using direct database bindings.
+const PRESETS_TALLAS = [
+  { id: 'bebe', label: '👶 Bebé / Pasos (14 a 17)', tallas: ['14', '15', '16', '17'] },
+  { id: 'nino', label: '🧒 Infantil / Niños (18 a 26)', tallas: ['18', '19', '20', '21', '22', '23', '24', '25', '26'] },
+  { id: 'junior', label: '👟 Junior (27 a 34)', tallas: ['27', '28', '29', '30', '31', '32', '33', '34'] },
+  { id: 'adulto', label: '👞 Adulto (35 a 42)', tallas: ['35', '36', '37', '38', '39', '40', '41', '42'] },
+  { id: 'ropa-bebe', label: '🍼 Ropa Bebé (Meses)', tallas: ['0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M'] },
+  { id: 'ropa', label: '👕 Ropa / Textil (XS a XL)', tallas: ['XS', 'S', 'M', 'L', 'XL'] },
+]
 
 // ── Tab definitions ──────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'web',        label: 'Web / Digital',    icon: Globe },
-  { id: 'documentos', label: 'Documentos',        icon: FileText },
-  { id: 'compras',    label: 'Compras',           icon: ShoppingCart },
-  { id: 'proveedores',label: 'Proveedores',       icon: Building2 },
-  { id: 'stock',      label: 'Stock',             icon: Layers },
-  { id: 'costeo',     label: 'Costeo',            icon: DollarSign },
-  { id: 'codigos',    label: 'Códigos de Barra',  icon: Barcode },
-  { id: 'facturas',   label: 'Facturas Venta',    icon: FileText },
+  { id: 'web',        label: 'Web / Digital',       icon: Globe },
+  { id: 'variantes',  label: 'Variantes y Tallas',  icon: Tag },
+  { id: 'documentos', label: 'Documentos',          icon: FileText },
+  { id: 'compras',    label: 'Compras',             icon: ShoppingCart },
+  { id: 'proveedores',label: 'Proveedores',         icon: Building2 },
+  { id: 'stock',      label: 'Stock',               icon: Warehouse },
+  { id: 'costeo',     label: 'Costeo',              icon: DollarSign },
+  { id: 'codigos',    label: 'Códigos de Barra',    icon: Barcode },
+  { id: 'facturas',   label: 'Facturas Venta',      icon: FileText },
 ]
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -1490,6 +1501,707 @@ function TabFacturas({ productoId }: { productoId: number }) {
   )
 }
 
+/* ---- TAB: Variantes y Tallas ---- */
+function TabVariantes({ producto, refetch }: { producto: any; refetch: () => void }) {
+  const qc = useQueryClient()
+  const productoId = producto.id
+
+  const { data: variantes = [], isLoading: loadingVariantes } = useQuery({
+    queryKey: ['variantes', productoId],
+    queryFn: () => getVariantes(productoId),
+    enabled: !!productoId,
+  })
+
+  const { data: bodegas = [] } = useQuery({
+    queryKey: ['bodegas'],
+    queryFn: getBodegas,
+  })
+
+  const [customTallasInput, setCustomTallasInput] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatorMsg, setGeneratorMsg] = useState<string | null>(null)
+
+  // Modales
+  const [showVarianteModal, setShowVarianteModal] = useState(false)
+  const [varianteAEditar, setVarianteAEditar] = useState<any>(null)
+  const [varianteAjustarStock, setVarianteAjustarStock] = useState<any>(null)
+
+  const mutCreateVariante = useMutation({
+    mutationFn: createVariante,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      setShowVarianteModal(false)
+      toast.success('Variante creada exitosamente')
+    },
+    onError: (err: any) => {
+      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+    }
+  })
+
+  const mutUpdateVariante = useMutation({
+    mutationFn: ({ varId, data }: any) => updateVariante(varId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      setVarianteAEditar(null)
+      toast.success('Variante actualizada')
+    },
+    onError: (err: any) => {
+      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+    }
+  })
+
+  const mutToggleVariante = useMutation({
+    mutationFn: toggleVariante,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      toast.success('Estado actualizado')
+    },
+    onError: (err: any) => {
+      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+    }
+  })
+
+  const mutDeleteVariante = useMutation({
+    mutationFn: deleteVariante,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      toast.success('Variante eliminada')
+    },
+    onError: (err: any) => {
+      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+    }
+  })
+
+  const mutStockVariante = useMutation({
+    mutationFn: ({ varId, data }: any) => ajustarStockVariante(varId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      setVarianteAjustarStock(null)
+      toast.success('Stock ajustado correctamente')
+    },
+    onError: (err: any) => {
+      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+    }
+  })
+
+  const handleGenerarTallas = async (tallasList: string[]) => {
+    if (!productoId || tallasList.length === 0) return
+    setIsGenerating(true)
+    setGeneratorMsg(null)
+
+    try {
+      const existingSkus = new Set((variantes as any[]).map((v: any) => v.sku?.toLowerCase()))
+      const existingTallas = new Set(
+        (variantes as any[]).map((v: any) => {
+          const att = (v.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+          return att?.valor?.toLowerCase()
+        })
+      )
+
+      let creadas = 0
+      const precioBaseSugerido = Number(producto.precios?.[0] || producto.precioBase || 0)
+      const baseSku = producto.sku || `PROD-${productoId}`
+
+      for (const talla of tallasList) {
+        const tClean = talla.trim()
+        if (!tClean) continue
+        if (existingTallas.has(tClean.toLowerCase())) continue
+
+        const variantSku = `${baseSku}-${tClean}`.toUpperCase()
+        if (existingSkus.has(variantSku.toLowerCase())) continue
+
+        await createVariante({
+          productoId,
+          sku: variantSku,
+          nombre: `Talla ${tClean}`,
+          atributos: [{ nombre: 'Talla', valor: tClean }],
+          precioBase: precioBaseSugerido,
+          costoPromedio: Number(producto.costoPromedio || producto.costo || 0),
+        })
+        creadas++
+      }
+
+      qc.invalidateQueries({ queryKey: ['variantes', productoId] })
+      qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      setGeneratorMsg(`✓ Se generaron ${creadas} variantes de talla exitosamente.`)
+      setCustomTallasInput('')
+      toast.success(`Se generaron ${creadas} variantes`)
+      setTimeout(() => setGeneratorMsg(null), 4000)
+    } catch (err: any) {
+      setGeneratorMsg(`Error generando variantes: ${err?.response?.data?.message || err.message}`)
+      toast.error(`Error generando variantes`)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const totalStockVariante = (v: any) =>
+    (v.stock ?? []).reduce((acc: number, s: any) => acc + parseFloat(s.cantidad || 0), 0)
+
+  const totalStockGlobal = (variantes as any[]).reduce((acc, v) => acc + totalStockVariante(v), 0)
+  const activasCount = (variantes as any[]).filter(v => v.activo).length
+
+  return (
+    <div className="space-y-6">
+      {/* Barra de cabecera con métricas rápidas */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+            <Tag size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-extrabold text-slate-800">Variantes y Tallas del Producto</h2>
+            <p className="text-xs text-slate-500">Configura tallas (ej. calzado, ropa) para vender individualmente en la tienda virtual y POS.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-center shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Variantes</span>
+            <span className="text-sm font-extrabold text-slate-800 font-mono">{variantes.length}</span>
+          </div>
+          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-center shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Activas</span>
+            <span className="text-sm font-extrabold text-emerald-600 font-mono">{activasCount}</span>
+          </div>
+          <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-center shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Stock Total</span>
+            <span className="text-sm font-extrabold text-indigo-600 font-mono">{totalStockGlobal} und</span>
+          </div>
+        </div>
+      </div>
+
+      {generatorMsg && (
+        <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          generatorMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {generatorMsg.startsWith('✓') ? <Check size={14} /> : <AlertTriangle size={14} />}
+          <span>{generatorMsg}</span>
+        </div>
+      )}
+
+      {/* Generador Rápido de Tallas */}
+      <div className="bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/50 border border-indigo-100 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-800">Generador Rápido de Tallas</h3>
+              <p className="text-xs text-slate-500">Crea múltiples tallas automáticamente con un solo clic</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setVarianteAEditar(null)
+              setShowVarianteModal(true)
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            <Plus size={14} />
+            <span>+ Variante manual</span>
+          </button>
+        </div>
+
+        {/* Preajustes rápidos */}
+        <div>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preajustes de Calzado y Ropa:</p>
+          <div className="flex flex-wrap gap-2">
+            {PRESETS_TALLAS.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                disabled={isGenerating}
+                onClick={() => handleGenerarTallas(p.tallas)}
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+                title={`Generar: ${p.tallas.join(', ')}`}
+              >
+                <span>{p.label}</span>
+                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">
+                  +{p.tallas.length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* O escribir tallas libres */}
+        <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <input
+            type="text"
+            value={customTallasInput}
+            onChange={e => setCustomTallasInput(e.target.value)}
+            placeholder="O ingresa tallas separadas por comas (ejemplo: 18, 19, 20, 21)..."
+            className="flex-1 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-medium"
+          />
+          <button
+            type="button"
+            disabled={isGenerating || !customTallasInput.trim()}
+            onClick={() => handleGenerarTallas(customTallasInput.split(','))}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
+          >
+            {isGenerating ? 'Generando...' : 'Crear tallas'}
+          </button>
+        </div>
+      </div>
+
+      {/* Listado de Variantes */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Tag size={16} className="text-indigo-600" />
+            <h3 className="font-extrabold text-slate-800 text-sm">Tallas y Variantes registradas</h3>
+            <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-slate-100 text-slate-600">
+              {variantes.length}
+            </span>
+          </div>
+        </div>
+
+        {loadingVariantes ? (
+          <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
+            <Loader2 size={24} className="animate-spin text-indigo-600" />
+            <span>Cargando variantes...</span>
+          </div>
+        ) : variantes.length === 0 ? (
+          <div className="py-16 px-4 text-center">
+            <Layers size={40} className="text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-bold text-slate-700">Este producto aún no tiene tallas o variantes</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+              Usa el generador rápido de arriba para crear las tallas de calzado en 1 clic, o agrega una variante manual.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50/75 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="p-4">Talla / Atributo</th>
+                  <th className="p-4">SKU Variante</th>
+                  <th className="p-4">Código Barras</th>
+                  <th className="p-4 text-right">Precio Base</th>
+                  <th className="p-4 text-center">Stock Físico</th>
+                  <th className="p-4 text-center">Estado</th>
+                  <th className="p-4 text-center w-36">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {variantes.map((v: any) => {
+                  const stockTotal = totalStockVariante(v)
+                  const tallaAttr = (v.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+                  return (
+                    <tr key={v.id} className={`hover:bg-slate-50/50 transition-colors ${!v.activo ? 'opacity-60 bg-slate-50/30' : ''}`}>
+                      {/* Talla / Atributo */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-extrabold text-xs font-mono">
+                            {tallaAttr ? `Talla ${tallaAttr.valor}` : v.nombre}
+                          </span>
+                          {v.atributos?.length > 1 && (
+                            <span className="text-[11px] text-slate-400">
+                              ({v.atributos.filter((a: any) => a.nombre?.toLowerCase() !== 'talla').map((a: any) => `${a.nombre}: ${a.valor}`).join(', ')})
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* SKU */}
+                      <td className="p-4 font-mono text-xs font-bold text-slate-700">
+                        {v.sku}
+                      </td>
+
+                      {/* Código de barras */}
+                      <td className="p-4 font-mono text-xs text-slate-500">
+                        {v.codigoBarras || '—'}
+                      </td>
+
+                      {/* Precio Base */}
+                      <td className="p-4 text-right font-extrabold text-slate-800 font-mono">
+                        {fmtCOP(parseFloat(v.precioBase || producto.precios?.[0] || producto.precioBase || 0))}
+                      </td>
+
+                      {/* Stock Físico */}
+                      <td className="p-4 text-center">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
+                            stockTotal > 0
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-red-50 text-red-600 border border-red-200'
+                          }`}>
+                            {stockTotal > 0 ? `${stockTotal} pares/und` : 'Agotado (0)'}
+                          </span>
+                          {v.stock?.length > 0 && (
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Warehouse size={10} />
+                              {v.stock.map((s: any) => `${s.bodega?.nombre ?? 'Bodega'}: ${parseFloat(s.cantidad)}`).join(' | ')}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Estado */}
+                      <td className="p-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => mutToggleVariante.mutate(v.id)}
+                          className="text-slate-400 hover:text-slate-700 p-1 transition-transform active:scale-95"
+                          title={v.activo ? 'Desactivar variante' : 'Activar variante'}
+                        >
+                          {v.activo ? (
+                            <ToggleRight size={24} className="text-emerald-600 inline" />
+                          ) : (
+                            <ToggleLeft size={24} className="text-slate-300 inline" />
+                          )}
+                        </button>
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setVarianteAjustarStock(v)}
+                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-lg border border-indigo-100 transition-colors"
+                            title="Ajustar stock en bodega"
+                          >
+                            + Stock
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setVarianteAEditar(v)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Editar variante"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`¿Eliminar la variante "${v.nombre}" (${v.sku})?`)) {
+                                mutDeleteVariante.mutate(v.id)
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar variante"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* MODAL 1: NUEVA / EDITAR VARIANTE MANUAL */}
+      {(showVarianteModal || varianteAEditar) && (
+        <ModalVarianteFormDetalle
+          producto={producto}
+          baseSku={producto.sku}
+          precioSugerido={producto.precios?.[0] || producto.precioBase || 0}
+          variante={varianteAEditar}
+          onClose={() => {
+            setShowVarianteModal(false)
+            setVarianteAEditar(null)
+          }}
+          onSubmit={(data: any) => {
+            if (varianteAEditar) {
+              mutUpdateVariante.mutate({ varId: varianteAEditar.id, data })
+            } else {
+              mutCreateVariante.mutate({ ...data, productoId })
+            }
+          }}
+          isLoading={mutCreateVariante.isPending || mutUpdateVariante.isPending}
+        />
+      )}
+
+      {/* MODAL 2: AJUSTAR STOCK DE VARIANTE */}
+      {varianteAjustarStock && (
+        <ModalAjustarStockVarianteDetalle
+          variante={varianteAjustarStock}
+          bodegas={bodegas}
+          onClose={() => setVarianteAjustarStock(null)}
+          onSubmit={(data: any) => {
+            mutStockVariante.mutate({ varId: varianteAjustarStock.id, data })
+          }}
+          isLoading={mutStockVariante.isPending}
+        />
+      )}
+    </div>
+  )
+}
+
+function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante, onClose, onSubmit, isLoading }: any) {
+  const isEditing = !!variante
+  const [sku, setSku] = useState(variante?.sku ?? (baseSku ? `${baseSku}-` : ''))
+  const [talla, setTalla] = useState(() => {
+    const attr = (variante?.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+    return attr?.valor ?? ''
+  })
+  const [precio, setPrecio] = useState(variante?.precioBase ? String(variante.precioBase) : String(precioSugerido || '0'))
+  const [codigoBarras, setCodigoBarras] = useState(variante?.codigoBarras ?? '')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sku.trim()) return alert('El SKU es obligatorio')
+    if (!talla.trim()) return alert('La talla es obligatoria')
+
+    onSubmit({
+      sku: sku.trim().toUpperCase(),
+      nombre: `Talla ${talla.trim()}`,
+      atributos: [{ nombre: 'Talla', valor: talla.trim() }],
+      precioBase: parseFloat(precio || '0'),
+      codigoBarras: codigoBarras.trim() || undefined,
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+              <Tag size={18} />
+            </div>
+            <h3 className="font-extrabold text-slate-800 text-sm">
+              {isEditing ? 'Editar Variante' : 'Nueva Variante / Talla'}
+            </h3>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Talla o Identificador *</label>
+            <input
+              type="text"
+              required
+              value={talla}
+              onChange={e => {
+                const val = e.target.value
+                setTalla(val)
+                if (!isEditing && baseSku) {
+                  setSku(`${baseSku}-${val}`.toUpperCase())
+                }
+              }}
+              placeholder="Ej: 18, 22, 37, XL..."
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">SKU Variante *</label>
+            <input
+              type="text"
+              required
+              value={sku}
+              onChange={e => setSku(e.target.value)}
+              placeholder="Ej: CALZ-001-18"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none uppercase"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Precio Base de Venta (COP)</label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={precio}
+              onChange={e => setPrecio(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Código de Barras (Opcional)</label>
+            <input
+              type="text"
+              value={codigoBarras}
+              onChange={e => setCodigoBarras(e.target.value)}
+              placeholder="Ej: 770123456789"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              {isLoading ? 'Guardando...' : (isEditing ? 'Actualizar Variante' : 'Guardar Variante')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function ModalAjustarStockVarianteDetalle({ variante, bodegas, onClose, onSubmit, isLoading }: any) {
+  const [bodegaId, setBodegaId] = useState<string>(bodegas[0]?.id ? String(bodegas[0].id) : '')
+  const [cantidad, setCantidad] = useState<string>('')
+  const [tipo, setTipo] = useState<'ENTRADA' | 'SALIDA' | 'AJUSTE'>('ENTRADA')
+  const [motivo, setMotivo] = useState<string>('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!bodegaId) return alert('Selecciona una bodega')
+    const cantNum = parseFloat(cantidad)
+    if (isNaN(cantNum) || cantNum <= 0) return alert('Ingresa una cantidad válida')
+
+    onSubmit({
+      bodegaId: parseInt(bodegaId, 10),
+      cantidad: cantNum,
+      tipo,
+      motivo: motivo.trim() || undefined,
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+              <Warehouse size={18} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-sm">Ajustar Stock Físico</h3>
+              <p className="text-[11px] text-slate-400 font-mono">{variante.sku} · {variante.nombre}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Bodega de destino</label>
+            <select
+              value={bodegaId}
+              onChange={e => setBodegaId(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            >
+              {bodegas.map((b: any) => (
+                <option key={b.id} value={b.id}>{b.nombre} {b.esPrincipal ? '(Principal)' : ''}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Movimiento</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setTipo('ENTRADA')}
+                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                  tipo === 'ENTRADA'
+                    ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-100'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                + Entrada
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipo('SALIDA')}
+                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                  tipo === 'SALIDA'
+                    ? 'bg-rose-50 border-rose-500 text-rose-700 ring-2 ring-rose-100'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                - Salida
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipo('AJUSTE')}
+                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                  tipo === 'AJUSTE'
+                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-2 ring-indigo-100'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                = Fijar
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+              {tipo === 'AJUSTE' ? 'Nuevo Stock Total *' : 'Cantidad a mover *'}
+            </label>
+            <input
+              type="number"
+              step="any"
+              min="0.01"
+              required
+              value={cantidad}
+              onChange={e => setCantidad(e.target.value)}
+              placeholder="Ej: 10"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Motivo / Observación</label>
+            <input
+              type="text"
+              value={motivo}
+              onChange={e => setMotivo(e.target.value)}
+              placeholder="Ej: Conteo físico inicial, ingreso de mercancía..."
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              {isLoading ? 'Registrando...' : 'Confirmar Stock'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 export function ConfigProductoDetalle() {
@@ -1717,6 +2429,7 @@ export function ConfigProductoDetalle() {
           {TABS.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
+            const varCount = tab.id === 'variantes' && Array.isArray(producto.variantes) ? producto.variantes.length : null
             return (
               <button
                 key={tab.id}
@@ -1728,7 +2441,12 @@ export function ConfigProductoDetalle() {
                 }`}
               >
                 <Icon size={14} />
-                {tab.label}
+                <span>{tab.label}</span>
+                {varCount !== null && varCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-indigo-100 text-indigo-700 font-bold">
+                    {varCount}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -1737,6 +2455,7 @@ export function ConfigProductoDetalle() {
         {/* Tab content */}
         <div className="p-6">
           {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} />}
+          {activeTab === 'variantes'   && <TabVariantes producto={producto} refetch={refetch} />}
           {activeTab === 'documentos'  && <TabDocumentos producto={producto} refetch={refetch} />}
           {activeTab === 'compras'     && <TabCompras productoId={productoId} sku={producto.sku} />}
           {activeTab === 'proveedores' && <TabProveedores producto={producto} refetch={refetch} />}
