@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-14 (sesión 23)
+> Última actualización: 2026-11-15 (sesión 24)
 
 ---
 
@@ -33,6 +33,18 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 24) — 2026-11-15
+
+✅ **Retiro del Banner de Mega Promociones (`tiendas-virtuales/distribuidorababyworld`):**
+  - Culminada la jornada de evento presencial del sábado 14 de noviembre, se retiró el slide `mega-promociones` de `HeroBanner.tsx`.
+  - El carrusel principal opera ahora de forma limpia y enfocada con 2 slides permanentes de alta conversión:
+    1. **Familia Baby World:** Fidelización y registro de clientes para cumpleaños y beneficios.
+    2. **Medios de Pago / Financiación:** Acceso y simulación de crédito con Addi y Sistecrédito.
+  - Tipado de datos `Slide` estructurado explícitamente en TypeScript para garantizar compilación estricta y permitir futuras incorporaciones de banners estacionales de forma ágil.
+  - Recompilación `tsc && vite build` completada con éxito; contenedor `edatia-glowxir` reconstruido y verificado en producción sin referencias al banner temporal.
+
+---
 
 ## Estado resuelto (sesión 23) — 2026-11-14
 

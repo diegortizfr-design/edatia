@@ -7,13 +7,25 @@ interface HeroBannerProps {
   onOpenBnplInfo?: () => void
 }
 
+interface Slide {
+  id: string
+  src: string
+  alt: string
+  ariaLabel: string
+  mobileText: string
+  mobileCta: string
+  mobileGradient: string
+  mobileIcon: 'sparkles' | 'credit' | 'location'
+  onClick: () => void
+}
+
 export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplInfo }: HeroBannerProps) {
   const [current, setCurrent] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
   const touchDeltaX = useRef<number>(0)
 
-  const slides = [
+  const slides: Slide[] = [
     {
       id: 'familia',
       src: '/banner-familia.jpg?v=3',
@@ -24,24 +36,6 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
       mobileGradient: 'from-baby-500 via-lavender-400 to-blush-500',
       mobileIcon: 'sparkles' as const,
       onClick: onOpenFamiliaRegistro,
-    },
-    {
-      id: 'mega-promociones',
-      src: '/banner-promociones.jpg?v=2',
-      alt: 'Este sábado 14 de noviembre Mega Promociones en Baby World Poblado Campestre. Muchas sorpresas y rifas.',
-      ariaLabel: 'Este sábado 14 de noviembre Mega Promociones. Ver ubicación de nuestra tienda en Poblado Campestre.',
-      mobileText: 'Este sábado 14 de nov • Poblado Campestre',
-      mobileCta: 'Ver mapa',
-      mobileGradient: 'from-blush-500 via-pink-400 to-baby-500',
-      mobileIcon: 'location' as const,
-      onClick: () => {
-        if (onOpenLocation) {
-          onOpenLocation()
-        } else {
-          const el = document.getElementById('catalogo-section')
-          if (el) el.scrollIntoView({ behavior: 'smooth' })
-        }
-      },
     },
     {
       id: 'medios-pago',
