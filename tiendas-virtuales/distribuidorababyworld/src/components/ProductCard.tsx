@@ -52,7 +52,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           src={getOptimizedImageUrl(product.imagen, 500)}
           alt={product.nombre}
           className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
+            imageLoaded
+              ? product.stock <= 0
+                ? 'opacity-75 grayscale-[20%]'
+                : 'opacity-100'
+              : 'opacity-0'
           }`}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
@@ -68,7 +72,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
 
         {/* Top Badges */}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-none">
-          {discountPercent ? (
+          {product.stock <= 0 ? (
+            <span className="bg-slate-900/85 backdrop-blur-sm text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tracking-wide">
+              Agotado
+            </span>
+          ) : discountPercent ? (
             <span className="bg-rose-500 text-white font-extrabold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-sm">
               -{discountPercent}%
             </span>
@@ -142,22 +150,41 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                onAddToCart(product)
+                if (product.stock > 0) {
+                  onAddToCart(product)
+                } else {
+                  onViewDetails(product)
+                }
               }}
               disabled={product.stock <= 0}
-              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3.5 bg-slate-900 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm active:scale-90 flex-shrink-0"
-              title={product.stock > 0 ? `Agregar a la bolsa (${product.stock} disp.)` : 'Agotado'}
-              aria-label={`Agregar ${product.nombre} al carrito`}
+              className={`h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm flex-shrink-0 ${
+                product.stock > 0
+                  ? 'bg-slate-900 hover:bg-sky-600 text-white active:scale-90'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+              }`}
+              title={product.stock > 0 ? `Agregar a la bolsa (${product.stock} disp.)` : 'Producto agotado en inventario'}
+              aria-label={product.stock > 0 ? `Agregar ${product.nombre} al carrito` : `${product.nombre} está agotado`}
             >
-              <Plus size={15} />
-              <span className="hidden sm:inline text-xs font-bold">Añadir</span>
+              {product.stock > 0 ? (
+                <>
+                  <Plus size={15} />
+                  <span className="hidden sm:inline text-xs font-bold">Añadir</span>
+                </>
+              ) : (
+                <span className="text-[10px] sm:text-[11px] font-bold px-0.5">Agotado</span>
+              )}
             </button>
           </div>
-          {product.stock < 999 && (
+          {product.stock > 0 && product.stock < 999 ? (
             <p className="text-[9px] font-semibold text-emerald-700">
               ● Stock disponible: {product.stock} {product.stock === 1 ? 'und' : 'unds'}
             </p>
-          )}
+          ) : product.stock <= 0 ? (
+            <p className="text-[9px] font-semibold text-rose-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>Agotado temporalmente</span>
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

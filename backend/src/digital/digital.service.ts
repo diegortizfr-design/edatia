@@ -422,7 +422,11 @@ export class DigitalService {
           tipoIvaEfectivo: pricing.tipoIva,
         };
       })
-      .filter((p) => p.stockDisponible > 0);
+      .sort((a, b) => {
+        if (a.stockDisponible > 0 && b.stockDisponible <= 0) return -1;
+        if (a.stockDisponible <= 0 && b.stockDisponible > 0) return 1;
+        return 0;
+      });
   }
 
   // Zonas de cobertura local directa (Cali y alrededores con domiciliario propio)

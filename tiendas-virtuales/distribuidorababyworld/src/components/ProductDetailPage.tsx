@@ -68,8 +68,12 @@ export function ProductDetailPage({
     }
   }
 
+  const isAgotado = product ? product.stock <= 0 : false
+
   const whatsappMessage = encodeURIComponent(
-    `Hola Baby-World! Me interesa ordenar: "${product.nombre}" (${fmtPrice(product.precio)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
+    isAgotado
+      ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}" (${fmtPrice(product.precio)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+      : `Hola Baby-World! Me interesa ordenar: "${product.nombre}" (${fmtPrice(product.precio)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
   )
 
   // Similar/Related products (excluding current product)
@@ -140,6 +144,11 @@ export function ProductDetailPage({
 
                 {/* Floating Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
+                  {isAgotado && (
+                    <span className="bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded-full shadow-md tracking-wider">
+                      Agotado
+                    </span>
+                  )}
                   {product.etapa && (
                     <span className="bg-slate-900/90 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-3 py-1 rounded-full shadow-md">
                       {product.etapa}
@@ -294,50 +303,64 @@ export function ProductDetailPage({
 
               {/* Purchase Actions Container */}
               <div className="space-y-3 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-3">
-                  {/* Quantity Counter */}
-                  <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
+                {!isAgotado ? (
+                  <div className="flex items-center gap-3">
+                    {/* Quantity Counter */}
+                    <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all"
+                        aria-label="Disminuir"
+                      >
+                        <Minus size={15} />
+                      </button>
+                      <span className="px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[2rem] text-center">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => setQuantity(Math.min(Math.max(1, product.stock), quantity + 1))}
+                        disabled={quantity >= product.stock}
+                        className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
+                        aria-label="Aumentar"
+                      >
+                        <Plus size={15} />
+                      </button>
+                    </div>
+
+                    {/* Add to Cart Button */}
                     <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={product.stock <= 0}
-                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
-                      aria-label="Disminuir"
+                      onClick={handleAdd}
+                      className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
-                      <Minus size={15} />
-                    </button>
-                    <span className="px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[2rem] text-center">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity(Math.min(Math.max(1, product.stock), quantity + 1))}
-                      disabled={product.stock <= 0 || quantity >= product.stock}
-                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
-                      aria-label="Aumentar"
-                    >
-                      <Plus size={15} />
+                      <ShoppingBag size={17} />
+                      <span>Añadir a mi Bolsa • {fmtPrice(product.precio * quantity)}</span>
                     </button>
                   </div>
-
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={handleAdd}
-                    disabled={product.stock <= 0}
-                    className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
-                  >
-                    <ShoppingBag size={17} />
-                    <span>Añadir a mi Bolsa • {fmtPrice(product.precio * quantity)}</span>
-                  </button>
-                </div>
+                ) : (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-rose-800 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                      <span>Producto temporalmente agotado</span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs">
+                      Sin existencias
+                    </span>
+                  </div>
+                )}
 
                 {/* Direct WhatsApp Ordering */}
                 <a
                   href={`https://wa.me/573023863380?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  className={`w-full py-3.5 px-4 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                    isAgotado
+                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 ring-2 ring-emerald-500/20'
+                      : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'
+                  }`}
                 >
                   <MessageCircle size={18} />
-                  <span>Asesoría o Pedido por WhatsApp</span>
+                  <span>{isAgotado ? 'Consultar disponibilidad por WhatsApp' : 'Asesoría o Pedido por WhatsApp'}</span>
                 </a>
 
                 {/* Trust Badges */}

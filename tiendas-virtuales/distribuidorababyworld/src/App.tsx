@@ -239,7 +239,11 @@ export function App() {
                 ...(p.sku ? { 'SKU': p.sku } : {})
               }
             }
-          }).filter((p: Product) => p.stock > 0)
+          }).sort((a: Product, b: Product) => {
+            if (a.stock > 0 && b.stock <= 0) return -1
+            if (a.stock <= 0 && b.stock > 0) return 1
+            return 0
+          })
           setProducts(mapped)
         } else {
           setProducts([])

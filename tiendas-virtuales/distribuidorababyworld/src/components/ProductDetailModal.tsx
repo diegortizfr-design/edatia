@@ -30,12 +30,17 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
   }
 
   const handleAdd = () => {
+    if (product && product.stock <= 0) return
     onAddToCart(product, quantity)
     setQuantity(1)
   }
 
+  const isAgotado = product ? product.stock <= 0 : false
+
   const whatsappMessage = encodeURIComponent(
-    `Hola Baby-World! Me interesa el producto: "${product.nombre}" (${fmtPrice(product.precio)}). ¿Tienen disponibilidad inmediata?`
+    isAgotado
+      ? `Hola Baby-World! Me interesa el producto agotado: "${product?.nombre}" (${fmtPrice(product?.precio || 0)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+      : `Hola Baby-World! Me interesa el producto: "${product?.nombre}" (${fmtPrice(product?.precio || 0)}). ¿Tienen disponibilidad inmediata?`
   )
 
   return (
@@ -68,7 +73,12 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
               loading="eager"
               decoding="async"
             />
-            {product.etapa && (
+            {isAgotado && (
+              <span className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md tracking-wider">
+                Agotado
+              </span>
+            )}
+            {product.etapa && !isAgotado && (
               <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
                 {product.etapa}
               </span>
@@ -154,42 +164,63 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
 
           {/* Quantity & CTA */}
           <div className="space-y-2.5 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500">Cantidad:</span>
-              <div className="flex items-center border border-slate-200 bg-slate-50 rounded-xl px-2 py-0.5">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="font-bold text-slate-800 text-xs w-7 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
-                >
-                  <Plus size={14} />
-                </button>
+            {!isAgotado ? (
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">Cantidad:</span>
+                <div className="flex items-center border border-slate-200 bg-slate-50 rounded-xl px-2 py-0.5">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="font-bold text-slate-800 text-xs w-7 text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(product?.stock || 999, quantity + 1))}
+                    className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-700 font-medium flex items-center justify-between">
+                <span>⚠️ Producto agotado en inventario</span>
+                <span className="text-[10px] bg-rose-200/80 text-rose-900 font-bold px-2 py-0.5 rounded-full">0 disponibles</span>
+              </div>
+            )}
 
             <div className="flex gap-2">
-              <button
-                onClick={handleAdd}
-                className="flex-1 py-3 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
-              >
-                <ShoppingBag size={15} />
-                <span>Añadir a mi Bolsa ({fmtPrice(product.precio * quantity)})</span>
-              </button>
+              {!isAgotado ? (
+                <button
+                  onClick={handleAdd}
+                  className="flex-1 py-3 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <ShoppingBag size={15} />
+                  <span>Añadir a mi Bolsa ({fmtPrice(product.precio * quantity)})</span>
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="flex-1 py-3 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  <span>Temporalmente Agotado</span>
+                </button>
+              )}
 
               <a
                 href={`https://wa.me/573023863380?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-xl transition-all flex items-center justify-center"
-                title="Consultar por WhatsApp"
+                className={`p-3 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs font-bold ${
+                  isAgotado
+                    ? 'px-4 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'
+                }`}
+                title={isAgotado ? 'Consultar reposición por WhatsApp' : 'Consultar por WhatsApp'}
               >
                 <MessageCircle size={18} />
+                {isAgotado && <span className="hidden sm:inline">Preguntar llegada</span>}
               </a>
             </div>
           </div>

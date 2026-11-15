@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-15 (sesión 24)
+> Última actualización: 2026-11-15 (sesión 25)
 
 ---
 
@@ -33,6 +33,18 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 25) — 2026-11-15
+
+✅ **Soporte y Visualización de Productos Agotados en Tienda Virtual (`backend` & `tiendas-virtuales/distribuidorababyworld`):**
+  - **Apertura en API Backend (`backend/src/digital/digital.service.ts`):** Retiro del filtro excluyente `.filter(p => p.stockDisponible > 0)` en `getProductosWebPublic`. Ahora retorna todos los productos publicados y activos ordenando primero los que tienen stock disponible (`stockDisponible > 0`) y luego los agotados.
+  - **Experiencia de Usuario en la Tienda Virtual (`tiendas-virtuales/distribuidorababyworld`):**
+    - `App.tsx`: Eliminado el descarte de productos con stock 0; ordenamiento prioritario para productos disponibles en catálogo.
+    - `ProductCard.tsx`: Etiqueta destacada **Agotado**, sutil desaturación de imagen, botón de añadir deshabilitado en gris (`Agotado`) y leyenda `● Agotado temporalmente`.
+    - `ProductDetailModal.tsx` & `ProductDetailPage.tsx`: Badge `Agotado` en imagen, aviso claro de producto sin existencias, bloqueo de selector de cantidad y conversión del botón de acción a **"Consultar disponibilidad por WhatsApp"** con mensaje prellenado automático consultando cuándo vuelve a estar disponible.
+  - **Recompilación y Despliegue:** `edatia-backend` y `edatia-glowxir` reconstruidos y validados en producción.
+
+---
 
 ## Estado resuelto (sesión 24) — 2026-11-15
 
