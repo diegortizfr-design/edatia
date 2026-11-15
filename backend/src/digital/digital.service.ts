@@ -765,9 +765,6 @@ export class DigitalService {
           where: { empresaId, activo: true }
         });
       }
-          where: { empresaId }
-        });
-      }
       if (!bodega) {
         bodega = await tx.bodega.create({
           data: {
