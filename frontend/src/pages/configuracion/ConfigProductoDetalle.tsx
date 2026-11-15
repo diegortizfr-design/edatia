@@ -1677,12 +1677,6 @@ function TabFacturas({ productoId }: { productoId: number }) {
     </div>
   )
 }
-          <p className="text-xs text-slate-300 mt-1">Este producto aún no se ha incluido en ninguna factura de venta.</p>
-        </div>
-      )}
-    </div>
-  )
-}
 
 /* ---- TAB: Variantes y Tallas ---- */
 function TabVariantes({ producto, refetch }: { producto: any; refetch: () => void }) {

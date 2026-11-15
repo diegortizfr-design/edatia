@@ -1382,25 +1382,11 @@ export function ConfigProductos() {
                                 <Eye size={15} />
                               </button>
                               <button
-                                onClick={() => navigate(`/configuracion/productos/${p.id}/detalle?tab=variantes`)}
-                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                                title="Gestionar Tallas y Variantes"
-                              >
-                                <Tag size={15} />
-                              </button>
-                              <button
                                 onClick={() => handleOpenEdit(p)}
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 title="Editar ficha técnica completa"
                               >
                                 <Edit3 size={15} />
-                              </button>
-                              <button
-                                onClick={() => handlePrintLabel(p)}
-                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                                title="Imprimir etiqueta"
-                              >
-                                <Printer size={15} />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(p)}
