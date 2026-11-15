@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -684,7 +684,8 @@ export function ControlExistencias() {
                   const ubicacionTexto = [p.ubicacion1, p.ubicacion2].filter(Boolean).join(' • ') || '—'
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                    <Fragment key={p.id}>
+                      <tr className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
@@ -812,8 +813,9 @@ export function ControlExistencias() {
                         </tr>
                       )
                     })}
-                  )
-                })}
+                  </Fragment>
+                )
+              })}
               </tbody>
             </table>
           </div>
