@@ -38,7 +38,7 @@ export class FacturasCompraService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly comprobantes: ComprobantesService,
-  ) {}
+  ) { }
 
   async findAll(empresaId: number, query?: { query?: string; proveedorId?: number }) {
     const where: any = { empresaId };
@@ -709,15 +709,15 @@ export class FacturasCompraService implements OnModuleInit {
     const egresoAsociado = (fc as any).egresoId
       ? await this.prisma.egreso.findFirst({ where: { id: (fc as any).egresoId, empresaId } })
       : await this.prisma.egreso.findFirst({
-          where: {
-            empresaId,
-            OR: [
-              { referencia: fc.numero },
-              { concepto: { contains: fc.consecutivoProveedor } },
-            ],
-            estado: { not: 'ANULADO' },
-          },
-        });
+        where: {
+          empresaId,
+          OR: [
+            { referencia: fc.numero },
+            { concepto: { contains: fc.consecutivoProveedor } },
+          ],
+          estado: { not: 'ANULADO' },
+        },
+      });
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Si hay un Egreso contable real asociado, anularlo automáticamente

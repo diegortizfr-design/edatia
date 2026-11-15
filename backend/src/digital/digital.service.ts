@@ -365,16 +365,55 @@ export class DigitalService {
               }
             }
           }
+        },
+        variantes: {
+          where: { activo: true },
+          select: {
+            id: true,
+            sku: true,
+            nombre: true,
+            atributos: true,
+            precioBase: true,
+            stock: {
+              select: {
+                cantidad: true,
+                cantidadReservada: true,
+                bodega: {
+                  select: { activo: true }
+                }
+              }
+            }
+          }
         }
       }
     });
 
     return productos
       .map((p) => {
-        const stockDisponible = this.calcularStockDisponible(p);
+        const variantesFormateadas = ((p as any).variantes ?? []).map((v: any) => {
+          const vStock = (v.stock ?? [])
+            .filter((s: any) => !s.bodega || s.bodega.activo !== false)
+            .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
+          return {
+            id: v.id,
+            sku: v.sku,
+            nombre: v.nombre,
+            atributos: v.atributos,
+            precioBase: Number(v.precioBase || 0),
+            stockDisponible: vStock,
+          };
+        });
+
+        const tieneVariantes = variantesFormateadas.length > 0;
+        const stockDisponible = tieneVariantes
+          ? variantesFormateadas.reduce((acc: number, v: any) => acc + v.stockDisponible, 0)
+          : this.calcularStockDisponible(p);
+
         const pricing = this.resolverPrecioYImpuesto(p);
         return {
           ...p,
+          variantes: variantesFormateadas,
+          tieneVariantes,
           stockDisponible,
           precioSubtotal: pricing.precioSubtotal,
           impuesto: pricing.impuesto,
