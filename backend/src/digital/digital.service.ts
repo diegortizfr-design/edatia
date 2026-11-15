@@ -29,7 +29,24 @@ export class DigitalService {
   }
 
   async updateConfig(empresaId: number, data: any) {
-    const { id, empresaId: _, createdAt, empresa, ...updateData } = data;
+    const { id, empresaId: _, createdAt, updatedAt, empresa, ...rawUpdate } = data;
+    const updateData: any = { ...rawUpdate };
+
+    if (updateData.bodegasIds !== undefined) {
+      updateData.bodegasIds = Array.isArray(updateData.bodegasIds)
+        ? updateData.bodegasIds.map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+        : [];
+    }
+    if (updateData.bodegaDespachoId !== undefined) {
+      updateData.bodegaDespachoId = updateData.bodegaDespachoId ? Number(updateData.bodegaDespachoId) : null;
+    }
+    if (updateData.costoEnvioBase !== undefined) {
+      updateData.costoEnvioBase = Number(updateData.costoEnvioBase || 0);
+    }
+    if (updateData.montoEnvioGratis !== undefined) {
+      updateData.montoEnvioGratis = Number(updateData.montoEnvioGratis || 0);
+    }
+
     try {
       return await this.prisma.configuracionTienda.upsert({
         where: { empresaId },
@@ -236,13 +253,20 @@ export class DigitalService {
    * Calcula las unidades reales disponibles según Control de Existencias (bodegas activas: cantidad - reservada).
    * Si el producto no maneja bodega (ej. servicio), devuelve 999.
    */
-  private calcularStockDisponible(prod: {
-    manejaBodega?: boolean | null;
-    stock?: Array<{ cantidad?: any; cantidadReservada?: any; bodega?: { activo?: boolean } | null }> | null;
-  }): number {
+  private calcularStockDisponible(
+    prod: {
+      manejaBodega?: boolean | null;
+      stock?: Array<{ cantidad?: any; cantidadReservada?: any; bodegaId?: number; bodega?: { id?: number; activo?: boolean } | null }> | null;
+    },
+    bodegasPermitidas?: number[] | null,
+  ): number {
     if (prod.manejaBodega === false) return 999;
     return (prod.stock || []).reduce((sum, s) => {
       if (s.bodega && s.bodega.activo === false) return sum;
+      const bId = s.bodegaId ?? (s.bodega as any)?.id;
+      if (bodegasPermitidas && bodegasPermitidas.length > 0 && bId && !bodegasPermitidas.includes(bId)) {
+        return sum;
+      }
       const disponible = Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0));
       return sum + disponible;
     }, 0);
@@ -359,8 +383,10 @@ export class DigitalService {
           select: {
             cantidad: true,
             cantidadReservada: true,
+            bodegaId: true,
             bodega: {
               select: {
+                id: true,
                 activo: true
               }
             }
@@ -378,8 +404,9 @@ export class DigitalService {
               select: {
                 cantidad: true,
                 cantidadReservada: true,
+                bodegaId: true,
                 bodega: {
-                  select: { activo: true }
+                  select: { id: true, activo: true }
                 }
               }
             }
@@ -388,11 +415,22 @@ export class DigitalService {
       }
     });
 
+    const bodegasFiltro = Array.isArray(config.bodegasIds) && config.bodegasIds.length > 0
+      ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+      : null;
+
     return productos
       .map((p) => {
         const variantesFormateadas = ((p as any).variantes ?? []).map((v: any) => {
           const vStock = (v.stock ?? [])
-            .filter((s: any) => !s.bodega || s.bodega.activo !== false)
+            .filter((s: any) => {
+              if (s.bodega && s.bodega.activo === false) return false;
+              const bId = s.bodegaId ?? s.bodega?.id;
+              if (bodegasFiltro && bodegasFiltro.length > 0 && bId && !bodegasFiltro.includes(bId)) {
+                return false;
+              }
+              return true;
+            })
             .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
           return {
             id: v.id,
@@ -407,7 +445,7 @@ export class DigitalService {
         const tieneVariantes = variantesFormateadas.length > 0;
         const stockDisponible = tieneVariantes
           ? variantesFormateadas.reduce((acc: number, v: any) => acc + v.stockDisponible, 0)
-          : this.calcularStockDisponible(p);
+          : this.calcularStockDisponible(p, bodegasFiltro);
 
         const pricing = this.resolverPrecioYImpuesto(p);
         return {
@@ -427,6 +465,36 @@ export class DigitalService {
         if (a.stockDisponible <= 0 && b.stockDisponible > 0) return 1;
         return 0;
       });
+  }
+
+  async getTiendaInfoPublic(slug: string) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      },
+      select: {
+        nombreTienda: true,
+        slugTienda: true,
+        dominioPropio: true,
+        whatsappVentas: true,
+        instagramUrl: true,
+        facebookUrl: true,
+        costoEnvioBase: true,
+        montoEnvioGratis: true,
+        activo: true,
+      }
+    });
+
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    return config;
   }
 
   // Zonas de cobertura local directa (Cali y alrededores con domiciliario propio)
@@ -511,6 +579,10 @@ export class DigitalService {
     }
 
     // Precios, impuestos y stock real SIEMPRE desde la base de datos
+    const bodegasFiltro = Array.isArray(config.bodegasIds) && config.bodegasIds.length > 0
+      ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+      : null;
+
     const productos = await this.prisma.producto.findMany({
       where: { id: { in: [...cantidades.keys()] }, empresaId, publicadoWeb: true, activo: true },
       select: {
@@ -527,8 +599,10 @@ export class DigitalService {
           select: {
             cantidad: true,
             cantidadReservada: true,
+            bodegaId: true,
             bodega: {
               select: {
+                id: true,
                 activo: true,
               },
             },
@@ -541,7 +615,7 @@ export class DigitalService {
     }
     const lineas = productos.map((p) => {
       const cantidad = cantidades.get(p.id)!;
-      const disponible = this.calcularStockDisponible(p);
+      const disponible = this.calcularStockDisponible(p, bodegasFiltro);
       if (disponible < cantidad) {
         throw new BadRequestException(
           disponible <= 0
@@ -674,12 +748,23 @@ export class DigitalService {
         }
       }
 
-      // 2. Encontrar la bodega principal para el pedido
-      let bodega = await tx.bodega.findFirst({
-        where: { empresaId, esPrincipal: true }
-      });
+      // 2. Encontrar la bodega asignada para el pedido web
+      let bodega: any = null;
+      if (config.bodegaDespachoId) {
+        bodega = await tx.bodega.findFirst({
+          where: { id: config.bodegaDespachoId, empresaId, activo: true }
+        });
+      }
       if (!bodega) {
         bodega = await tx.bodega.findFirst({
+          where: { empresaId, esPrincipal: true, activo: true }
+        });
+      }
+      if (!bodega) {
+        bodega = await tx.bodega.findFirst({
+          where: { empresaId, activo: true }
+        });
+      }
           where: { empresaId }
         });
       }

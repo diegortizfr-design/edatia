@@ -24,9 +24,11 @@ import { LocationPinIcon } from './components/LocationPinIcon'
 import { Product, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:4000/api/v1'
-  : 'https://api.edatia.com/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE || (
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:4000/api/v1'
+    : 'https://api.edatia.com/api/v1'
+)
 
 const getStoreSlug = () => {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'

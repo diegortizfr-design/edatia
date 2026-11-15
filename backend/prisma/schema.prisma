@@ -897,6 +897,11 @@ model ConfiguracionTienda {
   
   metodosPago     Json?
   costoEnvioBase  Decimal  @default(0) @db.Decimal(14, 2)
+  montoEnvioGratis Decimal @default(150000) @db.Decimal(14, 2)
+  
+  // 📦 Gestión de Inventario y Bodegas Ancladas
+  bodegasIds        Int[]    @default([])
+  bodegaDespachoId  Int?
   
   activo          Boolean  @default(true)
   

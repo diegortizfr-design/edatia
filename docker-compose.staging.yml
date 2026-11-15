@@ -1,0 +1,66 @@
+services:
+  # ============================================================
+  # EDATIA - ENTORNO DE STAGING / PRUEBAS (DOCKER)
+  # Se ejecuta de forma aislada en el VPS sin afectar producción.
+  # ============================================================
+
+  staging-babyworld:
+    build:
+      context: ./tiendas-virtuales/distribuidorababyworld
+      dockerfile: Dockerfile
+      args:
+        VITE_GA_MEASUREMENT_ID: ""
+        VITE_API_BASE: https://api.edatia.com/api/v1
+    container_name: edatia-staging-babyworld
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.staging-babyworld.rule=Host(`staging.distribuidorababyworld.com`) || Host(`staging-babyworld.edatia.com`)"
+      - "traefik.http.routers.staging-babyworld.entrypoints=websecure"
+      - "traefik.http.routers.staging-babyworld.tls=true"
+      - "traefik.http.routers.staging-babyworld.tls.certresolver=letsencrypt"
+      - "traefik.http.services.staging-babyworld.loadbalancer.server.port=80"
+    networks:
+      - default
+
+  staging-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://api.edatia.com
+    container_name: edatia-staging-frontend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.staging-web.rule=Host(`staging-erp.edatia.com`)"
+      - "traefik.http.routers.staging-web.entrypoints=websecure"
+      - "traefik.http.routers.staging-web.tls=true"
+      - "traefik.http.routers.staging-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.staging-web.loadbalancer.server.port=80"
+    networks:
+      - default
+
+  staging-manager:
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: https://api.edatia.com
+    container_name: edatia-staging-manager
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.staging-manager.rule=Host(`staging-manager.edatia.com`)"
+      - "traefik.http.routers.staging-manager.entrypoints=websecure"
+      - "traefik.http.routers.staging-manager.tls=true"
+      - "traefik.http.routers.staging-manager.tls.certresolver=letsencrypt"
+      - "traefik.http.services.staging-manager.loadbalancer.server.port=80"
+    networks:
+      - default
+
+networks:
+  default:
+    external: true
+    name: n8n_default
+
