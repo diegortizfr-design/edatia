@@ -146,4 +146,10 @@ export class VariantesService {
       include: { bodega: { select: { nombre: true } } },
     });
   }
+
+  async remove(id: number, empresaId: number) {
+    await this.findOne(id, empresaId);
+    await (this.prisma as any).stockVariante.deleteMany({ where: { varianteId: id } });
+    return (this.prisma as any).varianteProducto.delete({ where: { id } });
+  }
 }

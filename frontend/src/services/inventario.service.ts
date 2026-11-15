@@ -332,6 +332,8 @@ export const toggleVariante = (id: number) =>
   api.patch(`/inventario/variantes/${id}/toggle`).then(r => r.data)
 export const ajustarStockVariante = (id: number, data: any) =>
   api.post(`/inventario/variantes/${id}/stock`, data).then(r => r.data)
+export const deleteVariante = (id: number) =>
+  api.delete(`/inventario/variantes/${id}`).then(r => r.data)
 
 // ── Facturas de Compra (FC) y Recibir Traslado ──
 export interface FacturaCompra {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { VariantesService, CreateVarianteDto, AjustarStockVarianteDto } from './variantes.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
@@ -10,6 +10,11 @@ export class VariantesController {
 
   @Get()
   findByProducto(@GetUser() user: JwtPayload, @Query('productoId', ParseIntPipe) productoId: number) {
+    return this.svc.findByProducto(productoId, user.empresaId!);
+  }
+
+  @Get('producto/:productoId')
+  findByProductoParam(@GetUser() user: JwtPayload, @Param('productoId', ParseIntPipe) productoId: number) {
     return this.svc.findByProducto(productoId, user.empresaId!);
   }
 
@@ -44,5 +49,10 @@ export class VariantesController {
     @GetUser() user: JwtPayload,
   ) {
     return this.svc.ajustarStock(id, user.empresaId!, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @GetUser() user: JwtPayload) {
+    return this.svc.remove(id, user.empresaId!);
   }
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getProductos, getVariantes, createVariante, updateVariante,
   toggleVariante, ajustarStockVariante, getBodegas,
 } from '../../services/inventario.service'
-import { Plus, Tag, ChevronDown, ChevronUp, X, Edit2, ToggleLeft, ToggleRight, Warehouse } from 'lucide-react'
+import { Plus, Tag, ChevronDown, ChevronUp, X, Edit2, ToggleLeft, ToggleRight, Warehouse, Search, ExternalLink, Sparkles } from 'lucide-react'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -19,9 +20,14 @@ export function Variantes() {
   const [showForm, setShowForm] = useState(false)
   const [editando, setEditando] = useState<any>(null)
   const [stockModal, setStockModal] = useState<any>(null)
+  const [q, setQ] = useState('')
 
   const { data: productos = [] } = useQuery({ queryKey: ['productos'], queryFn: () => getProductos({ activo: true }) })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
+
+  const productosFiltrados = (productos as any[])
+    .filter(p => p.activo)
+    .filter(p => !q || p.nombre?.toLowerCase().includes(q.toLowerCase()) || p.sku?.toLowerCase().includes(q.toLowerCase()))
 
   const { data: variantes = [], isLoading } = useQuery({
     queryKey: ['variantes', productoSeleccionado?.id],
@@ -38,6 +44,29 @@ export function Variantes() {
 
   return (
     <div className="space-y-6">
+      {/* Banner de acceso directo desde productos */}
+      <div className="bg-gradient-to-r from-indigo-50 via-white to-slate-50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-600 text-white rounded-xl">
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-800 font-bold">
+              ¡Nuevo! Ahora puedes gestionar las tallas y variantes directamente desde la ficha del producto
+            </p>
+            <p className="text-[11px] text-slate-500">
+              En Catálogo de Productos haz clic en <strong>"Tallas"</strong> o entra a editar cualquier producto en su nueva pestaña <strong>"Variantes y Tallas"</strong>.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/inventario/productos"
+          className="px-3.5 py-1.5 bg-white border border-slate-200 text-indigo-700 hover:border-indigo-300 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+        >
+          <span>Ir a Catálogo de Productos</span> <ExternalLink size={12} />
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -45,39 +74,90 @@ export function Variantes() {
           <p className="text-slate-500 text-sm mt-0.5">Gestiona tallas, colores y otras combinaciones</p>
         </div>
         {productoSeleccionado && (
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-            <Plus size={16} /> Nueva variante
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/inventario/productos/${productoSeleccionado.id}?tab=variantes`}
+              className="px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+            >
+              <span>Editar en Producto</span> <ExternalLink size={14} />
+            </Link>
+            <button onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-xs">
+              <Plus size={16} /> Nueva variante
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Selector de producto */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-        <label className="block text-sm font-semibold text-slate-700 mb-3">Selecciona un producto para ver sus variantes</label>
-        <div className="flex flex-wrap gap-2">
-          {(productos as any[]).filter(p => p.activo).map((p: any) => (
-            <button key={p.id} onClick={() => setProductoSeleccionado(p)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                productoSeleccionado?.id === p.id
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
-              }`}>
-              {p.nombre}
-            </button>
-          ))}
+      {/* Selector de producto con buscador */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <label className="block text-sm font-semibold text-slate-700">Selecciona un producto para ver sus variantes</label>
+          <span className="text-xs text-slate-400">Total productos activos: {(productos as any[]).length}</span>
         </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Buscar producto por nombre o SKU..."
+              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-medium"
+            />
+          </div>
+          <select
+            value={productoSeleccionado?.id || ''}
+            onChange={e => {
+              const found = (productos as any[]).find(p => String(p.id) === e.target.value)
+              setProductoSeleccionado(found || null)
+            }}
+            className="p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 min-w-[240px] font-medium"
+          >
+            <option value="">— Elegir producto ({productosFiltrados.length}) —</option>
+            {productosFiltrados.map((p: any) => (
+              <option key={p.id} value={p.id}>{p.nombre} ({p.sku})</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Muestra sugerencias rápidas cuando escribe */}
+        {q && productosFiltrados.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100">
+            {productosFiltrados.slice(0, 8).map((p: any) => (
+              <button
+                key={p.id}
+                onClick={() => setProductoSeleccionado(p)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  productoSeleccionado?.id === p.id
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                {p.nombre}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Lista de variantes */}
       {productoSeleccionado && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Tag size={16} className="text-indigo-600" />
-            <h2 className="font-semibold text-slate-800">
-              Variantes de <span className="text-indigo-700">{productoSeleccionado.nombre}</span>
-            </h2>
-            <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{(variantes as any[]).length}</span>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <Tag size={16} className="text-indigo-600" />
+              <h2 className="font-semibold text-slate-800">
+                Variantes de <span className="text-indigo-700">{productoSeleccionado.nombre}</span>
+              </h2>
+              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{(variantes as any[]).length}</span>
+            </div>
+            <Link
+              to={`/inventario/productos/${productoSeleccionado.id}?tab=variantes`}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline"
+            >
+              <span>Abrir en Ficha del Producto</span> <ExternalLink size={12} />
+            </Link>
           </div>
 
           {isLoading && <p className="text-center py-12 text-slate-400">Cargando variantes...</p>}
