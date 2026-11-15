@@ -1786,7 +1786,7 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
 
       let creadas = 0
       const precioBaseSugerido = Number(producto.precios?.[0] || producto.precioBase || 0)
-      const baseSku = producto.sku || `PROD-${productoId}`
+      const baseSku = producto.referencia || producto.sku || `PROD-${productoId}`
 
       for (const talla of tallasList) {
         const tClean = talla.trim()
@@ -1887,7 +1887,7 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
             className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs font-bold transition-all shadow-xs"
           >
             <Plus size={14} />
-            <span>+ Variante manual</span>
+            <span>Variante manual</span>
           </button>
         </div>
 
@@ -2088,7 +2088,7 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
       {(showVarianteModal || varianteAEditar) && (
         <ModalVarianteFormDetalle
           producto={producto}
-          baseSku={producto.sku}
+          baseSku={producto.referencia || producto.sku}
           precioSugerido={producto.precios?.[0] || producto.precioBase || 0}
           variante={varianteAEditar}
           onClose={() => {
@@ -2189,9 +2189,12 @@ function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante,
               required
               value={sku}
               onChange={e => setSku(e.target.value)}
-              placeholder="Ej: CALZ-001-18"
+              placeholder="Ej: CALZ-001-18 o REF-18"
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none uppercase"
             />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Identificador único de inventario (puedes usar Referencia-Talla o SKU-Talla).
+            </p>
           </div>
 
           <div>
@@ -2215,6 +2218,9 @@ function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante,
               placeholder="Ej: 770123456789"
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
             />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Código de barras impreso en la caja para escanear con la pistola lectora (opcional).
+            </p>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
