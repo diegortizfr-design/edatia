@@ -415,7 +415,9 @@ export class ProductosService {
 
   async getFacturas(productoId: number, empresaId: number) {
     await this.findOne(productoId, empresaId);
-    return (this.prisma as any).facturaVentaItem.findMany({
+
+    // 1. Facturas de Venta (Tradicional / Electrónica DIAN)
+    const facturasVenta = await (this.prisma as any).facturaVentaItem.findMany({
       where: {
         productoId,
         factura: {
@@ -434,12 +436,93 @@ export class ProductosService {
           },
         },
       },
-      orderBy: {
-        factura: {
-          fecha: 'desc',
+      orderBy: { id: 'desc' },
+    }).catch((err: any) => {
+      console.error('[ProductosService.getFacturas] Error en facturaVentaItem:', err);
+      return [];
+    });
+
+    // 2. Ventas POS (Punto de Venta / Facturación de mostrador)
+    const ventasPos = await (this.prisma as any).ventaPosItem.findMany({
+      where: {
+        productoId,
+        venta: {
+          empresaId,
         },
       },
+      include: {
+        venta: {
+          include: {
+            cliente: {
+              select: {
+                nombre: true,
+                numeroDocumento: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { id: 'desc' },
+    }).catch((err: any) => {
+      console.error('[ProductosService.getFacturas] Error en ventaPosItem:', err);
+      return [];
     });
+
+    // Normalizar Facturas de Venta
+    const fvMapped = (facturasVenta || []).map((item: any) => ({
+      id: `FV-${item.id}`,
+      itemId: item.id,
+      tipoDocumento: 'FACTURA_VENTA',
+      tipoLabel: item.factura?.tipoDocumento === 'FVE' ? 'Factura Electrónica' : 'Factura de Venta',
+      documentoId: item.factura?.id,
+      numero: item.factura?.numero || `FV-${item.factura?.id}`,
+      fecha: item.factura?.fecha,
+      clienteNombre: item.factura?.cliente?.nombre || '—',
+      clienteDoc: item.factura?.cliente?.numeroDocumento || '—',
+      cantidad: Number(item.cantidad || 0),
+      precioUnitario: Number(item.precioUnitario || 0),
+      descuentoPct: Number(item.descuentoPct || 0),
+      total: Number(item.total || 0),
+      url: `/ventas/facturas/${item.factura?.id}`,
+      factura: item.factura,
+    }));
+
+    // Normalizar Ventas POS
+    const posMapped = (ventasPos || []).map((item: any) => ({
+      id: `POS-${item.id}`,
+      itemId: item.id,
+      tipoDocumento: 'VENTA_POS',
+      tipoLabel: 'Venta POS',
+      documentoId: item.venta?.id,
+      numero: item.venta?.numero || `POS-${item.venta?.id}`,
+      fecha: item.venta?.fecha,
+      clienteNombre: item.venta?.clienteNombre || item.venta?.cliente?.nombre || 'Consumidor Final',
+      clienteDoc: item.venta?.clienteDoc || item.venta?.cliente?.numeroDocumento || '—',
+      cantidad: Number(item.cantidad || 0),
+      precioUnitario: Number(item.precioUnitario || 0),
+      descuentoPct: Number(item.descuentoPct || 0),
+      total: Number(item.total || 0),
+      url: `/pos/historial?search=${item.venta?.numero || ''}`,
+      factura: {
+        id: item.venta?.id,
+        numero: item.venta?.numero,
+        consecutivo: item.venta?.numero,
+        fecha: item.venta?.fecha,
+        cliente: {
+          nombre: item.venta?.clienteNombre || item.venta?.cliente?.nombre || 'Consumidor Final',
+          numeroDocumento: item.venta?.clienteDoc || item.venta?.cliente?.numeroDocumento || '—',
+        },
+      },
+    }));
+
+    // Unir y ordenar por fecha descendente
+    const unificados = [...fvMapped, ...posMapped].sort((a, b) => {
+      const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const timeB = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    return unificados;
   }
 
   async remove(id: number, empresaId: number) {

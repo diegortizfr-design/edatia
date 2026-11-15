@@ -13,7 +13,7 @@ import {
   Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle
 } from 'lucide-react'
 import {
-  getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto,
+  getProducto, getStockProducto, getOrdenesCompra, getFacturasCompra, getProveedores, updateProducto,
   getVariantes, createVariante, updateVariante, toggleVariante, deleteVariante,
   ajustarStockVariante, getBodegas
 } from '../../services/inventario.service'
@@ -588,13 +588,24 @@ function TabDocumentos({ producto, refetch }: { producto: any; refetch: () => vo
 
 /* ---- TAB: Compras ---- */
 function TabCompras({ productoId, sku }: { productoId: number; sku: string }) {
-  const { data: ocAll = [], isLoading } = useQuery({
+  const { data: ocAll = [], isLoading: loadingOc } = useQuery({
     queryKey: ['oc_all'],
     queryFn: () => getOrdenesCompra(),
   })
 
-  const ocProducto = ocAll.filter(oc =>
+  const { data: fcAll = [], isLoading: loadingFc } = useQuery({
+    queryKey: ['fc_all'],
+    queryFn: () => getFacturasCompra(),
+  })
+
+  const [seccionCompras, setSeccionCompras] = useState<'FC' | 'OC'>('FC')
+
+  const ocProducto = (Array.isArray(ocAll) ? ocAll : []).filter(oc =>
     oc.items?.some((item: any) => item.productoId === productoId)
+  )
+
+  const fcProducto = (Array.isArray(fcAll) ? fcAll : []).filter((fc: any) =>
+    fc.items?.some((item: any) => item.productoId === productoId)
   )
 
   const ESTADO_COLOR: Record<string, string> = {
@@ -602,96 +613,214 @@ function TabCompras({ productoId, sku }: { productoId: number; sku: string }) {
     PENDIENTE: 'bg-amber-50 text-amber-700',
     APROBADA: 'bg-blue-50 text-blue-700',
     RECIBIDA: 'bg-emerald-50 text-emerald-700',
+    PAGADA: 'bg-emerald-50 text-emerald-700',
     ANULADA: 'bg-rose-50 text-rose-700',
   }
 
+  const isLoading = loadingOc || loadingFc
   if (isLoading) return <div className="py-16 text-center text-slate-400 text-sm">Cargando historial de compras...</div>
+
+  const totalCompradoFC = fcProducto.reduce((acc: number, fc: any) => {
+    const item = fc.items?.find((i: any) => i.productoId === productoId)
+    return acc + (item ? Number(item.subtotal || (Number(item.cantidad) * Number(item.costoUnitario)) || 0) : 0)
+  }, 0)
+
+  const totalCantFC = fcProducto.reduce((acc: number, fc: any) => {
+    const item = fc.items?.find((i: any) => i.productoId === productoId)
+    return acc + (item ? Number(item.cantidad || 0) : 0)
+  }, 0)
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><ShoppingCart size={18} className="text-indigo-600" /> Trazabilidad de Compras</h3>
-        <p className="text-xs text-slate-400 mt-0.5">Historial de órdenes de compra que incluyen este producto. Vista de solo lectura.</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+            <ShoppingCart size={18} className="text-indigo-600" /> Trazabilidad de Compras
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Historial de facturas de compra (proveedores) y órdenes de compra que incluyen este producto.
+          </p>
+        </div>
+
+        {/* Selector de sub-sección: Facturas de Compra vs Órdenes de Compra */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setSeccionCompras('FC')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              seccionCompras === 'FC'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span>Facturas de Compra</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              seccionCompras === 'FC' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-200 text-slate-600'
+            }`}>
+              {fcProducto.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSeccionCompras('OC')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              seccionCompras === 'OC'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span>Órdenes de Compra</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              seccionCompras === 'OC' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-200 text-slate-600'
+            }`}>
+              {ocProducto.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* KPIs rápidos */}
-      {ocProducto.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Órdenes Totales', value: ocProducto.length, icon: ShoppingCart, color: 'indigo' },
-            { label: 'Recibidas', value: ocProducto.filter(o => o.estado === 'RECIBIDA').length, icon: CheckCircle2, color: 'emerald' },
-            { label: 'Pendientes', value: ocProducto.filter(o => ['PENDIENTE', 'APROBADA'].includes(o.estado)).length, icon: Clock, color: 'amber' },
-            {
-              label: 'Total Comprado',
-              value: fmtCOP(ocProducto.reduce((acc, oc) => {
-                const item = oc.items?.find((i: any) => i.productoId === productoId)
-                return acc + (item ? Number(item.total) : 0)
-              }, 0)),
-              icon: DollarSign, color: 'purple'
-            },
-          ].map(kpi => (
-            <div key={kpi.label} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
-              <p className="text-xl font-extrabold text-slate-800 mt-1">{kpi.value}</p>
-            </div>
-          ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Facturas de Compra</p>
+          <p className="text-xl font-extrabold text-slate-800 mt-1">{fcProducto.length}</p>
         </div>
-      )}
-
-      {/* Tabla */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/75 border-b border-slate-100">
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">OC #</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Costo Unit.</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {ocProducto.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-16 text-center">
-                    <ShoppingCart size={32} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm font-bold text-slate-400">Sin órdenes de compra registradas</p>
-                    <p className="text-xs text-slate-300 mt-1">Las OC que incluyan este producto aparecerán aquí.</p>
-                  </td>
-                </tr>
-              ) : (
-                ocProducto.map(oc => {
-                  const item = oc.items?.find((i: any) => i.productoId === productoId)
-                  return (
-                    <tr key={oc.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4 font-mono font-bold text-slate-700 text-xs">{oc.numero}</td>
-                      <td className="p-4 text-sm text-slate-700">{oc.proveedor?.nombre}</td>
-                      <td className="p-4 text-xs text-slate-500">{new Date(oc.fechaEmision).toLocaleDateString('es-CO')}</td>
-                      <td className="p-4 text-right font-mono font-bold text-slate-700">{item?.cantidad ?? '—'}</td>
-                      <td className="p-4 text-right font-mono text-slate-600 text-xs">{fmtCOP(Number(item?.costoUnitario ?? 0))}</td>
-                      <td className="p-4 text-right font-mono font-bold text-slate-800">{fmtCOP(Number(item?.total ?? 0))}</td>
-                      <td className="p-4 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${ESTADO_COLOR[oc.estado] || 'bg-slate-100 text-slate-600'}`}>
-                          {oc.estado}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <Link to={`/inventario/ordenes-compra/${oc.id}`} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all flex items-center justify-center" title="Ver OC completa">
-                          <ExternalLink size={14} />
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unidades Compradas (FC)</p>
+          <p className="text-xl font-extrabold text-indigo-600 mt-1">{totalCantFC.toLocaleString()} und</p>
+        </div>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Comprado (FC)</p>
+          <p className="text-xl font-extrabold text-emerald-600 mt-1">{fmtCOP(totalCompradoFC)}</p>
+        </div>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Órdenes de Compra</p>
+          <p className="text-xl font-extrabold text-purple-600 mt-1">{ocProducto.length}</p>
         </div>
       </div>
+
+      {/* Tabla según subsección seleccionada */}
+      {seccionCompras === 'FC' ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/75 border-b border-slate-100">
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Factura Compra</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">N° Proveedor</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Costo Unit.</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {fcProducto.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-16 text-center">
+                      <ShoppingCart size={32} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-sm font-bold text-slate-400">Sin facturas de compra registradas</p>
+                      <p className="text-xs text-slate-300 mt-1">Las facturas de compra que incluyan este producto aparecerán aquí.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  fcProducto.map((fc: any) => {
+                    const item = fc.items?.find((i: any) => i.productoId === productoId)
+                    const sub = Number(item?.subtotal || (Number(item?.cantidad || 0) * Number(item?.costoUnitario || 0)))
+                    return (
+                      <tr key={fc.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-indigo-600 text-xs">
+                          {fc.numero || `FC-${fc.id}`}
+                        </td>
+                        <td className="p-4 font-mono text-xs text-slate-600">
+                          {fc.consecutivoProveedor || '—'}
+                        </td>
+                        <td className="p-4 text-sm text-slate-700">
+                          <p className="font-bold">{fc.proveedor?.nombre || '—'}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{fc.proveedor?.numeroDocumento || ''}</p>
+                        </td>
+                        <td className="p-4 text-xs text-slate-500">
+                          {fc.fechaFactura ? new Date(fc.fechaFactura).toLocaleDateString('es-CO') : (fc.createdAt ? new Date(fc.createdAt).toLocaleDateString('es-CO') : '—')}
+                        </td>
+                        <td className="p-4 text-right font-mono font-bold text-slate-700">
+                          {item?.cantidad ?? '—'}
+                        </td>
+                        <td className="p-4 text-right font-mono text-slate-600 text-xs">
+                          {fmtCOP(Number(item?.costoUnitario ?? 0))}
+                        </td>
+                        <td className="p-4 text-right font-mono font-bold text-slate-800">
+                          {fmtCOP(sub)}
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${ESTADO_COLOR[fc.estado] || 'bg-slate-100 text-slate-600'}`}>
+                            {fc.estado || 'REGISTRADA'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/75 border-b border-slate-100">
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">OC #</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Costo Unit.</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {ocProducto.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-16 text-center">
+                      <ShoppingCart size={32} className="mx-auto text-slate-300 mb-3" />
+                      <p className="text-sm font-bold text-slate-400">Sin órdenes de compra registradas</p>
+                      <p className="text-xs text-slate-300 mt-1">Las OC que incluyan este producto aparecerán aquí.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  ocProducto.map(oc => {
+                    const item = oc.items?.find((i: any) => i.productoId === productoId)
+                    return (
+                      <tr key={oc.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-slate-700 text-xs">{oc.numero}</td>
+                        <td className="p-4 text-sm text-slate-700">{oc.proveedor?.nombre}</td>
+                        <td className="p-4 text-xs text-slate-500">{new Date(oc.fechaEmision).toLocaleDateString('es-CO')}</td>
+                        <td className="p-4 text-right font-mono font-bold text-slate-700">{item?.cantidad ?? '—'}</td>
+                        <td className="p-4 text-right font-mono text-slate-600 text-xs">{fmtCOP(Number(item?.costoUnitario ?? 0))}</td>
+                        <td className="p-4 text-right font-mono font-bold text-slate-800">{fmtCOP(Number(item?.total ?? 0))}</td>
+                        <td className="p-4 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${ESTADO_COLOR[oc.estado] || 'bg-slate-100 text-slate-600'}`}>
+                            {oc.estado}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <Link to={`/inventario/ordenes-compra/${oc.id}`} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all flex items-center justify-center" title="Ver OC completa">
+                            <ExternalLink size={14} />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1406,7 +1535,7 @@ function TabFacturas({ productoId }: { productoId: number }) {
     async function load() {
       try {
         const res = await api.get(`/inventario/productos/${productoId}/facturas`)
-        setFacturas(res.data || [])
+        setFacturas(Array.isArray(res.data) ? res.data : [])
       } catch (err) {
         console.error('Error al cargar facturas de venta:', err)
       } finally {
@@ -1418,82 +1547,136 @@ function TabFacturas({ productoId }: { productoId: number }) {
 
   const fmtCOP = (val: number) => `$${Number(val).toLocaleString('es-CO')}`
 
+  const totalVendido = facturas.reduce((acc, it) => acc + (Number(it.total) || 0), 0)
+  const totalUnidades = facturas.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0)
+  const countFV = facturas.filter(it => it.tipoDocumento === 'FACTURA_VENTA').length
+  const countPOS = facturas.filter(it => it.tipoDocumento === 'VENTA_POS').length
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 size={24} className="animate-spin text-indigo-600 mr-2" />
-        <span className="text-xs text-slate-500 font-semibold">Cargando trazabilidad de facturas...</span>
+        <span className="text-xs text-slate-500 font-semibold">Cargando trazabilidad de ventas y facturas...</span>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-          <FileText size={18} className="text-indigo-600" /> Trazabilidad de Facturas de Venta
-        </h3>
-        <p className="text-xs text-slate-400 mt-0.5">
-          Historial de todas las facturas de venta emitidas que incluyen este producto en sus líneas de detalle.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+            <FileText size={18} className="text-indigo-600" /> Trazabilidad de Ventas y Facturas
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Historial de todas las ventas emitidas (Facturas electrónicas, facturas de venta y ventas POS de mostrador).
+          </p>
+        </div>
+
+        {facturas.length > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ventas</span>
+              <span className="text-xs font-extrabold text-slate-700 font-mono">{facturas.length} docs</span>
+            </div>
+            <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Unidades Vendidas</span>
+              <span className="text-xs font-extrabold text-indigo-600 font-mono">{totalUnidades.toLocaleString()} und</span>
+            </div>
+            <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Facturado</span>
+              <span className="text-xs font-extrabold text-emerald-600 font-mono">{fmtCOP(totalVendido)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {facturas.length > 0 ? (
         <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/75 border-b border-slate-100">
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Factura</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">P. Unitario</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Descuento</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Item</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {facturas.map((item) => {
-                const f = item.factura
-                return (
-                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4">
-                      <a 
-                        href={`/ventas/facturas/${f.id}`}
-                        className="font-mono font-extrabold text-indigo-600 hover:text-indigo-800 hover:underline text-sm"
-                      >
-                        {f.consecutivo || f.numero || `FAC-${f.id}`}
-                      </a>
-                    </td>
-                    <td className="p-4 text-xs text-slate-500">
-                      {new Date(f.fecha).toLocaleDateString('es-CO')}
-                    </td>
-                    <td className="p-4">
-                      <p className="text-xs font-bold text-slate-800">{f.cliente?.nombre || '—'}</p>
-                      <p className="text-[10px] font-mono text-slate-400">{f.cliente?.numeroDocumento || '—'}</p>
-                    </td>
-                    <td className="p-4 text-right font-mono text-xs text-slate-600">
-                      {Number(item.cantidad).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-right font-mono text-xs text-slate-600">
-                      {fmtCOP(Number(item.precioUnitario))}
-                    </td>
-                    <td className="p-4 text-right font-mono text-xs text-rose-600">
-                      {Number(item.descuentoPct) > 0 ? `${Number(item.descuentoPct)}%` : '—'}
-                    </td>
-                    <td className="p-4 text-right font-mono text-xs font-extrabold text-slate-800">
-                      {fmtCOP(Number(item.total))}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/75 border-b border-slate-100">
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Documento</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cantidad</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">P. Unitario</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Descuento</th>
+                  <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Total Item</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {facturas.map((item) => {
+                  const f = item.factura || item
+                  const docNumero = item.numero || f.consecutivo || f.numero || `FAC-${f.id}`
+                  const docFecha = item.fecha || f.fecha
+                  const clienteNombre = item.clienteNombre || f.cliente?.nombre || 'Consumidor Final'
+                  const clienteDoc = item.clienteDoc || f.cliente?.numeroDocumento || '—'
+                  const esPos = item.tipoDocumento === 'VENTA_POS' || item.id?.toString().startsWith('POS-')
+
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4">
+                        {item.url && item.tipoDocumento === 'FACTURA_VENTA' ? (
+                          <Link 
+                            to={item.url}
+                            className="font-mono font-extrabold text-indigo-600 hover:text-indigo-800 hover:underline text-sm"
+                          >
+                            {docNumero}
+                          </Link>
+                        ) : (
+                          <span className="font-mono font-extrabold text-indigo-600 text-sm">
+                            {docNumero}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                          esPos
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          {item.tipoLabel || (esPos ? 'Venta POS' : 'Factura Venta')}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs text-slate-500">
+                        {docFecha ? new Date(docFecha).toLocaleDateString('es-CO') : '—'}
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs font-bold text-slate-800">{clienteNombre}</p>
+                        <p className="text-[10px] font-mono text-slate-400">{clienteDoc}</p>
+                      </td>
+                      <td className="p-4 text-right font-mono text-xs text-slate-600">
+                        {Number(item.cantidad).toLocaleString()}
+                      </td>
+                      <td className="p-4 text-right font-mono text-xs text-slate-600">
+                        {fmtCOP(Number(item.precioUnitario))}
+                      </td>
+                      <td className="p-4 text-right font-mono text-xs text-rose-600">
+                        {Number(item.descuentoPct) > 0 ? `${Number(item.descuentoPct)}%` : '—'}
+                      </td>
+                      <td className="p-4 text-right font-mono text-xs font-extrabold text-slate-800">
+                        {fmtCOP(Number(item.total))}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
           <FileText size={36} className="mx-auto text-slate-300 mb-3" />
           <p className="text-sm font-bold text-slate-400">Sin ventas registradas</p>
+          <p className="text-xs text-slate-300 mt-1">Este producto aún no se ha incluido en ninguna factura de venta ni venta POS.</p>
+        </div>
+      )}
+    </div>
+  )
+}
           <p className="text-xs text-slate-300 mt-1">Este producto aún no se ha incluido en ninguna factura de venta.</p>
         </div>
       )}
