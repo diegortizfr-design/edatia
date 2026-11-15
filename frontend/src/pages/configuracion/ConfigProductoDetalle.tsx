@@ -10,12 +10,13 @@ import {
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
   BarChart3, Clock, Loader2,
-  Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle
+  Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle,
+  Lock, Eye, EyeOff
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getFacturasCompra, getProveedores, updateProducto,
   getVariantes, createVariante, updateVariante, toggleVariante, deleteVariante,
-  ajustarStockVariante, getBodegas
+  ajustarStockVariante, getBodegas, postAjusteManualKardex
 } from '../../services/inventario.service'
 import { getImpuestos } from '../../services/erp.service'
 
@@ -1757,16 +1758,23 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
   })
 
   const mutStockVariante = useMutation({
-    mutationFn: ({ varId, data }: any) => ajustarStockVariante(varId, data),
-    onSuccess: () => {
+    mutationFn: (data: any) => postAjusteManualKardex(data),
+    onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ['variantes', productoId] })
       qc.invalidateQueries({ queryKey: ['producto_detalle', productoId] })
       qc.invalidateQueries({ queryKey: ['productos'] })
+      qc.invalidateQueries({ queryKey: ['productos-existencias'] })
+      qc.invalidateQueries({ queryKey: ['stock'] })
+      qc.invalidateQueries({ queryKey: ['kardex-movimientos'] })
       setVarianteAjustarStock(null)
-      toast.success('Stock ajustado correctamente')
+      toast.success(res?.mensaje || 'Stock y Kardex ajustados con éxito')
     },
     onError: (err: any) => {
-      toast.error(`Error: ${err?.response?.data?.message || err.message}`)
+      if (err?.response?.status === 403) {
+        toast.error('Código de autorización incorrecto. Verifique con el administrador en Configuración > Empresa.')
+      } else {
+        toast.error(err?.response?.data?.message || err.message || 'Error al modificar kardex de la variante')
+      }
     }
   })
 
@@ -1943,6 +1951,13 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
               {variantes.length}
             </span>
           </div>
+          <Link
+            to="/inventario/control-existencias"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 text-slate-600 text-xs font-bold rounded-xl transition-all shadow-2xs"
+          >
+            <Warehouse size={13} className="text-indigo-600" />
+            <span>Gestionar en Control de Existencias</span>
+          </Link>
         </div>
 
         {loadingVariantes ? (
@@ -2048,10 +2063,11 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
                           <button
                             type="button"
                             onClick={() => setVarianteAjustarStock(v)}
-                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-lg border border-indigo-100 transition-colors"
-                            title="Ajustar stock en bodega"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs rounded-lg border border-amber-200 transition-colors shadow-2xs"
+                            title="Ajustar Kardex protegido con contraseña empresarial"
                           >
-                            + Stock
+                            <Lock size={11} />
+                            <span>Kardex</span>
                           </button>
                           <button
                             type="button"
@@ -2109,11 +2125,12 @@ function TabVariantes({ producto, refetch }: { producto: any; refetch: () => voi
       {/* MODAL 2: AJUSTAR STOCK DE VARIANTE */}
       {varianteAjustarStock && (
         <ModalAjustarStockVarianteDetalle
+          productoId={productoId}
           variante={varianteAjustarStock}
           bodegas={bodegas}
           onClose={() => setVarianteAjustarStock(null)}
           onSubmit={(data: any) => {
-            mutStockVariante.mutate({ varId: varianteAjustarStock.id, data })
+            mutStockVariante.mutate(data)
           }}
           isLoading={mutStockVariante.isPending}
         />
@@ -2245,144 +2262,180 @@ function ModalVarianteFormDetalle({ producto, baseSku, precioSugerido, variante,
   )
 }
 
-function ModalAjustarStockVarianteDetalle({ variante, bodegas, onClose, onSubmit, isLoading }: any) {
+function ModalAjustarStockVarianteDetalle({ productoId, variante, bodegas, onClose, onSubmit, isLoading }: any) {
   const [bodegaId, setBodegaId] = useState<string>(bodegas[0]?.id ? String(bodegas[0].id) : '')
-  const [cantidad, setCantidad] = useState<string>('')
-  const [tipo, setTipo] = useState<'ENTRADA' | 'SALIDA' | 'AJUSTE'>('ENTRADA')
+  const stBodega = (variante.stock || []).find((s: any) => String(s.bodegaId) === bodegaId)
+  const stockActual = stBodega ? Number(stBodega.cantidad || 0) : 0
+  const [nuevoStock, setNuevoStock] = useState<string>(String(stockActual))
   const [motivo, setMotivo] = useState<string>('')
+  const [codigoAutorizacion, setCodigoAutorizacion] = useState<string>('')
+  const [mostrarPass, setMostrarPass] = useState(false)
+
+  // Actualizar nuevoStock cuando cambie de bodega
+  const handleBodegaChange = (bId: string) => {
+    setBodegaId(bId)
+    const st = (variante.stock || []).find((s: any) => String(s.bodegaId) === bId)
+    setNuevoStock(String(st ? Number(st.cantidad || 0) : 0))
+  }
+
+  const dif = (Number(nuevoStock) || 0) - stockActual
+  const tallaAttr = (variante.atributos || []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!bodegaId) return alert('Selecciona una bodega')
-    const cantNum = parseFloat(cantidad)
-    if (isNaN(cantNum) || cantNum <= 0) return alert('Ingresa una cantidad válida')
+    const stockNum = parseFloat(nuevoStock)
+    if (isNaN(stockNum) || stockNum < 0) return alert('Ingresa un saldo físico válido mayor o igual a 0')
+    if (!motivo.trim()) return alert('Debe ingresar el motivo o justificación del ajuste')
+    if (!codigoAutorizacion.trim()) return alert('Debe ingresar la contraseña de autorización empresarial')
 
     onSubmit({
+      productoId,
       bodegaId: parseInt(bodegaId, 10),
-      cantidad: cantNum,
-      tipo,
-      motivo: motivo.trim() || undefined,
+      varianteId: variante.id,
+      nuevoStock: stockNum,
+      motivo: motivo.trim(),
+      codigoAutorizacion: codigoAutorizacion.trim(),
     })
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-              <Warehouse size={18} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 my-auto animate-in fade-in zoom-in-95">
+        <div className="flex items-center justify-between border-b border-amber-100 pb-3 bg-amber-50/50 -mx-6 -mt-6 p-5 rounded-t-2xl">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+              <Lock size={18} />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-800 text-sm">Ajustar Stock Físico</h3>
-              <p className="text-[11px] text-slate-400 font-mono">{variante.sku} · {variante.nombre}</p>
+              <h3 className="font-extrabold text-amber-950 text-sm">
+                Ajuste de Kardex Protegido · {tallaAttr ? `Talla ${tallaAttr.valor}` : variante.nombre}
+              </h3>
+              <p className="text-[11px] text-amber-700/80 font-mono">Ref: {variante.sku} {variante.codigoBarras ? `· SKU: ${variante.codigoBarras}` : ''}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Bodega de destino</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Bodega a Ajustar *</label>
             <select
               value={bodegaId}
-              onChange={e => setBodegaId(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+              onChange={e => handleBodegaChange(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none"
             >
               {bodegas.map((b: any) => (
-                <option key={b.id} value={b.id}>{b.nombre} {b.esPrincipal ? '(Principal)' : ''}</option>
+                <option key={b.id} value={b.id}>{b.nombre} ({b.codigo}) {b.esPrincipal ? '· Principal' : ''}</option>
               ))}
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Movimiento</label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setTipo('ENTRADA')}
-                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
-                  tipo === 'ENTRADA'
-                    ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-100'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                + Entrada
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipo('SALIDA')}
-                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
-                  tipo === 'SALIDA'
-                    ? 'bg-rose-50 border-rose-500 text-rose-700 ring-2 ring-rose-100'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                - Salida
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipo('AJUSTE')}
-                className={`py-2 text-xs font-bold rounded-xl border transition-all ${
-                  tipo === 'AJUSTE'
-                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-2 ring-indigo-100'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                = Fijar
-              </button>
+          {/* Comparador de Stock */}
+          <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual Talla</p>
+              <p className="text-base font-extrabold text-slate-700 mt-0.5">{stockActual}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Saldo</p>
+              <p className="text-base font-extrabold text-indigo-600 mt-0.5">{Number(nuevoStock) || 0}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia</p>
+              <p className={`text-base font-extrabold mt-0.5 ${dif > 0 ? 'text-emerald-600' : dif < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                {dif > 0 ? `+${dif}` : dif}
+              </p>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              {tipo === 'AJUSTE' ? 'Nuevo Stock Total *' : 'Cantidad a mover *'}
+              Nuevo Saldo Físico Real en Bodega *
             </label>
             <input
               type="number"
               step="any"
-              min="0.01"
+              min="0"
               required
-              value={cantidad}
-              onChange={e => setCantidad(e.target.value)}
-              placeholder="Ej: 10"
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold font-mono focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+              value={nuevoStock}
+              onChange={e => setNuevoStock(e.target.value)}
+              placeholder="0"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Motivo / Observación</label>
-            <input
-              type="text"
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+              Motivo o Justificación del Ajuste *
+            </label>
+            <textarea
+              rows={2}
+              required
               value={motivo}
               onChange={e => setMotivo(e.target.value)}
-              placeholder="Ej: Conteo físico inicial, ingreso de mercancía..."
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+              placeholder="Ej: Conteo físico inicial, corrección por auditoría..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none resize-none"
             />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                Contraseña de Autorización Empresarial *
+              </label>
+              <span className="text-[10px] text-slate-400">Configurada en Configuración &gt; Empresa</span>
+            </div>
+            <div className="relative">
+              <input
+                type={mostrarPass ? 'text' : 'password'}
+                required
+                value={codigoAutorizacion}
+                onChange={e => setCodigoAutorizacion(e.target.value)}
+                placeholder="Clave de seguridad para modificar kardex..."
+                className="w-full pl-3.5 pr-10 py-2.5 bg-amber-50/40 border border-amber-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPass(!mostrarPass)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2.5 rounded-xl text-[11px] flex gap-2 items-start">
+            <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+            <span>
+              Este ajuste quedará registrado en el historial del Kardex y sumará al inventario consolidado del producto padre.
+            </span>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 active:scale-95 disabled:opacity-50 transition-all shadow-sm cursor-pointer"
             >
-              {isLoading ? 'Registrando...' : 'Confirmar Stock'}
+              <Lock size={14} />
+              {isLoading ? 'Autorizando...' : 'Autorizar y Ajustar Kardex'}
             </button>
           </div>
         </form>
       </div>
     </div>
   )
+}
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────

@@ -87,6 +87,14 @@ export class AjusteDto {
   documentoId?: number;
 }
 
+export class AjusteVarianteItemDto {
+  @IsInt()
+  varianteId!: number;
+
+  @IsNumber({ maxDecimalPlaces: 3 })
+  nuevoStock!: number;
+}
+
 export class ModificarKardexManualDto {
   @IsInt()
   productoId!: number;
@@ -94,9 +102,10 @@ export class ModificarKardexManualDto {
   @IsInt()
   bodegaId!: number;
 
-  /** Nuevo saldo físico total que debe quedar en la bodega */
+  /** Nuevo saldo físico total que debe quedar en la bodega (opcional si se envía ajustesVariantes) */
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 3 })
-  nuevoStock!: number;
+  nuevoStock?: number;
 
   @IsString()
   motivo!: string;
@@ -115,6 +124,14 @@ export class ModificarKardexManualDto {
 
   @IsOptional() @IsArray() @IsString({ each: true })
   seriales?: string[];
+
+  @IsOptional()
+  @IsInt()
+  varianteId?: number;
+
+  @IsOptional()
+  @IsArray()
+  ajustesVariantes?: AjusteVarianteItemDto[];
 }
 
 export class TrasladoItemDto {

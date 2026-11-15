@@ -171,12 +171,17 @@ export const postTraslado = (data: any) => api.post('/inventario/movimientos/tra
 export const postAjusteManualKardex = (data: {
   productoId: number
   bodegaId: number
-  nuevoStock: number
+  nuevoStock?: number
   motivo: string
   codigoAutorizacion: string
   costoUnitario?: number
   loteNumero?: string
   seriales?: string[]
+  varianteId?: number
+  ajustesVariantes?: Array<{
+    varianteId: number
+    nuevoStock: number
+  }>
 }) => api.post('/inventario/movimientos/modificar-kardex', data).then(r => r.data)
 
 // Dashboard
