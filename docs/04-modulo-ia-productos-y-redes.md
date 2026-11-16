@@ -96,15 +96,29 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
 * **Componentes Clave:**
   - `ModalProductoIa.tsx`: Modal responsivo con arrastrar y soltar, subida de fotos, atajo de pegado desde portapapeles (`Ctrl + V`), barra de progreso en tiempo real, visor de miniaturas con fallback amigable para iPhone (HEIC), y editor rápido en línea de títulos y precios.
   - `CompartirRedesModal.tsx`:
-    - **Pestaña WhatsApp:** Genera imagen vertical de estado/story (1080×1920 px con Cloudinary padding), botón de compartir nativo móvil (`navigator.share`), botón directo para enviar a clientes por chat (`wa.me/?text=...`) y botón para WhatsApp Web en escritorio con copy publicitario optimizado con emojis y llamado a la acción.
-    - **Pestaña Instagram:** Selector Feed (1:1) o Story (9:16), copia de caption comercial persuasivo con emojis y hashtags locales colombianos de bebés y maternidad, descarga de imagen y acceso directo a Instagram.
-    - **Pestaña TikTok:** Guion publicitario estructurado con gancho (Hook 0-3s), presentación, precio y llamado a la acción (CTA) con hashtags virales, descarga de imagen vertical (9:16) y apertura directa a TikTok.
-    - **Pestaña Facebook Marketplace:** Formato semi-automatizado para copiar Título limpio, Precio en COP, Descripción detallada con URL directa a la tienda y botón de descarga de la foto de catálogo.
+    - **Transcodificación Forzada a JPEG Universal (`f_jpg`):** Utiliza la función helper `prepararUrlCloudinary` que inyecta `,f_jpg/` y reemplaza la extensión a `.jpg`, obligando a Cloudinary a servir siempre un estándar JPEG baseline (JFIF) con fondo blanco puro `#FFFFFF`, resolviendo problemas de incompatibilidad o archivos dañados en la aplicación Fotos de Windows y WhatsApp.
+    - **Descarga Asíncrona Robusta:** Limpieza de nombres de archivo para asegurar una única extensión `.jpg` (evitando extensiones duplicadas como `.jpg.jpeg`) y retardo en la revocación del Blob (`setTimeout`) para permitir que el sistema operativo y el navegador completen la escritura en disco sin truncamiento.
+    - **Flujo Adaptativo Móvil vs. PC:**
+      - En smartphones reales (Android / iOS): Invoca la Web Share API nativa (`navigator.share`) para compartir directamente en *"WhatsApp > Mi Estado"*.
+      - En computadores de escritorio (Windows / Mac / Linux): Descarga automáticamente la foto nítida (1080×1920 para Estado o 1200×1200 para Feed), copia el texto con el enlace al portapapeles y abre WhatsApp Web de forma fluida.
+      - Incluye botón dedicado **"⬇️ Descargar JPG"** en la tarjeta de previsualización para bajar el archivo con 1 solo clic.
+    - **Estructura de Copy Orientada a Conversión:** El enlace directo al producto en la tienda virtual se ubica estratégicamente en la **parte superior** del texto sugerido, garantizando que los clientes lo vean de inmediato sin necesidad de desplegar el mensaje completo.
+    - **Pestañas Multicanal:**
+      - **WhatsApp:** Opciones de formato vertical para estados (1080×1920) o cuadrado (1200×1200), envío directo por chat (`api.whatsapp.com/send`) y publicación en Estado.
+      - **Instagram:** Selector de formato Feed (1:1) o Story (9:16), copy comercial con hashtags locales colombianos de maternidad y juguetes, descarga de imagen y enlace a Instagram.
+      - **TikTok:** Guion publicitario estructurado con gancho (Hook 0-3s), desarrollo de beneficios, precio y llamada a la acción (CTA) con hashtags virales, descarga de imagen 9:16 y acceso directo a la plataforma.
+      - **Facebook Marketplace:** Formato optimizado para copiar título limpio, precio en COP, descripción con enlace web y descarga de imagen cuadrada estandarizada de 1200×1200 px.
   - `ConfigProductoDetalle.tsx` (Pestaña "Web / Digital"):
-    - **Autogeneración con IA:** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera automáticamente y puebla `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`.
-    - **Fondo de estudio IA en Imágenes (URLs):** Checkbox toggle activado por defecto para que cualquier foto subida, arrastrada o agregada por URL pase por el procesamiento de fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a estudio a demanda.
-    - **Difusión en Redes:** Barra omnicanal superior y botones directos por producto en el encabezado (WhatsApp, Instagram, TikTok y Marketplace).
-  - `CatalogoDigital.tsx`: Botones de difusión omnicanal y creación asistida rápida.
+    - **Encabezado Optimizado:** Se removieron los botones repetidos del encabezado general para mantener la interfaz despejada y profesional, centralizando los accesos en el banner destacado.
+    - **Banner Difusión Omnicanal:** Bloque interactivo con accesos directos a WhatsApp, Instagram, TikTok y Marketplace.
+    - **Autogeneración con IA:** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera y puebla automáticamente `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`.
+    - **Fondo de Estudio IA en Imágenes:** Checkbox toggle activado por defecto para aplicar fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos en cualquier foto nueva. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a demanda.
+    - **Visor Lightbox Interactivo de Imágenes:**
+      - Miniaturas ampliadas (48×48 px) con esquinas redondeadas, sombra suave e indicador interactivo de ojo (`👁️`).
+      - Modal Lightbox en pantalla completa con imagen en alta resolución sobre fondo de estudio blanco.
+      - Navegación táctil y por teclado con flechas izquierda/derecha (`←` y `→`) y cierre con tecla `Escape` o clic fuera del modal.
+      - Contador de imágenes (`X de N`), indicador de imagen principal y acciones integradas: *Hacer Principal* con 1 clic, *Fondo Blanco IA* directamente en el visor y *Abrir original en pestaña nueva*.
+  - `CatalogoDigital.tsx`: Integración de accesos directos de difusión omnicanal y creación asistida por IA.
 
 ---
 
