@@ -1375,6 +1375,7 @@ function ModalImprimirEtiquetasProducto({
   const [lista, setLista] = useState<BarcodeItemParaImprimir[]>(items);
   const [selectedPreviewIdx, setSelectedPreviewIdx] = useState<number>(0);
   const [imprimiendo, setImprimiendo] = useState(false);
+  const [rotar180, setRotar180] = useState(false);
 
   const fmtCOP = (val: number) => `$${Number(val || 0).toLocaleString('es-CO')}`;
 
@@ -1441,6 +1442,11 @@ function ModalImprimirEtiquetasProducto({
     toast.success('Archivo CSV descargado. Conéctalo desde Archivo > Conexión a Base de Datos en BarTender ✓');
   };
 
+  const limpiarImpresion = () => {
+    document.body.classList.remove('imprimiendo-etiquetas-termicas');
+    setImprimiendo(false);
+  };
+
   const handleImprimirDirecto = () => {
     if (etiquetasPlanas.length === 0) {
       toast.error('No hay etiquetas seleccionadas para imprimir');
@@ -1449,11 +1455,13 @@ function ModalImprimirEtiquetasProducto({
     setImprimiendo(true);
     document.body.classList.add('imprimiendo-etiquetas-termicas');
 
+    window.onafterprint = limpiarImpresion;
+
     setTimeout(() => {
       window.print();
-      document.body.classList.remove('imprimiendo-etiquetas-termicas');
-      setImprimiendo(false);
-    }, 400);
+      // Garantizar que se desbloquee incluso si onafterprint no dispara
+      setTimeout(limpiarImpresion, 1000);
+    }, 250);
   };
 
   return (
@@ -1593,15 +1601,34 @@ function ModalImprimirEtiquetasProducto({
                 <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
                   Vista Previa de Etiqueta
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">33,8 × 20 mm</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRotar180(!rotar180)}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                      rotar180
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title="Gira la etiqueta 180° si la impresora saca el texto al revés"
+                  >
+                    <RefreshCw size={11} className={rotar180 ? 'rotate-180' : ''} />
+                    {rotar180 ? 'Rotado 180°' : 'Girar 180°'}
+                  </button>
+                  <span className="text-[10px] text-slate-400 font-mono">33,8 × 20 mm</span>
+                </div>
               </div>
 
               {/* Contenedor de la etiqueta simulada física */}
-              <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200/80 flex items-center justify-center">
+              <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200/80 flex items-center justify-center overflow-hidden">
                 {previewItem ? (
                   <div
-                    className="bg-white rounded-xl shadow-lg border border-slate-300 p-2 flex flex-col items-center justify-between text-center select-none"
-                    style={{ width: '220px', height: '140px' }}
+                    className="bg-white rounded-xl shadow-lg border border-slate-300 p-2 flex flex-col items-center justify-between text-center select-none transition-transform duration-200"
+                    style={{
+                      width: '220px',
+                      height: '140px',
+                      transform: rotar180 ? 'rotate(180deg)' : 'none',
+                    }}
                   >
                     {/* Header marca */}
                     <div className="w-full text-center border-b border-slate-100 pb-1">
@@ -1653,18 +1680,18 @@ function ModalImprimirEtiquetasProducto({
               <button
                 type="button"
                 onClick={handleImprimirDirecto}
-                disabled={etiquetasPlanas.length === 0 || imprimiendo}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-indigo-200 transition-all active:scale-[0.99] disabled:opacity-50"
+                disabled={etiquetasPlanas.length === 0}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-indigo-200 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer"
               >
                 <Printer size={16} />
-                {imprimiendo ? 'Enviando a DigitalPos...' : `Imprimir en DigitalPos (${totalEtiquetas} etiquetas)`}
+                {imprimiendo ? 'Abriendo Diálogo de Impresión...' : `Imprimir en DigitalPos (${totalEtiquetas} etiquetas)`}
               </button>
 
               <button
                 type="button"
                 onClick={handleDescargarBarTender}
                 disabled={itemsSeleccionados.length === 0}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Download size={14} className="text-slate-500" />
                 Descargar para BarTender (.csv)
@@ -1713,6 +1740,7 @@ function ModalImprimirEtiquetasProducto({
                   textAlign: 'center',
                   overflow: 'hidden',
                   background: '#ffffff',
+                  transform: rotar180 ? 'rotate(180deg)' : 'none',
                 }}
               >
                 <span
