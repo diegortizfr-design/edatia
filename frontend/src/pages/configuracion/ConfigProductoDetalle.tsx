@@ -1375,7 +1375,7 @@ function ModalImprimirEtiquetasProducto({
   const [lista, setLista] = useState<BarcodeItemParaImprimir[]>(items);
   const [selectedPreviewIdx, setSelectedPreviewIdx] = useState<number>(0);
   const [imprimiendo, setImprimiendo] = useState(false);
-  const [rotar180, setRotar180] = useState(false);
+  const [rotacion, setRotacion] = useState<0 | 90 | 180 | 270>(0);
 
   const fmtCOP = (val: number) => `$${Number(val || 0).toLocaleString('es-CO')}`;
 
@@ -1599,35 +1599,39 @@ function ModalImprimirEtiquetasProducto({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                  Vista Previa de Etiqueta
+                  Vista Previa
                 </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRotar180(!rotar180)}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 ${
-                      rotar180
-                        ? 'bg-amber-100 text-amber-800 border-amber-300'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                    title="Gira la etiqueta 180° si la impresora saca el texto al revés"
-                  >
-                    <RefreshCw size={11} className={rotar180 ? 'rotate-180' : ''} />
-                    {rotar180 ? 'Rotado 180°' : 'Girar 180°'}
-                  </button>
-                  <span className="text-[10px] text-slate-400 font-mono">33,8 × 20 mm</span>
+                {/* Selector de Giro cada 90 grados */}
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 px-1 flex items-center gap-1">
+                    <RefreshCw size={11} /> Giro:
+                  </span>
+                  {([0, 90, 180, 270] as const).map(deg => (
+                    <button
+                      key={deg}
+                      type="button"
+                      onClick={() => setRotacion(deg)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+                        rotacion === deg
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-white'
+                      }`}
+                    >
+                      {deg}°
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Contenedor de la etiqueta simulada física */}
-              <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200/80 flex items-center justify-center overflow-hidden">
+              <div className="bg-slate-100 p-4 rounded-2xl border border-slate-200/80 flex items-center justify-center overflow-hidden min-h-[175px]">
                 {previewItem ? (
                   <div
-                    className="bg-white rounded-xl shadow-lg border border-slate-300 p-2 flex flex-col items-center justify-between text-center select-none transition-transform duration-200"
+                    className="bg-white rounded-xl shadow-lg border border-slate-300 p-2 flex flex-col items-center justify-between text-center select-none transition-all duration-200"
                     style={{
-                      width: '220px',
-                      height: '140px',
-                      transform: rotar180 ? 'rotate(180deg)' : 'none',
+                      width: rotacion === 90 || rotacion === 270 ? '135px' : '220px',
+                      height: rotacion === 90 || rotacion === 270 ? '220px' : '135px',
+                      transform: `rotate(${rotacion}deg)`,
                     }}
                   >
                     {/* Header marca */}
@@ -1638,7 +1642,7 @@ function ModalImprimirEtiquetasProducto({
                     </div>
 
                     {/* Nombre producto / variante */}
-                    <div className="my-1 px-1">
+                    <div className="my-0.5 px-1">
                       <p className="text-[11px] font-bold text-slate-800 leading-tight line-clamp-1">
                         {previewItem.nombreProducto}
                       </p>
@@ -1653,8 +1657,8 @@ function ModalImprimirEtiquetasProducto({
                     <div className="my-0.5">
                       <Barcode128
                         value={previewItem.codigoBarras}
-                        height={34}
-                        barWidth={1.2}
+                        height={rotacion === 90 || rotacion === 270 ? 26 : 32}
+                        barWidth={1.1}
                         showText={true}
                       />
                     </div>
@@ -1725,80 +1729,97 @@ function ModalImprimirEtiquetasProducto({
               padding: '0 1mm',
             }}
           >
-            {fila.map((et, eIdx) => (
-              <div
-                key={eIdx}
-                style={{
-                  width: '33.8mm',
-                  height: '20mm',
-                  boxSizing: 'border-box',
-                  padding: '1mm 1.5mm',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  background: '#ffffff',
-                  transform: rotar180 ? 'rotate(180deg)' : 'none',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '6.5px',
-                    fontWeight: 900,
-                    textTransform: 'uppercase',
-                    color: '#000000',
-                    lineHeight: 1,
-                    maxWidth: '100%',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  DISTRIBUIDORA BABY WORLD
-                </span>
-
-                <span
-                  style={{
-                    fontSize: '7.5px',
-                    fontWeight: 700,
-                    color: '#000000',
-                    lineHeight: 1,
-                    maxWidth: '100%',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {et.nombreVariante ? `${et.nombreProducto} · ${et.nombreVariante}` : et.nombreProducto}
-                </span>
-
-                <div style={{ margin: '0.5mm 0' }}>
-                  <Barcode128
-                    value={et.codigoBarras}
-                    height={22}
-                    barWidth={1.05}
-                    showText={false}
-                  />
-                </div>
-
+            {fila.map((et, eIdx) => {
+              const isRotatedVertical = rotacion === 90 || rotacion === 270;
+              return (
                 <div
+                  key={eIdx}
                   style={{
-                    width: '100%',
+                    width: '33.8mm',
+                    height: '20mm',
+                    boxSizing: 'border-box',
                     display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '7px',
-                    lineHeight: 1,
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    background: '#ffffff',
                   }}
                 >
-                  <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{et.codigoBarras}</span>
-                  <span style={{ fontWeight: 900, fontSize: '8px' }}>{fmtCOP(et.precio)}</span>
+                  <div
+                    style={{
+                      width: isRotatedVertical ? '20mm' : '33.8mm',
+                      height: isRotatedVertical ? '33.8mm' : '20mm',
+                      transform: `rotate(${rotacion}deg)`,
+                      transformOrigin: 'center center',
+                      boxSizing: 'border-box',
+                      padding: '1mm 1.2mm',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      textAlign: 'center',
+                      overflow: 'hidden',
+                      background: '#ffffff',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '6px',
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        color: '#000000',
+                        lineHeight: 1,
+                        maxWidth: '100%',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      DISTRIBUIDORA BABY WORLD
+                    </span>
+
+                    <span
+                      style={{
+                        fontSize: '6.5px',
+                        fontWeight: 700,
+                        color: '#000000',
+                        lineHeight: 1.1,
+                        maxWidth: '100%',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {et.nombreVariante ? `${et.nombreProducto} · ${et.nombreVariante}` : et.nombreProducto}
+                    </span>
+
+                    <div style={{ margin: '0.2mm 0' }}>
+                      <Barcode128
+                        value={et.codigoBarras}
+                        height={isRotatedVertical ? 17 : 21}
+                        barWidth={isRotatedVertical ? 0.95 : 1.05}
+                        showText={false}
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '6.5px',
+                        lineHeight: 1,
+                      }}
+                    >
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{et.codigoBarras}</span>
+                      <span style={{ fontWeight: 900, fontSize: '7.5px' }}>{fmtCOP(et.precio)}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {/* Rellenar espacios vacíos en la última fila si tiene menos de 3 */}
             {Array.from({ length: 3 - fila.length }).map((_, emptyIdx) => (
               <div key={`empty-${emptyIdx}`} style={{ width: '33.8mm', height: '20mm' }} />
