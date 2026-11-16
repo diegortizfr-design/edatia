@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, PackageCheck
+  ChevronRight, PackageCheck, Sparkles
 } from 'lucide-react'
 import { LocationPinIcon } from './LocationPinIcon'
-import { Product } from '../data/productos'
+import { Product, ProductVariant } from '../data/productos'
 import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl } from '../lib/imageOptimizer'
+import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
@@ -16,7 +17,7 @@ interface ProductDetailPageProps {
   allProducts: Product[]
   onBack: () => void
   onSelectProduct: (p: Product) => void
-  onAddToCart: (p: Product, quantity?: number) => void
+  onAddToCart: (p: Product, quantity?: number, selectedVariant?: ProductVariant) => void
   onOpenCart: () => void
   onOpenLocation?: () => void
 }
@@ -32,12 +33,19 @@ export function ProductDetailPage({
 }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product.imagen)
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
 
   // Scroll to top whenever product changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setQuantity(1)
     setCurrentImage(product.imagen)
+    if (product.variantes && product.variantes.length > 0) {
+      const firstInStock = product.variantes.find(v => v.stockDisponible > 0) || product.variantes[0]
+      setSelectedVariant(firstInStock)
+    } else {
+      setSelectedVariant(null)
+    }
   }, [product.id, product.imagen])
 
   const fmtPrice = (val: number) => {
@@ -46,12 +54,24 @@ export function ProductDetailPage({
     }).format(val)
   }
 
+  const effectivePrice = selectedVariant && Number(selectedVariant.precioBase) > 0
+    ? Number(selectedVariant.precioBase)
+    : product.precio
+
+  const effectiveStock = selectedVariant
+    ? selectedVariant.stockDisponible
+    : product.stock
+
+  const isAgotado = effectiveStock <= 0
+
   const handleAdd = () => {
-    onAddToCart(product, quantity)
+    if (isAgotado) return
+    onAddToCart(product, quantity, selectedVariant || undefined)
   }
 
   const handleBuyNow = () => {
-    onAddToCart(product, quantity)
+    if (isAgotado) return
+    onAddToCart(product, quantity, selectedVariant || undefined)
     onOpenCart()
   }
 
@@ -68,12 +88,11 @@ export function ProductDetailPage({
     }
   }
 
-  const isAgotado = product ? product.stock <= 0 : false
-
+  const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
   const whatsappMessage = encodeURIComponent(
     isAgotado
-      ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}" (${fmtPrice(product.precio)}). ¿Cuándo tendrán disponibilidad nuevamente?`
-      : `Hola Baby-World! Me interesa ordenar: "${product.nombre}" (${fmtPrice(product.precio)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
+      ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+      : `Hola Baby-World! Me interesa ordenar: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
   )
 
   // Similar/Related products (excluding current product)
@@ -214,12 +233,12 @@ export function ProductDetailPage({
 
                 {/* In Stock Badge (Conectado al Control de Existencias) */}
                 <div className="flex items-center gap-2 text-xs flex-wrap">
-                  {product.stock > 0 ? (
+                  {effectiveStock > 0 ? (
                     <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 border border-emerald-100 font-bold px-2.5 py-0.5 rounded-md">
                       <PackageCheck size={13} />
                       <span>
-                        {product.stock < 999
-                          ? `En Stock (${product.stock} ${product.stock === 1 ? 'unidad disponible' : 'unidades disponibles'})`
+                        {effectiveStock < 999
+                          ? `En Stock (${effectiveStock} ${effectiveStock === 1 ? 'unidad disponible' : 'unidades disponibles'})`
                           : 'Disponible para Despacho Inmediato'}
                       </span>
                     </span>
@@ -251,7 +270,7 @@ export function ProductDetailPage({
                     </span>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                        {fmtPrice(product.precio)}
+                        {fmtPrice(effectivePrice)}
                       </span>
                       <span className="text-[11px] text-slate-400 font-bold uppercase">COP</span>
                     </div>
@@ -259,7 +278,71 @@ export function ProductDetailPage({
                 </div>
 
                 {/* Simulador de Cuotas Addi y Sistecrédito */}
-                <BnplCreditSimulator price={product.precio} className="my-2" />
+                <BnplCreditSimulator price={effectivePrice} className="my-2" />
+
+                {/* Selector de Variantes (Colores y Tallas) */}
+                {product.variantes && product.variantes.length > 0 && (
+                  <div className="pt-3 pb-1 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-sky-500" />
+                        <span>Selecciona Color / Talla:</span>
+                      </span>
+                      {selectedVariant && (
+                        <span className="font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-lg border border-sky-100 text-xs">
+                          {selectedVariant.nombre}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      {product.variantes.map((v) => {
+                        const visual = extraerAtributosVisuales(v.atributos, v.nombre)
+                        const hexColor = visual.colorHex || buscarHexColor(v.nombre)
+                        const isSelected = selectedVariant?.id === v.id
+                        const inStock = v.stockDisponible > 0
+
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedVariant(v)
+                              setQuantity(1)
+                            }}
+                            className={`group relative flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-sky-500 bg-sky-50/70 shadow-sm ring-2 ring-sky-200'
+                                : inStock
+                                  ? 'border-slate-200 hover:border-slate-300 bg-white'
+                                  : 'border-slate-200/60 bg-slate-50 opacity-60'
+                            }`}
+                            title={`${v.nombre} (${inStock ? `${v.stockDisponible} disponibles` : 'Sin stock'})`}
+                          >
+                            {hexColor ? (
+                              <span
+                                className="w-4 h-4 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                                style={{ backgroundColor: hexColor }}
+                              />
+                            ) : (
+                              <span className="text-[11px] font-bold text-slate-500 font-mono">
+                                {visual.tallaLabel || '•'}
+                              </span>
+                            )}
+                            <div className="text-left">
+                              <span className={`text-xs font-bold block leading-tight ${isSelected ? 'text-sky-900' : 'text-slate-800'}`}>
+                                {v.nombre}
+                              </span>
+                              <span className={`text-[10px] block ${inStock ? 'text-emerald-600 font-semibold' : 'text-rose-500'}`}>
+                                {inStock ? `${v.stockDisponible} und` : 'Agotado'}
+                              </span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Description */}
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
@@ -318,8 +401,8 @@ export function ProductDetailPage({
                         {quantity}
                       </span>
                       <button
-                        onClick={() => setQuantity(Math.min(Math.max(1, product.stock), quantity + 1))}
-                        disabled={quantity >= product.stock}
+                        onClick={() => setQuantity(Math.min(Math.max(1, effectiveStock), quantity + 1))}
+                        disabled={quantity >= effectiveStock}
                         className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
                         aria-label="Aumentar"
                       >
@@ -333,7 +416,7 @@ export function ProductDetailPage({
                       className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
                     >
                       <ShoppingBag size={17} />
-                      <span>Añadir a mi Bolsa • {fmtPrice(product.precio * quantity)}</span>
+                      <span>Añadir a mi Bolsa • {fmtPrice(effectivePrice * quantity)}</span>
                     </button>
                   </div>
                 ) : (
@@ -444,16 +527,21 @@ export function ProductDetailPage({
         <div className="min-w-0">
           <span className="text-[10px] text-slate-400 font-bold block uppercase leading-none">Total</span>
           <span className="text-base font-black text-slate-900 truncate block mt-0.5">
-            {fmtPrice(product.precio * quantity)}
+            {fmtPrice(effectivePrice * quantity)}
           </span>
         </div>
 
         <button
           onClick={handleAdd}
-          className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all"
+          disabled={isAgotado}
+          className={`flex-1 py-3 px-4 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all ${
+            isAgotado
+              ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              : 'bg-slate-900 hover:bg-slate-800'
+          }`}
         >
           <ShoppingBag size={16} />
-          <span>Añadir a la Bolsa</span>
+          <span>{isAgotado ? 'Agotado' : 'Añadir a la Bolsa'}</span>
         </button>
       </div>
     </div>

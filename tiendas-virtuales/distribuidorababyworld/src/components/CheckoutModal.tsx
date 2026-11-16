@@ -4,11 +4,12 @@ import {
   ArrowRight, CreditCard, Smartphone, Banknote, Copy, Check, Info, Clock,
   RefreshCw, Edit3, QrCode, Download, KeyRound, Sparkles
 } from 'lucide-react'
-import { Product } from '../data/productos'
+import { Product, ProductVariant } from '../data/productos'
 
 interface CartItem {
   product: Product
   quantity: number
+  variante?: ProductVariant
 }
 
 interface CheckoutModalProps {
@@ -259,7 +260,8 @@ export function CheckoutModal({
       metodoPagoCodigo: paymentMethod,
       items: (activeCartItems.length > 0 ? activeCartItems : cartItems).map(item => ({
         productoId: item.product.id,
-        nombre: item.product.nombre,
+        varianteId: item.variante?.id,
+        nombre: item.variante ? `${item.product.nombre} · ${item.variante.nombre}` : item.product.nombre,
         precioUnitario: item.product.precio,
         cantidad: item.quantity,
       }))
@@ -340,7 +342,8 @@ export function CheckoutModal({
     msg += `*Método de Pago:* ${getPaymentMethodLabel(method)}\n\n`
     msg += `*Productos:*\n`
     items.forEach(i => {
-      msg += `• ${i.quantity}x ${i.product.nombre} (${fmtPrice(i.product.precio * i.quantity)})\n`
+      const varSuffix = i.variante ? ` [${i.variante.nombre}]` : ''
+      msg += `• ${i.quantity}x ${i.product.nombre}${varSuffix} (${fmtPrice(i.product.precio * i.quantity)})\n`
     })
     msg += `\n*Subtotal:* ${fmtPrice(subTot)}`
     msg += `\n*Impuesto (IVA):* ${fmtPrice(taxVal)}`

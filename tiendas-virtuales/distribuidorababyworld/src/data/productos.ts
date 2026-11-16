@@ -1,3 +1,12 @@
+export interface ProductVariant {
+  id: number
+  sku: string
+  nombre: string
+  atributos?: any[]
+  precioBase?: number
+  stockDisponible: number
+}
+
 export interface Product {
   id: number
   sku?: string
@@ -22,6 +31,8 @@ export interface Product {
   rating: number
   reviewsCount?: number
   stock: number
+  tieneVariantes?: boolean
+  variantes?: ProductVariant[]
   esDestacado?: boolean
   esOferta?: boolean
   esNovedad?: boolean

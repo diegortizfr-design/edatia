@@ -750,6 +750,7 @@ export class PosService implements OnModuleInit {
     pagosDetalle?: Record<string, number>
     items: {
       productoId: number
+      varianteId?: number
       cantidad: number
       precioUnitario: number
       descuentoPct?: number
@@ -780,39 +781,59 @@ export class PosService implements OnModuleInit {
       )
     }
 
-    // Verificar stock para cada ítem
+    // Verificar stock para cada ítem (respetando variantes y bodega de la caja)
     for (const item of dto.items) {
       const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
       if (prod && !prod.manejaBodega) continue // No validar stock para servicios o productos sin inventario
 
-      const stock = await this.prisma.stock.findFirst({
-        where: { productoId: item.productoId, bodegaId: sesion.caja.bodegaId },
-      })
-      const disponible = stock ? Number(stock.cantidad) - Number(stock.cantidadReservada) : 0
-      if (disponible < item.cantidad) {
-        const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
-        const permiteNegativo =
-          (empresa?.permiteStockNegativo ?? false) &&
-          (sesion.caja.bodega?.permiteStockNegativo ?? false) &&
-          (sesion.caja?.permiteStockNegativo ?? false)
+      const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId }, select: { permiteStockNegativo: true } })
+      const permiteNegativo =
+        (empresa?.permiteStockNegativo ?? false) &&
+        (sesion.caja.bodega?.permiteStockNegativo ?? false) &&
+        (sesion.caja?.permiteStockNegativo ?? false)
 
-        if (!permiteNegativo) {
-          if (!sesion.caja?.permiteStockNegativo) {
-            throw new BadRequestException(
-              `La caja "${sesion.caja.nombre}" no tiene habilitado facturar con stock en negativo en su configuración. Stock disponible para "${prod?.nombre ?? item.productoId}": ${disponible}`
-            )
+      if (item.varianteId) {
+        // Validación específica para variante hija
+        const stockVar = await this.prisma.stockVariante.findUnique({
+          where: {
+            varianteId_bodegaId: {
+              varianteId: item.varianteId,
+              bodegaId: sesion.caja.bodegaId,
+            }
+          },
+          include: { variante: true }
+        })
+        const dispVar = stockVar ? Number(stockVar.cantidad) - Number(stockVar.cantidadReservada ?? 0) : 0
+        if (dispVar < item.cantidad && !permiteNegativo) {
+          throw new BadRequestException(
+            `Stock insuficiente para la variante "${stockVar?.variante?.nombre ?? prod?.nombre ?? item.varianteId}". Disponible: ${dispVar}`
+          )
+        }
+      } else {
+        // Validación general para producto padre
+        const stock = await this.prisma.stock.findFirst({
+          where: { productoId: item.productoId, bodegaId: sesion.caja.bodegaId },
+        })
+        const disponible = stock ? Number(stock.cantidad) - Number(stock.cantidadReservada) : 0
+        if (disponible < item.cantidad) {
+          if (!permiteNegativo) {
+            if (!sesion.caja?.permiteStockNegativo) {
+              throw new BadRequestException(
+                `La caja "${sesion.caja.nombre}" no tiene habilitado facturar con stock en negativo en su configuración. Stock disponible para "${prod?.nombre ?? item.productoId}": ${disponible}`
+              )
+            }
+            if (!sesion.caja.bodega?.permiteStockNegativo) {
+              throw new BadRequestException(
+                `La bodega "${sesion.caja.bodega?.nombre ?? 'Sin bodega'}" asignada a esta caja no tiene autorizado stock negativo en Configuración > Empresa > Inventario y Compras.`
+              )
+            }
+            if (!empresa?.permiteStockNegativo) {
+              throw new BadRequestException(
+                `La empresa no tiene habilitada la venta con stock en negativo en Configuración > Empresa > Inventario y Compras.`
+              )
+            }
+            throw new BadRequestException(`Stock insuficiente para "${prod?.nombre ?? item.productoId}". Disponible: ${disponible}`)
           }
-          if (!sesion.caja.bodega?.permiteStockNegativo) {
-            throw new BadRequestException(
-              `La bodega "${sesion.caja.bodega?.nombre ?? 'Sin bodega'}" asignada a esta caja no tiene autorizado stock negativo en Configuración > Empresa > Inventario y Compras.`
-            )
-          }
-          if (!empresa?.permiteStockNegativo) {
-            throw new BadRequestException(
-              `La empresa no tiene habilitada la venta con stock en negativo en Configuración > Empresa > Inventario y Compras.`
-            )
-          }
-          throw new BadRequestException(`Stock insuficiente para "${prod?.nombre ?? item.productoId}". Disponible: ${disponible}`)
         }
       }
     }
@@ -848,6 +869,11 @@ export class PosService implements OnModuleInit {
 
     const itemsCalculados = await Promise.all(dto.items.map(async (item) => {
       const prod = await this.prisma.producto.findUnique({ where: { id: item.productoId } })
+      let variante: any = null
+      if (item.varianteId) {
+        variante = await this.prisma.varianteProducto.findUnique({ where: { id: item.varianteId } })
+      }
+
       let tipoIva = item.tipoIva ?? prod?.tipoIva ?? 'GRAVADO_19'
       if (prod?.productoExentoIva) {
         tipoIva = 'EXENTO'
@@ -869,10 +895,17 @@ export class PosService implements OnModuleInit {
       if (tipoIva === 'GRAVADO_19' || tipoIva === 'IVA_19') { baseIva19 += baseIvaItem; iva19 += ivaVal }
       if (tipoIva === 'GRAVADO_5' || tipoIva === 'IVA_5') { baseIva5 += baseIvaItem; iva5 += ivaVal }
 
+      const nombreFinal = variante ? `${prod?.nombre ?? ''} · ${variante.nombre}` : (prod?.nombre ?? '')
+      const skuFinal = variante?.sku || prod?.sku
+      const costoProm = variante && Number(variante.costoPromedio) > 0
+        ? Number(variante.costoPromedio)
+        : Number(prod?.costoPromedio ?? 0)
+
       return {
         productoId: item.productoId,
-        descripcion: prod?.nombre ?? '',
-        sku: prod?.sku,
+        varianteId: item.varianteId,
+        descripcion: nombreFinal,
+        sku: skuFinal,
         cantidad: item.cantidad,
         precioUnitario: item.precioUnitario,
         descuentoPct: descPct,
@@ -882,8 +915,8 @@ export class PosService implements OnModuleInit {
         ivaValor: ivaVal,
         subtotal: base,
         total: base + ivaVal,
-        costoUnitario: Number(prod?.costoPromedio ?? 0),
-        costoTotal: Number(prod?.costoPromedio ?? 0) * item.cantidad,
+        costoUnitario: costoProm,
+        costoTotal: costoProm * item.cantidad,
       }
     }))
 
@@ -1013,7 +1046,12 @@ export class PosService implements OnModuleInit {
           cambio: dto.cambio ?? 0,
           pagosDetalle: dto.pagosDetalle ? (dto.pagosDetalle as any) : undefined,
           estado: 'COMPLETADA',
-          items: { create: itemsCalculados.map((it, i) => ({ ...it, orden: i })) },
+          items: {
+            create: itemsCalculados.map((it, i) => {
+              const { varianteId, ...rawItem } = it
+              return { ...rawItem, orden: i }
+            }),
+          },
         },
         include: { items: true, reciboCaja: true },
       })
@@ -1028,12 +1066,33 @@ export class PosService implements OnModuleInit {
           productoId: item.productoId,
           bodegaId: sesion.caja.bodegaId,
           cantidad: item.cantidad,
-          concepto: `Venta POS ${numero}`,
+          concepto: `Venta POS ${numero}${item.descripcion ? ' (' + item.descripcion + ')' : ''}`,
           tipo: 'VENTA',
           referenciaId: v.numero,
           referenciaTipo: 'VENTA_POS',
-          numeroMov: `POS-${numero}-${item.productoId}`,
+          numeroMov: `POS-${numero}-${item.productoId}${item.varianteId ? '-' + item.varianteId : ''}`,
         })
+
+        // Si se vendió una variante hija, descontar directamente de StockVariante en esta bodega
+        if (item.varianteId) {
+          await tx.stockVariante.upsert({
+            where: {
+              varianteId_bodegaId: {
+                varianteId: item.varianteId,
+                bodegaId: sesion.caja.bodegaId,
+              },
+            },
+            update: {
+              cantidad: { decrement: item.cantidad },
+            },
+            create: {
+              empresaId,
+              varianteId: item.varianteId,
+              bodegaId: sesion.caja.bodegaId,
+              cantidad: -item.cantidad,
+            },
+          })
+        }
       }
 
       // 3. Actualizar totales de la sesión
@@ -1196,6 +1255,19 @@ export class PosService implements OnModuleInit {
           },
         },
       })
+      // Búsqueda en variantes activas del producto (SKU, código de barras o nombre)
+      orConditions.push({
+        variantes: {
+          some: {
+            activo: true,
+            OR: [
+              { sku: { contains: trimmedQ, mode: 'insensitive' } },
+              { codigoBarras: { contains: trimmedQ, mode: 'insensitive' } },
+              { nombre: { contains: trimmedQ, mode: 'insensitive' } },
+            ],
+          },
+        },
+      })
     }
 
     const where: any = {
@@ -1230,6 +1302,20 @@ export class PosService implements OnModuleInit {
                 },
               },
             },
+            // Productos que tengan variantes con stock en esta bodega
+            {
+              variantes: {
+                some: {
+                  activo: true,
+                  stock: {
+                    some: {
+                      bodegaId,
+                      ...(permiteNegativo ? {} : { cantidad: { gt: 0 } }),
+                    },
+                  },
+                },
+              },
+            },
           ],
         },
       ]
@@ -1240,6 +1326,12 @@ export class PosService implements OnModuleInit {
       include: {
         stock: { where: { bodegaId }, select: { cantidad: true, cantidadReservada: true } },
         codigosBarrasRel: { select: { codigo: true, tipo: true, descripcion: true, esPrincipal: true } },
+        variantes: {
+          where: { activo: true },
+          include: {
+            stock: { where: { bodegaId }, select: { cantidad: true, cantidadReservada: true } },
+          },
+        },
       },
       take: 60,
     })
@@ -1253,9 +1345,43 @@ export class PosService implements OnModuleInit {
           effectiveTipoIva = 'EXCLUIDO';
         }
 
-        const stockDisponible = p.manejaBodega
+        const variantesFormateadas = ((p as any).variantes || []).map((v: any) => {
+          const stockV = v.stock && v.stock[0]
+            ? Number(v.stock[0].cantidad) - Number(v.stock[0].cantidadReservada ?? 0)
+            : 0;
+          return {
+            id: v.id,
+            sku: v.sku,
+            nombre: v.nombre,
+            atributos: v.atributos,
+            precioBase: v.precioBase && Number(v.precioBase) > 0 ? Number(v.precioBase) : Number(p.precioBase),
+            codigoBarras: v.codigoBarras,
+            stock: stockV,
+          };
+        });
+
+        const tieneVariantes = (p as any).tieneVariantes || variantesFormateadas.length > 0;
+
+        const stockPadre = p.manejaBodega
           ? (p.stock[0] ? Number(p.stock[0].cantidad) - Number(p.stock[0].cantidadReservada ?? 0) : 0)
           : 999;
+
+        const stockDisponible = tieneVariantes && variantesFormateadas.length > 0
+          ? variantesFormateadas.reduce((acc: number, v: any) => acc + Math.max(0, v.stock), 0)
+          : stockPadre;
+
+        // Si la búsqueda coincide exactamente con SKU o código de barras de una variante, detectarlo para auto-añadir
+        let varianteCoincidenteId: number | null = null;
+        if (trimmedQ) {
+          const lowerQ = trimmedQ.toLowerCase();
+          const matchExact = variantesFormateadas.find((v: any) =>
+            (v.sku && v.sku.toLowerCase() === lowerQ) ||
+            (v.codigoBarras && v.codigoBarras.toLowerCase() === lowerQ)
+          );
+          if (matchExact) {
+            varianteCoincidenteId = matchExact.id;
+          }
+        }
 
         return {
           id: p.id,
@@ -1273,6 +1399,9 @@ export class PosService implements OnModuleInit {
           claseAbc: p.claseAbc,
           manejaBodega: p.manejaBodega,
           stock: stockDisponible,
+          tieneVariantes,
+          variantes: variantesFormateadas,
+          varianteCoincidenteId,
         };
       })
       .filter(p => !p.manejaBodega || permiteNegativo || p.stock > 0);

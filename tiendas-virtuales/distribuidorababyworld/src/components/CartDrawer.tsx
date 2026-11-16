@@ -1,19 +1,21 @@
 import React from 'react'
 import { X, Trash2, Plus, Minus, ShoppingBag, MessageCircle, ArrowRight, Truck } from 'lucide-react'
-import { Product } from '../data/productos'
+import { Product, ProductVariant } from '../data/productos'
 import { getOptimizedImageUrl } from '../lib/imageOptimizer'
+import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 
 export interface CartItem {
   product: Product
   quantity: number
+  variante?: ProductVariant
 }
 
 interface CartDrawerProps {
   isOpen: boolean
   onClose: () => void
   items: CartItem[]
-  onUpdateQuantity: (id: number, q: number) => void
-  onRemoveItem: (id: number) => void
+  onUpdateQuantity: (id: number, q: number, varianteId?: number) => void
+  onRemoveItem: (id: number, varianteId?: number) => void
   onCheckout: () => void
 }
 
@@ -46,7 +48,8 @@ export function CartDrawer({
     let message = `🍼 *NUEVO PEDIDO - BABY-WORLD*\n\n`
     message += `¡Hola! Deseo ordenar los siguientes productos:\n\n`
     items.forEach((it) => {
-      message += `• *${it.quantity}x* ${it.product.nombre} (${fmtPrice(it.product.precio * it.quantity)})\n`
+      const varSuffix = it.variante ? ` [${it.variante.nombre}]` : ''
+      message += `• *${it.quantity}x* ${it.product.nombre}${varSuffix} (${fmtPrice(it.product.precio * it.quantity)})\n`
     })
     message += `\n*Subtotal:* ${fmtPrice(baseSubtotal)}`
     message += `\n*Impuesto (IVA):* ${fmtPrice(totalImpuesto)}`
@@ -127,68 +130,94 @@ export function CartDrawer({
                 </button>
               </div>
             ) : (
-              items.map(item => (
-                <div 
-                  key={item.product.id} 
-                  className="flex gap-3 p-3 bg-slate-50/80 border border-slate-100 rounded-2xl relative group"
-                >
-                  <img
-                    src={getOptimizedImageUrl(item.product.imagen, 160)}
-                    alt={item.product.nombre}
-                    className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-100 flex-shrink-0"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="flex-1 flex flex-col justify-between min-w-0">
-                    <div className="pr-6">
-                      <h4 className="font-bold text-slate-800 text-xs truncate leading-snug">
-                        {item.product.nombre}
-                      </h4>
-                      <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">
-                        {item.product.categoria}
-                      </p>
-                    </div>
+              items.map(item => {
+                const visual = item.variante ? extraerAtributosVisuales(item.variante.atributos, item.variante.nombre) : null
+                const hexColor = visual?.colorHex || (item.variante ? buscarHexColor(item.variante.nombre) : undefined)
+                const maxStock = item.variante ? item.variante.stockDisponible : item.product.stock
+                const itemKey = item.variante ? `${item.product.id}-${item.variante.id}` : item.product.id
 
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center border border-slate-200 bg-white rounded-lg px-1 py-0.5">
-                        <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
-                          className="p-0.5 hover:text-sky-600 text-slate-400 transition-colors"
-                        >
-                          <Minus size={11} />
-                        </button>
-                        <span className="font-bold text-slate-800 text-xs w-6 text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.product.stock}
-                          className="p-0.5 hover:text-sky-600 disabled:opacity-35 disabled:cursor-not-allowed text-slate-400 transition-colors"
-                        >
-                          <Plus size={11} />
-                        </button>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="font-extrabold text-slate-900 text-xs block">
-                          {fmtPrice(item.product.precio * item.quantity)}
-                        </span>
-                        <span className="text-[9.5px] text-slate-400 block">
-                          Sub: {fmtPrice(item.product.precioSubtotal * item.quantity)} + IVA: {fmtPrice(item.product.impuesto * item.quantity)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => onRemoveItem(item.product.id)}
-                    className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
-                    title="Eliminar"
+                return (
+                  <div 
+                    key={itemKey} 
+                    className="flex gap-3 p-3 bg-slate-50/80 border border-slate-100 rounded-2xl relative group"
                   >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))
+                    <img
+                      src={getOptimizedImageUrl(item.product.imagen, 160)}
+                      alt={item.product.nombre}
+                      className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-100 flex-shrink-0"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="flex-1 flex flex-col justify-between min-w-0">
+                      <div className="pr-6">
+                        <h4 className="font-bold text-slate-800 text-xs truncate leading-snug">
+                          {item.product.nombre}
+                        </h4>
+                        {item.variante ? (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {hexColor && (
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0"
+                                style={{ backgroundColor: hexColor }}
+                              />
+                            )}
+                            <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
+                              {item.variante.nombre}
+                            </span>
+                            {item.variante.sku && (
+                              <span className="text-[9px] font-mono text-slate-400">
+                                {item.variante.sku}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">
+                            {item.product.categoria}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center border border-slate-200 bg-white rounded-lg px-1 py-0.5">
+                          <button
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1, item.variante?.id)}
+                            className="p-0.5 hover:text-sky-600 text-slate-400 transition-colors"
+                          >
+                            <Minus size={11} />
+                          </button>
+                          <span className="font-bold text-slate-800 text-xs w-6 text-center">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.variante?.id)}
+                            disabled={item.quantity >= maxStock}
+                            className="p-0.5 hover:text-sky-600 disabled:opacity-35 disabled:cursor-not-allowed text-slate-400 transition-colors"
+                          >
+                            <Plus size={11} />
+                          </button>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="font-extrabold text-slate-900 text-xs block">
+                            {fmtPrice(item.product.precio * item.quantity)}
+                          </span>
+                          <span className="text-[9.5px] text-slate-400 block">
+                            Sub: {fmtPrice(item.product.precioSubtotal * item.quantity)} + IVA: {fmtPrice(item.product.impuesto * item.quantity)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => onRemoveItem(item.product.id, item.variante?.id)}
+                      className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )
+              })
             )}
           </div>
 

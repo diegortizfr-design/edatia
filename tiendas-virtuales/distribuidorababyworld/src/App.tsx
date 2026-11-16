@@ -21,7 +21,7 @@ import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
-import { Product, PRODUCTOS_BABY_WORLD } from './data/productos'
+import { Product, ProductVariant, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
 const API_BASE = import.meta.env.VITE_API_BASE || (
@@ -224,6 +224,8 @@ export function App() {
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
               stock: stockReal,
+              tieneVariantes: Boolean(p.tieneVariantes || (p.variantes && p.variantes.length > 0)),
+              variantes: Array.isArray(p.variantes) ? p.variantes : [],
               esDestacado: !!p.esDestacado,
               detalles: Array.isArray(p.metadataWeb?.detalles) && p.metadataWeb.detalles.length > 0
                 ? p.metadataWeb.detalles
@@ -281,55 +283,66 @@ export function App() {
     return matchesCategory && matchesSubcategory && matchesSearch
   })
 
-  const handleAddToCart = (product: Product, quantity = 1) => {
-    if (product.stock <= 0) {
-      toast.error(`"${product.nombre}" se encuentra agotado en inventario.`)
+  const handleAddToCart = (product: Product, quantity = 1, selectedVariant?: ProductVariant) => {
+    // Si el producto maneja variantes y se llamó sin variante (ej: click directo en card del catálogo),
+    // abrir el detalle para que el cliente seleccione su color / talla preferida:
+    if (!selectedVariant && product.tieneVariantes && Array.isArray(product.variantes) && product.variantes.length > 0) {
+      handleOpenProduct(product)
       return
     }
-    const existingItem = cart.find(item => item.product.id === product.id)
-    const currentQty = existingItem ? existingItem.quantity : 0
-    if (currentQty >= product.stock) {
-      toast.error(`Solo hay ${product.stock} unidad(es) disponible(s) de "${product.nombre}".`)
-      return
-    }
-    const allowedAdd = Math.min(quantity, product.stock - currentQty)
 
-    analytics.agregarCarrito(product.id, product.nombre, product.precio, allowedAdd)
+    const effectiveStock = selectedVariant ? selectedVariant.stockDisponible : product.stock
+    const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
+
+    if (effectiveStock <= 0) {
+      toast.error(`"${product.nombre}${varLabel}" se encuentra agotado en inventario.`)
+      return
+    }
+
+    const existingItem = cart.find(item => item.product.id === product.id && item.variante?.id === selectedVariant?.id)
+    const currentQty = existingItem ? existingItem.quantity : 0
+    if (currentQty >= effectiveStock) {
+      toast.error(`Solo hay ${effectiveStock} unidad(es) disponible(s) de "${product.nombre}${varLabel}".`)
+      return
+    }
+    const allowedAdd = Math.min(quantity, effectiveStock - currentQty)
+
+    analytics.agregarCarrito(product.id, `${product.nombre}${varLabel}`, product.precio, allowedAdd)
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id)
+      const existing = prev.find(item => item.product.id === product.id && item.variante?.id === selectedVariant?.id)
       if (existing) {
-        const nextQty = Math.min(product.stock, existing.quantity + allowedAdd)
+        const nextQty = Math.min(effectiveStock, existing.quantity + allowedAdd)
         if (nextQty < existing.quantity + quantity) {
-          toast(`Ajustado al stock disponible (${product.stock} und)`, { icon: '📦' })
+          toast(`Ajustado al stock disponible (${effectiveStock} und)`, { icon: '📦' })
         } else {
-          toast.success(`Aumentaste ${allowedAdd}x "${product.nombre}"`, {
+          toast.success(`Aumentaste ${allowedAdd}x "${product.nombre}${varLabel}"`, {
             icon: '🍼',
             style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
           })
         }
         return prev.map(item =>
-          item.product.id === product.id
+          (item.product.id === product.id && item.variante?.id === selectedVariant?.id)
             ? { ...item, product, quantity: nextQty }
             : item
         )
       }
-      toast.success(`Agregado a la bolsa: ${product.nombre}`, {
+      toast.success(`Agregado a la bolsa: ${product.nombre}${varLabel}`, {
         icon: '🛍️',
         style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
       })
-      return [...prev, { product, quantity: allowedAdd }]
+      return [...prev, { product, quantity: allowedAdd, variante: selectedVariant }]
     })
   }
 
-  const handleUpdateQuantity = (productId: number, q: number) => {
+  const handleUpdateQuantity = (productId: number, q: number, varianteId?: number) => {
     if (q <= 0) {
-      handleRemoveItem(productId)
+      handleRemoveItem(productId, varianteId)
       return
     }
     setCart(prev =>
       prev.map(item => {
-        if (item.product.id !== productId) return item
-        const maxStock = item.product.stock
+        if (item.product.id !== productId || item.variante?.id !== varianteId) return item
+        const maxStock = item.variante ? item.variante.stockDisponible : item.product.stock
         if (q > maxStock) {
           toast.error(`Solo hay ${maxStock} unidad(es) disponible(s) en inventario.`)
           return { ...item, quantity: maxStock }
@@ -339,11 +352,12 @@ export function App() {
     )
   }
 
-  const handleRemoveItem = (productId: number) => {
-    const item = cart.find(i => i.product.id === productId)
-    setCart(prev => prev.filter(i => i.product.id !== productId))
+  const handleRemoveItem = (productId: number, varianteId?: number) => {
+    const item = cart.find(i => i.product.id === productId && i.variante?.id === varianteId)
+    setCart(prev => prev.filter(i => !(i.product.id === productId && i.variante?.id === varianteId)))
     if (item) {
-      toast.error(`Eliminado: ${item.product.nombre}`, {
+      const varSuffix = item.variante ? ` [${item.variante.nombre}]` : ''
+      toast.error(`Eliminado: ${item.product.nombre}${varSuffix}`, {
         style: { borderRadius: '1rem' }
       })
     }

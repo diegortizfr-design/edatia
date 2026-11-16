@@ -583,8 +583,9 @@ export class DigitalService {
       ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
       : null;
 
+    const productoIdsUnicos = [...new Set(dto.items.map((it: any) => Number(it.productoId)))];
     const productos = await this.prisma.producto.findMany({
-      where: { id: { in: [...cantidades.keys()] }, empresaId, publicadoWeb: true, activo: true },
+      where: { id: { in: productoIdsUnicos }, empresaId, publicadoWeb: true, activo: true },
       select: {
         id: true,
         nombre: true,
@@ -608,28 +609,83 @@ export class DigitalService {
             },
           },
         },
+        variantes: {
+          where: { activo: true },
+          select: {
+            id: true,
+            sku: true,
+            nombre: true,
+            precioBase: true,
+            stock: {
+              select: {
+                cantidad: true,
+                cantidadReservada: true,
+                bodegaId: true,
+                bodega: { select: { id: true, activo: true } },
+              },
+            },
+          },
+        },
       },
     });
-    if (productos.length !== cantidades.size) {
+
+    const prodMap = new Map<number, any>(productos.map(p => [p.id, p]));
+    if (prodMap.size !== productoIdsUnicos.length) {
       throw new BadRequestException('Uno o más productos ya no están disponibles');
     }
-    const lineas = productos.map((p) => {
-      const cantidad = cantidades.get(p.id)!;
-      const disponible = this.calcularStockDisponible(p, bodegasFiltro);
-      if (disponible < cantidad) {
-        throw new BadRequestException(
-          disponible <= 0
-            ? `El producto "${p.nombre}" se encuentra agotado en inventario.`
-            : `Stock insuficiente para "${p.nombre}": solo hay ${disponible} unidad(es) disponible(s).`
-        );
+
+    const lineas = dto.items.map((it: any) => {
+      const p = prodMap.get(Number(it.productoId))!;
+      const cantidad = Number(it.cantidad);
+      let variante: any = null;
+      let nombreLinea = p.nombre;
+
+      if (it.varianteId) {
+        variante = (p.variantes || []).find((v: any) => v.id === Number(it.varianteId));
+        if (!variante) {
+          throw new BadRequestException(`La variante seleccionada para "${p.nombre}" no existe o fue desactivada.`);
+        }
+        nombreLinea = `${p.nombre} · ${variante.nombre}`;
+
+        // Calcular stock de la variante en las bodegas autorizadas de la tienda
+        const vStock = (variante.stock || [])
+          .filter((s: any) => {
+            if (s.bodega && s.bodega.activo === false) return false;
+            const bId = s.bodegaId ?? s.bodega?.id;
+            if (bodegasFiltro && bodegasFiltro.length > 0 && bId && !bodegasFiltro.includes(bId)) {
+              return false;
+            }
+            return true;
+          })
+          .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
+
+        if (vStock < cantidad) {
+          throw new BadRequestException(
+            vStock <= 0
+              ? `La variante "${variante.nombre}" de "${p.nombre}" se encuentra agotada.`
+              : `Stock insuficiente para "${variante.nombre}" de "${p.nombre}": solo hay ${vStock} und disponible(s).`
+          );
+        }
+      } else {
+        const disponible = this.calcularStockDisponible(p, bodegasFiltro);
+        if (disponible < cantidad) {
+          throw new BadRequestException(
+            disponible <= 0
+              ? `El producto "${p.nombre}" se encuentra agotado en inventario.`
+              : `Stock insuficiente para "${p.nombre}": solo hay ${disponible} unidad(es) disponible(s).`
+          );
+        }
       }
+
       const pricing = this.resolverPrecioYImpuesto(p);
       const lineSubtotal = pricing.precioSubtotal * cantidad;
       const lineIva = pricing.impuesto * cantidad;
       const lineTotal = pricing.precioTotal * cantidad;
+
       return {
         productoId: p.id,
-        nombre: p.nombre,
+        varianteId: variante?.id,
+        nombre: nombreLinea,
         cantidad,
         precioSubtotal: pricing.precioSubtotal,
         impuestoUnitario: pricing.impuesto,
