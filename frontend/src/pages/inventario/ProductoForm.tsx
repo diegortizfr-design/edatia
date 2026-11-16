@@ -10,9 +10,13 @@ import {
 import {
   ArrowLeft, Save, Plus, Tag, Layers, Trash2, Edit2,
   Warehouse, ToggleLeft, ToggleRight, Sparkles, X, Info,
-  Package, Check, AlertCircle, RefreshCw, ChevronDown, ChevronUp
+  Package, Check, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Palette
 } from 'lucide-react'
 import { CurrencyInput } from '../../components/CurrencyInput'
+import {
+  PALETA_COLORES, PRESETS_COLORES, PRESETS_TALLAS,
+  slugifyAttr, buscarHexColor, extraerAtributosVisuales
+} from '../../utils/variantesColores'
 
 const TIPOS_IVA = [
   { value: 'GRAVADO_19', label: 'Gravado 19%' },
@@ -35,15 +39,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-
-const PRESETS_TALLAS = [
-  { id: 'bebe', label: '👶 Bebé / Pasos (14 a 17)', tallas: ['14', '15', '16', '17'] },
-  { id: 'nino', label: '🧒 Infantil / Niños (18 a 26)', tallas: ['18', '19', '20', '21', '22', '23', '24', '25', '26'] },
-  { id: 'junior', label: '👟 Junior (27 a 34)', tallas: ['27', '28', '29', '30', '31', '32', '33', '34'] },
-  { id: 'adulto', label: '👞 Adulto (35 a 42)', tallas: ['35', '36', '37', '38', '39', '40', '41', '42'] },
-  { id: 'ropa-bebe', label: '🍼 Ropa Bebé (Meses)', tallas: ['0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M'] },
-  { id: 'ropa', label: '👕 Ropa / Textil (XS a XL)', tallas: ['XS', 'S', 'M', 'L', 'XL'] },
-]
 
 export function ProductoForm() {
   const { id } = useParams<{ id: string }>()
@@ -79,8 +74,11 @@ export function ProductoForm() {
   const [varianteAEditar, setVarianteAEditar] = useState<any>(null)
   const [varianteAjustarStock, setVarianteAjustarStock] = useState<any>(null)
 
-  // Generador rápido de tallas
+  // Generador rápido de tallas y colores
+  const [modoGenerador, setModoGenerador] = useState<'tallas' | 'colores'>('tallas')
   const [customTallasInput, setCustomTallasInput] = useState('')
+  const [customColoresInput, setCustomColoresInput] = useState('')
+  const [coloresSeleccionadosChips, setColoresSeleccionadosChips] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatorMsg, setGeneratorMsg] = useState<string | null>(null)
 
@@ -219,8 +217,8 @@ export function ProductoForm() {
       const existingSkus = new Set((variantes as any[]).map((v: any) => v.sku?.toLowerCase()))
       const existingTallas = new Set(
         (variantes as any[]).map((v: any) => {
-          const att = (v.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
-          return att?.valor?.toLowerCase()
+          const vis = extraerAtributosVisuales(v)
+          return vis.talla?.toLowerCase()
         })
       )
 
@@ -231,7 +229,7 @@ export function ProductoForm() {
         if (existingTallas.has(tClean.toLowerCase())) continue
 
         const baseSku = form.sku || `PROD-${id}`
-        const variantSku = `${baseSku}-${tClean}`.toUpperCase()
+        const variantSku = `${baseSku}-${slugifyAttr(tClean)}`.toUpperCase()
         if (existingSkus.has(variantSku.toLowerCase())) continue
 
         await createVariante({
@@ -255,6 +253,64 @@ export function ProductoForm() {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  // Generador masivo de colores
+  const handleGenerarColores = async (coloresList: string[]) => {
+    if (!id || coloresList.length === 0) return
+    setIsGenerating(true)
+    setGeneratorMsg(null)
+
+    try {
+      const existingSkus = new Set((variantes as any[]).map((v: any) => v.sku?.toLowerCase()))
+      const existingColores = new Set(
+        (variantes as any[]).map((v: any) => {
+          const vis = extraerAtributosVisuales(v)
+          return vis.color?.toLowerCase()
+        })
+      )
+
+      let creadas = 0
+      for (const color of coloresList) {
+        const cClean = color.trim()
+        if (!cClean) continue
+        if (existingColores.has(cClean.toLowerCase())) continue
+
+        const baseSku = form.sku || `PROD-${id}`
+        const slugColor = slugifyAttr(cClean)
+        const variantSku = `${baseSku}-${slugColor}`.toUpperCase()
+        if (existingSkus.has(variantSku.toLowerCase())) continue
+
+        const hex = buscarHexColor(cClean)
+
+        await createVariante({
+          productoId: Number(id),
+          sku: variantSku,
+          nombre: `Color ${cClean}`,
+          atributos: [{ nombre: 'Color', valor: cClean, hex }],
+          precioBase: Number(form.precioBase || 0),
+          costoPromedio: Number(producto?.costoPromedio || 0),
+        })
+        creadas++
+      }
+
+      qc.invalidateQueries({ queryKey: ['variantes', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['productos'] })
+      setGeneratorMsg(`✓ Se generaron ${creadas} variantes de color exitosamente.`)
+      setCustomColoresInput('')
+      setColoresSeleccionadosChips([])
+      setTimeout(() => setGeneratorMsg(null), 4000)
+    } catch (err: any) {
+      setGeneratorMsg(`Error generando variantes: ${err?.response?.data?.message || err.message}`)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const toggleChipColor = (nombreColor: string) => {
+    setColoresSeleccionadosChips(prev =>
+      prev.includes(nombreColor) ? prev.filter(c => c !== nombreColor) : [...prev, nombreColor]
+    )
   }
 
   const totalStockVariante = (v: any) =>
@@ -580,68 +636,203 @@ export function ProductoForm() {
                 </div>
               )}
 
-              {/* Generador Rápido de Tallas */}
-              <div className="bg-gradient-to-r from-indigo-50/70 via-white to-slate-50 border border-indigo-100 rounded-2xl p-5 shadow-xs space-y-4">
+              {/* Generador Rápido de Tallas y Colores */}
+              <div className="bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/50 border border-indigo-100 rounded-2xl p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-indigo-600 text-white rounded-lg">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
                       <Sparkles size={16} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-800">Generador Rápido de Tallas</h3>
-                      <p className="text-xs text-slate-500">Crea múltiples tallas automáticamente con un solo clic</p>
+                      <h3 className="text-sm font-extrabold text-slate-800">Generador Rápido de Variantes</h3>
+                      <p className="text-xs text-slate-500">Crea múltiples tallas o colores automáticamente con un solo clic</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowVarianteModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600 rounded-lg text-xs font-bold transition-all shadow-xs"
-                  >
-                    <Plus size={14} />
-                    <span>+ Variante manual</span>
-                  </button>
-                </div>
-
-                {/* Preajustes rápidos */}
-                <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preajustes de Calzado y Ropa:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESETS_TALLAS.map(p => (
+                  <div className="flex items-center gap-2">
+                    {/* Selector de modo generador */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
                       <button
-                        key={p.id}
                         type="button"
-                        disabled={isGenerating}
-                        onClick={() => handleGenerarTallas(p.tallas)}
-                        className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg text-xs font-medium transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
-                        title={`Generar: ${p.tallas.join(', ')}`}
+                        onClick={() => setModoGenerador('tallas')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          modoGenerador === 'tallas'
+                            ? 'bg-white text-indigo-700 shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-800'
+                        }`}
                       >
-                        <span>{p.label}</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded font-mono">
-                          +{p.tallas.length}
-                        </span>
+                        <Tag size={13} />
+                        <span>Por Tallas</span>
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setModoGenerador('colores')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          modoGenerador === 'colores'
+                            ? 'bg-white text-pink-700 shadow-2xs'
+                            : 'text-slate-600 hover:text-slate-800'
+                        }`}
+                      >
+                        <Palette size={13} />
+                        <span>Por Colores</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowVarianteModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      <span>+ Variante manual</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* O escribir tallas libres */}
-                <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <input
-                    type="text"
-                    value={customTallasInput}
-                    onChange={e => setCustomTallasInput(e.target.value)}
-                    placeholder="O ingresa tallas separadas por comas (ejemplo: 18, 19, 20, 21)..."
-                    className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-medium"
-                  />
-                  <button
-                    type="button"
-                    disabled={isGenerating || !customTallasInput.trim()}
-                    onClick={() => handleGenerarTallas(customTallasInput.split(','))}
-                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs"
-                  >
-                    {isGenerating ? 'Generando...' : 'Crear tallas'}
-                  </button>
-                </div>
+                {/* MODO 1: TALLAS */}
+                {modoGenerador === 'tallas' && (
+                  <div className="space-y-3 animate-in fade-in duration-150">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preajustes de Calzado y Ropa:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {PRESETS_TALLAS.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => handleGenerarTallas(p.tallas)}
+                            className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            title={`Generar: ${p.tallas.join(', ')}`}
+                          >
+                            <span>{p.label}</span>
+                            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">
+                              +{p.tallas.length}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <input
+                        type="text"
+                        value={customTallasInput}
+                        onChange={e => setCustomTallasInput(e.target.value)}
+                        placeholder="O ingresa tallas separadas por comas (ejemplo: 18, 19, 20, 21)..."
+                        className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-medium"
+                      />
+                      <button
+                        type="button"
+                        disabled={isGenerating || !customTallasInput.trim()}
+                        onClick={() => handleGenerarTallas(customTallasInput.split(','))}
+                        className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs cursor-pointer"
+                      >
+                        {isGenerating ? 'Generando...' : 'Crear tallas'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODO 2: COLORES */}
+                {modoGenerador === 'colores' && (
+                  <div className="space-y-4 animate-in fade-in duration-150">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preajustes Rápidos de Color:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {PRESETS_COLORES.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => handleGenerarColores(p.colores)}
+                            className="px-3 py-1.5 bg-white border border-slate-200 hover:border-pink-300 hover:bg-pink-50/50 text-slate-700 hover:text-pink-700 rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            title={`Generar: ${p.colores.join(', ')}`}
+                          >
+                            <span>{p.label}</span>
+                            <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-mono">
+                              +{p.colores.length}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Paleta visual de selección múltiple */}
+                    <div className="pt-2 border-t border-slate-200/60 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          O toca los colores que deseas para este producto:
+                        </p>
+                        {coloresSeleccionadosChips.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setColoresSeleccionadosChips([])}
+                            className="text-[11px] text-slate-400 hover:text-slate-600 font-semibold cursor-pointer"
+                          >
+                            Limpiar selección ({coloresSeleccionadosChips.length})
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {PALETA_COLORES.map(col => {
+                          const isSelected = coloresSeleccionadosChips.includes(col.nombre)
+                          return (
+                            <button
+                              key={col.nombre}
+                              type="button"
+                              onClick={() => toggleChipColor(col.nombre)}
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-pink-50 border-pink-500 text-pink-900 ring-2 ring-pink-200 shadow-2xs'
+                                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                              }`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/15 shadow-2xs flex-shrink-0"
+                                style={{ backgroundColor: col.hex }}
+                              />
+                              <span>{col.nombre}</span>
+                              {isSelected && <Check size={12} className="text-pink-600" />}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {coloresSeleccionadosChips.length > 0 && (
+                        <div className="pt-1 flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => handleGenerarColores(coloresSeleccionadosChips)}
+                            className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Sparkles size={13} />
+                            <span>Generar {coloresSeleccionadosChips.length} variantes de color seleccionadas</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* O escribir colores libres */}
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <input
+                        type="text"
+                        value={customColoresInput}
+                        onChange={e => setCustomColoresInput(e.target.value)}
+                        placeholder="O escribe colores separados por comas (ejemplo: Rosado, Azul Celeste, Beige)..."
+                        className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-pink-100 focus:border-pink-500 font-medium"
+                      />
+                      <button
+                        type="button"
+                        disabled={isGenerating || !customColoresInput.trim()}
+                        onClick={() => handleGenerarColores(customColoresInput.split(','))}
+                        className="px-4 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 whitespace-nowrap shadow-xs cursor-pointer"
+                      >
+                        {isGenerating ? 'Generando...' : 'Crear colores'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Listado de Variantes */}
@@ -649,7 +840,7 @@ export function ProductoForm() {
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Tag size={16} className="text-indigo-600" />
-                    <h3 className="font-bold text-slate-800 text-sm">Tallas y Variantes registradas</h3>
+                    <h3 className="font-bold text-slate-800 text-sm">Variantes Registradas</h3>
                     <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
                       {variantes.length}
                     </span>
@@ -661,9 +852,9 @@ export function ProductoForm() {
                 ) : variantes.length === 0 ? (
                   <div className="py-16 px-4 text-center">
                     <Layers size={36} className="text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-slate-700">Este producto aún no tiene tallas o variantes</p>
+                    <p className="text-sm font-semibold text-slate-700">Este producto aún no tiene variantes registradas</p>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                      Usa el generador rápido de arriba para crear las tallas de calzado en 1 clic, o agrega una variante manual.
+                      Usa el generador rápido de arriba para crear variantes por talla o por color en 1 clic, o agrega una variante manual.
                     </p>
                   </div>
                 ) : (
@@ -671,9 +862,9 @@ export function ProductoForm() {
                     <table className="w-full text-left border-collapse text-sm">
                       <thead>
                         <tr className="bg-slate-50/75 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          <th className="p-4">Talla / Atributo</th>
-                          <th className="p-4">Ref. Fábrica (Talla)</th>
-                          <th className="p-4">SKU / Código de Barras</th>
+                          <th className="p-4">Variante / Atributo</th>
+                          <th className="p-4">Ref. Fábrica (SKU)</th>
+                          <th className="p-4">Código de Barras</th>
                           <th className="p-4 text-right">Precio Base</th>
                           <th className="p-4 text-center">Stock Físico</th>
                           <th className="p-4 text-center">Estado</th>
@@ -683,20 +874,40 @@ export function ProductoForm() {
                       <tbody className="divide-y divide-slate-100">
                         {variantes.map((v: any) => {
                           const stockTotal = totalStockVariante(v)
-                          const tallaAttr = (v.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+                          const vis = extraerAtributosVisuales(v)
+
                           return (
                             <tr key={v.id} className={`hover:bg-slate-50/50 transition-colors ${!v.activo ? 'opacity-60 bg-slate-50/30' : ''}`}>
-                              {/* Talla / Atributo */}
+                              {/* Variante / Atributo */}
                               <td className="p-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs font-mono">
-                                    {tallaAttr ? `Talla ${tallaAttr.valor}` : v.nombre}
-                                  </span>
-                                  {v.atributos?.length > 1 && (
-                                    <span className="text-[11px] text-slate-400">
-                                      ({v.atributos.filter((a: any) => a.nombre?.toLowerCase() !== 'talla').map((a: any) => `${a.nombre}: ${a.valor}`).join(', ')})
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {vis.esColor && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-pink-50/60 border border-pink-200 text-pink-900 font-bold text-xs shadow-2xs">
+                                      <span
+                                        className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-2xs flex-shrink-0"
+                                        style={{ backgroundColor: vis.colorHex || '#94A3B8' }}
+                                      />
+                                      <span>Color {vis.color}</span>
                                     </span>
                                   )}
+
+                                  {vis.esTalla && (
+                                    <span className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-extrabold text-xs font-mono shadow-2xs">
+                                      Talla {vis.talla}
+                                    </span>
+                                  )}
+
+                                  {!vis.esColor && !vis.esTalla && (
+                                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs">
+                                      {v.nombre}
+                                    </span>
+                                  )}
+
+                                  {v.atributos?.filter((a: any) => a.nombre?.toLowerCase() !== 'talla' && a.nombre?.toLowerCase() !== 'color').map((a: any, i: number) => (
+                                    <span key={i} className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded">
+                                      {a.nombre}: {a.valor}
+                                    </span>
+                                  ))}
                                 </div>
                               </td>
 
@@ -739,7 +950,7 @@ export function ProductoForm() {
                                 <button
                                   type="button"
                                   onClick={() => mutToggleVariante.mutate(v.id)}
-                                  className="text-slate-400 hover:text-slate-700 p-1"
+                                  className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
                                   title={v.activo ? 'Desactivar variante' : 'Activar variante'}
                                 >
                                   {v.activo ? (
@@ -756,7 +967,7 @@ export function ProductoForm() {
                                   <button
                                     type="button"
                                     onClick={() => setVarianteAjustarStock(v)}
-                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-100 transition-colors"
+                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-100 transition-colors cursor-pointer"
                                     title="Ajustar stock en bodega"
                                   >
                                     + Stock
@@ -764,7 +975,7 @@ export function ProductoForm() {
                                   <button
                                     type="button"
                                     onClick={() => setVarianteAEditar(v)}
-                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                     title="Editar variante"
                                   >
                                     <Edit2 size={14} />
@@ -776,7 +987,7 @@ export function ProductoForm() {
                                         mutDeleteVariante.mutate(v.id)
                                       }
                                     }}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                     title="Eliminar variante"
                                   >
                                     <Trash2 size={14} />
@@ -841,76 +1052,303 @@ export function ProductoForm() {
 // ── Modal de creación / edición de variante individual ──
 function ModalVarianteForm({ producto, baseSku, precioSugerido, variante, onClose, onSubmit, isLoading }: any) {
   const isEditing = !!variante
+
+  // Detección inicial de atributos si se está editando
+  const visInicial = variante ? extraerAtributosVisuales(variante) : null
+  const initialTipo: 'talla' | 'color' | 'ambos' = (() => {
+    if (!variante) return 'talla'
+    if (visInicial?.esTalla && visInicial?.esColor) return 'ambos'
+    if (visInicial?.esColor) return 'color'
+    return 'talla'
+  })()
+
+  const [tipoVariante, setTipoVariante] = useState<'talla' | 'color' | 'ambos'>(initialTipo)
+  const [talla, setTalla] = useState(visInicial?.talla || '')
+  const [color, setColor] = useState(visInicial?.color || '')
+  const [hexColor, setHexColor] = useState(visInicial?.colorHex || '#F472B6')
   const [sku, setSku] = useState(variante?.sku ?? (baseSku ? `${baseSku}-` : ''))
-  const [talla, setTalla] = useState(() => {
-    const attr = (variante?.atributos ?? []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
-    return attr?.valor ?? ''
-  })
   const [precio, setPrecio] = useState(variante?.precioBase ? String(variante.precioBase) : String(precioSugerido || '0'))
   const [codigoBarras, setCodigoBarras] = useState(variante?.codigoBarras ?? '')
 
+  // Generación automática del SKU según tipo de variante
+  const actualizarSkuSugerido = (tipo: 'talla' | 'color' | 'ambos', tVal: string, cVal: string) => {
+    if (isEditing || !baseSku) return
+    const tSlug = slugifyAttr(tVal)
+    const cSlug = slugifyAttr(cVal)
+
+    if (tipo === 'talla' && tSlug) {
+      setSku(`${baseSku}-${tSlug}`)
+    } else if (tipo === 'color' && cSlug) {
+      setSku(`${baseSku}-${cSlug}`)
+    } else if (tipo === 'ambos') {
+      const partes = [tSlug, cSlug].filter(Boolean)
+      setSku(partes.length > 0 ? `${baseSku}-${partes.join('-')}` : `${baseSku}-`)
+    }
+  }
+
+  const handleTipoChange = (nuevoTipo: 'talla' | 'color' | 'ambos') => {
+    setTipoVariante(nuevoTipo)
+    actualizarSkuSugerido(nuevoTipo, talla, color)
+  }
+
+  const handleTallaChange = (val: string) => {
+    setTalla(val)
+    actualizarSkuSugerido(tipoVariante, val, color)
+  }
+
+  const handleSelectColor = (colItem: typeof PALETA_COLORES[0]) => {
+    setColor(colItem.nombre)
+    setHexColor(colItem.hex)
+    actualizarSkuSugerido(tipoVariante, talla, colItem.nombre)
+  }
+
+  const handleColorCustomChange = (val: string) => {
+    setColor(val)
+    const autotHex = buscarHexColor(val)
+    setHexColor(autotHex)
+    actualizarSkuSugerido(tipoVariante, talla, val)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!sku.trim()) return alert('El SKU es obligatorio')
-    if (!talla.trim()) return alert('La talla es obligatoria')
+    if (!sku.trim()) return alert('El SKU / Ref. de Fábrica es obligatorio')
+
+    let atributos: Array<{ nombre: string; valor: string; hex?: string }> = []
+    let nombreVariante = ''
+
+    if (tipoVariante === 'talla') {
+      if (!talla.trim()) return alert('La talla es obligatoria')
+      atributos = [{ nombre: 'Talla', valor: talla.trim() }]
+      nombreVariante = `Talla ${talla.trim()}`
+    } else if (tipoVariante === 'color') {
+      if (!color.trim()) return alert('El color es obligatorio. Elige un color de la paleta o escribe su nombre.')
+      atributos = [{ nombre: 'Color', valor: color.trim(), hex: hexColor }]
+      nombreVariante = `Color ${color.trim()}`
+    } else {
+      if (!talla.trim()) return alert('La talla es obligatoria')
+      if (!color.trim()) return alert('El color es obligatorio')
+      atributos = [
+        { nombre: 'Talla', valor: talla.trim() },
+        { nombre: 'Color', valor: color.trim(), hex: hexColor }
+      ]
+      nombreVariante = `Talla ${talla.trim()} / Color ${color.trim()}`
+    }
 
     onSubmit({
       sku: sku.trim().toUpperCase(),
-      nombre: `Talla ${talla.trim()}`,
-      atributos: [{ nombre: 'Talla', valor: talla.trim() }],
-      precioBase: Number(precio || 0),
+      nombre: nombreVariante,
+      atributos,
+      precioBase: parseFloat(precio || '0'),
       codigoBarras: codigoBarras.trim() || undefined,
     })
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-              <Tag size={18} />
+              {tipoVariante === 'color' ? <Palette size={18} /> : <Tag size={18} />}
             </div>
-            <h2 className="font-bold text-slate-800 text-sm">
-              {isEditing ? 'Editar Talla / Variante' : 'Nueva Talla / Variante'}
-            </h2>
+            <div>
+              <h2 className="font-bold text-slate-800 text-sm">
+                {isEditing ? 'Editar Variante' : 'Nueva Variante del Producto'}
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Define si este artículo varía por talla, por color o por ambos.
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Talla *</label>
-            <input
-              required
-              type="text"
-              value={talla}
-              onChange={e => {
-                const val = e.target.value
-                setTalla(val)
-                if (!isEditing && baseSku) {
-                  setSku(`${baseSku}-${val}`.toUpperCase())
-                }
-              }}
-              placeholder="Ej. 18, 19, 20 o M, L"
-              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-bold"
-            />
-          </div>
+        {/* SELECTOR DE TIPO DE VARIANTE (TALLA, COLOR, AMBOS) */}
+        <div className="px-6 pt-4">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+            Tipo de Variante *
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => handleTipoChange('talla')}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                tipoVariante === 'talla'
+                  ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs ring-1 ring-indigo-300'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <Tag size={16} />
+              <span>Por Talla</span>
+              <span className="text-[9px] font-normal opacity-80 text-slate-500">Ropa / Calzado</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={() => handleTipoChange('color')}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                tipoVariante === 'color'
+                  ? 'bg-pink-50 border-pink-500 text-pink-700 shadow-2xs ring-1 ring-pink-300'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <Palette size={16} />
+              <span>Por Color</span>
+              <span className="text-[9px] font-normal opacity-80 text-slate-500">Tonos / Estilos</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTipoChange('ambos')}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                tipoVariante === 'ambos'
+                  ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-2xs ring-1 ring-purple-300'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <Sparkles size={16} />
+              <span>Talla + Color</span>
+              <span className="text-[9px] font-normal opacity-80 text-slate-500">Combinados</span>
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* CAMPO DE TALLA */}
+          {(tipoVariante === 'talla' || tipoVariante === 'ambos') && (
+            <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase">
+                Talla o Medida *
+              </label>
+              <input
+                required
+                type="text"
+                value={talla}
+                onChange={e => handleTallaChange(e.target.value)}
+                placeholder="Ej. 18, 19, 20 o M, L"
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-bold"
+              />
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] text-slate-400 font-semibold">Tallas comunes:</span>
+                {['18', '20', '22', '24', '26', 'XS', 'S', 'M', 'L', '0-3M', '6-9M'].map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleTallaChange(s)}
+                    className="px-2 py-0.5 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 rounded text-[11px] font-mono text-slate-700 hover:text-indigo-700 transition-colors cursor-pointer"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CAMPO DE COLOR */}
+          {(tipoVariante === 'color' || tipoVariante === 'ambos') && (
+            <div className="bg-pink-50/30 p-3.5 rounded-xl border border-pink-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
+                  Selecciona el Color *
+                </label>
+                {color && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white border border-pink-200 text-pink-900 text-xs font-bold">
+                    <span
+                      className="w-3 h-3 rounded-full border border-black/15 shadow-2xs"
+                      style={{ backgroundColor: hexColor }}
+                    />
+                    <span>{color}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Swatches interactivos */}
+              <div>
+                <p className="text-[10px] text-slate-400 font-medium mb-1.5">Toca un color para seleccionarlo:</p>
+                <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5">
+                  {PALETA_COLORES.map(col => {
+                    const isSelected = color?.toLowerCase() === col.nombre.toLowerCase()
+                    return (
+                      <button
+                        key={col.nombre}
+                        type="button"
+                        onClick={() => handleSelectColor(col)}
+                        title={`${col.nombre} (${col.hex})`}
+                        className={`group relative p-1 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-pink-500 bg-white ring-2 ring-pink-300 shadow-xs'
+                            : 'border-slate-200/80 bg-white hover:border-pink-300'
+                        }`}
+                      >
+                        <span
+                          className="w-6 h-6 rounded-lg border border-black/10 shadow-2xs flex items-center justify-center transition-transform group-hover:scale-105"
+                          style={{ backgroundColor: col.hex }}
+                        >
+                          {isSelected && (
+                            <Check size={13} className={col.hex === '#FFFFFF' || col.hex === '#E2E8F0' ? 'text-slate-900' : 'text-white'} />
+                          )}
+                        </span>
+                        <span className="text-[9px] font-semibold text-slate-600 truncate max-w-[50px] text-center leading-tight">
+                          {col.nombre.split(' ')[0]}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Nombre de color personalizado y picker */}
+              <div className="pt-2 border-t border-pink-100/80 flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
+                    Nombre del color
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={color}
+                    onChange={e => handleColorCustomChange(e.target.value)}
+                    placeholder="Ej: Rosado, Azul Celeste, Beige..."
+                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-pink-100 focus:border-pink-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">
+                    Tono (Hex)
+                  </label>
+                  <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2 py-1">
+                    <input
+                      type="color"
+                      value={hexColor}
+                      onChange={e => setHexColor(e.target.value)}
+                      className="w-6 h-6 rounded border-0 cursor-pointer p-0 bg-transparent"
+                      title="Seleccionar tono exacto"
+                    />
+                    <span className="text-[10px] font-mono font-bold text-slate-500">{hexColor}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* REF. DE FÁBRICA / SKU */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Ref. de Fábrica (Talla) *</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+              Ref. de Fábrica (SKU) *
+            </label>
             <input
               required
               type="text"
               value={sku}
               onChange={e => setSku(e.target.value)}
-              placeholder="Ej. TG26-211-18 o REF-18"
-              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-mono font-bold"
+              placeholder="Ej. TG26-211-18 o REF-ROSA"
+              className="w-full p-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 font-mono font-bold uppercase"
             />
           </div>
 
+          {/* PRECIO DE VENTA */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Precio de Venta</label>
             <CurrencyInput
@@ -919,6 +1357,7 @@ function ModalVarianteForm({ producto, baseSku, precioSugerido, variante, onClos
             />
           </div>
 
+          {/* SKU / CÓDIGO DE BARRAS */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">SKU / Código de Barras (Opcional)</label>
             <input
@@ -934,16 +1373,16 @@ function ModalVarianteForm({ producto, baseSku, precioSugerido, variante, onClos
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
+              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
             >
-              {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Talla'}
+              {isLoading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Guardar Variante'}
             </button>
           </div>
         </form>

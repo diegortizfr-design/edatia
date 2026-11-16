@@ -6,6 +6,7 @@ import {
   toggleVariante, ajustarStockVariante, getBodegas,
 } from '../../services/inventario.service'
 import { Plus, Tag, ChevronDown, ChevronUp, X, Edit2, ToggleLeft, ToggleRight, Warehouse, Search, ExternalLink, Sparkles } from 'lucide-react'
+import { buscarHexColor } from '../../utils/variantesColores'
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
@@ -194,11 +195,28 @@ export function Variantes() {
 
                 {/* Atributos */}
                 <div className="flex flex-wrap gap-1.5">
-                  {(v.atributos as any[] ?? []).map((a: any, i: number) => (
-                    <span key={i} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-                      {a.nombre}: {a.valor}
-                    </span>
-                  ))}
+                  {(v.atributos as any[] ?? []).map((a: any, i: number) => {
+                    const isColor = a.nombre?.toLowerCase() === 'color'
+                    const hex = a.hex || (isColor ? buscarHexColor(a.valor) : null)
+                    return (
+                      <span
+                        key={i}
+                        className={`text-xs px-2 py-0.5 rounded-lg font-medium inline-flex items-center gap-1.5 ${
+                          isColor
+                            ? 'bg-pink-50 text-pink-900 border border-pink-200'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                        }`}
+                      >
+                        {hex && (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border border-black/15 shadow-2xs"
+                            style={{ backgroundColor: hex }}
+                          />
+                        )}
+                        <span>{a.nombre}: {a.valor}</span>
+                      </span>
+                    )
+                  })}
                 </div>
 
                 {/* Precios */}
