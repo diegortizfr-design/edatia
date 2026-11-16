@@ -47,27 +47,32 @@ export function CompartirRedesModal({ isOpen, onClose, producto, redInicial = 'w
   const productSlug = producto.slug || producto.id
   const productoUrl = `${storeDomain}/producto/${productSlug}`
 
-  // Texto optimizado para WhatsApp
-  const textoWhatsApp = `🍼 *${producto.nombre}*
+  // Texto optimizado para WhatsApp (con enlace arriba para vista previa inmediata y máxima conversión)
+  const textoWhatsApp = `🛒 *Pídelo aquí:* 👉 ${productoUrl}
+
+🍼 *${producto.nombre}*
 💰 *Precio: ${precioFmt}*
 ✨ ${producto.descripcion || 'Disponible en Distribuidora Baby World'}
+📍 *Pañalera Baby World* • Envíos a toda Colombia 🚚`
 
-🛒 *Pídelo aquí:* 👉 ${productoUrl}
-📍 *Pañalera Baby World*`
+  // Texto optimizado para Instagram (con enlace visible antes del corte "...más")
+  const textoInstagram = `🛒 Link directo: 👉 ${productoUrl} (o en el enlace de nuestra biografía)
 
-  // Texto optimizado para Instagram (Feed y Stories)
-  const textoInstagram = `✨ ${producto.nombre} ✨
+✨ ${producto.nombre} ✨
+💰 Precio especial: ${precioFmt}
 
 ${producto.descripcion || 'Llegó a Distribuidora Baby World lo mejor para el bienestar y confort de tu bebé.'}
 
-💰 Precio especial: ${precioFmt}
 📦 Envíos rápidos y seguros a todo el país.
-📲 ¿Quieres el tuyo o asesoría personalizada? Toca el link de nuestra biografía o escríbenos por mensaje directo.
+📲 Escríbenos por DM o WhatsApp para asesoría personalizada.
 
 #BabyWorld #Pañalera #BebesColombia #CuidadoDelBebe #Maternidad #MamaPrimeriza #ProductosParaBebes #Colombia #TiendaDeBebes`
 
-  // Guion estructurado para TikTok (Video corto / carrusel)
-  const textoTikTok = `🎬 GANCHO (0-3 seg):
+  // Guion estructurado para TikTok (con llamado al link prioritario)
+  const textoTikTok = `📲 LINK DIRECTO AL PRODUCTO:
+👉 ${productoUrl} (o toca el enlace en nuestro perfil)
+
+🎬 GANCHO (0-3 seg):
 "¿Buscando lo mejor y más práctico para tu bebé? 👶 Mira lo que acaba de llegar a Baby World..."
 
 📦 PRESENTACIÓN:
@@ -76,20 +81,20 @@ ${producto.descripcion || 'Llegó a Distribuidora Baby World lo mejor para el bi
 💰 PRECIO:
 "Por solo ${precioFmt} en Distribuidora Baby World."
 
-📲 LLAMADO A LA ACCIÓN:
-"Toca el enlace en nuestro perfil para pedir el tuyo por WhatsApp con envíos a toda Colombia 🚚"
-
 🏷️ HASHTAGS:
 #BabyWorld #Pañalera #TikTokMadeMeBuyIt #MamaPrimeriza #Bebes #MaternidadReal #CuidadoDelBebe #Colombia`
 
-  // Texto para Facebook Marketplace
+  // Texto para Facebook Marketplace (enlace y precio al inicio para evitar que se pierdan en el "ver más")
   const tituloMarketplace = producto.nombre.slice(0, 100)
-  const descripcionMarketplace = `${producto.descripcion || producto.nombre}
-
+  const descripcionMarketplace = `🛒 Compra online o cotiza aquí: 👉 ${productoUrl}
 💰 Precio: ${precioFmt}
+
+🍼 ${producto.nombre}
+
+${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad de tu bebé.'}
+
 📍 Pañalera Baby World
-🛒 Compra online o cotiza en nuestra tienda oficial:
-👉 ${productoUrl}`
+🚚 Envíos seguros a todo el país`
 
   // URL de la imagen principal
   const imagenOriginal = producto.imagen || (Array.isArray(producto.metadataWeb?.imagenes) ? producto.metadataWeb.imagenes[0] : null)
