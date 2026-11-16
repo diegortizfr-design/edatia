@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart,
+  ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart, ShoppingBag,
   Building2, Layers, DollarSign, CheckCircle2,
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
