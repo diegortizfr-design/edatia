@@ -9,12 +9,13 @@ import {
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock, Loader2
+  BarChart3, Clock, Loader2, Share2
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
 } from '../../services/inventario.service'
 import { getImpuestos } from '../../services/erp.service'
+import { CompartirRedesModal } from '../../components/CompartirRedesModal'
 
 const Barcode = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
   <svg
@@ -1500,6 +1501,7 @@ export function ConfigProductoDetalle() {
     const params = new URLSearchParams(window.location.search)
     return params.get('tab') || 'web'
   })
+  const [compartirModalOpen, setCompartirModalOpen] = useState(false)
 
   const { data: producto, isLoading, isError, refetch } = useQuery({
     queryKey: ['producto_detalle', productoId],
@@ -1700,6 +1702,15 @@ export function ConfigProductoDetalle() {
 
           {/* Acciones del header */}
           <div className="flex items-center gap-2 shrink-0">
+            {producto.publicadoWeb && (
+              <button 
+                onClick={() => setCompartirModalOpen(true)} 
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Compartir en Estado de WhatsApp o Marketplace"
+              >
+                <Share2 size={13} /> Compartir en Redes
+              </button>
+            )}
             <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
               Catálogo
             </button>
@@ -1746,6 +1757,15 @@ export function ConfigProductoDetalle() {
           {activeTab === 'facturas'    && <TabFacturas productoId={productoId} />}
         </div>
       </div>
+
+      {/* Modal Compartir en Redes (WhatsApp Estados y Marketplace) */}
+      {producto && (
+        <CompartirRedesModal
+          isOpen={compartirModalOpen}
+          onClose={() => setCompartirModalOpen(false)}
+          producto={producto}
+        />
+      )}
     </div>
   )
 }
