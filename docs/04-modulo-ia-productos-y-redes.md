@@ -50,6 +50,15 @@ POST   /api/v1/digital/ia/productos
        Campos: fotos (1-3 archivos), precio (COP), notas (opcional)
        Respuesta: { borrador: Producto, advertenciaIa?: string }
 
+POST   /api/v1/digital/ia/productos/:id/generar-info-publicacion
+       Genera automáticamente los textos comerciales y SEO para e-commerce
+       Respuesta: { nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb }
+
+POST   /api/v1/digital/ia/productos/:id/procesar-imagen-estudio
+       Content-Type: multipart/form-data (archivo en 'file') o application/json ({ imageUrl })
+       Genera fondo blanco estudio (#FFFFFF) 1:1 1200x1200 px con Gemini + Sharp sin logos
+       Respuesta: { url: string, imagenes: string[], producto: Producto }
+
 POST   /api/v1/digital/ia/productos/:id/regenerar-imagen
        Body: { indice: number, modo: 'ia' | 'original', instruccion?: string }
        Respuesta: { producto: Producto, nuevaImagenUrl: string, indice: number }
@@ -59,8 +68,8 @@ PATCH  /api/v1/digital/ia/productos/:id
        Respuesta: Producto actualizado
 
 POST   /api/v1/digital/ia/productos/:id/compartido
-       Body: { canal: 'whatsapp' | 'facebook' | 'instagram' | 'copiar_link' }
-       Respuesta: { ok: true, totalCompartidos: number }
+       Body: { red: 'whatsapp' | 'instagram' | 'tiktok' | 'marketplace' }
+       Respuesta: { success: true, red: string, fecha: string }
 
 GET    /api/v1/public/tiendas/:slug/og/:productoSlug
        Endpoint público HTML para crawlers (WhatsApp, Facebook, Twitter, Telegram)
@@ -87,9 +96,15 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
 * **Componentes Clave:**
   - `ModalProductoIa.tsx`: Modal responsivo con arrastrar y soltar, subida de fotos, atajo de pegado desde portapapeles (`Ctrl + V`), barra de progreso en tiempo real, visor de miniaturas con fallback amigable para iPhone (HEIC), y editor rápido en línea de títulos y precios.
   - `CompartirRedesModal.tsx`:
-    - **Pestaña WhatsApp:** Genera imagen vertical de estado/story (1080×1920 px con Cloudinary padding), botón de compartir nativo móvil (`navigator.share`) y botón para WhatsApp Web en escritorio con copy publicitario optimizado con emojis y llamado a la acción.
+    - **Pestaña WhatsApp:** Genera imagen vertical de estado/story (1080×1920 px con Cloudinary padding), botón de compartir nativo móvil (`navigator.share`), botón directo para enviar a clientes por chat (`wa.me/?text=...`) y botón para WhatsApp Web en escritorio con copy publicitario optimizado con emojis y llamado a la acción.
+    - **Pestaña Instagram:** Selector Feed (1:1) o Story (9:16), copia de caption comercial persuasivo con emojis y hashtags locales colombianos de bebés y maternidad, descarga de imagen y acceso directo a Instagram.
+    - **Pestaña TikTok:** Guion publicitario estructurado con gancho (Hook 0-3s), presentación, precio y llamado a la acción (CTA) con hashtags virales, descarga de imagen vertical (9:16) y apertura directa a TikTok.
     - **Pestaña Facebook Marketplace:** Formato semi-automatizado para copiar Título limpio, Precio en COP, Descripción detallada con URL directa a la tienda y botón de descarga de la foto de catálogo.
-  - Botones de activación en `CatalogoDigital.tsx` ("✨ Nuevo con IA") y `ConfigProductoDetalle.tsx` ("Compartir en Redes").
+  - `ConfigProductoDetalle.tsx` (Pestaña "Web / Digital"):
+    - **Autogeneración con IA:** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera automáticamente y puebla `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`.
+    - **Fondo de estudio IA en Imágenes (URLs):** Checkbox toggle activado por defecto para que cualquier foto subida, arrastrada o agregada por URL pase por el procesamiento de fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a estudio a demanda.
+    - **Difusión en Redes:** Barra omnicanal superior y botones directos por producto en el encabezado (WhatsApp, Instagram, TikTok y Marketplace).
+  - `CatalogoDigital.tsx`: Botones de difusión omnicanal y creación asistida rápida.
 
 ---
 
@@ -115,3 +130,4 @@ Esto asegura que cuando un enlace del producto se comparta por chat o publicaci�
 - **Seguridad:** `.env` verificado en `.gitignore`; clave de API protegida exclusivamente en el backend.
 - **Higiene:** Scripts de diagnóstico y binarios temporales eliminados del repositorio.
 - **Compatibilidad móvil:** Probado con fotos HEIC nativas de iOS y encuadres responsivos.
+
