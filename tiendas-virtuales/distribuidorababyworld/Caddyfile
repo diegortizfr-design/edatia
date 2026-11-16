@@ -2,6 +2,15 @@
     root * /usr/share/caddy
     file_server
 
+    # Bots de redes sociales (WhatsApp, Facebook, Telegram, etc.): entregar HTML con Open Graph
+    @crawlers {
+        header_regexp User-Agent "(?i)(facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot|Discordbot)"
+        path_regexp prod ^/producto/([^/?#]+)
+    }
+    reverse_proxy @crawlers http://api:4000 {
+        rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
+    }
+
     @html {
         path *.html
         path /
