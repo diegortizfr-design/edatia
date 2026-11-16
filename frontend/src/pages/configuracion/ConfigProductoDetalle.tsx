@@ -9,7 +9,8 @@ import {
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock, Loader2, Share2, Sparkles, MessageCircle, Video, Wand2
+  BarChart3, Clock, Loader2, Share2, Sparkles, MessageCircle, Video, Wand2,
+  Eye, ChevronLeft, ChevronRight, Download
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
@@ -82,6 +83,39 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
   const [generandoInfo, setGenerandoInfo] = useState(false)
   const [fondoEstudioIa, setFondoEstudioIa] = useState(true)
   const [procesandoThumb, setProcesandoThumb] = useState<string | null>(null)
+  const [previewImgIndex, setPreviewImgIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (previewImgIndex === null) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewImgIndex(null)
+      if (e.key === 'ArrowLeft' && data.imagenes.length > 1) {
+        setPreviewImgIndex(prev => (prev !== null && prev > 0 ? prev - 1 : data.imagenes.length - 1))
+      }
+      if (e.key === 'ArrowRight' && data.imagenes.length > 1) {
+        setPreviewImgIndex(prev => (prev !== null && prev < data.imagenes.length - 1 ? prev + 1 : 0))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previewImgIndex, data.imagenes.length])
+
+  const marcarImagenPrincipal = async (index: number) => {
+    if (index === 0 || !data.imagenes[index]) return
+    const updatedImgs = [...data.imagenes]
+    const [selected] = updatedImgs.splice(index, 1)
+    updatedImgs.unshift(selected)
+    setData(prev => ({ ...prev, imagenes: updatedImgs }))
+    setPreviewImgIndex(0)
+    try {
+      const payload = buildPayload(data, updatedImgs)
+      await updateProducto(producto.id, payload)
+      refetch()
+      toast.success('Foto marcada como principal ✓')
+    } catch (err: any) {
+      toast.error('Error al actualizar imagen principal')
+    }
+  }
 
   useEffect(() => {
     setData({
@@ -272,6 +306,11 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
   }
 
   const removeImagen = async (i: number) => {
+    if (previewImgIndex === i) {
+      setPreviewImgIndex(null)
+    } else if (previewImgIndex !== null && previewImgIndex > i) {
+      setPreviewImgIndex(previewImgIndex - 1)
+    }
     const imageToDelete = data.imagenes[i];
     const updatedImgs = data.imagenes.filter((_, j) => j !== i)
     setData(prev => ({ ...prev, imagenes: updatedImgs }))
@@ -540,22 +579,44 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
                     Principal
                   </div>
                 )}
-                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative">
-                  <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
+                <div 
+                  onClick={() => setPreviewImgIndex(i)}
+                  className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative cursor-pointer group/thumb hover:ring-2 hover:ring-indigo-400 transition-all shadow-xs"
+                  title="Clic para previsualizar en grande"
+                >
+                  <img src={getMediaUrl(img)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain p-0.5" />
+                  <div className="absolute inset-0 bg-indigo-950/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity text-white">
+                    <Eye size={16} />
+                  </div>
                 </div>
-                <span className="truncate max-w-[150px] font-mono select-none">{img}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate max-w-[140px] font-mono select-none text-[11px] font-semibold text-slate-700">{img.split('/').pop()}</span>
+                  <span className="text-[10px] text-slate-400">Foto {i + 1}</span>
+                </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImgIndex(i)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Previsualizar imagen en grande"
+                  >
+                    <Eye size={13} />
+                  </button>
                   <button
                     type="button"
                     disabled={procesandoThumb === img}
                     onClick={() => handleConvertirFondoEstudio(img)}
-                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                     title="Transformar esta foto a fondo blanco estudio con IA"
                   >
-                    {procesandoThumb === img ? <Loader2 size={12} className="animate-spin text-indigo-600" /> : <Wand2 size={12} />}
+                    {procesandoThumb === img ? <Loader2 size={13} className="animate-spin text-indigo-600" /> : <Wand2 size={13} />}
                   </button>
                   <button type="button" onClick={() => removeImagen(i)}
-                    className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
+                    className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
+                    title="Eliminar imagen"
+                  >
+                    <X size={13} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -568,6 +629,143 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
           </div>
         )}
       </div>
+
+      {/* ── MODAL LIGHTBOX DE PREVISUALIZACIÓN DE IMÁGENES ── */}
+      {previewImgIndex !== null && data.imagenes[previewImgIndex] && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setPreviewImgIndex(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Lightbox */}
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                  <Eye size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      Previsualización de Imagen
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                      {previewImgIndex + 1} de {data.imagenes.length}
+                    </span>
+                    {previewImgIndex === 0 && (
+                      <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full uppercase">
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <a
+                  href={getMediaUrl(data.imagenes[previewImgIndex])}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  title="Abrir imagen original en nueva pestaña"
+                >
+                  <ExternalLink size={16} />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  title="Cerrar vista previa (Esc)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenedor central de la imagen con controles de navegación */}
+            <div className="relative flex-1 bg-slate-100/80 flex items-center justify-center p-4 min-h-[350px] max-h-[58vh] overflow-hidden select-none">
+              {/* Botón Anterior */}
+              {data.imagenes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(prev => (prev !== null && prev > 0 ? prev - 1 : data.imagenes.length - 1))}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg flex items-center justify-center transition-all z-10 cursor-pointer hover:scale-105"
+                  title="Imagen anterior (Flecha izquierda)"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+
+              {/* Imagen en alta resolución con fondo de estudio */}
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={getMediaUrl(data.imagenes[previewImgIndex])}
+                  alt={`Previsualización ${previewImgIndex + 1}`}
+                  className="max-h-[54vh] max-w-full object-contain rounded-2xl drop-shadow-md bg-white p-2"
+                />
+              </div>
+
+              {/* Botón Siguiente */}
+              {data.imagenes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(prev => (prev !== null && prev < data.imagenes.length - 1 ? prev + 1 : 0))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg flex items-center justify-center transition-all z-10 cursor-pointer hover:scale-105"
+                  title="Imagen siguiente (Flecha derecha)"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Footer con URL y acciones rápidas */}
+            <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Enlace del archivo</p>
+                <p className="font-mono text-[11px] text-slate-600 truncate bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg select-all">
+                  {data.imagenes[previewImgIndex]}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                {previewImgIndex !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => marcarImagenPrincipal(previewImgIndex)}
+                    className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Star size={13} />
+                    <span>Hacer Principal</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={procesandoThumb === data.imagenes[previewImgIndex]}
+                  onClick={() => handleConvertirFondoEstudio(data.imagenes[previewImgIndex])}
+                  className="px-3 py-2 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  title="Mejorar foto con IA a fondo blanco estudio"
+                >
+                  {procesandoThumb === data.imagenes[previewImgIndex] ? (
+                    <Loader2 size={13} className="animate-spin text-indigo-600" />
+                  ) : (
+                    <Wand2 size={13} />
+                  )}
+                  <span>Fondo Blanco IA</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1866,42 +2064,6 @@ export function ConfigProductoDetalle() {
 
           {/* Acciones del header */}
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            {/* Botones de Redes Sociales */}
-            <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-              <button 
-                onClick={() => abrirCompartir('whatsapp')} 
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                title="Publicar en WhatsApp (Estados o Chat)"
-              >
-                <MessageCircle size={13} />
-                <span className="hidden sm:inline">WhatsApp</span>
-              </button>
-              <button 
-                onClick={() => abrirCompartir('instagram')} 
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                title="Publicar en Instagram (Feed o Stories)"
-              >
-                <Sparkles size={13} />
-                <span className="hidden sm:inline">Instagram</span>
-              </button>
-              <button 
-                onClick={() => abrirCompartir('tiktok')} 
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                title="Publicar en TikTok (Video vertical 9:16)"
-              >
-                <Video size={13} />
-                <span className="hidden sm:inline">TikTok</span>
-              </button>
-              <button 
-                onClick={() => abrirCompartir('marketplace')} 
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                title="Publicar en Facebook Marketplace"
-              >
-                <Share2 size={13} />
-                <span className="hidden sm:inline">Marketplace</span>
-              </button>
-            </div>
-
             <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
               Catálogo
             </button>
