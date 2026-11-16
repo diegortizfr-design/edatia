@@ -1793,10 +1793,11 @@ function ModalImprimirEtiquetasProducto({
                       {et.nombreVariante ? `${et.nombreProducto} · ${et.nombreVariante}` : et.nombreProducto}
                     </span>
 
-                    <div style={{ margin: '0.2mm 0' }}>
+                    <div style={{ margin: '0.2mm 0', width: '100%', display: 'flex', justifyContent: 'center' }}>
                       <Barcode128
                         value={et.codigoBarras}
-                        height={isRotatedVertical ? 17 : 21}
+                        height={isRotatedVertical ? 16 : 20}
+                        maxWidth={isRotatedVertical ? '28mm' : '30mm'}
                         barWidth={isRotatedVertical ? 0.95 : 1.05}
                         showText={false}
                       />
@@ -1850,7 +1851,7 @@ function ModalImprimirEtiquetasProducto({
           }
           @page {
             size: 104mm 20mm;
-            margin: 0;
+            margin: 0 !important;
           }
         }
       `}</style>

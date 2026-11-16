@@ -83,12 +83,14 @@ export function Barcode128({
   value,
   height = 36,
   barWidth = 1.3,
+  maxWidth,
   showText = true,
   className = '',
 }: {
   value: string;
   height?: number;
   barWidth?: number;
+  maxWidth?: number | string;
   showText?: boolean;
   className?: string;
 }) {
@@ -117,13 +119,20 @@ export function Barcode128({
   }
 
   return (
-    <div className={`inline-flex flex-col items-center select-none ${className}`}>
+    <div
+      className={`inline-flex flex-col items-center select-none ${className}`}
+      style={maxWidth ? { maxWidth, width: '100%' } : undefined}
+    >
       <svg
-        width={totalWidth}
-        height={height}
         viewBox={`0 0 ${totalWidth} ${height}`}
-        className="block"
+        style={{
+          width: '100%',
+          maxWidth: maxWidth || totalWidth,
+          height: typeof height === 'number' ? `${height}px` : height,
+          display: 'block',
+        }}
         shapeRendering="crispEdges"
+        preserveAspectRatio="none"
       >
         <rect width={totalWidth} height={height} fill="#ffffff" />
         {rects.map((r, idx) => (
