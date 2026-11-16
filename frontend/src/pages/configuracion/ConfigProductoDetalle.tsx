@@ -11,7 +11,7 @@ import {
   Link2, Upload, Hash, Calculator,
   BarChart3, Clock, Loader2,
   Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle,
-  Lock, Eye, EyeOff, Palette
+  Lock, Eye, EyeOff, Palette, Printer, Download, Copy, FileSpreadsheet
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getFacturasCompra, getProveedores, updateProducto,
@@ -23,6 +23,9 @@ import {
   PALETA_COLORES, PRESETS_COLORES, PRESETS_TALLAS,
   buscarHexColor, slugifyAttr, extraerAtributosVisuales
 } from '../../utils/variantesColores'
+import {
+  Barcode128, descargarCSVBarTender, BarcodeItemParaImprimir
+} from '../../utils/barcode128'
 
 const Barcode = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
   <svg
@@ -1359,6 +1362,453 @@ function TabCosteo({ producto, refetch }: { producto: any; refetch: () => void }
   )
 }
 
+/* ---- MODAL: Impresión de Etiquetas para Impresora Térmica y BarTender ---- */
+function ModalImprimirEtiquetasProducto({
+  producto,
+  items,
+  onClose,
+}: {
+  producto: any;
+  items: BarcodeItemParaImprimir[];
+  onClose: () => void;
+}) {
+  const [lista, setLista] = useState<BarcodeItemParaImprimir[]>(items);
+  const [selectedPreviewIdx, setSelectedPreviewIdx] = useState<number>(0);
+  const [imprimiendo, setImprimiendo] = useState(false);
+
+  const fmtCOP = (val: number) => `$${Number(val || 0).toLocaleString('es-CO')}`;
+
+  const toggleItem = (idx: number) => {
+    setLista(prev => prev.map((it, i) => i === idx ? { ...it, incluir: !it.incluir } : it));
+  };
+
+  const setCantidad = (idx: number, cant: number) => {
+    const val = Math.max(0, cant);
+    setLista(prev => prev.map((it, i) => i === idx ? { ...it, cantidadCopias: val } : it));
+  };
+
+  const aplicarStockFisico = () => {
+    setLista(prev =>
+      prev.map(it => ({
+        ...it,
+        cantidadCopias: Math.max(0, it.stockActual),
+        incluir: it.stockActual > 0 || it.incluir,
+      }))
+    );
+    toast.success('Cantidades ajustadas según stock en bodega');
+  };
+
+  const setUnaCopiaATodos = () => {
+    setLista(prev => prev.map(it => ({ ...it, cantidadCopias: 1, incluir: true })));
+    toast.success('1 copia configurada para todos');
+  };
+
+  const itemsSeleccionados = lista.filter(it => it.incluir && it.cantidadCopias > 0);
+  const totalEtiquetas = itemsSeleccionados.reduce((s, it) => s + it.cantidadCopias, 0);
+  const filasEstimadas = Math.ceil(totalEtiquetas / 3);
+
+  const previewItem = itemsSeleccionados[selectedPreviewIdx] || itemsSeleccionados[0] || lista[0];
+
+  // Generar array plano de etiquetas individuales para la cuadrícula continua de 3 columnas
+  const etiquetasPlanas: BarcodeItemParaImprimir[] = [];
+  itemsSeleccionados.forEach(it => {
+    for (let c = 0; c < it.cantidadCopias; c++) {
+      etiquetasPlanas.push(it);
+    }
+  });
+
+  // Agrupar en filas de a 3 (3 al paso)
+  const filasDeTres: BarcodeItemParaImprimir[][] = [];
+  for (let i = 0; i < etiquetasPlanas.length; i += 3) {
+    filasDeTres.push(etiquetasPlanas.slice(i, i + 3));
+  }
+
+  const handleDescargarBarTender = () => {
+    if (itemsSeleccionados.length === 0) {
+      toast.error('Selecciona al menos un ítem con cantidad mayor a 0');
+      return;
+    }
+    const filasCsv = itemsSeleccionados.map(it => ({
+      producto: it.nombreProducto,
+      variante: it.nombreVariante || '',
+      codigoBarras: it.codigoBarras,
+      referencia: it.sku,
+      precio: it.precio,
+      cantidad: it.cantidadCopias,
+    }));
+    const skuLimpio = (producto.sku || producto.referencia || `prod-${producto.id}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+    descargarCSVBarTender(`etiquetas_${skuLimpio}`, filasCsv);
+    toast.success('Archivo CSV descargado. Conéctalo desde Archivo > Conexión a Base de Datos en BarTender ✓');
+  };
+
+  const handleImprimirDirecto = () => {
+    if (etiquetasPlanas.length === 0) {
+      toast.error('No hay etiquetas seleccionadas para imprimir');
+      return;
+    }
+    setImprimiendo(true);
+    document.body.classList.add('imprimiendo-etiquetas-termicas');
+
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('imprimiendo-etiquetas-termicas');
+      setImprimiendo(false);
+    }, 400);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Header Modal */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-inner">
+              <Printer size={20} />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                Imprimir Códigos de Barra
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">
+                  Rollo 3 al Paso (104 × 20 mm)
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {producto.nombre} · SKU: <span className="font-mono font-bold text-slate-600">{producto.sku}</span>
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body Modal */}
+        <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Columna Izquierda: Tabla y Configuración de Cantidades (7 cols) */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Barra de atajos rápidos */}
+            <div className="flex items-center justify-between flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              <span className="text-xs font-bold text-slate-600">Atajos de cantidad:</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={aplicarStockFisico}
+                  className="px-2.5 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <Sparkles size={13} /> Usar Stock en Bodega
+                </button>
+                <button
+                  type="button"
+                  onClick={setUnaCopiaATodos}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all shadow-sm"
+                >
+                  1 Copia c/u
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de productos y variantes */}
+            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100 max-h-[360px] overflow-y-auto">
+              {lista.map((it, idx) => (
+                <div
+                  key={it.id}
+                  onClick={() => setSelectedPreviewIdx(idx)}
+                  className={`p-3.5 flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                    selectedPreviewIdx === idx ? 'bg-indigo-50/40 border-l-4 border-indigo-600' : 'hover:bg-slate-50/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={it.incluir}
+                      onChange={e => {
+                        e.stopPropagation();
+                        toggleItem(idx);
+                      }}
+                      className="rounded text-indigo-600 h-4 w-4 shrink-0 cursor-pointer"
+                    />
+                    {it.colorHex && (
+                      <span
+                        className="w-4 h-4 rounded-full border border-slate-300 shrink-0"
+                        style={{ backgroundColor: it.colorHex }}
+                        title={it.nombreVariante}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">
+                        {it.nombreVariante ? `${it.nombreVariante}` : it.nombreProducto}
+                      </p>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono mt-0.5">
+                        <span>Cód: <strong className="text-slate-600">{it.codigoBarras}</strong></span>
+                        <span>•</span>
+                        <span className="text-emerald-600 font-bold">Stock: {it.stockActual}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selector de copias */}
+                  <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(idx, it.cantidadCopias - 1)}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all text-xs"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min="0"
+                      value={it.cantidadCopias}
+                      onChange={e => setCantidad(idx, parseInt(e.target.value, 10) || 0)}
+                      className="w-12 text-center text-xs font-extrabold font-mono py-1 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(idx, it.cantidadCopias + 1)}
+                      className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all text-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Resumen de conteo */}
+            <div className="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex items-center justify-between text-xs text-indigo-900">
+              <span className="font-medium">Total de etiquetas seleccionadas:</span>
+              <span className="font-extrabold text-sm text-indigo-700 font-mono">
+                {totalEtiquetas} unds · {filasEstimadas} filas (3 al paso)
+              </span>
+            </div>
+          </div>
+
+          {/* Columna Derecha: Vista Previa Fiel a la Etiqueta Física (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                  Vista Previa de Etiqueta
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">33,8 × 20 mm</span>
+              </div>
+
+              {/* Contenedor de la etiqueta simulada física */}
+              <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200/80 flex items-center justify-center">
+                {previewItem ? (
+                  <div
+                    className="bg-white rounded-xl shadow-lg border border-slate-300 p-2 flex flex-col items-center justify-between text-center select-none"
+                    style={{ width: '220px', height: '140px' }}
+                  >
+                    {/* Header marca */}
+                    <div className="w-full text-center border-b border-slate-100 pb-1">
+                      <span className="text-[10px] font-black tracking-widest text-slate-800 uppercase block truncate">
+                        DISTRIBUIDORA BABY WORLD
+                      </span>
+                    </div>
+
+                    {/* Nombre producto / variante */}
+                    <div className="my-1 px-1">
+                      <p className="text-[11px] font-bold text-slate-800 leading-tight line-clamp-1">
+                        {previewItem.nombreProducto}
+                      </p>
+                      {previewItem.nombreVariante && (
+                        <p className="text-[10px] font-semibold text-indigo-600 truncate mt-0.5">
+                          {previewItem.nombreVariante}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Código de barras vectorial SVG */}
+                    <div className="my-0.5">
+                      <Barcode128
+                        value={previewItem.codigoBarras}
+                        height={34}
+                        barWidth={1.2}
+                        showText={true}
+                      />
+                    </div>
+
+                    {/* Precio y SKU */}
+                    <div className="w-full flex items-center justify-between border-t border-slate-100 pt-1 px-1">
+                      <span className="text-[9px] font-mono font-bold text-slate-400">
+                        {previewItem.sku}
+                      </span>
+                      <span className="text-xs font-black text-slate-900 font-mono">
+                        {fmtCOP(previewItem.precio)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">Sin ítem seleccionado</p>
+                )}
+              </div>
+            </div>
+
+            {/* Opciones de salida */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={handleImprimirDirecto}
+                disabled={etiquetasPlanas.length === 0 || imprimiendo}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-indigo-200 transition-all active:scale-[0.99] disabled:opacity-50"
+              >
+                <Printer size={16} />
+                {imprimiendo ? 'Enviando a DigitalPos...' : `Imprimir en DigitalPos (${totalEtiquetas} etiquetas)`}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDescargarBarTender}
+                disabled={itemsSeleccionados.length === 0}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+              >
+                <Download size={14} className="text-slate-500" />
+                Descargar para BarTender (.csv)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Configurado para impresora térmica de 4 pulgadas con papel de 3 columnas continuas.</span>
+          <span className="font-mono">Edatia Barcode Suite</span>
+        </div>
+      </div>
+
+      {/* ÁREA OCULTA DE IMPRESIÓN DIRECTA NATIVA (Visible solo en @media print) */}
+      <div id="area-impresion-etiquetas" className="hidden">
+        {filasDeTres.map((fila, fIdx) => (
+          <div
+            key={fIdx}
+            style={{
+              width: '104mm',
+              height: '20mm',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              pageBreakInside: 'avoid',
+              pageBreakAfter: 'always',
+              boxSizing: 'border-box',
+              padding: '0 1mm',
+            }}
+          >
+            {fila.map((et, eIdx) => (
+              <div
+                key={eIdx}
+                style={{
+                  width: '33.8mm',
+                  height: '20mm',
+                  boxSizing: 'border-box',
+                  padding: '1mm 1.5mm',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  background: '#ffffff',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '6.5px',
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    color: '#000000',
+                    lineHeight: 1,
+                    maxWidth: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  DISTRIBUIDORA BABY WORLD
+                </span>
+
+                <span
+                  style={{
+                    fontSize: '7.5px',
+                    fontWeight: 700,
+                    color: '#000000',
+                    lineHeight: 1,
+                    maxWidth: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {et.nombreVariante ? `${et.nombreProducto} · ${et.nombreVariante}` : et.nombreProducto}
+                </span>
+
+                <div style={{ margin: '0.5mm 0' }}>
+                  <Barcode128
+                    value={et.codigoBarras}
+                    height={22}
+                    barWidth={1.05}
+                    showText={false}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '7px',
+                    lineHeight: 1,
+                  }}
+                >
+                  <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{et.codigoBarras}</span>
+                  <span style={{ fontWeight: 900, fontSize: '8px' }}>{fmtCOP(et.precio)}</span>
+                </div>
+              </div>
+            ))}
+            {/* Rellenar espacios vacíos en la última fila si tiene menos de 3 */}
+            {Array.from({ length: 3 - fila.length }).map((_, emptyIdx) => (
+              <div key={`empty-${emptyIdx}`} style={{ width: '33.8mm', height: '20mm' }} />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* ESTILOS DE IMPRESIÓN INYECTADOS */}
+      <style>{`
+        @media print {
+          body.imprimiendo-etiquetas-termicas * {
+            visibility: hidden !important;
+          }
+          body.imprimiendo-etiquetas-termicas #area-impresion-etiquetas,
+          body.imprimiendo-etiquetas-termicas #area-impresion-etiquetas * {
+            visibility: visible !important;
+          }
+          body.imprimiendo-etiquetas-termicas #area-impresion-etiquetas {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 104mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+          @page {
+            size: 104mm 20mm;
+            margin: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 /* ---- TAB: Códigos de Barra ---- */
 function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [codigos, setCodigos] = useState<any[]>(() => {
@@ -1368,101 +1818,364 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
       tipo: c.tipo,
       descripcion: c.descripcion || '',
       esPrincipal: c.esPrincipal || false,
-    }))
-  })
-  const [form, setForm] = useState({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false })
-  const [adding, setAdding] = useState(false)
-  const [saved, setSaved] = useState(false)
+    }));
+  });
+  const [form, setForm] = useState({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false });
+  const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Estado del modal de impresión de etiquetas
+  const [modalImprimir, setModalImprimir] = useState(false);
+  const [itemsParaImprimir, setItemsParaImprimir] = useState<BarcodeItemParaImprimir[]>([]);
+
+  const fmtCOP = (val: number) => `$${Number(val || 0).toLocaleString('es-CO')}`;
 
   const save = async (updated: any[]) => {
     try {
-      setCodigos(updated)
-      await updateProducto(producto.id, { codigos: updated })
-      setSaved(true)
-      refetch()
-      setTimeout(() => setSaved(false), 2000)
+      setCodigos(updated);
+      await updateProducto(producto.id, { codigos: updated });
+      setSaved(true);
+      refetch();
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      alert('Error al guardar códigos de barra')
+      alert('Error al guardar códigos de barra');
     }
-  }
+  };
 
   const addCodigo = () => {
-    if (!form.codigo.trim()) return
-    const newId = Date.now()
-    const updated = [...codigos, { ...form, id: newId, codigo: form.codigo.trim() }]
+    if (!form.codigo.trim()) return;
+    const newId = Date.now();
+    const updated = [...codigos, { ...form, id: newId, codigo: form.codigo.trim() }];
     if (form.esPrincipal) {
-      updated.forEach(c => { if (c.id !== newId) c.esPrincipal = false })
+      updated.forEach(c => { if (c.id !== newId) c.esPrincipal = false; });
     }
-    save(updated)
-    setForm({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false })
-    setAdding(false)
-  }
+    save(updated);
+    setForm({ codigo: '', tipo: 'EAN-13', descripcion: '', esPrincipal: false });
+    setAdding(false);
+  };
 
   const marcarPrincipal = (id: number) => {
-    const updated = codigos.map(c => ({ ...c, esPrincipal: c.id === id }))
-    save(updated)
-  }
+    const updated = codigos.map(c => ({ ...c, esPrincipal: c.id === id }));
+    save(updated);
+  };
 
   const eliminar = (id: number) => {
-    const updated = codigos.filter(c => c.id !== id)
-    save(updated)
-  }
+    const updated = codigos.filter(c => c.id !== id);
+    save(updated);
+  };
 
-  const TIPO_OPTIONS = ['EAN-13', 'EAN-8', 'UPC-A', 'UPC-E', 'Code 128', 'Code 39', 'QR Code', 'Data Matrix', 'ITF-14', 'Interno']
+  // Stock consolidado del producto padre
+  const stockPadreTotal = (producto.stock || []).reduce(
+    (acc: number, s: any) => acc + (Number(s.cantidad) || 0),
+    0
+  );
+
+  const variantes = Array.isArray(producto.variantes) ? producto.variantes : [];
+
+  // Función para abrir el modal con todos los ítems del producto (padre + variantes)
+  const abrirModalImpresionCompleta = () => {
+    const lista: BarcodeItemParaImprimir[] = [];
+
+    // Si tiene variantes, agregamos cada variante
+    if (variantes.length > 0) {
+      variantes.forEach((v: any) => {
+        const vStock = (v.stock || []).reduce((acc: number, s: any) => acc + (Number(s.cantidad) || 0), 0);
+        const code = v.codigoBarras || v.sku || producto.codigoBarras || producto.sku;
+        lista.push({
+          id: `var-${v.id}`,
+          productoId: producto.id,
+          varianteId: v.id,
+          nombreProducto: producto.nombre,
+          nombreVariante: v.nombre,
+          sku: v.sku || producto.sku,
+          codigoBarras: code,
+          precio: Number(v.precioBase || producto.precioBase || 0),
+          stockActual: vStock,
+          cantidadCopias: Math.max(1, vStock || 1),
+          colorHex: v.colorHex || buscarHexColor(v.nombre),
+          incluir: true,
+        });
+      });
+    } else {
+      // Producto simple
+      const code = producto.codigoBarras || producto.sku;
+      lista.push({
+        id: `prod-${producto.id}`,
+        productoId: producto.id,
+        varianteId: null,
+        nombreProducto: producto.nombre,
+        sku: producto.sku,
+        codigoBarras: code,
+        precio: Number(producto.precioBase || producto.precioWeb || 0),
+        stockActual: stockPadreTotal,
+        cantidadCopias: Math.max(1, stockPadreTotal || 1),
+        incluir: true,
+      });
+    }
+
+    setItemsParaImprimir(lista);
+    setModalImprimir(true);
+  };
+
+  // Función para imprimir solo una variante o el padre individual
+  const abrirModalImpresionIndividual = (item: BarcodeItemParaImprimir) => {
+    setItemsParaImprimir([item]);
+    setModalImprimir(true);
+  };
+
+  const TIPO_OPTIONS = ['EAN-13', 'EAN-8', 'UPC-A', 'UPC-E', 'Code 128', 'Code 39', 'QR Code', 'Data Matrix', 'ITF-14', 'Interno'];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Barcode size={18} className="text-indigo-600" /> Gestión de Códigos de Barra</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Registra múltiples códigos de barra del producto. El principal es el usado por defecto en el sistema.</p>
+      {/* Encabezado con Botón Destacado de Impresión */}
+      <div className="flex items-center justify-between flex-wrap gap-4 p-5 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-white/10 text-indigo-300">
+              <Printer size={20} />
+            </span>
+            <h3 className="text-lg font-black tracking-tight">Impresión de Códigos de Barra</h3>
+          </div>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Genera e imprime etiquetas adhesivas térmicas (rollo continuo 3 al paso · 104×20 mm) para este producto y todas sus variantes, o descárgalas en lote para BarTender.
+          </p>
         </div>
-        <button onClick={() => setAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
-          <Plus size={14} /> Agregar Código
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={abrirModalImpresionCompleta}
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-indigo-900/50 transition-all active:scale-95"
+          >
+            <Printer size={16} /> Imprimir Etiquetas ({variantes.length > 0 ? `${variantes.length} Variantes` : 'Producto'})
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-bold transition-all"
+          >
+            <Plus size={14} /> Agregar Código
+          </button>
+        </div>
       </div>
 
-      {/* Form */}
+      {/* TARJETA 1: Código Principal del Producto */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl">
+              <Barcode128
+                value={producto.codigoBarras || producto.sku}
+                height={34}
+                barWidth={1.2}
+                showText={false}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  Código Principal
+                </span>
+                <span className="text-xs font-mono font-extrabold text-slate-800">
+                  {producto.codigoBarras || producto.sku}
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-slate-800 mt-1">{producto.nombre}</h4>
+              <p className="text-xs text-slate-400 font-mono mt-0.5">
+                SKU: {producto.sku} {producto.referencia ? `· Ref: ${producto.referencia}` : ''} · Precio: <strong className="text-slate-700">{fmtCOP(producto.precioBase)}</strong> · Stock: <strong className="text-emerald-600">{stockPadreTotal} und</strong>
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              abrirModalImpresionIndividual({
+                id: `prod-${producto.id}`,
+                productoId: producto.id,
+                varianteId: null,
+                nombreProducto: producto.nombre,
+                sku: producto.sku,
+                codigoBarras: producto.codigoBarras || producto.sku,
+                precio: Number(producto.precioBase || producto.precioWeb || 0),
+                stockActual: stockPadreTotal,
+                cantidadCopias: Math.max(1, stockPadreTotal || 1),
+                incluir: true,
+              })
+            }
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 hover:border-indigo-200"
+          >
+            <Printer size={14} /> Imprimir Etiqueta Padre
+          </button>
+        </div>
+      </div>
+
+      {/* TARJETA 2: Variantes del Producto (Colores / Tallas) con Códigos Individuales */}
+      {variantes.length > 0 && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <Layers size={14} className="text-indigo-600" />
+                Códigos de Barra por Variante ({variantes.length} Variantes Registradas)
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Cada color o talla tiene su propio código y stock físico en bodega.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={abrirModalImpresionCompleta}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+            >
+              <Printer size={13} /> Imprimir Variantes en Lote
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {variantes.map((v: any) => {
+              const vStock = (v.stock || []).reduce((acc: number, s: any) => acc + (Number(s.cantidad) || 0), 0);
+              const code = v.codigoBarras || v.sku || producto.codigoBarras || producto.sku;
+              const colorHex = v.colorHex || buscarHexColor(v.nombre);
+
+              return (
+                <div key={v.id} className="p-4 flex items-center justify-between flex-wrap gap-3 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {colorHex && (
+                      <span
+                        className="w-5 h-5 rounded-full border border-slate-300 shadow-sm shrink-0"
+                        style={{ backgroundColor: colorHex }}
+                        title={v.nombre}
+                      />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold text-slate-800">{v.nombre}</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                          Ref: {v.sku}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                        <span>Código: <strong className="text-slate-700">{code}</strong></span>
+                        <span>•</span>
+                        <span>Precio: <strong className="text-slate-800">{fmtCOP(v.precioBase || producto.precioBase)}</strong></span>
+                        <span>•</span>
+                        <span className={vStock > 0 ? 'text-emerald-600 font-bold' : 'text-slate-400'}>
+                          Stock: {vStock} und
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="hidden sm:block">
+                      <Barcode128 value={code} height={26} barWidth={1.05} showText={false} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        abrirModalImpresionIndividual({
+                          id: `var-${v.id}`,
+                          productoId: producto.id,
+                          varianteId: v.id,
+                          nombreProducto: producto.nombre,
+                          nombreVariante: v.nombre,
+                          sku: v.sku || producto.sku,
+                          codigoBarras: code,
+                          precio: Number(v.precioBase || producto.precioBase || 0),
+                          stockActual: vStock,
+                          cantidadCopias: Math.max(1, vStock || 1),
+                          colorHex,
+                          incluir: true,
+                        })
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 hover:border-indigo-200"
+                    >
+                      <Printer size={13} /> Imprimir
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TARJETA 3: Formulario para Agregar Nuevo Código Alternativo */}
       {adding && (
-        <div className="bg-white border-2 border-indigo-100 rounded-2xl p-5 space-y-4 shadow-sm">
+        <div className="bg-white border-2 border-indigo-100 rounded-2xl p-5 space-y-4 shadow-sm animate-in fade-in duration-150">
           <h4 className="text-xs font-extrabold text-indigo-700 uppercase tracking-widest">Nuevo Código de Barra</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código *</label>
-              <input type="text" value={form.codigo} onChange={e => setForm(p => ({ ...p, codigo: e.target.value }))}
+              <input
+                type="text"
+                value={form.codigo}
+                onChange={e => setForm(p => ({ ...p, codigo: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCodigo())}
-                placeholder="Escanea o escribe el código" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-wider text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
+                placeholder="Escanea o escribe el código"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-wider text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+              />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Tipo</label>
-              <select value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer">
+              <select
+                value={form.tipo}
+                onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+              >
                 {TIPO_OPTIONS.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descripción (Opcional)</label>
-              <input type="text" value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
-                placeholder="Ej. Código de caja master, Código de proveedor..." className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all" />
+              <input
+                type="text"
+                value={form.descripcion}
+                onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
+                placeholder="Ej. Código de caja master, Código de proveedor..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+              />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 w-full cursor-pointer hover:bg-slate-100/50 transition-all h-[34px]">
-                <input type="checkbox" checked={form.esPrincipal} onChange={e => setForm(p => ({ ...p, esPrincipal: e.target.checked }))}
-                  className="rounded text-indigo-600 h-4 w-4" />
+                <input
+                  type="checkbox"
+                  checked={form.esPrincipal}
+                  onChange={e => setForm(p => ({ ...p, esPrincipal: e.target.checked }))}
+                  className="rounded text-indigo-600 h-4 w-4"
+                />
                 <span className="text-xs font-bold text-slate-700">Marcar como Principal</span>
               </label>
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setAdding(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">Cancelar</button>
-            <button type="button" onClick={addCodigo} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"><Save size={13} /> Guardar</button>
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={addCodigo}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"
+            >
+              <Save size={13} /> Guardar
+            </button>
           </div>
         </div>
       )}
 
-      {/* Lista de códigos */}
-      {codigos.length > 0 ? (
+      {/* TARJETA 4: Lista de Códigos Secundarios Registrados */}
+      {codigos.length > 0 && (
         <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              Códigos Secundarios y Relacionados
+            </h4>
+          </div>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-100">
@@ -1470,7 +2183,7 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Descripción</th>
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Principal</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -1492,34 +2205,55 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
                       : <button onClick={() => marcarPrincipal(c.id)} className="text-[10px] text-slate-400 hover:text-indigo-600 font-bold underline transition-colors">Marcar</button>
                     }
                   </td>
-                  <td className="p-4">
-                    <button onClick={() => eliminar(c.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          abrirModalImpresionIndividual({
+                            id: `sec-${c.id}`,
+                            productoId: producto.id,
+                            varianteId: null,
+                            nombreProducto: producto.nombre,
+                            sku: producto.sku,
+                            codigoBarras: c.codigo,
+                            precio: Number(producto.precioBase || 0),
+                            stockActual: stockPadreTotal,
+                            cantidadCopias: 1,
+                            incluir: true,
+                          })
+                        }
+                        title="Imprimir este código"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      >
+                        <Printer size={14} />
+                      </button>
+                      <button
+                        onClick={() => eliminar(c.id)}
+                        title="Eliminar"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : !adding ? (
-        <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
-          <Barcode size={36} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-sm font-bold text-slate-400">Sin códigos de barra registrados</p>
-          <p className="text-xs text-slate-300 mt-1">Agrega EAN-13, UPC, Code128 u otros formatos para este producto.</p>
-        </div>
-      ) : null}
+      )}
 
-      {/* Tip de uso */}
-      {codigos.length > 0 && (
-        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-2xl">
-          <Hash size={16} className="text-blue-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-blue-700">Tip: Múltiples Códigos</p>
-            <p className="text-[11px] text-blue-600 mt-0.5">Puedes registrar el código EAN de la unidad, el código de la caja, el código del proveedor y el código interno. El <strong>Principal</strong> es el que se usa por defecto en POS y documentos.</p>
-          </div>
-        </div>
+      {/* Modal de Impresión */}
+      {modalImprimir && (
+        <ModalImprimirEtiquetasProducto
+          producto={producto}
+          items={itemsParaImprimir}
+          onClose={() => setModalImprimir(false)}
+        />
       )}
     </div>
-  )
+  );
 }
 
 /* ---- TAB: Facturas Venta ---- */
