@@ -34,6 +34,17 @@ export class DigitalPublicController {
     return this.digitalService.getMetaFeedXml(slug, filtro || 'alto_margen', refresh === 'true');
   }
 
+  // Vista Previa enriquecida (Open Graph) para bots de WhatsApp, Facebook, etc.
+  @Get(':slug/og/:productoSlug')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=3600')
+  async getProductoOgHtml(
+    @Param('slug') slug: string,
+    @Param('productoSlug') productoSlug: string,
+  ) {
+    return this.digitalService.getProductoOgHtml(slug, productoSlug);
+  }
+
   // Analítica anónima de la tienda (visitas, producto visto, carrito, checkout)
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post(':slug/eventos')

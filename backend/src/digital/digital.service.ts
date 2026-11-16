@@ -1053,4 +1053,121 @@ ${itemsXml}
 
     return feedXml;
   }
+
+  // ── Vista Previa Open Graph (WhatsApp, Facebook, Twitter, Telegram) ─────────
+  async getProductoOgHtml(slugTienda: string, productoSlug: string): Promise<string> {
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda },
+          { dominioPropio: slugTienda },
+        ],
+      },
+    });
+
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    let baseDomain = 'distribuidorababyworld.com';
+    if (config.dominioPropio) {
+      baseDomain = config.dominioPropio.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    } else if (config.slugTienda && config.slugTienda !== 'distribuidorababyworld') {
+      baseDomain = `${config.slugTienda}.edatia.com`;
+    }
+    const baseUrl = `https://${baseDomain}`;
+
+    const cleanSlug = decodeURIComponent(productoSlug).trim().toLowerCase();
+    const isId = /^\d+$/.test(cleanSlug);
+
+    const producto = await this.prisma.producto.findFirst({
+      where: {
+        empresaId: config.empresaId,
+        publicadoWeb: true,
+        activo: true,
+        OR: [
+          { slug: cleanSlug },
+          { sku: { equals: cleanSlug, mode: 'insensitive' } },
+          ...(isId ? [{ id: parseInt(cleanSlug, 10) }] : []),
+        ],
+      },
+    });
+
+    if (!producto) {
+      return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>${config.nombreTienda || 'Baby World'}</title>
+  <meta http-equiv="refresh" content="0;url=${baseUrl}">
+</head>
+<body><script>window.location.href = '${baseUrl}';</script></body>
+</html>`;
+    }
+
+    const escapeHtml = (str?: string | null) =>
+      (str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const precio = Number(producto.precioWeb || producto.precioBase || 0);
+    const precioFmt = `$${precio.toLocaleString('es-CO')} COP`;
+    const canonicalUrl = `${baseUrl}/producto/${producto.slug || producto.id}`;
+    const titulo = escapeHtml(producto.nombre);
+    const tienda = escapeHtml(config.nombreTienda || 'Distribuidora Baby World');
+    const descripcion = escapeHtml(
+      `💰 ${precioFmt} — ${producto.descripcion || producto.nombre} en ${tienda}.`,
+    );
+
+    let imagenUrl =
+      producto.imagen ||
+      (Array.isArray((producto.metadataWeb as any)?.imagenes)
+        ? (producto.metadataWeb as any).imagenes[0]
+        : '') ||
+      `${baseUrl}/logo.png`;
+
+    if (imagenUrl.startsWith('/')) {
+      imagenUrl = `${baseUrl}${imagenUrl}`;
+    }
+
+    return `<!DOCTYPE html>
+<html lang="es" prefix="og: https://ogp.me/ns#">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${titulo} | ${tienda}</title>
+  <meta name="description" content="${descripcion}">
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="product">
+  <meta property="og:site_name" content="${tienda}">
+  <meta property="og:title" content="${titulo}">
+  <meta property="og:description" content="${descripcion}">
+  <meta property="og:image" content="${escapeHtml(imagenUrl)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(imagenUrl)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="1200">
+  <meta property="og:image:alt" content="${titulo}">
+  <meta property="og:url" content="${canonicalUrl}">
+  <meta property="product:price:amount" content="${precio}">
+  <meta property="product:price:currency" content="COP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${titulo}">
+  <meta name="twitter:description" content="${descripcion}">
+  <meta name="twitter:image" content="${escapeHtml(imagenUrl)}">
+
+  <!-- Redirección inmediata para usuarios en navegador -->
+  <meta http-equiv="refresh" content="0;url=${canonicalUrl}">
+</head>
+<body style="font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;padding:2rem;text-align:center;">
+  <p>Cargando producto en <strong>${tienda}</strong>...</p>
+  <p><a href="${canonicalUrl}">Haz clic aquí si no redirige automáticamente</a></p>
+  <script>window.location.replace('${canonicalUrl}');</script>
+</body>
+</html>`;
+  }
 }
