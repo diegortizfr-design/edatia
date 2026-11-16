@@ -583,7 +583,7 @@ export class DigitalService {
       ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
       : null;
 
-    const productoIdsUnicos = [...new Set(dto.items.map((it: any) => Number(it.productoId)))];
+    const productoIdsUnicos: number[] = Array.from(new Set<number>(dto.items.map((it: any) => Number(it.productoId))));
     const productos = await this.prisma.producto.findMany({
       where: { id: { in: productoIdsUnicos }, empresaId, publicadoWeb: true, activo: true },
       select: {
@@ -634,7 +634,7 @@ export class DigitalService {
       throw new BadRequestException('Uno o más productos ya no están disponibles');
     }
 
-    const lineas = dto.items.map((it: any) => {
+    const lineas: any[] = dto.items.map((it: any) => {
       const p = prodMap.get(Number(it.productoId))!;
       const cantidad = Number(it.cantidad);
       let variante: any = null;
@@ -697,7 +697,7 @@ export class DigitalService {
         lineTotal,
       };
     });
-    if (lineas.some((l) => !(l.precioTotal > 0))) {
+    if (lineas.some((l: any) => !(l.precioTotal > 0))) {
       throw new BadRequestException('Uno o más productos no tienen precio configurado');
     }
 
@@ -707,13 +707,13 @@ export class DigitalService {
       );
     }
 
-    const subtotal = lineas.reduce((s, l) => s + l.lineSubtotal, 0);
-    const baseIva19 = lineas.filter((l) => l.ivaPct === 19).reduce((s, l) => s + l.lineSubtotal, 0);
-    const iva19 = lineas.filter((l) => l.ivaPct === 19).reduce((s, l) => s + l.lineIva, 0);
-    const baseIva5 = lineas.filter((l) => l.ivaPct === 5).reduce((s, l) => s + l.lineSubtotal, 0);
-    const iva5 = lineas.filter((l) => l.ivaPct === 5).reduce((s, l) => s + l.lineIva, 0);
+    const subtotal = lineas.reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const baseIva19 = lineas.filter((l: any) => l.ivaPct === 19).reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const iva19 = lineas.filter((l: any) => l.ivaPct === 19).reduce((s: number, l: any) => s + l.lineIva, 0);
+    const baseIva5 = lineas.filter((l: any) => l.ivaPct === 5).reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const iva5 = lineas.filter((l: any) => l.ivaPct === 5).reduce((s: number, l: any) => s + l.lineIva, 0);
     const impuesto = iva19 + iva5;
-    const total = lineas.reduce((s, l) => s + l.lineTotal, 0);
+    const total = lineas.reduce((s: number, l: any) => s + l.lineTotal, 0);
     const envio = this.calcularEnvio(total, ciudad);
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -876,7 +876,7 @@ export class DigitalService {
             baseIva5,
             iva5,
             items: {
-              create: lineas.map((l, idx) => ({
+              create: lineas.map((l: any, idx: number) => ({
                 productoId: l.productoId,
                 descripcion: l.nombre,
                 unidad: 'UND',
@@ -922,7 +922,7 @@ export class DigitalService {
             iva5,
             estado: 'PENDIENTE',
             items: {
-              create: lineas.map((l, idx) => ({
+              create: lineas.map((l: any, idx: number) => ({
                 productoId: l.productoId,
                 descripcion: l.nombre,
                 unidad: 'UND',
@@ -959,7 +959,7 @@ export class DigitalService {
     // 6. Mercado Pago: se crea la preferencia FUERA de la transacción (llamada externa)
     let checkoutUrl: string | null = null;
     if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
-      const items = lineas.map((l) => ({
+      const items = lineas.map((l: any) => ({
         id: String(l.productoId),
         title: l.nombre.slice(0, 250),
         quantity: l.cantidad,
