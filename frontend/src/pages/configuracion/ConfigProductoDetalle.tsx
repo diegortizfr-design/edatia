@@ -4,14 +4,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart,
+  ArrowLeft, Edit3, Package, Globe, FileText, ShoppingCart, ShoppingBag,
   Building2, Layers, DollarSign, CheckCircle2,
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock, Loader2,
-  Tag, Sparkles, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle,
-  Lock, Eye, EyeOff, Palette, Printer, Download, Copy, FileSpreadsheet
+  BarChart3, Clock, Loader2, Share2, Sparkles, MessageCircle, Video, Wand2,
+  Eye, ChevronLeft, ChevronRight, Download,
+  Tag, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle,
+  Lock, EyeOff, Palette, Printer, Copy, FileSpreadsheet
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getFacturasCompra, getProveedores, updateProducto,
@@ -19,6 +20,7 @@ import {
   ajustarStockVariante, getBodegas, postAjusteManualKardex
 } from '../../services/inventario.service'
 import { getImpuestos } from '../../services/erp.service'
+import { CompartirRedesModal, RedSocial } from '../../components/CompartirRedesModal'
 import {
   PALETA_COLORES, PRESETS_COLORES, PRESETS_TALLAS,
   buscarHexColor, slugifyAttr, extraerAtributosVisuales
@@ -68,7 +70,7 @@ const TABS = [
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 /* ---- TAB: Web / Digital ---- */
-function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
+function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: () => void; onCompartir?: (red: RedSocial) => void }) {
   const [data, setData] = useState({
     publicadoWeb: producto.publicadoWeb || false,
     esDigital: producto.esDigital || false,
@@ -88,6 +90,42 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [newImagen, setNewImagen] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [generandoInfo, setGenerandoInfo] = useState(false)
+  const [fondoEstudioIa, setFondoEstudioIa] = useState(true)
+  const [procesandoThumb, setProcesandoThumb] = useState<string | null>(null)
+  const [previewImgIndex, setPreviewImgIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (previewImgIndex === null) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewImgIndex(null)
+      if (e.key === 'ArrowLeft' && data.imagenes.length > 1) {
+        setPreviewImgIndex(prev => (prev !== null && prev > 0 ? prev - 1 : data.imagenes.length - 1))
+      }
+      if (e.key === 'ArrowRight' && data.imagenes.length > 1) {
+        setPreviewImgIndex(prev => (prev !== null && prev < data.imagenes.length - 1 ? prev + 1 : 0))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previewImgIndex, data.imagenes.length])
+
+  const marcarImagenPrincipal = async (index: number) => {
+    if (index === 0 || !data.imagenes[index]) return
+    const updatedImgs = [...data.imagenes]
+    const [selected] = updatedImgs.splice(index, 1)
+    updatedImgs.unshift(selected)
+    setData(prev => ({ ...prev, imagenes: updatedImgs }))
+    setPreviewImgIndex(0)
+    try {
+      const payload = buildPayload(data, updatedImgs)
+      await updateProducto(producto.id, payload)
+      refetch()
+      toast.success('Foto marcada como principal ✓')
+    } catch (err: any) {
+      toast.error('Error al actualizar imagen principal')
+    }
+  }
 
   useEffect(() => {
     setData({
@@ -117,32 +155,69 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleGenerarInfoPublicacion = async () => {
+    try {
+      setGenerandoInfo(true)
+      const res = await api.post(`/digital/ia/productos/${producto.id}/generar-info-publicacion`)
+      const info = res.data
+      setData(prev => ({
+        ...prev,
+        nombreWeb: info.nombreWeb || prev.nombreWeb,
+        slug: info.slug || prev.slug,
+        etiquetaSeo: info.etiquetaSeo || prev.etiquetaSeo,
+        metaDescripcion: info.metaDescripcion || prev.metaDescripcion,
+        descripcionWeb: info.descripcionWeb || prev.descripcionWeb,
+      }))
+      toast.success('¡Información web generada con IA! Revisa y haz clic en Guardar.')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al generar información web con IA'
+      toast.error(typeof msg === 'string' ? msg : 'Error al generar información con IA')
+    } finally {
+      setGenerandoInfo(false)
+    }
+  }
+
+  const subirArchivo = async (file: File) => {
     setUploadingImg(true)
     const formData = new FormData()
     formData.append('file', file)
 
     try {
-      const response = await api.post('/configuracion/archivo/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      const { url } = response.data
-      const updatedImgs = [...data.imagenes, url]
-      setData(prev => ({ ...prev, imagenes: updatedImgs }))
-      const payload = buildPayload(data, updatedImgs)
-      await updateProducto(producto.id, payload)
-      refetch()
-      toast.success('Imagen subida y guardada exitosamente ✓')
+      if (fondoEstudioIa) {
+        toast.loading('Generando fondo de estudio blanco con IA...', { id: 'estudio-ia' })
+        const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const { url, imagenes } = res.data
+        const nuevasImgs = imagenes || [...data.imagenes, url]
+        setData(prev => ({ ...prev, imagenes: nuevasImgs }))
+        refetch()
+        toast.success('¡Imagen procesada con fondo blanco estudio y guardada! ✨', { id: 'estudio-ia' })
+      } else {
+        const response = await api.post('/configuracion/archivo/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const { url } = response.data
+        const updatedImgs = [...data.imagenes, url]
+        setData(prev => ({ ...prev, imagenes: updatedImgs }))
+        const payload = buildPayload(data, updatedImgs)
+        await updateProducto(producto.id, payload)
+        refetch()
+        toast.success('Imagen subida y guardada exitosamente ✓')
+      }
     } catch (err: any) {
-      console.error('Error al subir imagen:', err)
-      const msg = err?.response?.data?.message || 'Error al subir la imagen'
-      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen')
+      const msg = err?.response?.data?.message || 'Error al procesar la imagen'
+      toast.error(typeof msg === 'string' ? msg : 'Error al procesar la imagen', { id: 'estudio-ia' })
     } finally {
       setUploadingImg(false)
-      if (e.target) e.target.value = ''
     }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await subirArchivo(file)
+    if (e.target) e.target.value = ''
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -165,29 +240,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       toast.error('Por favor, suelta un archivo de imagen válido');
       return;
     }
-    
-    setUploadingImg(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await api.post('/configuracion/archivo/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const { url } = response.data;
-      const updatedImgs = [...data.imagenes, url];
-      setData(prev => ({ ...prev, imagenes: updatedImgs }));
-      const payload = buildPayload(data, updatedImgs);
-      await updateProducto(producto.id, payload);
-      refetch();
-      toast.success('Imagen subida y guardada exitosamente ✓');
-    } catch (err: any) {
-      console.error('Error al subir imagen:', err);
-      const msg = err?.response?.data?.message || 'Error al subir la imagen';
-      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen');
-    } finally {
-      setUploadingImg(false);
-    }
+    await subirArchivo(file);
   }
 
   const save = async () => {
@@ -209,21 +262,65 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
 
   const addImagen = async () => {
     if (!newImagen.trim()) return
-    const updatedImgs = [...data.imagenes, newImagen.trim()]
-    setData(prev => ({ ...prev, imagenes: updatedImgs }))
+    const url = newImagen.trim()
     setNewImagen('')
+
+    if (fondoEstudioIa) {
+      try {
+        setUploadingImg(true)
+        toast.loading('Procesando imagen con fondo de estudio blanco...', { id: 'url-estudio-ia' })
+        const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, { imageUrl: url })
+        const { url: urlSubida, imagenes } = res.data
+        const nuevasImgs = imagenes || [...data.imagenes, urlSubida]
+        setData(prev => ({ ...prev, imagenes: nuevasImgs }))
+        refetch()
+        toast.success('¡Imagen procesada con fondo blanco estudio! ✨', { id: 'url-estudio-ia' })
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Error al procesar la imagen'
+        toast.error(typeof msg === 'string' ? msg : 'Error al procesar la imagen', { id: 'url-estudio-ia' })
+      } finally {
+        setUploadingImg(false)
+      }
+    } else {
+      const updatedImgs = [...data.imagenes, url]
+      setData(prev => ({ ...prev, imagenes: updatedImgs }))
+      try {
+        const payload = buildPayload(data, updatedImgs)
+        await updateProducto(producto.id, payload)
+        refetch()
+        toast.success('Imagen agregada y guardada ✓')
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Error al guardar imagen'
+        toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
+      }
+    }
+  }
+
+  const handleConvertirFondoEstudio = async (imgUrl: string) => {
     try {
-      const payload = buildPayload(data, updatedImgs)
-      await updateProducto(producto.id, payload)
+      setProcesandoThumb(imgUrl)
+      toast.loading('Convirtiendo a fondo de estudio blanco con IA...', { id: 'thumb-ia' })
+      const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, { imageUrl: imgUrl })
+      const { imagenes } = res.data
+      if (imagenes) {
+        setData(prev => ({ ...prev, imagenes }))
+      }
       refetch()
-      toast.success('Imagen agregada y guardada ✓')
+      toast.success('¡Foto convertida a estudio blanco puro! ✨', { id: 'thumb-ia' })
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Error al guardar imagen'
-      toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
+      const msg = err?.response?.data?.message || 'Error al convertir imagen a estudio'
+      toast.error(typeof msg === 'string' ? msg : 'Error al convertir imagen a estudio', { id: 'thumb-ia' })
+    } finally {
+      setProcesandoThumb(null)
     }
   }
 
   const removeImagen = async (i: number) => {
+    if (previewImgIndex === i) {
+      setPreviewImgIndex(null)
+    } else if (previewImgIndex !== null && previewImgIndex > i) {
+      setPreviewImgIndex(previewImgIndex - 1)
+    }
     const imageToDelete = data.imagenes[i];
     const updatedImgs = data.imagenes.filter((_, j) => j !== i)
     setData(prev => ({ ...prev, imagenes: updatedImgs }))
@@ -282,9 +379,87 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         ))}
       </div>
 
+      {/* Banner Difusión en Redes Sociales */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white rounded-2xl p-4 sm:p-5 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center shrink-0 border border-white/10">
+            <Share2 size={20} className="text-pink-300" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black tracking-tight flex items-center gap-2">
+              Difusión en Redes Sociales
+              <span className="text-[10px] bg-pink-500/30 text-pink-200 border border-pink-400/30 px-2 py-0.5 rounded-full font-bold">Omnicanal</span>
+            </h4>
+            <p className="text-xs text-slate-300 mt-0.5">Publica este producto en segundos con fotos de estudio, ganchos y hashtags optimizados.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-start md:justify-end">
+          <button
+            type="button"
+            onClick={() => onCompartir?.('whatsapp')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en WhatsApp (Estados o Chat)"
+          >
+            <MessageCircle size={14} />
+            <span>WhatsApp</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('instagram')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en Instagram (Feed o Historias)"
+          >
+            <Sparkles size={14} />
+            <span>Instagram</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('tiktok')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en TikTok (Video vertical 9:16)"
+          >
+            <Video size={14} />
+            <span>TikTok</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('marketplace')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en Facebook Marketplace"
+          >
+            <ShoppingBag size={14} />
+            <span>Marketplace</span>
+          </button>
+        </div>
+      </div>
+
       {/* Campos web */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4">
-        <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Información de Publicación</h4>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Información de Publicación</h4>
+            <p className="text-[11px] text-slate-400">Datos visibles para catálogo web, buscadores y redes sociales.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerarInfoPublicacion}
+            disabled={generandoInfo}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+            title="Generar automáticamente con IA los textos y SEO"
+          >
+            {generandoInfo ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Generando con IA...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                <span>✨ Autogenerar con IA</span>
+              </>
+            )}
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Nombre en Tienda Web</label>
@@ -343,10 +518,22 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         onDrop={handleDrop}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-            <Upload size={14} /> Imágenes del Producto (URLs)
-          </h4>
-          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md hidden sm:inline-block">Puedes arrastrar y soltar fotos aquí</span>
+          <div>
+            <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <Upload size={14} /> Imágenes del Producto (URLs)
+            </h4>
+            <p className="text-[11px] text-slate-400">Puedes arrastrar fotos aquí o pegar enlaces web.</p>
+          </div>
+          <label className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 cursor-pointer select-none transition-colors hover:bg-indigo-100">
+            <input
+              type="checkbox"
+              checked={fondoEstudioIa}
+              onChange={(e) => setFondoEstudioIa(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+            />
+            <Sparkles size={13} className="text-indigo-600" />
+            <span>Fondo de estudio IA (Blanco puro 1:1)</span>
+          </label>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 relative">
@@ -402,12 +589,45 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
                     Principal
                   </div>
                 )}
-                <div className="w-8 h-8 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative">
-                  <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
+                <div 
+                  onClick={() => setPreviewImgIndex(i)}
+                  className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 relative cursor-pointer group/thumb hover:ring-2 hover:ring-indigo-400 transition-all shadow-xs"
+                  title="Clic para previsualizar en grande"
+                >
+                  <img src={getMediaUrl(img)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain p-0.5" />
+                  <div className="absolute inset-0 bg-indigo-950/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity text-white">
+                    <Eye size={16} />
+                  </div>
                 </div>
-                <span className="truncate max-w-[150px] font-mono select-none">{img}</span>
-                <button type="button" onClick={() => removeImagen(i)}
-                  className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate max-w-[140px] font-mono select-none text-[11px] font-semibold text-slate-700">{img.split('/').pop()}</span>
+                  <span className="text-[10px] text-slate-400">Foto {i + 1}</span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImgIndex(i)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Previsualizar imagen en grande"
+                  >
+                    <Eye size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={procesandoThumb === img}
+                    onClick={() => handleConvertirFondoEstudio(img)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Transformar esta foto a fondo blanco estudio con IA"
+                  >
+                    {procesandoThumb === img ? <Loader2 size={13} className="animate-spin text-indigo-600" /> : <Wand2 size={13} />}
+                  </button>
+                  <button type="button" onClick={() => removeImagen(i)}
+                    className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
+                    title="Eliminar imagen"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -419,6 +639,143 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
           </div>
         )}
       </div>
+
+      {/* ── MODAL LIGHTBOX DE PREVISUALIZACIÓN DE IMÁGENES ── */}
+      {previewImgIndex !== null && data.imagenes[previewImgIndex] && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setPreviewImgIndex(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Lightbox */}
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                  <Eye size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      Previsualización de Imagen
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                      {previewImgIndex + 1} de {data.imagenes.length}
+                    </span>
+                    {previewImgIndex === 0 && (
+                      <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full uppercase">
+                        Principal
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <a
+                  href={getMediaUrl(data.imagenes[previewImgIndex])}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  title="Abrir imagen original en nueva pestaña"
+                >
+                  <ExternalLink size={16} />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  title="Cerrar vista previa (Esc)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenedor central de la imagen con controles de navegación */}
+            <div className="relative flex-1 bg-slate-100/80 flex items-center justify-center p-4 min-h-[350px] max-h-[58vh] overflow-hidden select-none">
+              {/* Botón Anterior */}
+              {data.imagenes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(prev => (prev !== null && prev > 0 ? prev - 1 : data.imagenes.length - 1))}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg flex items-center justify-center transition-all z-10 cursor-pointer hover:scale-105"
+                  title="Imagen anterior (Flecha izquierda)"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+
+              {/* Imagen en alta resolución con fondo de estudio */}
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={getMediaUrl(data.imagenes[previewImgIndex])}
+                  alt={`Previsualización ${previewImgIndex + 1}`}
+                  className="max-h-[54vh] max-w-full object-contain rounded-2xl drop-shadow-md bg-white p-2"
+                />
+              </div>
+
+              {/* Botón Siguiente */}
+              {data.imagenes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(prev => (prev !== null && prev < data.imagenes.length - 1 ? prev + 1 : 0))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg flex items-center justify-center transition-all z-10 cursor-pointer hover:scale-105"
+                  title="Imagen siguiente (Flecha derecha)"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Footer con URL y acciones rápidas */}
+            <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Enlace del archivo</p>
+                <p className="font-mono text-[11px] text-slate-600 truncate bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg select-all">
+                  {data.imagenes[previewImgIndex]}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                {previewImgIndex !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => marcarImagenPrincipal(previewImgIndex)}
+                    className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Star size={13} />
+                    <span>Hacer Principal</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={procesandoThumb === data.imagenes[previewImgIndex]}
+                  onClick={() => handleConvertirFondoEstudio(data.imagenes[previewImgIndex])}
+                  className="px-3 py-2 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  title="Mejorar foto con IA a fondo blanco estudio"
+                >
+                  {procesandoThumb === data.imagenes[previewImgIndex] ? (
+                    <Loader2 size={13} className="animate-spin text-indigo-600" />
+                  ) : (
+                    <Wand2 size={13} />
+                  )}
+                  <span>Fondo Blanco IA</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImgIndex(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -3682,6 +4039,13 @@ export function ConfigProductoDetalle() {
     const params = new URLSearchParams(window.location.search)
     return params.get('tab') || 'web'
   })
+  const [compartirModalOpen, setCompartirModalOpen] = useState(false)
+  const [redCompartir, setRedCompartir] = useState<RedSocial>('whatsapp')
+
+  const abrirCompartir = (red: RedSocial) => {
+    setRedCompartir(red)
+    setCompartirModalOpen(true)
+  }
 
   const { data: producto, isLoading, isError, refetch } = useQuery({
     queryKey: ['producto_detalle', productoId],
@@ -3881,7 +4245,7 @@ export function ConfigProductoDetalle() {
           </div>
 
           {/* Acciones del header */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
               Catálogo
             </button>
@@ -3924,7 +4288,7 @@ export function ConfigProductoDetalle() {
 
         {/* Tab content */}
         <div className="p-6">
-          {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} />}
+          {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} onCompartir={abrirCompartir} />}
           {activeTab === 'variantes'   && <TabVariantes producto={producto} refetch={refetch} />}
           {activeTab === 'documentos'  && <TabDocumentos producto={producto} refetch={refetch} />}
           {activeTab === 'compras'     && <TabCompras productoId={productoId} sku={producto.sku} />}
@@ -3935,6 +4299,16 @@ export function ConfigProductoDetalle() {
           {activeTab === 'facturas'    && <TabFacturas productoId={productoId} />}
         </div>
       </div>
+
+      {/* Modal Compartir en Redes (WhatsApp, Instagram, TikTok y Marketplace) */}
+      {producto && (
+        <CompartirRedesModal
+          isOpen={compartirModalOpen}
+          onClose={() => setCompartirModalOpen(false)}
+          producto={producto}
+          redInicial={redCompartir}
+        />
+      )}
     </div>
   )
 }

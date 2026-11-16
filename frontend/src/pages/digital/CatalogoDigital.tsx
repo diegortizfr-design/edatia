@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Package, Search, Globe, Eye, Loader2, Save, EyeOff, ExternalLink } from 'lucide-react'
+import { Package, Search, Globe, Eye, Loader2, Save, EyeOff, ExternalLink, Sparkles, Share2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
+import { ModalProductoIa } from '../../components/ModalProductoIa'
+import { CompartirRedesModal, RedSocial } from '../../components/CompartirRedesModal'
 
 interface ProductoWeb {
   id: number;
@@ -15,6 +17,8 @@ interface ProductoWeb {
   imagen: string | null;
   activo?: boolean;
   categoria?: { id: number; nombre: string };
+  descripcion?: string | null;
+  metadataWeb?: any;
 }
 
 export function CatalogoDigital() {
@@ -23,6 +27,14 @@ export function CatalogoDigital() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [modalIaOpen, setModalIaOpen] = useState(false)
+  const [productoACompartir, setProductoACompartir] = useState<ProductoWeb | null>(null)
+  const [redACompartir, setRedACompartir] = useState<RedSocial>('whatsapp')
+
+  const abrirCompartir = (p: ProductoWeb, red: RedSocial = 'whatsapp') => {
+    setRedACompartir(red)
+    setProductoACompartir(p)
+  }
 
   const handlePreview = (p: ProductoWeb) => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -78,6 +90,14 @@ export function CatalogoDigital() {
           <p className="text-slate-500 text-sm">Gestiona cuáles productos de tu inventario están visibles en la tienda de Baby World y cuáles permanecen exclusivamente en ERP.</p>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setModalIaOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-100 transition-all cursor-pointer"
+            title="Crear producto con IA a partir de fotos"
+          >
+            <Sparkles size={15} />
+            ✨ Nuevo con IA
+          </button>
           <button 
             onClick={() => handlePreview({} as any)}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all"
@@ -271,7 +291,16 @@ export function CatalogoDigital() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {p.publicadoWeb && (
+                          <button 
+                            onClick={() => abrirCompartir(p, 'whatsapp')}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                            title="Compartir en Redes Sociales (WhatsApp, Instagram, TikTok, Marketplace)"
+                          >
+                            <Share2 size={18} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => handlePreview(p)}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -295,6 +324,23 @@ export function CatalogoDigital() {
           </table>
         </div>
       </div>
+
+      {/* Modal Creación Asistida por IA */}
+      <ModalProductoIa
+        isOpen={modalIaOpen}
+        onClose={() => setModalIaOpen(false)}
+        onSuccess={() => fetchProductos()}
+      />
+
+      {/* Modal Compartir en Redes (WhatsApp, Instagram, TikTok y Marketplace) */}
+      {productoACompartir && (
+        <CompartirRedesModal
+          isOpen={!!productoACompartir}
+          onClose={() => setProductoACompartir(null)}
+          producto={productoACompartir}
+          redInicial={redACompartir}
+        />
+      )}
     </div>
   )
 }
