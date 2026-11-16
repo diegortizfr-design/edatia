@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getProductos, updateProducto } from '../../services/inventario.service'
-import { Plus, Search, Package, ChevronRight, Download, Globe, EyeOff, Loader2 } from 'lucide-react'
+import { Plus, Search, Package, ChevronRight, Download, Globe, EyeOff, Loader2, Layers } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const IVA_LABELS: Record<string, string> = {
@@ -231,10 +231,22 @@ export function Productos() {
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <Link to={`/inventario/productos/${p.id}`}
-                      className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                      Editar <ChevronRight size={14} />
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        to={`/inventario/productos/${p.id}?tab=variantes`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all"
+                        title="Gestionar Tallas y Variantes de este producto"
+                      >
+                        <Layers size={12} />
+                        <span>Tallas</span>
+                      </Link>
+                      <Link
+                        to={`/inventario/productos/${p.id}`}
+                        className="flex items-center gap-1 text-slate-600 hover:text-indigo-600 text-xs font-medium px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+                      >
+                        Editar <ChevronRight size={14} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

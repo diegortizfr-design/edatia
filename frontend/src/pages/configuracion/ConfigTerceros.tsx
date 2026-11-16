@@ -49,6 +49,7 @@ export interface Tercero {
   pais: string
   departamento: string
   ciudad: string
+  barrio?: string
   direccionFiscal: string
   direccionDespachos: string
   

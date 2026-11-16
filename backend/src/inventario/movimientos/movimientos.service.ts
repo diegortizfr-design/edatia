@@ -1102,29 +1102,180 @@ export class MovimientosService {
       throw new BadRequestException('Debe ingresar un motivo o justificación para la modificación manual del kardex');
     }
 
-    // 2. Obtener producto y stock actual en la bodega solicitada
-    await this.getProducto(dto.productoId, empresaId);
+    // 2. Obtener producto y validar existencia
+    const producto = await this.getProducto(dto.productoId, empresaId);
+
+    // Caso A: Si se enviaron ajustes por variantes múltiples (producto padre con variantes / tallas)
+    if (dto.ajustesVariantes && dto.ajustesVariantes.length > 0) {
+      const movimientosCreados: any[] = [];
+      let totalDiferencia = 0;
+
+      for (const item of dto.ajustesVariantes) {
+        const variante = await (this.prisma as any).varianteProducto.findFirst({
+          where: { id: item.varianteId, productoId: dto.productoId, empresaId },
+        });
+        if (!variante) continue;
+
+        let stockVar = await (this.prisma as any).stockVariante.findFirst({
+          where: { varianteId: item.varianteId, bodegaId: dto.bodegaId },
+        });
+
+        const cantActualVar = stockVar ? parseFloat(stockVar.cantidad.toString()) : 0;
+        const nuevoStockNum = Number(item.nuevoStock) || 0;
+        const diferenciaVar = nuevoStockNum - cantActualVar;
+
+        if (stockVar) {
+          await (this.prisma as any).stockVariante.update({
+            where: { id: stockVar.id },
+            data: { cantidad: nuevoStockNum },
+          });
+        } else {
+          await (this.prisma as any).stockVariante.create({
+            data: {
+              empresaId,
+              varianteId: item.varianteId,
+              bodegaId: dto.bodegaId,
+              cantidad: nuevoStockNum,
+              cantidadReservada: 0,
+            },
+          });
+        }
+
+        if (Math.abs(diferenciaVar) >= 0.0001) {
+          totalDiferencia += diferenciaVar;
+          const mov = await this.procesarAjuste(
+            {
+              productoId: dto.productoId,
+              bodegaId: dto.bodegaId,
+              cantidad: diferenciaVar,
+              motivo: 'MODIFICACION_MANUAL_KARDEX',
+              notas: `Ajuste Kardex Talla/Variante "${variante.nombre}" (${variante.sku}). Anterior: ${cantActualVar} -> Nuevo: ${nuevoStockNum}. Justificación: ${dto.motivo}`,
+              costoUnitario: dto.costoUnitario,
+            },
+            empresaId,
+            usuarioId,
+          );
+          movimientosCreados.push(mov);
+        }
+      }
+
+      // Sincronizar el stock del producto padre para que sea exactamente la suma de todas sus variantes en esta bodega
+      const allStockVars = await (this.prisma as any).stockVariante.findMany({
+        where: {
+          bodegaId: dto.bodegaId,
+          variante: { productoId: dto.productoId, empresaId },
+        },
+      });
+      const nuevoTotalPadre = allStockVars.reduce((sum: number, sv: any) => sum + parseFloat(sv.cantidad.toString()), 0);
+
+      const stockPadre = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, this.prisma);
+      await (this.prisma as any).stock.update({
+        where: { id: stockPadre.id },
+        data: { cantidad: nuevoTotalPadre },
+      });
+
+      return {
+        mensaje: `Kardex y existencias actualizadas para ${dto.ajustesVariantes.length} variante(s). Saldo total consolidado en bodega: ${nuevoTotalPadre}`,
+        movimientos: movimientosCreados,
+        nuevoSaldo: nuevoTotalPadre,
+        diferencia: totalDiferencia,
+      };
+    }
+
+    // Caso B: Si se envió un ajuste para una variante individual
+    if (dto.varianteId) {
+      const variante = await (this.prisma as any).varianteProducto.findFirst({
+        where: { id: dto.varianteId, productoId: dto.productoId, empresaId },
+      });
+      if (!variante) throw new NotFoundException('Variante no encontrada');
+
+      let stockVar = await (this.prisma as any).stockVariante.findFirst({
+        where: { varianteId: dto.varianteId, bodegaId: dto.bodegaId },
+      });
+
+      const cantActualVar = stockVar ? parseFloat(stockVar.cantidad.toString()) : 0;
+      const nuevoStockNum = Number(dto.nuevoStock) || 0;
+      const diferenciaVar = nuevoStockNum - cantActualVar;
+
+      if (stockVar) {
+        await (this.prisma as any).stockVariante.update({
+          where: { id: stockVar.id },
+          data: { cantidad: nuevoStockNum },
+        });
+      } else {
+        await (this.prisma as any).stockVariante.create({
+          data: {
+            empresaId,
+            varianteId: dto.varianteId,
+            bodegaId: dto.bodegaId,
+            cantidad: nuevoStockNum,
+            cantidadReservada: 0,
+          },
+        });
+      }
+
+      let mov: any = null;
+      if (Math.abs(diferenciaVar) >= 0.0001) {
+        mov = await this.procesarAjuste(
+          {
+            productoId: dto.productoId,
+            bodegaId: dto.bodegaId,
+            cantidad: diferenciaVar,
+            motivo: 'MODIFICACION_MANUAL_KARDEX',
+            notas: `Ajuste Kardex Talla/Variante "${variante.nombre}" (${variante.sku}). Anterior: ${cantActualVar} -> Nuevo: ${nuevoStockNum}. Justificación: ${dto.motivo}`,
+            costoUnitario: dto.costoUnitario,
+          },
+          empresaId,
+          usuarioId,
+        );
+      }
+
+      // Sincronizar el stock del producto padre
+      const allStockVars = await (this.prisma as any).stockVariante.findMany({
+        where: {
+          bodegaId: dto.bodegaId,
+          variante: { productoId: dto.productoId, empresaId },
+        },
+      });
+      const nuevoTotalPadre = allStockVars.reduce((sum: number, sv: any) => sum + parseFloat(sv.cantidad.toString()), 0);
+
+      const stockPadre = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, this.prisma);
+      await (this.prisma as any).stock.update({
+        where: { id: stockPadre.id },
+        data: { cantidad: nuevoTotalPadre },
+      });
+
+      return {
+        mensaje: `Kardex y existencia de la variante "${variante.nombre}" actualizada correctamente`,
+        movimiento: mov,
+        saldoAnterior: cantActualVar,
+        nuevoSaldo: nuevoStockNum,
+        diferencia: diferenciaVar,
+      };
+    }
+
+    // Caso C: Producto estándar sin variantes
     const stockActual = await this.getOrCreateStock(dto.productoId, dto.bodegaId, empresaId, this.prisma);
     const cantActual = parseFloat(stockActual.cantidad.toString());
-    const diferencia = dto.nuevoStock - cantActual;
+    const nuevoStock = dto.nuevoStock ?? 0;
+    const diferencia = nuevoStock - cantActual;
 
     if (Math.abs(diferencia) < 0.0001) {
       return {
         mensaje: 'El stock actual ya coincide con el saldo indicado. No fue necesario realizar ajustes.',
         saldoAnterior: cantActual,
-        nuevoSaldo: dto.nuevoStock,
+        nuevoSaldo: nuevoStock,
         diferencia: 0,
       };
     }
 
-    // 3. Procesar ajuste a través del motor auditado de inventario
     const mov = await this.procesarAjuste(
       {
         productoId: dto.productoId,
         bodegaId: dto.bodegaId,
         cantidad: diferencia,
         motivo: 'MODIFICACION_MANUAL_KARDEX',
-        notas: `Ajuste manual de Kardex: Saldo anterior ${cantActual} -> Nuevo saldo ${dto.nuevoStock}. Justificación: ${dto.motivo}`,
+        notas: `Ajuste manual de Kardex: Saldo anterior ${cantActual} -> Nuevo saldo ${nuevoStock}. Justificación: ${dto.motivo}`,
         costoUnitario: dto.costoUnitario,
         loteNumero: dto.loteNumero,
         fechaVencimiento: dto.fechaVencimiento,
@@ -1138,7 +1289,7 @@ export class MovimientosService {
       mensaje: 'Kardex modificado y stock actualizado correctamente',
       movimiento: mov,
       saldoAnterior: cantActual,
-      nuevoSaldo: dto.nuevoStock,
+      nuevoSaldo: nuevoStock,
       diferencia,
     };
   }

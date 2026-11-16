@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-10-25 (sesión 20)
+> Última actualización: 2026-11-15 (sesión 25)
 
 ---
 
@@ -33,6 +33,99 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 25) — 2026-11-15
+
+✅ **Soporte y Visualización de Productos Agotados en Tienda Virtual (`backend` & `tiendas-virtuales/distribuidorababyworld`):**
+  - **Apertura en API Backend (`backend/src/digital/digital.service.ts`):** Retiro del filtro excluyente `.filter(p => p.stockDisponible > 0)` en `getProductosWebPublic`. Ahora retorna todos los productos publicados y activos ordenando primero los que tienen stock disponible (`stockDisponible > 0`) y luego los agotados.
+  - **Experiencia de Usuario en la Tienda Virtual (`tiendas-virtuales/distribuidorababyworld`):**
+    - `App.tsx`: Eliminado el descarte de productos con stock 0; ordenamiento prioritario para productos disponibles en catálogo.
+    - `ProductCard.tsx`: Etiqueta destacada **Agotado**, sutil desaturación de imagen, botón de añadir deshabilitado en gris (`Agotado`) y leyenda `● Agotado temporalmente`.
+    - `ProductDetailModal.tsx` & `ProductDetailPage.tsx`: Badge `Agotado` en imagen, aviso claro de producto sin existencias, bloqueo de selector de cantidad y conversión del botón de acción a **"Consultar disponibilidad por WhatsApp"** con mensaje prellenado automático consultando cuándo vuelve a estar disponible.
+  - **Recompilación y Despliegue:** `edatia-backend` y `edatia-glowxir` reconstruidos y validados en producción.
+
+---
+
+## Estado resuelto (sesión 24) — 2026-11-15
+
+✅ **Retiro del Banner de Mega Promociones (`tiendas-virtuales/distribuidorababyworld`):**
+  - Culminada la jornada de evento presencial del sábado 14 de noviembre, se retiró el slide `mega-promociones` de `HeroBanner.tsx`.
+  - El carrusel principal opera ahora de forma limpia y enfocada con 2 slides permanentes de alta conversión:
+    1. **Familia Baby World:** Fidelización y registro de clientes para cumpleaños y beneficios.
+    2. **Medios de Pago / Financiación:** Acceso y simulación de crédito con Addi y Sistecrédito.
+  - Tipado de datos `Slide` estructurado explícitamente en TypeScript para garantizar compilación estricta y permitir futuras incorporaciones de banners estacionales de forma ágil.
+  - Recompilación `tsc && vite build` completada con éxito; contenedor `edatia-glowxir` reconstruido y verificado en producción sin referencias al banner temporal.
+
+---
+
+## Estado resuelto (sesión 23) — 2026-11-14
+
+✅ **Redes Sociales Oficiales, Barra de Confianza y Refinamiento Visual del Hero Banner (`tiendas-virtuales/distribuidorababyworld`):**
+  - **Componentes SVG Nativos y Seguros:**
+    - Creados `InstagramIcon.tsx` (con degradado oficial multicapa de Instagram) y `TikTokIcon.tsx` (nota musical con `fill="currentColor"`).
+    - Enlaces oficiales configurados con `target="_blank"` y atributos de seguridad `rel="noopener noreferrer"`:
+      - Instagram: `https://www.instagram.com/distribuidorababyworld`
+      - TikTok: `https://www.tiktok.com/@baby.world426`
+  - **Barra de Confianza Interactiva (`QuickTrustBar.tsx`):**
+    - Ubicada estratégicamente justo debajo del banner principal en la vista de inicio.
+    - Reúne 5 puntos de confianza (*trust badges*):
+      1. 📍 **Tienda Física Poblado Campestre**: Abre el modal interactivo `StoreLocationModal` (con mapa, Waze y horarios).
+      2. 📸 **Instagram**: Acceso directo con identificador `@distribuidorababyworld`.
+      3. 🎵 **TikTok**: Acceso directo con identificador `@baby.world426`.
+      4. 💳 **Crédito a Cuotas Addi & Sistecrédito**: Abre el modal de información de financiamiento.
+      5. 🚚 **Contra Entrega**: Indicador de seguridad para pedidos a nivel local y nacional.
+    - Diseño responsive: en smartphones permite desplazamiento horizontal táctil suave (*swipe*) en micro-píldoras (`active:scale-95`), y en computadores se muestra como una barra centrada y equilibrada.
+    - Presencia replicada en la columna de marca del pie de página (`Footer` en `App.tsx`).
+  - **Optimización y Simetría Visual del Hero Banner (`HeroBanner.tsx`, `index.css`):**
+    - **Solución al vacío lateral en pantallas grandes:** Halos ambientales difusos pastel (*Ambient Glows*: azul cielo a la izquierda, rosa algodón a la derecha y ámbar sutil superior) con `blur-3xl`.
+    - **Navegación exterior en pantallas XL+:** Botones circulares blancos de navegación flotando en los laterales (`w-11 h-11`), eliminando obstrucción sobre fotos de bebés y textos legales del banner.
+    - **Simetría limpia:** Retiro de ilustraciones superpuestas que colisionaban con las flechas laterales.
+    - **Ritmo vertical y proporciones:** Calibración de márgenes entre el carrusel, los indicadores (*dots*) y la barra de redes, junto a un ancho máx. armónico en `.hero-banner-frame` (`min(1080px, calc(40vh * 3.03))`).
+  - **Recompilación y Despliegue:**
+    - Contenedor `edatia-glowxir` reconstruido y validado con `docker compose up -d --build glowxir`.
+
+---
+
+## Estado resuelto (sesión 22) — 2026-11-14
+
+✅ **Hero Banner de la Tienda Virtual Baby World: Alta Resolución y Tamaño Compacto (`tiendas-virtuales/distribuidorababyworld`):**
+  - **Super-resolución con IA de las 3 imágenes del carrusel (`public/`):**
+    - `banner-familia.jpg`, `banner-promociones.jpg` y `banner-medios-pago.jpg` escaladas de **1024×338 → 2048×676** (2x, nítidas en pantallas Retina/HiDPI y móviles).
+    - Proceso: Real-ESRGAN (`RealESRGAN_x4plus`, CPU, vía `spandrel` + PyTorch) a 4x → reducción Lanczos a 2048 px → unsharp mask suave → JPEG progresivo calidad 86 con subsampling 4:4:4 (sin halos de color en los textos). Peso final: 174–264 KB por imagen.
+    - Verificado visualmente: tipografías y logos (Addi / Sistecrédito) mucho más definidos; la fotografía de la niña conserva rasgos naturales sin artefactos.
+    - Cache-busting actualizado en `HeroBanner.tsx`: `banner-familia.jpg?v=3`, `banner-promociones.jpg?v=2`, `banner-medios-pago.jpg?v=5`.
+  - **Reducción del espacio ocupado por el banner:**
+    - Nueva clase `.hero-banner-frame` en `src/index.css`: ancho máx. **1040 px** centrado y, desde `sm` (≥640 px), `max-width: min(1040px, calc(38vh * 3.03))` → la altura del banner nunca supera ~**38% del alto visible** (proporción de imagen 3.03:1). Piso de legibilidad `min-width: min(100%, 560px)`.
+    - Padding vertical de la sección reducido (`sm:pt-6 sm:pb-7` → `sm:pt-4 sm:pb-4`).
+    - En móvil (<640 px) el banner se mantiene a ancho completo con su barra táctil inferior (sin cambios).
+  - **Especificación recomendada para futuros banners:** exportar desde el diseño original a ≥2048 px de ancho; para ocupar aún menos alto, migrar a formato **4:1 (2400×600)** y ajustar la constante `3.03` en `.hero-banner-frame`. Opcional: versión móvil dedicada (1080×600).
+  - **Pendiente:** retirar o reemplazar el slide `mega-promociones` (evento del sábado 14 de noviembre) una vez pase la fecha.
+  - **Compilación y Despliegue:** `tsc` sin errores, `vite build` OK; contenedor `edatia-glowxir` reconstruido (`docker compose up -d --build --no-deps glowxir`) y verificado sirviendo las imágenes 2048×676 y el nuevo CSS.
+
+---
+
+## Estado resuelto (sesión 21) — 2026-11-04
+
+✅ **Culminación Integral del Ecosistema Meta: Commerce Manager, Feed de Alto Margen y Meta Pixel con Embudo de Conversión:**
+  - **Enriquecimiento del Feed de Alto Margen (`backend/src/digital`):**
+    - **Prioridad Absoluta a Toda la Juguetería y Caminadores:** Blindaje de todas las subcategorías lúdicas (caminadores didácticos Nobily, Dulces Sueños, pistas de carreras, carros acrobáticos RC, muñecas interactivas MayMay, sets de Barbie, cocinas y juguetes didácticos) sin importar si tienen costo $0 o precio < $40.000 COP.
+    - **Línea de Confort Materno y Sueño del Bebé:** Protección y prioridad para nidos reductores de cuna antivuelco, colchonetas de camping con toldillo, fulares y canguros ergonómicos de porteo y cojines dona de lactancia.
+    - **Filtro Estricto de Protección de Pauta:** Exclusión definitiva de leches masivas de farmacia (*Klim*, *Nan*, *Nestógeno*) y pañales desechables sueltos (*Winny*, *Babysec*) para optimizar el retorno de inversión publicitaria (ROAS).
+    - **Sincronización:** Catálogo `Catalogo_Baby_World` (ID: `1460423996272361`) activo en Meta Commerce Manager con 116 productos sincronizados automáticamente cada hora vía `https://api.edatia.com/api/v1/public/tiendas/distribuidorababyworld/meta-feed.xml?filtro=alto_margen`.
+  - **Instalación y Cableado del Meta Pixel en la Tienda Virtual (`tiendas-virtuales/distribuidorababyworld`):**
+    - **Script Oficial y Coincidencias Avanzadas:** Inserción del script oficial de Meta Pixel (`Pixel Baby World` con ID `1530333682271437`) en el `<head>` de `index.html` con fallback `<noscript>` validado para el parser parse5/HTML5 de Vite.
+    - **Cableado Completo del Embudo en `analytics.ts` y `App.tsx`:**
+      - `PageView`: Al ingresar al sitio web.
+      - `ViewContent`: Al abrir el detalle del producto, transmitiendo `content_ids` (con el SKU sincronizado con `g:id` del catálogo XML) y valor en COP.
+      - `AddToCart`: Al añadir artículos al carrito de compras con cantidad y SKU.
+      - `InitiateCheckout`: Al abrir el drawer o modal de checkout.
+      - `Purchase`: Al completar la compra o pedido por WhatsApp/Contraentrega/Mercado Pago.
+  - **Vinculación Oficial Catálogo + Píxel:**
+    - Conjunto de datos `Pixel Baby World` enlazado con éxito a `Catalogo_Baby_World` en Commerce Manager para habilitar campañas de anuncios de catálogo dinámico (**Advantage+ Catalog Ads**) y retargeting automatizado.
+  - **Recompilación y Despliegue en Docker:**
+    - Contenedores `edatia-backend` y `edatia-glowxir` reconstruidos y verificados en producción.
+
+---
 
 ## Estado resuelto (sesión 20) — 2026-10-25
 

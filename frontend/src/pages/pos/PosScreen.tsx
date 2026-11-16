@@ -13,6 +13,7 @@ import {
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
 import { getMediaUrl } from '../../services/api'
+import { buscarHexColor, extraerAtributosVisuales } from '../../utils/variantesColores'
 import toast from 'react-hot-toast'
 
 const IVA_RATES: Record<string, number> = {
@@ -23,6 +24,9 @@ const IVA_RATES: Record<string, number> = {
 
 type CartItem = {
   productoId: number
+  varianteId?: number
+  varianteNombre?: string
+  varianteHex?: string
   nombre: string
   sku: string
   precio: number
@@ -50,6 +54,8 @@ export function PosScreen() {
 
   const [q, setQ] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
+  const [selectedProductVariants, setSelectedProductVariants] = useState<any | null>(null)
+  const [showVariantModal, setShowVariantModal] = useState(false)
   const [showPago, setShowPago] = useState(false)
   const [showAnular, setShowAnular] = useState<number | null>(null)
   const [selectedCliente, setSelectedCliente] = useState<any>(null)
@@ -363,45 +369,73 @@ export function PosScreen() {
     setShowPago(true)
   }
 
-  const addToCart = useCallback((prod: any) => {
+  const addToCart = useCallback((prod: any, variante?: any) => {
+    // Si el producto tiene variantes y no se ha especificado una variante particular, abrir modal de selección
+    if (!variante && prod.tieneVariantes && Array.isArray(prod.variantes) && prod.variantes.length > 0) {
+      setSelectedProductVariants(prod)
+      setShowVariantModal(true)
+      return
+    }
+
     const resolvedTipoIva = prod.productoExentoIva
       ? 'EXENTO'
       : (prod.liquidarIva === false || (Array.isArray(prod.appliedTaxIds) && prod.appliedTaxIds.length === 0))
         ? 'EXCLUIDO'
         : (prod.tipoIva ?? 'IVA_19')
 
+    const itemPrecio = variante && Number(variante.precioBase) > 0 ? Number(variante.precioBase) : Number(prod.precioBase)
+    const itemSku = variante?.sku || prod.sku || ''
+    const itemStock = variante ? Number(variante.stock ?? 0) : Number(prod.stock ?? 999)
+    const visual = variante ? extraerAtributosVisuales(variante.atributos, variante.nombre) : null
+    const hexColor = visual?.colorHex || (variante ? buscarHexColor(variante.nombre) : undefined)
+
     setCart(prev => {
-      const idx = prev.findIndex(i => i.productoId === prod.id)
+      const targetVarId = variante?.id ?? undefined
+      const idx = prev.findIndex(i => i.productoId === prod.id && i.varianteId === targetVarId)
       if (idx >= 0) {
         const updated = [...prev]
-        if (updated[idx].cantidad < updated[idx].stock) {
+        if (updated[idx].cantidad < updated[idx].stock || puedeStockNegativo) {
           updated[idx] = { ...updated[idx], cantidad: updated[idx].cantidad + 1 }
+        } else {
+          toast.error(`Stock máximo alcanzado (${updated[idx].stock} und) para ${variante ? variante.nombre : prod.nombre}`)
         }
         return updated
       }
       return [...prev, {
         productoId: prod.id,
+        varianteId: targetVarId,
+        varianteNombre: variante?.nombre,
+        varianteHex: hexColor,
         nombre: prod.nombre,
-        sku: prod.sku ?? '',
-        precio: prod.precioBase,
+        sku: itemSku,
+        precio: itemPrecio,
         cantidad: 1,
         descuentoPct: 0,
         tipoIva: resolvedTipoIva,
-        stock: prod.stock ?? 999,
+        stock: itemStock,
       }]
     })
     setQ('')
-  }, [])
+    setShowVariantModal(false)
+    setSelectedProductVariants(null)
+  }, [puedeStockNegativo])
 
-  const removeFromCart = (productoId: number) => setCart(prev => prev.filter(i => i.productoId !== productoId))
-  const updateQty = (productoId: number, delta: number) => setCart(prev =>
-    prev.map(i => i.productoId === productoId
-      ? { ...i, cantidad: Math.max(1, Math.floor(i.cantidad + delta)) }
-      : i)
-  )
-  const updateDescuento = (productoId: number, pct: number) => setCart(prev =>
-    prev.map(i => i.productoId === productoId ? { ...i, descuentoPct: Math.max(0, Math.min(100, pct)) } : i)
-  )
+  const removeFromCart = (productoId: number, varianteId?: number) =>
+    setCart(prev => prev.filter(i => !(i.productoId === productoId && i.varianteId === (varianteId ?? undefined))))
+
+  const updateQty = (productoId: number, delta: number, varianteId?: number) =>
+    setCart(prev =>
+      prev.map(i => (i.productoId === productoId && i.varianteId === (varianteId ?? undefined))
+        ? { ...i, cantidad: Math.max(1, Math.floor(i.cantidad + delta)) }
+        : i)
+    )
+
+  const updateDescuento = (productoId: number, pct: number, varianteId?: number) =>
+    setCart(prev =>
+      prev.map(i => (i.productoId === productoId && i.varianteId === (varianteId ?? undefined))
+        ? { ...i, descuentoPct: Math.max(0, Math.min(100, pct)) }
+        : i)
+    )
 
   const handleSaveQuickProduct = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -624,6 +658,7 @@ export function PosScreen() {
       tipoDocumento: sesion?.caja?.documentoConfig?.sigla || 'POS',
       items: cart.map(i => ({
         productoId: i.productoId,
+        varianteId: i.varianteId,
         cantidad: i.cantidad,
         precioUnitario: i.precio,
         descuentoPct: i.descuentoPct,
@@ -797,7 +832,15 @@ export function PosScreen() {
                   if (e.key === 'Enter') {
                     if (filteredProducts.length === 1) {
                       e.preventDefault()
-                      addToCart(filteredProducts[0])
+                      const singleProd = filteredProducts[0]
+                      if (singleProd.varianteCoincidenteId) {
+                        const matchedVar = singleProd.variantes?.find((v: any) => v.id === singleProd.varianteCoincidenteId)
+                        if (matchedVar) {
+                          addToCart(singleProd, matchedVar)
+                          return
+                        }
+                      }
+                      addToCart(singleProd)
                       return
                     }
                     if (filteredProducts.length === 0 && q.trim().length > 0) {
@@ -896,7 +939,14 @@ export function PosScreen() {
                   {filteredProducts.map((prod: any) => (
                     <button
                       key={prod.id}
-                      onClick={() => addToCart(prod)}
+                      onClick={() => {
+                        if (prod.tieneVariantes && Array.isArray(prod.variantes) && prod.variantes.length > 0) {
+                          setSelectedProductVariants(prod)
+                          setShowVariantModal(true)
+                        } else {
+                          addToCart(prod)
+                        }
+                      }}
                       className={`rounded-xl p-3 text-left transition-all border-2 border-transparent hover:border-indigo-500 active:scale-95 flex flex-col justify-between transition-colors duration-200 ${
                         isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-sm border-slate-200'
                       }`}
@@ -922,7 +972,21 @@ export function PosScreen() {
                               Ref: {prod.referencia}
                             </span>
                           )}
+                          {Array.isArray(prod.codigosBarras) && prod.codigosBarras.length > 1 && (
+                            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded transition-colors duration-200 ${isDark ? 'bg-slate-700 text-slate-300 border border-slate-600' : 'bg-slate-100 text-slate-600 border border-slate-200'}`} title={`Códigos de barra registrados: ${prod.codigosBarras.join(', ')}`}>
+                              {prod.codigosBarras.length} cód.
+                            </span>
+                          )}
                         </div>
+                        {prod.tieneVariantes && Array.isArray(prod.variantes) && prod.variantes.length > 0 && (
+                          <div className="mt-1.5">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                              isDark ? 'bg-indigo-500/25 text-indigo-200 border border-indigo-400/30' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                            }`}>
+                              ✨ {prod.variantes.length} Variantes / Colores
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="mt-2">
                         <div className={`font-extrabold text-sm transition-colors duration-200 ${isDark ? 'text-indigo-400' : 'text-indigo-650'}`}>{fmt(prod.precioBase)}</div>
@@ -1127,27 +1191,48 @@ export function PosScreen() {
             ) : (
               cart.map(item => {
                 const c = calcItem(item)
+                const itemKey = `${item.productoId}-${item.varianteId ?? 0}`
                 return (
-                  <div key={item.productoId} className={`rounded-xl p-3 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800 shadow-sm'}`}>
+                  <div key={itemKey} className={`rounded-xl p-3 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800 shadow-sm'}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1 min-w-0">
                         <div className={`text-xs font-semibold leading-tight truncate transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-850'}`}>{item.nombre}</div>
-                        <div className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{fmt(item.precio)} c/u</div>
+                        {item.varianteNombre && (
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            {item.varianteHex && (
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                                style={{ backgroundColor: item.varianteHex }}
+                              />
+                            )}
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              isDark ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/50' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            }`}>
+                              {item.varianteNombre}
+                            </span>
+                            {item.sku && (
+                              <span className={`text-[9px] font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {item.sku}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div className={`text-xs mt-1 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{fmt(item.precio)} c/u</div>
                       </div>
-                      <button onClick={() => removeFromCart(item.productoId)} className={`shrink-0 transition-colors duration-200 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-600'}`}>
+                      <button onClick={() => removeFromCart(item.productoId, item.varianteId)} className={`shrink-0 transition-colors duration-200 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-600'}`}>
                         <Trash2 size={14} />
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => updateQty(item.productoId, -1)}
+                        <button onClick={() => updateQty(item.productoId, -1, item.varianteId)}
                           className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
                             isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                           }`}>
                           <Minus size={12} />
                         </button>
                         <span className={`font-bold text-sm w-8 text-center transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.cantidad}</span>
-                        <button onClick={() => updateQty(item.productoId, 1)}
+                        <button onClick={() => updateQty(item.productoId, 1, item.varianteId)}
                           className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
                             isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                           }`}>
@@ -1159,7 +1244,7 @@ export function PosScreen() {
                           <Tag size={10} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
                           <input
                             type="number" min={0} max={100} value={item.descuentoPct}
-                            onChange={e => updateDescuento(item.productoId, +e.target.value)}
+                            onChange={e => updateDescuento(item.productoId, +e.target.value, item.varianteId)}
                             className={`w-10 text-xs text-center rounded px-1 py-0.5 outline-none transition-colors duration-200 ${
                               isDark ? 'bg-slate-600 text-white' : 'bg-white text-slate-800 border border-slate-250'
                             }`}
@@ -1919,6 +2004,169 @@ export function PosScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal de Selección de Variante / Color para POS ── */}
+      {showVariantModal && selectedProductVariants && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className={`relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border flex flex-col max-h-[85vh] ${
+            isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            {/* Cabecera */}
+            <div className={`p-4 border-b flex items-start justify-between gap-3 ${
+              isDark ? 'border-slate-700 bg-slate-800/90' : 'border-slate-100 bg-slate-50/80'
+            }`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border ${
+                  isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'
+                }`}>
+                  {selectedProductVariants.imagen && !imgErrors[selectedProductVariants.id] ? (
+                    <img
+                      src={getMediaUrl(selectedProductVariants.imagen)}
+                      alt={selectedProductVariants.nombre}
+                      onError={() => setImgErrors(prev => ({ ...prev, [selectedProductVariants.id]: true }))}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Tag size={20} className={isDark ? 'text-slate-400' : 'text-slate-400'} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
+                    Seleccionar Color o Talla
+                  </div>
+                  <h3 className="text-sm font-extrabold truncate leading-tight">
+                    {selectedProductVariants.nombre}
+                  </h3>
+                  <div className="text-[11px] opacity-75 mt-0.5">
+                    Bodega: <span className="font-semibold">{sesion?.caja?.bodega?.nombre ?? 'Punto de Venta'}</span> • Stock total: <span className="font-bold">{selectedProductVariants.stock} und</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVariantModal(false)
+                  setSelectedProductVariants(null)
+                }}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-white' : 'hover:bg-slate-200 text-slate-400 hover:text-slate-800'
+                }`}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Listado de Variantes */}
+            <div className="p-4 overflow-y-auto space-y-2.5 flex-1">
+              {selectedProductVariants.variantes?.map((v: any) => {
+                const visual = extraerAtributosVisuales(v.atributos, v.nombre)
+                const hexColor = visual.colorHex || buscarHexColor(v.nombre)
+                const tieneStock = v.stock > 0
+                const puedeAgregar = tieneStock || puedeStockNegativo
+
+                return (
+                  <div
+                    key={v.id}
+                    onClick={() => {
+                      if (puedeAgregar) {
+                        addToCart(selectedProductVariants, v)
+                      } else {
+                        toast.error(`Sin stock disponible para "${v.nombre}"`)
+                      }
+                    }}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                      puedeAgregar
+                        ? isDark
+                          ? 'bg-slate-700/60 hover:bg-slate-700 hover:border-indigo-500/80 border-slate-600'
+                          : 'bg-white hover:bg-indigo-50/50 hover:border-indigo-300 border-slate-200 shadow-2xs'
+                        : isDark
+                          ? 'bg-slate-800/40 opacity-60 border-slate-700/60 cursor-not-allowed'
+                          : 'bg-slate-100/60 opacity-60 border-slate-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Swatch o Badge de Color */}
+                      {hexColor ? (
+                        <div className="relative shrink-0">
+                          <span
+                            className="w-8 h-8 rounded-full border-2 border-white shadow-md block"
+                            style={{ backgroundColor: hexColor }}
+                          />
+                        </div>
+                      ) : (
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                          isDark ? 'bg-indigo-950 text-indigo-300 border border-indigo-700' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                        }`}>
+                          {visual.tallaLabel || 'VAR'}
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate leading-tight flex items-center gap-2">
+                          <span>{v.nombre}</span>
+                          {visual.tallaLabel && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-600 font-mono">
+                              Talla {visual.tallaLabel}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono opacity-70">
+                          <span>SKU: {v.sku}</span>
+                          {v.codigoBarras && <span>• Cód: {v.codigoBarras}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 flex items-center gap-3">
+                      <div>
+                        <div className="text-xs font-extrabold">
+                          {fmt(v.precioBase > 0 ? v.precioBase : selectedProductVariants.precioBase)}
+                        </div>
+                        <div className={`text-[10px] font-bold ${
+                          tieneStock
+                            ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                            : isDark ? 'text-rose-400' : 'text-rose-600'
+                        }`}>
+                          {tieneStock ? `${v.stock} und disp.` : 'Sin stock'}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={!puedeAgregar}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all ${
+                          puedeAgregar
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs active:scale-95'
+                            : 'bg-slate-300 text-slate-500 dark:bg-slate-700 dark:text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <Plus size={13} />
+                        <span>Agregar</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Pie del modal */}
+            <div className={`p-3 border-t flex justify-end ${isDark ? 'border-slate-700 bg-slate-800/80' : 'border-slate-100 bg-slate-50'}`}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVariantModal(false)
+                  setSelectedProductVariants(null)
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold ${
+                  isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                }`}
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

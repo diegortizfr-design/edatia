@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsArray, MinLength, IsIn, IsInt, Min } from 'class-validator'
+import { IsString, IsOptional, IsBoolean, IsNumber, IsArray, MinLength, IsIn, IsInt, Min, Max } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class CreateTerceroDto {
@@ -39,6 +39,9 @@ export class CreateTerceroDto {
   municipio?: string
 
   @IsString() @IsOptional()
+  barrio?: string
+
+  @IsString() @IsOptional()
   codigoDane?: string
 
   @IsString() @IsOptional()
@@ -46,6 +49,12 @@ export class CreateTerceroDto {
 
   @IsString() @IsOptional()
   direccion?: string
+
+  @IsInt() @IsOptional() @Min(0) @Max(31) @Type(() => Number)
+  cumpleanosDia?: number
+
+  @IsInt() @IsOptional() @Min(0) @Max(12) @Type(() => Number)
+  cumpleanosMes?: number
 
   // Roles Flags
   @IsBoolean() @IsOptional()

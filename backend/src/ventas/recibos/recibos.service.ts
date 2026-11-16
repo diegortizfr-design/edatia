@@ -52,7 +52,8 @@ export class RecibosService {
           where: { id: ap.facturaId, empresaId },
         })
         if (!f) throw new NotFoundException(`Factura ${ap.facturaId} no encontrada`)
-        if (Number(f.saldo) < ap.valor) {
+        const diff = ap.valor - Number(f.saldo);
+        if (diff > 1) {
           throw new BadRequestException(`El valor a aplicar supera el saldo de la factura ${f.numero}`)
         }
       }
@@ -105,9 +106,11 @@ export class RecibosService {
       if (dto.aplicaciones?.length) {
         for (const ap of dto.aplicaciones) {
           const f = await tx.facturaVenta.findUnique({ where: { id: ap.facturaId } })
-          const nuevoSaldo = Math.max(0, Number(f!.saldo) - ap.valor)
-          const nuevoTotalPagado = Number(f!.totalPagado) + ap.valor
-          const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PARCIAL'
+          const saldoNum = Number(f!.saldo);
+          const nuevoSaldoCalc = Math.max(0, Number((saldoNum - ap.valor).toFixed(2)));
+          const nuevoEstado = nuevoSaldoCalc <= 0.05 ? 'PAGADA' : 'PARCIAL';
+          const nuevoSaldo = nuevoEstado === 'PAGADA' ? 0 : nuevoSaldoCalc;
+          const nuevoTotalPagado = Math.min(Number(f!.total), Number(f!.totalPagado) + ap.valor);
           await tx.facturaVenta.update({
             where: { id: ap.facturaId },
             data: { saldo: nuevoSaldo, totalPagado: nuevoTotalPagado, estado: nuevoEstado },

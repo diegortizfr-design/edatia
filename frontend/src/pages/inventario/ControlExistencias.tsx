@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -12,7 +12,7 @@ import {
   Layers, Hash, SlidersHorizontal, Plus, ArrowRightLeft,
   Lock, Eye, EyeOff, X, Check, History, MapPin, AlertCircle,
   FileSpreadsheet, ArrowDownLeft, ArrowUpRight, Printer, FileText,
-  Tag
+  Tag, ChevronDown, ChevronUp, CornerDownRight
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { getApiError } from '../../services/api'
@@ -59,6 +59,8 @@ export function ControlExistencias() {
     motivo: string
     codigoAutorizacion: string
     mostrarPass: boolean
+    stocksVariantes: Record<number, string>
+    variantePreseleccionadaId?: number | null
   }>({
     abierto: false,
     producto: null,
@@ -67,7 +69,11 @@ export function ControlExistencias() {
     motivo: '',
     codigoAutorizacion: '',
     mostrarPass: false,
+    stocksVariantes: {},
+    variantePreseleccionadaId: null,
   })
+
+  const [productosExpandidos, setProductosExpandidos] = useState<Record<number, boolean>>({})
 
   const [modalHistorial, setModalHistorial] = useState<{
     abierto: boolean
@@ -179,12 +185,26 @@ export function ControlExistencias() {
   // 1. Filtrar órdenes de compra pendientes
   const ocsPendientes = ocs.filter(oc => oc.estado === 'APROBADA' || oc.estado === 'ENVIADA')
 
-  // 2. Procesar productos con stock filtrado por bodega
+  // 2. Procesar productos con stock filtrado por bodega (incluyendo variantes / tallas)
   const existenciasProcesadas = productos.map(p => {
     let stockTotal = 0
     let stockReservado = 0
+    const tieneVariantes = Boolean(p.variantes && p.variantes.length > 0)
     
-    if (p.stock) {
+    if (tieneVariantes) {
+      p.variantes.forEach((v: any) => {
+        if (bodegaSeleccionada === 'todas') {
+          stockTotal += (v.stock || []).reduce((sum: number, s: any) => sum + Number(s.cantidad || 0), 0)
+          stockReservado += (v.stock || []).reduce((sum: number, s: any) => sum + Number(s.cantidadReservada || 0), 0)
+        } else {
+          const stockBodega = (v.stock || []).find((s: any) => String(s.bodegaId) === bodegaSeleccionada)
+          if (stockBodega) {
+            stockTotal += Number(stockBodega.cantidad || 0)
+            stockReservado += Number(stockBodega.cantidadReservada || 0)
+          }
+        }
+      })
+    } else if (p.stock) {
       if (bodegaSeleccionada === 'todas') {
         stockTotal = p.stock.reduce((sum: number, s: any) => sum + Number(s.cantidad || 0), 0)
         stockReservado = p.stock.reduce((sum: number, s: any) => sum + Number(s.cantidadReservada || 0), 0)
@@ -199,6 +219,7 @@ export function ControlExistencias() {
 
     return {
       ...p,
+      tieneVariantes,
       stockCalculado: stockTotal,
       reservadoCalculado: stockReservado,
       disponibleCalculado: stockTotal - stockReservado
@@ -212,10 +233,11 @@ export function ControlExistencias() {
       return false
     }
 
-    // Si se selecciona una bodega específica, verificar si el producto tiene registro de stock en ella
+    // Si se selecciona una bodega específica, verificar si el producto o sus variantes tienen registro de stock en ella
     if (bodegaSeleccionada !== 'todas') {
-      const tieneEnBodega = p.stock && p.stock.some((s: any) => String(s.bodegaId) === bodegaSeleccionada)
-      if (!tieneEnBodega) return false
+      const tieneEnBodega = (p.stock && p.stock.some((s: any) => String(s.bodegaId) === bodegaSeleccionada)) ||
+        (p.tieneVariantes && p.variantes?.some((v: any) => (v.stock || []).some((s: any) => String(s.bodegaId) === bodegaSeleccionada)))
+      if (!tieneEnBodega && !mostrarSinStock) return false
     }
 
     // Filtrar por categoría seleccionada
@@ -228,7 +250,14 @@ export function ControlExistencias() {
       const matchNombre = p.nombre.toLowerCase().includes(qLower)
       const matchSku = p.sku.toLowerCase().includes(qLower)
       const matchBarcode = p.codigoBarras && p.codigoBarras.includes(q)
-      if (!matchNombre && !matchSku && !matchBarcode) return false
+      const matchRef = p.referencia && p.referencia.toLowerCase().includes(qLower)
+      const matchMultiBarcode = Array.isArray(p.codigosBarrasRel) && p.codigosBarrasRel.some((c: any) => c.codigo && c.codigo.includes(q))
+      const matchVariante = p.tieneVariantes && p.variantes?.some((v: any) => 
+        (v.nombre && v.nombre.toLowerCase().includes(qLower)) ||
+        (v.sku && v.sku.toLowerCase().includes(qLower)) ||
+        (v.codigoBarras && v.codigoBarras.includes(q))
+      )
+      if (!matchNombre && !matchSku && !matchBarcode && !matchRef && !matchMultiBarcode && !matchVariante) return false
     }
 
     return true
@@ -288,14 +317,26 @@ export function ControlExistencias() {
     })
   }
 
-  const handleOpenModificarKardex = (prod: any) => {
+  const handleOpenModificarKardex = (prod: any, variantePreseleccionadaId?: number) => {
     const defaultBodega = bodegaSeleccionada !== 'todas' 
       ? bodegaSeleccionada 
       : (bodegas[0] ? String(bodegas[0].id) : '')
     
-    // Obtener saldo actual en esa bodega
+    const tieneVar = Boolean(prod.variantes && prod.variantes.length > 0)
+    const initialVarStocks: Record<number, string> = {}
+    let totalActualVar = 0
+
+    if (tieneVar) {
+      prod.variantes.forEach((v: any) => {
+        const stBodegaVar = (v.stock || []).find((s: any) => String(s.bodegaId) === defaultBodega)
+        const c = stBodegaVar ? Number(stBodegaVar.cantidad || 0) : 0
+        initialVarStocks[v.id] = String(c)
+        totalActualVar += c
+      })
+    }
+
     const stBodega = prod.stock?.find((s: any) => String(s.bodegaId) === defaultBodega)
-    const saldoActual = stBodega ? Number(stBodega.cantidad || 0) : 0
+    const saldoActual = tieneVar ? totalActualVar : (stBodega ? Number(stBodega.cantidad || 0) : 0)
 
     setModalKardex({
       abierto: true,
@@ -305,6 +346,8 @@ export function ControlExistencias() {
       motivo: '',
       codigoAutorizacion: '',
       mostrarPass: false,
+      stocksVariantes: initialVarStocks,
+      variantePreseleccionadaId: variantePreseleccionadaId ?? null,
     })
   }
 
@@ -373,10 +416,6 @@ export function ControlExistencias() {
       toast.error('Seleccione la bodega para el ajuste')
       return
     }
-    if (modalKardex.nuevoStock === '' || isNaN(Number(modalKardex.nuevoStock)) || Number(modalKardex.nuevoStock) < 0) {
-      toast.error('Ingrese un saldo físico válido (mayor o igual a cero)')
-      return
-    }
     if (!modalKardex.motivo.trim()) {
       toast.error('Ingrese la justificación del ajuste manual')
       return
@@ -386,13 +425,44 @@ export function ControlExistencias() {
       return
     }
 
-    mutModificarKardex.mutate({
-      productoId: modalKardex.producto.id,
-      bodegaId: Number(modalKardex.bodegaId),
-      nuevoStock: Number(modalKardex.nuevoStock),
-      motivo: modalKardex.motivo.trim(),
-      codigoAutorizacion: modalKardex.codigoAutorizacion.trim(),
-    })
+    const tieneVar = Boolean(modalKardex.producto.variantes && modalKardex.producto.variantes.length > 0)
+
+    if (tieneVar) {
+      // Validar cada variante
+      for (const v of modalKardex.producto.variantes) {
+        const val = modalKardex.stocksVariantes[v.id]
+        if (val === undefined || val === '' || isNaN(Number(val)) || Number(val) < 0) {
+          toast.error(`Ingrese un saldo válido para la talla/variante "${v.nombre}"`)
+          return
+        }
+      }
+
+      const ajustesVariantes = modalKardex.producto.variantes.map((v: any) => ({
+        varianteId: v.id,
+        nuevoStock: Number(modalKardex.stocksVariantes[v.id])
+      }))
+
+      mutModificarKardex.mutate({
+        productoId: modalKardex.producto.id,
+        bodegaId: Number(modalKardex.bodegaId),
+        ajustesVariantes,
+        motivo: modalKardex.motivo.trim(),
+        codigoAutorizacion: modalKardex.codigoAutorizacion.trim(),
+      })
+    } else {
+      if (modalKardex.nuevoStock === '' || isNaN(Number(modalKardex.nuevoStock)) || Number(modalKardex.nuevoStock) < 0) {
+        toast.error('Ingrese un saldo físico válido (mayor o igual a cero)')
+        return
+      }
+
+      mutModificarKardex.mutate({
+        productoId: modalKardex.producto.id,
+        bodegaId: Number(modalKardex.bodegaId),
+        nuevoStock: Number(modalKardex.nuevoStock),
+        motivo: modalKardex.motivo.trim(),
+        codigoAutorizacion: modalKardex.codigoAutorizacion.trim(),
+      })
+    }
   }
 
   return (
@@ -614,7 +684,8 @@ export function ControlExistencias() {
                   const ubicacionTexto = [p.ubicacion1, p.ubicacion2].filter(Boolean).join(' • ') || '—'
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                    <Fragment key={p.id}>
+                      <tr className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
@@ -623,6 +694,18 @@ export function ControlExistencias() {
                           <div>
                             <p className="font-semibold text-slate-800 leading-tight">{p.nombre}</p>
                             <p className="text-[10px] font-mono text-slate-400 mt-0.5">{p.sku}</p>
+                            {p.tieneVariantes && (
+                              <button
+                                type="button"
+                                onClick={() => setProductosExpandidos(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+                                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors"
+                                title="Ver desglose por tallas"
+                              >
+                                <Layers size={10} />
+                                <span>{p.variantes.length} {p.variantes.length === 1 ? 'Talla' : 'Tallas'}</span>
+                                {productosExpandidos[p.id] ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -675,8 +758,64 @@ export function ControlExistencias() {
                         </div>
                       </td>
                     </tr>
-                  )
-                })}
+
+                    {/* Subfilas de variantes / tallas cuando la fila está expandida */}
+                    {productosExpandidos[p.id] && p.tieneVariantes && p.variantes?.map((v: any) => {
+                      let vStock = 0
+                      let vReservado = 0
+                      if (bodegaSeleccionada === 'todas') {
+                        vStock = (v.stock || []).reduce((sum: number, s: any) => sum + Number(s.cantidad || 0), 0)
+                        vReservado = (v.stock || []).reduce((sum: number, s: any) => sum + Number(s.cantidadReservada || 0), 0)
+                      } else {
+                        const stB = (v.stock || []).find((s: any) => String(s.bodegaId) === bodegaSeleccionada)
+                        vStock = stB ? Number(stB.cantidad || 0) : 0
+                        vReservado = stB ? Number(stB.cantidadReservada || 0) : 0
+                      }
+                      const vDisponible = vStock - vReservado
+                      const tallaAttr = (v.atributos || []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+
+                      return (
+                        <tr key={`var-${v.id}`} className="bg-indigo-50/20 border-b border-indigo-100/40 hover:bg-indigo-50/40 transition-colors text-xs">
+                          <td className="px-5 py-2.5 pl-12">
+                            <div className="flex items-center gap-2">
+                              <CornerDownRight size={13} className="text-indigo-400 shrink-0" />
+                              <span className="px-2 py-0.5 rounded-md bg-white border border-indigo-200 text-indigo-800 font-extrabold text-xs font-mono shadow-2xs">
+                                {tallaAttr ? `Talla ${tallaAttr.valor}` : v.nombre}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-500 font-bold">Ref: {v.sku}</span>
+                              {v.codigoBarras && <span className="text-[10px] font-mono text-slate-400">SKU: {v.codigoBarras}</span>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 hidden md:table-cell text-slate-400 text-[11px]">Talla / Variante</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600 font-mono">{fmtMoneda(Number(v.costoPromedio || p.costoPromedio))}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-slate-700 font-mono">{fmtMoneda(Number(v.precioBase || p.precioBase))}</td>
+                          <td className="px-4 py-2.5 text-center font-extrabold text-indigo-900">{vStock}</td>
+                          <td className="px-4 py-2.5 text-center text-slate-500">{vReservado}</td>
+                          <td className="px-4 py-2.5 text-center font-bold text-indigo-600">{vDisponible}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className={`inline-flex items-center font-bold px-2 py-0.5 rounded-full border text-[10px] ${
+                              vStock > 0 ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'
+                            }`}>
+                              {vStock > 0 ? 'Disponible' : 'Sin Stock'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center hidden lg:table-cell text-slate-400 text-[11px]">—</td>
+                          <td className="px-5 py-2.5 text-center">
+                            <button
+                              onClick={() => handleOpenModificarKardex(p, v.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[10px] font-bold border border-amber-200 transition-colors shadow-2xs"
+                              title={`Ajustar Kardex para ${tallaAttr ? `Talla ${tallaAttr.valor}` : v.nombre}`}
+                            >
+                              <Lock size={11} />
+                              <span>Ajustar Talla</span>
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </Fragment>
+                )
+              })}
               </tbody>
             </table>
           </div>
@@ -960,187 +1099,335 @@ export function ControlExistencias() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL 2: Modificar Kardex Manual con Contraseña                          */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {modalKardex.abierto && modalKardex.producto && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0">
-                  <Lock size={18} />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-amber-900 text-sm truncate">Modificación Manual de Kardex</h3>
-                  <p className="text-[11px] text-amber-700/80 truncate">Acción protegida mediante código de autorización empresarial</p>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setModalKardex(prev => ({ ...prev, abierto: false }))}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmitKardex} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
-                {/* Info producto */}
-                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between text-xs">
-                  <div>
-                    <p className="font-bold text-slate-800">{modalKardex.producto.nombre}</p>
-                    <p className="text-[10px] font-mono text-slate-500">SKU: {modalKardex.producto.sku}</p>
+      {modalKardex.abierto && modalKardex.producto && (() => {
+        const tieneVariantes = Boolean(modalKardex.producto.variantes && modalKardex.producto.variantes.length > 0)
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+            <div className={`bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${tieneVariantes ? 'max-w-2xl' : 'max-w-lg'} max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150`}>
+              {/* Header */}
+              <div className="px-5 sm:px-6 py-3.5 sm:py-4 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-2 bg-amber-100 text-amber-700 rounded-xl shrink-0">
+                    <Lock size={18} />
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
-                    <span className="font-bold text-slate-700">{fmtMoneda(Number(modalKardex.producto.costoPromedio))}</span>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-amber-900 text-sm truncate">
+                      {tieneVariantes ? 'Alimentar Stock de Variantes / Tallas en Kardex' : 'Modificación Manual de Kardex'}
+                    </h3>
+                    <p className="text-[11px] text-amber-700/80 truncate">Acción protegida mediante código de autorización empresarial</p>
                   </div>
                 </div>
-
-                {/* Selector de Bodega */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Bodega a Ajustar *
-                  </label>
-                  <select
-                    value={modalKardex.bodegaId}
-                    onChange={e => {
-                      const bId = e.target.value
-                      const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === bId)
-                      const saldo = stBodega ? Number(stBodega.cantidad || 0) : 0
-                      setModalKardex(prev => ({ ...prev, bodegaId: bId, nuevoStock: String(saldo) }))
-                    }}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="">Seleccione una bodega...</option>
-                    {bodegas.map(b => (
-                      <option key={b.id} value={b.id}>
-                        {b.nombre} ({b.codigo})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Comparador de Stock Actual vs Nuevo */}
-                {modalKardex.bodegaId && (() => {
-                  const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
-                  const stockActual = stBodega ? Number(stBodega.cantidad || 0) : 0
-                  const nuevo = Number(modalKardex.nuevoStock) || 0
-                  const dif = nuevo - stockActual
-
-                  return (
-                    <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual</p>
-                        <p className="text-base font-extrabold text-slate-700 mt-0.5">{stockActual}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Saldo</p>
-                        <p className="text-base font-extrabold text-indigo-600 mt-0.5">{nuevo}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia</p>
-                        <p className={`text-base font-extrabold mt-0.5 ${dif > 0 ? 'text-green-600' : dif < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                          {dif > 0 ? `+${dif}` : dif}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Nuevo Stock Input */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Nuevo Saldo Físico Real en Bodega *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    required
-                    value={modalKardex.nuevoStock}
-                    onChange={e => setModalKardex(prev => ({ ...prev, nuevoStock: e.target.value }))}
-                    placeholder="Ingrese el stock real resultante"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                </div>
-
-                {/* Justificación obligatoria */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Motivo o Justificación del Ajuste *
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={modalKardex.motivo}
-                    onChange={e => setModalKardex(prev => ({ ...prev, motivo: e.target.value }))}
-                    placeholder="Ej. Conteo físico anual / Corrección de inventario por auditoría..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
-                  />
-                </div>
-
-                {/* Contraseña empresarial */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
-                      Contraseña de Autorización Empresarial *
-                    </label>
-                    <span className="text-[10px] text-slate-400">Configurada a nivel de empresa</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={modalKardex.mostrarPass ? 'text' : 'password'}
-                      required
-                      value={modalKardex.codigoAutorizacion}
-                      onChange={e => setModalKardex(prev => ({ ...prev, codigoAutorizacion: e.target.value }))}
-                      placeholder="Clave de seguridad para modificar kardex..."
-                      className="w-full pl-3.5 pr-10 py-2.5 bg-amber-50/40 border border-amber-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setModalKardex(prev => ({ ...prev, mostrarPass: !prev.mostrarPass }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {modalKardex.mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Warning note */}
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-[11px] flex gap-2 items-start">
-                  <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                  <span>
-                    Esta acción quedará registrada en el historial del Kardex y en la auditoría del ERP con tu usuario, fecha y justificación.
-                  </span>
-                </div>
-              </div>
-
-              {/* Footer buttons (fijado abajo) */}
-              <div className="flex justify-end gap-2.5 px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
-                <button
+                <button 
                   type="button"
                   onClick={() => setModalKardex(prev => ({ ...prev, abierto: false }))}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0 cursor-pointer"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={mutModificarKardex.isPending}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 active:scale-95 disabled:opacity-50 shadow-sm shadow-amber-600/10 transition-all"
-                >
-                  <Lock size={14} />
-                  {mutModificarKardex.isPending ? 'Validando...' : 'Autorizar y Ajustar Kardex'}
+                  <X size={18} />
                 </button>
               </div>
 
-            </form>
+              {/* Form */}
+              <form onSubmit={handleSubmitKardex} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                  {/* Info producto */}
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-800">{modalKardex.producto.nombre}</p>
+                      <p className="text-[10px] font-mono text-slate-500">
+                        SKU: {modalKardex.producto.sku}
+                        {modalKardex.producto.referencia && ` • Ref: ${modalKardex.producto.referencia}`}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Costo Promedio</span>
+                      <span className="font-bold text-slate-700">{fmtMoneda(Number(modalKardex.producto.costoPromedio))}</span>
+                    </div>
+                  </div>
+
+                  {/* Selector de Bodega */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Bodega a Ajustar *
+                    </label>
+                    <select
+                      value={modalKardex.bodegaId}
+                      onChange={e => {
+                        const bId = e.target.value
+                        const updatedVarStocks: Record<number, string> = {}
+                        let totalVar = 0
+
+                        if (tieneVariantes) {
+                          modalKardex.producto.variantes.forEach((v: any) => {
+                            const stV = (v.stock || []).find((s: any) => String(s.bodegaId) === bId)
+                            const c = stV ? Number(stV.cantidad || 0) : 0
+                            updatedVarStocks[v.id] = String(c)
+                            totalVar += c
+                          })
+                        }
+
+                        const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === bId)
+                        const saldo = tieneVariantes ? totalVar : (stBodega ? Number(stBodega.cantidad || 0) : 0)
+
+                        setModalKardex(prev => ({
+                          ...prev,
+                          bodegaId: bId,
+                          nuevoStock: String(saldo),
+                          stocksVariantes: updatedVarStocks,
+                        }))
+                      }}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="">Seleccione una bodega...</option>
+                      {bodegas.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.nombre} ({b.codigo})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* CASO A: Producto Padre con Variantes / Tallas */}
+                  {tieneVariantes ? (
+                    <div className="space-y-3">
+                      <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3 flex items-start gap-2.5">
+                        <Layers className="text-indigo-600 shrink-0 mt-0.5" size={16} />
+                        <div className="text-xs">
+                          <h4 className="font-extrabold text-indigo-950 flex items-center gap-1.5">
+                            <span>Producto Padre con {modalKardex.producto.variantes.length} Variantes / Tallas</span>
+                          </h4>
+                          <p className="text-indigo-700/90 text-[11px] mt-0.5">
+                            Ingresa el conteo físico real de cada talla en la bodega seleccionada. Cada cambio generará su movimiento auditado en el Kardex y sumará al stock total consolidado.
+                          </p>
+                        </div>
+                      </div>
+
+                      {modalKardex.bodegaId ? (
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                              <tr>
+                                <th className="p-2.5 text-left">Talla / Identificador</th>
+                                <th className="p-2.5 text-left">Ref. Fábrica</th>
+                                <th className="p-2.5 text-center">Stock Actual</th>
+                                <th className="p-2.5 text-center w-28">Nuevo Saldo *</th>
+                                <th className="p-2.5 text-center">Diferencia</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {modalKardex.producto.variantes.map((v: any) => {
+                                const stV = (v.stock || []).find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
+                                const actual = stV ? Number(stV.cantidad || 0) : 0
+                                const nuevoVal = modalKardex.stocksVariantes[v.id] ?? ''
+                                const nuevoNum = Number(nuevoVal) || 0
+                                const dif = nuevoNum - actual
+                                const tallaAttr = (v.atributos || []).find((a: any) => a.nombre?.toLowerCase() === 'talla')
+                                const isPreselected = modalKardex.variantePreseleccionadaId === v.id
+
+                                return (
+                                  <tr key={v.id} className={`transition-colors ${isPreselected ? 'bg-amber-50/70' : 'hover:bg-slate-50/60'}`}>
+                                    <td className="p-2.5 font-bold text-slate-800">
+                                      <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-md font-mono text-xs">
+                                        {tallaAttr ? `Talla ${tallaAttr.valor}` : v.nombre}
+                                      </span>
+                                    </td>
+                                    <td className="p-2.5 font-mono text-[11px] text-slate-600">
+                                      <div>{v.sku}</div>
+                                      {v.codigoBarras && <div className="text-[10px] text-slate-400">SKU: {v.codigoBarras}</div>}
+                                    </td>
+                                    <td className="p-2.5 text-center font-bold text-slate-700">
+                                      {actual}
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        required
+                                        value={nuevoVal}
+                                        onChange={e => {
+                                          const val = e.target.value
+                                          setModalKardex(prev => ({
+                                            ...prev,
+                                            stocksVariantes: { ...prev.stocksVariantes, [v.id]: val }
+                                          }))
+                                        }}
+                                        placeholder="0"
+                                        className="w-24 px-2 py-1.5 text-center font-extrabold text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800"
+                                      />
+                                    </td>
+                                    <td className="p-2.5 text-center font-extrabold text-xs">
+                                      <span className={dif > 0 ? 'text-emerald-600 font-bold' : dif < 0 ? 'text-red-600 font-bold' : 'text-slate-400'}>
+                                        {dif > 0 ? `+${dif}` : dif}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 font-medium">
+                          Selecciona una bodega arriba para cargar las existencias de cada talla.
+                        </div>
+                      )}
+
+                      {/* Resumen consolidado de tallas */}
+                      {modalKardex.bodegaId && (() => {
+                        let sumActual = 0
+                        let sumNuevo = 0
+                        modalKardex.producto.variantes.forEach((v: any) => {
+                          const stV = (v.stock || []).find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
+                          sumActual += stV ? Number(stV.cantidad || 0) : 0
+                          sumNuevo += Number(modalKardex.stocksVariantes[v.id] || 0)
+                        })
+                        const difTotal = sumNuevo - sumActual
+
+                        return (
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual Tallas</p>
+                              <p className="text-base font-extrabold text-slate-700 mt-0.5">{sumActual}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Total Consolidado</p>
+                              <p className="text-base font-extrabold text-indigo-600 mt-0.5">{sumNuevo}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia Neta</p>
+                              <p className={`text-base font-extrabold mt-0.5 ${difTotal > 0 ? 'text-emerald-600' : difTotal < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                                {difTotal > 0 ? `+${difTotal}` : difTotal}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  ) : (
+                    /* CASO B: Producto estándar sin variantes */
+                    <>
+                      {/* Comparador de Stock Actual vs Nuevo */}
+                      {modalKardex.bodegaId && (() => {
+                        const stBodega = modalKardex.producto.stock?.find((s: any) => String(s.bodegaId) === modalKardex.bodegaId)
+                        const stockActual = stBodega ? Number(stBodega.cantidad || 0) : 0
+                        const nuevo = Number(modalKardex.nuevoStock) || 0
+                        const dif = nuevo - stockActual
+
+                        return (
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Stock Actual</p>
+                              <p className="text-base font-extrabold text-slate-700 mt-0.5">{stockActual}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Nuevo Saldo</p>
+                              <p className="text-base font-extrabold text-indigo-600 mt-0.5">{nuevo}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Diferencia</p>
+                              <p className={`text-base font-extrabold mt-0.5 ${dif > 0 ? 'text-green-600' : dif < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                                {dif > 0 ? `+${dif}` : dif}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })()}
+
+                      {/* Nuevo Stock Input */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Nuevo Saldo Físico Real en Bodega *
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          required
+                          value={modalKardex.nuevoStock}
+                          onChange={e => setModalKardex(prev => ({ ...prev, nuevoStock: e.target.value }))}
+                          placeholder="Ingrese el stock real resultante"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Justificación obligatoria */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Motivo o Justificación del Ajuste *
+                    </label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={modalKardex.motivo}
+                      onChange={e => setModalKardex(prev => ({ ...prev, motivo: e.target.value }))}
+                      placeholder="Ej. Conteo físico anual / Corrección de inventario por auditoría..."
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none"
+                    />
+                  </div>
+
+                  {/* Contraseña empresarial */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                        Contraseña de Autorización Empresarial *
+                      </label>
+                      <span className="text-[10px] text-slate-400">Configurada a nivel de empresa</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={modalKardex.mostrarPass ? 'text' : 'password'}
+                        required
+                        value={modalKardex.codigoAutorizacion}
+                        onChange={e => setModalKardex(prev => ({ ...prev, codigoAutorizacion: e.target.value }))}
+                        placeholder="Clave de seguridad para modificar kardex..."
+                        className="w-full pl-3.5 pr-10 py-2.5 bg-amber-50/40 border border-amber-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setModalKardex(prev => ({ ...prev, mostrarPass: !prev.mostrarPass }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {modalKardex.mostrarPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Warning note */}
+                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl text-[11px] flex gap-2 items-start">
+                    <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      Esta acción quedará registrada en el historial del Kardex y en la auditoría del ERP con tu usuario, fecha y justificación.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer buttons (fijado abajo) */}
+                <div className="flex justify-end gap-2.5 px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setModalKardex(prev => ({ ...prev, abierto: false }))}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={mutModificarKardex.isPending}
+                    className="flex items-center gap-1.5 px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 active:scale-95 disabled:opacity-50 shadow-sm shadow-amber-600/10 transition-all cursor-pointer"
+                  >
+                    <Lock size={14} />
+                    {mutModificarKardex.isPending ? 'Validando...' : 'Autorizar y Ajustar Kardex'}
+                  </button>
+                </div>
+
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL 3: Visor Rápido de Kardex del Producto                              */}

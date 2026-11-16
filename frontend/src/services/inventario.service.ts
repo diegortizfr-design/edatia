@@ -59,9 +59,46 @@ export interface Movimiento {
 
 export interface InvKpis {
   totalProductos: number; totalBodegas: number
-  movimientosRecientes: number; valorTotal: number
+  movimientosRecientes?: number; valorTotal: number
+  valorTotalCostoPromedio?: number
+  valorTotalUltimoCosto?: number
   productosAlertas: number
-  topProductos: Array<{ productoId: number; nombre: string; sku: string; cantidad: number; valor: number; claseAbc?: string }>
+  topProductos: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
+  topProductosUltimoCosto?: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
+  topProductosCostoPromedio?: Array<{
+    productoId: number
+    nombre: string
+    sku: string
+    cantidad: number
+    valor: number
+    valorCostoPromedio?: number
+    valorUltimoCosto?: number
+    costoPromedio?: number
+    costoUltimo?: number
+    claseAbc?: string
+  }>
   alertasCriticas: StockItem[]
   // Extended dashboard fields
   totalProveedores?: number
@@ -134,12 +171,17 @@ export const postTraslado = (data: any) => api.post('/inventario/movimientos/tra
 export const postAjusteManualKardex = (data: {
   productoId: number
   bodegaId: number
-  nuevoStock: number
+  nuevoStock?: number
   motivo: string
   codigoAutorizacion: string
   costoUnitario?: number
   loteNumero?: string
   seriales?: string[]
+  varianteId?: number
+  ajustesVariantes?: Array<{
+    varianteId: number
+    nuevoStock: number
+  }>
 }) => api.post('/inventario/movimientos/modificar-kardex', data).then(r => r.data)
 
 // Dashboard
@@ -295,6 +337,8 @@ export const toggleVariante = (id: number) =>
   api.patch(`/inventario/variantes/${id}/toggle`).then(r => r.data)
 export const ajustarStockVariante = (id: number, data: any) =>
   api.post(`/inventario/variantes/${id}/stock`, data).then(r => r.data)
+export const deleteVariante = (id: number) =>
+  api.delete(`/inventario/variantes/${id}`).then(r => r.data)
 
 // ── Facturas de Compra (FC) y Recibir Traslado ──
 export interface FacturaCompra {

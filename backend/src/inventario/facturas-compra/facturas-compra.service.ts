@@ -38,7 +38,7 @@ export class FacturasCompraService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly comprobantes: ComprobantesService,
-  ) {}
+  ) { }
 
   async findAll(empresaId: number, query?: { query?: string; proveedorId?: number }) {
     const where: any = { empresaId };
@@ -323,6 +323,33 @@ export class FacturasCompraService implements OnModuleInit {
           } : undefined
         },
       });
+
+      // Actualizar costos del producto al registrar la Factura de Compra (Último Costo, Costo Base y Costo Promedio CPP)
+      if (dto.items && dto.items.length > 0) {
+        for (const item of dto.items) {
+          const productoId = Number(item.productoId);
+          const costoUnit = Number(item.costoUnitario || 0);
+          const cantNueva = Math.max(0, Number(item.cantidad || 0));
+
+          if (productoId && costoUnit > 0) {
+            const { nuevoCPP } = await calcularNuevoCPP(tx, {
+              productoId,
+              empresaId,
+              cantNueva: cantNueva > 0 ? cantNueva : 1,
+              costoUnitario: costoUnit,
+            });
+
+            await tx.producto.update({
+              where: { id: productoId },
+              data: {
+                costoUltimo: costoUnit,
+                costo: costoUnit,
+                costoPromedio: nuevoCPP,
+              },
+            });
+          }
+        }
+      }
 
       // Si viene vinculada a una Orden de Compra, actualizamos el estado de la OC
       if (dto.ordenCompraId) {
@@ -682,15 +709,15 @@ export class FacturasCompraService implements OnModuleInit {
     const egresoAsociado = (fc as any).egresoId
       ? await this.prisma.egreso.findFirst({ where: { id: (fc as any).egresoId, empresaId } })
       : await this.prisma.egreso.findFirst({
-          where: {
-            empresaId,
-            OR: [
-              { referencia: fc.numero },
-              { concepto: { contains: fc.consecutivoProveedor } },
-            ],
-            estado: { not: 'ANULADO' },
-          },
-        });
+        where: {
+          empresaId,
+          OR: [
+            { referencia: fc.numero },
+            { concepto: { contains: fc.consecutivoProveedor } },
+          ],
+          estado: { not: 'ANULADO' },
+        },
+      });
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Si hay un Egreso contable real asociado, anularlo automáticamente
@@ -866,6 +893,7 @@ export class FacturasCompraService implements OnModuleInit {
           data: {
             costoPromedio: nuevoCPP,
             costoUltimo: costoUnitario,
+            costo: costoUnitario,
           },
         });
 
@@ -963,7 +991,7 @@ export class FacturasCompraService implements OnModuleInit {
     for (const f of facturas) {
       const provId = f.proveedorId;
       const fSaldo = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : (f.formaPago === 'CONTADO' ? 0 : Number(f.total));
-      if (fSaldo <= 0) continue;
+      if (fSaldo <= 0.05) continue;
 
       if (!proveedorMap.has(provId)) {
         proveedorMap.set(provId, {
@@ -997,13 +1025,16 @@ export class FacturasCompraService implements OnModuleInit {
     if (valorNum <= 0) throw new BadRequestException('El valor del pago debe ser mayor a 0');
 
     const saldoActual = fc.saldo !== null && fc.saldo !== undefined ? Number(fc.saldo) : (fc.formaPago === 'CONTADO' ? 0 : Number(fc.total));
-    if (valorNum > saldoActual) {
+    const diff = valorNum - saldoActual;
+    // Tolerancia al peso: si la diferencia es <= 1 peso, se considera redondeo de centavos en COP
+    if (diff > 1) {
       throw new BadRequestException(`El valor del pago (${valorNum}) supera el saldo pendiente (${saldoActual})`);
     }
 
-    const nuevoSaldo = Math.max(0, saldoActual - valorNum);
-    const nuevoTotalPagado = Number(fc.totalPagado ?? 0) + valorNum;
-    const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PARCIAL';
+    const nuevoSaldoCalc = Math.max(0, Number((saldoActual - valorNum).toFixed(2)));
+    const nuevoEstado = nuevoSaldoCalc <= 0.05 ? 'PAGADA' : 'PARCIAL';
+    const nuevoSaldo = nuevoEstado === 'PAGADA' ? 0 : nuevoSaldoCalc;
+    const nuevoTotalPagado = Math.min(Number(fc.total), Number(fc.totalPagado ?? 0) + valorNum);
 
     return this.prisma.$transaction(async (tx) => {
       const fecha = new Date();

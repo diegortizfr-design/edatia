@@ -1,11 +1,26 @@
+export interface ProductVariant {
+  id: number
+  sku: string
+  nombre: string
+  atributos?: any[]
+  precioBase?: number
+  stockDisponible: number
+}
+
 export interface Product {
   id: number
   sku?: string
+  referencia?: string
+  marca?: string
   slug?: string
   nombre: string
   descripcion: string
   descripcionLarga: string
   precio: number
+  precioSubtotal: number
+  impuesto: number
+  ivaPct: number
+  tipoIva?: string
   precioAnterior?: number
   categoria: string
   subcategoria?: string
@@ -16,6 +31,8 @@ export interface Product {
   rating: number
   reviewsCount?: number
   stock: number
+  tieneVariantes?: boolean
+  variantes?: ProductVariant[]
   esDestacado?: boolean
   esOferta?: boolean
   esNovedad?: boolean

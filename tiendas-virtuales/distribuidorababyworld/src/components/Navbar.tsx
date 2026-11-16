@@ -3,7 +3,6 @@ import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
 import { WhatsAppIcon } from './WhatsAppIcon'
 import { LocationPinIcon } from './LocationPinIcon'
-import { CATEGORIAS_PRODUCTOS } from '../data/productos'
 
 interface NavbarProps {
   cartCount: number
@@ -23,20 +22,20 @@ export function Navbar({
   setActiveCategory,
   searchQuery,
   setSearchQuery,
-  categories = CATEGORIAS_PRODUCTOS,
+  categories = ['Todos'],
   onOpenLocation,
 }: NavbarProps) {
   const getCategoryIcon = (cat: string) => {
-    switch (cat) {
-      case 'Pañales y Cuidado':
-      case 'Pañalera': return '🍼'
-      case 'Calzado': return '👟'
-      case 'Juguetería': return '🧸'
-      case 'Variedades': return '🎀'
-      case 'Ropa': return '👕'
-      case 'Alimentación': return '🍼'
-      default: return '✨'
-    }
+    const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    if (c === 'todos') return '✨'
+    if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) return '🍼'
+    if (c.includes('calzado') || c.includes('zapato') || c.includes('tenis')) return '👟'
+    if (c.includes('juguet') || c.includes('estimul')) return '🧸'
+    if (c.includes('ropa') || c.includes('vest') || c.includes('ajuar') || c.includes('moda')) return '👕'
+    if (c.includes('aliment') || c.includes('leche') || c.includes('lactanc') || c.includes('tetero')) return '🥣'
+    if (c.includes('coche') || c.includes('paseo') || c.includes('silla') || c.includes('cuna')) return '🛒'
+    if (c.includes('variedad') || c.includes('accesori')) return '🎀'
+    return '🏷️'
   }
 
   return (
@@ -82,7 +81,7 @@ export function Navbar({
               <span className="font-baby font-normal text-2xl tracking-tight leading-none mt-1">
                 <span className="text-blush-300">Baby</span> <span className="text-baby-300">World</span>
               </span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 ml-0.5">Pañalera Baby World</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 ml-0.5">Pañalera y Juguetería</span>
             </div>
           </div>
 

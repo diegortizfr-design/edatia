@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Truck, AlertCircle, FileText, Search, CreditCard,
@@ -44,14 +44,14 @@ export function CarteraCxP() {
     return (todasFacturas as any[]).filter((f: any) => {
       const saldo = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : (f.formaPago === 'CONTADO' ? 0 : Number(f.total))
       const isCred = f.formaPago === 'CREDITO' || (f.fechaVencimiento && f.formaPago !== 'CONTADO')
-      return (isCred || saldo > 0) && f.estado !== 'ANULADA' && saldo > 0
+      return (isCred || saldo > 0.05) && f.estado !== 'ANULADA' && saldo > 0.05
     }).sort((a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime())
   }, [todasFacturas])
 
   const facturasContado = useMemo(() => {
     return (todasFacturas as any[]).filter((f: any) => {
       const saldo = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : (f.formaPago === 'CONTADO' ? 0 : Number(f.total))
-      return (f.formaPago === 'CONTADO' || f.estado === 'PAGADA') && saldo <= 0
+      return (f.formaPago === 'CONTADO' || f.estado === 'PAGADA' || saldo <= 0.05)
     }).sort((a, b) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime())
   }, [todasFacturas])
 
@@ -445,11 +445,11 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
   const saldoPendienteFc = activeFc ? (activeFc.saldo !== null && activeFc.saldo !== undefined ? Number(activeFc.saldo) : Number(activeFc.total)) : 0
 
   // Prellenar valor sugerido con el saldo completo de la factura
-  useState(() => {
+  useEffect(() => {
     if (saldoPendienteFc > 0 && !valor) {
-      setValor(String(Math.round(saldoPendienteFc)))
+      setValor(String(Math.max(1, Math.round(saldoPendienteFc))))
     }
-  })
+  }, [saldoPendienteFc])
 
   // Medios de pago dinámicos desde configuración general
   const { data: mediosPagoList = [] } = useQuery({
@@ -467,11 +467,11 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
     ]
   }, [mediosPagoList])
 
-  useState(() => {
+  useEffect(() => {
     if (mediosActivos.length > 0 && !medioPago) {
       setMedioPago(mediosActivos[0].codigo)
     }
-  })
+  }, [mediosActivos, medioPago])
 
   const mutPago = useMutation({
     mutationFn: (data: { fcId: number; payload: any }) => registrarPagoFacturaCompra(data.fcId, data.payload),
@@ -493,7 +493,10 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
     const valNum = Number(valor || 0)
     if (!activeFc) return setErrorMsg('Selecciona una factura de compra')
     if (valNum <= 0) return setErrorMsg('Ingresa un valor válido')
-    if (valNum > saldoPendienteFc) {
+
+    // Tolerancia al peso: por redondeo de centavos en COP
+    const diff = valNum - saldoPendienteFc
+    if (diff > 1) {
       return setErrorMsg(`El valor a pagar (${fmt(valNum)}) supera el saldo de la factura (${fmt(saldoPendienteFc)})`)
     }
 
@@ -554,7 +557,7 @@ function PagoProveedorModal({ factura, proveedorId, todasFacturasCredito, onClos
                     const f = facturasDelProveedor.find((it: any) => String(it.id) === e.target.value)
                     if (f) {
                       const s = f.saldo !== null && f.saldo !== undefined ? Number(f.saldo) : Number(f.total)
-                      setValor(String(Math.round(s)))
+                      setValor(String(Math.max(1, Math.round(s))))
                     }
                   }}
                   className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:ring-1 focus:ring-indigo-500 font-medium"

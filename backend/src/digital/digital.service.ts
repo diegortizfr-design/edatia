@@ -29,7 +29,24 @@ export class DigitalService {
   }
 
   async updateConfig(empresaId: number, data: any) {
-    const { id, empresaId: _, createdAt, empresa, ...updateData } = data;
+    const { id, empresaId: _, createdAt, updatedAt, empresa, ...rawUpdate } = data;
+    const updateData: any = { ...rawUpdate };
+
+    if (updateData.bodegasIds !== undefined) {
+      updateData.bodegasIds = Array.isArray(updateData.bodegasIds)
+        ? updateData.bodegasIds.map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+        : [];
+    }
+    if (updateData.bodegaDespachoId !== undefined) {
+      updateData.bodegaDespachoId = updateData.bodegaDespachoId ? Number(updateData.bodegaDespachoId) : null;
+    }
+    if (updateData.costoEnvioBase !== undefined) {
+      updateData.costoEnvioBase = Number(updateData.costoEnvioBase || 0);
+    }
+    if (updateData.montoEnvioGratis !== undefined) {
+      updateData.montoEnvioGratis = Number(updateData.montoEnvioGratis || 0);
+    }
+
     try {
       return await this.prisma.configuracionTienda.upsert({
         where: { empresaId },
@@ -232,6 +249,86 @@ export class DigitalService {
     }
   }
 
+  /**
+   * Calcula las unidades reales disponibles según Control de Existencias (bodegas activas: cantidad - reservada).
+   * Si el producto no maneja bodega (ej. servicio), devuelve 999.
+   */
+  private calcularStockDisponible(
+    prod: {
+      manejaBodega?: boolean | null;
+      stock?: Array<{ cantidad?: any; cantidadReservada?: any; bodegaId?: number; bodega?: { id?: number; activo?: boolean } | null }> | null;
+    },
+    bodegasPermitidas?: number[] | null,
+  ): number {
+    if (prod.manejaBodega === false) return 999;
+    return (prod.stock || []).reduce((sum, s) => {
+      if (s.bodega && s.bodega.activo === false) return sum;
+      const bId = s.bodegaId ?? (s.bodega as any)?.id;
+      if (bodegasPermitidas && bodegasPermitidas.length > 0 && bId && !bodegasPermitidas.includes(bId)) {
+        return sum;
+      }
+      const disponible = Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0));
+      return sum + disponible;
+    }, 0);
+  }
+
+  /**
+   * Resuelve el subtotal base, el porcentaje/tipo de IVA ERP y el total con impuestos incluidos.
+   * Sigue exactamente la misma regla tributaria del POS y Facturación del ERP.
+   */
+  private resolverPrecioYImpuesto(prod: {
+    precioBase?: any;
+    precioWeb?: any;
+    tipoIva?: string | null;
+    liquidarIva?: boolean | null;
+    productoExentoIva?: boolean | null;
+    appliedTaxIds?: any;
+  }) {
+    const web = Number(prod.precioWeb ?? 0);
+    const base = Number(prod.precioBase ?? 0);
+    const precioSubtotal = Math.round(web > 0 ? web : base);
+
+    const appliedTaxIds = Array.isArray(prod.appliedTaxIds) ? prod.appliedTaxIds.map((t: any) => String(t)) : null;
+    let effectiveTipoIva = String(prod.tipoIva || 'GRAVADO_19').toUpperCase();
+
+    if (prod.productoExentoIva === true) {
+      effectiveTipoIva = 'EXENTO';
+    } else if (prod.liquidarIva === false || (appliedTaxIds && appliedTaxIds.length === 0)) {
+      effectiveTipoIva = 'EXCLUIDO';
+    } else if (appliedTaxIds && appliedTaxIds.some((t) => t.toLowerCase().includes('5'))) {
+      effectiveTipoIva = 'GRAVADO_5';
+    }
+
+    let ivaPct = 0;
+    let pedidoTipoIva: 'IVA_19' | 'IVA_5' | 'IVA_0' | 'EXCLUIDO' = 'EXCLUIDO';
+
+    if (effectiveTipoIva === 'GRAVADO_19' || effectiveTipoIva === 'IVA_19') {
+      ivaPct = 19;
+      pedidoTipoIva = 'IVA_19';
+    } else if (effectiveTipoIva === 'GRAVADO_5' || effectiveTipoIva === 'IVA_5') {
+      ivaPct = 5;
+      pedidoTipoIva = 'IVA_5';
+    } else if (effectiveTipoIva === 'EXENTO' || effectiveTipoIva === 'IVA_0') {
+      ivaPct = 0;
+      pedidoTipoIva = 'IVA_0';
+    } else {
+      ivaPct = 0;
+      pedidoTipoIva = 'EXCLUIDO';
+    }
+
+    const impuesto = Math.round(precioSubtotal * (ivaPct / 100));
+    const precioTotal = precioSubtotal + impuesto;
+
+    return {
+      precioSubtotal,
+      impuesto,
+      precioTotal,
+      ivaPct,
+      tipoIva: effectiveTipoIva,
+      pedidoTipoIva,
+    };
+  }
+
   async getProductosWebPublic(slug: string) {
     await this.autoInitializeBabyWorld(slug);
 
@@ -247,14 +344,20 @@ export class DigitalService {
       throw new NotFoundException('Tienda no encontrada o inactiva');
     }
 
-    return this.prisma.producto.findMany({
+    const productos = await this.prisma.producto.findMany({
       where: { empresaId: config.empresaId, publicadoWeb: true, activo: true },
       select: {
         id: true,
         nombre: true,
         sku: true,
+        referencia: true,
         precioBase: true,
         precioWeb: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
         slug: true,
         imagen: true,
         descripcion: true,
@@ -271,8 +374,127 @@ export class DigitalService {
             }
           }
         },
+        marca: {
+          select: {
+            nombre: true
+          }
+        },
+        stock: {
+          select: {
+            cantidad: true,
+            cantidadReservada: true,
+            bodegaId: true,
+            bodega: {
+              select: {
+                id: true,
+                activo: true
+              }
+            }
+          }
+        },
+        variantes: {
+          where: { activo: true },
+          select: {
+            id: true,
+            sku: true,
+            nombre: true,
+            atributos: true,
+            precioBase: true,
+            stock: {
+              select: {
+                cantidad: true,
+                cantidadReservada: true,
+                bodegaId: true,
+                bodega: {
+                  select: { id: true, activo: true }
+                }
+              }
+            }
+          }
+        }
       }
     });
+
+    const bodegasFiltro = Array.isArray(config.bodegasIds) && config.bodegasIds.length > 0
+      ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+      : null;
+
+    return productos
+      .map((p) => {
+        const variantesFormateadas = ((p as any).variantes ?? []).map((v: any) => {
+          const vStock = (v.stock ?? [])
+            .filter((s: any) => {
+              if (s.bodega && s.bodega.activo === false) return false;
+              const bId = s.bodegaId ?? s.bodega?.id;
+              if (bodegasFiltro && bodegasFiltro.length > 0 && bId && !bodegasFiltro.includes(bId)) {
+                return false;
+              }
+              return true;
+            })
+            .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
+          return {
+            id: v.id,
+            sku: v.sku,
+            nombre: v.nombre,
+            atributos: v.atributos,
+            precioBase: Number(v.precioBase || 0),
+            stockDisponible: vStock,
+          };
+        });
+
+        const tieneVariantes = variantesFormateadas.length > 0;
+        const stockDisponible = tieneVariantes
+          ? variantesFormateadas.reduce((acc: number, v: any) => acc + v.stockDisponible, 0)
+          : this.calcularStockDisponible(p, bodegasFiltro);
+
+        const pricing = this.resolverPrecioYImpuesto(p);
+        return {
+          ...p,
+          variantes: variantesFormateadas,
+          tieneVariantes,
+          stockDisponible,
+          precioSubtotal: pricing.precioSubtotal,
+          impuesto: pricing.impuesto,
+          precioTotal: pricing.precioTotal,
+          ivaPct: pricing.ivaPct,
+          tipoIvaEfectivo: pricing.tipoIva,
+        };
+      })
+      .sort((a, b) => {
+        if (a.stockDisponible > 0 && b.stockDisponible <= 0) return -1;
+        if (a.stockDisponible <= 0 && b.stockDisponible > 0) return 1;
+        return 0;
+      });
+  }
+
+  async getTiendaInfoPublic(slug: string) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      },
+      select: {
+        nombreTienda: true,
+        slugTienda: true,
+        dominioPropio: true,
+        whatsappVentas: true,
+        instagramUrl: true,
+        facebookUrl: true,
+        costoEnvioBase: true,
+        montoEnvioGratis: true,
+        activo: true,
+      }
+    });
+
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    return config;
   }
 
   // Zonas de cobertura local directa (Cali y alrededores con domiciliario propio)
@@ -356,21 +578,126 @@ export class DigitalService {
       cantidades.set(id, (cantidades.get(id) ?? 0) + cant);
     }
 
-    // Precios SIEMPRE desde la base de datos
+    // Precios, impuestos y stock real SIEMPRE desde la base de datos
+    const bodegasFiltro = Array.isArray(config.bodegasIds) && config.bodegasIds.length > 0
+      ? (config.bodegasIds as any[]).map((bid: any) => Number(bid)).filter((bid: number) => !isNaN(bid))
+      : null;
+
+    const productoIdsUnicos: number[] = Array.from(new Set<number>(dto.items.map((it: any) => Number(it.productoId))));
     const productos = await this.prisma.producto.findMany({
-      where: { id: { in: [...cantidades.keys()] }, empresaId, publicadoWeb: true, activo: true },
-      select: { id: true, nombre: true, precioWeb: true, precioBase: true },
+      where: { id: { in: productoIdsUnicos }, empresaId, publicadoWeb: true, activo: true },
+      select: {
+        id: true,
+        nombre: true,
+        precioWeb: true,
+        precioBase: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
+        stock: {
+          select: {
+            cantidad: true,
+            cantidadReservada: true,
+            bodegaId: true,
+            bodega: {
+              select: {
+                id: true,
+                activo: true,
+              },
+            },
+          },
+        },
+        variantes: {
+          where: { activo: true },
+          select: {
+            id: true,
+            sku: true,
+            nombre: true,
+            precioBase: true,
+            stock: {
+              select: {
+                cantidad: true,
+                cantidadReservada: true,
+                bodegaId: true,
+                bodega: { select: { id: true, activo: true } },
+              },
+            },
+          },
+        },
+      },
     });
-    if (productos.length !== cantidades.size) {
+
+    const prodMap = new Map<number, any>(productos.map(p => [p.id, p]));
+    if (prodMap.size !== productoIdsUnicos.length) {
       throw new BadRequestException('Uno o más productos ya no están disponibles');
     }
-    const lineas = productos.map((p) => {
-      const web = Number(p.precioWeb ?? 0);
-      const precio = web > 0 ? web : Number(p.precioBase ?? 0);
-      const cantidad = cantidades.get(p.id)!;
-      return { productoId: p.id, nombre: p.nombre, precio, cantidad, total: precio * cantidad };
+
+    const lineas: any[] = dto.items.map((it: any) => {
+      const p = prodMap.get(Number(it.productoId))!;
+      const cantidad = Number(it.cantidad);
+      let variante: any = null;
+      let nombreLinea = p.nombre;
+
+      if (it.varianteId) {
+        variante = (p.variantes || []).find((v: any) => v.id === Number(it.varianteId));
+        if (!variante) {
+          throw new BadRequestException(`La variante seleccionada para "${p.nombre}" no existe o fue desactivada.`);
+        }
+        nombreLinea = `${p.nombre} · ${variante.nombre}`;
+
+        // Calcular stock de la variante en las bodegas autorizadas de la tienda
+        const vStock = (variante.stock || [])
+          .filter((s: any) => {
+            if (s.bodega && s.bodega.activo === false) return false;
+            const bId = s.bodegaId ?? s.bodega?.id;
+            if (bodegasFiltro && bodegasFiltro.length > 0 && bId && !bodegasFiltro.includes(bId)) {
+              return false;
+            }
+            return true;
+          })
+          .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
+
+        if (vStock < cantidad) {
+          throw new BadRequestException(
+            vStock <= 0
+              ? `La variante "${variante.nombre}" de "${p.nombre}" se encuentra agotada.`
+              : `Stock insuficiente para "${variante.nombre}" de "${p.nombre}": solo hay ${vStock} und disponible(s).`
+          );
+        }
+      } else {
+        const disponible = this.calcularStockDisponible(p, bodegasFiltro);
+        if (disponible < cantidad) {
+          throw new BadRequestException(
+            disponible <= 0
+              ? `El producto "${p.nombre}" se encuentra agotado en inventario.`
+              : `Stock insuficiente para "${p.nombre}": solo hay ${disponible} unidad(es) disponible(s).`
+          );
+        }
+      }
+
+      const pricing = this.resolverPrecioYImpuesto(p);
+      const lineSubtotal = pricing.precioSubtotal * cantidad;
+      const lineIva = pricing.impuesto * cantidad;
+      const lineTotal = pricing.precioTotal * cantidad;
+
+      return {
+        productoId: p.id,
+        varianteId: variante?.id,
+        nombre: nombreLinea,
+        cantidad,
+        precioSubtotal: pricing.precioSubtotal,
+        impuestoUnitario: pricing.impuesto,
+        precioTotal: pricing.precioTotal,
+        ivaPct: pricing.ivaPct,
+        pedidoTipoIva: pricing.pedidoTipoIva,
+        lineSubtotal,
+        lineIva,
+        lineTotal,
+      };
     });
-    if (lineas.some((l) => !(l.precio > 0))) {
+    if (lineas.some((l: any) => !(l.precioTotal > 0))) {
       throw new BadRequestException('Uno o más productos no tienen precio configurado');
     }
 
@@ -380,9 +707,14 @@ export class DigitalService {
       );
     }
 
-    const subtotal = lineas.reduce((s, l) => s + l.total, 0);
-    const envio = this.calcularEnvio(subtotal, ciudad);
-    const total = subtotal;
+    const subtotal = lineas.reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const baseIva19 = lineas.filter((l: any) => l.ivaPct === 19).reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const iva19 = lineas.filter((l: any) => l.ivaPct === 19).reduce((s: number, l: any) => s + l.lineIva, 0);
+    const baseIva5 = lineas.filter((l: any) => l.ivaPct === 5).reduce((s: number, l: any) => s + l.lineSubtotal, 0);
+    const iva5 = lineas.filter((l: any) => l.ivaPct === 5).reduce((s: number, l: any) => s + l.lineIva, 0);
+    const impuesto = iva19 + iva5;
+    const total = lineas.reduce((s: number, l: any) => s + l.lineTotal, 0);
+    const envio = this.calcularEnvio(total, ciudad);
 
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Encontrar o Crear el Tercero (Cliente)
@@ -472,13 +804,21 @@ export class DigitalService {
         }
       }
 
-      // 2. Encontrar la bodega principal para el pedido
-      let bodega = await tx.bodega.findFirst({
-        where: { empresaId, esPrincipal: true }
-      });
+      // 2. Encontrar la bodega asignada para el pedido web
+      let bodega: any = null;
+      if (config.bodegaDespachoId) {
+        bodega = await tx.bodega.findFirst({
+          where: { id: config.bodegaDespachoId, empresaId, activo: true }
+        });
+      }
       if (!bodega) {
         bodega = await tx.bodega.findFirst({
-          where: { empresaId }
+          where: { empresaId, esPrincipal: true, activo: true }
+        });
+      }
+      if (!bodega) {
+        bodega = await tx.bodega.findFirst({
+          where: { empresaId, activo: true }
         });
       }
       if (!bodega) {
@@ -530,20 +870,25 @@ export class DigitalService {
             condicionesPago,
             subtotal,
             total,
+            descuento: 0,
+            baseIva19,
+            iva19,
+            baseIva5,
+            iva5,
             items: {
-              create: lineas.map((l, idx) => ({
+              create: lineas.map((l: any, idx: number) => ({
                 productoId: l.productoId,
                 descripcion: l.nombre,
                 unidad: 'UND',
                 cantidad: l.cantidad,
-                precioUnitario: l.precio,
+                precioUnitario: l.precioSubtotal,
                 descuentoPct: 0,
                 descuentoValor: 0,
-                tipoIva: 'EXCLUIDO',
-                baseIva: l.total,
-                ivaValor: 0,
-                subtotal: l.total,
-                total: l.total,
+                tipoIva: l.pedidoTipoIva,
+                baseIva: l.lineSubtotal,
+                ivaValor: l.lineIva,
+                subtotal: l.lineSubtotal,
+                total: l.lineTotal,
                 orden: idx
               }))
             }
@@ -571,25 +916,25 @@ export class DigitalService {
             subtotal,
             total,
             descuento: 0,
-            baseIva19: 0,
-            iva19: 0,
-            baseIva5: 0,
-            iva5: 0,
+            baseIva19,
+            iva19,
+            baseIva5,
+            iva5,
             estado: 'PENDIENTE',
             items: {
-              create: lineas.map((l, idx) => ({
+              create: lineas.map((l: any, idx: number) => ({
                 productoId: l.productoId,
                 descripcion: l.nombre,
                 unidad: 'UND',
                 cantidad: l.cantidad,
-                precioUnitario: l.precio,
+                precioUnitario: l.precioSubtotal,
                 descuentoPct: 0,
                 descuentoValor: 0,
-                tipoIva: 'EXCLUIDO',
-                baseIva: l.total,
-                ivaValor: 0,
-                subtotal: l.total,
-                total: l.total,
+                tipoIva: l.pedidoTipoIva,
+                baseIva: l.lineSubtotal,
+                ivaValor: l.lineIva,
+                subtotal: l.lineSubtotal,
+                total: l.lineTotal,
                 orden: idx
               }))
             }
@@ -614,11 +959,11 @@ export class DigitalService {
     // 6. Mercado Pago: se crea la preferencia FUERA de la transacción (llamada externa)
     let checkoutUrl: string | null = null;
     if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
-      const items = lineas.map((l) => ({
+      const items = lineas.map((l: any) => ({
         id: String(l.productoId),
         title: l.nombre.slice(0, 250),
         quantity: l.cantidad,
-        unit_price: l.precio,
+        unit_price: l.precioTotal,
       }));
       if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
 
@@ -638,6 +983,9 @@ export class DigitalService {
       orderId: result.orderId,
       numero: result.numero,
       subtotal,
+      impuesto,
+      iva19,
+      iva5,
       envio,
       total: total + envio,
       checkoutUrl,
@@ -779,12 +1127,16 @@ export class DigitalService {
     let checkoutUrl: string | null = null;
     if (metodoCodigo === 'mercadopago' && this.mp.isEnabled(config.slugTienda)) {
       const envio = this.calcularEnvio(Number(pedido.total), pedido.cliente?.municipio);
-      const items = (pedido.items || []).map((it: any) => ({
-        id: String(it.productoId),
-        title: String(it.descripcion || 'Producto').slice(0, 250),
-        quantity: Number(it.cantidad || 1),
-        unit_price: Number(it.precioUnitario || 0),
-      }));
+      const items = (pedido.items || []).map((it: any) => {
+        const cant = Math.max(1, Number(it.cantidad || 1));
+        const unitTotal = Number(it.total || 0) > 0 ? Math.round(Number(it.total) / cant) : Number(it.precioUnitario || 0);
+        return {
+          id: String(it.productoId),
+          title: String(it.descripcion || 'Producto').slice(0, 250),
+          quantity: cant,
+          unit_price: unitTotal,
+        };
+      });
       if (envio > 0) items.push({ id: 'ENVIO', title: 'Envío a domicilio', quantity: 1, unit_price: envio });
 
       const pref = await this.mp.createPreference({
@@ -804,6 +1156,167 @@ export class DigitalService {
       numero: pedido.numero,
       condicionesPago,
       checkoutUrl,
+    };
+  }
+
+  /**
+   * Registro público de clientes en el club "Familia Baby World" desde la tienda virtual.
+   * Crea o actualiza el Tercero como cliente (tipoPersona NATURAL, CC) con barrio y fecha de cumpleaños.
+   */
+  async registrarClienteFamilia(slug: string, dto: any) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [{ slugTienda: slug }, { dominioPropio: slug }],
+      },
+    });
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    const empresaId = config.empresaId;
+
+    const identificacion = String(dto?.identificacion ?? '').replace(/\D/g, '');
+    if (!/^\d{5,15}$/.test(identificacion) || identificacion === '222222222222') {
+      throw new BadRequestException('Ingresa un número de identificación válido (solo números, entre 5 y 15 dígitos).');
+    }
+
+    const nombreCompleto = this.sanitizeText(dto?.nombreCompleto, 120).replace(/\s+/g, ' ');
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]{3,120}$/.test(nombreCompleto)) {
+      throw new BadRequestException('El nombre completo solo debe contener letras y espacios.');
+    }
+
+    const email = this.sanitizeText(dto?.email, 120).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      throw new BadRequestException('Ingresa un correo electrónico válido.');
+    }
+
+    const celular = String(dto?.celular ?? '').replace(/\D/g, '');
+    if (!/^\d{10,12}$/.test(celular)) {
+      throw new BadRequestException('Ingresa un número de celular válido (solo números, 10 dígitos).');
+    }
+
+    const departamento = this.sanitizeText(dto?.departamento, 80);
+    const ciudad = this.sanitizeText(dto?.ciudad, 80);
+    const barrio = this.sanitizeText(dto?.barrio, 80);
+    const direccion = this.sanitizeText(dto?.direccion, 250);
+
+    if (departamento.length < 2 || ciudad.length < 2 || barrio.length < 2 || direccion.length < 4) {
+      throw new BadRequestException('Completa todos los datos de ubicación (departamento, ciudad, barrio y dirección).');
+    }
+
+    const cumpleanosDia = Number(dto?.cumpleanosDia);
+    const cumpleanosMes = Number(dto?.cumpleanosMes);
+    const diasPorMes = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (
+      !Number.isInteger(cumpleanosMes) ||
+      cumpleanosMes < 1 ||
+      cumpleanosMes > 12 ||
+      !Number.isInteger(cumpleanosDia) ||
+      cumpleanosDia < 1 ||
+      cumpleanosDia > diasPorMes[cumpleanosMes - 1]
+    ) {
+      throw new BadRequestException('Selecciona un día y mes de cumpleaños válido.');
+    }
+
+    const mesesNombres = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    const cumpleTexto = `${cumpleanosDia} de ${mesesNombres[cumpleanosMes - 1]}`;
+    const marcaClub = `[Club Familia Baby World - Registro web | Barrio: ${barrio} | Cumpleaños: ${cumpleTexto}]`;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let existing = await tx.tercero.findUnique({
+        where: {
+          empresaId_tipoDocumento_numeroDocumento: {
+            empresaId,
+            tipoDocumento: 'CC',
+            numeroDocumento: identificacion,
+          },
+        },
+      });
+
+      if (!existing) {
+        existing = await tx.tercero.findFirst({
+          where: { empresaId, numeroDocumento: identificacion },
+        });
+      }
+
+      let esNuevo = true;
+      if (existing) {
+        esNuevo = false;
+        const notasPrevias = existing.notas || '';
+        const notasActualizadas = notasPrevias.includes('Club Familia Baby World')
+          ? notasPrevias
+          : (notasPrevias ? `${notasPrevias}\n${marcaClub}` : marcaClub);
+
+        await tx.tercero.update({
+          where: { id: existing.id },
+          data: {
+            nombre: nombreCompleto,
+            email,
+            celular,
+            telefono: existing.telefono || celular,
+            departamento,
+            municipio: ciudad,
+            barrio,
+            direccion,
+            cumpleanosDia,
+            cumpleanosMes,
+            esCliente: true,
+            activo: true,
+            notas: notasActualizadas,
+          },
+        });
+      } else {
+        await tx.tercero.create({
+          data: {
+            empresaId,
+            tipoPersona: 'NATURAL',
+            tipoDocumento: 'CC',
+            numeroDocumento: identificacion,
+            nombre: nombreCompleto,
+            nombreComercial: nombreCompleto,
+            email,
+            celular,
+            telefono: celular,
+            pais: 'CO',
+            departamento,
+            municipio: ciudad,
+            barrio,
+            direccion,
+            cumpleanosDia,
+            cumpleanosMes,
+            esCliente: true,
+            activo: true,
+            regimenFiscal: '49',
+            notas: marcaClub,
+          },
+        });
+      }
+
+      await (tx as any).notificacion.create({
+        data: {
+          empresaId,
+          tipo: 'INFO',
+          titulo: esNuevo ? '👶 Nuevo miembro Familia Baby World' : '👶 Registro actualizado Familia Baby World',
+          mensaje: `${nombreCompleto} (CC ${identificacion} • Cel ${celular}) de ${ciudad} (${barrio}) se registró para beneficios. Cumpleaños: ${cumpleTexto}.`,
+          leida: false,
+        },
+      });
+
+      return { esNuevo };
+    });
+
+    return {
+      success: true,
+      esNuevo: result.esNuevo,
+      nombre: nombreCompleto,
+      identificacion,
+      cumpleanosDia,
+      cumpleanosMes,
     };
   }
 
@@ -854,6 +1367,11 @@ export class DigitalService {
         codigoBarras: true,
         precioBase: true,
         precioWeb: true,
+        tipoIva: true,
+        liquidarIva: true,
+        productoExentoIva: true,
+        appliedTaxIds: true,
+        manejaBodega: true,
         costo: true,
         costoPromedio: true,
         slug: true,
@@ -880,68 +1398,104 @@ export class DigitalService {
         stock: {
           select: {
             cantidad: true,
+            cantidadReservada: true,
+            bodega: {
+              select: {
+                activo: true,
+              },
+            },
           },
         },
       },
     });
 
+    // Términos estrictos de commodities masivos de muy bajo margen (leches y pañales sueltos)
     const isLowMarginCommodity = (nombre: string, mainCat: string, subcat: string) => {
-      const text = `${nombre} ${mainCat} ${subcat}`.toLowerCase();
+      const textNombre = nombre.toLowerCase();
       const lowMarginTerms = [
         'pañal', 'panal', 'huggies', 'pampers', 'winny', 'babysec', 'pequeñin', 'pequenin',
-        'toallitas', 'toallita', 'panitos', 'pañitos', 'shampoo', 'jabon bebe', 'jabón',
-        'formula infantil', 'fórmula', 'leche en polvo', 'enfamil', 'similac', 'nan pro',
+        'toallitas', 'toallita', 'panitos', 'pañitos', 'shampoo', 'jabon', 'jabón',
+        'formula infantil', 'fórmula', 'formula', 'leche en polvo', 'klim',
+        'enfamil', 'similac', 'nan pro', 'nan optipro', 'nestógeno', 'nestogeno',
         'crema antipañalitis', 'crema antipanalitis', 'desitin', 'bepanthen',
       ];
-      return lowMarginTerms.some((term) => text.includes(term));
+      return lowMarginTerms.some((term) => textNombre.includes(term));
     };
+
+    // Palabras clave de juguetería, estimulación y caminadores (SIEMPRE DENTRO)
+    const toyTerms = [
+      'caminador', 'nobily', 'pista', 'gimnasio', 'piano', 'montable', 'triciclo',
+      'carro', 'patineta', 'juguete', 'juguetes', 'muñeca', 'muñecas', 'barbie',
+      'cocina', 'cocinita', 'tocador', 'bloques', 'camion', 'camión', 'didactico',
+      'didáctico', 'peluche', 'figura', 'dinosaurio', 'avión', 'avion', 'sonajero',
+      'mordedor', 'balancin', 'balancín', 'alberca', 'burbuja', 'drone', 'control remoto',
+    ];
+
+    // Confort materno, sueño y descanso (SIEMPRE DENTRO - alta conversión y margen)
+    const comfortMaternalTerms = [
+      'nido', 'reductor', 'cojin', 'cojín', 'lactancia', 'toldillo', 'colchoneta',
+      'fular', 'canguro', 'porteo', 'bacin', 'bacenilla', 'bañera', 'banera',
+      'organizador', 'almohada', 'almohadita', 'cuna', 'corral', 'coche', 'silla',
+      'extractor', 'esterilizador', 'ajuar', 'revelacion', 'revelación', 'humo',
+    ];
+
+    // Moda infantil y calzado (SIEMPRE DENTRO)
+    const fashionTerms = [
+      'zapato', 'zapatos', 'sandalia', 'sandalias', 'tenis', 'bota', 'botas',
+      'conjunto', 'ropa', 'vestido', 'mameluco', 'pijama', 'semanario', 'calzado',
+    ];
 
     const isHighMarginProduct = (prod: any) => {
       const precio = Number(prod.precioWeb || prod.precioBase || 0);
       const costo = Number(prod.costo || prod.costoPromedio || 0);
-      const nombre = prod.nombre || '';
-      const cat = prod.categoria?.nombre || '';
-      const parentCat = prod.categoria?.parent?.nombre || '';
+      const nombre = (prod.nombre || '').toLowerCase();
+      const cat = (prod.categoria?.nombre || '').toLowerCase();
+      const parentCat = (prod.categoria?.parent?.nombre || '').toLowerCase();
       const subcat = parentCat ? cat : '';
       const mainCat = parentCat || cat;
 
-      // 1. Si tiene costo registrado y el margen es >= 25%
+      // 1. Destacados por el administrador
+      if (prod.esDestacado) return true;
+
+      // 2. Juguetes y caminadores: PRIORIDAD ABSOLUTA (entran siempre)
+      if (toyTerms.some((t) => nombre.includes(t) || cat.includes(t))) {
+        return true;
+      }
+
+      // 3. Confort, sueño y maternidad: PRIORIDAD ABSOLUTA (entran siempre)
+      if (comfortMaternalTerms.some((t) => nombre.includes(t) || cat.includes(t))) {
+        return true;
+      }
+
+      // 4. Calzado y Moda infantil: PRIORIDAD ABSOLUTA (entran siempre)
+      if (fashionTerms.some((t) => nombre.includes(t) || cat.includes(t) || mainCat.includes(t))) {
+        return true;
+      }
+
+      // 5. Si tiene costo registrado y el margen es >= 25%
       if (precio > 0 && costo > 0) {
         const marginPct = (precio - costo) / precio;
         if (marginPct >= 0.25) return true;
         if (marginPct < 0.15) return false;
       }
 
-      // 2. Si es producto de rotación masiva y bajo margen (pañales, toallitas, leches)
+      // 6. Excluir commodities masivos (leches, pañales sueltos, toallas masivas)
       if (isLowMarginCommodity(nombre, mainCat, subcat)) {
-        // Excepción: Kits artesanales premium de alto valor (como tortas de pañales con peluche de $145.000)
-        if (nombre.toLowerCase().includes('torta') || precio >= 120000) {
+        // Excepción: Kits artesanales premium de alto valor (como tortas de pañales con peluche de $120.000+)
+        if (nombre.includes('torta') || precio >= 120000) {
           return true;
         }
         return false;
       }
 
-      // 3. Categorías típicamente rentables (Juguetes, Calzado, Ropa, Sillas, Accesorios)
+      // 7. Categorías complementarias típicamente rentables
       const highMarginCategories = ['juguetería', 'juguetes', 'calzado', 'ropa', 'variedades', 'accesorios'];
-      if (highMarginCategories.some((c) => mainCat.toLowerCase().includes(c))) {
+      if (highMarginCategories.some((c) => mainCat.includes(c))) {
         return true;
       }
 
-      // 4. Palabras clave de productos rentables (caminadores, pistas, gimnasios, montables, etc.)
-      const highMarginTerms = [
-        'caminador', 'nobily', 'pista', 'gimnasio', 'piano', 'montable', 'triciclo',
-        'coche', 'silla', 'cuna', 'corral', 'extractor', 'esterilizador', 'ajuar',
-        'revelacion', 'revelación', 'humo', 'alberca', 'carro', 'patineta',
-      ];
-      if (highMarginTerms.some((t) => nombre.toLowerCase().includes(t))) {
-        return true;
-      }
-
-      // 5. Destacados por el administrador
-      if (prod.esDestacado) return true;
-
-      // Por defecto, productos superiores a $40.000 COP que no sean pañales/aseo masivo
-      return precio >= 40000;
+      // 8. Por defecto, productos superiores a $35.000 COP que no sean pañales/aseo masivo
+      return precio >= 35000;
     };
 
     // Filtrar según parámetro
@@ -965,7 +1519,8 @@ export class DigitalService {
     };
 
     const itemsXml = productosFiltrados.map((p) => {
-      const precio = Number(p.precioWeb || p.precioBase || 0);
+      const pricing = this.resolverPrecioYImpuesto(p);
+      const precio = pricing.precioTotal;
       const precioAnterior = (p.metadataWeb as any)?.precioAnterior ? Number((p.metadataWeb as any).precioAnterior) : null;
 
       const slugProducto = p.slug || p.id.toString();
@@ -993,10 +1548,9 @@ export class DigitalService {
         }
       }
 
-      // Stock
-      const stockTotal = (p.stock || []).reduce((sum, s) => sum + Number(s.cantidad || 0), 0);
-      const hasStock = p.stock && p.stock.length > 0 ? stockTotal > 0 : true;
-      const availability = hasStock ? 'in stock' : 'out of stock';
+      // Stock real desde Control de Existencias
+      const stockDisponible = this.calcularStockDisponible(p);
+      const availability = stockDisponible > 0 ? 'in stock' : 'out of stock';
 
       // Marca
       const brandName = p.marca?.nombre || (p.metadataWeb as any)?.marca || config.nombreTienda || 'Baby World';

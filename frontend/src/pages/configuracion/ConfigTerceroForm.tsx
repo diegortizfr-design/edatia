@@ -46,6 +46,7 @@ const DEFAULT_TERCERO: Tercero = {
   pais: 'COLOMBIA',
   departamento: '11 - BOGOTA D.C.',
   ciudad: '11001 - BOGOTA',
+  barrio: '',
   direccionFiscal: '',
   direccionDespachos: '',
   cumpleanosDia: 0,
@@ -124,13 +125,14 @@ const mapDbTerceroToForm = (t: any): Tercero => ({
   telefono2: '',
   telefono3: '',
   celular: t.celular || '',
-  pais: t.pais || 'COLOMBIA',
+  pais: !t.pais || t.pais === 'CO' ? 'COLOMBIA' : t.pais.toUpperCase(),
   departamento: t.departamento || '',
   ciudad: t.municipio || '',
+  barrio: t.barrio || '',
   direccionFiscal: t.direccion || '',
   direccionDespachos: t.direccion || '',
-  cumpleanosDia: 0,
-  cumpleanosMes: 0,
+  cumpleanosDia: t.cumpleanosDia || 0,
+  cumpleanosMes: t.cumpleanosMes || 0,
   cartera: t.esCliente ? 'CL - CLIENTES' : 'PR - PROVEEDORES',
   formaPago: t.condicionesPago || 'CONTADO',
   plazoCredito: t.plazoCredito ? Number(t.plazoCredito) : 0,
@@ -167,7 +169,10 @@ const compileTerceroPayload = (f: Tercero, currentSucs: Sucursal[]) => {
     pais: f.pais || 'CO',
     departamento: f.departamento || null,
     municipio: f.ciudad || null,
+    barrio: f.barrio || null,
     direccion: f.direccionFiscal || null,
+    cumpleanosDia: f.cumpleanosDia ? Number(f.cumpleanosDia) : null,
+    cumpleanosMes: f.cumpleanosMes ? Number(f.cumpleanosMes) : null,
     
     esCliente: !!f.cliente,
     esProveedor: !!f.proveedor,
@@ -780,6 +785,9 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 <Field label="Departamento">
                   <select value={form.departamento || ''} onChange={set('departamento')} className={inputCls} disabled={!form.pais}>
                     <option value="">-- Seleccionar --</option>
+                    {form.departamento && !deptsList.some((d: any) => d.nombre === form.departamento) && (
+                      <option value={form.departamento}>{form.departamento}</option>
+                    )}
                     {deptsList.map((d: any) => (
                       <option key={d.id} value={d.nombre}>{d.nombre}</option>
                     ))}
@@ -788,10 +796,16 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                 <Field label="Ciudad / Municipio">
                   <select value={form.ciudad || ''} onChange={set('ciudad')} className={inputCls} disabled={!form.departamento}>
                     <option value="">-- Seleccionar --</option>
+                    {form.ciudad && !citiesList.some((c: any) => c.nombre === form.ciudad) && (
+                      <option value={form.ciudad}>{form.ciudad}</option>
+                    )}
                     {citiesList.map((c: any) => (
                       <option key={c.id} value={c.nombre}>{c.nombre}</option>
                     ))}
                   </select>
+                </Field>
+                <Field label="Barrio">
+                  <input type="text" value={form.barrio || ''} onChange={set('barrio')} className={inputCls} placeholder="Ej. Poblado Campestre" />
                 </Field>
 
                 <div className="md:col-span-3">
@@ -799,7 +813,7 @@ export function ConfigTerceroForm({ defaultRole }: ConfigTerceroFormProps = {}) 
                     <input type="text" value={form.direccionFiscal || ''} onChange={set('direccionFiscal')} className={inputCls} placeholder="Ej. Calle 14 # 5-60" />
                   </Field>
                 </div>
-                <div className="md:col-span-3">
+                <div className="md:col-span-2">
                   <Field label="Dirección Despachos (Entrega)">
                     <input type="text" value={form.direccionDespachos || ''} onChange={set('direccionDespachos')} className={inputCls} placeholder="Igual al fiscal o dirección alternativa" />
                   </Field>

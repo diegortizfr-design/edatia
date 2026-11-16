@@ -1342,11 +1342,9 @@ export function ConfigProductos() {
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código (SKU)</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Descripción</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Precio 1 + Imp.</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Precio 2 + Imp.</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Costo Último</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</th>
-                    <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grupo</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tienda Web</th>
                     <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
                   </tr>
@@ -1354,7 +1352,7 @@ export function ConfigProductos() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-slate-400 italic">
+                      <td colSpan={9} className="p-8 text-center text-slate-400 italic">
                         Cargando catálogo de productos...
                       </td>
                     </tr>
@@ -1362,12 +1360,9 @@ export function ConfigProductos() {
                     filteredProducts.map(p => {
                       const taxRate = getAppliedTaxRate(p.extData)
                       const p1 = Number(p.extData.precios?.[0]) || Number(p.precioBase) || 0
-                      const p2 = Number(p.extData.precios?.[1]) || 0
                       const p1Iva = p1 * (1 + taxRate / 100)
-                      const p2Iva = p2 * (1 + taxRate / 100)
                       
                       const catName = categorias.find(c => c.id === p.extData.categoriaId)?.nombre || p.categoria?.nombre || '—'
-                      const grpName = grupos.find(g => g.id === p.extData.grupoId)?.nombre || '—'
                       const costVal = Number(p.extData.costoUltimo) || Number(p.costoPromedio) || Number(p.extData.costo) || 0
 
                       return (
@@ -1387,13 +1382,6 @@ export function ConfigProductos() {
                                 title="Editar ficha técnica completa"
                               >
                                 <Edit3 size={15} />
-                              </button>
-                              <button
-                                onClick={() => handlePrintLabel(p)}
-                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                                title="Imprimir etiqueta"
-                              >
-                                <Printer size={15} />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(p)}
@@ -1427,9 +1415,6 @@ export function ConfigProductos() {
                           <td className="p-4 text-right font-mono font-semibold text-slate-700">
                             ${p1Iva.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                           </td>
-                          <td className="p-4 text-right font-mono font-semibold text-slate-700">
-                            ${p2Iva.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                          </td>
                           <td className="p-4 text-slate-600 font-medium">{p.extData.tipoProducto || 'Inventario'}</td>
                           <td className="p-4 text-right font-mono text-slate-600">
                             {costVal === 0 ? (
@@ -1444,7 +1429,6 @@ export function ConfigProductos() {
                             )}
                           </td>
                           <td className="p-4 font-medium text-slate-600">{catName}</td>
-                          <td className="p-4 font-medium text-slate-600">{grpName}</td>
                           <td className="p-4 text-center">
                             <button
                               type="button"
@@ -1485,7 +1469,7 @@ export function ConfigProductos() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={11} className="p-8 text-center text-slate-400 italic">
+                      <td colSpan={9} className="p-8 text-center text-slate-400 italic">
                         No se encontraron productos registrados con los criterios seleccionados.
                       </td>
                     </tr>

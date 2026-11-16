@@ -5,6 +5,7 @@ declare global {
   interface Window {
     dataLayer: unknown[]
     gtag?: (...args: unknown[]) => void
+    fbq?: (...args: unknown[]) => void
   }
 }
 
@@ -92,6 +93,20 @@ const enviarGA = (evento: string, params?: Record<string, unknown>) => {
   if (window.gtag) window.gtag('event', evento, params)
 }
 
+const enviarFB = (evento: string, params?: Record<string, unknown>) => {
+  try {
+    if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+      if (params) {
+        window.fbq('track', evento, params)
+      } else {
+        window.fbq('track', evento)
+      }
+    }
+  } catch {
+    /* la analítica de Meta nunca debe interrumpir la navegación del usuario */
+  }
+}
+
 export const analytics = {
   init(base: string, slug: string) {
     apiBase = base
@@ -106,19 +121,41 @@ export const analytics = {
     }
     enviarEventoPropio('VISITA')
   },
-  verProducto(id: number, nombre: string, precio: number) {
+  verProducto(id: number, nombre: string, precio: number, sku?: string) {
     enviarEventoPropio('VER_PRODUCTO', id)
     enviarGA('view_item', { currency: 'COP', value: precio, items: [{ item_id: String(id), item_name: nombre, price: precio }] })
+    enviarFB('ViewContent', {
+      content_ids: [sku || String(id)],
+      content_name: nombre,
+      content_type: 'product',
+      value: precio,
+      currency: 'COP',
+    })
   },
-  agregarCarrito(id: number, nombre: string, precio: number, cantidad: number) {
+  agregarCarrito(id: number, nombre: string, precio: number, cantidad: number, sku?: string) {
     enviarEventoPropio('AGREGAR_CARRITO', id)
     enviarGA('add_to_cart', { currency: 'COP', value: precio * cantidad, items: [{ item_id: String(id), item_name: nombre, price: precio, quantity: cantidad }] })
+    enviarFB('AddToCart', {
+      content_ids: [sku || String(id)],
+      content_name: nombre,
+      content_type: 'product',
+      value: precio * cantidad,
+      currency: 'COP',
+    })
   },
   iniciarCheckout(valor: number) {
     enviarEventoPropio('INICIO_CHECKOUT')
     enviarGA('begin_checkout', { currency: 'COP', value: valor })
+    enviarFB('InitiateCheckout', {
+      value: valor,
+      currency: 'COP',
+    })
   },
   compra(valor: number) {
     enviarGA('purchase', { currency: 'COP', value: valor, transaction_id: `bw-${Date.now()}` })
+    enviarFB('Purchase', {
+      value: valor,
+      currency: 'COP',
+    })
   },
 }

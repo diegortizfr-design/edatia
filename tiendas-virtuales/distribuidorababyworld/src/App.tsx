@@ -6,23 +6,29 @@ import { HeroBanner } from './components/HeroBanner'
 import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
 import { ProductDetailPage } from './components/ProductDetailPage'
+import { FamiliaRegistroPage } from './components/FamiliaRegistroPage'
 import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
 import { CartDrawer, CartItem } from './components/CartDrawer'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
+import { QuickTrustBar, INSTAGRAM_URL, TIKTOK_URL } from './components/QuickTrustBar'
+import { InstagramIcon } from './components/InstagramIcon'
+import { TikTokIcon } from './components/TikTokIcon'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
-import { Product, CATEGORIAS_PRODUCTOS, SUBCATEGORIAS_CUIDADO, PRODUCTOS_BABY_WORLD } from './data/productos'
+import { Product, ProductVariant, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:4000/api/v1'
-  : 'https://api.edatia.com/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE || (
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:4000/api/v1'
+    : 'https://api.edatia.com/api/v1'
+)
 
 const getStoreSlug = () => {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -46,6 +52,10 @@ export function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [showFamiliaForm, setShowFamiliaForm] = useState<boolean>(() => {
+    const p = window.location.pathname.replace(/\/+$/, '')
+    return p === '/familia' || p === '/registro'
+  })
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
@@ -91,11 +101,20 @@ export function App() {
     window.history.replaceState({}, '', window.location.pathname)
   }, [])
 
-  // Deep linking: sincroniza el producto seleccionado con la URL (/producto/:slug o ?producto=:slug)
+  // Deep linking: sincroniza ruta (/familia, /registro, /producto/:slug) con la vista activa
   useEffect(() => {
-    if (!products.length) return
+    const syncFromUrl = () => {
+      const cleanPath = window.location.pathname.replace(/\/+$/, '')
+      if (cleanPath === '/familia' || cleanPath === '/registro') {
+        setShowFamiliaForm(true)
+        setSelectedProduct(null)
+        document.title = 'Familia Baby World | Regístrate y accede a beneficios'
+        return
+      }
+      setShowFamiliaForm(false)
 
-    const syncProductFromUrl = () => {
+      if (!products.length) return
+
       const pathname = window.location.pathname
       const params = new URLSearchParams(window.location.search)
       const querySlug = params.get('producto') || params.get('p')
@@ -130,14 +149,10 @@ export function App() {
       }
     }
 
-    syncProductFromUrl()
+    syncFromUrl()
 
-    const handlePopState = () => {
-      syncProductFromUrl()
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
   }, [products])
 
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
@@ -150,31 +165,56 @@ export function App() {
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
           const mapped: Product[] = data.map((p: any) => {
-            let cat = 'Variedades'
-            let subcat = 'Otros'
-            
+            let cat = 'Otros'
+            let subcat = ''
+
             if (p.categoria) {
               if (p.categoria.parent) {
-                cat = p.categoria.parent.nombre;
-                subcat = p.categoria.nombre;
+                cat = p.categoria.parent.nombre
+                subcat = p.categoria.nombre
               } else {
-                cat = p.categoria.nombre;
-                subcat = '';
+                cat = p.categoria.nombre
+                subcat = ''
               }
             }
 
+            const precioSubtotal = p.precioSubtotal !== undefined
+              ? Number(p.precioSubtotal)
+              : Math.round(Number(p.precioWeb || 0) > 0 ? Number(p.precioWeb) : Number(p.precioBase || 0))
+            const ivaPct = p.ivaPct !== undefined ? Number(p.ivaPct) : 0
+            const impuesto = p.impuesto !== undefined
+              ? Number(p.impuesto)
+              : Math.round(precioSubtotal * (ivaPct / 100))
+            const precioTotal = p.precioTotal !== undefined
+              ? Number(p.precioTotal)
+              : precioSubtotal + impuesto
+
+            const stockReal = p.stockDisponible !== undefined
+              ? Number(p.stockDisponible)
+              : Array.isArray(p.stock)
+                ? p.stock.reduce((sum: number, s: any) => sum + Math.max(0, Number(s?.cantidad || 0) - Number(s?.cantidadReservada || 0)), 0)
+                : Number(p.stock || 0)
+
             const imagenesMapeadas = Array.isArray(p.metadataWeb?.imagenes) && p.metadataWeb.imagenes.length > 0
               ? p.metadataWeb.imagenes
-              : p.imagen ? [p.imagen] : ['https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700'];
+              : p.imagen ? [p.imagen] : ['https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=700']
+
+            const marcaNombre = typeof p.marca === 'object' ? p.marca?.nombre : (p.marca || p.metadataWeb?.marca)
 
             return {
               id: p.id,
               sku: p.sku,
+              referencia: p.referencia || undefined,
+              marca: marcaNombre || undefined,
               slug: p.slug,
               nombre: p.nombre,
               descripcion: p.descripcion || 'Producto de alta calidad para bebés.',
               descripcionLarga: p.descripcionWeb || p.descripcion || '',
-              precio: Number(p.precioWeb || p.precioBase || 0),
+              precio: precioTotal,
+              precioSubtotal,
+              impuesto,
+              ivaPct,
+              tipoIva: p.tipoIvaEfectivo || p.tipoIva,
               precioAnterior: p.precioAnterior ? Number(p.precioAnterior) : undefined,
               categoria: cat,
               subcategoria: subcat,
@@ -183,7 +223,9 @@ export function App() {
               imagenes: imagenesMapeadas,
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
-              stock: p.stock || 30,
+              stock: stockReal,
+              tieneVariantes: Boolean(p.tieneVariantes || (p.variantes && p.variantes.length > 0)),
+              variantes: Array.isArray(p.variantes) ? p.variantes : [],
               esDestacado: !!p.esDestacado,
               detalles: Array.isArray(p.metadataWeb?.detalles) && p.metadataWeb.detalles.length > 0
                 ? p.metadataWeb.detalles
@@ -193,16 +235,22 @@ export function App() {
                   "Despacho y entrega rápida garantizada"
                 ],
               especificaciones: {
+                ...(marcaNombre ? { 'Marca': marcaNombre } : {}),
                 ...(p.metadataWeb?.tallas ? { 'Tallas': Array.isArray(p.metadataWeb.tallas) ? p.metadataWeb.tallas.join(', ') : p.metadataWeb.tallas } : {}),
                 ...(p.metadataWeb?.tipoCierre ? { 'Tipo de Cierre': p.metadataWeb.tipoCierre } : {}),
                 ...(p.metadataWeb?.material ? { 'Material': p.metadataWeb.material } : {}),
+                ...(p.referencia ? { 'Referencia': p.referencia } : {}),
                 ...(p.sku ? { 'SKU': p.sku } : {})
               }
             }
+          }).sort((a: Product, b: Product) => {
+            if (a.stock > 0 && b.stock <= 0) return -1
+            if (a.stock <= 0 && b.stock > 0) return 1
+            return 0
           })
           setProducts(mapped)
-        } else if (PRODUCTOS_BABY_WORLD.length > 0) {
-          setProducts(PRODUCTOS_BABY_WORLD)
+        } else {
+          setProducts([])
         }
       })
       .catch(err => {
@@ -216,13 +264,9 @@ export function App() {
       })
   }, [])
 
-  // Filter products by category, subcategory and search query
+  // Filter products by category, subcategory and search query (conectado 100% al ERP)
   const filteredProducts = products.filter(p => {
-    const isCare = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
-    const productIsCare = p.categoria === 'Pañales y Cuidado' || (p.categoria as any) === 'Pañalera'
-
-    const matchesCategory = activeCategory === 'Todos' ||
-      (isCare ? productIsCare : p.categoria === activeCategory)
+    const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
       (p.subcategoria && p.subcategoria.toLowerCase() === activeSubcategory.toLowerCase())
@@ -232,52 +276,88 @@ export function App() {
       p.nombre.toLowerCase().includes(q) ||
       p.descripcion.toLowerCase().includes(q) ||
       p.categoria.toLowerCase().includes(q) ||
-      (p.subcategoria && p.subcategoria.toLowerCase().includes(q))
+      (p.subcategoria && p.subcategoria.toLowerCase().includes(q)) ||
+      (p.sku && p.sku.toLowerCase().includes(q)) ||
+      (p.referencia && p.referencia.toLowerCase().includes(q)) ||
+      (p.marca && p.marca.toLowerCase().includes(q))
     return matchesCategory && matchesSubcategory && matchesSearch
   })
 
-  const handleAddToCart = (product: Product, quantity = 1) => {
-    analytics.agregarCarrito(product.id, product.nombre, product.precio, quantity)
+  const handleAddToCart = (product: Product, quantity = 1, selectedVariant?: ProductVariant) => {
+    // Si el producto maneja variantes y se llamó sin variante (ej: click directo en card del catálogo),
+    // abrir el detalle para que el cliente seleccione su color / talla preferida:
+    if (!selectedVariant && product.tieneVariantes && Array.isArray(product.variantes) && product.variantes.length > 0) {
+      handleOpenProduct(product)
+      return
+    }
+
+    const effectiveStock = selectedVariant ? selectedVariant.stockDisponible : product.stock
+    const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
+
+    if (effectiveStock <= 0) {
+      toast.error(`"${product.nombre}${varLabel}" se encuentra agotado en inventario.`)
+      return
+    }
+
+    const existingItem = cart.find(item => item.product.id === product.id && item.variante?.id === selectedVariant?.id)
+    const currentQty = existingItem ? existingItem.quantity : 0
+    if (currentQty >= effectiveStock) {
+      toast.error(`Solo hay ${effectiveStock} unidad(es) disponible(s) de "${product.nombre}${varLabel}".`)
+      return
+    }
+    const allowedAdd = Math.min(quantity, effectiveStock - currentQty)
+
+    analytics.agregarCarrito(product.id, `${product.nombre}${varLabel}`, product.precio, allowedAdd)
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id)
+      const existing = prev.find(item => item.product.id === product.id && item.variante?.id === selectedVariant?.id)
       if (existing) {
-        toast.success(`Aumentaste ${quantity}x "${product.nombre}"`, {
-          icon: '🍼',
-          style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
-        })
+        const nextQty = Math.min(effectiveStock, existing.quantity + allowedAdd)
+        if (nextQty < existing.quantity + quantity) {
+          toast(`Ajustado al stock disponible (${effectiveStock} und)`, { icon: '📦' })
+        } else {
+          toast.success(`Aumentaste ${allowedAdd}x "${product.nombre}${varLabel}"`, {
+            icon: '🍼',
+            style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
+          })
+        }
         return prev.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+          (item.product.id === product.id && item.variante?.id === selectedVariant?.id)
+            ? { ...item, product, quantity: nextQty }
             : item
         )
       }
-      toast.success(`Agregado a la bolsa: ${product.nombre}`, {
+      toast.success(`Agregado a la bolsa: ${product.nombre}${varLabel}`, {
         icon: '🛍️',
         style: { borderRadius: '1rem', background: '#0f172a', color: '#fff' }
       })
-      return [...prev, { product, quantity }]
+      return [...prev, { product, quantity: allowedAdd, variante: selectedVariant }]
     })
   }
 
-  const handleUpdateQuantity = (productId: number, q: number) => {
+  const handleUpdateQuantity = (productId: number, q: number, varianteId?: number) => {
     if (q <= 0) {
-      handleRemoveItem(productId)
+      handleRemoveItem(productId, varianteId)
       return
     }
     setCart(prev =>
-      prev.map(item =>
-        item.product.id === productId
-          ? { ...item, quantity: q }
-          : item
-      )
+      prev.map(item => {
+        if (item.product.id !== productId || item.variante?.id !== varianteId) return item
+        const maxStock = item.variante ? item.variante.stockDisponible : item.product.stock
+        if (q > maxStock) {
+          toast.error(`Solo hay ${maxStock} unidad(es) disponible(s) en inventario.`)
+          return { ...item, quantity: maxStock }
+        }
+        return { ...item, quantity: q }
+      })
     )
   }
 
-  const handleRemoveItem = (productId: number) => {
-    const item = cart.find(i => i.product.id === productId)
-    setCart(prev => prev.filter(i => i.product.id !== productId))
+  const handleRemoveItem = (productId: number, varianteId?: number) => {
+    const item = cart.find(i => i.product.id === productId && i.variante?.id === varianteId)
+    setCart(prev => prev.filter(i => !(i.product.id === productId && i.variante?.id === varianteId)))
     if (item) {
-      toast.error(`Eliminado: ${item.product.nombre}`, {
+      const varSuffix = item.variante ? ` [${item.variante.nombre}]` : ''
+      toast.error(`Eliminado: ${item.product.nombre}${varSuffix}`, {
         style: { borderRadius: '1rem' }
       })
     }
@@ -294,6 +374,7 @@ export function App() {
   }
 
   const handleOpenProduct = (product: Product) => {
+    setShowFamiliaForm(false)
     setSelectedProduct(product)
     const productSlug = product.slug || product.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || product.id
     if (window.location.pathname !== `/producto/${productSlug}`) {
@@ -311,8 +392,46 @@ export function App() {
     document.title = 'Distribuidora Baby World | Tienda Virtual'
   }
 
+  const handleOpenFamiliaRegistro = () => {
+    setSelectedProduct(null)
+    setShowFamiliaForm(true)
+    if (window.location.pathname !== '/familia') {
+      window.history.pushState({ view: 'familia' }, '', '/familia')
+    }
+    document.title = 'Familia Baby World | Regístrate y accede a beneficios'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCloseFamiliaRegistro = () => {
+    setShowFamiliaForm(false)
+    if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+      window.history.pushState({}, '', '/')
+    }
+    document.title = 'Distribuidora Baby World | Tienda Virtual'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSearchChange = (qVal: string) => {
+    setSearchQuery(qVal)
+    if (qVal && (showFamiliaForm || selectedProduct)) {
+      setShowFamiliaForm(false)
+      setSelectedProduct(null)
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/')
+      }
+      document.title = 'Distribuidora Baby World | Tienda Virtual'
+    }
+  }
+
   const handleCategorySelect = (category: string) => {
     handleCloseProduct()
+    if (showFamiliaForm) {
+      setShowFamiliaForm(false)
+      if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+        window.history.pushState({}, '', '/')
+      }
+      document.title = 'Distribuidora Baby World | Tienda Virtual'
+    }
     setActiveCategory(category)
     setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
@@ -322,73 +441,39 @@ export function App() {
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const isCareSection = activeCategory === 'Pañales y Cuidado' || activeCategory === 'Pañalera'
 
   const availableCategories = useMemo(() => {
-    const hasCalzado = products.some(p => p.categoria === 'Calzado')
-    return hasCalzado
-      ? CATEGORIAS_PRODUCTOS
-      : CATEGORIAS_PRODUCTOS.filter(c => c !== 'Calzado')
+    const counts = new Map<string, number>()
+    for (const p of products) {
+      if (!p.categoria) continue
+      counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1)
+    }
+    const sorted = Array.from(counts.keys()).sort((a, b) => a.localeCompare(b, 'es'))
+    return ['Todos', ...sorted]
   }, [products])
 
+  const availableSubcategories = useMemo(() => {
+    if (activeCategory === 'Todos') return []
+    const subs = new Set<string>()
+    for (const p of products) {
+      if (p.categoria === activeCategory && p.subcategoria && p.subcategoria.trim()) {
+        subs.add(p.subcategoria.trim())
+      }
+    }
+    if (subs.size === 0) return []
+    return ['Todos', ...Array.from(subs).sort((a, b) => a.localeCompare(b, 'es'))]
+  }, [products, activeCategory])
+
+  useEffect(() => {
+    if (activeCategory !== 'Todos' && availableCategories.length > 1 && !availableCategories.includes(activeCategory)) {
+      setActiveCategory('Todos')
+    }
+  }, [availableCategories, activeCategory])
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 pb-20 md:pb-0">
+    <div className={`min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-sky-200 ${!selectedProduct && !showFamiliaForm ? 'pb-20 md:pb-0' : ''}`}>
       {/* Toast notifications */}
       <Toaster position="bottom-right" toastOptions={{ className: 'text-xs font-bold' }} />
-
-      {/* Top BNPL Announcement Bar (Ultra-compacto en móvil, con logos oficiales de Addi y Sistecrédito) */}
-      <div 
-        onClick={() => setIsBnplModalOpen(true)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsBnplModalOpen(true) }}
-        className="bg-gradient-to-r from-emerald-600 via-sky-600 to-indigo-600 text-white text-[10px] sm:text-xs py-1 sm:py-1.5 px-2.5 sm:px-4 text-center font-bold tracking-wide shadow-xs relative z-40 cursor-pointer hover:brightness-105 active:scale-[0.99] transition-all select-none"
-        title="Toca para conocer cómo pagar a cuotas con Addi y Sistecrédito"
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-1.5 sm:gap-2.5 flex-nowrap overflow-hidden">
-          {/* Badge Nuevo / Cuotas */}
-          <span className="inline-flex items-center gap-1 bg-white/20 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shrink-0">
-            ✨ <span className="hidden xs:inline">Nuevo:</span> Cuotas
-          </span>
-
-          {/* Texto descriptivo adaptable */}
-          <span className="text-white/95 font-medium shrink-0">
-            <span className="hidden sm:inline">Paga a cuotas sin tarjeta con</span>
-            <span className="sm:hidden">Sin tarjeta con</span>
-          </span>
-
-          {/* Micro-píldora con Logos oficiales Addi y Sistecrédito */}
-          <div className="inline-flex items-center gap-1 sm:gap-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs shrink-0 border border-white/60">
-            <img 
-              src="/logo-addi.png" 
-              alt="Addi" 
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full object-contain" 
-            />
-            <span className="text-slate-300 text-[10px] font-light">•</span>
-            <img 
-              src="/logo-sistecredito.png" 
-              alt="Sistecrédito" 
-              className="h-2.5 sm:h-3 max-w-[46px] sm:max-w-[55px] object-contain" 
-            />
-          </div>
-
-          {/* Beneficios adicionales para pantallas medianas/grandes */}
-          <span className="hidden sm:inline text-white/90 font-normal">
-            en tienda virtual y físico
-          </span>
-          <span className="hidden md:inline text-white/60">•</span>
-          <span className="hidden md:inline text-emerald-200 font-extrabold">
-            Aprobación en 3 minutos
-          </span>
-
-          {/* Micro-indicador "Ver info" interactivo */}
-          <span className="inline-flex items-center gap-0.5 text-white/90 hover:text-white bg-black/15 hover:bg-black/25 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-normal ml-0.5 transition-colors shrink-0">
-            <span className="hidden sm:inline">¿Cómo funciona?</span>
-            <span className="sm:hidden">Info</span>
-            <span className="text-[10px] leading-none">↗</span>
-          </span>
-        </div>
-      </div>
 
       {/* Navigation Bar */}
       <Navbar
@@ -397,13 +482,19 @@ export function App() {
         activeCategory={activeCategory}
         setActiveCategory={handleCategorySelect}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchChange}
         categories={availableCategories}
         onOpenLocation={() => setIsLocationModalOpen(true)}
       />
 
-      {/* If a product is selected, display the full Dedicated Product View Page */}
-      {selectedProduct ? (
+      {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
+      {showFamiliaForm ? (
+        <FamiliaRegistroPage
+          onBack={handleCloseFamiliaRegistro}
+          API_BASE={API_BASE}
+          storeSlug={STORE_SLUG}
+        />
+      ) : selectedProduct ? (
         <ProductDetailPage
           product={selectedProduct}
           allProducts={products}
@@ -415,12 +506,17 @@ export function App() {
         />
       ) : (
         <>
-          {/* Hero Banner Section (Clean, Compact, Mobile-First) */}
+          {/* Hero Banner Section (Banner Familia Baby World) */}
           {activeCategory === 'Todos' && !searchQuery && (
             <>
-              <HeroBanner 
-                onSelectCategory={handleCategorySelect} 
+              <HeroBanner
+                onOpenFamiliaRegistro={handleOpenFamiliaRegistro}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
+                onOpenBnplInfo={() => setIsBnplModalOpen(true)}
+              />
+              <QuickTrustBar
+                onOpenLocation={() => setIsLocationModalOpen(true)}
+                onOpenBnplInfo={() => setIsBnplModalOpen(true)}
               />
               <FeaturedCarousel 
                 products={products} 
@@ -431,8 +527,8 @@ export function App() {
           )}
 
           {/* Main Catalog Section */}
-          <div className="bg-white rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full relative z-20">
+          <div className="bg-white rounded-t-[2.5rem] sm:rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 w-full relative z-20">
               {/* Section Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div>
@@ -451,23 +547,19 @@ export function App() {
                       ? `Resultados para "${searchQuery}"`
                       : activeCategory === 'Todos'
                         ? 'Lo mejor para tu bebé'
-                        : isCareSection
-                          ? '🍼 Pañales y Cuidado para Bebés'
-                          : activeCategory === 'Juguetería'
-                            ? '🧸 Juguetería & Estimulación Temprana'
-                            : '🎀 Variedades, Ropa & Accesorios'}
+                        : activeCategory}
                   </h2>
                 </div>
 
               </div>
 
-              {/* Subcategories Filter Pills (Visible when in Pañales y Cuidado) */}
-              {isCareSection && (
+              {/* Subcategories Filter Pills (Dinámico desde las subcategorías reales del ERP) */}
+              {availableSubcategories.length > 1 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
                     Filtrar:
                   </span>
-                  {SUBCATEGORIAS_CUIDADO.map((sub) => {
+                  {availableSubcategories.map((sub) => {
                     const isSelected = activeSubcategory === sub
                     return (
                       <button
@@ -539,29 +631,44 @@ export function App() {
               <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
                 <b>Baby-World</b>: Distribuidora líder de pañales, juguetes de estimulación y variedades para consentir y cuidar el crecimiento de tu bebé.
               </p>
+              {/* Redes Sociales Oficiales */}
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-300 text-slate-700 hover:text-pink-600 rounded-xl text-xs font-bold transition-all shadow-2xs group active:scale-95"
+                  title="Visita nuestro perfil de Instagram @distribuidorababyworld"
+                >
+                  <InstagramIcon size={14} className="group-hover:scale-110 transition-transform" />
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href={TIKTOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-400 text-slate-700 hover:text-slate-950 rounded-xl text-xs font-bold transition-all shadow-2xs group active:scale-95"
+                  title="Síguenos en TikTok @baby.world426"
+                >
+                  <TikTokIcon size={14} className="text-slate-900 group-hover:scale-110 transition-transform" />
+                  <span>TikTok</span>
+                </a>
+              </div>
             </div>
 
-            {/* Quick Categories */}
+            {/* Quick Categories (Dinámico desde el ERP) */}
             <div className="space-y-2.5">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
                 Categorías Principales
               </p>
               <ul className="space-y-2 text-xs text-slate-500 font-medium">
-                <li>
-                  <button onClick={() => handleCategorySelect('Pañales y Cuidado')} className="hover:text-sky-600 transition-colors">
-                    🍼 Pañales & Cuidado (Huggies, Winny, Desitin, Cremas)
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => handleCategorySelect('Juguetería')} className="hover:text-sky-600 transition-colors">
-                    🧸 Juguetería Sensorial & Gimnasios
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => handleCategorySelect('Variedades')} className="hover:text-sky-600 transition-colors">
-                    🎀 Variedades, Ajuares & Accesorios
-                  </button>
-                </li>
+                {availableCategories.filter(c => c !== 'Todos').slice(0, 6).map(cat => (
+                  <li key={cat}>
+                    <button onClick={() => handleCategorySelect(cat)} className="hover:text-sky-600 transition-colors text-left">
+                      {cat}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -672,14 +779,15 @@ export function App() {
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <FloatingWhatsAppButton phone="573023863380" />
+      {/* Floating WhatsApp Button (Oculto en la vista de formulario para no estorbar en móvil) */}
+      {!showFamiliaForm && <FloatingWhatsAppButton phone="573023863380" />}
 
       {/* Sticky Mobile Bottom Navigation (Only visible on smartphones in catalog view) */}
-      {!selectedProduct && (
+      {!selectedProduct && !showFamiliaForm && (
         <MobileBottomNav
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}
+          quickCategories={availableCategories.filter(c => c !== 'Todos')}
           cartCount={totalCartCount}
           onOpenCart={() => setIsCartOpen(true)}
           onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}

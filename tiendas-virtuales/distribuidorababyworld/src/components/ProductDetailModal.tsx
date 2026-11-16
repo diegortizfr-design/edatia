@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react'
-import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus } from 'lucide-react'
-import { Product } from '../data/productos'
+import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus, Sparkles } from 'lucide-react'
+import { Product, ProductVariant } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl } from '../lib/imageOptimizer'
+import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 
 interface ProductDetailModalProps {
   product: Product | null
   onClose: () => void
-  onAddToCart: (p: Product, quantity?: number) => void
+  onAddToCart: (p: Product, quantity?: number, selectedVariant?: ProductVariant) => void
 }
 
 export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDetailModalProps) {
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product?.imagen)
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
 
   useEffect(() => {
     if (product) {
       setCurrentImage(product.imagen)
       setQuantity(1)
+      if (product.variantes && product.variantes.length > 0) {
+        const firstInStock = product.variantes.find(v => v.stockDisponible > 0) || product.variantes[0]
+        setSelectedVariant(firstInStock)
+      } else {
+        setSelectedVariant(null)
+      }
     }
   }, [product])
 
@@ -29,13 +37,27 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
     }).format(val)
   }
 
+  const effectivePrice = selectedVariant && Number(selectedVariant.precioBase) > 0
+    ? Number(selectedVariant.precioBase)
+    : product.precio
+
+  const effectiveStock = selectedVariant
+    ? selectedVariant.stockDisponible
+    : product.stock
+
+  const isAgotado = effectiveStock <= 0
+
   const handleAdd = () => {
-    onAddToCart(product, quantity)
+    if (isAgotado) return
+    onAddToCart(product, quantity, selectedVariant || undefined)
     setQuantity(1)
   }
 
+  const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
   const whatsappMessage = encodeURIComponent(
-    `Hola Baby-World! Me interesa el producto: "${product.nombre}" (${fmtPrice(product.precio)}). ¿Tienen disponibilidad inmediata?`
+    isAgotado
+      ? `Hola Baby-World! Me interesa el producto agotado: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+      : `Hola Baby-World! Me interesa el producto: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Tienen disponibilidad inmediata?`
   )
 
   return (
@@ -68,7 +90,12 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
               loading="eager"
               decoding="async"
             />
-            {product.etapa && (
+            {isAgotado && (
+              <span className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md tracking-wider">
+                Agotado
+              </span>
+            )}
+            {product.etapa && !isAgotado && (
               <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
                 {product.etapa}
               </span>
@@ -117,8 +144,10 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                   <span>{product.rating}</span>
                 </div>
                 <span className="text-slate-300">•</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1 text-[11px]">
-                  <CheckCircle2 size={12} /> {product.stock > 0 ? 'En Stock' : 'Bajo Pedido'}
+                <span className={`font-bold flex items-center gap-1 text-[11px] ${
+                  effectiveStock > 0 ? 'text-emerald-600' : 'text-rose-600'
+                }`}>
+                  <CheckCircle2 size={12} /> {effectiveStock > 0 ? `En Stock (${effectiveStock} und)` : 'Agotado'}
                 </span>
               </div>
 
@@ -129,13 +158,75 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                   </span>
                 )}
                 <span className="text-xl sm:text-2xl font-black text-slate-900">
-                  {fmtPrice(product.precio)}
+                  {fmtPrice(effectivePrice)}
                 </span>
               </div>
 
               {/* Simulador de Cuotas Addi y Sistecrédito */}
-              <BnplCreditSimulator price={product.precio} className="mt-2" />
+              <BnplCreditSimulator price={effectivePrice} className="mt-2" />
             </div>
+
+            {/* Selector de Variantes (Colores y Tallas) */}
+            {product.variantes && product.variantes.length > 0 && (
+              <div className="pt-2.5 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-700 flex items-center gap-1">
+                    <Sparkles size={13} className="text-sky-500" />
+                    <span>Color / Talla:</span>
+                  </span>
+                  {selectedVariant && (
+                    <span className="font-extrabold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 text-[11px]">
+                      {selectedVariant.nombre}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {product.variantes.map((v) => {
+                    const visual = extraerAtributosVisuales(v.atributos, v.nombre)
+                    const hexColor = visual.colorHex || buscarHexColor(v.nombre)
+                    const isSelected = selectedVariant?.id === v.id
+                    const inStock = v.stockDisponible > 0
+
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedVariant(v)
+                          setQuantity(1)
+                        }}
+                        className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-sky-500 bg-sky-50/70 shadow-xs ring-2 ring-sky-200'
+                            : inStock
+                              ? 'border-slate-200 hover:border-slate-300 bg-white'
+                              : 'border-slate-200/60 bg-slate-50 opacity-60'
+                        }`}
+                        title={`${v.nombre} (${inStock ? `${v.stockDisponible} disponibles` : 'Sin stock'})`}
+                      >
+                        {hexColor ? (
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/15 shrink-0 shadow-2xs"
+                            style={{ backgroundColor: hexColor }}
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 font-mono">
+                            {visual.tallaLabel || '•'}
+                          </span>
+                        )}
+                        <span className={`text-xs font-bold leading-tight ${isSelected ? 'text-sky-900' : 'text-slate-800'}`}>
+                          {v.nombre}
+                        </span>
+                        {!inStock && (
+                          <span className="text-[9px] text-rose-500 font-semibold">(Agotado)</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             <p className="text-xs text-slate-600 leading-relaxed">
               {product.descripcionLarga || product.descripcion}
@@ -154,42 +245,63 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
 
           {/* Quantity & CTA */}
           <div className="space-y-2.5 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500">Cantidad:</span>
-              <div className="flex items-center border border-slate-200 bg-slate-50 rounded-xl px-2 py-0.5">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="font-bold text-slate-800 text-xs w-7 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
-                >
-                  <Plus size={14} />
-                </button>
+            {!isAgotado ? (
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">Cantidad:</span>
+                <div className="flex items-center border border-slate-200 bg-slate-50 rounded-xl px-2 py-0.5">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="font-bold text-slate-800 text-xs w-7 text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(effectiveStock || 999, quantity + 1))}
+                    className="p-1 hover:text-sky-600 text-slate-400 transition-colors"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-700 font-medium flex items-center justify-between">
+                <span>⚠️ Opción seleccionada agotada en inventario</span>
+                <span className="text-[10px] bg-rose-200/80 text-rose-900 font-bold px-2 py-0.5 rounded-full">0 disponibles</span>
+              </div>
+            )}
 
             <div className="flex gap-2">
-              <button
-                onClick={handleAdd}
-                className="flex-1 py-3 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
-              >
-                <ShoppingBag size={15} />
-                <span>Añadir a mi Bolsa ({fmtPrice(product.precio * quantity)})</span>
-              </button>
+              {!isAgotado ? (
+                <button
+                  onClick={handleAdd}
+                  className="flex-1 py-3 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <ShoppingBag size={15} />
+                  <span>Añadir a mi Bolsa ({fmtPrice(effectivePrice * quantity)})</span>
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="flex-1 py-3 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-wider cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  <span>Temporalmente Agotado</span>
+                </button>
+              )}
 
               <a
                 href={`https://wa.me/573023863380?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-xl transition-all flex items-center justify-center"
-                title="Consultar por WhatsApp"
+                className={`p-3 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs font-bold ${
+                  isAgotado
+                    ? 'px-4 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200'
+                }`}
+                title={isAgotado ? 'Consultar reposición por WhatsApp' : 'Consultar por WhatsApp'}
               >
                 <MessageCircle size={18} />
+                {isAgotado && <span className="hidden sm:inline">Preguntar llegada</span>}
               </a>
             </div>
           </div>
