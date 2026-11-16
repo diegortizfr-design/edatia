@@ -130,3 +130,4 @@ export function extraerAtributosVisuales(v: any) {
     esColor: !!colorAttr,
   }
 }
+
