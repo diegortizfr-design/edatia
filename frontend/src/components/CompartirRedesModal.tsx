@@ -96,20 +96,27 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
 📍 Pañalera Baby World
 🚚 Envíos seguros a todo el país`
 
+  // Helper para URL de Cloudinary con fondo blanco y formato JPG universal
+  const prepararUrlCloudinary = (urlOriginal: string | null | undefined, transformacion: string): string => {
+    if (!urlOriginal) return ''
+    let url = getMediaUrl(urlOriginal)
+    if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+      // Reemplaza la extensión original por .jpg para forzar la transcodificación a JPEG estándar en Cloudinary
+      url = url.replace(/\.(png|webp|avif|jpeg|gif)$/i, '.jpg')
+      // Inserta los parámetros de transformación con f_jpg para asegurar compatibilidad 100% con Windows y móviles
+      url = url.replace('/upload/', `/upload/${transformacion},f_jpg/`)
+    }
+    return url
+  }
+
   // URL de la imagen principal
   const imagenOriginal = producto.imagen || (Array.isArray(producto.metadataWeb?.imagenes) ? producto.metadataWeb.imagenes[0] : null)
   
-  // URL de imagen vertical 1080x1920 (optimizada al vuelo en Cloudinary con fondo blanco)
-  let imagenParaEstado = imagenOriginal ? getMediaUrl(imagenOriginal) : ''
-  if (imagenParaEstado.includes('res.cloudinary.com') && imagenParaEstado.includes('/upload/')) {
-    imagenParaEstado = imagenParaEstado.replace('/upload/', '/upload/b_white,c_pad,w_1080,h_1920/')
-  }
+  // URL de imagen vertical 1080x1920 (optimizada al vuelo en Cloudinary con fondo blanco y f_jpg)
+  const imagenParaEstado = prepararUrlCloudinary(imagenOriginal, 'b_white,c_pad,w_1080,h_1920')
 
   // URL imagen feed cuadrado 1200x1200
-  let imagenCuadrada = imagenOriginal ? getMediaUrl(imagenOriginal) : ''
-  if (imagenCuadrada.includes('res.cloudinary.com') && imagenCuadrada.includes('/upload/')) {
-    imagenCuadrada = imagenCuadrada.replace('/upload/', '/upload/b_white,c_pad,w_1200,h_1200/')
-  }
+  const imagenCuadrada = prepararUrlCloudinary(imagenOriginal, 'b_white,c_pad,w_1200,h_1200')
 
   const imagenSeleccionadaWhatsApp = formatoVertical ? imagenParaEstado : imagenCuadrada
   const imagenSeleccionadaInstagram = formatoIg === 'story' ? imagenParaEstado : imagenCuadrada
@@ -133,7 +140,7 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
     }
   }
 
-  // Descarga una imagen vía blob
+  // Descarga una imagen vía blob asegurando formato JPG válido y limpio
   const descargarImagen = async (url: string, nombreArchivo: string) => {
     if (!url) {
       toast.error('No hay imagen disponible para descargar')
@@ -142,15 +149,23 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
     try {
       toast.loading('Descargando imagen...', { id: 'descarga' })
       const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const blob = await res.blob()
-      const blobUrl = URL.createObjectURL(blob)
+
+      // Limpia nombre para asegurar una única extensión .jpg sin duplicados (.jpg.jpeg)
+      const nombreLimpio = nombreArchivo.replace(/(\.jpg|\.jpeg|\.png|\.webp)+$/i, '') + '.jpg'
+      const jpgBlob = new Blob([blob], { type: 'image/jpeg' })
+      const blobUrl = URL.createObjectURL(jpgBlob)
+      
       const a = document.createElement('a')
       a.href = blobUrl
-      a.download = nombreArchivo
+      a.download = nombreLimpio
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(blobUrl)
+      
+      // Esperamos 4s antes de revocar el blob para que el navegador complete la escritura del archivo en disco
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 4000)
       toast.success('Imagen descargada con éxito ✓', { id: 'descarga' })
     } catch (err) {
       toast.error('Abriendo imagen en nueva pestaña...', { id: 'descarga' })
@@ -162,12 +177,16 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
   const handleCompartirWhatsAppEstado = async () => {
     registrarCompartido('whatsapp')
 
-    if (navigator.share && navigator.canShare && imagenSeleccionadaWhatsApp) {
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+    // Solo usar navigator.share en dispositivos móviles reales (Android / iOS)
+    if (isMobile && navigator.share && navigator.canShare && imagenSeleccionadaWhatsApp) {
       try {
         setCompartiendo(true)
         const res = await fetch(imagenSeleccionadaWhatsApp)
         const blob = await res.blob()
-        const file = new File([blob], `${producto.sku || 'producto'}-estado.jpg`, { type: 'image/jpeg' })
+        const nombreArchivo = `${producto.sku || 'producto'}-estado.jpg`
+        const file = new File([blob], nombreArchivo, { type: 'image/jpeg' })
 
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
@@ -179,9 +198,7 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
           return
         }
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.warn('Web Share no disponible, usando fallback.')
-        } else {
+        if (err.name === 'AbortError') {
           return
         }
       } finally {
@@ -189,15 +206,15 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
       }
     }
 
-    // Fallback Desktop
+    // Flujo Desktop (Windows / Mac / Linux): descarga directa de JPG limpio, copia texto y abre WhatsApp Web
     copiarTexto(textoWhatsApp, 'whatsapp-todo')
     if (imagenSeleccionadaWhatsApp) {
-      descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku || 'producto'}-estado.jpg`)
+      await descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku || 'producto'}-estado.jpg`)
     }
-    toast.success('Texto copiado e imagen descargada. Abriendo WhatsApp Web...')
+    toast.success('Foto JPG descargada y texto copiado. Abriendo WhatsApp Web...')
     setTimeout(() => {
       window.open('https://web.whatsapp.com', '_blank')
-    }, 800)
+    }, 1000)
   }
 
   // Enviar por Chat de WhatsApp
@@ -241,7 +258,8 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
       : (producto.imagen ? [producto.imagen] : [])
 
     if (imgs.length > 0) {
-      descargarImagen(getMediaUrl(imgs[0]), `${producto.sku || 'producto'}-marketplace.jpg`)
+      const urlImg = prepararUrlCloudinary(imgs[0], 'b_white,c_pad,w_1200,h_1200') || getMediaUrl(imgs[0])
+      descargarImagen(urlImg, `${producto.sku || 'producto'}-marketplace.jpg`)
     }
     copiarTexto(descripcionMarketplace, 'desc-mk')
     toast.success('Imagen descargada y descripción copiada. Abriendo Facebook...')
@@ -370,16 +388,17 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
                     <img src={imagenSeleccionadaWhatsApp} alt="Preview" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-slate-800">Foto {formatoVertical ? 'Vertical 9:16' : 'Cuadrada 1:1'}</p>
-                    <p className="text-slate-400 text-[11px]">Fondo blanco estudio listo para compartir.</p>
+                    <p className="font-bold text-slate-800">Foto {formatoVertical ? 'Vertical 9:16 (1080×1920)' : 'Cuadrada 1:1 (1200×1200)'}</p>
+                    <p className="text-slate-500 text-[11px]">Formato JPG compatible con Windows y WhatsApp.</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku}-whatsapp.jpg`)}
-                    className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
-                    title="Descargar imagen"
+                    onClick={() => descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku || 'producto'}-${formatoVertical ? 'estado' : 'cuadrada'}.jpg`)}
+                    className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    title="Descargar imagen en JPG limpio"
                   >
-                    <Download size={16} />
+                    <Download size={14} />
+                    <span>Descargar JPG</span>
                   </button>
                 </div>
               )}
@@ -465,7 +484,7 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
                   </div>
                   <button
                     type="button"
-                    onClick={() => descargarImagen(imagenSeleccionadaInstagram, `${producto.sku}-instagram-${formatoIg}.jpg`)}
+                    onClick={() => descargarImagen(imagenSeleccionadaInstagram, `${producto.sku || 'producto'}-instagram-${formatoIg}.jpg`)}
                     className="p-2 text-slate-500 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-colors"
                     title="Descargar foto"
                   >
@@ -523,7 +542,7 @@ ${producto.descripcion || 'Producto 100% garantizado para el cuidado y comodidad
                   </div>
                   <button
                     type="button"
-                    onClick={() => descargarImagen(imagenParaEstado, `${producto.sku}-tiktok-9x16.jpg`)}
+                    onClick={() => descargarImagen(imagenParaEstado, `${producto.sku || 'producto'}-tiktok-9x16.jpg`)}
                     className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
                     title="Descargar imagen"
                   >
