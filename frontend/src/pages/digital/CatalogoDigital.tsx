@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
 import { ModalProductoIa } from '../../components/ModalProductoIa'
-import { CompartirRedesModal } from '../../components/CompartirRedesModal'
+import { CompartirRedesModal, RedSocial } from '../../components/CompartirRedesModal'
 
 interface ProductoWeb {
   id: number;
@@ -29,6 +29,12 @@ export function CatalogoDigital() {
   const [filter, setFilter] = useState('all')
   const [modalIaOpen, setModalIaOpen] = useState(false)
   const [productoACompartir, setProductoACompartir] = useState<ProductoWeb | null>(null)
+  const [redACompartir, setRedACompartir] = useState<RedSocial>('whatsapp')
+
+  const abrirCompartir = (p: ProductoWeb, red: RedSocial = 'whatsapp') => {
+    setRedACompartir(red)
+    setProductoACompartir(p)
+  }
 
   const handlePreview = (p: ProductoWeb) => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -288,9 +294,9 @@ export function CatalogoDigital() {
                       <div className="flex items-center justify-center gap-1.5">
                         {p.publicadoWeb && (
                           <button 
-                            onClick={() => setProductoACompartir(p)}
+                            onClick={() => abrirCompartir(p, 'whatsapp')}
                             className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                            title="Compartir en Estado de WhatsApp o Marketplace"
+                            title="Compartir en Redes Sociales (WhatsApp, Instagram, TikTok, Marketplace)"
                           >
                             <Share2 size={18} />
                           </button>
@@ -326,12 +332,13 @@ export function CatalogoDigital() {
         onSuccess={() => fetchProductos()}
       />
 
-      {/* Modal Compartir en Redes (WhatsApp Estados y Marketplace) */}
+      {/* Modal Compartir en Redes (WhatsApp, Instagram, TikTok y Marketplace) */}
       {productoACompartir && (
         <CompartirRedesModal
           isOpen={!!productoACompartir}
           onClose={() => setProductoACompartir(null)}
           producto={productoACompartir}
+          redInicial={redACompartir}
         />
       )}
     </div>

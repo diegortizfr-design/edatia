@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Share2, MessageCircle, ShoppingBag, Copy, Check, Download,
-  ExternalLink, X, Smartphone, Monitor, Image as ImageIcon, Sparkles
+  ExternalLink, X, Sparkles, Video, Send
 } from 'lucide-react'
 import api, { getMediaUrl } from '../services/api'
 import toast from 'react-hot-toast'
+
+export type RedSocial = 'whatsapp' | 'instagram' | 'tiktok' | 'marketplace'
 
 interface CompartirRedesModalProps {
   isOpen: boolean
@@ -20,13 +22,21 @@ interface CompartirRedesModalProps {
     descripcion?: string | null
     metadataWeb?: any
   }
+  redInicial?: RedSocial
 }
 
-export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRedesModalProps) {
-  const [redActiva, setRedActiva] = useState<'whatsapp' | 'marketplace'>('whatsapp')
+export function CompartirRedesModal({ isOpen, onClose, producto, redInicial = 'whatsapp' }: CompartirRedesModalProps) {
+  const [redActiva, setRedActiva] = useState<RedSocial>(redInicial)
   const [copiadoCampo, setCopiadoCampo] = useState<string | null>(null)
   const [formatoVertical, setFormatoVertical] = useState<boolean>(true)
+  const [formatoIg, setFormatoIg] = useState<'feed' | 'story'>('feed')
   const [compartiendo, setCompartiendo] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (redInicial) {
+      setRedActiva(redInicial)
+    }
+  }, [redInicial, isOpen])
 
   if (!isOpen || !producto) return null
 
@@ -37,13 +47,42 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
   const productSlug = producto.slug || producto.id
   const productoUrl = `${storeDomain}/producto/${productSlug}`
 
-  // Texto optimizado para Estados de WhatsApp
-  const textoWhatsApp = `🍼 ${producto.nombre}
-💰 ${precioFmt}
-🛒 Pídelo aquí 👉 ${productoUrl}
-📍 Pañalera Baby World`
+  // Texto optimizado para WhatsApp
+  const textoWhatsApp = `🍼 *${producto.nombre}*
+💰 *Precio: ${precioFmt}*
+✨ ${producto.descripcion || 'Disponible en Distribuidora Baby World'}
 
-  // Texto para Marketplace
+🛒 *Pídelo aquí:* 👉 ${productoUrl}
+📍 *Pañalera Baby World*`
+
+  // Texto optimizado para Instagram (Feed y Stories)
+  const textoInstagram = `✨ ${producto.nombre} ✨
+
+${producto.descripcion || 'Llegó a Distribuidora Baby World lo mejor para el bienestar y confort de tu bebé.'}
+
+💰 Precio especial: ${precioFmt}
+📦 Envíos rápidos y seguros a todo el país.
+📲 ¿Quieres el tuyo o asesoría personalizada? Toca el link de nuestra biografía o escríbenos por mensaje directo.
+
+#BabyWorld #Pañalera #BebesColombia #CuidadoDelBebe #Maternidad #MamaPrimeriza #ProductosParaBebes #Colombia #TiendaDeBebes`
+
+  // Guion estructurado para TikTok (Video corto / carrusel)
+  const textoTikTok = `🎬 GANCHO (0-3 seg):
+"¿Buscando lo mejor y más práctico para tu bebé? 👶 Mira lo que acaba de llegar a Baby World..."
+
+📦 PRESENTACIÓN:
+"${producto.nombre} - ${producto.descripcion ? producto.descripcion.slice(0, 140) + '...' : 'Calidad comprobada y la mejor comodidad para tu pequeño.'}"
+
+💰 PRECIO:
+"Por solo ${precioFmt} en Distribuidora Baby World."
+
+📲 LLAMADO A LA ACCIÓN:
+"Toca el enlace en nuestro perfil para pedir el tuyo por WhatsApp con envíos a toda Colombia 🚚"
+
+🏷️ HASHTAGS:
+#BabyWorld #Pañalera #TikTokMadeMeBuyIt #MamaPrimeriza #Bebes #MaternidadReal #CuidadoDelBebe #Colombia`
+
+  // Texto para Facebook Marketplace
   const tituloMarketplace = producto.nombre.slice(0, 100)
   const descripcionMarketplace = `${producto.descripcion || producto.nombre}
 
@@ -57,9 +96,18 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
   
   // URL de imagen vertical 1080x1920 (optimizada al vuelo en Cloudinary con fondo blanco)
   let imagenParaEstado = imagenOriginal ? getMediaUrl(imagenOriginal) : ''
-  if (formatoVertical && imagenParaEstado.includes('res.cloudinary.com') && imagenParaEstado.includes('/upload/')) {
+  if (imagenParaEstado.includes('res.cloudinary.com') && imagenParaEstado.includes('/upload/')) {
     imagenParaEstado = imagenParaEstado.replace('/upload/', '/upload/b_white,c_pad,w_1080,h_1920/')
   }
+
+  // URL imagen feed cuadrado 1200x1200
+  let imagenCuadrada = imagenOriginal ? getMediaUrl(imagenOriginal) : ''
+  if (imagenCuadrada.includes('res.cloudinary.com') && imagenCuadrada.includes('/upload/')) {
+    imagenCuadrada = imagenCuadrada.replace('/upload/', '/upload/b_white,c_pad,w_1200,h_1200/')
+  }
+
+  const imagenSeleccionadaWhatsApp = formatoVertical ? imagenParaEstado : imagenCuadrada
+  const imagenSeleccionadaInstagram = formatoIg === 'story' ? imagenParaEstado : imagenCuadrada
 
   const copiarTexto = async (texto: string, campo: string) => {
     try {
@@ -72,16 +120,20 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
     }
   }
 
-  const registrarCompartido = async (red: 'whatsapp' | 'marketplace') => {
+  const registrarCompartido = async (red: RedSocial) => {
     try {
       await api.post(`/digital/ia/productos/${producto.id}/compartido`, { red })
     } catch (e) {
-      // Silencioso para no bloquear la experiencia de usuario
+      // Silencioso para no bloquear al usuario
     }
   }
 
-  // Descarga una imagen vía blob para evitar que el navegador la abra en pestaña nueva
+  // Descarga una imagen vía blob
   const descargarImagen = async (url: string, nombreArchivo: string) => {
+    if (!url) {
+      toast.error('No hay imagen disponible para descargar')
+      return
+    }
     try {
       toast.loading('Descargando imagen...', { id: 'descarga' })
       const res = await fetch(url)
@@ -96,20 +148,19 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
       URL.revokeObjectURL(blobUrl)
       toast.success('Imagen descargada con éxito ✓', { id: 'descarga' })
     } catch (err) {
-      toast.error('No se pudo descargar directamente, abriendo imagen...', { id: 'descarga' })
+      toast.error('Abriendo imagen en nueva pestaña...', { id: 'descarga' })
       window.open(url, '_blank')
     }
   }
 
   // Compartir en Estado de WhatsApp
-  const handleCompartirWhatsApp = async () => {
+  const handleCompartirWhatsAppEstado = async () => {
     registrarCompartido('whatsapp')
 
-    // 1. Intentar Web Share API en dispositivos móviles
-    if (navigator.share && navigator.canShare && imagenParaEstado) {
+    if (navigator.share && navigator.canShare && imagenSeleccionadaWhatsApp) {
       try {
         setCompartiendo(true)
-        const res = await fetch(imagenParaEstado)
+        const res = await fetch(imagenSeleccionadaWhatsApp)
         const blob = await res.blob()
         const file = new File([blob], `${producto.sku || 'producto'}-estado.jpg`, { type: 'image/jpeg' })
 
@@ -124,20 +175,19 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
-          console.warn('Web Share no disponible o cancelado, usando fallback.')
+          console.warn('Web Share no disponible, usando fallback.')
         } else {
-          return // Usuario canceló la hoja de compartir
+          return
         }
       } finally {
         setCompartiendo(false)
       }
     }
 
-    // 2. Fallback de Escritorio (Desktop):
-    // Descarga la imagen, copia el texto y abre WhatsApp Web
+    // Fallback Desktop
     copiarTexto(textoWhatsApp, 'whatsapp-todo')
-    if (imagenParaEstado) {
-      descargarImagen(imagenParaEstado, `${producto.sku || 'producto'}-estado.jpg`)
+    if (imagenSeleccionadaWhatsApp) {
+      descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku || 'producto'}-estado.jpg`)
     }
     toast.success('Texto copiado e imagen descargada. Abriendo WhatsApp Web...')
     setTimeout(() => {
@@ -145,23 +195,51 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
     }, 800)
   }
 
-  // Compartir en Marketplace
+  // Enviar por Chat de WhatsApp
+  const handleEnviarWhatsAppChat = () => {
+    registrarCompartido('whatsapp')
+    const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoWhatsApp)}`
+    window.open(urlWa, '_blank')
+  }
+
+  // Compartir en Instagram
+  const handleAbrirInstagram = () => {
+    registrarCompartido('instagram')
+    copiarTexto(textoInstagram, 'ig-copy')
+    if (imagenSeleccionadaInstagram) {
+      descargarImagen(imagenSeleccionadaInstagram, `${producto.sku || 'producto'}-instagram-${formatoIg}.jpg`)
+    }
+    toast.success('Copy copiado e imagen descargada. Abriendo Instagram...')
+    setTimeout(() => {
+      window.open('https://www.instagram.com', '_blank')
+    }, 800)
+  }
+
+  // Compartir en TikTok
+  const handleAbrirTikTok = () => {
+    registrarCompartido('tiktok')
+    copiarTexto(textoTikTok, 'tiktok-copy')
+    if (imagenParaEstado) {
+      descargarImagen(imagenParaEstado, `${producto.sku || 'producto'}-tiktok-9x16.jpg`)
+    }
+    toast.success('Guion copiado e imagen 9:16 descargada. Abriendo TikTok...')
+    setTimeout(() => {
+      window.open('https://www.tiktok.com/upload', '_blank')
+    }, 800)
+  }
+
+  // Compartir en Facebook Marketplace
   const handleAbrirMarketplace = async () => {
     registrarCompartido('marketplace')
-
-    // Descargar todas las imágenes disponibles para que el usuario las suba
     const imgs: string[] = Array.isArray(producto.metadataWeb?.imagenes) && producto.metadataWeb.imagenes.length > 0
       ? producto.metadataWeb.imagenes
       : (producto.imagen ? [producto.imagen] : [])
 
     if (imgs.length > 0) {
-      descargarImagen(getMediaUrl(imgs[0]), `${producto.sku || 'producto'}-marketplace-1.jpg`)
+      descargarImagen(getMediaUrl(imgs[0]), `${producto.sku || 'producto'}-marketplace.jpg`)
     }
-
-    // Copiar la descripción por defecto
     copiarTexto(descripcionMarketplace, 'desc-mk')
     toast.success('Imagen descargada y descripción copiada. Abriendo Facebook...')
-
     setTimeout(() => {
       window.open('https://www.facebook.com/marketplace/create/item', '_blank')
     }, 700)
@@ -178,7 +256,7 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
               <Share2 size={20} />
             </div>
             <div>
-              <h2 className="text-base font-black text-slate-800">Compartir Producto</h2>
+              <h2 className="text-base font-black text-slate-800">Difusión y Redes Sociales</h2>
               <p className="text-xs text-slate-400 truncate max-w-xs">{producto.nombre}</p>
             </div>
           </div>
@@ -190,45 +268,71 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
           </button>
         </div>
 
-        {/* Selector de Canal: WhatsApp o Marketplace */}
-        <div className="p-3 bg-slate-100/70 flex gap-2 border-b border-slate-200">
+        {/* Barra de Canales: WhatsApp, Instagram, TikTok, Marketplace */}
+        <div className="p-2.5 bg-slate-100/70 grid grid-cols-2 sm:grid-cols-4 gap-1.5 border-b border-slate-200">
           <button
             type="button"
             onClick={() => setRedActiva('whatsapp')}
-            className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               redActiva === 'whatsapp'
                 ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
                 : 'bg-white text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <MessageCircle size={16} />
-            Estado de WhatsApp
+            <MessageCircle size={15} />
+            <span>WhatsApp</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setRedActiva('instagram')}
+            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              redActiva === 'instagram'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-200'
+                : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Sparkles size={15} />
+            <span>Instagram</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRedActiva('tiktok')}
+            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              redActiva === 'tiktok'
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-400'
+                : 'bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Video size={15} />
+            <span>TikTok</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setRedActiva('marketplace')}
-            className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               redActiva === 'marketplace'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                 : 'bg-white text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <ShoppingBag size={16} />
-            Facebook Marketplace
+            <ShoppingBag size={15} />
+            <span>Marketplace</span>
           </button>
         </div>
 
         {/* Contenido según el canal */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           
-          {/* VISTA WHATSAPP */}
+          {/* ── 1. VISTA WHATSAPP ── */}
           {redActiva === 'whatsapp' && (
             <div className="space-y-4">
-              {/* Formato de imagen */}
-              <div className="flex items-center justify-between p-3 bg-emerald-50/60 rounded-2xl border border-emerald-200 text-xs text-emerald-900">
+              <div className="flex items-center justify-between p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs text-emerald-900">
                 <div>
-                  <p className="font-bold">Formato Vertical para Historias (1080×1920)</p>
-                  <p className="text-[11px] text-emerald-700">Añade márgenes blancos automáticos para que no se corte en el móvil.</p>
+                  <p className="font-bold">Formato Vertical para Estados (1080×1920)</p>
+                  <p className="text-[11px] text-emerald-700">Añade márgenes blancos automáticos para que no se corte en pantalla móvil.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -238,17 +342,16 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
                 />
               </div>
 
-              {/* Vista previa del mensaje */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Texto del Estado</label>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Texto sugerido</label>
                   <button
                     type="button"
                     onClick={() => copiarTexto(textoWhatsApp, 'whatsapp-todo')}
                     className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
                   >
                     {copiadoCampo === 'whatsapp-todo' ? <Check size={13} /> : <Copy size={13} />}
-                    Copiar Texto
+                    Copiar
                   </button>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-700 whitespace-pre-line leading-relaxed shadow-xs">
@@ -256,54 +359,195 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
                 </div>
               </div>
 
-              {/* Miniatura de la foto */}
-              {imagenParaEstado && (
+              {imagenSeleccionadaWhatsApp && (
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 p-1">
-                    <img src={imagenParaEstado} alt="Preview" className="w-full h-full object-contain" />
+                    <img src={imagenSeleccionadaWhatsApp} alt="Preview" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1 text-xs">
-                    <p className="font-bold text-slate-800">Imagen lista con logo Baby World</p>
-                    <p className="text-slate-400 text-[11px]">Se adjunta automáticamente al compartir desde el celular.</p>
+                    <p className="font-bold text-slate-800">Foto {formatoVertical ? 'Vertical 9:16' : 'Cuadrada 1:1'}</p>
+                    <p className="text-slate-400 text-[11px]">Fondo blanco estudio listo para compartir.</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => descargarImagen(imagenParaEstado, `${producto.sku}-estado.jpg`)}
+                    onClick={() => descargarImagen(imagenSeleccionadaWhatsApp, `${producto.sku}-whatsapp.jpg`)}
                     className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
-                    title="Descargar imagen manualmente"
+                    title="Descargar imagen"
                   >
                     <Download size={16} />
                   </button>
                 </div>
               )}
 
-              {/* Botón principal */}
-              <button
-                type="button"
-                disabled={compartiendo}
-                onClick={handleCompartirWhatsApp}
-                className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-200 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <MessageCircle size={18} />
-                <span>Publicar en Estado de WhatsApp</span>
-              </button>
-              <p className="text-[11px] text-slate-400 text-center">
-                En el celular abre la hoja de compartir; en el PC descarga la imagen y abre WhatsApp Web.
-              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleEnviarWhatsAppChat}
+                  className="py-3 px-3 bg-white hover:bg-emerald-50 text-emerald-700 border-2 border-emerald-300 rounded-2xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Send size={15} />
+                  <span>Enviar por Chat de WhatsApp</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={compartiendo}
+                  onClick={handleCompartirWhatsAppEstado}
+                  className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <MessageCircle size={16} />
+                  <span>Publicar en Mi Estado</span>
+                </button>
+              </div>
             </div>
           )}
 
-          {/* VISTA MARKETPLACE */}
-          {redActiva === 'marketplace' && (
+          {/* ── 2. VISTA INSTAGRAM ── */}
+          {redActiva === 'instagram' && (
             <div className="space-y-4">
-              <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-200 text-xs text-blue-900">
-                <p className="font-bold">Publicación semiautomática para perfil personal</p>
-                <p className="text-[11px] text-blue-700 mt-0.5">
-                  Facebook no permite publicar directamente por API a Marketplace personal. Haz clic en cada campo para copiarlo y pégalo en el formulario de Facebook.
+              <div className="flex items-center justify-between p-3 bg-pink-50/70 rounded-2xl border border-pink-200 text-xs text-pink-950">
+                <div>
+                  <p className="font-bold">Formato de Publicación para Instagram</p>
+                  <p className="text-[11px] text-pink-700">Selecciona si vas a publicar en el Feed principal o en Historias/Reels.</p>
+                </div>
+                <div className="flex gap-1 bg-white p-1 rounded-xl border border-pink-200">
+                  <button
+                    type="button"
+                    onClick={() => setFormatoIg('feed')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      formatoIg === 'feed' ? 'bg-pink-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Feed (1:1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormatoIg('story')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      formatoIg === 'story' ? 'bg-pink-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    Story (9:16)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Caption con Hashtags</label>
+                  <button
+                    type="button"
+                    onClick={() => copiarTexto(textoInstagram, 'ig-copy')}
+                    className="text-xs font-bold text-pink-600 hover:text-pink-700 flex items-center gap-1"
+                  >
+                    {copiadoCampo === 'ig-copy' ? <Check size={13} /> : <Copy size={13} />}
+                    Copiar Caption
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-700 whitespace-pre-line leading-relaxed max-h-44 overflow-y-auto shadow-xs">
+                  {textoInstagram}
+                </div>
+              </div>
+
+              {imagenSeleccionadaInstagram && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 p-1">
+                    <img src={imagenSeleccionadaInstagram} alt="Preview" className="w-full h-full object-contain" />
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-slate-800">Foto Instagram ({formatoIg === 'story' ? 'Story 9:16' : 'Feed 1:1'})</p>
+                    <p className="text-slate-400 text-[11px]">Limpia, fondo blanco estudio profesional.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => descargarImagen(imagenSeleccionadaInstagram, `${producto.sku}-instagram-${formatoIg}.jpg`)}
+                    className="p-2 text-slate-500 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-colors"
+                    title="Descargar foto"
+                  >
+                    <Download size={16} />
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAbrirInstagram}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 hover:opacity-95 text-white rounded-2xl font-bold text-sm shadow-lg shadow-pink-200 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles size={16} />
+                <span>Copiar Caption, Descargar Foto y Abrir Instagram</span>
+              </button>
+            </div>
+          )}
+
+          {/* ── 3. VISTA TIKTOK ── */}
+          {redActiva === 'tiktok' && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-900 text-white rounded-2xl text-xs space-y-1">
+                <p className="font-bold flex items-center gap-1.5"><Video size={14} className="text-cyan-400" /> Guion y Formato Vertical (9:16)</p>
+                <p className="text-[11px] text-slate-300">
+                  Usa este guion estructurado con gancho para grabar tu video corto o publicar la foto en modo foto carrusel de TikTok.
                 </p>
               </div>
 
-              {/* Campo 1: Título */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Guion + Hashtags sugeridos</label>
+                  <button
+                    type="button"
+                    onClick={() => copiarTexto(textoTikTok, 'tiktok-copy')}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                  >
+                    {copiadoCampo === 'tiktok-copy' ? <Check size={13} /> : <Copy size={13} />}
+                    Copiar Guion
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs text-slate-700 whitespace-pre-line leading-relaxed max-h-48 overflow-y-auto shadow-xs">
+                  {textoTikTok}
+                </div>
+              </div>
+
+              {imagenParaEstado && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 p-1">
+                    <img src={imagenParaEstado} alt="Preview" className="w-full h-full object-contain" />
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-slate-800">Imagen Vertical TikTok (9:16)</p>
+                    <p className="text-slate-400 text-[11px]">Optimizada para pantalla completa de celular.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => descargarImagen(imagenParaEstado, `${producto.sku}-tiktok-9x16.jpg`)}
+                    className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+                    title="Descargar imagen"
+                  >
+                    <Download size={16} />
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAbrirTikTok}
+                className="w-full py-3.5 px-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-sm shadow-lg shadow-slate-300 hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Video size={16} />
+                <span>Copiar Guion, Descargar Imagen y Abrir TikTok</span>
+              </button>
+            </div>
+          )}
+
+          {/* ── 4. VISTA MARKETPLACE ── */}
+          {redActiva === 'marketplace' && (
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-200 text-xs text-blue-900">
+                <p className="font-bold">Publicación semiautomática para Facebook Marketplace</p>
+                <p className="text-[11px] text-blue-700 mt-0.5">
+                  Haz clic en cada campo para copiarlo rápidamente en el formulario de publicación de Facebook.
+                </p>
+              </div>
+
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">1. Título</label>
@@ -321,7 +565,6 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
                 </div>
               </div>
 
-              {/* Campo 2: Precio */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">2. Precio (COP)</label>
@@ -339,7 +582,6 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
                 </div>
               </div>
 
-              {/* Campo 3: Descripción con Link */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">3. Descripción + Enlace Web</label>
@@ -357,7 +599,6 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
                 </div>
               </div>
 
-              {/* Botón Marketplace */}
               <div className="pt-2">
                 <button
                   type="button"
@@ -376,4 +617,3 @@ export function CompartirRedesModal({ isOpen, onClose, producto }: CompartirRede
     </div>
   )
 }
-

@@ -9,13 +9,13 @@ import {
   AlertTriangle, Plus, Trash2, ExternalLink, TrendingUp,
   Star, X, Search, Save, RefreshCw, Warehouse,
   Link2, Upload, Hash, Calculator,
-  BarChart3, Clock, Loader2, Share2
+  BarChart3, Clock, Loader2, Share2, Sparkles, MessageCircle, Video, Wand2
 } from 'lucide-react'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getProveedores, updateProducto
 } from '../../services/inventario.service'
 import { getImpuestos } from '../../services/erp.service'
-import { CompartirRedesModal } from '../../components/CompartirRedesModal'
+import { CompartirRedesModal, RedSocial } from '../../components/CompartirRedesModal'
 
 const Barcode = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
   <svg
@@ -59,7 +59,7 @@ const TABS = [
 // ── Sub-components ───────────────────────────────────────────────────────────
 
 /* ---- TAB: Web / Digital ---- */
-function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
+function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: () => void; onCompartir?: (red: RedSocial) => void }) {
   const [data, setData] = useState({
     publicadoWeb: producto.publicadoWeb || false,
     esDigital: producto.esDigital || false,
@@ -79,6 +79,9 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
   const [newImagen, setNewImagen] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [generandoInfo, setGenerandoInfo] = useState(false)
+  const [fondoEstudioIa, setFondoEstudioIa] = useState(true)
+  const [procesandoThumb, setProcesandoThumb] = useState<string | null>(null)
 
   useEffect(() => {
     setData({
@@ -108,32 +111,69 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleGenerarInfoPublicacion = async () => {
+    try {
+      setGenerandoInfo(true)
+      const res = await api.post(`/digital/ia/productos/${producto.id}/generar-info-publicacion`)
+      const info = res.data
+      setData(prev => ({
+        ...prev,
+        nombreWeb: info.nombreWeb || prev.nombreWeb,
+        slug: info.slug || prev.slug,
+        etiquetaSeo: info.etiquetaSeo || prev.etiquetaSeo,
+        metaDescripcion: info.metaDescripcion || prev.metaDescripcion,
+        descripcionWeb: info.descripcionWeb || prev.descripcionWeb,
+      }))
+      toast.success('¡Información web generada con IA! Revisa y haz clic en Guardar.')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Error al generar información web con IA'
+      toast.error(typeof msg === 'string' ? msg : 'Error al generar información con IA')
+    } finally {
+      setGenerandoInfo(false)
+    }
+  }
+
+  const subirArchivo = async (file: File) => {
     setUploadingImg(true)
     const formData = new FormData()
     formData.append('file', file)
 
     try {
-      const response = await api.post('/configuracion/archivo/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      const { url } = response.data
-      const updatedImgs = [...data.imagenes, url]
-      setData(prev => ({ ...prev, imagenes: updatedImgs }))
-      const payload = buildPayload(data, updatedImgs)
-      await updateProducto(producto.id, payload)
-      refetch()
-      toast.success('Imagen subida y guardada exitosamente ✓')
+      if (fondoEstudioIa) {
+        toast.loading('Generando fondo de estudio blanco con IA...', { id: 'estudio-ia' })
+        const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const { url, imagenes } = res.data
+        const nuevasImgs = imagenes || [...data.imagenes, url]
+        setData(prev => ({ ...prev, imagenes: nuevasImgs }))
+        refetch()
+        toast.success('¡Imagen procesada con fondo blanco estudio y guardada! ✨', { id: 'estudio-ia' })
+      } else {
+        const response = await api.post('/configuracion/archivo/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const { url } = response.data
+        const updatedImgs = [...data.imagenes, url]
+        setData(prev => ({ ...prev, imagenes: updatedImgs }))
+        const payload = buildPayload(data, updatedImgs)
+        await updateProducto(producto.id, payload)
+        refetch()
+        toast.success('Imagen subida y guardada exitosamente ✓')
+      }
     } catch (err: any) {
-      console.error('Error al subir imagen:', err)
-      const msg = err?.response?.data?.message || 'Error al subir la imagen'
-      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen')
+      const msg = err?.response?.data?.message || 'Error al procesar la imagen'
+      toast.error(typeof msg === 'string' ? msg : 'Error al procesar la imagen', { id: 'estudio-ia' })
     } finally {
       setUploadingImg(false)
-      if (e.target) e.target.value = ''
     }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await subirArchivo(file)
+    if (e.target) e.target.value = ''
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -156,29 +196,7 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
       toast.error('Por favor, suelta un archivo de imagen válido');
       return;
     }
-    
-    setUploadingImg(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await api.post('/configuracion/archivo/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const { url } = response.data;
-      const updatedImgs = [...data.imagenes, url];
-      setData(prev => ({ ...prev, imagenes: updatedImgs }));
-      const payload = buildPayload(data, updatedImgs);
-      await updateProducto(producto.id, payload);
-      refetch();
-      toast.success('Imagen subida y guardada exitosamente ✓');
-    } catch (err: any) {
-      console.error('Error al subir imagen:', err);
-      const msg = err?.response?.data?.message || 'Error al subir la imagen';
-      toast.error(typeof msg === 'string' ? msg : 'Error al subir la imagen');
-    } finally {
-      setUploadingImg(false);
-    }
+    await subirArchivo(file);
   }
 
   const save = async () => {
@@ -200,17 +218,56 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
 
   const addImagen = async () => {
     if (!newImagen.trim()) return
-    const updatedImgs = [...data.imagenes, newImagen.trim()]
-    setData(prev => ({ ...prev, imagenes: updatedImgs }))
+    const url = newImagen.trim()
     setNewImagen('')
+
+    if (fondoEstudioIa) {
+      try {
+        setUploadingImg(true)
+        toast.loading('Procesando imagen con fondo de estudio blanco...', { id: 'url-estudio-ia' })
+        const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, { imageUrl: url })
+        const { url: urlSubida, imagenes } = res.data
+        const nuevasImgs = imagenes || [...data.imagenes, urlSubida]
+        setData(prev => ({ ...prev, imagenes: nuevasImgs }))
+        refetch()
+        toast.success('¡Imagen procesada con fondo blanco estudio! ✨', { id: 'url-estudio-ia' })
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Error al procesar la imagen'
+        toast.error(typeof msg === 'string' ? msg : 'Error al procesar la imagen', { id: 'url-estudio-ia' })
+      } finally {
+        setUploadingImg(false)
+      }
+    } else {
+      const updatedImgs = [...data.imagenes, url]
+      setData(prev => ({ ...prev, imagenes: updatedImgs }))
+      try {
+        const payload = buildPayload(data, updatedImgs)
+        await updateProducto(producto.id, payload)
+        refetch()
+        toast.success('Imagen agregada y guardada ✓')
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Error al guardar imagen'
+        toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
+      }
+    }
+  }
+
+  const handleConvertirFondoEstudio = async (imgUrl: string) => {
     try {
-      const payload = buildPayload(data, updatedImgs)
-      await updateProducto(producto.id, payload)
+      setProcesandoThumb(imgUrl)
+      toast.loading('Convirtiendo a fondo de estudio blanco con IA...', { id: 'thumb-ia' })
+      const res = await api.post(`/digital/ia/productos/${producto.id}/procesar-imagen-estudio`, { imageUrl: imgUrl })
+      const { imagenes } = res.data
+      if (imagenes) {
+        setData(prev => ({ ...prev, imagenes }))
+      }
       refetch()
-      toast.success('Imagen agregada y guardada ✓')
+      toast.success('¡Foto convertida a estudio blanco puro! ✨', { id: 'thumb-ia' })
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Error al guardar imagen'
-      toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
+      const msg = err?.response?.data?.message || 'Error al convertir imagen a estudio'
+      toast.error(typeof msg === 'string' ? msg : 'Error al convertir imagen a estudio', { id: 'thumb-ia' })
+    } finally {
+      setProcesandoThumb(null)
     }
   }
 
@@ -273,9 +330,87 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         ))}
       </div>
 
+      {/* Banner Difusión en Redes Sociales */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white rounded-2xl p-4 sm:p-5 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center shrink-0 border border-white/10">
+            <Share2 size={20} className="text-pink-300" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black tracking-tight flex items-center gap-2">
+              Difusión en Redes Sociales
+              <span className="text-[10px] bg-pink-500/30 text-pink-200 border border-pink-400/30 px-2 py-0.5 rounded-full font-bold">Omnicanal</span>
+            </h4>
+            <p className="text-xs text-slate-300 mt-0.5">Publica este producto en segundos con fotos de estudio, ganchos y hashtags optimizados.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-start md:justify-end">
+          <button
+            type="button"
+            onClick={() => onCompartir?.('whatsapp')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en WhatsApp (Estados o Chat)"
+          >
+            <MessageCircle size={14} />
+            <span>WhatsApp</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('instagram')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en Instagram (Feed o Historias)"
+          >
+            <Sparkles size={14} />
+            <span>Instagram</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('tiktok')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en TikTok (Video vertical 9:16)"
+          >
+            <Video size={14} />
+            <span>TikTok</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onCompartir?.('marketplace')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Compartir en Facebook Marketplace"
+          >
+            <ShoppingBag size={14} />
+            <span>Marketplace</span>
+          </button>
+        </div>
+      </div>
+
       {/* Campos web */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4">
-        <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Información de Publicación</h4>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Información de Publicación</h4>
+            <p className="text-[11px] text-slate-400">Datos visibles para catálogo web, buscadores y redes sociales.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerarInfoPublicacion}
+            disabled={generandoInfo}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+            title="Generar automáticamente con IA los textos y SEO"
+          >
+            {generandoInfo ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Generando con IA...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                <span>✨ Autogenerar con IA</span>
+              </>
+            )}
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Nombre en Tienda Web</label>
@@ -334,10 +469,22 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
         onDrop={handleDrop}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
-            <Upload size={14} /> Imágenes del Producto (URLs)
-          </h4>
-          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md hidden sm:inline-block">Puedes arrastrar y soltar fotos aquí</span>
+          <div>
+            <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+              <Upload size={14} /> Imágenes del Producto (URLs)
+            </h4>
+            <p className="text-[11px] text-slate-400">Puedes arrastrar fotos aquí o pegar enlaces web.</p>
+          </div>
+          <label className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 cursor-pointer select-none transition-colors hover:bg-indigo-100">
+            <input
+              type="checkbox"
+              checked={fondoEstudioIa}
+              onChange={(e) => setFondoEstudioIa(e.target.checked)}
+              className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+            />
+            <Sparkles size={13} className="text-indigo-600" />
+            <span>Fondo de estudio IA (Blanco puro 1:1)</span>
+          </label>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 relative">
@@ -397,8 +544,19 @@ function TabWeb({ producto, refetch }: { producto: any; refetch: () => void }) {
                   <img src={getMediaUrl(img)} alt="Preview" className="w-full h-full object-contain" />
                 </div>
                 <span className="truncate max-w-[150px] font-mono select-none">{img}</span>
-                <button type="button" onClick={() => removeImagen(i)}
-                  className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    disabled={procesandoThumb === img}
+                    onClick={() => handleConvertirFondoEstudio(img)}
+                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                    title="Transformar esta foto a fondo blanco estudio con IA"
+                  >
+                    {procesandoThumb === img ? <Loader2 size={12} className="animate-spin text-indigo-600" /> : <Wand2 size={12} />}
+                  </button>
+                  <button type="button" onClick={() => removeImagen(i)}
+                    className="text-slate-300 hover:text-rose-500 transition-colors" title="Eliminar imagen"><X size={12} /></button>
+                </div>
               </div>
             ))}
           </div>
@@ -1502,6 +1660,12 @@ export function ConfigProductoDetalle() {
     return params.get('tab') || 'web'
   })
   const [compartirModalOpen, setCompartirModalOpen] = useState(false)
+  const [redCompartir, setRedCompartir] = useState<RedSocial>('whatsapp')
+
+  const abrirCompartir = (red: RedSocial) => {
+    setRedCompartir(red)
+    setCompartirModalOpen(true)
+  }
 
   const { data: producto, isLoading, isError, refetch } = useQuery({
     queryKey: ['producto_detalle', productoId],
@@ -1701,16 +1865,43 @@ export function ConfigProductoDetalle() {
           </div>
 
           {/* Acciones del header */}
-          <div className="flex items-center gap-2 shrink-0">
-            {producto.publicadoWeb && (
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {/* Botones de Redes Sociales */}
+            <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
               <button 
-                onClick={() => setCompartirModalOpen(true)} 
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-                title="Compartir en Estado de WhatsApp o Marketplace"
+                onClick={() => abrirCompartir('whatsapp')} 
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Publicar en WhatsApp (Estados o Chat)"
               >
-                <Share2 size={13} /> Compartir en Redes
+                <MessageCircle size={13} />
+                <span className="hidden sm:inline">WhatsApp</span>
               </button>
-            )}
+              <button 
+                onClick={() => abrirCompartir('instagram')} 
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Publicar en Instagram (Feed o Stories)"
+              >
+                <Sparkles size={13} />
+                <span className="hidden sm:inline">Instagram</span>
+              </button>
+              <button 
+                onClick={() => abrirCompartir('tiktok')} 
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Publicar en TikTok (Video vertical 9:16)"
+              >
+                <Video size={13} />
+                <span className="hidden sm:inline">TikTok</span>
+              </button>
+              <button 
+                onClick={() => abrirCompartir('marketplace')} 
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Publicar en Facebook Marketplace"
+              >
+                <Share2 size={13} />
+                <span className="hidden sm:inline">Marketplace</span>
+              </button>
+            </div>
+
             <button onClick={() => navigate(`/configuracion/productos`)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
               Catálogo
             </button>
@@ -1747,7 +1938,7 @@ export function ConfigProductoDetalle() {
 
         {/* Tab content */}
         <div className="p-6">
-          {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} />}
+          {activeTab === 'web'         && <TabWeb producto={producto} refetch={refetch} onCompartir={abrirCompartir} />}
           {activeTab === 'documentos'  && <TabDocumentos producto={producto} refetch={refetch} />}
           {activeTab === 'compras'     && <TabCompras productoId={productoId} sku={producto.sku} />}
           {activeTab === 'proveedores' && <TabProveedores producto={producto} refetch={refetch} />}
@@ -1758,12 +1949,13 @@ export function ConfigProductoDetalle() {
         </div>
       </div>
 
-      {/* Modal Compartir en Redes (WhatsApp Estados y Marketplace) */}
+      {/* Modal Compartir en Redes (WhatsApp, Instagram, TikTok y Marketplace) */}
       {producto && (
         <CompartirRedesModal
           isOpen={compartirModalOpen}
           onClose={() => setCompartirModalOpen(false)}
           producto={producto}
+          redInicial={redCompartir}
         />
       )}
     </div>
