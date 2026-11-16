@@ -38,6 +38,8 @@ edatia/
 │   │   ├── auth/          # JWT auth ERP (register, login, /me)
 │   │   ├── users/         # CRUD usuarios ERP
 │   │   ├── empresas/      # CRUD empresas ERP
+│   │   ├── digital/       # Catálogo digital y e-commerce (Baby World)
+│   │   │   └── ia-productos/ # Catalogación asistida con Gemini + Estandarización 1200x1200
 │   │   ├── manager-auth/  # Auth Manager (ManagerJwtStrategy, 'manager-jwt')
 │   │   ├── colaboradores/ # CRUD colaboradores internos Edatia
 │   │   ├── perfiles-cargo/# Perfiles de cargo permanentes
