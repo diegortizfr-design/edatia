@@ -57,8 +57,14 @@ export class ActualizarBorradorIaDto {
   categoriaId?: number;
 }
 
+export class ProcesarImagenEstudioDto {
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+}
+
 export class RegistrarCompartidoDto {
-  @IsIn(['whatsapp', 'marketplace'])
-  red: 'whatsapp' | 'marketplace';
+  @IsIn(['whatsapp', 'instagram', 'tiktok', 'marketplace'])
+  red: 'whatsapp' | 'instagram' | 'tiktok' | 'marketplace';
 }
 

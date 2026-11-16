@@ -399,6 +399,130 @@ export class IaProductosService {
     return { success: true, red: dto.red, fecha: nuevoCompartido[dto.red] };
   }
 
+  /**
+   * Genera textos optimizados de publicación web (nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb)
+   * a partir de los datos registrados del producto utilizando Gemini.
+   */
+  async generarInfoPublicacion(empresaId: number, productoId: number) {
+    const producto = await (this.prisma as any).producto.findFirst({
+      where: { id: productoId, empresaId },
+      include: {
+        categoria: { select: { nombre: true } },
+        marca: { select: { nombre: true } },
+      },
+    });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+
+    const precio = Number(
+      producto.precioWeb ||
+      producto.precioBase ||
+      (Array.isArray(producto.precios) ? producto.precios[0] : 0),
+    );
+
+    const info = await this.gemini.generarInfoPublicacion({
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      descripcionAlterna: producto.descripcionAlterna,
+      marca: producto.marca?.nombre,
+      categoria: producto.categoria?.nombre,
+      sku: producto.sku,
+      precio,
+    });
+
+    return info;
+  }
+
+  /**
+   * Procesa una foto de producto (archivo cargado o URL) para generarle un fondo
+   * de estudio blanco puro (#FFFFFF), centrado 1:1 (1200x1200 px), sin marcas ni logos,
+   * y la guarda en Cloudinary y en el producto.
+   */
+  async procesarImagenEstudio(
+    empresaId: number,
+    productoId: number,
+    bufferEntrada?: Buffer,
+    imageUrl?: string,
+  ) {
+    const producto = await (this.prisma as any).producto.findFirst({
+      where: { id: productoId, empresaId },
+    });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+
+    let bufferOriginal: Buffer;
+
+    if (bufferEntrada && bufferEntrada.length > 0) {
+      bufferOriginal = bufferEntrada;
+    } else if (imageUrl && imageUrl.trim()) {
+      try {
+        const resp = await fetch(imageUrl.trim());
+        if (!resp.ok) {
+          throw new BadRequestException('No se pudo descargar la imagen desde la URL');
+        }
+        const ab = await resp.arrayBuffer();
+        bufferOriginal = Buffer.from(ab as any);
+      } catch (e: any) {
+        throw new BadRequestException('Error al descargar la imagen de la URL: ' + (e?.message || e));
+      }
+    } else {
+      throw new BadRequestException('Debes proporcionar un archivo de imagen o una URL válida');
+    }
+
+    // 1. Normalizar entrada (HEIC, orientación EXIF, max 1536px, JPEG)
+    const bufferNormalizado = await this.imagenEstandar.normalizarEntrada(bufferOriginal);
+
+    // 2. Generar imagen de estudio con Gemini
+    const bufferIa = await this.gemini.generarImagenEstudio({
+      data: bufferNormalizado,
+      mimeType: 'image/jpeg',
+    });
+
+    // 3. Componer a 1200x1200 cuadrado centrado con fondo blanco puro (#FFFFFF) y SIN logo
+    const { imagen: bufferFinal } = await this.imagenEstandar.componer(bufferIa);
+
+    // 4. Subir a Cloudinary
+    const timestamp = Date.now();
+    const publicId = `${producto.sku || 'prod'}-estudio-${timestamp.toString().slice(-6)}`;
+    const urlSubida = await this.subirACloudinary(
+      bufferFinal,
+      `edatia_erp/empresa_${empresaId}/productos`,
+      publicId,
+    );
+
+    // 5. Actualizar el producto en BD agregando o reemplazando la imagen
+    const meta = (producto.metadataWeb as Record<string, any>) || {};
+    const imagenesActuales: string[] = Array.isArray(meta.imagenes) && meta.imagenes.length > 0
+      ? [...meta.imagenes]
+      : (producto.imagen ? [producto.imagen] : []);
+
+    let nuevasImagenes: string[];
+    if (imageUrl && imagenesActuales.includes(imageUrl.trim())) {
+      const idx = imagenesActuales.indexOf(imageUrl.trim());
+      nuevasImagenes = [...imagenesActuales];
+      nuevasImagenes[idx] = urlSubida;
+    } else {
+      nuevasImagenes = [...imagenesActuales, urlSubida];
+    }
+
+    const nuevaMeta = {
+      ...meta,
+      imagenes: nuevasImagenes,
+    };
+
+    const productoActualizado = await (this.prisma as any).producto.update({
+      where: { id: productoId },
+      data: {
+        imagen: nuevasImagenes[0] || urlSubida,
+        metadataWeb: nuevaMeta,
+      },
+    });
+
+    return {
+      url: urlSubida,
+      imagenes: nuevasImagenes,
+      producto: productoActualizado,
+    };
+  }
+
   // ── Helpers de Base de Datos y Cloudinary ──────────────────────────────────
 
   private async asegurarCategoria(

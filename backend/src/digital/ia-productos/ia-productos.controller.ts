@@ -7,10 +7,11 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
+  UploadedFile,
   ParseIntPipe,
   BadRequestException,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { GetUser, JwtPayload } from '../../common/decorators/get-user.decorator';
@@ -20,6 +21,7 @@ import {
   RegenerarImagenIaDto,
   ActualizarBorradorIaDto,
   RegistrarCompartidoDto,
+  ProcesarImagenEstudioDto,
 } from './dto/ia-productos.dto';
 
 @Controller('digital/ia/productos')
@@ -38,10 +40,13 @@ export class IaProductosController {
         fileSize: 10 * 1024 * 1024, // 10MB por archivo
       },
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/i)) {
+        if (
+          !file.mimetype.match(/\/(jpg|jpeg|png|webp|heic|heif)$/i) &&
+          !file.originalname.match(/\.(heic|heif)$/i)
+        ) {
           return cb(
             new BadRequestException(
-              'Formato no soportado. Solo se admiten fotos JPG, PNG o WEBP.',
+              'Formato no soportado. Solo se admiten fotos JPG, PNG, WEBP o HEIC (iPhone).',
             ),
             false,
           );
@@ -87,7 +92,7 @@ export class IaProductosController {
   }
 
   /**
-   * Registra cuando el usuario comparte el producto en WhatsApp Estados o Marketplace.
+   * Registra cuando el usuario comparte el producto en WhatsApp, Instagram, TikTok o Marketplace.
    */
   @Post(':id/compartido')
   async registrarCompartido(
@@ -96,6 +101,58 @@ export class IaProductosController {
     @Body() dto: RegistrarCompartidoDto,
   ) {
     return this.iaProductosService.registrarCompartido(user.empresaId!, id, dto);
+  }
+
+  /**
+   * Genera automáticamente la información de publicación web (nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb) con IA.
+   */
+  @Post(':id/generar-info-publicacion')
+  async generarInfoPublicacion(
+    @GetUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.iaProductosService.generarInfoPublicacion(user.empresaId!, id);
+  }
+
+  /**
+   * Procesa una imagen nueva o existente para dejarla con fondo blanco tipo estudio profesional (#FFFFFF),
+   * centrada en lienzo 1:1 (1200x1200px), sin logos invasivos, y la guarda en Cloudinary y en el producto.
+   */
+  @Post(':id/procesar-imagen-estudio')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 15 * 1024 * 1024, // 15MB
+      },
+      fileFilter: (req, file, cb) => {
+        if (
+          !file.mimetype.match(/\/(jpg|jpeg|png|webp|heic|heif)$/i) &&
+          !file.originalname.match(/\.(heic|heif)$/i)
+        ) {
+          return cb(
+            new BadRequestException(
+              'Formato no soportado. Solo se admiten fotos JPG, PNG, WEBP o HEIC (iPhone).',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async procesarImagenEstudio(
+    @GetUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() dto?: ProcesarImagenEstudioDto,
+  ) {
+    return this.iaProductosService.procesarImagenEstudio(
+      user.empresaId!,
+      id,
+      file?.buffer,
+      dto?.imageUrl,
+    );
   }
 }
 

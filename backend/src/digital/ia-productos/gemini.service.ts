@@ -35,6 +35,14 @@ export interface AnalisisProducto {
   advertencia: string;
 }
 
+export interface InfoPublicacionWeb {
+  nombreWeb: string;
+  slug: string;
+  etiquetaSeo: string;
+  metaDescripcion: string;
+  descripcionWeb: string;
+}
+
 class GeminiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -221,6 +229,80 @@ ${listaCategorias}`;
       throw new BadGatewayException('La IA no devolvió una imagen. Puedes regenerarla o usar la foto original.');
     }
     return Buffer.from(data, 'base64');
+  }
+
+  // ── Generar Información de Publicación Web (SEO y Copywriting) ───────────────
+  async generarInfoPublicacion(producto: {
+    nombre: string;
+    descripcion?: string | null;
+    descripcionAlterna?: string | null;
+    marca?: string | null;
+    categoria?: string | null;
+    sku?: string | null;
+    precio?: number | null;
+  }): Promise<InfoPublicacionWeb> {
+    const prompt = `Eres un copywriter y especialista en SEO e-commerce para la tienda "Distribuidora Baby World" en Colombia.
+Tu tarea es generar la información de publicación web optimizada para vender el siguiente producto:
+- Nombre actual: ${producto.nombre}
+- SKU: ${producto.sku || 'N/A'}
+- Categoría: ${producto.categoria || 'General'}
+- Marca: ${producto.marca || 'N/A'}
+- Descripción actual: ${producto.descripcion || producto.descripcionAlterna || 'N/A'}
+- Precio de venta aproximado: $${producto.precio || 0} COP
+
+Reglas:
+1. "nombreWeb": Nombre comercial claro, atractivo y completo para el catálogo online (máx 70 caracteres). Ejemplo: "Aceite Corporal Arrurú con Jojoba y Manzanilla 200ml".
+2. "slug": URL amigable en minúsculas separada por guiones (ej: "aceite-corporal-arruru-200ml").
+3. "etiquetaSeo": Título SEO optimizado para buscadores de Google (máx 60 caracteres). Ej: "Aceite Corporal Arrurú 200ml | Baby World Colombia".
+4. "metaDescripcion": Resumen atractivo de venta para resultados de búsqueda de Google, con beneficios clave y llamado a la acción (máx 155 caracteres).
+5. "descripcionWeb": Redacción comercial persuasiva y detallada (2 a 4 párrafos o secciones cortas con viñetas) que destaque beneficios para el bebé y la madre, ingredientes/materiales, modo de uso y confianza de marca. Redactado en español colombiano natural.`;
+
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.5,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            nombreWeb: { type: 'STRING' },
+            slug: { type: 'STRING' },
+            etiquetaSeo: { type: 'STRING' },
+            metaDescripcion: { type: 'STRING' },
+            descripcionWeb: { type: 'STRING' },
+          },
+          required: ['nombreWeb', 'slug', 'etiquetaSeo', 'metaDescripcion', 'descripcionWeb'],
+        },
+      },
+    };
+
+    const modelosATratar = Array.from(new Set([this.modeloTexto, ...MODELOS_TEXTO_FALLBACK]));
+    let json: any;
+    let ultimoErr: any;
+
+    for (const mod of modelosATratar) {
+      try {
+        json = await this.llamar(mod, body, 25_000);
+        if (json?.candidates?.[0]?.content?.parts) break;
+      } catch (e: any) {
+        ultimoErr = e;
+      }
+    }
+
+    if (!json?.candidates?.[0]?.content?.parts) {
+      throw this.traducirError(ultimoErr, 'generar información de publicación');
+    }
+
+    const texto = json.candidates[0].content.parts.find((p: any) => typeof p.text === 'string')?.text;
+    const crudo = JSON.parse(texto);
+
+    return {
+      nombreWeb: String(crudo.nombreWeb || producto.nombre).slice(0, 100).trim(),
+      slug: String(crudo.slug || producto.nombre).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      etiquetaSeo: String(crudo.etiquetaSeo || producto.nombre).slice(0, 70).trim(),
+      metaDescripcion: String(crudo.metaDescripcion || '').slice(0, 160).trim(),
+      descripcionWeb: String(crudo.descripcionWeb || producto.descripcion || '').trim(),
+    };
   }
 
   // ── Infraestructura ──────────────────────────────────────────────────────────
