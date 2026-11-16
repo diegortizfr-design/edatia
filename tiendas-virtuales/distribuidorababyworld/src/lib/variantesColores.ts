@@ -86,3 +86,4 @@ export function extraerAtributosVisuales(atributos: any, nombreVariante?: string
 
   return { colorHex, colorLabel, tallaLabel }
 }
+
