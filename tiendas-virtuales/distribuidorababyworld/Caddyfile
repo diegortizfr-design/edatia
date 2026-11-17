@@ -7,17 +7,22 @@
         header_regexp User-Agent "(?i)(facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot|Discordbot)"
         path_regexp prod ^/producto/([^/?#]+)
     }
-    reverse_proxy @crawlers http://api:4000 {
-        rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
+    handle @crawlers {
+        reverse_proxy http://api:4000 {
+            rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
+        }
     }
 
-    @html {
-        path *.html
-        path /
-    }
-    header @html Cache-Control "no-cache, no-store, must-revalidate"
-    header @html Pragma "no-cache"
-    header @html Expires "0"
+    handle {
+        @html {
+            path *.html
+            path /
+        }
+        header @html Cache-Control "no-cache, no-store, must-revalidate"
+        header @html Pragma "no-cache"
+        header @html Expires "0"
 
-    try_files {path} /index.html
+        try_files {path} /index.html
+        file_server
+    }
 }
