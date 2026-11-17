@@ -5,7 +5,7 @@
 
 **Módulo:** Catálogo Digital / IA Productos & Redes  
 **Submódulo:** `ia-productos`  
-**Estado:** Completado y Verificado en Producción Local ✅  
+**Estado:** Completado, Desplegado y Verificado en Producción VPS (`edatia.com`) ✅  
 
 ---
 
@@ -124,17 +124,32 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
 
 ## 5. Detección de Bots Sociales y Open Graph
 
-En `tiendas-virtuales/distribuidorababyworld/Caddyfile`, se implementó el proxy inverso condicional:
+En `tiendas-virtuales/distribuidorababyworld/Caddyfile`, se implementó el enrutamiento condicional mediante bloques `handle` mutuamente excluyentes:
 ```caddy
 @crawlers {
     header_regexp User-Agent "(?i)(facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot|Discordbot)"
     path_regexp prod ^/producto/([^/?#]+)
 }
-reverse_proxy @crawlers http://api:4000 {
-    rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
+handle @crawlers {
+    reverse_proxy http://api:4000 {
+        rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
+    }
+}
+
+handle {
+    @html {
+        path *.html
+        path /
+    }
+    header @html Cache-Control "no-cache, no-store, must-revalidate"
+    header @html Pragma "no-cache"
+    header @html Expires "0"
+
+    try_files {path} /index.html
+    file_server
 }
 ```
-Esto asegura que cuando un enlace del producto se comparta por chat o publicación, WhatsApp y Facebook reciban de inmediato la tarjeta con imagen grande en alta resolución, nombre y precio en COP sin renderizar la SPA.
+Esto garantiza que la directiva `try_files` no intercepte prematuramente las solicitudes de los bots, asegurando que cuando un enlace del producto se comparta por chat o publicación, WhatsApp, Facebook, Telegram, Twitter y Discord reciban de inmediato la tarjeta con imagen grande en alta resolución, nombre y precio en COP. Los navegadores de usuarios finales son atendidos por el bloque `handle` secundario cargando la SPA normalmente.
 
 ---
 

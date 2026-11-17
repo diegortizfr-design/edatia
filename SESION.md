@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-15 (sesión 25)
+> Última actualización: 2026-11-17 (sesión 26)
 
 ---
 
@@ -17,14 +17,14 @@ SaaS ERP para empresas de retail y distribución. Tiene 4 portales principales y
 
 ### Contenedores Docker
 ```
-db                → PostgreSQL 15 (ERP)
-api               → NestJS backend
-web               → ERP React (Caddy)
-landing           → HTML estático (Caddy)
-manager           → Manager React (Caddy)
-glowxir           → Tienda Virtual Baby World (Caddy)
-herramientas      → Herramientas Edatia (Caddy)
-prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19) [:3006]
+db                → PostgreSQL 15 (ERP) [healthy]
+api               → NestJS backend [healthy]
+web               → ERP React (Caddy) [healthy]
+landing           → HTML estático (Caddy) [healthy]
+manager           → Manager React (Caddy) [healthy]
+glowxir           → Tienda Virtual Baby World (Caddy) [healthy/up]
+herramientas      → Herramientas Edatia (Caddy) [healthy]
+prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19) [:3006] [up]
 ```
 
 ### Credenciales
@@ -33,6 +33,29 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | Manager | admin@edatia.com | Manager123! |
 | ERP | admin@edatia.com | Admin123! |
 | Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 26) — 2026-11-17
+
+✅ **Despliegue y Configuración Integral de Producción — Módulo IA de Productos, Redes Sociales y Estabilidad:**
+  - **Integración de PR #27 (`feature/producto-ia-redes`):**
+    - Módulo IA en backend con Google Gemini (`gemini-flash-lite-latest` y `gemini-2.5-flash-image`) para extracción visual de empaques, redacción de títulos comerciales, SEO y fondos blancos de estudio (`#FFFFFF`, 1200x1200 px) sin marcas de agua ni logos.
+    - Soporte nativo para fotos de iPhone (`heic-convert` + `sharp`).
+    - Visor interactivo Lightbox en pantalla completa para fotos de producto en `ConfigProductoDetalle.tsx`.
+    - Modal de difusión omnicanal (`CompartirRedesModal.tsx`) con previsualización adaptativa para WhatsApp (Estado/Chat), Instagram (Feed/Story), TikTok y Marketplace, con forzado de compatibilidad JPEG (`f_jpg`).
+    - Endpoint público de Open Graph (`/api/v1/public/tiendas/:slug/og/:productoSlug`) para renderizado de tarjetas ricas en WhatsApp, Facebook, Telegram, Twitter y Discord.
+  - **Corrección de Infraestructura y Docker:**
+    - Exclusión de `*.tsbuildinfo` en `backend/.dockerignore` para prevenir que cachés locales de TypeScript omitan la emisión de archivos `.js` en Docker.
+    - Reestructuración de `tiendas-virtuales/distribuidorababyworld/Caddyfile` con bloques `handle` mutuamente excluyentes para asegurar que `@crawlers` se proxee directamente al backend antes del fallback SPA con `try_files`.
+  - **Configuración de Variables de Entorno y Seguridad:**
+    - `backend/.env` configurado y validado con `GEMINI_API_KEY`, credenciales Cloudinary, JWT y bases de datos.
+    - Archivo raíz `.env` configurado con variables compartidas para Docker Compose.
+    - Archivos `.env` en frontends (`frontend/.env`, `tiendas-virtuales/distribuidorababyworld/.env`, `manager/.env`) configurados con URLs de API y GA ID.
+    - Restricción estricta de permisos `chmod 600` en todos los archivos `.env` y confirmación de exclusión en Git.
+  - **Despliegue y Validación Operativa:**
+    - Ejecución completa de `./deploy.sh` con respaldo preventivo de bases de datos (`backup_20261117_033435`).
+    - Reconstrucción de imágenes de los 8 contenedores de producción.
+    - Verificación de migraciones de Prisma al día (26 migraciones).
+    - Health check verificado tanto localmente (`http://localhost:4000/api/v1/health` → `200 OK`) como externamente (`https://api.edatia.com/api/v1/health` → `200 OK`).
 
 ## Estado resuelto (sesión 25) — 2026-11-15
 
