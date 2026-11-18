@@ -8,11 +8,13 @@ import { ProductCard } from './components/ProductCard'
 import { ProductDetailPage } from './components/ProductDetailPage'
 import { FamiliaRegistroPage } from './components/FamiliaRegistroPage'
 import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
+import { FloatingSocialDock } from './components/FloatingSocialDock'
 import { CartDrawer, CartItem } from './components/CartDrawer'
 import { CheckoutModal } from './components/CheckoutModal'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
-import { QuickTrustBar, INSTAGRAM_URL, TIKTOK_URL } from './components/QuickTrustBar'
+import { QuickTrustBar } from './components/QuickTrustBar'
+import { INSTAGRAM_URL, TIKTOK_URL } from './constants/social'
 import { InstagramIcon } from './components/InstagramIcon'
 import { TikTokIcon } from './components/TikTokIcon'
 import { ProductSkeleton } from './components/ProductSkeleton'
@@ -778,6 +780,9 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Social Media Dock (Visible todo el tiempo en Desktop/Tablet) */}
+      <FloatingSocialDock />
 
       {/* Floating WhatsApp Button (Oculto en la vista de formulario para no estorbar en móvil) */}
       {!showFamiliaForm && <FloatingWhatsAppButton phone="573023863380" />}
