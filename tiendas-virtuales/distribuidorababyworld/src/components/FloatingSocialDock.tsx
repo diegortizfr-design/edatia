@@ -1,72 +1,125 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { ChevronLeft, Sparkles, ExternalLink } from 'lucide-react'
 import { InstagramIcon } from './InstagramIcon'
 import { TikTokIcon } from './TikTokIcon'
 import { INSTAGRAM_URL, TIKTOK_URL } from '../constants/social'
 
 /**
- * FloatingSocialDock: Muelle flotante lateral de redes sociales oficiales.
- * Diseñado para mantenerse visible en todo momento en pantallas medianas y grandes,
- * permitiendo conectar con Instagram y TikTok con un solo clic y previsualizar sus perfiles.
+ * FloatingSocialDock: Pestaña lateral flotante en el borde derecho de la pantalla.
+ * En reposo permanece recogida mostrando una pestaña viva y colorida con "REDES".
+ * Al pasar el cursor (hover) se desliza suavemente hacia afuera mostrando los accesos directos
+ * a Instagram y TikTok con sus colores oficiales y perfiles.
  */
 export function FloatingSocialDock() {
+  const [isHovered, setIsHovered] = useState(false)
+
   return (
     <aside
       aria-label="Redes sociales oficiales de Baby World"
-      className="fixed left-3 lg:left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex flex-col items-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)] transition-all select-none animate-in fade-in slide-in-from-left-4 duration-300"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`fixed right-0 top-1/2 -translate-y-1/2 z-30 hidden md:flex items-center transition-transform duration-300 ease-out select-none ${
+        isHovered ? 'translate-x-0' : 'translate-x-[calc(100%-38px)]'
+      }`}
     >
-      {/* Etiqueta vertical discreta */}
-      <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase py-1 select-none pointer-events-none">
-        REDES
-      </span>
+      {/* Pestaña disparadora que sobresale en el borde derecho en reposo */}
+      <button
+        type="button"
+        onClick={() => setIsHovered(prev => !prev)}
+        className="flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 rounded-l-2xl bg-gradient-to-b from-[#f09433] via-[#dc2743] to-[#0f172a] text-white shadow-[-5px_4px_20px_rgba(220,39,67,0.45)] border-y border-l border-white/30 cursor-pointer transition-all hover:brightness-110 active:scale-95 shrink-0"
+        title="Pasa el cursor para ver nuestras redes sociales"
+        aria-label="Abrir panel de redes sociales"
+      >
+        <ChevronLeft
+          size={15}
+          className={`transition-transform duration-300 text-white stroke-[2.5] ${
+            isHovered ? 'rotate-180' : 'animate-pulse'
+          }`}
+        />
+        {/* Letras alineadas verticalmente para máxima compatibilidad visual */}
+        <div className="flex flex-col items-center text-[9px] font-black tracking-widest text-white uppercase drop-shadow-sm leading-tight py-0.5">
+          <span>R</span>
+          <span>E</span>
+          <span>D</span>
+          <span>E</span>
+          <span>S</span>
+        </div>
+        <div className="flex flex-col gap-1 pt-1 opacity-90">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-ping" />
+        </div>
+      </button>
 
-      {/* Botón Instagram */}
-      <div className="relative group flex items-center">
+      {/* Panel Desplegable Colorido */}
+      <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-l-2xl border-y border-l border-slate-200/90 shadow-[-10px_12px_35px_rgba(0,0,0,0.18)] flex flex-col gap-2.5 min-w-[220px]">
+        {/* Cabecera del panel */}
+        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={14} className="text-pink-500 fill-pink-500 animate-pulse" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+              Síguenos en Redes
+            </span>
+          </div>
+          <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-pink-50 text-pink-600 border border-pink-100">
+            Oficial
+          </span>
+        </div>
+
+        {/* Tarjeta / Botón Instagram con Degradado Oficial */}
         <a
           href={INSTAGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-gradient-to-tr hover:from-amber-500/10 hover:via-pink-500/10 hover:to-purple-500/10 border border-slate-200/80 hover:border-pink-300 text-slate-700 hover:text-pink-600 transition-all duration-200 active:scale-95 shadow-2xs"
-          title="Síguenos en Instagram @distribuidorababyworld"
-          aria-label="Instagram @distribuidorababyworld"
+          className="group/ig relative flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-[#f09433]/10 via-[#dc2743]/15 to-[#bc1888]/20 hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] border border-pink-200/80 hover:border-transparent text-slate-800 hover:text-white transition-all duration-300 shadow-2xs hover:shadow-md hover:shadow-pink-500/30 active:scale-95 overflow-hidden"
+          title="Visita nuestro perfil de Instagram @distribuidorababyworld"
         >
-          <InstagramIcon size={20} className="group-hover:scale-110 transition-transform duration-200" />
+          <div className="flex items-center gap-2.5 relative z-10">
+            <div className="w-8 h-8 rounded-lg bg-white group-hover/ig:bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-xs transition-colors shrink-0">
+              <InstagramIcon size={18} className="group-hover/ig:scale-110 transition-transform" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-black tracking-tight leading-none group-hover/ig:text-white">
+                Instagram
+              </span>
+              <span className="text-[10px] font-bold text-pink-600 group-hover/ig:text-pink-100 transition-colors mt-0.5">
+                @distribuidorababyworld
+              </span>
+            </div>
+          </div>
+          <ExternalLink size={13} className="relative z-10 text-slate-400 group-hover/ig:text-white/90 transition-colors mr-0.5 shrink-0" />
         </a>
 
-        {/* Tooltip expansible hacia la derecha */}
-        <div className="absolute left-full ml-2.5 px-3 py-1.5 bg-slate-900 text-white rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 -translate-x-1 group-hover:translate-x-0 z-50 flex items-center gap-2">
-          <InstagramIcon size={14} className="shrink-0" />
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-extrabold leading-tight">Instagram</span>
-            <span className="text-[10px] text-pink-300 font-medium">@distribuidorababyworld</span>
-          </div>
-          <span className="text-xs text-slate-400 font-bold ml-1">↗</span>
-        </div>
-      </div>
-
-      {/* Botón TikTok */}
-      <div className="relative group flex items-center">
+        {/* Tarjeta / Botón TikTok con Efecto Neón de Marca */}
         <a
           href={TIKTOK_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200/80 hover:border-slate-400 text-slate-800 hover:text-black transition-all duration-200 active:scale-95 shadow-2xs"
+          className="group/tt relative flex items-center justify-between p-2.5 rounded-xl bg-slate-900 hover:bg-black text-white border border-slate-800 hover:border-slate-700 transition-all duration-300 shadow-2xs hover:shadow-md hover:shadow-cyan-500/25 active:scale-95 overflow-hidden"
           title="Síguenos en TikTok @baby.world426"
-          aria-label="TikTok @baby.world426"
         >
-          <TikTokIcon size={18} className="group-hover:scale-110 transition-transform duration-200" />
+          {/* Acentos cian y magenta de TikTok */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00f2fe]/10 via-transparent to-[#fe0979]/15 group-hover/tt:opacity-100 opacity-60 transition-opacity" />
+
+          <div className="flex items-center gap-2.5 relative z-10">
+            <div className="w-8 h-8 rounded-lg bg-white/10 group-hover/tt:bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-xs transition-colors shrink-0">
+              <TikTokIcon size={16} className="text-white group-hover/tt:scale-110 transition-transform" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-black tracking-tight leading-none text-white">
+                TikTok
+              </span>
+              <span className="text-[10px] font-bold text-cyan-300 group-hover/tt:text-cyan-200 transition-colors mt-0.5">
+                @baby.world426
+              </span>
+            </div>
+          </div>
+          <ExternalLink size={13} className="relative z-10 text-slate-400 group-hover/tt:text-white/90 transition-colors mr-0.5 shrink-0" />
         </a>
 
-        {/* Tooltip expansible hacia la derecha */}
-        <div className="absolute left-full ml-2.5 px-3 py-1.5 bg-slate-900 text-white rounded-xl shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 -translate-x-1 group-hover:translate-x-0 z-50 flex items-center gap-2">
-          <TikTokIcon size={14} className="text-white shrink-0" />
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] font-extrabold leading-tight">TikTok</span>
-            <span className="text-[10px] text-sky-300 font-medium">@baby.world426</span>
-          </div>
-          <span className="text-xs text-slate-400 font-bold ml-1">↗</span>
-        </div>
+        {/* Nota amigable */}
+        <p className="text-[9px] text-slate-400 text-center font-medium pt-0.5">
+          ¡Videos, novedades y ofertas exclusivas! ✨
+        </p>
       </div>
     </aside>
   )
 }
-
