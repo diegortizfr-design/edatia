@@ -29,7 +29,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
   const slides: Slide[] = [
     {
       id: 'black-days',
-      src: '/banner-black-days.jpg?v=1',
+      src: '/banner-black-days.jpg?v=2',
       alt: 'Black Days en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
       ariaLabel: 'Black Days Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
       mobileText: '🔥 Black Days: Hasta 60% OFF en Juguetes',
