@@ -76,7 +76,7 @@ export function Navbar({
                 title="Síguenos en TikTok @baby.world426"
                 aria-label="TikTok @baby.world426"
               >
-                <TikTokIcon size={13} className="text-white group-hover:scale-110 transition-transform" />
+                <TikTokIcon size={13} chromatic={true} className="group-hover:scale-110 transition-transform" />
                 <span className="hidden sm:inline">TikTok</span>
               </a>
             </div>
