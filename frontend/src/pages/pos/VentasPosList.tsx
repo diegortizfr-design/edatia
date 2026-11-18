@@ -389,7 +389,7 @@ export function VentasPosList() {
             </div>
 
             {/* Rango de Fechas */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-2 border border-slate-200 px-3 py-2 bg-slate-50/50 rounded-xl">
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Desde</span>
                 <input
@@ -407,6 +407,65 @@ export function VentasPosList() {
                   onChange={e => setHasta(e.target.value)}
                   className="text-xs outline-none bg-transparent font-bold text-slate-700"
                 />
+              </div>
+
+              {/* Atajos rápidos de fecha */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = getLocalDateString();
+                    setDesde(today);
+                    setHasta(today);
+                  }}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    desde === getLocalDateString() && hasta === getLocalDateString()
+                      ? 'bg-white text-indigo-700 shadow-sm font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - 7);
+                    const tzOffset = d.getTimezoneOffset() * 60000;
+                    setDesde(new Date(d.getTime() - tzOffset).toISOString().split('T')[0]);
+                    setHasta(getLocalDateString());
+                  }}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                >
+                  7 días
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    const tzOffset = d.getTimezoneOffset() * 60000;
+                    const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+                    setDesde(new Date(firstDay.getTime() - tzOffset).toISOString().split('T')[0]);
+                    setHasta(getLocalDateString());
+                  }}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                >
+                  Este Mes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDesde('');
+                    setHasta('');
+                  }}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    !desde && !hasta
+                      ? 'bg-white text-indigo-700 shadow-sm font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Ver Todo
+                </button>
               </div>
             </div>
 

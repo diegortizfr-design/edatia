@@ -700,12 +700,16 @@ export class PosService implements OnModuleInit {
     if (desde || hasta) {
       where.fecha = {}
       if (desde) {
-        const dDesde = new Date(desde)
-        where.fecha.gte = new Date(dDesde.getFullYear(), dDesde.getMonth(), dDesde.getDate())
+        // Asegurar que abarque desde las 00:00:00 en zona horaria local (-05:00 Colombia) o ISO
+        const dStr = desde.includes('T') ? desde : `${desde}T00:00:00-05:00`
+        const d = new Date(dStr)
+        where.fecha.gte = isNaN(d.getTime()) ? new Date(desde) : d
       }
       if (hasta) {
-        const dHasta = new Date(hasta)
-        where.fecha.lt = new Date(dHasta.getFullYear(), dHasta.getMonth(), dHasta.getDate() + 1)
+        // Asegurar que abarque hasta las 23:59:59.999 en zona horaria local (-05:00 Colombia) o ISO
+        const hStr = hasta.includes('T') ? hasta : `${hasta}T23:59:59.999-05:00`
+        const h = new Date(hStr)
+        where.fecha.lte = isNaN(h.getTime()) ? new Date(hasta) : h
       }
     }
 
