@@ -1,0 +1,47 @@
+# ==============================================================================
+# Edatia ERP — Configuración Local para Desarrollo (docker-compose.override.yml)
+# Copia este archivo como `docker-compose.override.yml` para trabajar en entorno local.
+# Este archivo está ignorado en Git (.gitignore).
+# ==============================================================================
+
+services:
+  api:
+    ports:
+      - "4000:4000"
+
+  manager:
+    build:
+      context: ./manager
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports:
+      - "5173:80"
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports:
+      - "5174:80"
+
+  landing:
+    ports:
+      - "5175:80"
+
+  herramientas:
+    ports:
+      - "3000:80"
+
+  glowxir:
+    build:
+      context: ./tiendas-virtuales/distribuidorababyworld
+      args:
+        VITE_API_BASE: http://localhost:4000/api/v1
+    ports:
+      - "3005:80"
+
+  prestamos:
+    ports:
+      - "3006:3000"
+
