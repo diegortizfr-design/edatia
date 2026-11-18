@@ -5,6 +5,7 @@ interface HeroBannerProps {
   onOpenFamiliaRegistro: () => void
   onOpenLocation?: () => void
   onOpenBnplInfo?: () => void
+  onSelectCategory?: (category: string) => void
 }
 
 interface Slide {
@@ -19,13 +20,31 @@ interface Slide {
   onClick: () => void
 }
 
-export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplInfo }: HeroBannerProps) {
+export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplInfo, onSelectCategory }: HeroBannerProps) {
   const [current, setCurrent] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
   const touchDeltaX = useRef<number>(0)
 
   const slides: Slide[] = [
+    {
+      id: 'black-days',
+      src: '/banner-black-days.jpg?v=1',
+      alt: 'Black Days en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
+      ariaLabel: 'Black Days Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
+      mobileText: '🔥 Black Days: Hasta 60% OFF en Juguetes',
+      mobileCta: 'Ver juguetes',
+      mobileGradient: 'from-amber-500 via-rose-600 to-slate-950',
+      mobileIcon: 'sparkles' as const,
+      onClick: () => {
+        if (onSelectCategory) {
+          onSelectCategory('Juguetería')
+        } else {
+          const el = document.getElementById('catalogo-section')
+          if (el) el.scrollIntoView({ behavior: 'smooth' })
+        }
+      },
+    },
     {
       id: 'familia',
       src: '/banner-familia.jpg?v=3',

@@ -515,6 +515,7 @@ export function App() {
                 onOpenFamiliaRegistro={handleOpenFamiliaRegistro}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
                 onOpenBnplInfo={() => setIsBnplModalOpen(true)}
+                onSelectCategory={handleCategorySelect}
               />
               <QuickTrustBar
                 onOpenLocation={() => setIsLocationModalOpen(true)}
