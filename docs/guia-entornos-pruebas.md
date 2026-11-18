@@ -48,6 +48,10 @@ Para modificar componentes (`HeroBanner.tsx`, `Navbar.tsx`, `ControlExistencias.
 ### Pruebas en dispositivos móviles (Misma red Wi-Fi):
 Gracias al flag `--host` configurado en los scripts, Vite expone el servidor a tu red local. Abre en el navegador de tu celular la dirección IP asignada (ejemplo: `http://192.168.1.X:5176`).
 
+### 🔒 Aislamiento de Frontends en Docker Local (`docker-compose.override.yml`):
+Si en lugar de ejecutar Vite en la máquina anfitriona levantas los frontends mediante Docker (`docker compose up -d web manager glowxir`), asegúrate de contar con el archivo local `docker-compose.override.yml` (basado en `docker-compose.override.example.yml`).
+Este archivo inyecta `VITE_API_URL: http://localhost:4000` durante el `docker build` de Vite, garantizando que los contenedores locales **nunca** dirijan solicitudes hacia la API de producción (`api.edatia.com`).
+
 ---
 
 ## 🐳 2. Nivel 2: Staging en Docker (VPS de Hostinger)

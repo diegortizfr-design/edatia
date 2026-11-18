@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-17 (sesión 26)
+> Última actualización: 2026-11-17 (sesión 27)
 
 ---
 
@@ -28,11 +28,28 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 ```
 
 ### Credenciales
-| Portal | Email | Contraseña |
-|--------|-------|------------|
-| Manager | admin@edatia.com | Manager123! |
-| ERP | admin@edatia.com | Admin123! |
-| Préstamos | creditorapidos26@gmail.com | Creditosrapidos2026 |
+| Portal / Entorno | NIT | Usuario / Email | Contraseña |
+|---|---|---|---|
+| Manager | - | admin@edatia.com | Manager123! |
+| ERP (Local & Prod) | 1143875756 | admin (o admin@edatia.com / admin@babyworld.com) | Admin123! |
+| ERP (Demo SAS) | 900000000 | admin (o admin@edatia.com) | Admin123! |
+| Préstamos | 1143875756 | admin@edatia.com | Admin123! |
+| Préstamos (Cliente) | 1033680464 | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 27) — 2026-11-17
+
+✅ **Aislamiento Arquitectónico de Entorno Local vs Producción & Sincronización de Autenticación:**
+  - **Diagnóstico y Corrección de Tráfico Cruzado a Producción:**
+    - Se detectó que `frontend/Dockerfile` fijaba por defecto `ARG VITE_API_URL="https://api.edatia.com"`, lo que provocaba que al compilar el contenedor `edatia-frontend` en local (`localhost:5174`), el código JavaScript estático de Vite realizara todas las solicitudes de autenticación y API directamente al VPS de producción en Hostinger (`187.127.10.22`), en lugar de comunicarse con el backend local (`http://localhost:4000`).
+    - Se actualizó [docker-compose.override.yml](docker-compose.override.yml) incorporando la inyección explícita de `VITE_API_URL: http://localhost:4000` para `web` y `manager`, y `VITE_API_BASE: http://localhost:4000/api/v1` para `glowxir`.
+    - Se generó la plantilla pública versionada [docker-compose.override.example.yml](docker-compose.override.example.yml) para que cualquier clon del proyecto levante un entorno local 100% aislado por defecto.
+    - Recompilación exitosa del contenedor `web` (`docker compose build web && docker compose up -d web`), verificando que el bundle JS sirva exclusivamente sobre `http://localhost:4000`.
+  - **Sincronización y Desbloqueo de Credenciales:**
+    - Se desbloquearon los intentos fallidos acumulados (`loginFallidosConsecutivos: 0`, `loginBloqueadoHasta: null`).
+    - Se configuró el usuario `admin` con la contraseña estándar `Admin123!` tanto en la base de datos de pruebas local (`edatia-db`) como en la de producción (`Distribuidora Baby World`, NIT `1143875756`).
+    - Validación de respuestas `HTTP 200 OK` con generación íntegra de Token JWT y módulos activos en `/api/v1/auth/login`.
+
+---
 
 ## Estado resuelto (sesión 26) — 2026-11-17
 
