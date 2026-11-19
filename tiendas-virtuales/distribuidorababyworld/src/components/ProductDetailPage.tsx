@@ -9,7 +9,7 @@ import { LocationPinIcon } from './LocationPinIcon'
 import { Product, ProductVariant } from '../data/productos'
 import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
-import { getOptimizedImageUrl } from '../lib/imageOptimizer'
+import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 import toast from 'react-hot-toast'
 
@@ -206,6 +206,12 @@ export function ProductDetailPage({
                   className="w-full h-full object-contain p-2 sm:p-4 transition-transform duration-150 ease-out pointer-events-none"
                   loading="eager"
                   decoding="async"
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    if (target.src !== FALLBACK_IMAGE) {
+                      target.src = FALLBACK_IMAGE
+                    }
+                  }}
                 />
 
                 {/* Floating Badges */}
@@ -270,6 +276,12 @@ export function ProductDetailPage({
                         className="w-full h-full object-contain p-1"
                         loading="lazy"
                         decoding="async"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (target.src !== FALLBACK_IMAGE) {
+                            target.src = FALLBACK_IMAGE
+                          }
+                        }}
                       />
                     </button>
                   ))}
@@ -677,6 +689,12 @@ export function ProductDetailPage({
                 src={getOptimizedImageUrl(gallery[lightboxIndex], 1400)}
                 alt={`${product.nombre} - ${lightboxIndex + 1}`}
                 className="max-h-[68vh] max-w-full object-contain drop-shadow-sm transition-all duration-300"
+                onError={(e) => {
+                  const target = e.currentTarget
+                  if (target.src !== FALLBACK_IMAGE) {
+                    target.src = FALLBACK_IMAGE
+                  }
+                }}
               />
 
               {gallery.length > 1 && (
@@ -705,7 +723,17 @@ export function ProductDetailPage({
                         : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <img src={getOptimizedImageUrl(img, 120)} alt="" className="w-full h-full object-contain p-0.5" />
+                    <img 
+                      src={getOptimizedImageUrl(img, 120)} 
+                      alt="" 
+                      className="w-full h-full object-contain p-0.5" 
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        if (target.src !== FALLBACK_IMAGE) {
+                          target.src = FALLBACK_IMAGE
+                        }
+                      }}
+                    />
                   </button>
                 ))}
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus, Sparkles, ZoomIn } from 'lucide-react'
 import { Product, ProductVariant } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
-import { getOptimizedImageUrl } from '../lib/imageOptimizer'
+import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 
 interface ProductDetailModalProps {
@@ -108,6 +108,12 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
               className="w-full h-full object-contain p-2 transition-transform duration-150 ease-out pointer-events-none"
               loading="eager"
               decoding="async"
+              onError={(e) => {
+                const target = e.currentTarget
+                if (target.src !== FALLBACK_IMAGE) {
+                  target.src = FALLBACK_IMAGE
+                }
+              }}
             />
             {isAgotado && (
               <span className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md tracking-wider pointer-events-none z-10">
@@ -143,6 +149,12 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                     className="w-full h-full object-contain bg-white p-0.5"
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      if (target.src !== FALLBACK_IMAGE) {
+                        target.src = FALLBACK_IMAGE
+                      }
+                    }}
                   />
                 </button>
               ))}
