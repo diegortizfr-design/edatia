@@ -191,10 +191,10 @@ ${listaCategorias}`;
   // ── Imagen de estudio ────────────────────────────────────────────────────────
   async generarImagenEstudio(imagen: ImagenEntrada, instruccionExtra?: string): Promise<Buffer> {
     const prompt = `Edit this product photo into a professional e-commerce catalog image.
-- Pure white seamless studio background (#FFFFFF) with a soft, natural contact shadow under the product.
-- Product centered, upright and facing the camera, filling about 75-80% of the frame, with even professional lighting.
+- Pure white seamless studio background (#FFFFFF) with a subtle, natural contact shadow directly beneath the base of the product (do not make the product float high in the air).
+- Close-up studio framing: product must be upright, centered, prominent and fill approximately 88-92% of the frame (avoid distant shots or excessive empty margins).
 - Keep the product and its packaging EXACTLY as they are: same brand logos, texts, numbers, sizes, colors and proportions. Do not invent, translate, blur or rewrite any text on the package.
-- Remove everything that is not the product: hands, fingers, tables, other objects, price tags, stickers from other stores, watermarks and reflections.
+- Remove everything that is not the product: hands, fingers, tables, retail price tags, store hanging labels, stickers, barcodes, watermarks, hangers and reflections.
 - Do NOT add any new logos, text, frames, badges or watermarks.
 - Square 1:1 composition.${instruccionExtra ? `\nAdditional instruction from the seller: ${instruccionExtra}` : ''}`;
 

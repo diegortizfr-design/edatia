@@ -12,6 +12,7 @@ const sharp = ((sharpNamespace as any).default || sharpNamespace) as typeof shar
  */
 
 const LADO = 1200;
+const MARGEN_UTIL = 1080; // 90% de 1200 px para encuadre en primer plano uniforme sin márgenes vacíos excesivos
 
 interface Rgb {
   r: number;
@@ -106,6 +107,48 @@ export class ImagenEstandarService {
       const fondo = await this.detectarFondo(buffer);
 
       if (fondo) {
+        // 1. Recortar márgenes vacíos de fondo para encuadrar el producto al 90% (primer plano)
+        try {
+          const basePlana = await sharp(buffer)
+            .rotate()
+            .flatten({ background: fondo })
+            .toBuffer();
+
+          const recortada = await sharp(basePlana)
+            .trim({ background: fondo, threshold: 12 })
+            .toBuffer({ resolveWithObject: true });
+
+          // Si el recorte detectó el producto con dimensiones válidas (>= 100 px):
+          if (recortada.info.width >= 100 && recortada.info.height >= 100) {
+            const productoEscalado = await sharp(recortada.data)
+              .resize(MARGEN_UTIL, MARGEN_UTIL, {
+                fit: 'inside',
+                withoutEnlargement: false,
+              })
+              .toBuffer();
+
+            const canvas = await sharp({
+              create: {
+                width: LADO,
+                height: LADO,
+                channels: 3,
+                background: fondo,
+              },
+            })
+              .jpeg()
+              .toBuffer();
+
+            const imagen = await sharp(canvas)
+              .composite([{ input: productoEscalado, gravity: 'center' }])
+              .jpeg({ quality: 92, chromaSubsampling: '4:4:4' })
+              .toBuffer();
+
+            return { imagen };
+          }
+        } catch {
+          // Fallback a resize directo si trim no aplica
+        }
+
         const imagen = await sharp(buffer)
           .rotate()
           .flatten({ background: fondo })
