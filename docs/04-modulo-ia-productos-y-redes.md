@@ -39,8 +39,8 @@ flowchart TD
 | Servicio | Archivo | Responsabilidad |
 | :--- | :--- | :--- |
 | `IaProductosService` | `ia-productos.service.ts` | Orquestador del pipeline: valida archivos, consulta categorías existentes, invoca a Gemini, estandariza imágenes, sube a Cloudinary y guarda en Prisma. |
-| `GeminiService` | `gemini.service.ts` | Conexión con la API de Google AI Studio. Modelo primario de texto: `gemini-flash-lite-latest` (con failover automático). Modelo de imagen: `gemini-2.5-flash-image`. |
-| `ImagenEstandarService` | `imagen-estandar.service.ts` | Corrección EXIF, decodificación transparente de fotos Apple iPhone (`heic-convert`), centrado **sin recortes** en lienzo cuadrado de 1200×1200 px. Relleno: color de fondo detectado (o blanco `#FFFFFF`) en fotos de catálogo; versión desenfocada de la misma foto en fotos con fondo real (tienda, degradados). Sin superposición de logos. |
+| `GeminiService` | `gemini.service.ts` | Conexión con la API de Google AI Studio. Modelo primario de texto: `gemini-flash-lite-latest` (con failover automático). Modelo de imagen: `gemini-2.5-flash-image` con prompt de encuadre en primer plano (88-92% de ocupación del lienzo, sombra de contacto sutil y remoción de etiquetas comerciales). |
+| `ImagenEstandarService` | `imagen-estandar.service.ts` | Corrección EXIF, decodificación transparente de fotos Apple iPhone (`heic-convert`), auto-recorte inteligente de márgenes vacíos (`trim`) y encuadre centrado al **90% del lienzo** (1080 px en 1200×1200 px) para fotos de estudio/catálogo. Relleno automático con color de fondo detectado (o `#FFFFFF`), o versión desenfocada si la foto tiene fondo real de tienda. Sin superposición de logos ni distorsión. |
 
 ### 2.3 Endpoints REST
 
@@ -107,6 +107,9 @@ docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --revertir -
    - Consume automáticamente los créditos promocionales del Google Developer Program ($31.635 COP mensuales) y el crédito de bienvenida de Google Cloud ($949.041 COP).
 3. **Resiliencia:**
    - Si la llamada de imagen falla por latencia o cuota, el sistema degrada limpiamente a la foto normalizada y centrada localmente por `sharp`, garantizando que el usuario nunca quede bloqueado.
+4. **Optimización de Escala y Encuadre (90% Close-Up):**
+   - El prompt instruye a Gemini generar tomas en primer plano (`88-92%`) con sombra directa en la base (evitando que el producto parezca flotar o verse alejado).
+   - Sharp aplica `trim` de umbral para remover márgenes artificiales y remonta el producto ocupando el 90% del lienzo cuadrado de 1200×1200 px.
 
 ---
 
@@ -162,6 +165,8 @@ Para maximizar la conversión en la tienda online y aprovechar las fotos de estu
    - Cabeceras HTTP `no-cache, no-store, must-revalidate` en API pública y `{ cache: 'no-store' }` en `fetch` para garantizar sincronización instantánea sin que el caché del navegador retenga datos antiguos.
 5. **Paridad de Descuentos en Modal y Página:**
    - La modal de vista rápida (`ProductDetailModal.tsx`) cuenta con la misma visualización de descuentos promocionales que la página de detalle: badges `-X% OFF`, precio tachado y ahorro calculado en COP (`¡Ahorras $X!`).
+6. **Protección Integral contra Imágenes Rotas (`onError` Fallback):**
+   - En `ProductCard.tsx`, `ProductDetailModal.tsx` y `ProductDetailPage.tsx` (incluyendo miniaturas de la galería y modal Lightbox), todos los elementos `<img>` cuentan con manejadores `onError` vinculados a `FALLBACK_IMAGE`. Si una URL externa o de Cloudinary no responde (HTTP 404), la interfaz degrada limpiamente sin dejar recuadros en blanco ni íconos rotos del navegador.
 
 ---
 
