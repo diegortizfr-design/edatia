@@ -4,6 +4,10 @@ export interface ProductVariant {
   nombre: string
   atributos?: any[]
   precioBase?: number
+  precio?: number
+  precioSubtotal?: number
+  impuesto?: number
+  precioAnterior?: number
   stockDisponible: number
 }
 
@@ -21,6 +25,9 @@ export interface Product {
   impuesto: number
   ivaPct: number
   tipoIva?: string
+  precioBase?: number
+  recargoPct?: number
+  descuentoPct?: number
   precioAnterior?: number
   categoria: string
   subcategoria?: string

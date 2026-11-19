@@ -47,9 +47,40 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
     }).format(val)
   }
 
-  const effectivePrice = selectedVariant && Number(selectedVariant.precioBase) > 0
-    ? Number(selectedVariant.precioBase)
-    : product.precio
+  const getVariantPriceInfo = (v: ProductVariant | null, prod: Product) => {
+    if (!v) {
+      return {
+        precio: prod.precio,
+        precioAnterior: prod.precioAnterior,
+      }
+    }
+
+    if (typeof v.precio === 'number' && v.precio > 0) {
+      return {
+        precio: v.precio,
+        precioAnterior: v.precioAnterior ?? prod.precioAnterior,
+      }
+    }
+
+    const vBase = Number(v.precioBase || 0)
+    const pBase = Number(prod.precioBase || 0)
+    if (vBase <= 0 || (pBase > 0 && vBase === pBase)) {
+      return {
+        precio: prod.precio,
+        precioAnterior: prod.precioAnterior,
+      }
+    }
+
+    const ratio = pBase > 0 ? (prod.precio / pBase) : 1
+    return {
+      precio: Math.round(vBase * ratio),
+      precioAnterior: prod.precioAnterior && pBase > 0 ? Math.round(vBase * (prod.precioAnterior / pBase)) : undefined,
+    }
+  }
+
+  const variantPricing = getVariantPriceInfo(selectedVariant, product)
+  const effectivePrice = variantPricing.precio
+  const effectivePrecioAnterior = variantPricing.precioAnterior
 
   const effectiveStock = selectedVariant
     ? selectedVariant.stockDisponible
@@ -187,16 +218,16 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                 </span>
               </div>
 
-              {product.precioAnterior && product.precioAnterior > effectivePrice && (
+              {effectivePrecioAnterior && effectivePrecioAnterior > effectivePrice && (
                 <div className="flex items-center justify-between text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-xl font-bold mt-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(product.precioAnterior)}</span>
+                    <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(effectivePrecioAnterior)}</span>
                     <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
-                      -{Math.round(((product.precioAnterior - effectivePrice) / product.precioAnterior) * 100)}% OFF
+                      -{Math.round(((effectivePrecioAnterior - effectivePrice) / effectivePrecioAnterior) * 100)}% OFF
                     </span>
                   </div>
                   <span className="text-[11px] font-extrabold text-rose-700">
-                    ¡Ahorras {fmtPrice(product.precioAnterior - effectivePrice)}!
+                    ¡Ahorras {fmtPrice(effectivePrecioAnterior - effectivePrice)}!
                   </span>
                 </div>
               )}

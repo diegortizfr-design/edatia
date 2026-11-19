@@ -37,9 +37,25 @@ export function CartDrawer({
     }).format(val)
   }
 
-  const baseSubtotal = items.reduce((sum, item) => sum + item.product.precioSubtotal * item.quantity, 0)
-  const totalImpuesto = items.reduce((sum, item) => sum + item.product.impuesto * item.quantity, 0)
-  const subtotal = items.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
+  const getItemPrice = (item: CartItem) => {
+    return (item.variante && typeof item.variante.precio === 'number' && item.variante.precio > 0)
+      ? item.variante.precio
+      : item.product.precio
+  }
+  const getItemSubtotal = (item: CartItem) => {
+    return (item.variante && typeof item.variante.precioSubtotal === 'number' && item.variante.precioSubtotal > 0)
+      ? item.variante.precioSubtotal
+      : item.product.precioSubtotal
+  }
+  const getItemImpuesto = (item: CartItem) => {
+    return (item.variante && typeof item.variante.impuesto === 'number')
+      ? item.variante.impuesto
+      : item.product.impuesto
+  }
+
+  const baseSubtotal = items.reduce((sum, item) => sum + getItemSubtotal(item) * item.quantity, 0)
+  const totalImpuesto = items.reduce((sum, item) => sum + getItemImpuesto(item) * item.quantity, 0)
+  const subtotal = items.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0)
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
   const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)
 
@@ -49,7 +65,7 @@ export function CartDrawer({
     message += `¡Hola! Deseo ordenar los siguientes productos:\n\n`
     items.forEach((it) => {
       const varSuffix = it.variante ? ` [${it.variante.nombre}]` : ''
-      message += `• *${it.quantity}x* ${it.product.nombre}${varSuffix} (${fmtPrice(it.product.precio * it.quantity)})\n`
+      message += `• *${it.quantity}x* ${it.product.nombre}${varSuffix} (${fmtPrice(getItemPrice(it) * it.quantity)})\n`
     })
     message += `\n*Subtotal:* ${fmtPrice(baseSubtotal)}`
     message += `\n*Impuesto (IVA):* ${fmtPrice(totalImpuesto)}`
@@ -199,10 +215,10 @@ export function CartDrawer({
 
                         <div className="text-right">
                           <span className="font-extrabold text-slate-900 text-xs block">
-                            {fmtPrice(item.product.precio * item.quantity)}
+                            {fmtPrice(getItemPrice(item) * item.quantity)}
                           </span>
                           <span className="text-[9.5px] text-slate-400 block">
-                            Sub: {fmtPrice(item.product.precioSubtotal * item.quantity)} + IVA: {fmtPrice(item.product.impuesto * item.quantity)}
+                            Sub: {fmtPrice(getItemSubtotal(item) * item.quantity)} + IVA: {fmtPrice(getItemImpuesto(item) * item.quantity)}
                           </span>
                         </div>
                       </div>
