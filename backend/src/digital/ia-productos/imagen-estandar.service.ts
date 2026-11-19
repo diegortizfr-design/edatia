@@ -6,7 +6,8 @@ const sharp = ((sharpNamespace as any).default || sharpNamespace) as typeof shar
 /**
  * Normaliza y estandariza las imágenes del catálogo:
  *  - Formato cuadrado 1:1 (1200x1200 px).
- *  - Producto centrado con fondo blanco puro y márgenes limpios.
+ *  - Producto centrado y completo (sin recortes); relleno con el color de fondo detectado,
+ *    blanco, o la misma foto desenfocada si tiene fondo real (ver componer()).
  *  - Sin superposición de logos (diseño limpio y profesional).
  */
 
@@ -94,23 +95,43 @@ export class ImagenEstandarService {
   }
 
   /**
-   * Estandariza la imagen a un lienzo cuadrado 1200x1200 con fondo blanco y producto centrado.
+   * Estandariza la imagen a un lienzo cuadrado 1200x1200 con el producto centrado y completo.
+   *  - Fondo uniforme y claro (fotos de catálogo/estudio): se rellena con ese mismo color.
+   *  - Fondo no uniforme (fotos tomadas en tienda, degradados): se rellena con una versión
+   *    desenfocada de la misma foto, evitando franjas blancas artificiales.
    * Sin superponer logos.
    */
   async componer(buffer: Buffer): Promise<{ imagen: Buffer }> {
     try {
       const fondo = await this.detectarFondo(buffer);
 
-      const imagen = await sharp(buffer)
-        .rotate()
-        .flatten({ background: fondo })
-        .resize(LADO, LADO, {
-          fit: 'contain',
-          background: fondo,
-        })
-        .jpeg({ quality: 92, chromaSubsampling: '4:4:4' })
+      if (fondo) {
+        const imagen = await sharp(buffer)
+          .rotate()
+          .flatten({ background: fondo })
+          .resize(LADO, LADO, {
+            fit: 'contain',
+            background: fondo,
+          })
+          .jpeg({ quality: 92, chromaSubsampling: '4:4:4' })
+          .toBuffer();
+        return { imagen };
+      }
+
+      const base = await sharp(buffer).rotate().flatten({ background: '#ffffff' }).toBuffer();
+      const desenfocado = await sharp(base)
+        .resize(LADO, LADO, { fit: 'cover' })
+        .blur(45)
+        .modulate({ brightness: 1.08, saturation: 0.85 })
+        .toBuffer();
+      const frente = await sharp(base)
+        .resize(LADO, LADO, { fit: 'inside' })
         .toBuffer();
 
+      const imagen = await sharp(desenfocado)
+        .composite([{ input: frente, gravity: 'center' }])
+        .jpeg({ quality: 92, chromaSubsampling: '4:4:4' })
+        .toBuffer();
       return { imagen };
     } catch (err: any) {
       this.logger.error('Error al estandarizar imagen:', err?.stack || err?.message || err);
@@ -119,9 +140,11 @@ export class ImagenEstandarService {
   }
 
   /**
-   * Color de fondo predominante analizando las esquinas; si no es uniforme, usa blanco (#FFFFFF).
+   * Color de fondo predominante analizando las esquinas. Si las esquinas no son uniformes
+   * pero la mayoría del contorno es claro, usa blanco. Devuelve null cuando es una foto con
+   * fondo real (tienda, degradados): en ese caso se usa relleno desenfocado.
    */
-  private async detectarFondo(buffer: Buffer): Promise<Rgb> {
+  private async detectarFondo(buffer: Buffer): Promise<Rgb | null> {
     try {
       const N = 32;
       const raw = await sharp(buffer)
@@ -163,7 +186,21 @@ export class ImagenEstandarService {
       );
       const claro = Math.min(prom.r, prom.g, prom.b) > 200;
 
-      return uniforme && claro ? prom : { r: 255, g: 255, b: 255 };
+      if (uniforme && claro) return prom;
+
+      // Producto que toca los bordes sobre fondo blanco (p. ej. catálogo recortado):
+      // si la mayoría del contorno es claro, se rellena con blanco en vez de desenfocar.
+      let claros = 0;
+      let total = 0;
+      for (let i = 0; i < N; i++) {
+        for (const m of [px(i, 0), px(i, N - 1), px(0, i), px(N - 1, i)]) {
+          total++;
+          if (Math.min(m.r, m.g, m.b) > 215) claros++;
+        }
+      }
+      if (claros / total >= 0.5) return { r: 255, g: 255, b: 255 };
+
+      return null;
     } catch {
       return { r: 255, g: 255, b: 255 };
     }

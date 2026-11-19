@@ -144,7 +144,7 @@ export function CartDrawer({
                     <img
                       src={getOptimizedImageUrl(item.product.imagen, 160)}
                       alt={item.product.nombre}
-                      className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-100 flex-shrink-0"
+                      className="w-14 h-14 object-contain p-0.5 rounded-xl bg-white border border-slate-100 flex-shrink-0"
                       loading="lazy"
                       decoding="async"
                     />

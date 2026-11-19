@@ -40,7 +40,7 @@ flowchart TD
 | :--- | :--- | :--- |
 | `IaProductosService` | `ia-productos.service.ts` | Orquestador del pipeline: valida archivos, consulta categorías existentes, invoca a Gemini, estandariza imágenes, sube a Cloudinary y guarda en Prisma. |
 | `GeminiService` | `gemini.service.ts` | Conexión con la API de Google AI Studio. Modelo primario de texto: `gemini-flash-lite-latest` (con failover automático). Modelo de imagen: `gemini-2.5-flash-image`. |
-| `ImagenEstandarService` | `imagen-estandar.service.ts` | Corrección EXIF, decodificación transparente de fotos Apple iPhone (`heic-convert`), centrado y recorte en lienzo cuadrado de 1200×1200 px con fondo blanco puro `#FFFFFF`. Sin superposición de logos. |
+| `ImagenEstandarService` | `imagen-estandar.service.ts` | Corrección EXIF, decodificación transparente de fotos Apple iPhone (`heic-convert`), centrado **sin recortes** en lienzo cuadrado de 1200×1200 px. Relleno: color de fondo detectado (o blanco `#FFFFFF`) en fotos de catálogo; versión desenfocada de la misma foto en fotos con fondo real (tienda, degradados). Sin superposición de logos. |
 
 ### 2.3 Endpoints REST
 
@@ -59,6 +59,11 @@ POST   /api/v1/digital/ia/productos/:id/procesar-imagen-estudio
        Genera fondo blanco estudio (#FFFFFF) 1:1 1200x1200 px con Gemini + Sharp sin logos
        Respuesta: { url: string, imagenes: string[], producto: Producto }
 
+POST   /api/v1/digital/ia/productos/:id/estandarizar-imagen
+       Content-Type: multipart/form-data (archivo en 'file') o application/json ({ imageUrl })
+       Cuadra la foto 1:1 1200x1200 px SIN IA (solo Sharp), conservándola completa
+       Respuesta: { url: string, imagenes: string[], producto: Producto }
+
 POST   /api/v1/digital/ia/productos/:id/regenerar-imagen
        Body: { indice: number, modo: 'ia' | 'original', instruccion?: string }
        Respuesta: { producto: Producto, nuevaImagenUrl: string, indice: number }
@@ -75,6 +80,20 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
        Endpoint público HTML para crawlers (WhatsApp, Facebook, Twitter, Telegram)
        Devuelve etiquetas Open Graph dinámicas (og:title, og:image, og:description)
 ```
+
+### 2.4 Cuadrar imágenes existentes del catálogo
+
+Script `backend/scripts/cuadrar_imagenes_catalogo.js`: recorre las imágenes de los productos de una empresa, deja intactas las que ya son cuadradas (tolerancia 2%) y cuadra el resto con `ImagenEstandarService`. Es reversible: guarda `metadataWeb.imagenesAntesCuadrar` (`{ urlNueva: urlAnterior }`) y no borra nada de Cloudinary.
+
+```bash
+docker cp backend/scripts/cuadrar_imagenes_catalogo.js edatia-backend:/app/cuadrar.js
+docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2              # simulación
+docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --muestras 8 # + vistas previas en /tmp/cuadrar-preview
+docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --aplicar    # aplica
+docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --revertir --aplicar
+```
+
+> En la tienda virtual (`ProductCard`), las imágenes se muestran con `object-contain` sobre fondo blanco, por lo que tampoco se recortan fotos no cuadradas.
 
 ---
 
@@ -112,7 +131,7 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
     - **Encabezado Optimizado:** Se removieron los botones repetidos del encabezado general para mantener la interfaz despejada y profesional, centralizando los accesos en el banner destacado.
     - **Banner Difusión Omnicanal:** Bloque interactivo con accesos directos a WhatsApp, Instagram, TikTok y Marketplace.
     - **Autogeneración con IA Multimodal (OCR Visual):** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera y puebla automáticamente `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`. Envía la URL de la imagen principal procesada (`imageUrl`) para que `gemini-flash-lite` lea directamente marcas, textos del empaque, edades sugeridas y advertencias mediante OCR visual multimodal, con fallback automático a texto.
-    - **Fondo de Estudio IA en Imágenes:** Checkbox toggle activado por defecto para aplicar fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos en cualquier foto nueva. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a demanda.
+    - **Fondo de Estudio IA en Imágenes:** Checkbox toggle activado por defecto para aplicar fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos en cualquier foto nueva. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a demanda. Con el toggle apagado, las fotos (archivo o URL) pasan por `estandarizar-imagen` y quedan cuadradas 1:1, asegurando que la tienda virtual nunca las recorte.
     - **Visor Lightbox Interactivo de Imágenes:**
       - Miniaturas ampliadas (48×48 px) con esquinas redondeadas, sombra suave e indicador interactivo de ojo (`👁️`).
       - Modal Lightbox en pantalla completa con imagen en alta resolución sobre fondo de estudio blanco.

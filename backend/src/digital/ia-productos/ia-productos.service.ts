@@ -484,29 +484,8 @@ export class IaProductosService {
     bufferEntrada?: Buffer,
     imageUrl?: string,
   ) {
-    const producto = await (this.prisma as any).producto.findFirst({
-      where: { id: productoId, empresaId },
-    });
-    if (!producto) throw new NotFoundException('Producto no encontrado');
-
-    let bufferOriginal: Buffer;
-
-    if (bufferEntrada && bufferEntrada.length > 0) {
-      bufferOriginal = bufferEntrada;
-    } else if (imageUrl && imageUrl.trim()) {
-      try {
-        const resp = await fetch(imageUrl.trim());
-        if (!resp.ok) {
-          throw new BadRequestException('No se pudo descargar la imagen desde la URL');
-        }
-        const ab = await resp.arrayBuffer();
-        bufferOriginal = Buffer.from(ab as any);
-      } catch (e: any) {
-        throw new BadRequestException('Error al descargar la imagen de la URL: ' + (e?.message || e));
-      }
-    } else {
-      throw new BadRequestException('Debes proporcionar un archivo de imagen o una URL válida');
-    }
+    const producto = await this.obtenerProducto(empresaId, productoId);
+    const bufferOriginal = await this.obtenerBufferEntrada(bufferEntrada, imageUrl);
 
     // 1. Normalizar entrada (HEIC, orientación EXIF, max 1536px, JPEG)
     const bufferNormalizado = await this.imagenEstandar.normalizarEntrada(bufferOriginal);
@@ -520,16 +499,80 @@ export class IaProductosService {
     // 3. Componer a 1200x1200 cuadrado centrado con fondo blanco puro (#FFFFFF) y SIN logo
     const { imagen: bufferFinal } = await this.imagenEstandar.componer(bufferIa);
 
-    // 4. Subir a Cloudinary
+    // 4. Subir a Cloudinary y guardar en el producto
+    return this.guardarImagenEnProducto(empresaId, producto, bufferFinal, 'estudio', imageUrl);
+  }
+
+  /**
+   * Estandariza una foto SIN IA: corrige orientación/HEIC y la centra en un lienzo
+   * cuadrado 1:1 (1200x1200 px) rellenando con el color de fondo detectado (o blanco).
+   * Evita que la tienda virtual recorte las fotos horizontales o verticales.
+   */
+  async estandarizarImagen(
+    empresaId: number,
+    productoId: number,
+    bufferEntrada?: Buffer,
+    imageUrl?: string,
+  ) {
+    const producto = await this.obtenerProducto(empresaId, productoId);
+    const bufferOriginal = await this.obtenerBufferEntrada(bufferEntrada, imageUrl);
+
+    const bufferNormalizado = await this.imagenEstandar.normalizarEntrada(bufferOriginal);
+    const { imagen: bufferFinal } = await this.imagenEstandar.componer(bufferNormalizado);
+
+    return this.guardarImagenEnProducto(empresaId, producto, bufferFinal, 'std', imageUrl);
+  }
+
+  private async obtenerProducto(empresaId: number, productoId: number) {
+    const producto = await (this.prisma as any).producto.findFirst({
+      where: { id: productoId, empresaId },
+    });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+    return producto;
+  }
+
+  private async obtenerBufferEntrada(bufferEntrada?: Buffer, imageUrl?: string): Promise<Buffer> {
+    if (bufferEntrada && bufferEntrada.length > 0) {
+      return bufferEntrada;
+    }
+    if (imageUrl && imageUrl.trim()) {
+      const url = imageUrl.trim();
+      if (!/^https?:\/\//i.test(url)) {
+        throw new BadRequestException('La URL de la imagen debe comenzar por http:// o https://');
+      }
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          throw new BadRequestException('No se pudo descargar la imagen desde la URL');
+        }
+        const ab = await resp.arrayBuffer();
+        return Buffer.from(ab as any);
+      } catch (e: any) {
+        throw new BadRequestException('Error al descargar la imagen de la URL: ' + (e?.message || e));
+      }
+    }
+    throw new BadRequestException('Debes proporcionar un archivo de imagen o una URL válida');
+  }
+
+  /**
+   * Sube el buffer final a Cloudinary y lo agrega al producto. Si `imageUrl` ya era una
+   * de las imágenes del producto, la reemplaza en la misma posición.
+   */
+  private async guardarImagenEnProducto(
+    empresaId: number,
+    producto: any,
+    bufferFinal: Buffer,
+    etiqueta: string,
+    imageUrl?: string,
+  ) {
     const timestamp = Date.now();
-    const publicId = `${producto.sku || 'prod'}-estudio-${timestamp.toString().slice(-6)}`;
+    const publicId = `${producto.sku || 'prod'}-${etiqueta}-${timestamp.toString().slice(-6)}`;
     const urlSubida = await this.subirACloudinary(
       bufferFinal,
       `edatia_erp/empresa_${empresaId}/productos`,
       publicId,
     );
 
-    // 5. Actualizar el producto en BD agregando o reemplazando la imagen
     const meta = (producto.metadataWeb as Record<string, any>) || {};
     const imagenesActuales: string[] = Array.isArray(meta.imagenes) && meta.imagenes.length > 0
       ? [...meta.imagenes]
@@ -544,16 +587,11 @@ export class IaProductosService {
       nuevasImagenes = [...imagenesActuales, urlSubida];
     }
 
-    const nuevaMeta = {
-      ...meta,
-      imagenes: nuevasImagenes,
-    };
-
     const productoActualizado = await (this.prisma as any).producto.update({
-      where: { id: productoId },
+      where: { id: producto.id },
       data: {
         imagen: nuevasImagenes[0] || urlSubida,
-        metadataWeb: nuevaMeta,
+        metadataWeb: { ...meta, imagenes: nuevasImagenes },
       },
     });
 

@@ -39,7 +39,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
       {/* Product Image Box */}
       <div 
         onClick={() => onViewDetails(product)}
-        className="relative overflow-hidden aspect-square bg-slate-50 cursor-pointer select-none"
+        className="relative overflow-hidden aspect-square bg-white cursor-pointer select-none"
       >
         {/* Skeleton Shimmer de carga mientras se descarga la imagen */}
         {!imageLoaded && (
@@ -51,7 +51,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         <img
           src={getOptimizedImageUrl(product.imagen, 500)}
           alt={product.nombre}
-          className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${
+          className={`w-full h-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-all duration-500 ${
             imageLoaded
               ? product.stock <= 0
                 ? 'opacity-75 grayscale-[20%]'

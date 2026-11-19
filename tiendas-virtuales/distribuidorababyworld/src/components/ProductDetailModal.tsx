@@ -140,7 +140,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                   <img
                     src={getOptimizedImageUrl(img, 160)}
                     alt={`${product.nombre} - ${idx}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-white p-0.5"
                     loading="lazy"
                     decoding="async"
                   />

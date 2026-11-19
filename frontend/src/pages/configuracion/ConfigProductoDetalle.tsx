@@ -202,16 +202,15 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
         refetch()
         toast.success('¡Imagen procesada con fondo blanco estudio y guardada! ✨', { id: 'estudio-ia' })
       } else {
-        const response = await api.post('/configuracion/archivo/upload', formData, {
+        // Sin IA: el backend centra la foto en un lienzo cuadrado 1:1 para que la tienda no la recorte
+        const response = await api.post(`/digital/ia/productos/${producto.id}/estandarizar-imagen`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         })
-        const { url } = response.data
-        const updatedImgs = [...data.imagenes, url]
+        const { url, imagenes } = response.data
+        const updatedImgs = imagenes || [...data.imagenes, url]
         setData(prev => ({ ...prev, imagenes: updatedImgs }))
-        const payload = buildPayload(data, updatedImgs)
-        await updateProducto(producto.id, payload)
         refetch()
-        toast.success('Imagen subida y guardada exitosamente ✓')
+        toast.success('Imagen subida, cuadrada y guardada ✓')
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Error al procesar la imagen'
@@ -290,16 +289,20 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
         setUploadingImg(false)
       }
     } else {
-      const updatedImgs = [...data.imagenes, url]
-      setData(prev => ({ ...prev, imagenes: updatedImgs }))
       try {
-        const payload = buildPayload(data, updatedImgs)
-        await updateProducto(producto.id, payload)
+        setUploadingImg(true)
+        // Sin IA: se descarga la URL y se centra en lienzo cuadrado 1:1 (sin recortes en la tienda)
+        const res = await api.post(`/digital/ia/productos/${producto.id}/estandarizar-imagen`, { imageUrl: url })
+        const { url: urlSubida, imagenes } = res.data
+        const updatedImgs = imagenes || [...data.imagenes, urlSubida]
+        setData(prev => ({ ...prev, imagenes: updatedImgs }))
         refetch()
-        toast.success('Imagen agregada y guardada ✓')
+        toast.success('Imagen agregada, cuadrada y guardada ✓')
       } catch (err: any) {
         const msg = err?.response?.data?.message || 'Error al guardar imagen'
         toast.error(typeof msg === 'string' ? msg : 'Error al guardar imagen')
+      } finally {
+        setUploadingImg(false)
       }
     }
   }

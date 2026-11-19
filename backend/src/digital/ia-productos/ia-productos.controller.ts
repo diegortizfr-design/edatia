@@ -157,5 +157,45 @@ export class IaProductosController {
       dto?.imageUrl,
     );
   }
-}
 
+  /**
+   * Estandariza una imagen nueva o existente SIN IA: la centra en un lienzo cuadrado 1:1 (1200x1200px)
+   * conservando la foto completa (sin recortes), y la guarda en Cloudinary y en el producto.
+   */
+  @Post(':id/estandarizar-imagen')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 15 * 1024 * 1024, // 15MB
+      },
+      fileFilter: (req, file, cb) => {
+        if (
+          !file.mimetype.match(/\/(jpg|jpeg|png|webp|heic|heif)$/i) &&
+          !file.originalname.match(/\.(heic|heif)$/i)
+        ) {
+          return cb(
+            new BadRequestException(
+              'Formato no soportado. Solo se admiten fotos JPG, PNG, WEBP o HEIC (iPhone).',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async estandarizarImagen(
+    @GetUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() dto?: ProcesarImagenEstudioDto,
+  ) {
+    return this.iaProductosService.estandarizarImagen(
+      user.empresaId!,
+      id,
+      file?.buffer,
+      dto?.imageUrl,
+    );
+  }
+}
