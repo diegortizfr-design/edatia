@@ -92,59 +92,53 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
 
       {/* Info Body */}
       <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-2">
-        <div className="space-y-1">
-          {/* Category Tag */}
+        <div className="space-y-1.5">
+          {/* Category Tag & Rating */}
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border ${getCategoryBadgeColor(product.categoria)}`}>
+            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border truncate max-w-[120px] ${getCategoryBadgeColor(product.categoria)}`}>
               {product.subcategoria || product.categoria}
             </span>
-            <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold">
+            <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold shrink-0">
               <Star size={11} fill="currentColor" />
               <span>{product.rating}</span>
             </div>
           </div>
           
-          {/* Title */}
+          {/* Title with consistent height across all cards */}
           <h3 
             onClick={() => onViewDetails(product)}
-            className="font-bold text-slate-800 text-xs sm:text-sm hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer pt-0.5"
+            className="font-bold text-slate-800 text-xs sm:text-sm hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer min-h-[2rem] sm:min-h-[2.4rem] flex items-center"
             title={product.nombre}
           >
             {product.nombre}
           </h3>
-          
-          {/* Short description for larger screens */}
-          <p className="text-[11px] text-slate-500 line-clamp-1 hidden sm:block">
-            {product.descripcion}
-          </p>
         </div>
 
-        {/* Pricing (Subtotal + Impuesto + Total) & Add to Cart button */}
-        <div className="pt-2 border-t border-slate-50 space-y-1.5">
-          <div className="flex items-center justify-between text-[9.5px] sm:text-[10px] text-slate-500">
-            <span>Sub: <b className="text-slate-700">{fmtPrice(product.precioSubtotal)}</b></span>
-            <span>
-              {product.ivaPct > 0
-                ? <>IVA {product.ivaPct}%: <b className="text-slate-700">{fmtPrice(product.impuesto)}</b></>
-                : <>IVA: <b className="text-slate-600">$0</b></>
-              }
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between gap-1.5">
-            <div className="min-w-0">
-              {product.precioAnterior && (
-                <span className="text-[9px] sm:text-[10px] text-slate-400 line-through block font-medium leading-none mb-0.5">
-                  {fmtPrice(product.precioAnterior)}
+        {/* Pricing & Add to Cart */}
+        <div className="pt-2 border-t border-slate-100 space-y-2 mt-auto">
+          {/* Precio Anterior / Descuento (si tiene oferta activa) */}
+          {product.precioAnterior && product.precioAnterior > product.precio && (
+            <div className="flex items-center gap-1.5 leading-none">
+              <span className="text-[10px] sm:text-[11px] text-slate-400 line-through font-semibold">
+                {fmtPrice(product.precioAnterior)}
+              </span>
+              {discountPercent && (
+                <span className="bg-rose-500 text-white font-black text-[9px] px-1.5 py-0.2 rounded-md">
+                  -{discountPercent}%
                 </span>
               )}
-              <div className="flex items-baseline gap-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-sky-600">Total</span>
-                <span className="font-extrabold text-slate-900 text-xs sm:text-base truncate">
-                  {fmtPrice(product.precio)}
-                </span>
-              </div>
-              <BnplCreditSimulator price={product.precio} compact className="mt-0.5" />
+            </div>
+          )}
+
+          {/* Fila Principal: Precio y Botón de Añadir */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <span className="font-black text-slate-900 text-sm sm:text-base leading-none block whitespace-nowrap">
+                {fmtPrice(product.precio)}
+              </span>
+              <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
+                {product.ivaPct > 0 ? `IVA ${product.ivaPct}% incl.` : 'IVA incluido'}
+              </span>
             </div>
 
             <button
@@ -157,9 +151,9 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
                 }
               }}
               disabled={product.stock <= 0}
-              className={`h-8 w-8 sm:h-9 sm:w-auto sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 shadow-sm flex-shrink-0 ${
+              className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 shrink-0 font-bold text-xs shadow-2xs ${
                 product.stock > 0
-                  ? 'bg-slate-900 hover:bg-sky-600 text-white active:scale-90'
+                  ? 'bg-slate-900 hover:bg-sky-600 active:scale-90 text-white cursor-pointer'
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               }`}
               title={product.stock > 0 ? `Agregar a la bolsa (${product.stock} disp.)` : 'Producto agotado en inventario'}
@@ -167,24 +161,39 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
             >
               {product.stock > 0 ? (
                 <>
-                  <Plus size={15} />
-                  <span className="hidden sm:inline text-xs font-bold">Añadir</span>
+                  <Plus size={14} strokeWidth={2.5} />
+                  <span className="text-xs font-bold">Añadir</span>
                 </>
               ) : (
-                <span className="text-[10px] sm:text-[11px] font-bold px-0.5">Agotado</span>
+                <span className="text-[10px] sm:text-[11px] font-bold">Agotado</span>
               )}
             </button>
           </div>
-          {product.stock > 0 && product.stock < 999 ? (
-            <p className="text-[9px] font-semibold text-emerald-700">
-              ● Stock disponible: {product.stock} {product.stock === 1 ? 'und' : 'unds'}
-            </p>
-          ) : product.stock <= 0 ? (
-            <p className="text-[9px] font-semibold text-rose-500 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              <span>Agotado temporalmente</span>
-            </p>
-          ) : null}
+
+          {/* Simulador Cuotas Addi y Sistecrédito */}
+          <div className="pt-0.5">
+            <BnplCreditSimulator price={product.precio} compact />
+          </div>
+
+          {/* Disponibilidad de Stock */}
+          <div className="min-h-[14px] flex items-center">
+            {product.stock > 0 && product.stock <= 5 ? (
+              <p className="text-[9px] font-bold text-amber-700 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span>¡Últimas {product.stock} {product.stock === 1 ? 'unidad' : 'unidades'}!</span>
+              </p>
+            ) : product.stock > 5 ? (
+              <p className="text-[9px] font-medium text-emerald-700 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Disponible ({product.stock} unds)</span>
+              </p>
+            ) : (
+              <p className="text-[9px] font-medium text-rose-500 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                <span>Agotado temporalmente</span>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -56,7 +56,7 @@ export function FeaturedCarousel({ products, onAddToCart, onViewDetails }: Featu
           className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 snap-x snap-mandatory no-scrollbar"
         >
           {featured.map((product, idx) => (
-            <div key={product.id} className="min-w-[160px] sm:min-w-[220px] max-w-[160px] sm:max-w-[220px] flex-shrink-0 snap-start h-full">
+            <div key={product.id} className="min-w-[170px] sm:min-w-[235px] max-w-[170px] sm:max-w-[245px] flex-shrink-0 snap-start h-full flex flex-col">
               <ProductCard
                 product={product}
                 onAddToCart={onAddToCart}
