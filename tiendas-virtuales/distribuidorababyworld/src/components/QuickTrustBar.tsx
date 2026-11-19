@@ -9,8 +9,8 @@ interface QuickTrustBarProps {
   onOpenBnplInfo?: () => void
 }
 
-export const INSTAGRAM_URL = 'https://www.instagram.com/distribuidorababyworld'
-export const TIKTOK_URL = 'https://www.tiktok.com/@baby.world426'
+import { INSTAGRAM_URL, TIKTOK_URL } from '../constants/social'
+export { INSTAGRAM_URL, TIKTOK_URL }
 
 /**
  * Barra interactiva de distintivos de confianza (Trust & Social Bar) ubicada justo debajo del HeroBanner.
