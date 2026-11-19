@@ -20,6 +20,7 @@ import { TikTokIcon } from './components/TikTokIcon'
 import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
+import { PromoAnnouncementModal } from './components/PromoAnnouncementModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
@@ -61,6 +62,25 @@ export function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
+
+  // Mostrar modal de anuncio Black Days al abrir la tienda (1 vez por sesión)
+  useEffect(() => {
+    const cleanPath = window.location.pathname.replace(/\/+$/, '')
+    const isDirectRoute = cleanPath === '/familia' || cleanPath === '/registro' || window.location.search.includes('pago=')
+    if (isDirectRoute) return
+
+    const hasShown = sessionStorage.getItem('babyworld_promo_black_days_shown')
+    const forcePromo = new URLSearchParams(window.location.search).get('promo') === 'true'
+
+    if (!hasShown || forcePromo) {
+      const timer = setTimeout(() => {
+        setIsPromoModalOpen(true)
+        sessionStorage.setItem('babyworld_promo_black_days_shown', 'true')
+      }, 700)
+      return () => clearTimeout(timer)
+    }
+  }, [])
 
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -445,6 +465,14 @@ export function App() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' })
     }
+  }
+
+  const handlePromoAction = () => {
+    setIsPromoModalOpen(false)
+    const jugueteriaCat = availableCategories.find(c =>
+      c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('juguet')
+    ) || 'Juguetería'
+    handleCategorySelect(jugueteriaCat)
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
@@ -839,6 +867,13 @@ export function App() {
       <StoreLocationModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
+      />
+
+      {/* Modal Anuncio Promocional (Black Days Juguetería) */}
+      <PromoAnnouncementModal
+        isOpen={isPromoModalOpen}
+        onClose={() => setIsPromoModalOpen(false)}
+        onAction={handlePromoAction}
       />
     </div>
   )
