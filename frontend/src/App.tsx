@@ -33,6 +33,7 @@ import { DigitalDashboard } from './pages/digital/DigitalDashboard'
 import { CatalogoDigital } from './pages/digital/CatalogoDigital'
 import { ConfigTienda } from './pages/digital/ConfigTienda'
 import { VisitasTienda } from './pages/digital/VisitasTienda'
+import { GestionPrecios } from './pages/digital/GestionPrecios'
 
 // ── Ventas ──
 import { VentasDashboard } from './pages/ventas/VentasDashboard'
@@ -231,6 +232,7 @@ function App() {
         <Route path="/digital" element={<Navigate to="/digital/dashboard" replace />} />
         <Route path="/digital/dashboard" element={<P><DigitalDashboard /></P>} />
         <Route path="/digital/catalogo"  element={<P><CatalogoDigital /></P>} />
+        <Route path="/digital/precios"   element={<P><GestionPrecios /></P>} />
         <Route path="/digital/config"    element={<P><ConfigTienda /></P>} />
         <Route path="/digital/visitas"   element={<P><VisitasTienda /></P>} />
 

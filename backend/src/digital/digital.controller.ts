@@ -26,6 +26,21 @@ export class DigitalController {
     return this.digitalService.updateConfig(req.user.empresaId, body);
   }
 
+  @Get('reglas-precios')
+  getReglasPrecios(@Request() req: any) {
+    return this.digitalService.getReglasPrecios(req.user.empresaId);
+  }
+
+  @Patch('reglas-precios')
+  updateReglasPrecios(@Request() req: any, @Body() body: any) {
+    return this.digitalService.updateReglasPrecios(req.user.empresaId, body);
+  }
+
+  @Get('precios-preview')
+  getPreciosPreview(@Request() req: any) {
+    return this.digitalService.getPreciosPreview(req.user.empresaId);
+  }
+
   @Get('productos')
   getProductos(@Request() req: any, @Query('publicado') publicado?: string) {
     return this.digitalService.getProductosWeb(

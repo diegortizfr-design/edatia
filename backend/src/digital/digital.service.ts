@@ -71,6 +71,106 @@ export class DigitalService {
     }
   }
 
+  async getReglasPrecios(empresaId: number) {
+    const config = await this.getConfig(empresaId);
+    return (config as any)?.reglasPrecios || {
+      recargos: { activo: false, global: 0, redondeo: 'CENTENA', categorias: {} },
+      descuentos: { activo: false, global: 0, categorias: {}, productos: {} },
+    };
+  }
+
+  async updateReglasPrecios(empresaId: number, data: any) {
+    const config = await this.getConfig(empresaId);
+    const updated = await this.prisma.configuracionTienda.update({
+      where: { id: config.id },
+      data: {
+        reglasPrecios: data,
+      },
+      select: {
+        id: true,
+        reglasPrecios: true,
+      },
+    });
+    return updated.reglasPrecios;
+  }
+
+  async getPreciosPreview(empresaId: number) {
+    const config = await this.getConfig(empresaId);
+    const reglas = (config as any)?.reglasPrecios || {
+      recargos: { activo: false, global: 0, redondeo: 'CENTENA', categorias: {} },
+      descuentos: { activo: false, global: 0, categorias: {}, productos: {} },
+    };
+
+    const [productos, categorias] = await Promise.all([
+      this.prisma.producto.findMany({
+        where: { empresaId, publicadoWeb: true, activo: true },
+        select: {
+          id: true,
+          nombre: true,
+          sku: true,
+          referencia: true,
+          imagen: true,
+          costoPromedio: true,
+          precioBase: true,
+          precioWeb: true,
+          tipoIva: true,
+          liquidarIva: true,
+          productoExentoIva: true,
+          appliedTaxIds: true,
+          categoriaId: true,
+          categoria: {
+            select: {
+              id: true,
+              nombre: true,
+              parent: { select: { id: true, nombre: true } },
+            },
+          },
+        },
+        orderBy: { nombre: 'asc' },
+      }),
+      this.prisma.categoria.findMany({
+        where: { empresaId, activo: true },
+        select: { id: true, nombre: true, parentId: true },
+        orderBy: { nombre: 'asc' },
+      }),
+    ]);
+
+    const previewProductos = productos.map((p) => {
+      const pricing = this.resolverPrecioYImpuesto(p, reglas);
+      const costo = Number(p.costoPromedio || 0);
+      const precioVenta = pricing.precioTotal;
+      const alertaBajoCosto = costo > 0 && precioVenta < costo;
+
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        sku: p.sku,
+        referencia: p.referencia,
+        imagen: p.imagen,
+        categoriaId: p.categoriaId,
+        categoriaNombre: p.categoria?.nombre || 'Sin categoría',
+        costoPromedio: costo,
+        precioBase: Number(p.precioBase || 0),
+        precioWebManual: p.precioWeb ? Number(p.precioWeb) : null,
+        recargoPct: pricing.recargoPct,
+        precioRegular: pricing.precioAnterior || pricing.precioTotal,
+        descuentoPct: pricing.descuentoPct,
+        precioVenta: pricing.precioTotal,
+        precioAnterior: pricing.precioAnterior,
+        tieneDescuento: pricing.tieneDescuento,
+        alertaBajoCosto,
+        margenGanancia: precioVenta - costo,
+        ivaPct: pricing.ivaPct,
+      };
+    });
+
+    return {
+      reglas,
+      categorias,
+      productos: previewProductos,
+    };
+  }
+
   async getProductosWeb(empresaId: number, query?: { publicado?: boolean }) {
     const where: any = { empresaId };
     if (query?.publicado !== undefined) {
@@ -272,21 +372,83 @@ export class DigitalService {
     }, 0);
   }
 
+  private redondearPrecio(valor: number, modo?: string): number {
+    if (modo === 'CENTENA') {
+      return Math.round(valor / 100) * 100;
+    }
+    if (modo === 'MILLAR') {
+      return Math.round(valor / 1000) * 1000;
+    }
+    return Math.round(valor);
+  }
+
   /**
    * Resuelve el subtotal base, el porcentaje/tipo de IVA ERP y el total con impuestos incluidos.
-   * Sigue exactamente la misma regla tributaria del POS y Facturación del ERP.
+   * Aplica la regla en dos fases:
+   *  1. Recargo de tienda virtual (Markup) sobre el precio base o web manual.
+   *  2. Descuento de tienda virtual (Sale) aplicado SOBRE el precio regular de la tienda.
+   * Si hay descuento activo, genera el `precioAnterior` (tachado) y el `precioTotal` final con descuento.
    */
-  private resolverPrecioYImpuesto(prod: {
-    precioBase?: any;
-    precioWeb?: any;
-    tipoIva?: string | null;
-    liquidarIva?: boolean | null;
-    productoExentoIva?: boolean | null;
-    appliedTaxIds?: any;
-  }) {
+  private resolverPrecioYImpuesto(
+    prod: {
+      id?: number;
+      categoriaId?: number | null;
+      precioBase?: any;
+      precioWeb?: any;
+      tipoIva?: string | null;
+      liquidarIva?: boolean | null;
+      productoExentoIva?: boolean | null;
+      appliedTaxIds?: any;
+    },
+    reglasPrecios?: any,
+  ) {
     const web = Number(prod.precioWeb ?? 0);
     const base = Number(prod.precioBase ?? 0);
-    const precioSubtotal = Math.round(web > 0 ? web : base);
+    const precioBaseCalculo = web > 0 ? web : base;
+
+    const catId = prod.categoriaId ? String(prod.categoriaId) : null;
+    const prodId = prod.id ? String(prod.id) : null;
+
+    const recargos = reglasPrecios?.recargos;
+    const descuentos = reglasPrecios?.descuentos;
+    const modoRedondeo = recargos?.redondeo || 'CENTENA';
+
+    // 1. Recargo de tienda virtual (Markup)
+    let recargoPct = 0;
+    let precioRegularSubtotal = precioBaseCalculo;
+
+    if (recargos && recargos.activo !== false) {
+      if (catId && recargos.categorias && recargos.categorias[catId] !== undefined && recargos.categorias[catId] !== null && recargos.categorias[catId] !== '') {
+        recargoPct = Number(recargos.categorias[catId]);
+      } else if (recargos.global !== undefined && recargos.global !== null && recargos.global !== '') {
+        recargoPct = Number(recargos.global);
+      }
+
+      if (recargoPct !== 0 && !isNaN(recargoPct)) {
+        precioRegularSubtotal = this.redondearPrecio(precioBaseCalculo * (1 + recargoPct / 100), modoRedondeo);
+      }
+    }
+
+    // 2. Descuento de tienda virtual (Sale) - Se aplica SOBRE el precio regular de la tienda
+    let descuentoPct = 0;
+    let precioFinalSubtotal = precioRegularSubtotal;
+    let tieneDescuento = false;
+
+    if (descuentos && descuentos.activo !== false) {
+      if (prodId && descuentos.productos && descuentos.productos[prodId] !== undefined && descuentos.productos[prodId] !== null && descuentos.productos[prodId] !== '') {
+        descuentoPct = Number(descuentos.productos[prodId]);
+      } else if (catId && descuentos.categorias && descuentos.categorias[catId] !== undefined && descuentos.categorias[catId] !== null && descuentos.categorias[catId] !== '') {
+        descuentoPct = Number(descuentos.categorias[catId]);
+      } else if (descuentos.global !== undefined && descuentos.global !== null && descuentos.global !== '') {
+        descuentoPct = Number(descuentos.global);
+      }
+
+      if (descuentoPct > 0 && !isNaN(descuentoPct)) {
+        tieneDescuento = true;
+        const montoDcto = precioRegularSubtotal * (descuentoPct / 100);
+        precioFinalSubtotal = this.redondearPrecio(precioRegularSubtotal - montoDcto, modoRedondeo);
+      }
+    }
 
     const appliedTaxIds = Array.isArray(prod.appliedTaxIds) ? prod.appliedTaxIds.map((t: any) => String(t)) : null;
     let effectiveTipoIva = String(prod.tipoIva || 'GRAVADO_19').toUpperCase();
@@ -316,8 +478,19 @@ export class DigitalService {
       pedidoTipoIva = 'EXCLUIDO';
     }
 
+    // Precio a cobrar en la tienda (con descuento aplicado)
+    const precioSubtotal = Math.round(precioFinalSubtotal);
     const impuesto = Math.round(precioSubtotal * (ivaPct / 100));
     const precioTotal = precioSubtotal + impuesto;
+
+    // Precio anterior (tachado en la tienda, precio regular con recargo si aplica)
+    let precioAnterior: number | null = null;
+    let precioAnteriorSubtotal: number | null = null;
+    if (tieneDescuento && precioRegularSubtotal > precioFinalSubtotal) {
+      precioAnteriorSubtotal = Math.round(precioRegularSubtotal);
+      const impuestoAnterior = Math.round(precioAnteriorSubtotal * (ivaPct / 100));
+      precioAnterior = precioAnteriorSubtotal + impuestoAnterior;
+    }
 
     return {
       precioSubtotal,
@@ -326,6 +499,11 @@ export class DigitalService {
       ivaPct,
       tipoIva: effectiveTipoIva,
       pedidoTipoIva,
+      recargoPct,
+      descuentoPct,
+      precioAnterior,
+      precioAnteriorSubtotal,
+      tieneDescuento,
     };
   }
 
@@ -364,6 +542,7 @@ export class DigitalService {
         descripcionWeb: true,
         esDestacado: true,
         metadataWeb: true,
+        categoriaId: true,
         categoria: {
           select: {
             nombre: true,
@@ -447,7 +626,7 @@ export class DigitalService {
           ? variantesFormateadas.reduce((acc: number, v: any) => acc + v.stockDisponible, 0)
           : this.calcularStockDisponible(p, bodegasFiltro);
 
-        const pricing = this.resolverPrecioYImpuesto(p);
+        const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
         return {
           ...p,
           variantes: variantesFormateadas,
@@ -456,6 +635,11 @@ export class DigitalService {
           precioSubtotal: pricing.precioSubtotal,
           impuesto: pricing.impuesto,
           precioTotal: pricing.precioTotal,
+          precio: pricing.precioTotal,
+          precioAnterior: pricing.precioAnterior,
+          descuentoPct: pricing.descuentoPct,
+          recargoPct: pricing.recargoPct,
+          tieneDescuento: pricing.tieneDescuento,
           ivaPct: pricing.ivaPct,
           tipoIvaEfectivo: pricing.tipoIva,
         };
@@ -596,6 +780,7 @@ export class DigitalService {
         productoExentoIva: true,
         appliedTaxIds: true,
         manejaBodega: true,
+        categoriaId: true,
         stock: {
           select: {
             cantidad: true,
@@ -677,7 +862,7 @@ export class DigitalService {
         }
       }
 
-      const pricing = this.resolverPrecioYImpuesto(p);
+      const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
       const lineSubtotal = pricing.precioSubtotal * cantidad;
       const lineIva = pricing.impuesto * cantidad;
       const lineTotal = pricing.precioTotal * cantidad;
@@ -1380,6 +1565,7 @@ export class DigitalService {
         descripcionWeb: true,
         esDestacado: true,
         metadataWeb: true,
+        categoriaId: true,
         categoria: {
           select: {
             nombre: true,
@@ -1519,9 +1705,9 @@ export class DigitalService {
     };
 
     const itemsXml = productosFiltrados.map((p) => {
-      const pricing = this.resolverPrecioYImpuesto(p);
+      const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
       const precio = pricing.precioTotal;
-      const precioAnterior = (p.metadataWeb as any)?.precioAnterior ? Number((p.metadataWeb as any).precioAnterior) : null;
+      const precioAnterior = pricing.precioAnterior || ((p.metadataWeb as any)?.precioAnterior ? Number((p.metadataWeb as any).precioAnterior) : null);
 
       const slugProducto = p.slug || p.id.toString();
       const productUrl = `${baseUrl}/producto/${slugProducto}`;
@@ -1666,8 +1852,11 @@ ${itemsXml}
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 
-    const precio = Number(producto.precioWeb || producto.precioBase || 0);
-    const precioFmt = `$${precio.toLocaleString('es-CO')} COP`;
+    const pricing = this.resolverPrecioYImpuesto(producto, (config as any)?.reglasPrecios);
+    const precio = pricing.precioTotal;
+    const precioFmt = pricing.precioAnterior
+      ? `$${precio.toLocaleString('es-CO')} COP (Antes $${pricing.precioAnterior.toLocaleString('es-CO')} • -${pricing.descuentoPct}%)`
+      : `$${precio.toLocaleString('es-CO')} COP`;
     const canonicalUrl = `${baseUrl}/producto/${producto.slug || producto.id}`;
     const titulo = escapeHtml(producto.nombre);
     const tienda = escapeHtml(config.nombreTienda || 'Distribuidora Baby World');

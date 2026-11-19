@@ -252,6 +252,19 @@ export function ProductDetailPage({
 
                 {/* Price Breakdown: Subtotal + Impuesto (IVA) = Total */}
                 <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 space-y-2">
+                  {product.precioAnterior && product.precioAnterior > effectivePrice && (
+                    <div className="flex items-center justify-between text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-xl font-bold">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(product.precioAnterior)}</span>
+                        <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                          -{Math.round(((product.precioAnterior - effectivePrice) / product.precioAnterior) * 100)}% OFF
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-extrabold text-rose-700">
+                        ¡Ahorras {fmtPrice(product.precioAnterior - effectivePrice)}!
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs text-slate-600">
                     <span>Subtotal producto:</span>
                     <span className="font-bold text-slate-800">{fmtPrice(product.precioSubtotal)}</span>
