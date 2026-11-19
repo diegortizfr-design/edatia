@@ -22,6 +22,7 @@ import {
   ActualizarBorradorIaDto,
   RegistrarCompartidoDto,
   ProcesarImagenEstudioDto,
+  GenerarInfoPublicacionDto,
 } from './dto/ia-productos.dto';
 
 @Controller('digital/ia/productos')
@@ -104,14 +105,16 @@ export class IaProductosController {
   }
 
   /**
-   * Genera automáticamente la información de publicación web (nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb) con IA.
+   * Genera automáticamente la información de publicación web (nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb) con IA
+   * considerando datos del producto y análisis visual de la imagen (si existe).
    */
   @Post(':id/generar-info-publicacion')
   async generarInfoPublicacion(
     @GetUser() user: JwtPayload,
     @Param('id', ParseIntPipe) id: number,
+    @Body() dto?: GenerarInfoPublicacionDto,
   ) {
-    return this.iaProductosService.generarInfoPublicacion(user.empresaId!, id);
+    return this.iaProductosService.generarInfoPublicacion(user.empresaId!, id, dto?.imageUrl);
   }
 
   /**

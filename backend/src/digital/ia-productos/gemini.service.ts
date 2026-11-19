@@ -240,7 +240,10 @@ ${listaCategorias}`;
     categoria?: string | null;
     sku?: string | null;
     precio?: number | null;
+    imagen?: ImagenEntrada | null;
   }): Promise<InfoPublicacionWeb> {
+    const tieneImagen = Boolean(producto.imagen?.data && producto.imagen.data.length > 0);
+
     const prompt = `Eres un copywriter y especialista en SEO e-commerce para la tienda "Distribuidora Baby World" en Colombia.
 Tu tarea es generar la información de publicación web optimizada para vender el siguiente producto:
 - Nombre actual: ${producto.nombre}
@@ -248,19 +251,35 @@ Tu tarea es generar la información de publicación web optimizada para vender e
 - Categoría: ${producto.categoria || 'General'}
 - Marca: ${producto.marca || 'N/A'}
 - Descripción actual: ${producto.descripcion || producto.descripcionAlterna || 'N/A'}
-- Precio de venta aproximado: $${producto.precio || 0} COP
+- Precio de venta aproximado: $${producto.precio || 0} COP${tieneImagen ? `
+- FOTO REAL DEL PRODUCTO ADJUNTA:
+  * Analiza con máxima atención la foto y su empaque (caja, bolsa o etiqueta física).
+  * Lee minuciosamente cualquier texto impreso en el empaque: marca, línea, capacidad en ml u onzas, talla, etapa, cantidad de unidades, sellos (ej: "Libre de BPA", "Hipoalergénico", "Tetina flujo lento", "0% alcohol"), ingredientes o componentes.
+  * Identifica los colores reales, estampados, diseño y presentación física.
+  * Si el nombre actual en el ERP es muy genérico, corto o está en mayúsculas sin detalles (ej: "BIBERON" o un código numérico), CORRÍGELO Y COMPLETA "nombreWeb" con lo que lees y ves directamente en la foto (ej: Marca + Tipo de producto + Capacidad/Talla + Color/Estilo).` : ''}
 
 Reglas:
-1. "nombreWeb": Nombre comercial claro, atractivo y completo para el catálogo online (máx 70 caracteres). Ejemplo: "Aceite Corporal Arrurú con Jojoba y Manzanilla 200ml".
+1. "nombreWeb": Nombre comercial claro, atractivo y completo para el catálogo online (máx 70 caracteres). Ejemplo: "Aceite Corporal Arrurú con Jojoba y Manzanilla 200ml"${tieneImagen ? ' o "Biberón Anticólico Philips Avent 260ml Azul"' : ''}.
 2. "slug": URL amigable en minúsculas separada por guiones (ej: "aceite-corporal-arruru-200ml").
 3. "etiquetaSeo": Título SEO optimizado para buscadores de Google (máx 60 caracteres). Ej: "Aceite Corporal Arrurú 200ml | Baby World Colombia".
 4. "metaDescripcion": Resumen atractivo de venta para resultados de búsqueda de Google, con beneficios clave y llamado a la acción (máx 155 caracteres).
-5. "descripcionWeb": Redacción comercial persuasiva y detallada (2 a 4 párrafos o secciones cortas con viñetas) que destaque beneficios para el bebé y la madre, ingredientes/materiales, modo de uso y confianza de marca. Redactado en español colombiano natural.`;
+5. "descripcionWeb": Redacción comercial persuasiva y detallada (2 a 4 párrafos o secciones cortas con viñetas) que destaque beneficios para el bebé y la madre, ingredientes/materiales, modo de uso y confianza de marca. Redactado en español colombiano natural.${tieneImagen ? ' Incorpora de forma precisa las características, sellos y beneficios reales que se observan en la foto del empaque.' : ''}`;
+
+    const parts: any[] = [{ text: prompt }];
+
+    if (tieneImagen && producto.imagen) {
+      parts.push({
+        inlineData: {
+          mimeType: producto.imagen.mimeType || 'image/jpeg',
+          data: producto.imagen.data.toString('base64'),
+        },
+      });
+    }
 
     const body = {
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: [{ parts }],
       generationConfig: {
-        temperature: 0.5,
+        temperature: 0.4,
         responseMimeType: 'application/json',
         responseSchema: {
           type: 'OBJECT',
@@ -286,6 +305,23 @@ Reglas:
         if (json?.candidates?.[0]?.content?.parts) break;
       } catch (e: any) {
         ultimoErr = e;
+      }
+    }
+
+    // Fallback de seguridad: si falló con la foto, reintentar con solo texto
+    if (!json?.candidates?.[0]?.content?.parts && tieneImagen) {
+      this.logger.warn(`Llamada multimodal falló (${ultimoErr?.message || ultimoErr}). Reintentando generación con solo texto...`);
+      const bodySoloTexto = {
+        ...body,
+        contents: [{ parts: [{ text: prompt }] }],
+      };
+      for (const mod of modelosATratar) {
+        try {
+          json = await this.llamar(mod, bodySoloTexto, 25_000);
+          if (json?.candidates?.[0]?.content?.parts) break;
+        } catch (e: any) {
+          ultimoErr = e;
+        }
       }
     }
 

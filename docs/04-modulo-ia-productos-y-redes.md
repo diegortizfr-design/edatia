@@ -111,7 +111,7 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
   - `ConfigProductoDetalle.tsx` (Pestaña "Web / Digital"):
     - **Encabezado Optimizado:** Se removieron los botones repetidos del encabezado general para mantener la interfaz despejada y profesional, centralizando los accesos en el banner destacado.
     - **Banner Difusión Omnicanal:** Bloque interactivo con accesos directos a WhatsApp, Instagram, TikTok y Marketplace.
-    - **Autogeneración con IA:** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera y puebla automáticamente `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`.
+    - **Autogeneración con IA Multimodal (OCR Visual):** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera y puebla automáticamente `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`. Envía la URL de la imagen principal procesada (`imageUrl`) para que `gemini-flash-lite` lea directamente marcas, textos del empaque, edades sugeridas y advertencias mediante OCR visual multimodal, con fallback automático a texto.
     - **Fondo de Estudio IA en Imágenes:** Checkbox toggle activado por defecto para aplicar fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos en cualquier foto nueva. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a demanda.
     - **Visor Lightbox Interactivo de Imágenes:**
       - Miniaturas ampliadas (48×48 px) con esquinas redondeadas, sombra suave e indicador interactivo de ojo (`👁️`).
@@ -122,7 +122,31 @@ GET    /api/v1/public/tiendas/:slug/og/:productoSlug
 
 ---
 
-## 5. Detección de Bots Sociales y Open Graph
+## 5. Experiencia de Usuario en Tienda Virtual (`distribuidorababyworld`)
+
+Para maximizar la conversión en la tienda online y aprovechar las fotos de estudio de alta definición:
+
+1. **Lupa Dinámica Interactiva (Hover Zoom 2.2x):**
+   - Implementada en `ProductDetailPage.tsx` y `ProductDetailModal.tsx`.
+   - Cursor en cruz (`cursor-crosshair`) con seguimiento dinámico del puntero (`transformOrigin: x% y%`) y ampliación fluida del **220%** sin pixelación.
+   - Permite al comprador inspeccionar detalles clave del producto (texturas, advertencias de empaque, certificados de seguridad, piezas incluidas).
+   - Incluye badge flotante interactivo: `🔍 Lupa zoom` / `Pasa el cursor`.
+2. **Visor Lightbox Pantalla Completa:**
+   - Accesible haciendo clic directo en el escenario de la imagen o mediante el botón flotante `⛶`.
+   - Fondo oscuro translúcido con efecto de desenfoque (`backdrop-blur-md`).
+   - Navegación táctil, selector inferior de miniaturas y atajos de teclado (`Esc`, `←`, `→`).
+3. **Escenario Blanco de Integración (`bg-white`):**
+   - Contenedor con fondo blanco puro y borde sutil que se funde con los fondos de estudio generados por IA.
+4. **Mapeo Comercial y Resiliencia en Rutas:**
+   - `App.tsx` prioriza `p.metadataWeb?.nombreWeb || p.nombreWeb || p.nombre` para mostrar siempre el título comercial persuasivo optimizado para e-commerce.
+   - Búsqueda tolerante en deep links de productos (`/producto/:slug` o `?p=:slug`) resolviendo contra `slug`, nombre con slugify, SKU o ID.
+   - Cabeceras HTTP `no-cache, no-store, must-revalidate` en API pública y `{ cache: 'no-store' }` en `fetch` para garantizar sincronización instantánea sin que el caché del navegador retenga datos antiguos.
+5. **Paridad de Descuentos en Modal y Página:**
+   - La modal de vista rápida (`ProductDetailModal.tsx`) cuenta con la misma visualización de descuentos promocionales que la página de detalle: badges `-X% OFF`, precio tachado y ahorro calculado en COP (`¡Ahorras $X!`).
+
+---
+
+## 6. Detección de Bots Sociales y Open Graph
 
 En `tiendas-virtuales/distribuidorababyworld/Caddyfile`, se implementó el enrutamiento condicional mediante bloques `handle` mutuamente excluyentes:
 ```caddy
@@ -153,7 +177,7 @@ Esto garantiza que la directiva `try_files` no intercepte prematuramente las sol
 
 ---
 
-## 6. Verificación y Calidad
+## 7. Verificación y Calidad
 
 - **Sin logs residuales:** Sin llamadas de depuración (`console.log`, `var_dump`) en el código de producción.
 - **Seguridad:** `.env` verificado en `.gitignore`; clave de API protegida exclusivamente en el backend.

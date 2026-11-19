@@ -63,6 +63,12 @@ export class ProcesarImagenEstudioDto {
   imageUrl?: string;
 }
 
+export class GenerarInfoPublicacionDto {
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+}
+
 export class RegistrarCompartidoDto {
   @IsIn(['whatsapp', 'instagram', 'tiktok', 'marketplace'])
   red: 'whatsapp' | 'instagram' | 'tiktok' | 'marketplace';

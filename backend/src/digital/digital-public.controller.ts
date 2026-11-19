@@ -54,6 +54,9 @@ export class DigitalPublicController {
   }
 
   @Get(':slug/productos')
+  @Header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   async getProductosPublic(@Param('slug') slug: string) {
     return this.digitalService.getProductosWebPublic(slug);
   }

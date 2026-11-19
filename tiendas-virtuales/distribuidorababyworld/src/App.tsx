@@ -133,10 +133,11 @@ export function App() {
         const targetClean = targetSlug.toLowerCase()
         const found = products.find(p => {
           const pSlug = (p.slug || '').toLowerCase()
-          const pNameSlug = p.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+          const pNameSlug = (p.nombre || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+          const pErpSlug = ((p as any).nombreErp || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
           const pId = p.id.toString()
           const pSku = (p.sku || '').toLowerCase()
-          return pSlug === targetClean || pNameSlug === targetClean || pId === targetClean || pSku === targetClean
+          return pSlug === targetClean || pNameSlug === targetClean || pErpSlug === targetClean || pId === targetClean || pSku === targetClean
         })
 
         if (found) {
@@ -157,7 +158,7 @@ export function App() {
 
   // Fetch backend catalog if available, fallback to rich local Baby-World catalog
   useEffect(() => {
-    fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`)
+    fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`, { cache: 'no-store' })
       .then(r => {
         if (!r.ok) throw new Error('Falló al consultar backend')
         return r.json()
@@ -201,13 +202,16 @@ export function App() {
 
             const marcaNombre = typeof p.marca === 'object' ? p.marca?.nombre : (p.marca || p.metadataWeb?.marca)
 
+            const nombreFinal = p.metadataWeb?.nombreWeb || p.nombreWeb || p.nombre
+
             return {
               id: p.id,
               sku: p.sku,
               referencia: p.referencia || undefined,
               marca: marcaNombre || undefined,
               slug: p.slug,
-              nombre: p.nombre,
+              nombre: nombreFinal,
+              nombreErp: p.nombre,
               descripcion: p.descripcion || 'Producto de alta calidad para bebés.',
               descripcionLarga: p.descripcionWeb || p.descripcion || '',
               precio: precioTotal,
@@ -274,6 +278,7 @@ export function App() {
     const q = searchQuery.toLowerCase().trim()
     const matchesSearch = q === '' ||
       p.nombre.toLowerCase().includes(q) ||
+      Boolean((p as any).nombreErp && (p as any).nombreErp.toLowerCase().includes(q)) ||
       p.descripcion.toLowerCase().includes(q) ||
       p.categoria.toLowerCase().includes(q) ||
       (p.subcategoria && p.subcategoria.toLowerCase().includes(q)) ||

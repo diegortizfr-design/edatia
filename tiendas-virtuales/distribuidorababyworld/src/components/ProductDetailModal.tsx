@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus, Sparkles } from 'lucide-react'
+import { X, Star, CheckCircle2, ShoppingBag, MessageCircle, Plus, Minus, Sparkles, ZoomIn } from 'lucide-react'
 import { Product, ProductVariant } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl } from '../lib/imageOptimizer'
@@ -15,11 +15,14 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product?.imagen)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [isHovering, setIsHovering] = useState(false)
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
 
   useEffect(() => {
     if (product) {
       setCurrentImage(product.imagen)
       setQuantity(1)
+      setIsHovering(false)
       if (product.variantes && product.variantes.length > 0) {
         const firstInStock = product.variantes.find(v => v.stockDisponible > 0) || product.variantes[0]
         setSelectedVariant(firstInStock)
@@ -28,6 +31,13 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
       }
     }
   }, [product])
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+    setZoomPos({ x, y })
+  }
 
   if (!product) return null
 
@@ -82,24 +92,38 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
 
         {/* Product Image Stage */}
         <div className="w-full sm:w-1/2 flex flex-col gap-3 flex-shrink-0">
-          <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden relative shadow-inner">
+          <div 
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            onMouseMove={handleMouseMove}
+            className="aspect-square bg-white rounded-2xl overflow-hidden relative shadow-inner border border-slate-200/90 cursor-crosshair select-none flex items-center justify-center group"
+          >
             <img
               src={getOptimizedImageUrl(currentImage, 900)}
               alt={product.nombre}
-              className="w-full h-full object-cover"
+              style={{
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                transform: isHovering ? 'scale(2.2)' : 'scale(1)',
+              }}
+              className="w-full h-full object-contain p-2 transition-transform duration-150 ease-out pointer-events-none"
               loading="eager"
               decoding="async"
             />
             {isAgotado && (
-              <span className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md tracking-wider">
+              <span className="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md tracking-wider pointer-events-none z-10">
                 Agotado
               </span>
             )}
             {product.etapa && !isAgotado && (
-              <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100">
+              <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-slate-800 font-bold text-[9px] px-2.5 py-1 rounded-full shadow-sm border border-slate-100 pointer-events-none z-10">
                 {product.etapa}
               </span>
             )}
+            {/* Pill indicador de lupa */}
+            <div className="absolute bottom-2.5 right-2.5 bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-full pointer-events-none flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity z-10">
+              <ZoomIn size={12} className="text-sky-300" />
+              <span>{isHovering ? 'Pasa el cursor' : 'Lupa zoom'}</span>
+            </div>
           </div>
           
           {/* Thumbnails */}
@@ -151,15 +175,25 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                 </span>
               </div>
 
-              <div className="mt-2.5 flex items-baseline gap-2">
-                {product.precioAnterior && (
-                  <span className="text-xs text-slate-400 line-through">
-                    {fmtPrice(product.precioAnterior)}
+              {product.precioAnterior && product.precioAnterior > effectivePrice && (
+                <div className="flex items-center justify-between text-xs text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-xl font-bold mt-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(product.precioAnterior)}</span>
+                    <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                      -{Math.round(((product.precioAnterior - effectivePrice) / product.precioAnterior) * 100)}% OFF
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-extrabold text-rose-700">
+                    ¡Ahorras {fmtPrice(product.precioAnterior - effectivePrice)}!
                   </span>
-                )}
+                </div>
+              )}
+
+              <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-xl sm:text-2xl font-black text-slate-900">
                   {fmtPrice(effectivePrice)}
                 </span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">COP</span>
               </div>
 
               {/* Simulador de Cuotas Addi y Sistecrédito */}

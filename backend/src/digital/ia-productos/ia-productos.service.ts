@@ -401,9 +401,9 @@ export class IaProductosService {
 
   /**
    * Genera textos optimizados de publicación web (nombreWeb, slug, etiquetaSeo, metaDescripcion, descripcionWeb)
-   * a partir de los datos registrados del producto utilizando Gemini.
+   * a partir de los datos registrados del producto y de su imagen (si existe) utilizando Gemini.
    */
-  async generarInfoPublicacion(empresaId: number, productoId: number) {
+  async generarInfoPublicacion(empresaId: number, productoId: number, imageUrlParam?: string) {
     const producto = await (this.prisma as any).producto.findFirst({
       where: { id: productoId, empresaId },
       include: {
@@ -419,6 +419,46 @@ export class IaProductosService {
       (Array.isArray(producto.precios) ? producto.precios[0] : 0),
     );
 
+    // Identificar imagen para análisis visual multimodal
+    const meta = (producto.metadataWeb as Record<string, any>) || {};
+    const candidateUrl: string | null = (imageUrlParam && typeof imageUrlParam === 'string' && imageUrlParam.trim())
+      ? imageUrlParam.trim()
+      : (producto.imagen || (Array.isArray(meta.imagenes) && meta.imagenes[0]) || null);
+
+    let imagenEntrada: ImagenEntrada | null = null;
+
+    if (candidateUrl && (candidateUrl.startsWith('http://') || candidateUrl.startsWith('https://'))) {
+      try {
+        let urlDescarga = candidateUrl;
+        // Si es Cloudinary, optimizar resolución a ~1000px para acelerar transferencia y consumo de tokens
+        if (urlDescarga.includes('res.cloudinary.com') && urlDescarga.includes('/upload/')) {
+          if (!urlDescarga.includes('/upload/w_') && !urlDescarga.includes('/upload/c_')) {
+            urlDescarga = urlDescarga.replace('/upload/', '/upload/w_1000,c_limit,q_auto/');
+          }
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const resp = await fetch(urlDescarga, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (resp.ok) {
+          const contentType = resp.headers.get('content-type') || 'image/jpeg';
+          const ab = await resp.arrayBuffer();
+          const buffer = Buffer.from(ab as any);
+
+          if (buffer.length > 0 && buffer.length <= 15 * 1024 * 1024) {
+            imagenEntrada = {
+              data: buffer,
+              mimeType: contentType.startsWith('image/') ? contentType.split(';')[0] : 'image/jpeg',
+            };
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`No se pudo descargar imagen para generarInfoPublicacion (${err?.message || err}). Continuando solo con texto.`);
+      }
+    }
+
     const info = await this.gemini.generarInfoPublicacion({
       nombre: producto.nombre,
       descripcion: producto.descripcion,
@@ -427,6 +467,7 @@ export class IaProductosService {
       categoria: producto.categoria?.nombre,
       sku: producto.sku,
       precio,
+      imagen: imagenEntrada,
     });
 
     return info;

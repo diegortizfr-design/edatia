@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, HeartHandshake, Share2, Plus, Minus,
-  ChevronRight, PackageCheck, Sparkles
+  ChevronRight, ChevronLeft, PackageCheck, Sparkles,
+  ZoomIn, Maximize2, X
 } from 'lucide-react'
 import { LocationPinIcon } from './LocationPinIcon'
 import { Product, ProductVariant } from '../data/productos'
@@ -34,12 +35,21 @@ export function ProductDetailPage({
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product.imagen)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [isHovering, setIsHovering] = useState(false)
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
+
+  const gallery = (product.imagenes && product.imagenes.length > 0)
+    ? product.imagenes
+    : [currentImage || product.imagen]
 
   // Scroll to top whenever product changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setQuantity(1)
     setCurrentImage(product.imagen)
+    setIsHovering(false)
     if (product.variantes && product.variantes.length > 0) {
       const firstInStock = product.variantes.find(v => v.stockDisponible > 0) || product.variantes[0]
       setSelectedVariant(firstInStock)
@@ -47,6 +57,29 @@ export function ProductDetailPage({
       setSelectedVariant(null)
     }
   }, [product.id, product.imagen])
+
+  // Controles de teclado para el Lightbox
+  useEffect(() => {
+    if (!isLightboxOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsLightboxOpen(false)
+      if (e.key === 'ArrowRight' && gallery.length > 1) {
+        setLightboxIndex((prev) => (prev + 1) % gallery.length)
+      }
+      if (e.key === 'ArrowLeft' && gallery.length > 1) {
+        setLightboxIndex((prev) => (prev - 1 + gallery.length) % gallery.length)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isLightboxOpen, gallery.length])
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+    setZoomPos({ x, y })
+  }
 
   const fmtPrice = (val: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -150,19 +183,33 @@ export function ProductDetailPage({
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-4 sm:p-8 lg:p-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10 items-start">
             
-            {/* Product Image Stage */}
+            {/* Product Image Stage con Lupa Interactiva */}
             <div className="relative space-y-4">
-              <div className="aspect-square bg-slate-50 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 shadow-inner flex items-center justify-center relative group">
+              <div 
+                onClick={() => {
+                  const currentIdx = gallery.indexOf(currentImage)
+                  setLightboxIndex(currentIdx >= 0 ? currentIdx : 0)
+                  setIsLightboxOpen(true)
+                }}
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={() => setIsHovering(false)}
+                onMouseMove={handleMouseMove}
+                className="aspect-square bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs flex items-center justify-center relative group cursor-crosshair select-none"
+              >
                 <img
-                  src={getOptimizedImageUrl(currentImage, 900)}
+                  src={getOptimizedImageUrl(currentImage, 1000)}
                   alt={product.nombre}
-                  className="w-full h-full object-cover sm:object-contain group-hover:scale-105 transition-transform duration-500"
+                  style={{
+                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                    transform: isHovering ? 'scale(2.2)' : 'scale(1)',
+                  }}
+                  className="w-full h-full object-contain p-2 sm:p-4 transition-transform duration-150 ease-out pointer-events-none"
                   loading="eager"
                   decoding="async"
                 />
 
                 {/* Floating Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none z-10">
                   {isAgotado && (
                     <span className="bg-slate-900/90 backdrop-blur-md text-white font-black text-[10px] sm:text-xs px-3 py-1 rounded-full shadow-md tracking-wider">
                       Agotado
@@ -179,6 +226,29 @@ export function ProductDetailPage({
                     </span>
                   )}
                 </div>
+
+                {/* Botón flotante de Pantalla Completa */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const currentIdx = gallery.indexOf(currentImage)
+                    setLightboxIndex(currentIdx >= 0 ? currentIdx : 0)
+                    setIsLightboxOpen(true)
+                  }}
+                  className="absolute top-3 right-3 p-2.5 bg-white/95 hover:bg-white text-slate-700 hover:text-sky-600 rounded-2xl shadow-md border border-slate-200/80 transition-all hover:scale-105 active:scale-95 z-10 cursor-pointer"
+                  title="Ampliar en pantalla completa"
+                >
+                  <Maximize2 size={16} />
+                </button>
+
+                {/* Indicador inferior de lupa */}
+                <div className={`absolute bottom-3 right-3 bg-white/95 backdrop-blur-md text-slate-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-md border border-slate-200/80 flex items-center gap-1.5 pointer-events-none transition-all duration-200 z-10 ${
+                  isHovering ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                }`}>
+                  <ZoomIn size={13} className="text-sky-600" />
+                  <span>Pasa el cursor o clic para lupa</span>
+                </div>
               </div>
               
               {/* Image Thumbnails */}
@@ -188,16 +258,16 @@ export function ProductDetailPage({
                     <button
                       key={idx}
                       onClick={() => setCurrentImage(img)}
-                      className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                      className={`relative w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                         currentImage === img 
-                          ? 'border-sky-500 ring-2 ring-sky-200' 
-                          : 'border-slate-100 hover:border-slate-300'
+                          ? 'border-sky-500 ring-2 ring-sky-200 shadow-sm' 
+                          : 'border-slate-200/80 hover:border-slate-300 bg-white'
                       }`}
                     >
                       <img
                         src={getOptimizedImageUrl(img, 180)}
                         alt={`${product.nombre} view ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain p-1"
                         loading="lazy"
                         decoding="async"
                       />
@@ -557,6 +627,92 @@ export function ProductDetailPage({
           <span>{isAgotado ? 'Agotado' : 'Añadir a la Bolsa'}</span>
         </button>
       </div>
+
+      {/* ── MODAL LIGHTBOX / ZOOM EN PANTALLA COMPLETA ── */}
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden relative animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Lightbox */}
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-xs sm:text-sm font-extrabold text-slate-800 truncate">
+                  {product.nombre}
+                </span>
+                {gallery.length > 1 && (
+                  <span className="text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-full shrink-0">
+                    {lightboxIndex + 1} de {gallery.length}
+                  </span>
+                )}
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsLightboxOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                title="Cerrar (Esc)"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Stage de Imagen del Lightbox */}
+            <div className="flex-1 bg-white flex items-center justify-center p-4 sm:p-8 overflow-hidden relative select-none min-h-[320px] max-h-[72vh]">
+              {gallery.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setLightboxIndex((prev) => (prev - 1 + gallery.length) % gallery.length)}
+                  className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg border border-slate-200/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-10 cursor-pointer"
+                  title="Foto anterior (←)"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+
+              <img
+                src={getOptimizedImageUrl(gallery[lightboxIndex], 1400)}
+                alt={`${product.nombre} - ${lightboxIndex + 1}`}
+                className="max-h-[68vh] max-w-full object-contain drop-shadow-sm transition-all duration-300"
+              />
+
+              {gallery.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setLightboxIndex((prev) => (prev + 1) % gallery.length)}
+                  className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-lg border border-slate-200/80 flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-10 cursor-pointer"
+                  title="Siguiente foto (→)"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
+            </div>
+
+            {/* Miniaturas en el pie del Lightbox si hay varias fotos */}
+            {gallery.length > 1 && (
+              <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-center gap-2 overflow-x-auto">
+                {gallery.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setLightboxIndex(i)}
+                    className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                      lightboxIndex === i 
+                        ? 'border-sky-500 ring-2 ring-sky-200 scale-105' 
+                        : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <img src={getOptimizedImageUrl(img, 120)} alt="" className="w-full h-full object-contain p-0.5" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

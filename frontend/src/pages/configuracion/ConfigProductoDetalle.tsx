@@ -158,7 +158,15 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
   const handleGenerarInfoPublicacion = async () => {
     try {
       setGenerandoInfo(true)
-      const res = await api.post(`/digital/ia/productos/${producto.id}/generar-info-publicacion`)
+      const imagenPrincipal = (data.imagenes && data.imagenes.length > 0) ? data.imagenes[0] : (producto.imagen || null)
+      if (imagenPrincipal) {
+        toast.loading('Analizando imagen y redactando información con IA...', { id: 'info-ia' })
+      } else {
+        toast.loading('Generando información web con IA...', { id: 'info-ia' })
+      }
+      const res = await api.post(`/digital/ia/productos/${producto.id}/generar-info-publicacion`, {
+        imageUrl: imagenPrincipal,
+      })
       const info = res.data
       setData(prev => ({
         ...prev,
@@ -168,10 +176,10 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
         metaDescripcion: info.metaDescripcion || prev.metaDescripcion,
         descripcionWeb: info.descripcionWeb || prev.descripcionWeb,
       }))
-      toast.success('¡Información web generada con IA! Revisa y haz clic en Guardar.')
+      toast.success('¡Información web generada con IA! Revisa y haz clic en Guardar.', { id: 'info-ia' })
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Error al generar información web con IA'
-      toast.error(typeof msg === 'string' ? msg : 'Error al generar información con IA')
+      toast.error(typeof msg === 'string' ? msg : 'Error al generar información con IA', { id: 'info-ia' })
     } finally {
       setGenerandoInfo(false)
     }
