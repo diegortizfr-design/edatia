@@ -1,11 +1,8 @@
 import React from 'react'
 import { ShoppingBag, Search, X } from 'lucide-react'
 import { BabyWorldLogo } from './BabyWorldLogo'
-import { WhatsAppIcon } from './WhatsAppIcon'
 import { LocationPinIcon } from './LocationPinIcon'
-import { InstagramIcon } from './InstagramIcon'
-import { TikTokIcon } from './TikTokIcon'
-import { INSTAGRAM_URL, TIKTOK_URL } from '../constants/social'
+import { BlackDaysTopBar } from './BlackDaysTopBar'
 
 interface NavbarProps {
   cartCount: number
@@ -16,6 +13,7 @@ interface NavbarProps {
   setSearchQuery: (query: string) => void
   categories?: readonly string[]
   onOpenLocation?: () => void
+  onPromoClick?: () => void
 }
 
 export function Navbar({
@@ -27,6 +25,7 @@ export function Navbar({
   setSearchQuery,
   categories = ['Todos'],
   onOpenLocation,
+  onPromoClick,
 }: NavbarProps) {
   const getCategoryIcon = (cat: string) => {
     const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -43,61 +42,8 @@ export function Navbar({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
-      {/* Top Delivery & Social Media / WhatsApp Quick Banner */}
-      <div className="bg-slate-900 text-white text-[11px] font-medium py-1 px-3 sm:px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="text-sky-400 font-bold animate-pulse truncate text-[10px] sm:text-[11px]">
-              🚀 Envío GRATIS en compras superiores a $150.000 COP
-            </span>
-            <span className="text-slate-400 hidden md:inline">• Atención personalizada</span>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Redes Sociales Oficiales Permanentes */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-slate-300 hover:text-pink-400 transition-all px-1.5 py-0.5 rounded-full hover:bg-white/10 active:scale-95 text-[10px] sm:text-[11px] font-semibold group"
-                title="Síguenos en Instagram @distribuidorababyworld"
-                aria-label="Instagram @distribuidorababyworld"
-              >
-                <InstagramIcon size={13} className="group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline">Instagram</span>
-              </a>
-
-              <a
-                href={TIKTOK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-slate-300 hover:text-white transition-all px-1.5 py-0.5 rounded-full hover:bg-white/10 active:scale-95 text-[10px] sm:text-[11px] font-semibold group"
-                title="Síguenos en TikTok @baby.world426"
-                aria-label="TikTok @baby.world426"
-              >
-                <TikTokIcon size={13} chromatic={true} className="group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline">TikTok</span>
-              </a>
-            </div>
-
-            <span className="text-slate-700 hidden sm:inline select-none">|</span>
-
-            {/* Asesoría y Pedidos por WhatsApp */}
-            <a
-              href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 hover:border-[#25D366] px-2 sm:px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-[11px] transition-all shadow-2xs hover:shadow-emerald-500/20 active:scale-95 shrink-0"
-              title="Asesoría y pedidos por WhatsApp"
-            >
-              <WhatsAppIcon size={14} />
-              <span className="hidden sm:inline text-emerald-300">Asesoría & Pedidos</span>
-              <span className="sm:hidden text-emerald-300">WhatsApp</span>
-            </a>
-          </div>
-        </div>
-      </div>
+      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos */}
+      <BlackDaysTopBar onPromoClick={onPromoClick} />
 
       {/* Main Bar */}
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">

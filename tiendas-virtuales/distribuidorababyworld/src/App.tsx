@@ -520,6 +520,7 @@ export function App() {
         setSearchQuery={handleSearchChange}
         categories={availableCategories}
         onOpenLocation={() => setIsLocationModalOpen(true)}
+        onPromoClick={handlePromoAction}
       />
 
       {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
