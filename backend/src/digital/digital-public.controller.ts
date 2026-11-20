@@ -61,6 +61,14 @@ export class DigitalPublicController {
     return this.digitalService.getProductosWebPublic(slug);
   }
 
+  @Get(':slug/categorias')
+  @Header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
+  async getCategoriasPublic(@Param('slug') slug: string) {
+    return this.digitalService.getCategoriasWebPublic(slug);
+  }
+
   @Get(':slug/info')
   async getTiendaInfoPublic(@Param('slug') slug: string) {
     return this.digitalService.getTiendaInfoPublic(slug);

@@ -600,6 +600,8 @@ export class DigitalService {
 
     return productos
       .map((p) => {
+        const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
+
         const variantesFormateadas = ((p as any).variantes ?? []).map((v: any) => {
           const vStock = (v.stock ?? [])
             .filter((s: any) => {
@@ -611,12 +613,26 @@ export class DigitalService {
               return true;
             })
             .reduce((sum: number, s: any) => sum + Math.max(0, Number(s.cantidad || 0) - Number(s.cantidadReservada || 0)), 0);
+
+          const vBase = Number(v.precioBase || 0);
+          // Si la variante tiene precio base específico diferente del producto padre,
+          // se calcula su pricing aplicando las mismas reglas de recargo, descuento e impuesto.
+          // Si no tiene precio base o es igual al producto padre, hereda exactamente el pricing del producto.
+          let vPricing = pricing;
+          if (vBase > 0 && vBase !== Number(p.precioBase || 0)) {
+            vPricing = this.resolverPrecioYImpuesto({ ...p, precioBase: vBase, precioWeb: null }, (config as any)?.reglasPrecios);
+          }
+
           return {
             id: v.id,
             sku: v.sku,
             nombre: v.nombre,
             atributos: v.atributos,
-            precioBase: Number(v.precioBase || 0),
+            precioBase: vBase > 0 ? vBase : Number(p.precioBase || 0),
+            precio: vPricing.precioTotal,
+            precioSubtotal: vPricing.precioSubtotal,
+            impuesto: vPricing.impuesto,
+            precioAnterior: vPricing.precioAnterior,
             stockDisponible: vStock,
           };
         });
@@ -625,8 +641,6 @@ export class DigitalService {
         const stockDisponible = tieneVariantes
           ? variantesFormateadas.reduce((acc: number, v: any) => acc + v.stockDisponible, 0)
           : this.calcularStockDisponible(p, bodegasFiltro);
-
-        const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
         return {
           ...p,
           variantes: variantesFormateadas,
@@ -649,6 +663,66 @@ export class DigitalService {
         if (a.stockDisponible <= 0 && b.stockDisponible > 0) return 1;
         return 0;
       });
+  }
+
+  async getCategoriasWebPublic(slug: string) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      }
+    });
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    const categorias = await this.prisma.categoria.findMany({
+      where: {
+        empresaId: config.empresaId,
+        activo: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        slug: true,
+        parentId: true,
+        parent: {
+          select: {
+            id: true,
+            nombre: true,
+            slug: true,
+          }
+        },
+        hijos: {
+          where: { activo: true },
+          select: {
+            id: true,
+            nombre: true,
+            slug: true,
+          }
+        },
+        _count: {
+          select: {
+            productos: {
+              where: {
+                publicadoWeb: true,
+                activo: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { parentId: 'asc' },
+        { nombre: 'asc' }
+      ]
+    });
+
+    return categorias;
   }
 
   async getTiendaInfoPublic(slug: string) {
@@ -862,7 +936,12 @@ export class DigitalService {
         }
       }
 
-      const pricing = this.resolverPrecioYImpuesto(p, (config as any)?.reglasPrecios);
+      // Si el item especifica una variante con precioBase diferente al producto padre
+      const vBase = variante ? Number(variante.precioBase || 0) : 0;
+      const targetProd = (vBase > 0 && vBase !== Number(p.precioBase || 0))
+        ? { ...p, precioBase: vBase, precioWeb: null }
+        : p;
+      const pricing = this.resolverPrecioYImpuesto(targetProd, (config as any)?.reglasPrecios);
       const lineSubtotal = pricing.precioSubtotal * cantidad;
       const lineIva = pricing.impuesto * cantidad;
       const lineTotal = pricing.precioTotal * cantidad;

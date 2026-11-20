@@ -87,9 +87,56 @@ export function ProductDetailPage({
     }).format(val)
   }
 
-  const effectivePrice = selectedVariant && Number(selectedVariant.precioBase) > 0
-    ? Number(selectedVariant.precioBase)
-    : product.precio
+  const getVariantPriceInfo = (v: ProductVariant | null, prod: Product) => {
+    if (!v) {
+      return {
+        precio: prod.precio,
+        precioSubtotal: prod.precioSubtotal,
+        impuesto: prod.impuesto,
+        precioAnterior: prod.precioAnterior,
+      }
+    }
+
+    if (typeof v.precio === 'number' && v.precio > 0) {
+      return {
+        precio: v.precio,
+        precioSubtotal: typeof v.precioSubtotal === 'number' ? v.precioSubtotal : v.precio,
+        impuesto: typeof v.impuesto === 'number' ? v.impuesto : 0,
+        precioAnterior: v.precioAnterior ?? prod.precioAnterior,
+      }
+    }
+
+    // Fallback defensivo:
+    // Si precioBase de la variante es <= 0 o igual al precioBase del producto, hereda los precios del producto
+    const vBase = Number(v.precioBase || 0)
+    const pBase = Number(prod.precioBase || 0)
+    if (vBase <= 0 || (pBase > 0 && vBase === pBase)) {
+      return {
+        precio: prod.precio,
+        precioSubtotal: prod.precioSubtotal,
+        impuesto: prod.impuesto,
+        precioAnterior: prod.precioAnterior,
+      }
+    }
+
+    // Si tiene un precioBase diferente (variante más cara o más económica), escalar proporcionalmente
+    const ratio = pBase > 0 ? (prod.precio / pBase) : 1
+    const subRatio = (pBase > 0 && prod.precioSubtotal) ? (prod.precioSubtotal / pBase) : 1
+    const taxRatio = (pBase > 0 && prod.impuesto) ? (prod.impuesto / pBase) : 0
+
+    return {
+      precio: Math.round(vBase * ratio),
+      precioSubtotal: Math.round(vBase * subRatio),
+      impuesto: Math.round(vBase * taxRatio),
+      precioAnterior: prod.precioAnterior && pBase > 0 ? Math.round(vBase * (prod.precioAnterior / pBase)) : undefined,
+    }
+  }
+
+  const variantPricing = getVariantPriceInfo(selectedVariant, product)
+  const effectivePrice = variantPricing.precio
+  const effectiveSubtotal = variantPricing.precioSubtotal
+  const effectiveImpuesto = variantPricing.impuesto
+  const effectivePrecioAnterior = variantPricing.precioAnterior
 
   const effectiveStock = selectedVariant
     ? selectedVariant.stockDisponible
@@ -334,23 +381,23 @@ export function ProductDetailPage({
 
                 {/* Price Breakdown: Subtotal + Impuesto (IVA) = Total */}
                 <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 space-y-2">
-                  {product.precioAnterior && product.precioAnterior > effectivePrice && (
+                  {effectivePrecioAnterior && effectivePrecioAnterior > effectivePrice && (
                     <div className="flex items-center justify-between gap-1.5 flex-wrap text-xs text-amber-950 bg-gradient-to-r from-amber-50 to-amber-100/60 border border-amber-200/80 px-3 py-1.5 rounded-xl font-bold">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(product.precioAnterior)}</span>
+                        <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(effectivePrecioAnterior)}</span>
                         <span className="bg-gradient-to-r from-slate-950 to-slate-900 text-amber-300 border border-amber-400/40 text-[10px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 shadow-xs shrink-0">
                           <span>🔥</span>
-                          <span>BLACK DAYS -{Math.round(((product.precioAnterior - effectivePrice) / product.precioAnterior) * 100)}%</span>
+                          <span>BLACK DAYS -{Math.round(((effectivePrecioAnterior - effectivePrice) / effectivePrecioAnterior) * 100)}%</span>
                         </span>
                       </div>
                       <span className="text-[11px] font-extrabold text-amber-800 shrink-0">
-                        ¡Ahorras {fmtPrice(product.precioAnterior - effectivePrice)}!
+                        ¡Ahorras {fmtPrice(effectivePrecioAnterior - effectivePrice)}!
                       </span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-xs text-slate-600">
                     <span>Subtotal producto:</span>
-                    <span className="font-bold text-slate-800">{fmtPrice(product.precioSubtotal)}</span>
+                    <span className="font-bold text-slate-800">{fmtPrice(effectiveSubtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-600">
                     <span>
@@ -358,7 +405,7 @@ export function ProductDetailPage({
                         ? `Impuesto (IVA ${product.ivaPct}%):`
                         : 'Impuesto (Exento / Excluido):'}
                     </span>
-                    <span className="font-bold text-slate-800">{fmtPrice(product.impuesto)}</span>
+                    <span className="font-bold text-slate-800">{fmtPrice(effectiveImpuesto)}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-200 flex items-baseline justify-between gap-2">
                     <span className="text-xs font-black uppercase tracking-wider text-sky-700">

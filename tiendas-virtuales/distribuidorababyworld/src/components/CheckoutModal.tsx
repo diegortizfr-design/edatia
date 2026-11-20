@@ -151,10 +151,26 @@ export function CheckoutModal({
     }
   }
 
+  const getItemPrice = (item: CartItem) => {
+    return (item.variante && typeof item.variante.precio === 'number' && item.variante.precio > 0)
+      ? item.variante.precio
+      : item.product.precio
+  }
+  const getItemSubtotal = (item: CartItem) => {
+    return (item.variante && typeof item.variante.precioSubtotal === 'number' && item.variante.precioSubtotal > 0)
+      ? item.variante.precioSubtotal
+      : item.product.precioSubtotal
+  }
+  const getItemImpuesto = (item: CartItem) => {
+    return (item.variante && typeof item.variante.impuesto === 'number')
+      ? item.variante.impuesto
+      : item.product.impuesto
+  }
+
   const itemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  const productosSubtotal = cartItems.reduce((sum, item) => sum + item.product.precioSubtotal * item.quantity, 0)
-  const productosImpuesto = cartItems.reduce((sum, item) => sum + item.product.impuesto * item.quantity, 0)
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.precio * item.quantity, 0)
+  const productosSubtotal = cartItems.reduce((sum, item) => sum + getItemSubtotal(item) * item.quantity, 0)
+  const productosImpuesto = cartItems.reduce((sum, item) => sum + getItemImpuesto(item) * item.quantity, 0)
+  const subtotal = cartItems.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0)
   const shipping = isLocal ? (subtotal >= 150000 ? 0 : 8000) : 0
   const total = subtotal + shipping
 
@@ -262,7 +278,7 @@ export function CheckoutModal({
         productoId: item.product.id,
         varianteId: item.variante?.id,
         nombre: item.variante ? `${item.product.nombre} · ${item.variante.nombre}` : item.product.nombre,
-        precioUnitario: item.product.precio,
+        precioUnitario: getItemPrice(item),
         cantidad: item.quantity,
       }))
     }
@@ -343,7 +359,7 @@ export function CheckoutModal({
     msg += `*Productos:*\n`
     items.forEach(i => {
       const varSuffix = i.variante ? ` [${i.variante.nombre}]` : ''
-      msg += `• ${i.quantity}x ${i.product.nombre}${varSuffix} (${fmtPrice(i.product.precio * i.quantity)})\n`
+      msg += `• ${i.quantity}x ${i.product.nombre}${varSuffix} (${fmtPrice(getItemPrice(i) * i.quantity)})\n`
     })
     msg += `\n*Subtotal:* ${fmtPrice(subTot)}`
     msg += `\n*Impuesto (IVA):* ${fmtPrice(taxVal)}`
