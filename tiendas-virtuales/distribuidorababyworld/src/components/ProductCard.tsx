@@ -26,10 +26,10 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
 
   const getCategoryBadgeColor = (cat: string) => {
     const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo')) return 'bg-sky-50 text-sky-600 border-sky-100'
+    if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo') || c.includes('toalla')) return 'bg-sky-50 text-sky-600 border-sky-100'
     if (c.includes('juguet')) return 'bg-amber-50 text-amber-600 border-amber-100'
     if (c.includes('variedad') || c.includes('ropa')) return 'bg-pink-50 text-pink-600 border-pink-100'
-    if (c.includes('aliment')) return 'bg-emerald-50 text-emerald-600 border-emerald-100'
+    if (c.includes('aliment') || c.includes('tetero') || c.includes('leche')) return 'bg-emerald-50 text-emerald-600 border-emerald-100'
     if (c.includes('calzado')) return 'bg-indigo-50 text-indigo-600 border-indigo-100'
     return 'bg-slate-50 text-slate-600 border-slate-100'
   }

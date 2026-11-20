@@ -31,7 +31,9 @@ export function Navbar({
     const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     if (c === 'todos') return '✨'
     if (c.includes('black') || c.includes('oferta')) return '🔥'
-    if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) return '🍼'
+    if (c.includes('toalla')) return '🫧'
+    if (c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) return '🧴'
+    if (c.includes('panal')) return '🍼'
     if (c.includes('calzado') || c.includes('zapato') || c.includes('tenis')) return '👟'
     if (c.includes('juguet') || c.includes('estimul')) return '🧸'
     if (c.includes('ropa') || c.includes('vest') || c.includes('ajuar') || c.includes('moda')) return '👕'
