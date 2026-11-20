@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Flame, Clock, Sparkles, ArrowRight } from 'lucide-react'
+import { Flame, Clock, ArrowRight } from 'lucide-react'
 import { InstagramIcon } from './InstagramIcon'
 import { TikTokIcon } from './TikTokIcon'
 import { WhatsAppIcon } from './WhatsAppIcon'
