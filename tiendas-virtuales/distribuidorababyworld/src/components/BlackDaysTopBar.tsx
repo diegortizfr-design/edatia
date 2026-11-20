@@ -180,19 +180,19 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
               <Clock size={13} className="text-amber-400 animate-pulse" />
               <span className="text-[10px] font-black uppercase text-amber-200 tracking-wider mr-1">Termina en:</span>
               <div className="flex items-center gap-1 font-mono text-xs font-black text-amber-300">
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.days)}d
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.hours)}h
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.minutes)}m
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-amber-400/20 border border-amber-400/60 px-1 py-0.2 rounded text-amber-200 shadow-2xs w-6 text-center">
+                <span className="bg-amber-400/20 border border-amber-400/60 min-w-[34px] px-1.5 py-0.5 rounded text-amber-200 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.seconds)}s
                 </span>
               </div>
@@ -280,13 +280,13 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
             <div className="flex items-center gap-1 font-mono font-bold text-amber-300">
               <Clock size={11} className="text-amber-400" />
               <span className="uppercase text-[9px] text-slate-400 font-extrabold">Termina en:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.days)}d</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.days)}d</span>
               <span>:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.hours)}h</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.hours)}h</span>
               <span>:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.minutes)}m</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.minutes)}m</span>
               <span>:</span>
-              <span className="bg-amber-400/20 text-amber-300 px-1 py-0.2 rounded font-black">{formatDigits(timeLeft.seconds)}s</span>
+              <span className="bg-amber-400/20 text-amber-300 min-w-[26px] px-1.5 py-0.5 rounded font-black text-center inline-flex items-center justify-center">{formatDigits(timeLeft.seconds)}s</span>
             </div>
 
             {/* Accesos rápidos móvil */}
