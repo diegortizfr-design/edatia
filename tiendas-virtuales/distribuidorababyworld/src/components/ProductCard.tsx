@@ -73,18 +73,18 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         {/* Top Badges */}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-none">
           {product.stock <= 0 ? (
-            <span className="bg-slate-900/85 backdrop-blur-sm text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tracking-wide">
+            <span className="bg-slate-900/85 backdrop-blur-sm text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tracking-wide shrink-0">
               Agotado
             </span>
           ) : discountPercent ? (
-            <span className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-amber-300 border border-amber-400/40 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+            <span className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-amber-300 border border-amber-400/40 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 shrink-0">
               <span>🔥</span>
               <span className="tracking-tight">BLACK DAYS -{discountPercent}%</span>
             </span>
           ) : <span />}
 
           {product.etapa && (
-            <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100">
+            <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100 truncate max-w-[40%] shrink-0">
               {product.etapa}
             </span>
           )}

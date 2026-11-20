@@ -335,15 +335,15 @@ export function ProductDetailPage({
                 {/* Price Breakdown: Subtotal + Impuesto (IVA) = Total */}
                 <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 space-y-2">
                   {product.precioAnterior && product.precioAnterior > effectivePrice && (
-                    <div className="flex items-center justify-between text-xs text-amber-950 bg-gradient-to-r from-amber-50 to-amber-100/60 border border-amber-200/80 px-3 py-1.5 rounded-xl font-bold">
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap text-xs text-amber-950 bg-gradient-to-r from-amber-50 to-amber-100/60 border border-amber-200/80 px-3 py-1.5 rounded-xl font-bold">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(product.precioAnterior)}</span>
-                        <span className="bg-gradient-to-r from-slate-950 to-slate-900 text-amber-300 border border-amber-400/40 text-[10px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 shadow-xs">
+                        <span className="bg-gradient-to-r from-slate-950 to-slate-900 text-amber-300 border border-amber-400/40 text-[10px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 shadow-xs shrink-0">
                           <span>🔥</span>
                           <span>BLACK DAYS -{Math.round(((product.precioAnterior - effectivePrice) / product.precioAnterior) * 100)}%</span>
                         </span>
                       </div>
-                      <span className="text-[11px] font-extrabold text-amber-800">
+                      <span className="text-[11px] font-extrabold text-amber-800 shrink-0">
                         ¡Ahorras {fmtPrice(product.precioAnterior - effectivePrice)}!
                       </span>
                     </div>

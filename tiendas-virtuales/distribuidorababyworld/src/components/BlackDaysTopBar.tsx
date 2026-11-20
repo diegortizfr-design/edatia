@@ -275,11 +275,11 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
           </div>
 
           {/* Micro-franja inferior con Temporizador Compacto y WhatsApp Rápido */}
-          <div className="bg-black/90 px-3 py-1 flex items-center justify-between border-t border-white/10 text-[10px]">
+          <div className="bg-black/90 px-2.5 sm:px-3 py-1 flex items-center justify-between border-t border-white/10 text-[10px] flex-nowrap whitespace-nowrap overflow-x-auto no-scrollbar">
             {/* Reloj mini */}
-            <div className="flex items-center gap-1 font-mono font-bold text-amber-300">
-              <Clock size={11} className="text-amber-400" />
-              <span className="uppercase text-[9px] text-slate-400 font-extrabold">Termina en:</span>
+            <div className="flex items-center gap-1 font-mono font-bold text-amber-300 shrink-0">
+              <Clock size={11} className="text-amber-400 shrink-0" />
+              <span className="uppercase text-[9px] text-slate-400 font-extrabold hidden sm:inline">Termina en:</span>
               <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.days)}d</span>
               <span>:</span>
               <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.hours)}h</span>
@@ -290,7 +290,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
             </div>
 
             {/* Accesos rápidos móvil */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
