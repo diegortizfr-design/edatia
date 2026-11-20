@@ -42,12 +42,14 @@ export function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
-      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos */}
+    <>
+      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos (Se muestra en la cima de la tienda) */}
       <BlackDaysTopBar onPromoClick={onPromoClick} />
 
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+      {/* Encabezado Fijo de Navegación (Sticky): Maximiza el espacio de productos en móvil al hacer scroll */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
+        {/* Main Bar */}
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Logo */}
           <div
@@ -151,5 +153,6 @@ export function Navbar({
         </div>
       </div>
     </header>
+    </>
   )
 }
