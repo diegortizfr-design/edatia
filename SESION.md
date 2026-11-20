@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-17 (sesión 27)
+> Última actualización: 2026-11-20 (sesión 28)
 
 ---
 
@@ -35,6 +35,25 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | ERP (Demo SAS) | 900000000 | admin (o admin@edatia.com) | Admin123! |
 | Préstamos | 1143875756 | admin@edatia.com | Admin123! |
 | Préstamos (Cliente) | 1033680464 | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 28) — 2026-11-20
+
+✅ **Campaña Promocional Black Days, Barra Superior de Urgencia y Optimización Responsive Móvil (`tiendas-virtuales/distribuidorababyworld`):**
+  - **Componente `BlackDaysTopBar`:**
+    - Barra promocional en la cúspide de la tienda con cinta continua infinita (*marquee* animado en CSS puro `@keyframes marquee-scroll` de 32s con gradientes de difuminado y pausa al pasar el cursor).
+    - Temporizador digital de urgencia comercial con relieve y estandarización matemática de casillas (`[ 11d ] : [ 03h ] : [ 29m ] : [ 57s ]`) configurado a **11 días**, con clave `babyworld_black_days_target_11d` en `sessionStorage` para renovación inmediata de caché en los navegadores de los clientes.
+    - Accesos rápidos fijos e interactivos a Instagram (`@distribuidorababyworld`), TikTok (`@baby.world426`) y asesoría personalizada por WhatsApp (`wa.me/573023863380`).
+  - **Arquitectura y Optimización de Experiencia de Usuario (UX) Móvil (`Navbar.tsx`):**
+    - Desacoplamiento de `BlackDaysTopBar` del contenedor `<header className="sticky top-0 ...">`, permitiendo que la barra superior acompañe el scroll natural de la página mientras el buscador y las categorías permanecen fijos. Esto **libera 64 píxeles netos de altura en celulares**, ofreciendo una visualización completa de los productos y reduciendo drásticamente la saturación de barras fijas.
+    - Respaldo permanente de la campaña: incorporación de la pestaña destacada `🔥 Black Days` en el carrusel de categorías con gradiente negro/dorado (`from-slate-950 to-slate-900` e iluminación dorada `from-amber-500 to-yellow-500` al activarse).
+    - Blindaje responsive: adición de `flex-nowrap`, `whitespace-nowrap`, `overflow-x-auto` y ocultamiento de etiquetas redundantes (`hidden sm:inline`) en celulares estrechos (320px–360px), asegurando cero saltos de línea y márgenes simétricos de respiración para la letra 's' y números del cronómetro.
+  - **Badges Comerciales y Alertas de Stock (`ProductCard.tsx` & `ProductDetailPage.tsx`):**
+    - Badge oficial `🔥 BLACK DAYS -X%` en tarjetas de catálogo y vista de producto, calculado dinámicamente entre `precioAnterior` y `precio`.
+    - Alerta de escasez y urgencia comercial: `⚡ ¡Últimas X unds!` si el stock disponible es menor o igual a 5 unidades.
+    - Desglose con cálculo automático del ahorro en pesos (`¡Ahorras $X COP!`) con capacidad flexible de ajuste en pantallas estrechas (`flex-wrap`).
+    - **Protección de Base de Datos y ERP:** Se verificó y garantizó que toda la lógica de filtrado de ofertas opera 100% en la capa visual de React, manteniendo intacta la base de datos de PostgreSQL, los SKUs y las categorías de origen en `edatia_erp`.
+
+---
 
 ## Estado resuelto (sesión 27) — 2026-11-17
 
