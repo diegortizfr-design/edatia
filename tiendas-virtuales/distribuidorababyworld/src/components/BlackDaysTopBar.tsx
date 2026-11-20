@@ -56,17 +56,17 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
   function calculateTimeLeft(): TimeRemaining {
     const now = new Date()
     const target = new Date(now)
-    target.setDate(now.getDate() + 3)
+    target.setDate(now.getDate() + 11)
     target.setHours(23, 59, 59, 999)
 
-    const storedTarget = sessionStorage.getItem('babyworld_black_days_target_date')
+    const storedTarget = sessionStorage.getItem('babyworld_black_days_target_11d')
     let finalTargetTime: number
 
     if (storedTarget && !isNaN(Number(storedTarget))) {
       finalTargetTime = Number(storedTarget)
     } else {
       finalTargetTime = target.getTime()
-      sessionStorage.setItem('babyworld_black_days_target_date', finalTargetTime.toString())
+      sessionStorage.setItem('babyworld_black_days_target_11d', finalTargetTime.toString())
     }
 
     const difference = finalTargetTime - now.getTime()
