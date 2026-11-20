@@ -665,6 +665,66 @@ export class DigitalService {
       });
   }
 
+  async getCategoriasWebPublic(slug: string) {
+    await this.autoInitializeBabyWorld(slug);
+
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda: slug },
+          { dominioPropio: slug }
+        ]
+      }
+    });
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    const categorias = await this.prisma.categoria.findMany({
+      where: {
+        empresaId: config.empresaId,
+        activo: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        slug: true,
+        parentId: true,
+        parent: {
+          select: {
+            id: true,
+            nombre: true,
+            slug: true,
+          }
+        },
+        hijos: {
+          where: { activo: true },
+          select: {
+            id: true,
+            nombre: true,
+            slug: true,
+          }
+        },
+        _count: {
+          select: {
+            productos: {
+              where: {
+                publicadoWeb: true,
+                activo: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: [
+        { parentId: 'asc' },
+        { nombre: 'asc' }
+      ]
+    });
+
+    return categorias;
+  }
+
   async getTiendaInfoPublic(slug: string) {
     await this.autoInitializeBabyWorld(slug);
 

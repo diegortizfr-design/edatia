@@ -26,6 +26,17 @@ import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
 import { Product, ProductVariant, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { analytics } from './lib/analytics'
+import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
+
+interface ErpCategory {
+  id: number
+  nombre: string
+  slug: string
+  parentId: number | null
+  parent?: { id: number; nombre: string; slug: string } | null
+  hijos?: { id: number; nombre: string; slug: string }[]
+  _count?: { productos: number }
+}
 
 const API_BASE = import.meta.env.VITE_API_BASE || (
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -83,6 +94,7 @@ export function App() {
   }, [])
 
   const [products, setProducts] = useState<Product[]>([])
+  const [erpCategories, setErpCategories] = useState<ErpCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Reset subcategory when switching main category
@@ -178,28 +190,43 @@ export function App() {
     return () => window.removeEventListener('popstate', syncFromUrl)
   }, [products])
 
-  // Fetch backend catalog if available, fallback to rich local Baby-World catalog
+  // Fetch backend catalog & categories from ERP
   useEffect(() => {
-    fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`, { cache: 'no-store' })
-      .then(r => {
-        if (!r.ok) throw new Error('Falló al consultar backend')
-        return r.json()
-      })
-      .then(data => {
+    Promise.all([
+      fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/productos`, { cache: 'no-store' })
+        .then(r => {
+          if (!r.ok) throw new Error('Falló al consultar backend de productos')
+          return r.json()
+        })
+        .catch(() => []),
+      fetch(`${API_BASE}/public/tiendas/${STORE_SLUG}/categorias`, { cache: 'no-store' })
+        .then(r => {
+          if (!r.ok) throw new Error('Falló al consultar backend de categorías')
+          return r.json()
+        })
+        .catch(() => [])
+    ])
+      .then(([data, categoriasData]) => {
+        if (Array.isArray(categoriasData) && categoriasData.length > 0) {
+          setErpCategories(categoriasData)
+        }
         if (data && Array.isArray(data) && data.length > 0) {
           const mapped: Product[] = data.map((p: any) => {
-            let cat = 'Otros'
-            let subcat = ''
+            let rawCat = 'Otros'
+            let rawSubcat = ''
 
             if (p.categoria) {
               if (p.categoria.parent) {
-                cat = p.categoria.parent.nombre
-                subcat = p.categoria.nombre
+                rawCat = p.categoria.parent.nombre
+                rawSubcat = p.categoria.nombre
               } else {
-                cat = p.categoria.nombre
-                subcat = ''
+                rawCat = p.categoria.nombre
+                rawSubcat = ''
               }
             }
+
+            const cat = toCategoryTitleCase(rawCat)
+            const subcat = rawSubcat ? toCategoryTitleCase(rawSubcat) : ''
 
             const precioSubtotal = p.precioSubtotal !== undefined
               ? Number(p.precioSubtotal)
@@ -295,10 +322,10 @@ export function App() {
 
   // Filter products by category, subcategory and search query (conectado 100% al ERP)
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Todos' || p.categoria === activeCategory
+    const matchesCategory = activeCategory === 'Todos' || matchesCategoryName(p.categoria, activeCategory)
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
-      (p.subcategoria && p.subcategoria.toLowerCase() === activeSubcategory.toLowerCase())
+      (p.subcategoria && matchesCategoryName(p.subcategoria, activeSubcategory))
 
     const q = searchQuery.toLowerCase().trim()
     const matchesSearch = q === '' ||
@@ -462,7 +489,8 @@ export function App() {
       }
       document.title = 'Distribuidora Baby World | Tienda Virtual'
     }
-    setActiveCategory(category)
+    const matched = availableCategories.find(c => matchesCategoryName(c, category)) || category
+    setActiveCategory(matched)
     setActiveSubcategory('Todos')
     const el = document.getElementById('catalogo-section')
     if (el) {
@@ -473,7 +501,7 @@ export function App() {
   const handlePromoAction = () => {
     setIsPromoModalOpen(false)
     const jugueteriaCat = availableCategories.find(c =>
-      c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('juguet')
+      matchesCategoryName(c, 'Juguetería') || matchesCategoryName(c, 'Jugueteria') || c.toLowerCase().includes('juguet')
     ) || 'Juguetería'
     handleCategorySelect(jugueteriaCat)
   }
@@ -481,26 +509,59 @@ export function App() {
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   const availableCategories = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const p of products) {
-      if (!p.categoria) continue
-      counts.set(p.categoria, (counts.get(p.categoria) || 0) + 1)
+    const categorySet = new Set<string>()
+
+    // 1. Cargar las categorías principales directamente del ERP
+    if (erpCategories.length > 0) {
+      erpCategories
+        .filter(c => !c.parentId)
+        .forEach(c => {
+          categorySet.add(toCategoryTitleCase(c.nombre))
+        })
     }
-    const sorted = Array.from(counts.keys()).sort((a, b) => a.localeCompare(b, 'es'))
+
+    // 2. Agregar las categorías de los productos reales para garantizar que ningún producto quede huérfano
+    for (const p of products) {
+      if (p.categoria) {
+        categorySet.add(p.categoria)
+      }
+    }
+
+    // Ordenar alfabéticamente en español, dejando 'Otros' siempre al final si existe
+    const sorted = Array.from(categorySet).sort((a, b) => {
+      if (a === 'Otros') return 1
+      if (b === 'Otros') return -1
+      return a.localeCompare(b, 'es')
+    })
     return ['Todos', ...sorted]
-  }, [products])
+  }, [erpCategories, products])
 
   const availableSubcategories = useMemo(() => {
     if (activeCategory === 'Todos') return []
     const subs = new Set<string>()
+
+    // Subcategorías desde el ERP para la categoría activa
+    if (erpCategories.length > 0) {
+      const activeParent = erpCategories.find(c =>
+        !c.parentId && matchesCategoryName(toCategoryTitleCase(c.nombre), activeCategory)
+      )
+      if (activeParent && Array.isArray(activeParent.hijos)) {
+        activeParent.hijos.forEach(h => {
+          subs.add(toCategoryTitleCase(h.nombre))
+        })
+      }
+    }
+
+    // Subcategorías de los productos que pertenecen a la categoría activa
     for (const p of products) {
-      if (p.categoria === activeCategory && p.subcategoria && p.subcategoria.trim()) {
+      if (matchesCategoryName(p.categoria, activeCategory) && p.subcategoria && p.subcategoria.trim()) {
         subs.add(p.subcategoria.trim())
       }
     }
+
     if (subs.size === 0) return []
     return ['Todos', ...Array.from(subs).sort((a, b) => a.localeCompare(b, 'es'))]
-  }, [products, activeCategory])
+  }, [erpCategories, products, activeCategory])
 
   useEffect(() => {
     if (activeCategory !== 'Todos' && availableCategories.length > 1 && !availableCategories.includes(activeCategory)) {
