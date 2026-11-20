@@ -56,17 +56,17 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
   function calculateTimeLeft(): TimeRemaining {
     const now = new Date()
     const target = new Date(now)
-    target.setDate(now.getDate() + 3)
+    target.setDate(now.getDate() + 11)
     target.setHours(23, 59, 59, 999)
 
-    const storedTarget = sessionStorage.getItem('babyworld_black_days_target_date')
+    const storedTarget = sessionStorage.getItem('babyworld_black_days_target_11d')
     let finalTargetTime: number
 
     if (storedTarget && !isNaN(Number(storedTarget))) {
       finalTargetTime = Number(storedTarget)
     } else {
       finalTargetTime = target.getTime()
-      sessionStorage.setItem('babyworld_black_days_target_date', finalTargetTime.toString())
+      sessionStorage.setItem('babyworld_black_days_target_11d', finalTargetTime.toString())
     }
 
     const difference = finalTargetTime - now.getTime()
@@ -180,19 +180,19 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
               <Clock size={13} className="text-amber-400 animate-pulse" />
               <span className="text-[10px] font-black uppercase text-amber-200 tracking-wider mr-1">Termina en:</span>
               <div className="flex items-center gap-1 font-mono text-xs font-black text-amber-300">
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.days)}d
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.hours)}h
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-slate-900 border border-slate-700/80 px-1 py-0.2 rounded text-amber-300 shadow-2xs">
+                <span className="bg-slate-900 border border-slate-700/80 min-w-[34px] px-1.5 py-0.5 rounded text-amber-300 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.minutes)}m
                 </span>
                 <span className="text-amber-400 font-bold">:</span>
-                <span className="bg-amber-400/20 border border-amber-400/60 px-1 py-0.2 rounded text-amber-200 shadow-2xs w-6 text-center">
+                <span className="bg-amber-400/20 border border-amber-400/60 min-w-[34px] px-1.5 py-0.5 rounded text-amber-200 shadow-2xs inline-flex items-center justify-center">
                   {formatDigits(timeLeft.seconds)}s
                 </span>
               </div>
@@ -275,22 +275,22 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
           </div>
 
           {/* Micro-franja inferior con Temporizador Compacto y WhatsApp Rápido */}
-          <div className="bg-black/90 px-3 py-1 flex items-center justify-between border-t border-white/10 text-[10px]">
+          <div className="bg-black/90 px-2.5 sm:px-3 py-1 flex items-center justify-between border-t border-white/10 text-[10px] flex-nowrap whitespace-nowrap overflow-x-auto no-scrollbar">
             {/* Reloj mini */}
-            <div className="flex items-center gap-1 font-mono font-bold text-amber-300">
-              <Clock size={11} className="text-amber-400" />
-              <span className="uppercase text-[9px] text-slate-400 font-extrabold">Termina en:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.days)}d</span>
+            <div className="flex items-center gap-1 font-mono font-bold text-amber-300 shrink-0">
+              <Clock size={11} className="text-amber-400 shrink-0" />
+              <span className="uppercase text-[9px] text-slate-400 font-extrabold hidden sm:inline">Termina en:</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.days)}d</span>
               <span>:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.hours)}h</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.hours)}h</span>
               <span>:</span>
-              <span className="bg-slate-800 px-1 py-0.2 rounded">{formatDigits(timeLeft.minutes)}m</span>
+              <span className="bg-slate-800 min-w-[26px] px-1.5 py-0.5 rounded text-center inline-flex items-center justify-center">{formatDigits(timeLeft.minutes)}m</span>
               <span>:</span>
-              <span className="bg-amber-400/20 text-amber-300 px-1 py-0.2 rounded font-black">{formatDigits(timeLeft.seconds)}s</span>
+              <span className="bg-amber-400/20 text-amber-300 min-w-[26px] px-1.5 py-0.5 rounded font-black text-center inline-flex items-center justify-center">{formatDigits(timeLeft.seconds)}s</span>
             </div>
 
             {/* Accesos rápidos móvil */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"

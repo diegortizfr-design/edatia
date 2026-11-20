@@ -322,7 +322,10 @@ export function App() {
 
   // Filter products by category, subcategory and search query (conectado 100% al ERP)
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Todos' || matchesCategoryName(p.categoria, activeCategory)
+    const isBlackDaysFilter = activeCategory.toLowerCase().includes('black')
+    const matchesCategory = isBlackDaysFilter
+      ? Boolean((p.precioAnterior && p.precioAnterior > p.precio) || p.categoria.toLowerCase().includes('juguet'))
+      : activeCategory === 'Todos' || matchesCategoryName(p.categoria, activeCategory)
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
       (p.subcategoria && matchesCategoryName(p.subcategoria, activeSubcategory))
@@ -500,10 +503,7 @@ export function App() {
 
   const handlePromoAction = () => {
     setIsPromoModalOpen(false)
-    const jugueteriaCat = availableCategories.find(c =>
-      matchesCategoryName(c, 'Juguetería') || matchesCategoryName(c, 'Jugueteria') || c.toLowerCase().includes('juguet')
-    ) || 'Juguetería'
-    handleCategorySelect(jugueteriaCat)
+    handleCategorySelect('🔥 Black Days')
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
@@ -533,7 +533,7 @@ export function App() {
       if (b === 'Otros') return -1
       return a.localeCompare(b, 'es')
     })
-    return ['Todos', ...sorted]
+    return ['Todos', '🔥 Black Days', ...sorted]
   }, [erpCategories, products])
 
   const availableSubcategories = useMemo(() => {
@@ -646,9 +646,11 @@ export function App() {
                   <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
                     {searchQuery
                       ? `Resultados para "${searchQuery}"`
-                      : activeCategory === 'Todos'
-                        ? 'Lo mejor para tu bebé'
-                        : activeCategory}
+                      : activeCategory.toLowerCase().includes('black')
+                        ? '🔥 Ofertas Oficiales Black Days'
+                        : activeCategory === 'Todos'
+                          ? 'Lo mejor para tu bebé'
+                          : activeCategory}
                   </h2>
                 </div>
 

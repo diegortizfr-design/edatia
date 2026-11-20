@@ -30,6 +30,7 @@ export function Navbar({
   const getCategoryIcon = (cat: string) => {
     const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     if (c === 'todos') return '✨'
+    if (c.includes('black') || c.includes('oferta')) return '🔥'
     if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) return '🍼'
     if (c.includes('calzado') || c.includes('zapato') || c.includes('tenis')) return '👟'
     if (c.includes('juguet') || c.includes('estimul')) return '🧸'
@@ -41,12 +42,14 @@ export function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
-      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos */}
+    <>
+      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos (Se muestra en la cima de la tienda) */}
       <BlackDaysTopBar onPromoClick={onPromoClick} />
 
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+      {/* Encabezado Fijo de Navegación (Sticky): Maximiza el espacio de productos en móvil al hacer scroll */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
+        {/* Main Bar */}
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-3">
           {/* Logo */}
           <div
@@ -123,6 +126,7 @@ export function Navbar({
         <div className="flex items-center gap-2 overflow-x-auto pb-2.5 pt-0.5 no-scrollbar scroll-smooth">
           {categories.map((cat) => {
             const isActive = activeCategory === cat
+            const isBlackDaysTab = cat.toLowerCase().includes('black')
             return (
               <button
                 key={cat}
@@ -131,10 +135,15 @@ export function Navbar({
                   const el = document.getElementById('catalogo-section')
                   if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${isActive
-                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10 scale-105'
-                    : 'bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${
+                  isBlackDaysTab
+                    ? isActive
+                      ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 font-black shadow-md scale-105 border border-amber-300'
+                      : 'bg-gradient-to-r from-slate-950 to-slate-900 text-amber-300 border border-amber-400/40 hover:border-amber-300 font-extrabold shadow-sm'
+                    : isActive
+                      ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10 scale-105'
+                      : 'bg-slate-50 border border-slate-100 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <span>{getCategoryIcon(cat)}</span>
                 <span>{cat}</span>
@@ -144,5 +153,6 @@ export function Navbar({
         </div>
       </div>
     </header>
+    </>
   )
 }
