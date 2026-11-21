@@ -3,7 +3,7 @@ import {
   Tag, Percent, TrendingUp, AlertTriangle, CheckCircle2,
   Save, Loader2, RefreshCw, Search, Filter, HelpCircle,
   ArrowRight, ShieldCheck, ArrowDown, Eye, Sliders,
-  ShoppingBag, Sparkles, Check, X
+  ShoppingBag, Sparkles, Check, X, Plus, Trash2, Package
 } from 'lucide-react'
 import api, { getMediaUrl } from '../../services/api'
 import toast from 'react-hot-toast'
@@ -75,7 +75,13 @@ export function GestionPrecios() {
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedCat, setSelectedCat] = useState<string>('todas')
-  const [filtroDescuento, setFiltroDescuento] = useState<'todos' | 'con_descuento' | 'sin_descuento'>('todos')
+  const [filtroDescuento, setFiltroDescuento] = useState<'todos' | 'con_descuento' | 'descuento_producto' | 'descuento_categoria' | 'sin_descuento'>('todos')
+
+  // Estado del modal de agregar descuento a producto
+  const [modalAgregarDctoOpen, setModalAgregarDctoOpen] = useState(false)
+  const [modalSearch, setModalSearch] = useState('')
+  const [modalSelectedProd, setModalSelectedProd] = useState<ProductoPreview | null>(null)
+  const [modalDctoPct, setModalDctoPct] = useState<number | string>(10)
 
   useEffect(() => {
     cargarDatos()
@@ -124,6 +130,61 @@ export function GestionPrecios() {
     }
   }
 
+  // Helper para asignar o modificar descuento a un producto individual
+  const handleSetDescuentoProducto = (productoId: number | string, valor: string | number | null | undefined) => {
+    const prodKey = String(productoId)
+    setReglas(prev => {
+      const nextProds = { ...(prev.descuentos?.productos || {}) }
+      if (valor === '' || valor === null || valor === undefined) {
+        delete nextProds[prodKey]
+      } else {
+        const num = Number(valor)
+        if (isNaN(num) || num < 0) {
+          delete nextProds[prodKey]
+        } else {
+          nextProds[prodKey] = Math.min(100, Math.max(0, num))
+        }
+      }
+      return {
+        ...prev,
+        descuentos: {
+          ...prev.descuentos,
+          productos: nextProds
+        }
+      }
+    })
+  }
+
+  // Helper para eliminar descuento de un producto individual (volver a heredar categoría o global)
+  const handleRemoveDescuentoProducto = (productoId: number | string) => {
+    const prodKey = String(productoId)
+    setReglas(prev => {
+      const nextProds = { ...(prev.descuentos?.productos || {}) }
+      delete nextProds[prodKey]
+      return {
+        ...prev,
+        descuentos: {
+          ...prev.descuentos,
+          productos: nextProds
+        }
+      }
+    })
+  }
+
+  // Helper para limpiar todos los descuentos individuales
+  const handleClearAllDescuentosProductos = () => {
+    if (window.confirm('¿Deseas eliminar todos los descuentos específicos por producto? Los productos volverán a heredar de su categoría o del descuento global.')) {
+      setReglas(prev => ({
+        ...prev,
+        descuentos: {
+          ...prev.descuentos,
+          productos: {}
+        }
+      }))
+      toast.success('Descuentos específicos por producto eliminados')
+    }
+  }
+
   // Helper de cálculo dinámico para previsualización inmediata en vivo
   const redondear = (val: number, modo: string) => {
     if (modo === 'CENTENA') return Math.round(val / 100) * 100
@@ -158,7 +219,7 @@ export function GestionPrecios() {
     let tieneDescuento = false
 
     if (reglas.descuentos.activo) {
-      if (reglas.descuentos.productos[prodId] !== undefined && reglas.descuentos.productos[prodId] !== null) {
+      if (reglas.descuentos.productos && reglas.descuentos.productos[prodId] !== undefined && reglas.descuentos.productos[prodId] !== null) {
         descuentoPct = Number(reglas.descuentos.productos[prodId])
       } else if (catId && reglas.descuentos.categorias[catId] !== undefined && reglas.descuentos.categorias[catId] !== null) {
         descuentoPct = Number(reglas.descuentos.categorias[catId])
@@ -191,6 +252,24 @@ export function GestionPrecios() {
     }
   }
 
+  // Lista de productos con descuento individual activo para el panel superior
+  const productosConDctoIndividual = useMemo(() => {
+    const prodsMap = new Map<string, ProductoPreview>()
+    productos.forEach(p => prodsMap.set(String(p.id), p))
+
+    const entries = Object.entries(reglas.descuentos?.productos || {})
+    return entries
+      .map(([prodId, pct]) => {
+        const prod = prodsMap.get(prodId)
+        return {
+          id: prodId,
+          producto: prod,
+          pct: Number(pct)
+        }
+      })
+      .filter((item): item is { id: string; producto: ProductoPreview; pct: number } => item.producto !== undefined)
+  }, [productos, reglas.descuentos.productos])
+
   // Filtrado de productos para la tabla
   const productosFiltrados = useMemo(() => {
     return productos.filter(p => {
@@ -203,9 +282,12 @@ export function GestionPrecios() {
       const matchesCat = selectedCat === 'todas' || String(p.categoriaId) === selectedCat
 
       const sim = calcularSimulacion(p)
+      const tieneDctoIndiv = reglas.descuentos.productos && reglas.descuentos.productos[String(p.id)] !== undefined
       const matchesDescuento =
         filtroDescuento === 'todos' ||
         (filtroDescuento === 'con_descuento' && sim.tieneDescuento) ||
+        (filtroDescuento === 'descuento_producto' && tieneDctoIndiv) ||
+        (filtroDescuento === 'descuento_categoria' && sim.tieneDescuento && !tieneDctoIndiv && String(p.categoriaId) in (reglas.descuentos.categorias || {})) ||
         (filtroDescuento === 'sin_descuento' && !sim.tieneDescuento)
 
       return matchesSearch && matchesCat && matchesDescuento
@@ -215,12 +297,16 @@ export function GestionPrecios() {
   const stats = useMemo(() => {
     let conRecargo = 0
     let conDescuento = 0
+    let conDctoProducto = 0
     let alertas = 0
 
     productos.forEach(p => {
       const s = calcularSimulacion(p)
       if (s.recargoPct > 0) conRecargo++
       if (s.tieneDescuento) conDescuento++
+      if (reglas.descuentos.productos && reglas.descuentos.productos[String(p.id)] !== undefined) {
+        conDctoProducto++
+      }
       if (s.alertaBajoCosto) alertas++
     })
 
@@ -228,9 +314,26 @@ export function GestionPrecios() {
       total: productos.length,
       conRecargo,
       conDescuento,
+      conDctoProducto,
       alertas
     }
   }, [productos, reglas])
+
+  // Lista de productos para el modal de agregar descuento
+  const modalProductosFiltrados = useMemo(() => {
+    const q = modalSearch.toLowerCase().trim()
+    return productos
+      .filter(p => {
+        if (!q) return true
+        return (
+          p.nombre.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q) ||
+          (p.referencia && p.referencia.toLowerCase().includes(q)) ||
+          p.categoriaNombre.toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 50)
+  }, [productos, modalSearch])
 
   const fmt = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`
 
@@ -246,7 +349,7 @@ export function GestionPrecios() {
             <div>
               <h1 className="text-xl font-bold text-slate-800">Gestión de Precios y Promociones Web</h1>
               <p className="text-slate-500 text-xs mt-0.5">
-                Configura recargos porcentuales para el canal digital y activa descuentos promocionales sobre el catálogo de tu tienda virtual.
+                Configura recargos porcentuales para el canal digital y activa descuentos globales, por categoría o por producto específico.
               </p>
             </div>
           </div>
@@ -276,7 +379,7 @@ export function GestionPrecios() {
       </div>
 
       {/* Métricas Resumen */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Publicados en Web</span>
           <p className="text-2xl font-black text-slate-800 mt-1">{stats.total}</p>
@@ -286,10 +389,17 @@ export function GestionPrecios() {
           <p className="text-2xl font-black text-indigo-600 mt-1">{stats.conRecargo}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Con Descuento / Oferta</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">En Descuento / Oferta</span>
           <p className="text-2xl font-black text-rose-600 mt-1">{stats.conDescuento}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-600">Oferta por Producto</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <p className="text-2xl font-black text-fuchsia-600">{stats.conDctoProducto}</p>
+            <span className="text-[10px] font-semibold text-slate-400">individuales</span>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-2 sm:col-span-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Alerta de Margen</span>
           <p className="text-2xl font-black text-amber-600 mt-1">{stats.alertas}</p>
         </div>
@@ -328,7 +438,7 @@ export function GestionPrecios() {
           <span>2. Descuentos y Promociones Web (Sale)</span>
           {reglas.descuentos.activo && (
             <span className="bg-rose-100 text-rose-700 text-[10px] px-2 py-0.5 rounded-full font-black">
-              Activo
+              {stats.conDctoProducto > 0 ? `${stats.conDctoProducto} por prod. • ` : ''}Activo
             </span>
           )}
         </button>
@@ -514,13 +624,15 @@ export function GestionPrecios() {
 
               <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-[11px] text-rose-800 space-y-1">
                 <span className="font-extrabold flex items-center gap-1">
-                  <Sparkles size={13} /> Regla de Descuentos:
+                  <Sparkles size={13} /> Jerarquía de Descuentos:
                 </span>
-                <p>
-                  El descuento se calcula <strong>SOBRE el precio de venta de la tienda virtual</strong> (con el recargo ya aplicado).
-                </p>
-                <p className="text-[10px] text-rose-600 font-medium">
-                  En la tienda virtual se mostrará el precio con recargo <strong>tachado</strong>, el badge <strong>-X%</strong> y el precio final de venta.
+                <ol className="list-decimal pl-4 space-y-0.5 text-[10px] text-rose-700">
+                  <li><strong>Por Producto:</strong> Prioridad máxima (oferta individual).</li>
+                  <li><strong>Por Categoría:</strong> Aplica a los productos de esa sección.</li>
+                  <li><strong>Global Tienda:</strong> Base general para todo el catálogo.</li>
+                </ol>
+                <p className="text-[10px] text-rose-600 font-medium pt-1">
+                  En la tienda virtual se mostrará el precio regular <strong>tachado</strong>, el badge <strong>-X%</strong> y el precio final de venta.
                 </p>
               </div>
 
@@ -545,23 +657,156 @@ export function GestionPrecios() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Úsalo para campañas de toda la web (ej: Black Friday 15%). Deja en 0 para aplicar solo por categorías o productos.
+                  Úsalo para campañas masivas (ej: Black Friday 15%). Deja en 0 para aplicar solo por categorías o productos específicos.
                 </p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Ofertas por producto:</span>
+                <span className="font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                  {productosConDctoIndividual.length} activos
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Descuentos por Categoría */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* Columna Derecha: Descuentos por Producto y por Categoría */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* 1. Descuentos Específicos por Producto */}
+            <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-sm space-y-4 ring-1 ring-rose-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-rose-100 text-rose-600 rounded-lg">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      Descuentos Específicos por Producto
+                      <span className="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {productosConDctoIndividual.length} en oferta
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Asigna porcentajes únicos a productos clave o escribe directamente en la tabla inferior.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {productosConDctoIndividual.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAllDescuentosProductos}
+                      className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                      title="Eliminar todas las ofertas individuales"
+                    >
+                      Limpiar todos
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalSearch('')
+                      setModalSelectedProd(null)
+                      setModalDctoPct(10)
+                      setModalAgregarDctoOpen(true)
+                    }}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-rose-200 transition active:scale-95 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>+ Agregar Producto en Oferta</span>
+                  </button>
+                </div>
+              </div>
+
+              {productosConDctoIndividual.length === 0 ? (
+                <div className="p-6 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200 space-y-2">
+                  <Package size={28} className="mx-auto text-slate-300" />
+                  <p className="text-xs font-bold text-slate-700">No hay productos con descuento específico aún</p>
+                  <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+                    Haz clic en <strong>+ Agregar Producto en Oferta</strong> o simplemente escribe el porcentaje deseado en la columna <strong>Descuento</strong> de cualquier fila de la tabla abajo.
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-[260px] overflow-y-auto divide-y divide-slate-100 pr-1">
+                  {productosConDctoIndividual.map(({ id, producto, pct }) => {
+                    const sim = calcularSimulacion(producto)
+                    const imgUrl = producto.imagen ? getMediaUrl(producto.imagen) : null
+
+                    return (
+                      <div key={id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/50 rounded-lg px-1 transition">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {imgUrl ? (
+                              <img src={imgUrl} alt={producto.nombre} className="w-full h-full object-cover" />
+                            ) : (
+                              <ShoppingBag size={15} className="text-slate-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 truncate max-w-[240px]" title={producto.nombre}>
+                              {producto.nombre}
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                              <span className="font-mono">{producto.sku}</span>
+                              <span>•</span>
+                              <span className="text-slate-500 font-medium">{producto.categoriaNombre}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          {/* Precio resultante */}
+                          <div className="text-right hidden sm:block">
+                            <span className="text-[10px] text-slate-400 line-through block leading-none">
+                              {fmt(sim.precioRegular)}
+                            </span>
+                            <span className="text-xs font-black text-rose-600 leading-tight">
+                              {fmt(sim.precioVenta)}
+                            </span>
+                          </div>
+
+                          {/* Input de porcentaje */}
+                          <div className="relative w-24">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              value={pct}
+                              onChange={(e) => handleSetDescuentoProducto(id, e.target.value)}
+                              className="w-full pl-2.5 pr-6 py-1 bg-rose-50/50 border border-rose-300 text-rose-700 font-black rounded-lg text-xs outline-none focus:ring-2 focus:ring-rose-200"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-rose-400 font-bold text-[10px]">%</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDescuentoProducto(id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            title="Quitar descuento a este producto"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Descuentos por Categoría */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Descuentos por Categoría</h3>
                 <p className="text-[11px] text-slate-400">
-                  Ingresa el porcentaje de descuento a aplicar para cada categoría (ej: 20% en Juguetería).
+                  Ingresa el porcentaje a aplicar a todos los productos de cada categoría (ej: 20% en Juguetería).
                 </p>
               </div>
 
-              <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100 pr-1">
+              <div className="max-h-[260px] overflow-y-auto divide-y divide-slate-100 pr-1">
                 {categorias.map(cat => {
                   const catKey = String(cat.id)
                   const valorActual = reglas.descuentos.categorias[catKey] ?? ''
@@ -625,7 +870,7 @@ export function GestionPrecios() {
                               })
                             }}
                             className="text-slate-400 hover:text-rose-500 text-xs p-1"
-                            title="Quitar descuento"
+                            title="Quitar descuento de categoría"
                           >
                             <X size={13} />
                           </button>
@@ -683,7 +928,9 @@ export function GestionPrecios() {
               className="py-1.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none"
             >
               <option value="todos">Todos los productos</option>
-              <option value="con_descuento">Solo en Oferta / Descuento</option>
+              <option value="con_descuento">En Oferta / Descuento (Cualquiera)</option>
+              <option value="descuento_producto">🎯 Solo con Oferta por Producto</option>
+              <option value="descuento_categoria">📁 Solo con Descuento por Categoría</option>
               <option value="sin_descuento">Sin Descuento</option>
             </select>
           </div>
@@ -699,7 +946,12 @@ export function GestionPrecios() {
                 <th className="py-3 px-3 text-right">Precio Base ERP</th>
                 <th className="py-3 px-3 text-center">Recargo Web</th>
                 <th className="py-3 px-3 text-right">Precio Regular Tienda</th>
-                <th className="py-3 px-3 text-center">Descuento</th>
+                <th className="py-3 px-3 text-center min-w-[150px]">
+                  <span className="flex items-center justify-center gap-1">
+                    <Percent size={11} className="text-rose-500" />
+                    <span>Descuento %</span>
+                  </span>
+                </th>
                 <th className="py-3 px-4 text-right">Precio a Cobrar (Web)</th>
                 <th className="py-3 px-4 text-center">Cómo se ve en la Tienda</th>
                 <th className="py-3 px-3 text-center">Margen / Estado</th>
@@ -723,6 +975,22 @@ export function GestionPrecios() {
                 productosFiltrados.map(p => {
                   const sim = calcularSimulacion(p)
                   const imgUrl = p.imagen ? getMediaUrl(p.imagen) : null
+                  const prodKey = String(p.id)
+                  const tieneDctoIndiv = reglas.descuentos.productos && reglas.descuentos.productos[prodKey] !== undefined
+                  const valorProdIndiv = tieneDctoIndiv ? reglas.descuentos.productos[prodKey] : ''
+
+                  // Herencia para el placeholder
+                  const catKey = p.categoriaId ? String(p.categoriaId) : null
+                  const tieneDctoCat = catKey && reglas.descuentos.categorias[catKey] !== undefined && Number(reglas.descuentos.categorias[catKey]) > 0
+                  const dctoCatValor = tieneDctoCat ? Number(reglas.descuentos.categorias[catKey]) : 0
+                  const tieneDctoGlobal = reglas.descuentos.global > 0
+
+                  let placeholderDcto = '0%'
+                  if (tieneDctoCat) {
+                    placeholderDcto = `${dctoCatValor}% (Cat)`
+                  } else if (tieneDctoGlobal) {
+                    placeholderDcto = `${reglas.descuentos.global}% (Global)`
+                  }
 
                   return (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
@@ -780,15 +1048,64 @@ export function GestionPrecios() {
                         <span className="font-bold text-slate-800">{fmt(sim.precioRegular)}</span>
                       </td>
 
-                      {/* Descuento */}
+                      {/* Descuento Editable Directo por Producto */}
                       <td className="py-3 px-3 text-center">
-                        {sim.tieneDescuento ? (
-                          <span className="bg-rose-50 border border-rose-200 text-rose-700 font-black text-[10px] px-2 py-0.5 rounded-full">
-                            -{sim.descuentoPct}%
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 text-[10px]">—</span>
-                        )}
+                        <div className="inline-flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1">
+                            <div className="relative w-24">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.5"
+                                value={valorProdIndiv}
+                                onChange={(e) => handleSetDescuentoProducto(p.id, e.target.value)}
+                                placeholder={placeholderDcto}
+                                title={
+                                  tieneDctoIndiv
+                                    ? `Descuento individual activo (${valorProdIndiv}%). Haz clic en la X para volver a heredar.`
+                                    : `Hereda descuento: ${placeholderDcto}. Escribe un porcentaje aquí para darle un descuento específico a este producto.`
+                                }
+                                className={`w-full pl-2 pr-5 py-1 text-xs font-black rounded-lg border outline-none transition-all ${
+                                  tieneDctoIndiv
+                                    ? Number(valorProdIndiv) === 0
+                                      ? 'border-amber-400 bg-amber-50 text-amber-800 focus:ring-2 focus:ring-amber-200'
+                                      : 'border-rose-400 bg-rose-50 text-rose-700 focus:ring-2 focus:ring-rose-200 shadow-sm'
+                                    : 'border-slate-200 bg-slate-50/70 text-slate-700 focus:bg-white focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder:text-slate-400 placeholder:font-normal'
+                                }`}
+                              />
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">%</span>
+                            </div>
+
+                            {tieneDctoIndiv && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDescuentoProducto(p.id)}
+                                className="text-slate-400 hover:text-rose-600 p-1 hover:bg-rose-50 rounded transition cursor-pointer"
+                                title="Quitar descuento individual y volver a heredar"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Origen del Descuento */}
+                          {tieneDctoIndiv ? (
+                            Number(valorProdIndiv) === 0 ? (
+                              <span className="text-[9px] font-bold text-amber-700 bg-amber-100/70 px-1.5 py-0.2 rounded">
+                                Excluido de promo
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-rose-700 bg-rose-100/70 px-1.5 py-0.2 rounded flex items-center gap-0.5">
+                                <Sparkles size={8} /> Individual
+                              </span>
+                            )
+                          ) : sim.tieneDescuento ? (
+                            <span className="text-[9px] font-semibold text-slate-400">
+                              {tieneDctoCat ? 'De categoría' : 'De tienda'}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
 
                       {/* Precio Final Venta */}
@@ -844,6 +1161,177 @@ export function GestionPrecios() {
           </table>
         </div>
       </div>
+
+      {/* Modal: Agregar Descuento Específico a un Producto */}
+      {modalAgregarDctoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-rose-100 text-rose-600 rounded-lg">
+                  <Percent size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Agregar Descuento Específico a Producto</h3>
+                  <p className="text-[11px] text-slate-400">Selecciona el producto y define el porcentaje de oferta.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalAgregarDctoOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4">
+              {/* Buscador de producto */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  1. Buscar Producto en Catálogo
+                </label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    placeholder="Escribe nombre, SKU, referencia..."
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Lista de productos para seleccionar */}
+              <div className="max-h-48 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-100 bg-slate-50/30">
+                {modalProductosFiltrados.length === 0 ? (
+                  <p className="p-4 text-center text-xs text-slate-400">No se encontraron productos coincidentes.</p>
+                ) : (
+                  modalProductosFiltrados.map(p => {
+                    const isSelected = modalSelectedProd?.id === p.id
+                    const tieneDctoYa = reglas.descuentos.productos && reglas.descuentos.productos[String(p.id)] !== undefined
+                    const imgUrl = p.imagen ? getMediaUrl(p.imagen) : null
+
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setModalSelectedProd(p)
+                          if (tieneDctoYa) {
+                            setModalDctoPct(reglas.descuentos.productos[String(p.id)])
+                          }
+                        }}
+                        className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition ${
+                          isSelected ? 'bg-rose-50/80 border-l-4 border-rose-500' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {imgUrl ? (
+                              <img src={imgUrl} alt={p.nombre} className="w-full h-full object-cover" />
+                            ) : (
+                              <ShoppingBag size={14} className="text-slate-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 truncate max-w-[260px]">{p.nombre}</p>
+                            <span className="text-[10px] text-slate-400 font-mono">SKU: {p.sku} • {p.categoriaNombre}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-bold text-slate-700">{fmt(p.precioBase)}</span>
+                          {tieneDctoYa && (
+                            <span className="block text-[9px] font-bold text-rose-600 bg-rose-100/60 px-1 rounded">
+                              Activo: -{reglas.descuentos.productos[String(p.id)]}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+
+              {/* Configuración de Porcentaje */}
+              {modalSelectedProd && (
+                <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-xl space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-900">
+                      2. Porcentaje de Descuento para "{modalSelectedProd.nombre}"
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={modalDctoPct}
+                        onChange={(e) => setModalDctoPct(e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 bg-white border border-rose-300 text-rose-800 font-black rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-200"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-rose-400 font-bold text-xs">%</span>
+                    </div>
+
+                    {/* Previsualización rápida */}
+                    {(() => {
+                      const base = modalSelectedProd.precioWebManual || modalSelectedProd.precioBase
+                      const recargo = reglas.recargos.activo ? Number(reglas.recargos.global || 0) : 0
+                      const regular = redondear(base * (1 + recargo / 100), reglas.recargos.redondeo)
+                      const pct = Number(modalDctoPct) || 0
+                      const final = pct > 0 ? redondear(regular * (1 - pct / 100), reglas.recargos.redondeo) : regular
+
+                      return (
+                        <div className="text-xs space-y-0.5">
+                          <div className="text-slate-400 text-[11px]">
+                            Regular: <span className="line-through">{fmt(regular)}</span>
+                          </div>
+                          <div className="font-black text-rose-600 text-sm">
+                            Venta: {fmt(final)} <span className="text-[10px] text-rose-400">(-{pct}%)</span>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setModalAgregarDctoOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!modalSelectedProd}
+                onClick={() => {
+                  if (modalSelectedProd) {
+                    handleSetDescuentoProducto(modalSelectedProd.id, modalDctoPct)
+                    toast.success(`Descuento de ${modalDctoPct}% asignado a ${modalSelectedProd.nombre}`)
+                    setModalAgregarDctoOpen(false)
+                  }
+                }}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-rose-200 cursor-pointer"
+              >
+                <Check size={14} />
+                <span>Aplicar Descuento</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
