@@ -21,6 +21,7 @@ import { ProductSkeleton } from './components/ProductSkeleton'
 import { BnplInfoModal } from './components/BnplInfoModal'
 import { StoreLocationModal } from './components/StoreLocationModal'
 import { PromoAnnouncementModal } from './components/PromoAnnouncementModal'
+import { CategoriesDrawerModal } from './components/CategoriesDrawerModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
@@ -74,6 +75,7 @@ export function App() {
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
+  const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false)
 
   // Mostrar modal de anuncio Black Days al abrir la tienda (1 vez por sesión)
   useEffect(() => {
@@ -585,6 +587,7 @@ export function App() {
         categories={availableCategories}
         onOpenLocation={() => setIsLocationModalOpen(true)}
         onPromoClick={handlePromoAction}
+        onOpenCategories={() => setIsCategoriesModalOpen(true)}
       />
 
       {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
@@ -761,9 +764,18 @@ export function App() {
 
             {/* Quick Categories (Dinámico desde el ERP) */}
             <div className="space-y-2.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                Categorías Principales
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Categorías Principales
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoriesModalOpen(true)}
+                  className="text-[11px] font-bold text-sky-600 hover:text-sky-700 hover:underline"
+                >
+                  Ver todas →
+                </button>
+              </div>
               <ul className="space-y-2 text-xs text-slate-500 font-medium">
                 {availableCategories.filter(c => c !== 'Todos').slice(0, 6).map(cat => (
                   <li key={cat}>
@@ -893,6 +905,7 @@ export function App() {
         <MobileBottomNav
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}
+          onOpenCategoriesModal={() => setIsCategoriesModalOpen(true)}
           quickCategories={availableCategories.filter(c => c !== 'Todos')}
           cartCount={totalCartCount}
           onOpenCart={() => setIsCartOpen(true)}
@@ -941,6 +954,23 @@ export function App() {
         isOpen={isPromoModalOpen}
         onClose={() => setIsPromoModalOpen(false)}
         onAction={handlePromoAction}
+      />
+
+      {/* Modal / Drawer Maestro de Categorías & Departamentos */}
+      <CategoriesDrawerModal
+        isOpen={isCategoriesModalOpen}
+        onClose={() => setIsCategoriesModalOpen(false)}
+        categories={availableCategories}
+        erpCategories={erpCategories}
+        products={products}
+        activeCategory={activeCategory}
+        activeSubcategory={activeSubcategory}
+        onSelectCategory={(category, subcategory) => {
+          handleCategorySelect(category)
+          if (subcategory) {
+            setActiveSubcategory(subcategory)
+          }
+        }}
       />
     </div>
   )
