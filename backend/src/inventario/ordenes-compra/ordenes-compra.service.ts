@@ -448,13 +448,20 @@ export class OrdenesCompraService {
 
     return this.prisma.$transaction(async (tx: any) => {
       let numeroRec: string;
+      let docConfig = null;
       if (dto.documentoConfigId) {
-        const docConfig = await tx.documentoConfig.findFirst({
+        docConfig = await tx.documentoConfig.findFirst({
           where: { id: dto.documentoConfigId, empresaId, sigla: 'RP' },
         });
-        if (!docConfig) {
-          throw new NotFoundException('Resolución de documento de recepción de mercancía no encontrada');
-        }
+      }
+      if (!docConfig) {
+        docConfig = await tx.documentoConfig.findFirst({
+          where: { empresaId, sigla: 'RP', estado: 'ACTIVO' },
+          orderBy: { id: 'asc' },
+        });
+      }
+
+      if (docConfig) {
         numeroRec = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
         await tx.documentoConfig.update({
           where: { id: docConfig.id },
@@ -476,8 +483,9 @@ export class OrdenesCompraService {
         data: {
           numero: numeroRec,
           empresaId,
-          documentoConfigId: dto.documentoConfigId,
+          documentoConfigId: docConfig ? docConfig.id : dto.documentoConfigId,
           ordenCompraId: id,
+          bodegaId: oc.bodegaId ?? undefined,
           usuarioId,
           notas: dto.notas,
           inventarioAfectado,

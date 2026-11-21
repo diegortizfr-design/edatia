@@ -805,22 +805,25 @@ export class FacturasCompraService implements OnModuleInit {
       const year = new Date().getFullYear();
       let numeroRec: string;
 
+      let docConfig = null;
       if (dto.documentoConfigId) {
-        const docConfig = await tx.documentoConfig.findFirst({
+        docConfig = await tx.documentoConfig.findFirst({
           where: { id: dto.documentoConfigId, empresaId, sigla: 'RP' },
         });
-        if (docConfig) {
-          numeroRec = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
-          await tx.documentoConfig.update({
-            where: { id: docConfig.id },
-            data: { consecutivoSiguiente: { increment: 1 } },
-          });
-        } else {
-          const recCount = await tx.recepcionMercancia.count({
-            where: { empresaId, numero: { startsWith: `RP-${year}-` } },
-          });
-          numeroRec = `RP-${year}-${String(recCount + 1).padStart(5, '0')}`;
-        }
+      }
+      if (!docConfig) {
+        docConfig = await tx.documentoConfig.findFirst({
+          where: { empresaId, sigla: 'RP', estado: 'ACTIVO' },
+          orderBy: { id: 'asc' },
+        });
+      }
+
+      if (docConfig) {
+        numeroRec = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        await tx.documentoConfig.update({
+          where: { id: docConfig.id },
+          data: { consecutivoSiguiente: { increment: 1 } },
+        });
       } else {
         const recCount = await tx.recepcionMercancia.count({
           where: { empresaId, numero: { startsWith: `RP-${year}-` } },
@@ -836,7 +839,7 @@ export class FacturasCompraService implements OnModuleInit {
           facturaCompraId,
           ordenCompraId: fc.ordenCompraId ?? undefined,
           bodegaId: dto.bodegaId,
-          documentoConfigId: dto.documentoConfigId,
+          documentoConfigId: docConfig ? docConfig.id : dto.documentoConfigId,
           usuarioId,
           notas: dto.notas || `Recepción física por FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}`,
           inventarioAfectado: true,
@@ -955,7 +958,10 @@ export class FacturasCompraService implements OnModuleInit {
 
       await tx.facturaCompra.update({
         where: { id: facturaCompraId },
-        data: { estadoRecepcion },
+        data: {
+          estadoRecepcion,
+          recepcionId: numeroRec,
+        },
       });
 
       return recepcion;
@@ -967,7 +973,7 @@ export class FacturasCompraService implements OnModuleInit {
       where: { empresaId },
       include: {
         facturaCompra: { select: { id: true, numero: true, consecutivoProveedor: true, proveedor: { select: { nombre: true } } } },
-        ordenCompra: { select: { id: true, numero: true } },
+        ordenCompra: { select: { id: true, numero: true, proveedor: { select: { nombre: true } }, bodega: { select: { id: true, nombre: true, codigo: true } } } },
         bodega: { select: { id: true, nombre: true, codigo: true } },
         items: { include: { producto: { select: { id: true, nombre: true, sku: true } } } },
       },

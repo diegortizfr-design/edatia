@@ -80,6 +80,12 @@ export function Compras() {
   )
 
   useEffect(() => {
+    if (documentosFiltradosRP.length > 0 && !documentoConfigId) {
+      setDocumentoConfigId(String(documentosFiltradosRP[0].id))
+    }
+  }, [documentosFiltradosRP, selectedFcForRecepcion])
+
+  useEffect(() => {
     if (bodegas.length > 0 && !bodegaDestinoId) {
       const principal = bodegas.find((b: any) => b.esPrincipal) || bodegas[0]
       if (principal) setBodegaDestinoId(String(principal.id))
@@ -168,17 +174,11 @@ export function Compras() {
     queryFn: () => getFacturasCompra(),
   })
 
-  // 3. Consolidated Recepciones de Producto (RP) from OCs
-  const recepcionesConsolidadas = ocs.flatMap((oc: any) => 
-    (oc.recepciones || []).map((rec: any) => ({
-      ...rec,
-      ocId: oc.id,
-      ocNumero: oc.numero,
-      proveedorNombre: oc.proveedor?.nombre,
-      bodegaNombre: oc.bodega?.nombre,
-      totalArticulos: rec.items?.reduce((sum: number, item: any) => sum + Number(item.cantidadRecibida), 0) || 0
-    }))
-  ).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+  // 3. Recepciones de Producto (RP) from backend (unificadas: desde FC o desde OC)
+  const { data: recepciones = [], isLoading: cargandoRP } = useQuery({
+    queryKey: ['recepciones-producto'],
+    queryFn: () => getRecepcionesProducto(),
+  })
 
   return (
     <div className="space-y-6">
@@ -215,7 +215,7 @@ export function Compras() {
         {(
           [['oc', 'Órdenes de Compra (OC)', ocs.length], 
            ['fc', 'Facturas de Compra (FC)', fcs.length], 
-           ['rp', 'Recepciones de Producto (RP)', recepcionesConsolidadas.length]
+           ['rp', 'Recepciones de Producto (RP)', recepciones.length]
           ] as [typeof activeTab, string, number][]
         ).map(([tab, label, count]) => (
           <button
@@ -498,7 +498,12 @@ export function Compras() {
       {/* TAB 3: Recepciones de Producto (RP) */}
       {activeTab === 'rp' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          {recepcionesConsolidadas.length === 0 ? (
+          {cargandoRP ? (
+            <div className="text-center py-16">
+              <Package size={40} className="animate-pulse mx-auto text-indigo-400 mb-3" />
+              <p className="text-slate-400 text-sm">Cargando recepciones de producto...</p>
+            </div>
+          ) : recepciones.length === 0 ? (
             <div className="text-center py-16">
               <Package size={40} className="mx-auto text-slate-300 mb-3" />
               <p className="text-slate-400 text-sm">No se han registrado recepciones físicas de producto aún.</p>
@@ -509,7 +514,7 @@ export function Compras() {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                     <th className="text-left px-6 py-4">N° Recepción (RP)</th>
-                    <th className="text-left px-6 py-4">Factura de Compra</th>
+                    <th className="text-left px-6 py-4">Factura de Compra / Origen</th>
                     <th className="text-left px-6 py-4">Proveedor</th>
                     <th className="text-left px-6 py-4 hidden md:table-cell">Bodega Destino</th>
                     <th className="text-center px-6 py-4">Ítems Recibidos</th>
@@ -518,45 +523,61 @@ export function Compras() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {recepcionesConsolidadas.map((rec: any) => (
-                    <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                        <Link 
-                          to={`/inventario/movimientos?ver=${rec.numero}`}
-                          className="text-indigo-600 hover:text-indigo-850 hover:underline"
-                        >
-                          {rec.numero}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-700">
-                        {rec.facturaCompra ? (
-                          <span>{rec.facturaCompra.numero} (N° {rec.facturaCompra.consecutivoProveedor})</span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-800">
-                        {rec.facturaCompra?.proveedor?.nombre || rec.proveedorNombre || 'Proveedor'}
-                      </td>
-                      <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">
-                        <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
-                          <Building2 size={12} className="text-indigo-600" />
-                          {rec.bodega?.nombre || rec.bodegaNombre || 'Bodega Principal'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center font-bold text-slate-700">
-                        {rec.items?.reduce((sum: number, it: any) => sum + Number(it.cantidadRecibida), 0) || 0} und
-                      </td>
-                      <td className="px-6 py-4 hidden lg:table-cell text-slate-400 font-medium">
-                        {new Date(rec.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link to={`/inventario/movimientos?ver=${rec.numero}`} className="inline-flex items-center gap-1 text-indigo-600 hover:underline font-semibold">
-                          Ver en Kardex <ArrowUpRight size={12} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {recepciones.map((rec: any) => {
+                    const totalItems = rec.items?.reduce((sum: number, it: any) => sum + Number(it.cantidadRecibida || 0), 0) || 0
+                    const provNombre = rec.facturaCompra?.proveedor?.nombre || rec.ordenCompra?.proveedor?.nombre || rec.proveedorNombre || 'Proveedor'
+                    const bodegaNombre = rec.bodega?.nombre || rec.ordenCompra?.bodega?.nombre || rec.bodegaNombre || 'Bodega Principal'
+                    const fechaStr = rec.fecha || rec.createdAt
+
+                    return (
+                      <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                          <Link 
+                            to={`/inventario/movimientos?ver=${rec.numero}`}
+                            className="text-indigo-600 hover:text-indigo-850 hover:underline"
+                          >
+                            {rec.numero}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 font-mono font-semibold text-slate-700">
+                          {rec.facturaCompra ? (
+                            <Link 
+                              to={`/inventario/movimientos?ver=${rec.facturaCompra.numero}`}
+                              className="text-indigo-600 hover:underline block"
+                            >
+                              {rec.facturaCompra.numero} {rec.facturaCompra.consecutivoProveedor ? `(Prov: ${rec.facturaCompra.consecutivoProveedor})` : ''}
+                            </Link>
+                          ) : rec.ordenCompra ? (
+                            <span className="text-slate-500 font-sans">
+                              OC: <Link to={`/inventario/ordenes-compra/${rec.ordenCompra.id}`} className="text-indigo-600 hover:underline font-mono">{rec.ordenCompra.numero}</Link>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-sans">— Directa</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-800">
+                          {provNombre}
+                        </td>
+                        <td className="px-6 py-4 hidden md:table-cell text-slate-500 font-medium">
+                          <span className="inline-flex items-center gap-1 text-slate-700 font-bold">
+                            <Building2 size={12} className="text-indigo-600" />
+                            {bodegaNombre}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center font-bold text-slate-700">
+                          {totalItems} und
+                        </td>
+                        <td className="px-6 py-4 hidden lg:table-cell text-slate-400 font-medium">
+                          {fechaStr ? new Date(fechaStr).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Link to={`/inventario/movimientos?ver=${rec.numero}`} className="inline-flex items-center gap-1 text-indigo-600 hover:underline font-semibold">
+                            Ver en Kardex <ArrowUpRight size={12} />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
