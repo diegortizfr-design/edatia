@@ -1,9 +1,10 @@
 import React from 'react'
-import { Home, ShoppingBag, Baby, Sparkles, Heart } from 'lucide-react'
+import { Home, ShoppingBag, Baby, Sparkles, Heart, Layers, Flame } from 'lucide-react'
 
 interface MobileBottomNavProps {
   activeCategory: string
   onSelectCategory: (category: string) => void
+  onOpenCategoriesModal?: () => void
   quickCategories?: string[]
   cartCount: number
   onOpenCart: () => void
@@ -13,15 +14,19 @@ interface MobileBottomNavProps {
 export function MobileBottomNav({
   activeCategory,
   onSelectCategory,
+  onOpenCategoriesModal,
   quickCategories = [],
   cartCount,
   onOpenCart,
 }: MobileBottomNavProps) {
-  const visibleCats = quickCategories.slice(0, 3)
+  const visibleCats = quickCategories.slice(0, 2)
 
   const renderCategoryIcon = (cat: string, isActive: boolean) => {
     const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     const strokeClass = isActive ? 'stroke-[2.5]' : 'stroke-2'
+    if (c.includes('black') || c.includes('oferta')) {
+      return <Flame size={20} className={isActive ? 'text-amber-500 fill-amber-400' : 'text-slate-500'} />
+    }
     if (c.includes('panal') || c.includes('cuidado') || c.includes('aseo') || c.includes('aliment')) {
       return <Baby size={20} className={strokeClass} />
     }
@@ -50,10 +55,26 @@ export function MobileBottomNav({
           <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-full px-1">Inicio</span>
         </button>
 
-        {/* Categorías dinámicas del ERP */}
+        {/* 2. Botón Maestro: Categorías (Abre el Drawer con todo el catálogo) */}
+        {onOpenCategoriesModal && (
+          <button
+            onClick={onOpenCategoriesModal}
+            className="flex flex-col items-center justify-center flex-1 min-w-0 py-1 rounded-xl transition-all text-slate-500 hover:text-sky-600"
+            title="Ver todas las categorías"
+          >
+            <div className="p-1 rounded-full transition-transform active:scale-90 hover:bg-sky-50">
+              <Layers size={20} className="stroke-2 text-sky-600" />
+            </div>
+            <span className="text-[10px] font-bold text-sky-700 tracking-tight mt-0.5 truncate max-w-full px-1">
+              Secciones
+            </span>
+          </button>
+        )}
+
+        {/* 3. Categorías dinámicas o destacadas */}
         {visibleCats.map((cat) => {
           const isActive = activeCategory === cat
-          const shortLabel = cat.split(/\s+y\s+|\s*\/\s*/i)[0].trim()
+          const shortLabel = cat.split(/\s+y\s+|\s*\/\s*/i)[0].replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '').trim()
           return (
             <button
               key={cat}
@@ -77,7 +98,7 @@ export function MobileBottomNav({
           )
         })}
 
-        {/* Bolsa / Carrito */}
+        {/* 4. Bolsa / Carrito */}
         <button
           onClick={onOpenCart}
           className="flex flex-col items-center justify-center flex-1 min-w-0 py-1 text-slate-700 relative active:scale-90 transition-transform"
