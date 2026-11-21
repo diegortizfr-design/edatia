@@ -351,7 +351,7 @@ export function CheckoutModal({
     method = paymentMethod,
     items = (activeCartItems.length > 0 ? activeCartItems : cartItems)
   ) => {
-    let msg = `🍼 *PEDIDO BABY-WORLD - ORDEN #${ordNum}*\n\n`
+    let msg = `*PEDIDO BABY-WORLD - ORDEN #${ordNum}*\n\n`
     msg += `*Cliente:* ${formData.nombre}\n`
     msg += `*Teléfono:* ${formData.telefono}\n`
     msg += `*Dirección:* ${formData.direccion}, ${effectiveCity}\n`
@@ -364,7 +364,7 @@ export function CheckoutModal({
     msg += `\n*Subtotal:* ${fmtPrice(subTot)}`
     msg += `\n*Impuesto (IVA):* ${fmtPrice(taxVal)}`
     if (isLocal) {
-      msg += `\n*Envío:* ${shipVal === 0 ? 'Gratis 🎉 (Domicilio Local)' : `${fmtPrice(shipVal)} (Domicilio Local)`}`
+      msg += `\n*Envío:* ${shipVal === 0 ? 'Gratis (Domicilio Local)' : `${fmtPrice(shipVal)} (Domicilio Local)`}`
     } else {
       msg += `\n*Envío:* Flete al Cobro por Transportadora (lo pagas al recibir)`
     }
@@ -372,18 +372,18 @@ export function CheckoutModal({
 
     if (method === 'transferencia') {
       if (isLocal) {
-        msg += `\n\n📌 *Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
+        msg += `\n\n*Nota:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Adjunto comprobante a continuación.`
       } else {
-        msg += `\n\n📦 *Despacho Nacional:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Por favor compártanme la guía de la transportadora cuando el pedido sea despachado.`
+        msg += `\n\n*Despacho Nacional:* Voy a transferir mediante *Bre-B (Llave: @eip656 / QR)*. Por favor compártanme la guía de la transportadora cuando el pedido sea despachado.`
       }
     } else if (method === 'mercadopago') {
-      msg += `\n\n💳 *Nota:* Seleccioné pago online con Mercado Pago para la orden #${ordNum}.`
+      msg += `\n\n*Nota:* Seleccioné pago online con Mercado Pago para la orden #${ordNum}.`
     } else if (method === 'credito') {
-      msg += `\n\n💳 *Financiación a Crédito con ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}:*\n`
+      msg += `\n\n*Financiación a Crédito con ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'}:*\n`
       if (cedulaCredito.trim()) msg += `*Cédula del titular:* ${cedulaCredito.trim()}\n`
       msg += `Solicito el enlace de pago oficial de ${creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'} para confirmar mi crédito y procesar la orden #${ordNum}. ¡Muchas gracias!`
     } else {
-      msg += `\n\n💵 *Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
+      msg += `\n\n*Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
     }
 
     return `https://api.whatsapp.com/send?phone=573136546975&text=${encodeURIComponent(msg)}`

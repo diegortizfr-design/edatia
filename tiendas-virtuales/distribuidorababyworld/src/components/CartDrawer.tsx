@@ -61,7 +61,7 @@ export function CartDrawer({
 
   // Generate formatted WhatsApp Order Text
   const handleWhatsAppOrder = () => {
-    let message = `🍼 *NUEVO PEDIDO - BABY-WORLD*\n\n`
+    let message = `*NUEVO PEDIDO - BABY-WORLD*\n\n`
     message += `¡Hola! Deseo ordenar los siguientes productos:\n\n`
     items.forEach((it) => {
       const varSuffix = it.variante ? ` [${it.variante.nombre}]` : ''
@@ -69,8 +69,8 @@ export function CartDrawer({
     })
     message += `\n*Subtotal:* ${fmtPrice(baseSubtotal)}`
     message += `\n*Impuesto (IVA):* ${fmtPrice(totalImpuesto)}`
-    message += `\n💰 *Total Productos:* ${fmtPrice(subtotal)}\n`
-    message += `\n📍 Por favor indíquenme disponibilidad para coordinar el envío. ¡Gracias!`
+    message += `\n*Total Productos:* ${fmtPrice(subtotal)}\n`
+    message += `\nPor favor indíquenme disponibilidad para coordinar el envío. ¡Gracias!`
 
     const encoded = encodeURIComponent(message)
     window.open(`https://api.whatsapp.com/send?phone=573136546975&text=${encoded}`, '_blank')

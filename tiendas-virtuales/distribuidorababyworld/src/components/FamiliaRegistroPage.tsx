@@ -353,7 +353,7 @@ export function FamiliaRegistroPage({
               </button>
               <a
                 href={`https://wa.me/573136546975?text=${encodeURIComponent(
-                  `Hola Baby-World 👋 Acabo de registrarme en la Familia Baby World con mi nombre ${successData.nombre} (ID: ${successData.identificacion}). ¡Quiero conocer los beneficios!`
+                  `Hola Baby-World! Acabo de registrarme en la Familia Baby World con mi nombre ${successData.nombre} (ID: ${successData.identificacion}). ¡Quiero conocer los beneficios!`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
