@@ -73,7 +73,7 @@ export function CartDrawer({
     message += `\n📍 Por favor indíquenme disponibilidad para coordinar el envío. ¡Gracias!`
 
     const encoded = encodeURIComponent(message)
-    window.open(`https://api.whatsapp.com/send?phone=573023863380&text=${encoded}`, '_blank')
+    window.open(`https://api.whatsapp.com/send?phone=573136546975&text=${encoded}`, '_blank')
   }
 
   return (

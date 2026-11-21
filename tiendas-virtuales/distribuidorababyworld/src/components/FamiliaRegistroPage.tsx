@@ -352,7 +352,7 @@ export function FamiliaRegistroPage({
                 🛍️ Ir a ver el Catálogo
               </button>
               <a
-                href={`https://wa.me/573023863380?text=${encodeURIComponent(
+                href={`https://wa.me/573136546975?text=${encodeURIComponent(
                   `Hola Baby-World 👋 Acabo de registrarme en la Familia Baby World con mi nombre ${successData.nombre} (ID: ${successData.identificacion}). ¡Quiero conocer los beneficios!`
                 )}`}
                 target="_blank"
@@ -900,7 +900,7 @@ export function FamiliaRegistroPage({
                 Tus datos serán utilizados exclusivamente para gestionar beneficios del club, promociones, obsequios o descuentos por tu cumpleaños, facturación electrónica cuando realices compras y agilizar el despacho de tus pedidos.
               </p>
               <p>
-                Los beneficios y promociones de cumpleaños están sujetos a vigencia, disponibilidad y verificación de documento de identidad en tienda física o virtual. Puedes solicitar la actualización o eliminación de tus datos en cualquier momento escribiéndonos al WhatsApp +57 302 386 3380.
+                Los beneficios y promociones de cumpleaños están sujetos a vigencia, disponibilidad y verificación de documento de identidad en tienda física o virtual. Puedes solicitar la actualización o eliminación de tus datos en cualquier momento escribiéndonos al WhatsApp +57 313 654 6975.
               </p>
             </div>
             <button

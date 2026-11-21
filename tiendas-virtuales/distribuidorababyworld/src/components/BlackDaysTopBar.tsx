@@ -242,7 +242,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
 
             {/* Asesoría WhatsApp */}
             <a
-              href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
+              href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/50 hover:border-[#25D366] px-2.5 py-1 rounded-full font-extrabold text-xs transition-all shadow-xs hover:shadow-emerald-500/30 active:scale-95 shrink-0"
@@ -310,7 +310,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
                 <TikTokIcon size={12} chromatic={true} />
               </a>
               <a
-                href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
+                href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full text-[10px]"

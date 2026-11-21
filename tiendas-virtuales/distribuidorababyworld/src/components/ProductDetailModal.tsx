@@ -367,7 +367,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
               )}
 
               <a
-                href={`https://wa.me/573023863380?text=${whatsappMessage}`}
+                href={`https://wa.me/573136546975?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`p-3 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs font-bold ${

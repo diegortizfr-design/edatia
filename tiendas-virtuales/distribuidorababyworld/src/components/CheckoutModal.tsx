@@ -386,7 +386,7 @@ export function CheckoutModal({
       msg += `\n\n💵 *Nota:* Pagaré contra entrega en efectivo al recibir en mi dirección.`
     }
 
-    return `https://api.whatsapp.com/send?phone=573023863380&text=${encodeURIComponent(msg)}`
+    return `https://api.whatsapp.com/send?phone=573136546975&text=${encodeURIComponent(msg)}`
   }
 
   const handleFinish = () => {

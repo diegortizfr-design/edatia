@@ -576,7 +576,7 @@ export function ProductDetailPage({
 
                 {/* Direct WhatsApp Ordering */}
                 <a
-                  href={`https://wa.me/573023863380?text=${whatsappMessage}`}
+                  href={`https://wa.me/573136546975?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`w-full py-3.5 px-4 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${

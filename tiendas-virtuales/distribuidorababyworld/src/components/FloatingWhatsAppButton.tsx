@@ -8,7 +8,7 @@ interface FloatingWhatsAppButtonProps {
 }
 
 export function FloatingWhatsAppButton({
-  phone = '573023863380',
+  phone = '573136546975',
   defaultMessage = '¡Hola Baby World! 👋 Deseo asesoría sobre productos, tallas o realizar un pedido.'
 }: FloatingWhatsAppButtonProps) {
   const [showTooltip, setShowTooltip] = useState(true)

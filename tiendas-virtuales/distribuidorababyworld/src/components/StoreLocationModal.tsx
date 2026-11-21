@@ -27,7 +27,7 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
   const address = 'Calle 21 con Cra 35 Oeste, Manzana 4 Casa 26, Poblado Campestre, Candelaria - Cali, Valle del Cauca'
   const googleMapsUrl = 'https://maps.app.goo.gl/yY63rsTFhMYcwv3k6'
   const wazeUrl = 'https://waze.com/ul?ll=3.4116568,-76.4553798&navigate=yes'
-  const whatsappUrl = 'https://wa.me/573023863380?text=Hola%20Baby%20World%20%F0%9F%91%8B,%20deseo%20saber%20c%C3%B3mo%20llegar%20a%20su%20tienda%20f%C3%ADsica%20en%20Poblado%20Campestre'
+  const whatsappUrl = 'https://wa.me/573136546975?text=Hola%20Baby%20World%20%F0%9F%91%8B,%20deseo%20saber%20c%C3%B3mo%20llegar%20a%20su%20tienda%20f%C3%ADsica%20en%20Poblado%20Campestre'
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(address)

@@ -827,13 +827,13 @@ export function App() {
 
               <div className="space-y-2 text-xs text-slate-500 pt-1">
                 <a
-                  href="https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
+                  href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20hacer%20un%20pedido"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-emerald-600 font-bold hover:underline"
                 >
                   <WhatsAppIcon size={16} />
-                  <span>+57 302 386 3380 (WhatsApp Directo)</span>
+                  <span>+57 313 654 6975 (WhatsApp Directo)</span>
                 </a>
                 <p className="flex items-center gap-2">
                   <Truck size={14} className="text-slate-400" />
@@ -886,7 +886,7 @@ export function App() {
       <FloatingSocialDock />
 
       {/* Floating WhatsApp Button (Oculto en la vista de formulario para no estorbar en móvil) */}
-      {!showFamiliaForm && <FloatingWhatsAppButton phone="573023863380" />}
+      {!showFamiliaForm && <FloatingWhatsAppButton phone="573136546975" />}
 
       {/* Sticky Mobile Bottom Navigation (Only visible on smartphones in catalog view) */}
       {!selectedProduct && !showFamiliaForm && (
@@ -896,7 +896,7 @@ export function App() {
           quickCategories={availableCategories.filter(c => c !== 'Todos')}
           cartCount={totalCartCount}
           onOpenCart={() => setIsCartOpen(true)}
-          onOpenWhatsApp={() => window.open('https://wa.me/573023863380?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
+          onOpenWhatsApp={() => window.open('https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20sobre%20un%20producto', '_blank')}
         />
       )}
 
