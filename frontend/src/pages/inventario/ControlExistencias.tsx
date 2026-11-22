@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react'
+import { useState, useMemo, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -23,6 +23,7 @@ export function ControlExistencias() {
   const [q, setQ] = useState('')
   const [bodegaSeleccionada, setBodegaSeleccionada] = useState<string>('todas')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas')
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<string>('todas')
   const [modalPlanilla, setModalPlanilla] = useState(false)
   const [mostrarStockSistema, setMostrarStockSistema] = useState(true)
   const [soloConStock, setSoloConStock] = useState(true)
@@ -100,6 +101,21 @@ export function ControlExistencias() {
     queryKey: ['categorias-existencias'],
     queryFn: getCategorias,
   })
+
+  const rootCategorias = useMemo(() => {
+    return (categorias as any[]).filter(c => !c.parentId && c.activo !== false)
+  }, [categorias])
+
+  const subcategorias = useMemo(() => {
+    return (categorias as any[]).filter(c => !!c.parentId && c.activo !== false)
+  }, [categorias])
+
+  const subcategoriasDisponibles = useMemo(() => {
+    if (categoriaSeleccionada === 'todas') {
+      return subcategorias
+    }
+    return subcategorias.filter(c => String(c.parentId) === categoriaSeleccionada)
+  }, [subcategorias, categoriaSeleccionada])
 
   const { data: empresa } = useQuery({
     queryKey: ['empresa-info-conteo'],
@@ -240,9 +256,21 @@ export function ControlExistencias() {
       if (!tieneEnBodega && !mostrarSinStock) return false
     }
 
-    // Filtrar por categoría seleccionada
+    // Filtrar por categoría seleccionada (incluye hijas si es categoría raíz)
     if (categoriaSeleccionada !== 'todas') {
-      if (String(p.categoriaId) !== categoriaSeleccionada) return false
+      const matchCat =
+        String(p.categoriaId) === categoriaSeleccionada ||
+        (p.categoria?.parentId && String(p.categoria.parentId) === categoriaSeleccionada) ||
+        (p.categoria?.parent?.id && String(p.categoria.parent.id) === categoriaSeleccionada)
+      if (!matchCat) return false
+    }
+
+    // Filtrar por subcategoría seleccionada
+    if (subcategoriaSeleccionada !== 'todas') {
+      const matchSub =
+        String(p.categoriaId) === subcategoriaSeleccionada ||
+        (p.categoria?.id && String(p.categoria.id) === subcategoriaSeleccionada)
+      if (!matchSub) return false
     }
 
     if (q) {
@@ -582,18 +610,45 @@ export function ControlExistencias() {
           />
         </div>
 
-        {/* Selector de Categoría */}
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[200px]">
+        {/* Selector de Categoría (Raíz) */}
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[190px]">
           <Tag size={16} className="text-indigo-600 shrink-0" />
           <select
             value={categoriaSeleccionada}
-            onChange={e => setCategoriaSeleccionada(e.target.value)}
+            onChange={e => {
+              setCategoriaSeleccionada(e.target.value)
+              setSubcategoriaSeleccionada('todas')
+            }}
             className="w-full text-xs font-bold text-slate-700 focus:outline-none bg-transparent cursor-pointer outline-none"
           >
             <option value="todas">Todas las Categorías</option>
-            {categorias.filter((c: any) => c.activo !== false).map((c: any) => (
+            {rootCategorias.map((c: any) => (
               <option key={c.id} value={String(c.id)}>
                 {c.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Selector de Subcategoría */}
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 min-w-[190px]">
+          <Tag size={16} className="text-slate-400 shrink-0" />
+          <select
+            value={subcategoriaSeleccionada}
+            onChange={e => setSubcategoriaSeleccionada(e.target.value)}
+            disabled={categoriaSeleccionada !== 'todas' && subcategoriasDisponibles.length === 0}
+            className={`w-full text-xs font-bold text-slate-700 focus:outline-none bg-transparent cursor-pointer outline-none ${
+              categoriaSeleccionada !== 'todas' && subcategoriasDisponibles.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <option value="todas">
+              {categoriaSeleccionada !== 'todas' && subcategoriasDisponibles.length === 0
+                ? 'Sin subcategorías'
+                : 'Todas las Subcategorías'}
+            </option>
+            {subcategoriasDisponibles.map((c: any) => (
+              <option key={c.id} value={String(c.id)}>
+                {c.nombre} {categoriaSeleccionada === 'todas' && c.parent?.nombre ? `(${c.parent.nombre})` : ''}
               </option>
             ))}
           </select>
@@ -640,7 +695,7 @@ export function ControlExistencias() {
           <div className="text-center py-16">
             <Package size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="text-slate-400 text-sm">
-              {q || categoriaSeleccionada !== 'todas' || bodegaSeleccionada !== 'todas'
+              {q || categoriaSeleccionada !== 'todas' || subcategoriaSeleccionada !== 'todas' || bodegaSeleccionada !== 'todas'
                 ? 'No se encontraron productos que coincidan con los filtros aplicados.'
                 : 'No se encontraron productos con existencias disponibles en el inventario.'}
             </p>
@@ -709,7 +764,18 @@ export function ControlExistencias() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 hidden md:table-cell text-slate-500 font-medium">{p.categoria?.nombre ?? '—'}</td>
+                      <td className="px-4 py-3.5 hidden md:table-cell text-slate-500 font-medium">
+                        {p.categoria?.parent ? (
+                          <div className="flex flex-col">
+                            <span className="text-slate-800 font-bold text-[11px] leading-tight">{p.categoria.parent.nombre}</span>
+                            <span className="text-slate-400 text-[10px] flex items-center gap-0.5 mt-0.5">
+                              <span>↳</span> {p.categoria.nombre}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-700 font-semibold">{p.categoria?.nombre ?? '—'}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3.5 text-right font-semibold text-slate-700">{fmtMoneda(Number(p.costoPromedio))}</td>
                       <td className="px-4 py-3.5 text-right font-extrabold text-slate-800">{fmtMoneda(Number(p.precioBase))}</td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-slate-800">{p.stockCalculado}</td>
@@ -1709,7 +1775,7 @@ export function ControlExistencias() {
                           </td>
                           <td className="border border-slate-300 px-3 py-2">
                             <span className="font-bold text-slate-900 block leading-tight">{p.nombre}</span>
-                            <span className="text-[9px] text-slate-500">{p.categoria?.nombre || 'General'}</span>
+                            <span className="text-[9px] text-slate-500">{p.categoria?.parent ? `${p.categoria.parent.nombre} > ${p.categoria.nombre}` : (p.categoria?.nombre || 'General')}</span>
                           </td>
                           <td className="border border-slate-300 px-2 py-2 text-slate-600 text-[10px]">
                             {ubicacionStr ? (
