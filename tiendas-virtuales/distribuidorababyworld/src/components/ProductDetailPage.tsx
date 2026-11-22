@@ -706,8 +706,8 @@ export function ProductDetailPage({
             </button>
           </div>
 
-          {/* Responsive 2-column mobile grid / 3-4 desktop */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+          {/* Responsive 2-column mobile grid / 3 tablet / 4-5 desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3.5 md:gap-4">
             {moreProducts.map(p => (
               <ProductCard
                 key={p.id}

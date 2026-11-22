@@ -36,11 +36,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
   }
 
   return (
-    <div className={`group bg-white ${compact ? 'rounded-2xl' : 'rounded-3xl sm:rounded-[2rem]'} border border-slate-100 overflow-hidden shadow-2xs hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative animate-fade-in-up`} style={{ animationFillMode: 'both' }}>
+    <div className={`group bg-white ${compact ? 'rounded-2xl' : 'rounded-2xl sm:rounded-2xl'} border border-slate-100/90 overflow-hidden shadow-2xs hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative animate-fade-in-up`} style={{ animationFillMode: 'both' }}>
       {/* Product Image Box */}
       <div 
         onClick={() => onViewDetails(product)}
-        className="relative overflow-hidden aspect-square bg-white cursor-pointer select-none"
+        className="relative overflow-hidden aspect-square bg-white cursor-pointer select-none flex items-center justify-center p-2.5 sm:p-3"
       >
         {/* Skeleton Shimmer de carga mientras se descarga la imagen */}
         {!imageLoaded && (
@@ -52,7 +52,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         <img
           src={getOptimizedImageUrl(product.imagen, 500)}
           alt={product.nombre}
-          className={`w-full h-full object-contain p-2 sm:p-3 group-hover:scale-105 transition-all duration-500 ${
+          className={`w-full h-full object-contain group-hover:scale-105 transition-all duration-500 ${
             imageLoaded
               ? product.stock <= 0
                 ? 'opacity-75 grayscale-[20%]'
@@ -74,11 +74,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         {/* Top Badges */}
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 pointer-events-none">
           {product.stock <= 0 ? (
-            <span className="bg-slate-900/85 backdrop-blur-sm text-white font-extrabold text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tracking-wide shrink-0">
+            <span className="bg-slate-900/85 backdrop-blur-sm text-white font-extrabold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-xs tracking-wide shrink-0">
               Agotado
             </span>
           ) : discountPercent ? (
-            <span className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-amber-300 border border-amber-400/40 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 shrink-0">
+            <span className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-amber-300 border border-amber-400/40 font-black text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 shrink-0">
               <span>🔥</span>
               <span className="tracking-tight">BLACK FRIDAY -{discountPercent}%</span>
             </span>
@@ -86,13 +86,13 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
 
           <div className="flex items-center gap-1 shrink-0">
             {product.videos && product.videos.length > 0 && (
-              <span className="bg-black/75 backdrop-blur-xs text-white font-extrabold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+              <span className="bg-black/75 backdrop-blur-xs text-white font-extrabold text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
                 <Play size={8} fill="currentColor" />
                 <span>Video</span>
               </span>
             )}
             {product.etapa && (
-              <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100 truncate max-w-[40%] shrink-0">
+              <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-xs border border-slate-100 truncate max-w-[40%] shrink-0">
                 {product.etapa}
               </span>
             )}
@@ -101,11 +101,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
       </div>
 
       {/* Info Body */}
-      <div className={`${compact ? 'p-2.5 sm:p-3 space-y-1 sm:space-y-1.5' : 'p-3 sm:p-4 space-y-2'} flex-1 flex flex-col justify-between`}>
+      <div className={`${compact ? 'p-2 sm:p-2.5 space-y-1' : 'p-2.5 sm:p-3 space-y-1.5'} flex-1 flex flex-col justify-between`}>
         <div className="space-y-1">
           {/* Category Tag & Rating */}
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-md border truncate max-w-[100px] ${getCategoryBadgeColor(product.categoria)}`}>
+            <span className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-md border truncate max-w-[90px] sm:max-w-[110px] ${getCategoryBadgeColor(product.categoria)}`}>
               {product.subcategoria || product.categoria}
             </span>
             <div className="flex items-center gap-0.5 text-amber-500 text-[9px] sm:text-[10px] font-bold shrink-0">
@@ -117,7 +117,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           {/* Title with consistent height across all cards */}
           <h3 
             onClick={() => onViewDetails(product)}
-            className={`font-bold text-slate-800 ${compact ? 'text-[11px] sm:text-xs min-h-[1.8rem] sm:min-h-[2rem]' : 'text-xs sm:text-sm min-h-[2rem] sm:min-h-[2.4rem]'} hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer flex items-center`}
+            className={`font-bold text-slate-800 ${compact ? 'text-[11px] sm:text-xs min-h-[1.8rem] sm:min-h-[2rem]' : 'text-xs sm:text-[13px] min-h-[2rem] sm:min-h-[2.2rem]'} hover:text-sky-600 transition-colors line-clamp-2 leading-snug cursor-pointer flex items-center`}
             title={product.nombre}
           >
             {product.nombre}
@@ -125,7 +125,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         </div>
 
         {/* Pricing & Add to Cart */}
-        <div className={`${compact ? 'pt-1.5 space-y-1.5' : 'pt-2 space-y-2'} border-t border-slate-100 mt-auto`}>
+        <div className={`${compact ? 'pt-1.5 space-y-1.5' : 'pt-2 space-y-1.5'} border-t border-slate-100 mt-auto`}>
           {/* Precio Anterior / Descuento (si tiene oferta activa) */}
           {product.precioAnterior && product.precioAnterior > product.precio && (
             <div className="flex items-center justify-between gap-1 leading-none">

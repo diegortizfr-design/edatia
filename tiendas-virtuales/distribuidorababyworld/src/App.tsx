@@ -772,10 +772,10 @@ export function App() {
                   </div>
                 )}
 
-                {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
+                {/* Product Grid (2 cols mobile, 3 tablet, 4-5 laptop, 5-6 desktop) */}
                 {isLoading ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-                    {[...Array(8)].map((_, i) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3.5 md:gap-4">
+                    {[...Array(10)].map((_, i) => (
                       <ProductSkeleton key={i} />
                     ))}
                   </div>
@@ -801,14 +801,14 @@ export function App() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3.5 md:gap-4">
                     {filteredProducts.map((product, idx) => (
                       <ProductCard
                         key={product.id}
                         product={product}
                         onAddToCart={handleAddToCart}
                         onViewDetails={handleOpenProduct}
-                        priority={idx < 4}
+                        priority={idx < 6}
                       />
                     ))}
                   </div>
