@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, Truck, Store, Clock, Navigation } from 'lucide-react'
+import { Shield, Truck, Store, Clock, Navigation, ArrowLeft } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
+import { CategoriesSection } from './components/CategoriesSection'
 import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
 import { ProductDetailPage } from './components/ProductDetailPage'
@@ -609,9 +610,10 @@ export function App() {
         />
       ) : (
         <>
-          {/* Hero Banner Section (Banner Familia Baby World) */}
-          {activeCategory === 'Todos' && !searchQuery && (
+          {/* VISTA DE INICIO (Home): Banners + Lo Más Recomendado + Sección de Categorías */}
+          {activeCategory === 'Todos' && !searchQuery ? (
             <>
+              {/* 1. Banners Principales */}
               <HeroBanner
                 onOpenFamiliaRegistro={handleOpenFamiliaRegistro}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
@@ -622,108 +624,157 @@ export function App() {
                 onOpenLocation={() => setIsLocationModalOpen(true)}
                 onOpenBnplInfo={() => setIsBnplModalOpen(true)}
               />
+
+              {/* 2. Sección "Lo Más Recomendado" (Exclusivamente productos destacados del ERP) */}
               <FeaturedCarousel 
                 products={products} 
                 onAddToCart={handleAddToCart} 
                 onViewDetails={handleOpenProduct} 
               />
+
+              {/* 3. Sección "Explora por Categorías" (Vitrina para que el usuario navegue a lo que necesita) */}
+              <CategoriesSection
+                categories={availableCategories}
+                erpCategories={erpCategories}
+                products={products}
+                onSelectCategory={(category, subcategory) => {
+                  handleCategorySelect(category)
+                  if (subcategory) {
+                    setActiveSubcategory(subcategory)
+                  }
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+              />
             </>
-          )}
+          ) : (
+            /* VISTA DE CATÁLOGO POR CATEGORÍA O RESULTADOS DE BÚSQUEDA */
+            <div className="bg-white min-h-[60vh] flex-1 relative z-30 animate-fade-in-up">
+              <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full relative z-20">
+                {/* Header de navegación y título de categoría */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+                  <div className="space-y-1.5">
+                    {/* Botón Volver a Categorías */}
+                    <button
+                      onClick={() => {
+                        setActiveCategory('Todos')
+                        setSearchQuery('')
+                        setActiveSubcategory('Todos')
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-xl text-xs font-bold transition-all group active:scale-95"
+                    >
+                      <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+                      <span>Volver a Categorías</span>
+                    </button>
 
-          {/* Main Catalog Section */}
-          <div className="bg-white rounded-t-[2.5rem] sm:rounded-t-[3rem] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)] border-t border-slate-100 flex-1 relative z-30 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <main id="catalogo-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 w-full relative z-20">
-              {/* Section Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
-                      Catálogo Baby-World
-                    </span>
-                    <span className="h-1 w-1 rounded-full bg-slate-300" />
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-400">
-                      {activeCategory} ({filteredProducts.length})
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-sky-600">
+                        {searchQuery ? 'Búsqueda' : 'Categoría'}
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-400">
+                        {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}
+                      </span>
+                    </div>
 
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-                    {searchQuery
-                      ? `Resultados para "${searchQuery}"`
-                      : activeCategory.toLowerCase().includes('black')
-                        ? '🔥 Ofertas Oficiales Black Days'
-                        : activeCategory === 'Todos'
-                          ? 'Lo mejor para tu bebé'
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                      {searchQuery
+                        ? `Resultados para "${searchQuery}"`
+                        : activeCategory.toLowerCase().includes('black')
+                          ? '🔥 Ofertas Oficiales Black Days'
                           : activeCategory}
-                  </h2>
-                </div>
-
-              </div>
-
-              {/* Subcategories Filter Pills (Dinámico desde las subcategorías reales del ERP) */}
-              {availableSubcategories.length > 1 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-4 no-scrollbar">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
-                    Filtrar:
-                  </span>
-                  {availableSubcategories.map((sub) => {
-                    const isSelected = activeSubcategory === sub
-                    return (
-                      <button
-                        key={sub}
-                        onClick={() => setActiveSubcategory(sub)}
-                        className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSelected
-                            ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
-                            : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-                          }`}
-                      >
-                        {sub}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
-              {isLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-                  {[...Array(8)].map((_, i) => (
-                    <ProductSkeleton key={i} />
-                  ))}
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8 animate-fade-in-up">
-                  <div className="text-4xl">🍼</div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos</h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Prueba ajustando tu búsqueda o seleccionando otra sección.
-                    </p>
+                    </h2>
                   </div>
-                  <button
-                    onClick={() => {
-                      setActiveCategory('Todos')
-                      setSearchQuery('')
-                    }}
-                    className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-                  >
-                    Ver Todo el Catálogo
-                  </button>
+
+                  {/* Selector rápido para saltar a otra categoría */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-semibold hidden md:inline">Cambiar categoría:</span>
+                    <select
+                      value={activeCategory}
+                      onChange={(e) => {
+                        handleCategorySelect(e.target.value)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-sky-300 transition-all cursor-pointer"
+                    >
+                      {availableCategories.map(c => (
+                        <option key={c} value={c}>
+                          {c === 'Todos' ? '✨ Todas las Categorías (Inicio)' : c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-                  {filteredProducts.map((product, idx) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onAddToCart={handleAddToCart}
-                      onViewDetails={handleOpenProduct}
-                      priority={idx < 4}
-                    />
-                  ))}
-                </div>
-              )}
-            </main>
-          </div>
+
+                {/* Subcategories Filter Pills (Dinámico desde las subcategorías reales del ERP) */}
+                {availableSubcategories.length > 1 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-3 pt-1 mb-6 no-scrollbar">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">
+                      Subcategorías:
+                    </span>
+                    {availableSubcategories.map((sub) => {
+                      const isSelected = activeSubcategory === sub
+                      return (
+                        <button
+                          key={sub}
+                          onClick={() => setActiveSubcategory(sub)}
+                          className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                            isSelected
+                              ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20 font-bold'
+                              : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {sub}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Product Grid (2 columns on mobile, 3-4 on desktop) */}
+                {isLoading ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                    {[...Array(8)].map((_, i) => (
+                      <ProductSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-md mx-auto my-8 animate-fade-in-up">
+                    <div className="text-4xl">🍼</div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-800">No encontramos productos en esta sección</h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Prueba seleccionando otra subcategoría o regresa a explorar nuestras categorías.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveCategory('Todos')
+                        setSearchQuery('')
+                        setActiveSubcategory('Todos')
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                      className="px-5 py-2.5 bg-slate-900 hover:bg-sky-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+                    >
+                      Volver a Categorías
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                    {filteredProducts.map((product, idx) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={handleOpenProduct}
+                        priority={idx < 4}
+                      />
+                    ))}
+                  </div>
+                )}
+              </main>
+            </div>
+          )}
         </>
       )}
 

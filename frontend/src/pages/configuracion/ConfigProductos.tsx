@@ -179,6 +179,7 @@ const DEFAULT_FORM = {
   esAjustable: true,
   receta: false,
   publicadoWeb: false,
+  esDestacado: false,
   precioWeb: 0,
 
   // Categorizacion
@@ -861,6 +862,7 @@ export function ConfigProductos() {
       referencia: p.referencia || '',
       activo: p.activo,
       publicadoWeb: !!p.publicadoWeb,
+      esDestacado: !!p.esDestacado || !!p.extData?.esDestacado,
       precioWeb: p.precioWeb || p.precioBase || currentPrecios[0] || 0,
       precios: currentPrecios,
       appliedTaxIds: initialSalesTaxes,
@@ -936,6 +938,7 @@ export function ConfigProductos() {
       esAjustable: !!formData.esAjustable,
       receta: !!formData.receta,
       publicadoWeb: !!formData.publicadoWeb,
+      esDestacado: !!formData.esDestacado,
       noAutoAddPos: !!formData.noAutoAddPos,
       manejaBodega: true,
       manejaLotes: !!formData.esLote,
@@ -1830,6 +1833,7 @@ export function ConfigProductos() {
                   { key: 'esAjustable', label: 'Ajustable', desc: 'Permite ajuste stock' },
                   { key: 'receta', label: 'Maneja Receta', desc: 'Materia prima / BOP' },
                   { key: 'publicadoWeb', label: '🌐 Tienda Virtual', desc: 'Visible en catálogo web' },
+                  { key: 'esDestacado', label: '⭐ Destacado Web', desc: 'Lo Más Recomendado' },
                 ].map(item => (
                   <label key={item.key} className="flex flex-col p-3 bg-slate-50 border border-slate-200/60 rounded-xl cursor-pointer hover:bg-slate-100/50 transition-all">
                     <div className="flex items-center gap-2 mb-1">

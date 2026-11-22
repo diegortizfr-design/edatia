@@ -12,7 +12,7 @@ interface FeaturedCarouselProps {
 export function FeaturedCarousel({ products, onAddToCart, onViewDetails }: FeaturedCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const featured = products.filter(p => p.esDestacado).slice(0, 8)
+  const featured = products.filter(p => p.esDestacado).slice(0, 16)
 
   if (featured.length === 0) return null
 
