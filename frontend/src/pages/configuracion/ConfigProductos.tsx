@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { 
-  Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal, 
-  Layers, ArrowLeft, Save, Package, Info, Percent, 
+import {
+  Plus, Trash2, Edit3, CheckCircle2, SlidersHorizontal,
+  Layers, ArrowLeft, Save, Package, Info, Percent,
   Scale, Tag, AlertTriangle, FileText, Eye,
   Upload, Download, FileSpreadsheet, Loader2, X, Printer,
   Globe, EyeOff
@@ -183,6 +183,7 @@ const DEFAULT_FORM = {
 
   // Categorizacion
   categoriaId: '',
+  subcategoriaId: '',
   grupoId: '',
   subgrupoId: '',
   unidadMedidaId: '',
@@ -258,6 +259,7 @@ export function ConfigProductos() {
   const [filterNombre, setFilterNombre] = useState('')
   const [filterActivo, setFilterActivo] = useState<string>('true')
   const [filterCategoria, setFilterCategoria] = useState('')
+  const [filterSubcategoria, setFilterSubcategoria] = useState('')
   const [filterGrupo, setFilterGrupo] = useState('')
   const [filterSubgrupo, setFilterSubgrupo] = useState('')
   const [filterMarca, setFilterMarca] = useState('')
@@ -282,7 +284,12 @@ export function ConfigProductos() {
   const { data: taxData = [] } = useQuery({ queryKey: ['impuestos'], queryFn: getImpuestos })
 
   // Map to MasterItem arrays
-  const categorias: MasterItem[] = catData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
+  const categorias: MasterItem[] = catData.map((x: any) => ({
+    id: String(x.id),
+    nombre: x.nombre,
+    activo: x.activo ?? true,
+    parentId: x.parentId ? String(x.parentId) : undefined,
+  }))
   const marcas: MasterItem[] = marcaData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
   const unidades: MasterItem[] = undData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true, extra: x.abreviatura }))
   const grupos: MasterItem[] = grpData.map((x: any) => ({ id: String(x.id), nombre: x.nombre, activo: x.activo ?? true }))
@@ -336,12 +343,26 @@ export function ConfigProductos() {
 
   // Merge database products
   const products = dbProducts.map((p: any) => {
+    let initCatId = ''
+    let initSubcatId = ''
+    if (p.categoriaId) {
+      const rawCat = catData.find((c: any) => c.id === p.categoriaId)
+      if (rawCat && rawCat.parentId) {
+        initCatId = String(rawCat.parentId)
+        initSubcatId = String(rawCat.id)
+      } else {
+        initCatId = String(p.categoriaId)
+        initSubcatId = ''
+      }
+    }
+
     return {
       ...p,
       extData: {
         ...DEFAULT_FORM,
         ...p,
-        categoriaId: p.categoriaId ? String(p.categoriaId) : '',
+        categoriaId: initCatId,
+        subcategoriaId: initSubcatId,
         grupoId: p.grupoId ? String(p.grupoId) : '',
         subgrupoId: p.subgrupoId ? String(p.subgrupoId) : '',
         unidadMedidaId: p.unidadMedidaId ? String(p.unidadMedidaId) : '',
@@ -410,7 +431,17 @@ export function ConfigProductos() {
       const isAct = filterActivo === 'true'
       if (p.activo !== isAct) return false
     }
-    if (filterCategoria && p.extData.categoriaId !== filterCategoria) return false
+    if (filterCategoria) {
+      const matchCat = p.extData.categoriaId === filterCategoria ||
+        p.extData.subcategoriaId === filterCategoria ||
+        (p.categoria?.parentId && String(p.categoria.parentId) === filterCategoria)
+      if (!matchCat) return false
+    }
+    if (filterSubcategoria) {
+      const matchSub = p.extData.subcategoriaId === filterSubcategoria ||
+        String(p.categoriaId) === filterSubcategoria
+      if (!matchSub) return false
+    }
     if (filterGrupo && p.extData.grupoId !== filterGrupo) return false
     if (filterSubgrupo && p.extData.subgrupoId !== filterSubgrupo) return false
     if (filterMarca && p.extData.marcaId !== filterMarca) return false
@@ -420,6 +451,20 @@ export function ConfigProductos() {
 
   // Dynamic filter lists
   const availableSubgroups = subgrupos.filter(sg => !formData.grupoId || sg.parentId === formData.grupoId)
+
+  const rootCategorias = useMemo(() => {
+    return categorias.filter(c => !c.parentId)
+  }, [categorias])
+
+  const availableSubcategories = useMemo(() => {
+    if (!formData.categoriaId) return []
+    return categorias.filter(c => c.parentId && String(c.parentId) === String(formData.categoriaId))
+  }, [categorias, formData.categoriaId])
+
+  const filterAvailableSubcategories = useMemo(() => {
+    if (!filterCategoria) return []
+    return categorias.filter(c => c.parentId && String(c.parentId) === String(filterCategoria))
+  }, [categorias, filterCategoria])
 
   // Calculations for Cubicaje automatically on changes
   useEffect(() => {
@@ -504,7 +549,10 @@ export function ConfigProductos() {
         ? p.stock.reduce((acc: number, s: any) => acc + parseFloat(s.cantidad ?? 0), 0)
         : 0
       const bodegaNombre = p.stock?.[0]?.bodega?.nombre || 'Bodega Principal'
-      const catNombre = p.categoria?.nombre || categorias.find(c => String(c.id) === String(p.extData?.categoriaId || p.categoriaId))?.nombre || ''
+      const rawCatObj = catData.find((c: any) => c.id === (p.categoriaId || Number(p.extData?.subcategoriaId || p.extData?.categoriaId)))
+      const catNombre = rawCatObj
+        ? (rawCatObj.parent ? `${rawCatObj.parent.nombre} > ${rawCatObj.nombre}` : rawCatObj.nombre)
+        : (p.categoria?.parent ? `${p.categoria.parent.nombre} > ${p.categoria.nombre}` : (p.categoria?.nombre || ''))
       const marcaNombre = p.marca?.nombre || marcas.find(m => String(m.id) === String(p.extData?.marcaId || p.marcaId))?.nombre || ''
       const grupoNombre = p.grupo?.nombre || grupos.find(g => String(g.id) === String(p.extData?.grupoId || p.grupoId))?.nombre || ''
       const subgrupoNombre = p.subgrupo?.nombre || subgrupos.find(sg => String(sg.id) === String(p.extData?.subgrupoId || p.subgrupoId))?.nombre || ''
@@ -761,7 +809,7 @@ export function ConfigProductos() {
 
   const handleOpenEdit = (p: any) => {
     setEditingId(p.id)
-    
+
     // 1. Impuestos de VENTA (appliedTaxIds)
     let initialSalesTaxes: string[] = []
     const isExempt = p.extData?.productoExentoIva || p.productoExentoIva || p.tipoIva === 'EXENTO'
@@ -802,8 +850,8 @@ export function ConfigProductos() {
     const currentPrecios = (Array.isArray(p.precios) && p.precios.length > 0)
       ? p.precios
       : ((Array.isArray(p.extData?.precios) && p.extData.precios.length > 0)
-          ? p.extData.precios
-          : [p.precioBase || 0, ...Array(10).fill(0)])
+        ? p.extData.precios
+        : [p.precioBase || 0, ...Array(10).fill(0)])
 
     setFormData({
       ...DEFAULT_FORM,
@@ -855,7 +903,7 @@ export function ConfigProductos() {
       referencia: formData.referencia || null,
       descripcion: formData.descripcionAlterna || null,
       descripcionAlterna: formData.descripcionAlterna || null,
-      categoriaId: formData.categoriaId ? Number(formData.categoriaId) : null,
+      categoriaId: formData.subcategoriaId ? Number(formData.subcategoriaId) : (formData.categoriaId ? Number(formData.categoriaId) : null),
       grupoId: formData.grupoId ? Number(formData.grupoId) : null,
       subgrupoId: formData.subgrupoId ? Number(formData.subgrupoId) : null,
       unidadMedidaId: formData.unidadMedidaId ? Number(formData.unidadMedidaId) : null,
@@ -904,17 +952,17 @@ export function ConfigProductos() {
       liquidarIva: !formData.productoExentoIva && formData.liquidarIva && (formData.appliedTaxIds || []).length > 0,
       productoExentoIva: !!formData.productoExentoIva,
       appliedTaxIds: formData.appliedTaxIds || [],
-      tipoIva: formData.productoExentoIva 
-        ? 'EXENTO' 
-        : (!formData.liquidarIva || (formData.appliedTaxIds || []).length === 0) 
-          ? 'EXCLUIDO' 
+      tipoIva: formData.productoExentoIva
+        ? 'EXENTO'
+        : (!formData.liquidarIva || (formData.appliedTaxIds || []).length === 0)
+          ? 'EXCLUIDO'
           : (() => {
-              const selectedTaxes = systemTaxes.filter(t => isTaxSelected(t.id, formData.appliedTaxIds))
-              const rate = selectedTaxes.reduce((acc, t) => acc + (Number(t.tarifa) || 0), 0)
-              if (rate === 5) return 'GRAVADO_5'
-              if (rate === 19) return 'GRAVADO_19'
-              return rate > 0 ? `GRAVADO_${rate}` : 'EXCLUIDO'
-            })(),
+            const selectedTaxes = systemTaxes.filter(t => isTaxSelected(t.id, formData.appliedTaxIds))
+            const rate = selectedTaxes.reduce((acc, t) => acc + (Number(t.tarifa) || 0), 0)
+            if (rate === 5) return 'GRAVADO_5'
+            if (rate === 19) return 'GRAVADO_19'
+            return rate > 0 ? `GRAVADO_${rate}` : 'EXCLUIDO'
+          })(),
     }
 
     if (!editingId && formData.sku) {
@@ -938,7 +986,7 @@ export function ConfigProductos() {
         savedProduct = await updateProducto(editingId, payload)
       } else {
         savedProduct = await createProducto(payload)
-        
+
         // Autogenerate Ficha Técnica PDF document link
         const pdfDoc = {
           id: Date.now(),
@@ -948,7 +996,7 @@ export function ConfigProductos() {
           descripcion: 'Ficha técnica oficial de especificaciones autogenerada por el sistema.',
           size: 150 * 1024 // 150 KB estimated size
         }
-        
+
         // Save PDF link to product's documentos array
         await updateProducto(savedProduct.id, {
           documentos: [pdfDoc]
@@ -974,7 +1022,7 @@ export function ConfigProductos() {
 
   const toggleTag = (tagId: string) => {
     const isSelected = formData.selectedTags.includes(tagId)
-    const updated = isSelected 
+    const updated = isSelected
       ? formData.selectedTags.filter(t => t !== tagId)
       : [...formData.selectedTags, tagId]
     setFormData(prev => ({
@@ -988,7 +1036,7 @@ export function ConfigProductos() {
       const taxRate = getAppliedTaxRate(p.extData)
       const p1Iva = (Number(p.extData.precios?.[0]) || Number(p.precioBase) || 0) * (1 + taxRate / 100)
       const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(p1Iva)
-      
+
       const res = await fetch('http://localhost:8080/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1103,11 +1151,10 @@ export function ConfigProductos() {
             <button
               type="button"
               onClick={() => { setFilterWeb('all'); setFilterSinCosto(false) }}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                filterWeb === 'all' && !filterSinCosto
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${filterWeb === 'all' && !filterSinCosto
                   ? 'bg-indigo-50/70 border-indigo-200 ring-2 ring-indigo-500/20 shadow-sm'
                   : 'bg-white border-slate-200/80 hover:bg-slate-50 shadow-xs'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Productos</span>
@@ -1122,11 +1169,10 @@ export function ConfigProductos() {
             <button
               type="button"
               onClick={() => setFilterWeb(prev => prev === 'published' ? 'all' : 'published')}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                filterWeb === 'published'
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${filterWeb === 'published'
                   ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/30 shadow-sm'
                   : 'bg-white border-slate-200/80 hover:bg-emerald-50/30 shadow-xs'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -1146,11 +1192,10 @@ export function ConfigProductos() {
             <button
               type="button"
               onClick={() => setFilterWeb(prev => prev === 'hidden' ? 'all' : 'hidden')}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                filterWeb === 'hidden'
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${filterWeb === 'hidden'
                   ? 'bg-slate-100 border-slate-400 ring-2 ring-slate-400/30 shadow-sm'
                   : 'bg-white border-slate-200/80 hover:bg-slate-50 shadow-xs'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Solo Inventario (Ocultos)</span>
@@ -1167,11 +1212,10 @@ export function ConfigProductos() {
             <button
               type="button"
               onClick={() => setFilterSinCosto(prev => !prev)}
-              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                filterSinCosto
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${filterSinCosto
                   ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/30 shadow-sm'
                   : 'bg-white border-slate-200/80 hover:bg-amber-50/30 shadow-xs'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Sin Costo Asignado</span>
@@ -1192,42 +1236,42 @@ export function ConfigProductos() {
               <SlidersHorizontal size={14} className="text-indigo-600" />
               Panel de Filtros y Búsqueda Avanzada
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código / SKU</label>
-                <input 
-                  type="text" 
-                  value={filterSku} 
+                <input
+                  type="text"
+                  value={filterSku}
                   onChange={e => setFilterSku(e.target.value)}
-                  placeholder="Ej. P-001..." 
+                  placeholder="Ej. P-001..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Referencia Fábrica</label>
-                <input 
-                  type="text" 
-                  value={filterReferencia} 
+                <input
+                  type="text"
+                  value={filterReferencia}
                   onChange={e => setFilterReferencia(e.target.value)}
-                  placeholder="Buscar referencia..." 
+                  placeholder="Buscar referencia..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descripción / Nombre</label>
-                <input 
-                  type="text" 
-                  value={filterNombre} 
+                <input
+                  type="text"
+                  value={filterNombre}
                   onChange={e => setFilterNombre(e.target.value)}
-                  placeholder="Nombre del producto..." 
+                  placeholder="Nombre del producto..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado</label>
-                <select 
-                  value={filterActivo} 
+                <select
+                  value={filterActivo}
                   onChange={e => setFilterActivo(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                 >
@@ -1239,19 +1283,35 @@ export function ConfigProductos() {
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoría</label>
-                <select 
-                  value={filterCategoria} 
-                  onChange={e => setFilterCategoria(e.target.value)}
+                <select
+                  value={filterCategoria}
+                  onChange={e => {
+                    setFilterCategoria(e.target.value)
+                    setFilterSubcategoria('')
+                  }}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                 >
                   <option value="">-- Todas las Categorías --</option>
-                  {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                  {rootCategorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
+              {filterAvailableSubcategories.length > 0 && (
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subcategoría</label>
+                  <select
+                    value={filterSubcategoria}
+                    onChange={e => setFilterSubcategoria(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">-- Todas las Subcategorías --</option>
+                    {filterAvailableSubcategories.map(sc => <option key={sc.id} value={sc.id}>{sc.nombre}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Grupo</label>
-                <select 
-                  value={filterGrupo} 
+                <select
+                  value={filterGrupo}
                   onChange={e => setFilterGrupo(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                 >
@@ -1261,8 +1321,8 @@ export function ConfigProductos() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subgrupo</label>
-                <select 
-                  value={filterSubgrupo} 
+                <select
+                  value={filterSubgrupo}
                   onChange={e => setFilterSubgrupo(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                 >
@@ -1272,8 +1332,8 @@ export function ConfigProductos() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Marca</label>
-                <select 
-                  value={filterMarca} 
+                <select
+                  value={filterMarca}
                   onChange={e => setFilterMarca(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                 >
@@ -1284,8 +1344,8 @@ export function ConfigProductos() {
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tienda Virtual</label>
-                <select 
-                  value={filterWeb} 
+                <select
+                  value={filterWeb}
                   onChange={e => setFilterWeb(e.target.value as any)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer font-medium"
                 >
@@ -1295,29 +1355,29 @@ export function ConfigProductos() {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setFilterSinCosto(prev => !prev)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
-                  filterSinCosto
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${filterSinCosto
                     ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30 ring-2 ring-amber-400'
                     : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80'
-                }`}
+                  }`}
                 title="Filtrar productos creados al vuelo en el POS o sin costo asignado"
               >
                 <AlertTriangle size={13} className={filterSinCosto ? 'text-white' : 'text-amber-600'} />
                 <span>⚠️ Pendientes de Costo ({pendingCostCount})</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => {
                   setFilterSku('')
                   setFilterReferencia('')
                   setFilterNombre('')
                   setFilterActivo('true')
                   setFilterCategoria('')
+                  setFilterSubcategoria('')
                   setFilterGrupo('')
                   setFilterSubgrupo('')
                   setFilterMarca('')
@@ -1361,8 +1421,11 @@ export function ConfigProductos() {
                       const taxRate = getAppliedTaxRate(p.extData)
                       const p1 = Number(p.extData.precios?.[0]) || Number(p.precioBase) || 0
                       const p1Iva = p1 * (1 + taxRate / 100)
-                      
-                      const catName = categorias.find(c => c.id === p.extData.categoriaId)?.nombre || p.categoria?.nombre || '—'
+
+                      const rawCatObj = catData.find((c: any) => c.id === (p.categoriaId || Number(p.extData?.subcategoriaId || p.extData?.categoriaId)))
+                      const catName = rawCatObj
+                        ? (rawCatObj.parent ? `${rawCatObj.parent.nombre} > ${rawCatObj.nombre}` : rawCatObj.nombre)
+                        : (p.categoria?.parent ? `${p.categoria.parent.nombre} > ${p.categoria.nombre}` : (p.categoria?.nombre || '—'))
                       const costVal = Number(p.extData.costoUltimo) || Number(p.costoPromedio) || Number(p.extData.costo) || 0
 
                       return (
@@ -1396,7 +1459,7 @@ export function ConfigProductos() {
                           <td className="p-4">
                             <div className="flex items-center gap-3">
                               {p.imagen && (
-                                <a 
+                                <a
                                   href={getMediaUrl(p.imagen)}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -1434,11 +1497,10 @@ export function ConfigProductos() {
                               type="button"
                               onClick={() => handleToggleWeb(p)}
                               disabled={togglingWebId === p.id}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide transition-all shadow-xs active:scale-95 cursor-pointer ${
-                                p.publicadoWeb
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide transition-all shadow-xs active:scale-95 cursor-pointer ${p.publicadoWeb
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
                                   : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 hover:text-slate-700'
-                              }`}
+                                }`}
                               title={
                                 p.publicadoWeb
                                   ? 'Publicado en la tienda virtual de Baby World. Haz clic para ocultarlo y dejarlo solo en inventario.'
@@ -1456,11 +1518,10 @@ export function ConfigProductos() {
                             </button>
                           </td>
                           <td className="p-4 text-center">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase ${
-                              p.activo
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase ${p.activo
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                 : 'bg-rose-50 text-rose-700 border border-rose-100'
-                            }`}>
+                              }`}>
                               {p.activo ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
@@ -1484,8 +1545,8 @@ export function ConfigProductos() {
           {/* Form Header */}
           <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setViewMode('list')} 
+              <button
+                onClick={() => setViewMode('list')}
                 className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl transition-all shadow-sm"
               >
                 <ArrowLeft size={16} />
@@ -1528,7 +1589,7 @@ export function ConfigProductos() {
 
           {/* Form */}
           <form onSubmit={handleSave} className="space-y-6 w-full">
-            
+
             {/* SECTION 1: INFORMACION GENERAL */}
             <div className="bg-white border border-slate-200/85 rounded-2xl shadow-sm p-6 space-y-4">
               <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -1792,44 +1853,51 @@ export function ConfigProductos() {
                 <Layers size={16} className="text-indigo-600" />
                 4. Categorización desde Maestros Paramétricos
               </h2>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Categoría Maestro</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Categoría Comercial (Raíz)</label>
                   <select
                     value={formData.categoriaId}
-                    onChange={e => setFormData(prev => ({ ...prev, categoriaId: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, categoriaId: e.target.value, subcategoriaId: '' }))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
                   >
                     <option value="">-- Seleccionar Categoría --</option>
-                    {categorias.filter(c => c.activo).map(c => (
+                    {rootCategorias.filter(c => c.activo).map(c => (
                       <option key={c.id} value={c.id}>{c.nombre}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Grupo Maestro</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5 flex items-center justify-between">
+                    <span>Subcategoría Comercial</span>
+                    {availableSubcategories.length === 0 && formData.categoriaId && (
+                      <span className="text-[9px] text-slate-400 font-normal lowercase">(sin subcategorías)</span>
+                    )}
+                  </label>
                   <select
-                    value={formData.grupoId}
-                    onChange={e => setFormData(prev => ({ ...prev, grupoId: e.target.value, subgrupoId: '' }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                    value={formData.subcategoriaId}
+                    onChange={e => setFormData(prev => ({ ...prev, subcategoriaId: e.target.value }))}
+                    disabled={!formData.categoriaId || availableSubcategories.length === 0}
+                    className={`w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer ${(!formData.categoriaId || availableSubcategories.length === 0) ? 'opacity-60 cursor-not-allowed' : ''
+                      }`}
                   >
-                    <option value="">-- Seleccionar Grupo --</option>
-                    {grupos.filter(g => g.activo).map(g => (
-                      <option key={g.id} value={g.id}>{g.nombre}</option>
+                    <option value="">-- Seleccionar Subcategoría --</option>
+                    {availableSubcategories.filter(sc => sc.activo).map(sc => (
+                      <option key={sc.id} value={sc.id}>{sc.nombre}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Subgrupo Maestro</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Marca Maestro</label>
                   <select
-                    value={formData.subgrupoId}
-                    onChange={e => setFormData(prev => ({ ...prev, subgrupoId: e.target.value }))}
+                    value={formData.marcaId}
+                    onChange={e => setFormData(prev => ({ ...prev, marcaId: e.target.value }))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
                   >
-                    <option value="">-- Seleccionar Subgrupo --</option>
-                    {availableSubgroups.filter(sg => sg.activo).map(sg => (
-                      <option key={sg.id} value={sg.id}>{sg.nombre}</option>
+                    <option value="">-- Seleccionar Marca --</option>
+                    {marcas.filter(m => m.activo).map(m => (
+                      <option key={m.id} value={m.id}>{m.nombre}</option>
                     ))}
                   </select>
                 </div>
@@ -1848,28 +1916,28 @@ export function ConfigProductos() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Color Maestro</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Grupo Contable (PUC)</label>
                   <select
-                    value={formData.colorId}
-                    onChange={e => setFormData(prev => ({ ...prev, colorId: e.target.value }))}
+                    value={formData.grupoId}
+                    onChange={e => setFormData(prev => ({ ...prev, grupoId: e.target.value, subgrupoId: '' }))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
                   >
-                    <option value="">-- Seleccionar Color --</option>
-                    {colores.filter(c => c.activo).map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    <option value="">-- Seleccionar Grupo Contable --</option>
+                    {grupos.filter(g => g.activo).map(g => (
+                      <option key={g.id} value={g.id}>{g.nombre}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Marca Maestro</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Subgrupo Contable</label>
                   <select
-                    value={formData.marcaId}
-                    onChange={e => setFormData(prev => ({ ...prev, marcaId: e.target.value }))}
+                    value={formData.subgrupoId}
+                    onChange={e => setFormData(prev => ({ ...prev, subgrupoId: e.target.value }))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
                   >
-                    <option value="">-- Seleccionar Marca --</option>
-                    {marcas.filter(m => m.activo).map(m => (
-                      <option key={m.id} value={m.id}>{m.nombre}</option>
+                    <option value="">-- Seleccionar Subgrupo Contable --</option>
+                    {availableSubgroups.filter(sg => sg.activo).map(sg => (
+                      <option key={sg.id} value={sg.id}>{sg.nombre}</option>
                     ))}
                   </select>
                 </div>
@@ -1900,6 +1968,19 @@ export function ConfigProductos() {
                 </div>
 
                 <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Color Maestro</label>
+                  <select
+                    value={formData.colorId}
+                    onChange={e => setFormData(prev => ({ ...prev, colorId: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                  >
+                    <option value="">-- Seleccionar Color --</option>
+                    {colores.filter(c => c.activo).map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Grupo Producto ERP</label>
                   <input
                     type="text"
@@ -1919,27 +2000,29 @@ export function ConfigProductos() {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">¿Aplica Talla?</label>
-                  <select
-                    value={formData.aplicaTalla}
-                    onChange={e => setFormData(prev => ({ ...prev, aplicaTalla: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
-                  >
-                    <option value="No">No</option>
-                    <option value="Si">Sí (Configurable)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">¿Aplica Color?</label>
-                  <select
-                    value={formData.aplicaColor}
-                    onChange={e => setFormData(prev => ({ ...prev, aplicaColor: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
-                  >
-                    <option value="No">No</option>
-                    <option value="Si">Sí (Configurable)</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">¿Aplica Talla?</label>
+                    <select
+                      value={formData.aplicaTalla}
+                      onChange={e => setFormData(prev => ({ ...prev, aplicaTalla: e.target.value }))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                    >
+                      <option value="No">No</option>
+                      <option value="Si">Sí (Configurable)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">¿Aplica Color?</label>
+                    <select
+                      value={formData.aplicaColor}
+                      onChange={e => setFormData(prev => ({ ...prev, aplicaColor: e.target.value }))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none"
+                    >
+                      <option value="No">No</option>
+                      <option value="Si">Sí (Configurable)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1954,11 +2037,10 @@ export function ConfigProductos() {
                         key={t.id}
                         type="button"
                         onClick={() => toggleTag(t.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                          isSelected
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${isSelected
                             ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
                             : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
-                        }`}
+                          }`}
                       >
                         {t.nombre}
                       </button>
@@ -1977,7 +2059,7 @@ export function ConfigProductos() {
                 <Percent size={16} className="text-indigo-600" />
                 5. Costos y Campañas de Promoción
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 {/* Costos col */}
                 <div className="md:col-span-6 grid grid-cols-2 gap-4 border-r border-slate-100 pr-4">
@@ -2030,11 +2112,10 @@ export function ConfigProductos() {
                                 : [...costTaxIds, sId]
                               setCostTaxIds(updated)
                             }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
-                              isChecked
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${isChecked
                                 ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/60'
-                            }`}
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -2097,7 +2178,7 @@ export function ConfigProductos() {
                       <span className="text-[10px] font-extrabold text-indigo-600 uppercase">Activar Promoción</span>
                     </label>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Descuento (%)</label>
@@ -2167,14 +2248,13 @@ export function ConfigProductos() {
 
               {/* Controles de IVA e Impuestos */}
               <div className="bg-slate-50/50 border border-slate-200/60 p-5 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-6">
-                
+
                 {/* Column 1: Checkboxes de Control */}
                 <div className="md:col-span-4 space-y-3">
                   <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Control Tributario de Venta</span>
-                  
-                  <label className={`flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition-all shadow-sm ${
-                    formData.productoExentoIva ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-50'
-                  }`}>
+
+                  <label className={`flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition-all shadow-sm ${formData.productoExentoIva ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-50'
+                    }`}>
                     <input
                       type="checkbox"
                       disabled={formData.productoExentoIva}
@@ -2192,8 +2272,8 @@ export function ConfigProductos() {
                     <input
                       type="checkbox"
                       checked={formData.productoExentoIva}
-                      onChange={e => setFormData(prev => ({ 
-                        ...prev, 
+                      onChange={e => setFormData(prev => ({
+                        ...prev,
                         productoExentoIva: e.target.checked,
                         liquidarIva: e.target.checked ? false : prev.liquidarIva
                       }))}
@@ -2220,7 +2300,7 @@ export function ConfigProductos() {
                       Ver Catálogo de Impuestos
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {systemTaxes.filter(t => (t.tipo === 'IVA' || t.tipo === 'CONSUMO') && (t.activo !== false && t.estado !== 'INACTIVO')).map(tax => {
                       const isChecked = isTaxSelected(tax.id, formData.appliedTaxIds)
@@ -2230,15 +2310,14 @@ export function ConfigProductos() {
                       const sId = String(tax.id)
 
                       return (
-                        <label 
-                          key={tax.id} 
-                          className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all bg-white shadow-sm ${
-                            isExempt 
-                              ? 'opacity-40 cursor-not-allowed border-slate-100' 
-                              : isChecked 
-                                ? 'border-indigo-300 bg-indigo-50/30 cursor-pointer hover:bg-indigo-50/50' 
+                        <label
+                          key={tax.id}
+                          className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all bg-white shadow-sm ${isExempt
+                              ? 'opacity-40 cursor-not-allowed border-slate-100'
+                              : isChecked
+                                ? 'border-indigo-300 bg-indigo-50/30 cursor-pointer hover:bg-indigo-50/50'
                                 : 'border-slate-200 cursor-pointer hover:bg-slate-50'
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -2249,8 +2328,8 @@ export function ConfigProductos() {
                               const updated = isChecked
                                 ? currentTaxes.filter(id => id !== sId && id !== tax.nombre)
                                 : [...currentTaxes, sId]
-                              setFormData(prev => ({ 
-                                ...prev, 
+                              setFormData(prev => ({
+                                ...prev,
                                 appliedTaxIds: updated,
                                 liquidarIva: updated.length > 0
                               }))
@@ -2261,10 +2340,10 @@ export function ConfigProductos() {
                             <span className="text-xs font-bold text-slate-800">{tax.nombre}</span>
                             <span className="text-[9px] block text-slate-400">
                               Tarifa: {tax.tarifa}% {
-                                isExempt 
-                                  ? <span className="text-rose-500 font-bold">(Exento)</span> 
-                                  : isNotLiquidated 
-                                    ? <span className="text-amber-500 font-bold">(No liquidado)</span> 
+                                isExempt
+                                  ? <span className="text-rose-500 font-bold">(Exento)</span>
+                                  : isNotLiquidated
+                                    ? <span className="text-amber-500 font-bold">(No liquidado)</span>
                                     : <span className="text-emerald-600 font-bold">(Liquidando: {displayRate}%)</span>
                               }
                             </span>
@@ -2288,7 +2367,7 @@ export function ConfigProductos() {
                 </div>
 
               </div>
-              
+
               {/* NIVELES DE PRECIO (MÍNIMO 2 NIVELES: BASE / DETAL Y MAYORISTA) */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
@@ -2539,7 +2618,7 @@ export function ConfigProductos() {
       {showImportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full shadow-2xl border border-slate-100 p-6 md:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-150 my-8">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -2698,13 +2777,12 @@ export function ConfigProductos() {
                               <td className="p-2.5 text-right font-mono text-slate-600">${formatCOP(row.costoUnitario || 0)}</td>
                               <td className="p-2.5 text-right font-mono font-bold text-emerald-600">${formatCOP(row.precioVenta || 0)}</td>
                               <td className="p-2.5">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                                  (row.tipoIva || '').includes('EXENTO') 
-                                    ? 'bg-emerald-50 text-emerald-700' 
-                                    : (row.tipoIva || '').includes('5') 
-                                      ? 'bg-blue-50 text-blue-700' 
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${(row.tipoIva || '').includes('EXENTO')
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : (row.tipoIva || '').includes('5')
+                                      ? 'bg-blue-50 text-blue-700'
                                       : 'bg-amber-50 text-amber-700'
-                                }`}>
+                                  }`}>
                                   {row.tipoIva || 'GRAVADO_19'}
                                 </span>
                               </td>

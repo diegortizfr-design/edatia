@@ -44,11 +44,13 @@ export class CategoriasService {
   }
 
   async create(dto: CreateCategoriaDto, empresaId: number) {
-    const slug = dto.slug || slugify(dto.nombre);
+    let slug = dto.slug || slugify(dto.nombre);
     const exists = await (this.prisma as any).categoria.findUnique({
       where: { empresaId_slug: { empresaId, slug } },
     });
-    if (exists) throw new ConflictException(`Ya existe una categoría con el slug "${slug}"`);
+    if (exists) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    }
     return (this.prisma as any).categoria.create({
       data: { ...dto, slug, empresaId },
     });
@@ -56,12 +58,17 @@ export class CategoriasService {
 
   async update(id: number, dto: UpdateCategoriaDto, empresaId: number) {
     await this.findOne(id, empresaId);
-    const slug = dto.slug || (dto.nombre ? slugify(dto.nombre) : undefined);
+    if (dto.parentId && Number(dto.parentId) === Number(id)) {
+      throw new ConflictException('Una categoría no puede ser subcategoría de sí misma');
+    }
+    let slug = dto.slug || (dto.nombre ? slugify(dto.nombre) : undefined);
     if (slug) {
       const conflict = await (this.prisma as any).categoria.findFirst({
         where: { empresaId, slug, NOT: { id } },
       });
-      if (conflict) throw new ConflictException(`Ya existe una categoría con el slug "${slug}"`);
+      if (conflict) {
+        slug = `${slug}-${Date.now().toString().slice(-4)}`;
+      }
       dto.slug = slug;
     }
     return (this.prisma as any).categoria.update({ where: { id }, data: dto });

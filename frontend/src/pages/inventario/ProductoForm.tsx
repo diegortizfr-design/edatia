@@ -62,7 +62,7 @@ export function ProductoForm() {
 
   const [form, setForm] = useState({
     sku: '', nombre: '', codigoBarras: '', descripcion: '', referencia: '',
-    categoriaId: '', marcaId: '', unidadMedidaId: '',
+    categoriaId: '', subcategoriaId: '', marcaId: '', unidadMedidaId: '',
     precioBase: '0', tipoIva: 'GRAVADO_19',
     manejaBodega: true, manejaLotes: false, manejaSerial: false,
     stockMinimo: '0', stockMaximo: '', puntoReorden: '0',
@@ -102,13 +102,27 @@ export function ProductoForm() {
 
   useEffect(() => {
     if (producto) {
+      let initCatId = ''
+      let initSubcatId = ''
+      if (producto.categoriaId) {
+        const rawCat = (categorias as any[]).find((c: any) => c.id === producto.categoriaId)
+        if (rawCat && rawCat.parentId) {
+          initCatId = String(rawCat.parentId)
+          initSubcatId = String(rawCat.id)
+        } else {
+          initCatId = String(producto.categoriaId)
+          initSubcatId = ''
+        }
+      }
+
       setForm({
         sku: producto.sku,
         nombre: producto.nombre,
         codigoBarras: producto.codigoBarras ?? '',
         descripcion: producto.descripcion ?? '',
         referencia: producto.referencia ?? '',
-        categoriaId: producto.categoriaId ? String(producto.categoriaId) : '',
+        categoriaId: initCatId,
+        subcategoriaId: initSubcatId,
         marcaId: producto.marcaId ? String(producto.marcaId) : '',
         unidadMedidaId: producto.unidadMedidaId ? String(producto.unidadMedidaId) : '',
         precioBase: String(producto.precioBase),
@@ -190,7 +204,7 @@ export function ProductoForm() {
       codigoBarras: form.codigoBarras || undefined,
       descripcion: form.descripcion || undefined,
       referencia: form.referencia || undefined,
-      categoriaId: form.categoriaId ? +form.categoriaId : undefined,
+      categoriaId: form.subcategoriaId ? +form.subcategoriaId : (form.categoriaId ? +form.categoriaId : undefined),
       marcaId: form.marcaId ? +form.marcaId : undefined,
       unidadMedidaId: form.unidadMedidaId ? +form.unidadMedidaId : undefined,
       precioBase: +form.precioBase,
@@ -460,12 +474,29 @@ export function ProductoForm() {
 
           {/* Clasificación */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h2 className="font-semibold text-slate-800 mb-4">Clasificación</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Field label="Categoría">
-                <select value={form.categoriaId} onChange={e => setForm(f => ({ ...f, categoriaId: e.target.value }))} className={inputCls}>
+            <h2 className="font-semibold text-slate-800 mb-4">Clasificación Comercial</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <Field label="Categoría (Raíz)">
+                <select
+                  value={form.categoriaId}
+                  onChange={e => setForm(f => ({ ...f, categoriaId: e.target.value, subcategoriaId: '' }))}
+                  className={inputCls}
+                >
                   <option value="">— Sin categoría —</option>
-                  {categorias.filter((c: any) => c.activo).map((c: any) => (
+                  {(categorias as any[]).filter((c: any) => c.activo && !c.parentId).map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Subcategoría">
+                <select
+                  value={form.subcategoriaId}
+                  onChange={e => setForm(f => ({ ...f, subcategoriaId: e.target.value }))}
+                  disabled={!form.categoriaId}
+                  className={inputCls}
+                >
+                  <option value="">— Sin subcategoría —</option>
+                  {(categorias as any[]).filter((c: any) => c.activo && c.parentId && String(c.parentId) === String(form.categoriaId)).map((c: any) => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
                 </select>

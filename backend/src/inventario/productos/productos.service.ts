@@ -4,7 +4,14 @@ import { CreateProductoDto, UpdateProductoDto } from './dto/producto.dto';
 import { v2 as cloudinary } from 'cloudinary';
 
 const PRODUCTO_INCLUDE = {
-  categoria: { select: { id: true, nombre: true } },
+  categoria: {
+    select: {
+      id: true,
+      nombre: true,
+      parentId: true,
+      parent: { select: { id: true, nombre: true } },
+    },
+  },
   marca: { select: { id: true, nombre: true } },
   unidadMedida: { select: { id: true, nombre: true, abreviatura: true } },
   grupo: { select: { id: true, nombre: true } },

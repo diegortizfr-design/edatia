@@ -400,7 +400,7 @@ export function ConfigProductosMaestros() {
         nombre: x.nombre,
         activo: x.activo ?? true,
         extra: x.abreviatura || x.extra || x.pucCuenta || undefined,
-        parentId: x.grupoId ? String(x.grupoId) : undefined,
+        parentId: x.grupoId ? String(x.grupoId) : (x.parentId ? String(x.parentId) : undefined),
         contable: x.contable || undefined,
       }))
     : []
@@ -557,6 +557,7 @@ export function ConfigProductosMaestros() {
       ...(activeTab === 'unidades' && formExtra ? { abreviatura: formExtra } : {}),
       ...(activeTab === 'clasificacion' && formExtra ? { pucCuenta: formExtra } : {}),
       ...(activeTab === 'subgrupos' && formParentId ? { grupoId: Number(formParentId) } : {}),
+      ...(activeTab === 'categorias' ? { parentId: formParentId ? Number(formParentId) : null } : {}),
       ...(activeTab === 'grupos' ? { contable: formContable } : {}),
     }
 
@@ -663,6 +664,9 @@ export function ConfigProductosMaestros() {
                     {activeTab === 'subgrupos' && (
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grupo Padre</th>
                     )}
+                    {activeTab === 'categorias' && (
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo / Categoría Superior</th>
+                    )}
                     {activeTab === 'grupos' && (
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Parametrización</th>
                     )}
@@ -698,6 +702,19 @@ export function ConfigProductosMaestros() {
                         {activeTab === 'subgrupos' && (
                           <td className="p-4 text-slate-600 font-medium">
                             {gruposList.find(g => g.id === item.parentId)?.nombre || <span className="text-slate-300 italic">No asignado</span>}
+                          </td>
+                        )}
+                        {activeTab === 'categorias' && (
+                          <td className="p-4 text-slate-600 font-medium">
+                            {item.parentId ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
+                                ↳ Subcategoría de: {categoriasData.find((c: any) => String(c.id) === String(item.parentId))?.nombre || 'Categoría superior'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
+                                Categoría Principal (Raíz)
+                              </span>
+                            )}
                           </td>
                         )}
                         {activeTab === 'grupos' && (
@@ -811,6 +828,25 @@ export function ConfigProductosMaestros() {
                         <option key={g.id} value={g.id}>{g.nombre}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {activeTab === 'categorias' && (
+                  <div className="md:col-span-4">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Categoría Padre (Opcional)</label>
+                    <select
+                      value={formParentId}
+                      onChange={e => setFormParentId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                    >
+                      <option value="">-- Ninguna (Es Categoría Principal / Raíz) --</option>
+                      {categoriasData
+                        .filter((c: any) => c.activo && (!c.parentId || c.parentId === null) && (!editingId || String(c.id) !== String(editingId)))
+                        .map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
+                    </select>
+                    <p className="text-[10px] text-slate-400 mt-1">Si seleccionas un padre, esta categoría actuará como subcategoría en la tienda y en productos.</p>
                   </div>
                 )}
 
