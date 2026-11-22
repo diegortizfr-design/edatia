@@ -57,11 +57,12 @@ interface GrupoContable {
   impuestosCompra?: string[];
 }
 
-type TabType = 'categorias' | 'marcas' | 'unidades' | 'grupos' | 'subgrupos' | 'colores' | 'tallas' | 'clasificacion' | 'tags';
+type TabType = 'categorias' | 'subcategorias' | 'marcas' | 'unidades' | 'grupos' | 'subgrupos' | 'colores' | 'tallas' | 'clasificacion' | 'tags';
 
 interface TabConfig {
   id: TabType;
   label: string;
+  singularLabel: string;
   storageKey: string;
   extraLabel?: string;
   extraPlaceholder?: string;
@@ -72,6 +73,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   categorias: {
     id: 'categorias',
     label: 'Categorías',
+    singularLabel: 'Categoría',
     storageKey: 'edatia_maestros_categorias',
     defaultData: [
       { id: 'cat_lujo', nombre: 'Joyería de Lujo', activo: true },
@@ -79,9 +81,17 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
       { id: 'cat_plata', nombre: 'Platería Ley 925', activo: true }
     ]
   },
+  subcategorias: {
+    id: 'subcategorias',
+    label: 'Subcategorías',
+    singularLabel: 'Subcategoría',
+    storageKey: 'edatia_maestros_subcategorias',
+    defaultData: []
+  },
   marcas: {
     id: 'marcas',
     label: 'Marcas',
+    singularLabel: 'Marca',
     storageKey: 'edatia_maestros_marcas',
     defaultData: [
       { id: 'mar_rolex', nombre: 'Rolex', activo: true },
@@ -92,6 +102,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   unidades: {
     id: 'unidades',
     label: 'Unidades de Medida',
+    singularLabel: 'Unidad de Medida',
     storageKey: 'edatia_maestros_unidades',
     extraLabel: 'Abreviatura',
     extraPlaceholder: 'Ej. und, g, kt',
@@ -104,6 +115,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   grupos: {
     id: 'grupos',
     label: 'Grupos',
+    singularLabel: 'Grupo',
     storageKey: 'edatia_maestros_grupos',
     defaultData: [
       { id: 'grp_anillos', nombre: 'Anillos', activo: true },
@@ -114,6 +126,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   subgrupos: {
     id: 'subgrupos',
     label: 'Subgrupos',
+    singularLabel: 'Subgrupo',
     storageKey: 'edatia_maestros_subgrupos',
     extraLabel: 'Grupo Asociado (ID)',
     extraPlaceholder: 'Ej. grp_anillos',
@@ -126,6 +139,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   colores: {
     id: 'colores',
     label: 'Colores',
+    singularLabel: 'Color',
     storageKey: 'edatia_maestros_colores',
     defaultData: [
       { id: 'col_oro', nombre: 'Oro Amarillo', activo: true },
@@ -137,6 +151,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   tallas: {
     id: 'tallas',
     label: 'Tallas / Medidas',
+    singularLabel: 'Talla',
     storageKey: 'edatia_maestros_tallas',
     defaultData: [
       { id: 'tal_6', nombre: 'Talla 6', activo: true },
@@ -148,6 +163,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   clasificacion: {
     id: 'clasificacion',
     label: 'Clasificación Contable',
+    singularLabel: 'Clasificación Contable',
     storageKey: 'edatia_maestros_clasificacion',
     extraLabel: 'Código Cuenta PUC',
     extraPlaceholder: 'Ej. 143505',
@@ -159,6 +175,7 @@ const TAB_CONFIGS: Record<TabType, TabConfig> = {
   tags: {
     id: 'tags',
     label: 'Tags / Etiquetas',
+    singularLabel: 'Tag',
     storageKey: 'edatia_maestros_tags',
     defaultData: [
       { id: 'tag_lujo', nombre: 'Alta Gama', activo: true },
@@ -318,6 +335,7 @@ export function ConfigProductosMaestros() {
   const queryClient = useQueryClient()
 
   const [search, setSearch] = useState('')
+  const [filterSubcatParent, setFilterSubcatParent] = useState<string>('')
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list')
 
   // Formulario general
@@ -336,6 +354,7 @@ export function ConfigProductosMaestros() {
   useEffect(() => {
     setViewMode('list')
     setSearch('')
+    setFilterSubcatParent('')
   }, [activeTab])
 
   // ── API Queries per tab ─────────────────────────────────────────────────────
@@ -382,15 +401,16 @@ export function ConfigProductosMaestros() {
 
   // Derive active tab items and loading state
   const TAB_QUERY_MAP: Record<string, { items: any[]; isLoading: boolean }> = {
-    categorias: { items: categoriasData, isLoading: loadingCategorias },
-    marcas:     { items: marcasData,     isLoading: loadingMarcas },
-    unidades:   { items: unidadesData,   isLoading: loadingUnidades },
-    grupos:     { items: gruposData,     isLoading: loadingGrupos },
-    subgrupos:  { items: subgruposData,  isLoading: loadingSubgrupos },
-    colores:    { items: coloresData,    isLoading: loadingColores },
-    tallas:     { items: tallasData,     isLoading: loadingTallas },
+    categorias:    { items: categoriasData.filter((c: any) => !c.parentId), isLoading: loadingCategorias },
+    subcategorias: { items: categoriasData.filter((c: any) => !!c.parentId), isLoading: loadingCategorias },
+    marcas:        { items: marcasData,     isLoading: loadingMarcas },
+    unidades:      { items: unidadesData,   isLoading: loadingUnidades },
+    grupos:        { items: gruposData,     isLoading: loadingGrupos },
+    subgrupos:     { items: subgruposData,  isLoading: loadingSubgrupos },
+    colores:       { items: coloresData,    isLoading: loadingColores },
+    tallas:        { items: tallasData,     isLoading: loadingTallas },
     clasificacion: { items: clasificacionesData, isLoading: loadingClasificaciones },
-    tags:       { items: tagsData,       isLoading: loadingTags },
+    tags:          { items: tagsData,       isLoading: loadingTags },
   }
 
   const apiTabState = TAB_QUERY_MAP[activeTab]
@@ -419,51 +439,55 @@ export function ConfigProductosMaestros() {
 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const QUERY_KEY_MAP: Record<string, string[]> = {
-    categorias: ['categorias'],
-    marcas:     ['marcas'],
-    unidades:   ['unidades_medida'],
-    grupos:     ['grupos_producto'],
-    subgrupos:  ['subgrupos_producto'],
-    colores:    ['colores_producto'],
-    tallas:     ['tallas_producto'],
+    categorias:    ['categorias'],
+    subcategorias: ['categorias'],
+    marcas:        ['marcas'],
+    unidades:      ['unidades_medida'],
+    grupos:        ['grupos_producto'],
+    subgrupos:     ['subgrupos_producto'],
+    colores:       ['colores_producto'],
+    tallas:        ['tallas_producto'],
     clasificacion: ['clasificaciones_contables'],
-    tags:       ['tags_producto'],
+    tags:          ['tags_producto'],
   }
 
   const CREATE_FN_MAP: Record<string, (dto: any) => Promise<any>> = {
-    categorias: createCategoria,
-    marcas:     createMarca,
-    unidades:   createUnidadMedida,
-    grupos:     createGrupoProducto,
-    subgrupos:  createSubgrupoProducto,
-    colores:    createColorProducto,
-    tallas:     createTallaProducto,
+    categorias:    createCategoria,
+    subcategorias: createCategoria,
+    marcas:        createMarca,
+    unidades:      createUnidadMedida,
+    grupos:        createGrupoProducto,
+    subgrupos:     createSubgrupoProducto,
+    colores:       createColorProducto,
+    tallas:        createTallaProducto,
     clasificacion: createClasificacionContable,
-    tags:       createTagProducto,
+    tags:          createTagProducto,
   }
 
   const UPDATE_FN_MAP: Record<string, (id: number, dto: any) => Promise<any>> = {
-    categorias: updateCategoria,
-    marcas:     updateMarca,
-    unidades:   updateUnidadMedida,
-    grupos:     updateGrupoProducto,
-    subgrupos:  updateSubgrupoProducto,
-    colores:    updateColorProducto,
-    tallas:     updateTallaProducto,
+    categorias:    updateCategoria,
+    subcategorias: updateCategoria,
+    marcas:        updateMarca,
+    unidades:      updateUnidadMedida,
+    grupos:        updateGrupoProducto,
+    subgrupos:     updateSubgrupoProducto,
+    colores:       updateColorProducto,
+    tallas:        updateTallaProducto,
     clasificacion: updateClasificacionContable,
-    tags:       updateTagProducto,
+    tags:          updateTagProducto,
   }
 
   const DELETE_FN_MAP: Record<string, (id: number) => Promise<any>> = {
-    categorias: deleteCategoria,
-    marcas:     deleteMarca,
-    unidades:   deleteUnidadMedida,
-    grupos:     deleteGrupoProducto,
-    subgrupos:  deleteSubgrupoProducto,
-    colores:    deleteColorProducto,
-    tallas:     deleteTallaProducto,
+    categorias:    deleteCategoria,
+    subcategorias: deleteCategoria,
+    marcas:        deleteMarca,
+    unidades:      deleteUnidadMedida,
+    grupos:        deleteGrupoProducto,
+    subgrupos:     deleteSubgrupoProducto,
+    colores:       deleteColorProducto,
+    tallas:        deleteTallaProducto,
     clasificacion: deleteClasificacionContable,
-    tags:       deleteTagProducto,
+    tags:          deleteTagProducto,
   }
 
   const createMutation = useMutation({
@@ -524,7 +548,7 @@ export function ConfigProductosMaestros() {
     setFormNombre('')
     setFormActivo(true)
     setFormExtra('')
-    setFormParentId('')
+    setFormParentId(activeTab === 'subcategorias' && filterSubcatParent ? filterSubcatParent : '')
     setFormContable(DEFAULT_CONTABLE)
     setViewMode('form')
   }
@@ -550,6 +574,12 @@ export function ConfigProductosMaestros() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formNombre) return alert('El nombre es obligatorio.')
+    if (activeTab === 'subcategorias' && !formParentId) {
+      return alert('Debe seleccionar la Categoría Padre obligatoriamente para crear una subcategoría.')
+    }
+    if (activeTab === 'subgrupos' && !formParentId) {
+      return alert('Debe seleccionar el Grupo Asociado obligatoriamente.')
+    }
 
     const dto: any = {
       nombre: formNombre,
@@ -557,7 +587,8 @@ export function ConfigProductosMaestros() {
       ...(activeTab === 'unidades' && formExtra ? { abreviatura: formExtra } : {}),
       ...(activeTab === 'clasificacion' && formExtra ? { pucCuenta: formExtra } : {}),
       ...(activeTab === 'subgrupos' && formParentId ? { grupoId: Number(formParentId) } : {}),
-      ...(activeTab === 'categorias' ? { parentId: formParentId ? Number(formParentId) : null } : {}),
+      ...(activeTab === 'categorias' ? { parentId: null } : {}),
+      ...(activeTab === 'subcategorias' && formParentId ? { parentId: Number(formParentId) } : {}),
       ...(activeTab === 'grupos' ? { contable: formContable } : {}),
     }
 
@@ -568,10 +599,17 @@ export function ConfigProductosMaestros() {
     }
   }
 
-  const filteredItems = items.filter(x =>
-    x.nombre.toLowerCase().includes(search.toLowerCase()) ||
-    (x.extra || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredItems = items
+    .filter(x => {
+      if (activeTab === 'subcategorias' && filterSubcatParent) {
+        return String(x.parentId) === filterSubcatParent
+      }
+      return true
+    })
+    .filter(x =>
+      x.nombre.toLowerCase().includes(search.toLowerCase()) ||
+      (x.extra || '').toLowerCase().includes(search.toLowerCase())
+    )
 
   const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
@@ -609,7 +647,7 @@ export function ConfigProductosMaestros() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 hover:shadow-lg active:scale-[0.98] transition-all"
               >
                 <Plus size={16} />
-                Agregar {currentTabConfig.label.slice(0, -1)}
+                Agregar {currentTabConfig.singularLabel}
               </button>
             </div>
           </div>
@@ -635,16 +673,37 @@ export function ConfigProductosMaestros() {
             })}
           </div>
 
-          {/* Search bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-3.5 w-3.5" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={`Buscar en ${currentTabConfig.label.toLowerCase()}...`}
-              className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all shadow-sm"
-            />
+          {/* Search bar & Filters */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-3.5 w-3.5" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={`Buscar en ${currentTabConfig.label.toLowerCase()}...`}
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all shadow-sm"
+              />
+            </div>
+
+            {activeTab === 'subcategorias' && (
+              <div className="w-full sm:w-72">
+                <select
+                  value={filterSubcatParent}
+                  onChange={e => setFilterSubcatParent(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all shadow-sm font-semibold cursor-pointer"
+                >
+                  <option value="">📁 Todas las Categorías Padre ({categoriasData.filter((c: any) => !c.parentId).length})</option>
+                  {categoriasData
+                    .filter((c: any) => !c.parentId)
+                    .map((c: any) => (
+                      <option key={c.id} value={String(c.id)}>
+                        Categoría: {c.nombre}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Table list */}
@@ -665,7 +724,10 @@ export function ConfigProductosMaestros() {
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grupo Padre</th>
                     )}
                     {activeTab === 'categorias' && (
-                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo / Categoría Superior</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Subcategorías Asociadas</th>
+                    )}
+                    {activeTab === 'subcategorias' && (
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría Padre</th>
                     )}
                     {activeTab === 'grupos' && (
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Parametrización</th>
@@ -706,15 +768,35 @@ export function ConfigProductosMaestros() {
                         )}
                         {activeTab === 'categorias' && (
                           <td className="p-4 text-slate-600 font-medium">
-                            {item.parentId ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
-                                ↳ Subcategoría de: {categoriasData.find((c: any) => String(c.id) === String(item.parentId))?.nombre || 'Categoría superior'}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
-                                Categoría Principal (Raíz)
-                              </span>
-                            )}
+                            {(() => {
+                              const subcats = categoriasData.filter((c: any) => String(c.parentId) === String(item.id))
+                              return subcats.length > 0 ? (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="inline-flex items-center px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-bold border border-indigo-100">
+                                    {subcats.length} subcategoría{subcats.length > 1 ? 's' : ''}
+                                  </span>
+                                  <span className="text-xs text-slate-400">
+                                    ({subcats.map((s: any) => s.nombre).slice(0, 3).join(', ')}{subcats.length > 3 ? '...' : ''})
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-300 italic">Sin subcategorías</span>
+                              )
+                            })()}
+                          </td>
+                        )}
+                        {activeTab === 'subcategorias' && (
+                          <td className="p-4 text-slate-600 font-medium">
+                            {(() => {
+                              const parent = categoriasData.find((c: any) => String(c.id) === String(item.parentId))
+                              return parent ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
+                                  ↳ {parent.nombre}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-amber-600 font-medium italic">Sin categoría padre</span>
+                              )
+                            })()}
                           </td>
                         )}
                         {activeTab === 'grupos' && (
@@ -770,7 +852,7 @@ export function ConfigProductosMaestros() {
               </div>
               <h1 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2 tracking-tight">
                 <SlidersHorizontal size={24} className="text-indigo-600" />
-                {editingId ? `Editar ${currentTabConfig.label.slice(0, -1)}` : `Crear ${currentTabConfig.label.slice(0, -1)}`}
+                {editingId ? `Editar ${currentTabConfig.singularLabel}` : `Crear ${currentTabConfig.singularLabel}`}
               </h1>
               <p className="text-slate-500 text-xs mt-0.5">
                 {activeTab === 'grupos'
@@ -821,7 +903,7 @@ export function ConfigProductosMaestros() {
                       value={formParentId}
                       onChange={e => setFormParentId(e.target.value)}
                       required
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer font-medium"
                     >
                       <option value="">-- Seleccionar Grupo --</option>
                       {gruposList.filter(g => g.activo).map(g => (
@@ -832,21 +914,31 @@ export function ConfigProductosMaestros() {
                 )}
 
                 {activeTab === 'categorias' && (
+                  <div className="md:col-span-4 flex items-center">
+                    <div className="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-xs text-slate-600 leading-relaxed">
+                      <span className="font-bold text-indigo-700 block mb-0.5">Categoría Principal (Raíz)</span>
+                      Esta categoría se creará en el nivel superior y aparecerá destacada en la portada y catálogo de la tienda virtual.
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'subcategorias' && (
                   <div className="md:col-span-4">
-                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Categoría Padre (Opcional)</label>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Categoría Padre *</label>
                     <select
                       value={formParentId}
                       onChange={e => setFormParentId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer"
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all cursor-pointer font-medium"
                     >
-                      <option value="">-- Ninguna (Es Categoría Principal / Raíz) --</option>
+                      <option value="">-- Seleccionar Categoría Padre --</option>
                       {categoriasData
-                        .filter((c: any) => c.activo && (!c.parentId || c.parentId === null) && (!editingId || String(c.id) !== String(editingId)))
+                        .filter((c: any) => c.activo && (!c.parentId || c.parentId === null))
                         .map((c: any) => (
                           <option key={c.id} value={c.id}>{c.nombre}</option>
                         ))}
                     </select>
-                    <p className="text-[10px] text-slate-400 mt-1">Si seleccionas un padre, esta categoría actuará como subcategoría en la tienda y en productos.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Selecciona a qué categoría principal pertenece esta subcategoría.</p>
                   </div>
                 )}
 
@@ -1040,7 +1132,7 @@ export function ConfigProductosMaestros() {
                 type="submit"
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 active:scale-[0.98] transition-all"
               >
-                Guardar {currentTabConfig.label.slice(0, -1)}
+                Guardar {currentTabConfig.singularLabel}
               </button>
             </div>
           </form>
