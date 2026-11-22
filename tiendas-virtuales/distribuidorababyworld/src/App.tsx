@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, Truck, Store, Clock, Navigation, ArrowLeft } from 'lucide-react'
+import { Shield, Truck, Store, Clock, Navigation, ArrowLeft, Layers } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { CategoriesSection } from './components/CategoriesSection'
@@ -30,6 +30,7 @@ import { Product, ProductVariant, PRODUCTOS_BABY_WORLD } from './data/productos'
 import { normalizarVideos } from './lib/videoEmbed'
 import { analytics } from './lib/analytics'
 import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
+import { ACTIVE_CAMPAIGN } from './constants/seasonalCampaign'
 
 interface ErpCategory {
   id: number
@@ -66,6 +67,7 @@ export function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [activeSubcategory, setActiveSubcategory] = useState('Todos')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFullCatalogMode, setIsFullCatalogMode] = useState(false)
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -330,9 +332,13 @@ export function App() {
 
   // Filter products by category, subcategory and search query (conectado 100% al ERP)
   const filteredProducts = products.filter(p => {
-    const isBlackDaysFilter = activeCategory.toLowerCase().includes('black')
-    const matchesCategory = isBlackDaysFilter
-      ? Boolean((p.precioAnterior && p.precioAnterior > p.precio) || p.categoria.toLowerCase().includes('juguet'))
+    const isCampaignFilter = ACTIVE_CAMPAIGN.active && (
+      matchesCategoryName(activeCategory, ACTIVE_CAMPAIGN.categoryName) ||
+      activeCategory.toLowerCase().includes(ACTIVE_CAMPAIGN.id) ||
+      activeCategory.toLowerCase().includes('black')
+    )
+    const matchesCategory = isCampaignFilter
+      ? ACTIVE_CAMPAIGN.isCampaignProduct(p)
       : activeCategory === 'Todos' || matchesCategoryName(p.categoria, activeCategory)
 
     const matchesSubcategory = activeSubcategory === 'Todos' ||
@@ -500,6 +506,7 @@ export function App() {
       }
       document.title = 'Distribuidora Baby World | Tienda Virtual'
     }
+    setIsFullCatalogMode(false)
     const matched = availableCategories.find(c => matchesCategoryName(c, category)) || category
     setActiveCategory(matched)
     setActiveSubcategory('Todos')
@@ -509,9 +516,30 @@ export function App() {
     }
   }
 
+  const handleSelectAllCatalog = () => {
+    handleCloseProduct()
+    if (showFamiliaForm) {
+      setShowFamiliaForm(false)
+      if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+        window.history.pushState({}, '', '/')
+      }
+      document.title = 'Distribuidora Baby World | Tienda Virtual'
+    }
+    setActiveCategory('Todos')
+    setActiveSubcategory('Todos')
+    setSearchQuery('')
+    setIsFullCatalogMode(true)
+    const el = document.getElementById('catalogo-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   const handlePromoAction = () => {
     setIsPromoModalOpen(false)
-    handleCategorySelect('🔥 Black Days')
+    handleCategorySelect(ACTIVE_CAMPAIGN.categoryName)
   }
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
@@ -541,7 +569,8 @@ export function App() {
       if (b === 'Otros') return -1
       return a.localeCompare(b, 'es')
     })
-    return ['Todos', '🔥 Black Days', ...sorted]
+    const campaignPill = ACTIVE_CAMPAIGN.active ? [ACTIVE_CAMPAIGN.categoryName] : []
+    return ['Todos', ...campaignPill, ...sorted]
   }, [erpCategories, products])
 
   const availableSubcategories = useMemo(() => {
@@ -616,7 +645,7 @@ export function App() {
       ) : (
         <>
           {/* VISTA DE INICIO (Home): Banners + Lo Más Recomendado + Sección de Categorías */}
-          {activeCategory === 'Todos' && !searchQuery ? (
+          {activeCategory === 'Todos' && !searchQuery && !isFullCatalogMode ? (
             <>
               {/* 1. Banners Principales */}
               <HeroBanner
@@ -643,12 +672,14 @@ export function App() {
                 erpCategories={erpCategories}
                 products={products}
                 onSelectCategory={(category, subcategory) => {
+                  setIsFullCatalogMode(false)
                   handleCategorySelect(category)
                   if (subcategory) {
                     setActiveSubcategory(subcategory)
                   }
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
+                onSelectAllCatalog={handleSelectAllCatalog}
               />
             </>
           ) : (
@@ -661,6 +692,7 @@ export function App() {
                     {/* Botón Volver a Categorías */}
                     <button
                       onClick={() => {
+                        setIsFullCatalogMode(false)
                         setActiveCategory('Todos')
                         setSearchQuery('')
                         setActiveSubcategory('Todos')
@@ -669,7 +701,7 @@ export function App() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-700 rounded-xl text-xs font-bold transition-all group active:scale-95"
                     >
                       <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-                      <span>Volver a Categorías</span>
+                      <span>Volver al Inicio / Categorías</span>
                     </button>
 
                     <div className="flex items-center gap-2 pt-1">
@@ -685,29 +717,33 @@ export function App() {
                     <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                       {searchQuery
                         ? `Resultados para "${searchQuery}"`
-                        : activeCategory.toLowerCase().includes('black')
-                          ? '🔥 Ofertas Oficiales Black Days'
-                          : activeCategory}
+                        : isFullCatalogMode || activeCategory === 'Todos'
+                          ? '✨ Todo el Catálogo de Baby World'
+                          : ACTIVE_CAMPAIGN.active && (activeCategory.toLowerCase().includes('black') || activeCategory.toLowerCase().includes(ACTIVE_CAMPAIGN.id))
+                            ? ACTIVE_CAMPAIGN.title
+                            : activeCategory}
                     </h2>
                   </div>
 
                   {/* Selector rápido para saltar a otra categoría */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-semibold hidden md:inline">Cambiar categoría:</span>
-                    <select
-                      value={activeCategory}
-                      onChange={(e) => {
-                        handleCategorySelect(e.target.value)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }}
-                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-sky-300 transition-all cursor-pointer"
+                    <span className="text-xs text-slate-400 font-semibold hidden md:inline">Cambiar sección:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoriesModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-700 hover:text-sky-700 transition-all active:scale-95 shadow-2xs group cursor-pointer"
+                      title="Abrir menú de todas las categorías"
                     >
-                      {availableCategories.map(c => (
-                        <option key={c} value={c}>
-                          {c === 'Todos' ? '✨ Todas las Categorías (Inicio)' : c}
-                        </option>
-                      ))}
-                    </select>
+                      <Layers size={14} className="text-sky-600 group-hover:scale-110 transition-transform" />
+                      <span className="max-w-[140px] sm:max-w-none truncate">
+                        {isFullCatalogMode || activeCategory === 'Todos'
+                          ? '✨ Todo el Catálogo'
+                          : activeCategory}
+                      </span>
+                      <span className="text-[10px] text-slate-400 group-hover:text-sky-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md ml-0.5 font-semibold">
+                        Cambiar
+                      </span>
+                    </button>
                   </div>
                 </div>
 
@@ -1022,11 +1058,13 @@ export function App() {
         activeCategory={activeCategory}
         activeSubcategory={activeSubcategory}
         onSelectCategory={(category, subcategory) => {
+          setIsFullCatalogMode(false)
           handleCategorySelect(category)
           if (subcategory) {
             setActiveSubcategory(subcategory)
           }
         }}
+        onSelectAllCatalog={handleSelectAllCatalog}
       />
     </div>
   )

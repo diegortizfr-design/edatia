@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react'
-import { ArrowRight, ChevronRight, Sparkles, Layers, Tag } from 'lucide-react'
+import { ArrowRight, ChevronRight, Sparkles, Layers } from 'lucide-react'
 import { Product } from '../data/productos'
 import { matchesCategoryName, toCategoryTitleCase } from '../lib/categoriaFormat'
+import { getCategoryMeta } from '../lib/categoryMeta'
+import { ACTIVE_CAMPAIGN } from '../constants/seasonalCampaign'
 
 interface ErpCategory {
   id: number
@@ -18,112 +20,7 @@ interface CategoriesSectionProps {
   erpCategories?: ErpCategory[]
   products?: Product[]
   onSelectCategory: (category: string, subcategory?: string) => void
-}
-
-interface CategoryCardMeta {
-  icon: string
-  bgLight: string
-  textColor: string
-  borderColor: string
-  ringColor: string
-  gradient?: string
-  badgeText?: string
-}
-
-function getCategoryMeta(catName: string): CategoryCardMeta {
-  const c = catName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-
-  if (c.includes('black') || c.includes('oferta')) {
-    return {
-      icon: '🔥',
-      bgLight: 'bg-amber-50',
-      textColor: 'text-amber-600',
-      borderColor: 'border-amber-300',
-      ringColor: 'hover:ring-amber-400',
-      gradient: 'from-amber-500 via-rose-500 to-slate-900',
-      badgeText: 'Black Days',
-    }
-  }
-  if (c.includes('panal') || c.includes('toalla')) {
-    return {
-      icon: '🍼',
-      bgLight: 'bg-sky-50',
-      textColor: 'text-sky-600',
-      borderColor: 'border-sky-200',
-      ringColor: 'hover:ring-sky-400',
-    }
-  }
-  if (c.includes('juguet') || c.includes('estimul') || c.includes('didact')) {
-    return {
-      icon: '🧸',
-      bgLight: 'bg-amber-50',
-      textColor: 'text-amber-600',
-      borderColor: 'border-amber-200',
-      ringColor: 'hover:ring-amber-400',
-    }
-  }
-  if (c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) {
-    return {
-      icon: '🧴',
-      bgLight: 'bg-emerald-50',
-      textColor: 'text-emerald-600',
-      borderColor: 'border-emerald-200',
-      ringColor: 'hover:ring-emerald-400',
-    }
-  }
-  if (c.includes('calzado') || c.includes('zapato') || c.includes('tenis')) {
-    return {
-      icon: '👟',
-      bgLight: 'bg-purple-50',
-      textColor: 'text-purple-600',
-      borderColor: 'border-purple-200',
-      ringColor: 'hover:ring-purple-400',
-    }
-  }
-  if (c.includes('ropa') || c.includes('vest') || c.includes('ajuar') || c.includes('moda')) {
-    return {
-      icon: '👕',
-      bgLight: 'bg-rose-50',
-      textColor: 'text-rose-600',
-      borderColor: 'border-rose-200',
-      ringColor: 'hover:ring-rose-400',
-    }
-  }
-  if (c.includes('aliment') || c.includes('leche') || c.includes('lactanc') || c.includes('tetero')) {
-    return {
-      icon: '🥣',
-      bgLight: 'bg-indigo-50',
-      textColor: 'text-indigo-600',
-      borderColor: 'border-indigo-200',
-      ringColor: 'hover:ring-indigo-400',
-    }
-  }
-  if (c.includes('coche') || c.includes('paseo') || c.includes('silla') || c.includes('cuna') || c.includes('corral')) {
-    return {
-      icon: '🛒',
-      bgLight: 'bg-teal-50',
-      textColor: 'text-teal-600',
-      borderColor: 'border-teal-200',
-      ringColor: 'hover:ring-teal-400',
-    }
-  }
-  if (c.includes('variedad') || c.includes('accesori')) {
-    return {
-      icon: '🎀',
-      bgLight: 'bg-pink-50',
-      textColor: 'text-pink-600',
-      borderColor: 'border-pink-200',
-      ringColor: 'hover:ring-pink-400',
-    }
-  }
-
-  return {
-    icon: '🏷️',
-    bgLight: 'bg-slate-50',
-    textColor: 'text-slate-600',
-    borderColor: 'border-slate-200',
-    ringColor: 'hover:ring-slate-400',
-  }
+  onSelectAllCatalog?: () => void
 }
 
 export function CategoriesSection({
@@ -131,8 +28,9 @@ export function CategoriesSection({
   erpCategories = [],
   products = [],
   onSelectCategory,
+  onSelectAllCatalog,
 }: CategoriesSectionProps) {
-  // Excluir 'Todos' porque esta sección es la vitrina para que el usuario escoja a dónde entrar
+  // Excluir 'Todos' de las tarjetas cuadradas
   const displayCategories = useMemo(() => {
     return categories.filter(c => c.toLowerCase() !== 'todos')
   }, [categories])
@@ -143,8 +41,8 @@ export function CategoriesSection({
     for (const p of products) {
       const cat = p.categoria || 'Otros'
       map.set(cat, (map.get(cat) || 0) + 1)
-      if ((p.precioAnterior && p.precioAnterior > p.precio) || p.categoria.toLowerCase().includes('juguet')) {
-        map.set('🔥 Black Days', (map.get('🔥 Black Days') || 0) + 1)
+      if (ACTIVE_CAMPAIGN.active && ACTIVE_CAMPAIGN.isCampaignProduct(p)) {
+        map.set(ACTIVE_CAMPAIGN.categoryName, (map.get(ACTIVE_CAMPAIGN.categoryName) || 0) + 1)
       }
     }
     return map
@@ -152,7 +50,7 @@ export function CategoriesSection({
 
   // Obtener subcategorías asociadas
   const getSubcategories = (catName: string): string[] => {
-    if (catName.includes('Black')) return []
+    if (catName.includes('Black') || catName.includes('Oferta') || catName.includes('Navidad')) return []
     const subs = new Set<string>()
 
     // Desde el ERP
@@ -173,58 +71,109 @@ export function CategoriesSection({
     return Array.from(subs).filter(Boolean)
   }
 
+  const handleAllCatalogClick = () => {
+    if (onSelectAllCatalog) {
+      onSelectAllCatalog()
+    } else {
+      onSelectCategory('Todos')
+    }
+  }
+
   return (
-    <section id="categorias-section" className="bg-gradient-to-b from-white via-slate-50/60 to-white py-12 sm:py-16 border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Encabezado de la sección */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-600 border border-sky-100 text-xs font-bold uppercase tracking-wider mb-3 shadow-2xs">
-            <Layers size={13} className="text-sky-500" />
-            <span>Nuestras Categorías</span>
+    <section id="categorias-section" className="bg-gradient-to-b from-white via-slate-50/50 to-white py-6 sm:py-8 border-t border-slate-100">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+        
+        {/* ============================================================== */}
+        {/* ENCABEZADO COMPACTO DE SECCIÓN                                 */}
+        {/* ============================================================== */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4 sm:mb-5">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-600 border border-sky-100 text-[10px] font-bold uppercase tracking-wider mb-1 shadow-2xs">
+              <Layers size={11} className="text-sky-500" />
+              <span>Nuestras Secciones</span>
+            </div>
+            <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              ¿Qué estás buscando para tu bebé?
+            </h2>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            ¿Qué estás buscando para tu bebé?
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-2">
-            Explora por departamentos y encuentra las mejores marcas, ofertas y productos seleccionados especialmente para ti.
+
+          <p className="text-xs text-slate-500 max-w-sm sm:text-right font-medium">
+            Selecciona un departamento o consulta el inventario completo.
           </p>
         </div>
 
-        {/* Rejilla de Tarjetas de Categoría */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+        {/* ============================================================== */}
+        {/* 1. BARRA SUPERIOR DESTACADA: "VER TODO EL CATÁLOGO" (ARRIBA)    */}
+        {/* ============================================================== */}
+        <div
+          onClick={handleAllCatalogClick}
+          className="mb-4 sm:mb-5 group relative overflow-hidden bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-white rounded-2xl p-2.5 sm:p-3 border border-sky-400/30 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 z-10">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-base sm:text-lg shrink-0 group-hover:scale-105 transition-transform">
+              ✨
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
+                  Explorar Todo el Catálogo
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-400/20 text-sky-300 text-[10px] font-bold border border-sky-400/30 shrink-0">
+                  <Sparkles size={9} />
+                  <span>{products.length} productos</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 truncate hidden xs:block sm:block font-normal">
+                Ver todos los pañales, juguetes, aseo, ropa y accesorios sin filtro de categoría
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500 group-hover:bg-sky-400 text-white font-extrabold text-[11px] sm:text-xs shadow-xs transition-all z-10">
+            <span>Ver todo</span>
+            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* 2. REJILLA DE TARJETAS COMPACTAS (AJUSTADAS A LA PANTALLA)     */}
+        {/* ============================================================== */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
           {displayCategories.map((cat) => {
             const meta = getCategoryMeta(cat)
             const count = countByCategory.get(cat) || 0
             const subcategories = getSubcategories(cat)
-            const isBlackDays = cat.toLowerCase().includes('black')
+            const isSpecial = meta.isSpecialCampaign
 
-            if (isBlackDays) {
+            if (isSpecial) {
               return (
                 <div
                   key={cat}
                   onClick={() => onSelectCategory(cat)}
-                  className="col-span-2 sm:col-span-2 md:col-span-1 lg:col-span-1 group relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 text-white p-5 sm:p-6 rounded-3xl border border-amber-400/30 shadow-md hover:shadow-xl hover:-translate-y-1 hover:border-amber-400 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[170px]"
+                  className={`col-span-2 sm:col-span-2 md:col-span-1 lg:col-span-1 group relative overflow-hidden bg-gradient-to-br ${meta.gradient || 'from-slate-950 via-slate-900 to-amber-950'} text-white p-3.5 sm:p-4 rounded-2xl border ${meta.borderColor} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[110px] sm:min-h-[118px]`}
                 >
-                  <div className="flex items-start justify-between">
-                    <span className="text-3xl sm:text-4xl filter drop-shadow">🔥</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase tracking-wider">
-                      <Sparkles size={10} />
-                      Ofertas
+                  <div className="flex items-start justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl sm:text-2xl filter drop-shadow">{meta.icon}</span>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-black text-amber-300 group-hover:text-amber-200 transition-colors leading-tight">
+                          {cat}
+                        </h3>
+                        <p className="text-[10px] text-slate-300 font-medium line-clamp-1 mt-0.5">
+                          {ACTIVE_CAMPAIGN.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-wider shrink-0">
+                      <Sparkles size={9} />
+                      {meta.badgeText || 'Ofertas'}
                     </span>
                   </div>
 
-                  <div className="mt-4">
-                    <h3 className="text-base sm:text-lg font-black text-amber-300 group-hover:text-amber-200 transition-colors">
-                      {cat}
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-0.5 font-medium">
-                      Hasta 60% OFF en referencias seleccionadas
-                    </p>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-xs font-bold text-amber-400 border-t border-white/10 pt-3">
-                    <span>Ver ofertas</span>
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  <div className="mt-2 pt-2 flex items-center justify-between text-[11px] font-bold text-amber-400 border-t border-white/10">
+                    <span>{ACTIVE_CAMPAIGN.actionText}</span>
+                    <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
               )
@@ -234,63 +183,62 @@ export function CategoriesSection({
               <div
                 key={cat}
                 onClick={() => onSelectCategory(cat)}
-                className="group bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-sky-300 transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[170px] relative overflow-hidden"
+                className="group bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-sky-300 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[110px] sm:min-h-[118px] relative"
               >
                 <div>
-                  {/* Icono + Conteo */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${meta.bgLight} ${meta.borderColor} border flex items-center justify-center text-2xl sm:text-3xl shadow-2xs group-hover:scale-105 transition-transform duration-300`}>
+                  {/* Fila superior: Icono + Conteo + Flecha */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${meta.bgLight} ${meta.borderColor} border flex items-center justify-center text-lg sm:text-xl shadow-2xs group-hover:scale-105 transition-transform duration-200`}>
                       {meta.icon}
                     </div>
-                    {count > 0 && (
-                      <span className="text-[10px] sm:text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
-                        {count} prod.
-                      </span>
-                    )}
+
+                    <div className="flex items-center gap-1.5">
+                      {count > 0 && (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-md">
+                          {count} prod.
+                        </span>
+                      )}
+                      <ChevronRight size={14} className="text-slate-300 group-hover:text-sky-600 group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
 
                   {/* Título de la Categoría */}
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-800 group-hover:text-sky-600 transition-colors leading-snug">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 group-hover:text-sky-600 transition-colors leading-tight truncate">
                     {cat}
                   </h3>
 
-                  {/* Previsualización de subcategorías (hasta 2 o 3) */}
+                  {/* Previsualización compacta de subcategorías */}
                   {subcategories.length > 0 ? (
-                    <div className="flex flex-wrap gap-1 mt-2.5">
-                      {subcategories.slice(0, 3).map((sub) => (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {subcategories.slice(0, 2).map((sub) => (
                         <span
                           key={sub}
                           onClick={(e) => {
                             e.stopPropagation()
                             onSelectCategory(cat, sub)
                           }}
-                          className="text-[10px] font-medium text-slate-500 bg-slate-100/80 hover:bg-sky-50 hover:text-sky-600 px-2 py-0.5 rounded-md transition-colors"
+                          className="text-[9px] font-medium text-slate-500 bg-slate-100/90 hover:bg-sky-50 hover:text-sky-600 px-1.5 py-0.5 rounded transition-colors truncate max-w-[120px]"
                         >
                           {sub}
                         </span>
                       ))}
-                      {subcategories.length > 3 && (
+                      {subcategories.length > 2 && (
                         <span className="text-[9px] font-bold text-slate-400 self-center">
-                          +{subcategories.length - 3}
+                          +{subcategories.length - 2}
                         </span>
                       )}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
-                      Ver catálogo completo
+                    <p className="text-[10px] text-slate-400 mt-1 line-clamp-1">
+                      Ver sección
                     </p>
                   )}
-                </div>
-
-                {/* Footer de la tarjeta con acción rápida */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-sky-600 group-hover:text-sky-700">
-                  <span className="text-[11px] sm:text-xs">Explorar</span>
-                  <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             )
           })}
         </div>
+
       </div>
     </section>
   )
