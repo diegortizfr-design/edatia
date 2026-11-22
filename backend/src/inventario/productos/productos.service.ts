@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductoDto, UpdateProductoDto } from './dto/producto.dto';
+import { normalizarVideosWeb } from './video-web.util';
 import { v2 as cloudinary } from 'cloudinary';
 
 const PRODUCTO_INCLUDE = {
@@ -137,6 +138,7 @@ export class ProductosService {
       esDigital: metadata.esDigital ?? false,
       nombreWeb: metadata.nombreWeb ?? '',
       imagenes: Array.isArray(metadata.imagenes) ? metadata.imagenes : [],
+      videos: Array.isArray(metadata.videos) ? metadata.videos : [],
       etiquetaSeo: metadata.etiquetaSeo ?? '',
       metaDescripcion: metadata.metaDescripcion ?? '',
       ordenMostrar: metadata.ordenMostrar ?? 0,
@@ -152,10 +154,15 @@ export class ProductosService {
     
     const { proveedores, codigos, ...productData } = dto as any;
 
+    const videosWeb = productData.videos !== undefined
+      ? await normalizarVideosWeb(productData.videos)
+      : [];
+
     const metadataFields = {
       esDigital: productData.esDigital,
       nombreWeb: productData.nombreWeb,
       imagenes: productData.imagenes,
+      videos: videosWeb,
       etiquetaSeo: productData.etiquetaSeo,
       metaDescripcion: productData.metaDescripcion,
       ordenMostrar: productData.ordenMostrar,
@@ -165,6 +172,7 @@ export class ProductosService {
     delete productData.esDigital;
     delete productData.nombreWeb;
     delete productData.imagenes;
+    delete productData.videos;
     delete productData.etiquetaSeo;
     delete productData.metaDescripcion;
     delete productData.ordenMostrar;
@@ -274,11 +282,16 @@ export class ProductosService {
     const existing = await this.findOne(id, empresaId);
     const existingMetadata = (existing.metadataWeb as Record<string, any>) || {};
 
+    const videosWeb = productData.videos !== undefined
+      ? await normalizarVideosWeb(productData.videos)
+      : undefined;
+
     const metadataFields = {
       ...existingMetadata,
       ...(productData.esDigital !== undefined && { esDigital: productData.esDigital }),
       ...(productData.nombreWeb !== undefined && { nombreWeb: productData.nombreWeb }),
       ...(productData.imagenes !== undefined && { imagenes: productData.imagenes }),
+      ...(videosWeb !== undefined && { videos: videosWeb }),
       ...(productData.etiquetaSeo !== undefined && { etiquetaSeo: productData.etiquetaSeo }),
       ...(productData.metaDescripcion !== undefined && { metaDescripcion: productData.metaDescripcion }),
       ...(productData.ordenMostrar !== undefined && { ordenMostrar: productData.ordenMostrar }),
@@ -288,6 +301,7 @@ export class ProductosService {
     delete productData.esDigital;
     delete productData.nombreWeb;
     delete productData.imagenes;
+    delete productData.videos;
     delete productData.etiquetaSeo;
     delete productData.metaDescripcion;
     delete productData.ordenMostrar;

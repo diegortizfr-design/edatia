@@ -26,6 +26,7 @@ import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
 import { Product, ProductVariant, PRODUCTOS_BABY_WORLD } from './data/productos'
+import { normalizarVideos } from './lib/videoEmbed'
 import { analytics } from './lib/analytics'
 import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
 
@@ -279,6 +280,10 @@ export function App() {
               genero: p.metadataWeb?.genero || 'Unisex',
               imagen: imagenesMapeadas[0],
               imagenes: imagenesMapeadas,
+              videos: (() => {
+                const raw = p.metadataWeb?.videos || p.videos || []
+                return normalizarVideos(raw)
+              })(),
               rating: p.esDestacado ? 5.0 : 4.8,
               reviewsCount: 25 + (p.id * 3),
               stock: stockReal,

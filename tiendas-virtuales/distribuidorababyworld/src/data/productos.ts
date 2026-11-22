@@ -1,3 +1,5 @@
+import { VideoInfo } from '../lib/videoEmbed'
+
 export interface ProductVariant {
   id: number
   sku: string
@@ -35,6 +37,7 @@ export interface Product {
   etapa?: string
   imagen: string
   imagenes?: string[]
+  videos?: VideoInfo[]
   rating: number
   reviewsCount?: number
   stock: number

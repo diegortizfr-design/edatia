@@ -1992,4 +1992,34 @@ ${itemsXml}
 </body>
 </html>`;
   }
+
+  // Caché en memoria para evitar saturar el resolvedor de TikTok
+  private streamVideoCache = new Map<string, { playUrl: string; cover?: string; timestamp: number }>();
+
+  async resolverVideoStream(url: string) {
+    if (!url) return { playUrl: null };
+    const ahora = Date.now();
+    const cached = this.streamVideoCache.get(url);
+    if (cached && ahora - cached.timestamp < 1000 * 60 * 60 * 3) { // 3 horas
+      return { playUrl: cached.playUrl, cover: cached.cover };
+    }
+
+    try {
+      const resp = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EdatiaBot/1.0; +https://edatia.com)' },
+      });
+      if (resp.ok) {
+        const json: any = await resp.json();
+        if (json.code === 0 && json.data?.play) {
+          const resultado = { playUrl: json.data.play, cover: json.data.cover, timestamp: ahora };
+          this.streamVideoCache.set(url, resultado);
+          return { playUrl: resultado.playUrl, cover: resultado.cover };
+        }
+      }
+    } catch (e: any) {
+      this.logger.warn(`Error resolviendo stream de video para ${url}: ${e?.message}`);
+    }
+
+    return { playUrl: null };
+  }
 }

@@ -233,6 +233,9 @@ export class CreateProductoDto {
   @IsOptional()
   imagenes?: any;
 
+  @IsOptional() @IsArray()
+  videos?: any[];
+
   @IsOptional() @IsString()
   etiquetaSeo?: string;
 
@@ -485,6 +488,9 @@ export class UpdateProductoDto {
 
   @IsOptional()
   imagenes?: any;
+
+  @IsOptional() @IsArray()
+  videos?: any[];
 
   @IsOptional() @IsString()
   etiquetaSeo?: string;

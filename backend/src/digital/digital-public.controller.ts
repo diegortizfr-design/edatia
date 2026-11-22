@@ -88,6 +88,12 @@ export class DigitalPublicController {
     return this.digitalService.crearPedidoWeb(slug, body);
   }
 
+  // Resolución de stream de video limpio sin marcas de agua
+  @Get(':slug/video-stream')
+  async getVideoStream(@Query('url') url: string) {
+    return this.digitalService.resolverVideoStream(url);
+  }
+
   // Permite al cliente cambiar su forma de pago en un pedido pendiente
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Patch(':slug/pedidos/:id/metodo-pago')

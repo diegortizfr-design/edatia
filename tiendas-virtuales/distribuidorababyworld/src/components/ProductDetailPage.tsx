@@ -3,7 +3,7 @@ import {
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, HeartHandshake, Share2, Plus, Minus,
   ChevronRight, ChevronLeft, PackageCheck, Sparkles,
-  ZoomIn, Maximize2, X
+  ZoomIn, Maximize2, X, Play
 } from 'lucide-react'
 import { LocationPinIcon } from './LocationPinIcon'
 import { Product, ProductVariant } from '../data/productos'
@@ -11,6 +11,7 @@ import { ProductCard } from './ProductCard'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
+import { VideoReelModal, VideoReelItem } from './VideoReelModal'
 import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
@@ -39,6 +40,7 @@ export function ProductDetailPage({
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
+  const [videoModalIndex, setVideoModalIndex] = useState<number | null>(null)
 
   const gallery = (product.imagenes && product.imagenes.length > 0)
     ? product.imagenes
@@ -169,6 +171,13 @@ export function ProductDetailPage({
   }
 
   const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
+  const videoItems: VideoReelItem[] = (product.videos || []).map(v => ({
+    video: v,
+    product,
+    precio: effectivePrice,
+    stock: effectiveStock,
+    etiqueta: selectedVariant ? selectedVariant.nombre : undefined,
+  }))
   const whatsappMessage = encodeURIComponent(
     isAgotado
       ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
@@ -278,6 +287,20 @@ export function ProductDetailPage({
                       ✨ Nuevo
                     </span>
                   )}
+                  {product.videos && product.videos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setVideoModalIndex(0)
+                      }}
+                      className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-extrabold text-[10px] sm:text-xs px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer pointer-events-auto"
+                      title="Ver demostración en video"
+                    >
+                      <Play size={11} fill="currentColor" />
+                      <span>Ver en Video</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Botón flotante de Pantalla Completa */}
@@ -304,14 +327,46 @@ export function ProductDetailPage({
                 </div>
               </div>
               
-              {/* Image Thumbnails */}
-              {product.imagenes && product.imagenes.length > 1 && (
+              {/* Media Thumbnails: Imágenes y Videos */}
+              {((product.imagenes && product.imagenes.length > 1) || (product.videos && product.videos.length > 0)) && (
                 <div className="flex items-center gap-3 overflow-x-auto pb-2 snap-x">
-                  {product.imagenes.map((img, idx) => (
+                  {/* Videos de demostración con badge Play */}
+                  {product.videos && product.videos.map((vid, vidIdx) => (
                     <button
-                      key={idx}
+                      key={`vid-${vidIdx}`}
+                      type="button"
+                      onClick={() => setVideoModalIndex(vidIdx)}
+                      className="relative w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-2 border-rose-400 hover:border-rose-500 bg-slate-900 shadow-sm transition-all cursor-pointer group snap-start"
+                      title={`Ver video: ${vid.titulo || product.nombre}`}
+                    >
+                      <img
+                        src={vid.thumbnail || getOptimizedImageUrl(product.imagen, 180)}
+                        alt="Video"
+                        className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          if (target.src !== FALLBACK_IMAGE) {
+                            target.src = FALLBACK_IMAGE
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                        <span className="w-8 h-8 rounded-full bg-white text-rose-500 shadow-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Play size={13} fill="currentColor" className="ml-0.5" />
+                        </span>
+                      </div>
+                      <span className="absolute bottom-1 inset-x-1 bg-black/75 backdrop-blur-xs text-white text-[8px] font-black py-0.5 px-1 rounded truncate text-center uppercase">
+                        Video
+                      </span>
+                    </button>
+                  ))}
+
+                  {/* Fotos del producto */}
+                  {product.imagenes && product.imagenes.map((img, idx) => (
+                    <button
+                      key={`img-${idx}`}
                       onClick={() => setCurrentImage(img)}
-                      className={`relative w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
+                      className={`relative w-20 h-20 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer snap-start ${
                         currentImage === img 
                           ? 'border-sky-500 ring-2 ring-sky-200 shadow-sm' 
                           : 'border-slate-200/80 hover:border-slate-300 bg-white'
@@ -788,6 +843,17 @@ export function ProductDetailPage({
             )}
           </div>
         </div>
+      )}
+
+      {/* ── MODAL REPRODUCTOR DE VIDEO REEL / IN-STORE ── */}
+      {videoModalIndex !== null && videoItems.length > 0 && (
+        <VideoReelModal
+          items={videoItems}
+          startIndex={videoModalIndex}
+          onClose={() => setVideoModalIndex(null)}
+          onAddToCart={() => onAddToCart(product, quantity, selectedVariant || undefined)}
+          variantesResueltas={true}
+        />
       )}
     </div>
   )

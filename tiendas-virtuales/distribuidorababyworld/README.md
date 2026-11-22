@@ -27,6 +27,12 @@ Storefront oficial de comercio electrónico para **Distribuidora Baby World (Pa�
 - **Geolocalización GPS:** Modal interactivo con dirección física en Poblado Campestre, enlaces directos a Google Maps, Waze y copia de dirección en un clic.
 - **Pedidos Directos:** Carrito con cálculo de subtotal, IVA, recargos y canalización directa a checkout o WhatsApp oficial.
 
+### 3. Demostración de Productos en Video (Cero Almacenamiento & Marca Blanca)
+- **Reproducción Limpia y Nativa:** Soporte para videos demostrativos (TikTok, YouTube Shorts, Instagram Reels, MP4 directos) gestionados desde la pestaña *Web / Digital* del ERP.
+- **Streaming sin Marcas de Agua (TikTok):** Doble canal de resolución dinámica en tiempo real (API directa en cliente + endpoint de respaldo en backend `/api/v1/public/tiendas/distribuidorababyworld/video-stream`), eliminando marcas de agua, logotipos y botones de terceros.
+- **Visor Reel Integrado ([VideoReelModal.tsx](src/components/VideoReelModal.tsx)):** Modal centrado con fondo oscuro, cierre instantáneo por clic exterior (`backdrop-click`), tecla `Esc` y botón directo de compra siempre visible. Desmontaje limpio de estado en React sin alterar el historial ni recargar la ficha del producto.
+- **Cero Consumo de Espacio:** El servidor no almacena videos ni consume cuota de disco; los flujos se consumen bajo demanda.
+
 ---
 
 ## 🛠️ Tecnologías y Herramientas
