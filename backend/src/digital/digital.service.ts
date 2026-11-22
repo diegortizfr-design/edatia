@@ -122,6 +122,7 @@ export class DigitalService {
             select: {
               id: true,
               nombre: true,
+              parentId: true,
               parent: { select: { id: true, nombre: true } },
             },
           },
@@ -130,8 +131,13 @@ export class DigitalService {
       }),
       this.prisma.categoria.findMany({
         where: { empresaId, activo: true },
-        select: { id: true, nombre: true, parentId: true },
-        orderBy: { nombre: 'asc' },
+        select: {
+          id: true,
+          nombre: true,
+          parentId: true,
+          parent: { select: { id: true, nombre: true } },
+        },
+        orderBy: [{ parentId: 'asc' }, { nombre: 'asc' }],
       }),
     ]);
 
@@ -148,7 +154,11 @@ export class DigitalService {
         referencia: p.referencia,
         imagen: p.imagen,
         categoriaId: p.categoriaId,
-        categoriaNombre: p.categoria?.nombre || 'Sin categoría',
+        categoriaPadreId: p.categoria?.parentId || (p.categoria?.parent as any)?.id || null,
+        categoriaPadreNombre: (p.categoria?.parent as any)?.nombre || null,
+        categoriaNombre: p.categoria
+          ? (p.categoria.parent ? `${(p.categoria.parent as any).nombre} > ${p.categoria.nombre}` : p.categoria.nombre)
+          : 'Sin categoría',
         costoPromedio: costo,
         precioBase: Number(p.precioBase || 0),
         precioWebManual: p.precioWeb ? Number(p.precioWeb) : null,
@@ -407,6 +417,9 @@ export class DigitalService {
     const precioBaseCalculo = web > 0 ? web : base;
 
     const catId = prod.categoriaId ? String(prod.categoriaId) : null;
+    const parentCatId = (prod as any).categoria?.parentId
+      ? String((prod as any).categoria.parentId)
+      : ((prod as any).categoria?.parent?.id ? String((prod as any).categoria.parent.id) : null);
     const prodId = prod.id ? String(prod.id) : null;
 
     const recargos = reglasPrecios?.recargos;
@@ -420,6 +433,8 @@ export class DigitalService {
     if (recargos && recargos.activo !== false) {
       if (catId && recargos.categorias && recargos.categorias[catId] !== undefined && recargos.categorias[catId] !== null && recargos.categorias[catId] !== '') {
         recargoPct = Number(recargos.categorias[catId]);
+      } else if (parentCatId && recargos.categorias && recargos.categorias[parentCatId] !== undefined && recargos.categorias[parentCatId] !== null && recargos.categorias[parentCatId] !== '') {
+        recargoPct = Number(recargos.categorias[parentCatId]);
       } else if (recargos.global !== undefined && recargos.global !== null && recargos.global !== '') {
         recargoPct = Number(recargos.global);
       }
@@ -439,6 +454,8 @@ export class DigitalService {
         descuentoPct = Number(descuentos.productos[prodId]);
       } else if (catId && descuentos.categorias && descuentos.categorias[catId] !== undefined && descuentos.categorias[catId] !== null && descuentos.categorias[catId] !== '') {
         descuentoPct = Number(descuentos.categorias[catId]);
+      } else if (parentCatId && descuentos.categorias && descuentos.categorias[parentCatId] !== undefined && descuentos.categorias[parentCatId] !== null && descuentos.categorias[parentCatId] !== '') {
+        descuentoPct = Number(descuentos.categorias[parentCatId]);
       } else if (descuentos.global !== undefined && descuentos.global !== null && descuentos.global !== '') {
         descuentoPct = Number(descuentos.global);
       }
@@ -545,9 +562,12 @@ export class DigitalService {
         categoriaId: true,
         categoria: {
           select: {
+            id: true,
             nombre: true,
+            parentId: true,
             parent: {
               select: {
+                id: true,
                 nombre: true
               }
             }
@@ -855,6 +875,14 @@ export class DigitalService {
         appliedTaxIds: true,
         manejaBodega: true,
         categoriaId: true,
+        categoria: {
+          select: {
+            id: true,
+            nombre: true,
+            parentId: true,
+            parent: { select: { id: true, nombre: true } },
+          },
+        },
         stock: {
           select: {
             cantidad: true,

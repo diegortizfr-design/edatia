@@ -12,6 +12,7 @@ interface Categoria {
   id: number
   nombre: string
   parentId?: number | null
+  parent?: { id: number; nombre: string } | null
 }
 
 interface ProductoPreview {
@@ -21,6 +22,8 @@ interface ProductoPreview {
   referencia?: string
   imagen?: string | null
   categoriaId?: number | null
+  categoriaPadreId?: number | null
+  categoriaPadreNombre?: string | null
   categoriaNombre: string
   costoPromedio: number
   precioBase: number
@@ -185,6 +188,58 @@ export function GestionPrecios() {
     }
   }
 
+  // Organización jerárquica de categorías (Raíz y Subcategorías)
+  const { categoriasRaiz, subcategoriasPorPadre, todasOrganizadas } = useMemo(() => {
+    const raiz: Categoria[] = []
+    const subMap: Record<number, Categoria[]> = {}
+
+    categorias.forEach(c => {
+      if (!c.parentId) {
+        raiz.push(c)
+      } else {
+        if (!subMap[c.parentId]) subMap[c.parentId] = []
+        subMap[c.parentId].push(c)
+      }
+    })
+
+    raiz.sort((a, b) => a.nombre.localeCompare(b.nombre))
+    Object.values(subMap).forEach(list => list.sort((a, b) => a.nombre.localeCompare(b.nombre)))
+
+    const organizadas: Array<{
+      categoria: Categoria
+      esSub: boolean
+      padreId?: number
+      padreNombre?: string
+    }> = []
+
+    raiz.forEach(padre => {
+      organizadas.push({ categoria: padre, esSub: false })
+      const hijos = subMap[padre.id] || []
+      hijos.forEach(hijo => {
+        organizadas.push({
+          categoria: hijo,
+          esSub: true,
+          padreId: padre.id,
+          padreNombre: padre.nombre
+        })
+      })
+    })
+
+    // Subcategorías huérfanas si las hubiera
+    categorias.forEach(c => {
+      if (c.parentId && !raiz.some(r => r.id === c.parentId) && !organizadas.some(o => o.categoria.id === c.id)) {
+        organizadas.push({
+          categoria: c,
+          esSub: true,
+          padreId: c.parentId,
+          padreNombre: c.parent?.nombre || 'General'
+        })
+      }
+    })
+
+    return { categoriasRaiz: raiz, subcategoriasPorPadre: subMap, todasOrganizadas: organizadas }
+  }, [categorias])
+
   // Helper de cálculo dinámico para previsualización inmediata en vivo
   const redondear = (val: number, modo: string) => {
     if (modo === 'CENTENA') return Math.round(val / 100) * 100
@@ -195,9 +250,10 @@ export function GestionPrecios() {
   const calcularSimulacion = (p: ProductoPreview) => {
     const base = p.precioWebManual && p.precioWebManual > 0 ? p.precioWebManual : p.precioBase
     const catId = p.categoriaId ? String(p.categoriaId) : null
+    const parentCatId = p.categoriaPadreId ? String(p.categoriaPadreId) : null
     const prodId = String(p.id)
 
-    // 1. Recargo
+    // 1. Recargo (Subcategoría -> Categoría Padre -> Global)
     let recargoPct = 0
     let precioRegularSubtotal = base
     const modoRedondeo = reglas.recargos.redondeo
@@ -205,6 +261,8 @@ export function GestionPrecios() {
     if (reglas.recargos.activo) {
       if (catId && reglas.recargos.categorias[catId] !== undefined && reglas.recargos.categorias[catId] !== null) {
         recargoPct = Number(reglas.recargos.categorias[catId])
+      } else if (parentCatId && reglas.recargos.categorias[parentCatId] !== undefined && reglas.recargos.categorias[parentCatId] !== null) {
+        recargoPct = Number(reglas.recargos.categorias[parentCatId])
       } else {
         recargoPct = Number(reglas.recargos.global || 0)
       }
@@ -213,7 +271,7 @@ export function GestionPrecios() {
       }
     }
 
-    // 2. Descuento
+    // 2. Descuento (Producto -> Subcategoría -> Categoría Padre -> Global)
     let descuentoPct = 0
     let precioFinalSubtotal = precioRegularSubtotal
     let tieneDescuento = false
@@ -223,6 +281,8 @@ export function GestionPrecios() {
         descuentoPct = Number(reglas.descuentos.productos[prodId])
       } else if (catId && reglas.descuentos.categorias[catId] !== undefined && reglas.descuentos.categorias[catId] !== null) {
         descuentoPct = Number(reglas.descuentos.categorias[catId])
+      } else if (parentCatId && reglas.descuentos.categorias[parentCatId] !== undefined && reglas.descuentos.categorias[parentCatId] !== null) {
+        descuentoPct = Number(reglas.descuentos.categorias[parentCatId])
       } else {
         descuentoPct = Number(reglas.descuentos.global || 0)
       }
@@ -279,15 +339,24 @@ export function GestionPrecios() {
         p.sku.toLowerCase().includes(q) ||
         (p.referencia && p.referencia.toLowerCase().includes(q))
 
-      const matchesCat = selectedCat === 'todas' || String(p.categoriaId) === selectedCat
+      // Coincide si es la categoría seleccionada o si es hijo de la categoría padre seleccionada
+      const matchesCat = selectedCat === 'todas' ||
+        String(p.categoriaId) === selectedCat ||
+        (p.categoriaPadreId && String(p.categoriaPadreId) === selectedCat)
 
       const sim = calcularSimulacion(p)
       const tieneDctoIndiv = reglas.descuentos.productos && reglas.descuentos.productos[String(p.id)] !== undefined
+      const catKey = p.categoriaId ? String(p.categoriaId) : null
+      const parentKey = p.categoriaPadreId ? String(p.categoriaPadreId) : null
+      const tieneDctoCatDirecto = catKey && reglas.descuentos.categorias && reglas.descuentos.categorias[catKey] !== undefined && Number(reglas.descuentos.categorias[catKey]) > 0
+      const tieneDctoCatPadre = parentKey && reglas.descuentos.categorias && reglas.descuentos.categorias[parentKey] !== undefined && Number(reglas.descuentos.categorias[parentKey]) > 0
+      const tieneDctoPorCategoria = tieneDctoCatDirecto || tieneDctoCatPadre
+
       const matchesDescuento =
         filtroDescuento === 'todos' ||
         (filtroDescuento === 'con_descuento' && sim.tieneDescuento) ||
         (filtroDescuento === 'descuento_producto' && tieneDctoIndiv) ||
-        (filtroDescuento === 'descuento_categoria' && sim.tieneDescuento && !tieneDctoIndiv && String(p.categoriaId) in (reglas.descuentos.categorias || {})) ||
+        (filtroDescuento === 'descuento_categoria' && sim.tieneDescuento && !tieneDctoIndiv && tieneDctoPorCategoria) ||
         (filtroDescuento === 'sin_descuento' && !sim.tieneDescuento)
 
       return matchesSearch && matchesCat && matchesDescuento
@@ -533,15 +602,39 @@ export function GestionPrecios() {
                 </div>
               </div>
 
-              <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100 pr-1">
-                {categorias.map(cat => {
+              <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100 pr-1">
+                {todasOrganizadas.map(({ categoria: cat, esSub, padreNombre, padreId }) => {
                   const catKey = String(cat.id)
                   const valorActual = reglas.recargos.categorias[catKey] ?? ''
+                  // Placeholder: si es subcategoría y su padre tiene recargo configurado, muestra ese porcentaje heredado
+                  const recargoPadre = padreId && reglas.recargos.categorias[String(padreId)] !== undefined
+                    ? `${reglas.recargos.categorias[String(padreId)]}% (Padre)`
+                    : `${reglas.recargos.global}%`
+
                   return (
-                    <div key={cat.id} className="py-2.5 flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold text-slate-700 truncate">{cat.nombre}</span>
+                    <div
+                      key={cat.id}
+                      className={`py-2.5 flex items-center justify-between gap-3 ${
+                        esSub ? 'pl-6 bg-slate-50/40' : 'bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {esSub && <span className="text-slate-400 font-mono text-xs">↳</span>}
+                        <span className={`text-xs truncate ${esSub ? 'text-slate-600 font-medium' : 'text-slate-800 font-bold'}`}>
+                          {cat.nombre}
+                        </span>
+                        {esSub ? (
+                          <span className="text-[10px] text-slate-400 font-normal shrink-0">
+                            (de {padreNombre})
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.2 rounded shrink-0">
+                            Principal
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <div className="relative w-24">
+                        <div className="relative w-28">
                           <input
                             type="number"
                             min="0"
@@ -563,8 +656,10 @@ export function GestionPrecios() {
                                 }
                               })
                             }}
-                            placeholder={`${reglas.recargos.global}%`}
-                            className="w-full pl-2.5 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-300"
+                            placeholder={recargoPadre}
+                            className={`w-full pl-2.5 pr-6 py-1 bg-slate-50 border rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-300 ${
+                              valorActual !== '' ? 'border-indigo-400 bg-indigo-50/30' : 'border-slate-200'
+                            }`}
                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">%</span>
                         </div>
@@ -582,7 +677,7 @@ export function GestionPrecios() {
                               })
                             }}
                             className="text-slate-400 hover:text-rose-500 text-xs p-1"
-                            title="Restablecer al global"
+                            title="Restablecer (heredar)"
                           >
                             <X size={13} />
                           </button>
@@ -806,25 +901,47 @@ export function GestionPrecios() {
                 </p>
               </div>
 
-              <div className="max-h-[260px] overflow-y-auto divide-y divide-slate-100 pr-1">
-                {categorias.map(cat => {
+              <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-100 pr-1">
+                {todasOrganizadas.map(({ categoria: cat, esSub, padreNombre, padreId }) => {
                   const catKey = String(cat.id)
                   const valorActual = reglas.descuentos.categorias[catKey] ?? ''
                   const tieneDcto = valorActual !== '' && Number(valorActual) > 0
 
+                  // Placeholder de herencia
+                  const dctoPadre = padreId && reglas.descuentos.categorias[String(padreId)] !== undefined && Number(reglas.descuentos.categorias[String(padreId)]) > 0
+                    ? `${reglas.descuentos.categorias[String(padreId)]}% (Padre)`
+                    : (reglas.descuentos.global > 0 ? `${reglas.descuentos.global}% (Global)` : '0%')
+
                   return (
-                    <div key={cat.id} className="py-2.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="text-xs font-semibold text-slate-700 truncate">{cat.nombre}</span>
+                    <div
+                      key={cat.id}
+                      className={`py-2.5 flex items-center justify-between gap-3 ${
+                        esSub ? 'pl-6 bg-slate-50/40' : 'bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate min-w-0">
+                        {esSub && <span className="text-slate-400 font-mono text-xs">↳</span>}
+                        <span className={`text-xs truncate ${esSub ? 'text-slate-600 font-medium' : 'text-slate-800 font-bold'}`}>
+                          {cat.nombre}
+                        </span>
+                        {esSub ? (
+                          <span className="text-[10px] text-slate-400 font-normal shrink-0">
+                            (de {padreNombre})
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.2 rounded shrink-0">
+                            Principal
+                          </span>
+                        )}
                         {tieneDcto && (
-                          <span className="bg-rose-100 text-rose-700 text-[10px] font-black px-1.5 py-0.2 rounded">
+                          <span className="bg-rose-100 text-rose-700 text-[10px] font-black px-1.5 py-0.2 rounded shrink-0">
                             -{valorActual}%
                           </span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <div className="relative w-24">
+                        <div className="relative w-28">
                           <input
                             type="number"
                             min="0"
@@ -846,7 +963,7 @@ export function GestionPrecios() {
                                 }
                               })
                             }}
-                            placeholder="0%"
+                            placeholder={dctoPadre}
                             className={`w-full pl-2.5 pr-6 py-1 bg-slate-50 border rounded-lg text-xs font-bold outline-none focus:ring-1 ${
                               tieneDcto
                                 ? 'border-rose-400 text-rose-700 bg-rose-50/50 focus:ring-rose-300'
@@ -913,12 +1030,23 @@ export function GestionPrecios() {
             <select
               value={selectedCat}
               onChange={(e) => setSelectedCat(e.target.value)}
-              className="py-1.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none"
+              className="py-1.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none max-w-xs"
             >
               <option value="todas">Todas las Categorías</option>
-              {categorias.map(c => (
-                <option key={c.id} value={String(c.id)}>{c.nombre}</option>
-              ))}
+              <optgroup label="Categorías Principales">
+                {categoriasRaiz.map(c => (
+                  <option key={c.id} value={String(c.id)}>{c.nombre}</option>
+                ))}
+              </optgroup>
+              {todasOrganizadas.some(o => o.esSub) && (
+                <optgroup label="Subcategorías">
+                  {todasOrganizadas.filter(o => o.esSub).map(o => (
+                    <option key={o.categoria.id} value={String(o.categoria.id)}>
+                      {o.categoria.nombre} ({o.padreNombre})
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
 
             {/* Filtro Descuento */}
@@ -981,12 +1109,18 @@ export function GestionPrecios() {
 
                   // Herencia para el placeholder
                   const catKey = p.categoriaId ? String(p.categoriaId) : null
+                  const parentKey = p.categoriaPadreId ? String(p.categoriaPadreId) : null
                   const tieneDctoCat = catKey && reglas.descuentos.categorias[catKey] !== undefined && Number(reglas.descuentos.categorias[catKey]) > 0
-                  const dctoCatValor = tieneDctoCat ? Number(reglas.descuentos.categorias[catKey]) : 0
+                  const tieneDctoPadre = !tieneDctoCat && parentKey && reglas.descuentos.categorias[parentKey] !== undefined && Number(reglas.descuentos.categorias[parentKey]) > 0
+                  const dctoCatValor = tieneDctoCat
+                    ? Number(reglas.descuentos.categorias[catKey])
+                    : (tieneDctoPadre ? Number(reglas.descuentos.categorias[parentKey]) : 0)
                   const tieneDctoGlobal = reglas.descuentos.global > 0
 
                   let placeholderDcto = '0%'
                   if (tieneDctoCat) {
+                    placeholderDcto = `${dctoCatValor}% (Subcat)`
+                  } else if (tieneDctoPadre) {
                     placeholderDcto = `${dctoCatValor}% (Cat)`
                   } else if (tieneDctoGlobal) {
                     placeholderDcto = `${reglas.descuentos.global}% (Global)`
@@ -1102,7 +1236,7 @@ export function GestionPrecios() {
                             )
                           ) : sim.tieneDescuento ? (
                             <span className="text-[9px] font-semibold text-slate-400">
-                              {tieneDctoCat ? 'De categoría' : 'De tienda'}
+                              {tieneDctoCat ? 'De subcategoría' : (tieneDctoPadre ? 'De categoría padre' : 'De tienda')}
                             </span>
                           ) : null}
                         </div>

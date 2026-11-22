@@ -73,4 +73,33 @@ export class CategoriasService {
     }
     return (this.prisma as any).categoria.update({ where: { id }, data: dto });
   }
+
+  async remove(id: number, empresaId: number) {
+    await this.findOne(id, empresaId);
+
+    // Validar si tiene subcategorías vinculadas
+    const hijosCount = await (this.prisma as any).categoria.count({
+      where: { parentId: id, empresaId, activo: true },
+    });
+    if (hijosCount > 0) {
+      throw new ConflictException('No se puede eliminar la categoría porque contiene subcategorías asociadas.');
+    }
+
+    // Validar si tiene productos asociados
+    const prodsCount = await (this.prisma as any).producto.count({
+      where: { categoriaId: id, empresaId },
+    });
+    if (prodsCount > 0) {
+      // Soft-delete si tiene productos asociados
+      return (this.prisma as any).categoria.update({
+        where: { id },
+        data: { activo: false },
+      });
+    }
+
+    // Eliminación física si no tiene referencias
+    return (this.prisma as any).categoria.delete({
+      where: { id },
+    });
+  }
 }
