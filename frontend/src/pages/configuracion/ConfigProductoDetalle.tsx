@@ -12,8 +12,9 @@ import {
   BarChart3, Clock, Loader2, Share2, Sparkles, MessageCircle, Video, Wand2,
   Eye, ChevronLeft, ChevronRight, Download,
   Tag, ToggleLeft, ToggleRight, Edit2, Info, Check, AlertCircle,
-  Lock, EyeOff, Palette, Printer, Copy, FileSpreadsheet
+  Lock, EyeOff, Palette, Printer, Copy, FileSpreadsheet, Camera
 } from 'lucide-react'
+import { CameraCaptureModal } from '../../components/CameraCaptureModal'
 import {
   getProducto, getStockProducto, getOrdenesCompra, getFacturasCompra, getProveedores, updateProducto,
   getVariantes, createVariante, updateVariante, toggleVariante, deleteVariante,
@@ -92,6 +93,7 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
   const [newVideoUrl, setNewVideoUrl] = useState('')
   const [newVideoTitulo, setNewVideoTitulo] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
+  const [mostrarCamara, setMostrarCamara] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [generandoInfo, setGenerandoInfo] = useState(false)
   const [fondoEstudioIa, setFondoEstudioIa] = useState(true)
@@ -586,6 +588,17 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
             <span className="ml-1.5">{uploadingImg ? 'Subiendo...' : 'Subir Imagen'}</span>
             <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImg} className="hidden" />
           </label>
+
+          <button
+            type="button"
+            onClick={() => setMostrarCamara(true)}
+            disabled={uploadingImg}
+            className="flex items-center justify-center px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold cursor-pointer transition-all border border-emerald-200 shrink-0 shadow-xs"
+            title="Tomar foto con la cámara del dispositivo"
+          >
+            <Camera size={14} className="text-emerald-600" />
+            <span className="ml-1.5">Tomar Foto</span>
+          </button>
         </div>
         
         {data.imagenes.length > 0 ? (
@@ -918,6 +931,15 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
           </div>
         </div>
       )}
+
+      {/* ── MODAL CAPTURA DE CÁMARA EN VIVO ── */}
+      <CameraCaptureModal
+        isOpen={mostrarCamara}
+        onClose={() => setMostrarCamara(false)}
+        onCapture={(file) => subirArchivo(file)}
+        conFondoIa={fondoEstudioIa}
+        titulo={`Tomar Foto - ${producto?.nombre || 'Producto'}`}
+      />
     </div>
   )
 }

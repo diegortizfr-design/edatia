@@ -7,6 +7,7 @@ import {
 import api, { getMediaUrl } from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import { CameraCaptureModal } from './CameraCaptureModal'
 
 interface ModalProductoIaProps {
   isOpen: boolean
@@ -28,6 +29,7 @@ export function ModalProductoIa({ isOpen, onClose, onSuccess }: ModalProductoIaP
   const [precio, setPrecio] = useState<string>('')
   const [notas, setNotas] = useState<string>('')
   const [isDragging, setIsDragging] = useState(false)
+  const [mostrarCamara, setMostrarCamara] = useState(false)
 
   // Estado del proceso
   const [progresoMensaje, setProgresoMensaje] = useState<string>('Iniciando...')
@@ -322,6 +324,19 @@ export function ModalProductoIa({ isOpen, onClose, onSuccess }: ModalProductoIaP
                   <p className="text-xs text-slate-400 mt-1">
                     También puedes pegar una imagen de internet con <kbd className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono text-slate-600 shadow-xs">Ctrl + V</kbd>
                   </p>
+                  <div className="mt-3 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMostrarCamara(true)
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs"
+                    >
+                      <Camera size={14} className="text-emerald-600" />
+                      <span>O tomar foto con la cámara</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Miniaturas de imágenes seleccionadas */}
@@ -650,6 +665,13 @@ export function ModalProductoIa({ isOpen, onClose, onSuccess }: ModalProductoIaP
           )}
         </div>
       </div>
+
+      <CameraCaptureModal
+        isOpen={mostrarCamara}
+        onClose={() => setMostrarCamara(false)}
+        onCapture={(file) => agregarArchivos([file])}
+        titulo="Tomar Foto del Producto con IA"
+      />
     </div>
   )
 }
