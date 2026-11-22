@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Star, Plus } from 'lucide-react'
+import { Star, Plus, Play } from 'lucide-react'
 import { Product } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
@@ -83,11 +83,19 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
             </span>
           ) : <span />}
 
-          {product.etapa && (
-            <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100 truncate max-w-[40%] shrink-0">
-              {product.etapa}
-            </span>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {product.videos && product.videos.length > 0 && (
+              <span className="bg-black/75 backdrop-blur-xs text-white font-extrabold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                <Play size={8} fill="currentColor" />
+                <span>Video</span>
+              </span>
+            )}
+            {product.etapa && (
+              <span className="bg-white/90 backdrop-blur-sm text-slate-700 font-bold text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full shadow-sm border border-slate-100 truncate max-w-[40%] shrink-0">
+                {product.etapa}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

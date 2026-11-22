@@ -158,4 +158,13 @@ export const analytics = {
       currency: 'COP',
     })
   },
+  verVideo(id: number, nombre: string, plataforma: string) {
+    enviarEventoPropio('VER_PRODUCTO', id)
+    enviarGA('view_video', { items: [{ item_id: String(id), item_name: nombre, video_platform: plataforma }] })
+    enviarFB('ViewContent', {
+      content_ids: [String(id)],
+      content_name: `${nombre} (Video ${plataforma})`,
+      content_type: 'product',
+    })
+  },
 }

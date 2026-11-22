@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-20 (sesión 28)
+> Última actualización: 2026-11-22 (sesión 29)
 
 ---
 
@@ -35,6 +35,21 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | ERP (Demo SAS) | 900000000 | admin (o admin@edatia.com) | Admin123! |
 | Préstamos | 1143875756 | admin@edatia.com | Admin123! |
 | Préstamos (Cliente) | 1033680464 | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 29) — 2026-11-22
+
+✅ **Reproducción Limpia de Videos Demostrativos sin Marcas de Agua (TikTok) y Optimización de UX (`distribuidorababyworld` & `backend`):**
+  - **Reproductor Universal de Video Limpio (Opción 2 — Cero Almacenamiento):**
+    - Eliminación de marcas de agua flotantes de TikTok, logotipos y botones de likes/comentarios.
+    - Sustitución del iframe restrictivo por etiqueta nativa HTML5 `<video>` con soporte para loop, controles estándar y `referrerPolicy: 'no-referrer'`.
+    - Solución definitiva al error de escritorio *"Unable to load player"* que TikTok arrojaba en navegadores de PC.
+    - Doble canal de resolución en tiempo real: consulta primaria directa a la API oficial pública de TikWM desde el cliente (`https://www.tikwm.com/api/?url=...`) con respaldo en endpoint de backend (`/api/v1/public/tiendas/:slug/video-stream`) con caché en memoria de 3 horas.
+  - **Experiencia de Usuario en Ficha de Producto (`VideoReelModal.tsx`):**
+    - Cierre intuitivo al hacer clic en el fondo oscuro exterior (`backdrop-click`) o presionar `Esc`.
+    - Desmontaje limpio de estado en React (`setVideoModalIndex(null)`) sin llamar a `window.history.back()`, asegurando que al cerrar el video el cliente permanezca **100% en la ficha del producto actual** con su scroll, fotos y botón de compra intactos.
+  - **Gestión Administrativa en ERP (`ConfigProductoDetalle.tsx`):**
+    - Pestaña *Web / Digital* con soporte para agregar, previsualizar y eliminar videos demostrativos (TikTok, YouTube Shorts, Reels o archivos MP4 directos).
+    - Normalización automática en backend (`video-web.util.ts`), resolución de enlaces cortos móviles (`vt.tiktok.com`) y persistencia en `metadataWeb.videos`.
 
 ## Estado resuelto (sesión 28) — 2026-11-20
 

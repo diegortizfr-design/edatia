@@ -80,6 +80,7 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
     imagenes: Array.isArray(producto.imagenes) && producto.imagenes.length > 0 
       ? producto.imagenes 
       : producto.imagen ? [producto.imagen] : [],
+    videos: Array.isArray(producto.videos) ? producto.videos : [],
     etiquetaSeo: producto.etiquetaSeo || '',
     metaDescripcion: producto.metaDescripcion || '',
     ordenMostrar: producto.ordenMostrar || 0,
@@ -88,6 +89,8 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
   })
   const [saved, setSaved] = useState(false)
   const [newImagen, setNewImagen] = useState('')
+  const [newVideoUrl, setNewVideoUrl] = useState('')
+  const [newVideoTitulo, setNewVideoTitulo] = useState('')
   const [uploadingImg, setUploadingImg] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [generandoInfo, setGenerandoInfo] = useState(false)
@@ -137,6 +140,7 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
       imagenes: Array.isArray(producto.imagenes) && producto.imagenes.length > 0 
         ? producto.imagenes 
         : producto.imagen ? [producto.imagen] : [],
+      videos: Array.isArray(producto.videos) ? producto.videos : [],
       etiquetaSeo: producto.etiquetaSeo || '',
       metaDescripcion: producto.metaDescripcion || '',
       ordenMostrar: producto.ordenMostrar || 0,
@@ -152,7 +156,25 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
       slug: currentData.slug?.trim() ? currentData.slug.trim() : null,
       imagenes: imgs,
       imagen: imgs.length > 0 ? imgs[0] : null,
+      videos: currentData.videos || [],
     }
+  }
+
+  const addVideo = () => {
+    if (!newVideoUrl.trim()) return
+    const url = newVideoUrl.trim()
+    const titulo = newVideoTitulo.trim()
+    const item = titulo ? { url, titulo } : { url }
+    const updated = [...(data.videos || []), item]
+    setData(prev => ({ ...prev, videos: updated }))
+    setNewVideoUrl('')
+    setNewVideoTitulo('')
+    toast.success('Video agregado a la lista. Haz clic en Guardar para confirmar ✓')
+  }
+
+  const removeVideo = (index: number) => {
+    const updated = (data.videos || []).filter((_, i) => i !== index)
+    setData(prev => ({ ...prev, videos: updated }))
   }
 
   const handleGenerarInfoPublicacion = async () => {
@@ -648,6 +670,115 @@ function TabWeb({ producto, refetch, onCompartir }: { producto: any; refetch: ()
             <p className="text-xs font-bold text-slate-400">Sin imágenes</p>
             <p className="text-[10px] text-slate-400 mt-1">Sube, pega una URL o arrastra un archivo aquí</p>
           </div>
+        )}
+      </div>
+
+      {/* Videos del Producto (TikTok, YouTube, Shorts, Instagram, Reels, MP4) */}
+      <div className="bg-white border-2 border-slate-200/80 rounded-2xl p-5 space-y-4">
+        <div>
+          <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Video size={14} className="text-rose-500" /> Videos del Producto (TikTok, YouTube, Reels, MP4)
+          </h4>
+          <p className="text-[11px] text-slate-400">
+            Pega enlaces de <b>TikTok</b> (incluye enlaces cortos vt.tiktok.com), <b>YouTube Shorts</b>, <b>Instagram Reels</b> o archivos directos. El cliente los verá directamente en la tienda sin salir.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+          <div className="sm:col-span-7">
+            <input
+              type="url"
+              value={newVideoUrl}
+              onChange={e => setNewVideoUrl(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addVideo())}
+              placeholder="https://vt.tiktok.com/... o https://www.tiktok.com/@usuario/video/..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-mono"
+            />
+          </div>
+          <div className="sm:col-span-4">
+            <input
+              type="text"
+              value={newVideoTitulo}
+              onChange={e => setNewVideoTitulo(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addVideo())}
+              placeholder="Título opcional (ej: Demostración)"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all"
+            />
+          </div>
+          <div className="sm:col-span-1">
+            <button
+              type="button"
+              onClick={addVideo}
+              disabled={!newVideoUrl.trim()}
+              className="w-full h-full min-h-[36px] bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center shadow-sm cursor-pointer"
+              title="Agregar video"
+            >
+              <Plus size={15} />
+            </button>
+          </div>
+        </div>
+
+        {data.videos && data.videos.length > 0 ? (
+          <div className="space-y-2 pt-1">
+            {data.videos.map((vid: any, idx: number) => {
+              const urlStr = typeof vid === 'string' ? vid : vid?.url || ''
+              const titStr = typeof vid === 'object' ? vid?.titulo : ''
+              const esTikTok = urlStr.includes('tiktok.com')
+              const esYouTube = urlStr.includes('youtube.com') || urlStr.includes('youtu.be')
+              const esInstagram = urlStr.includes('instagram.com')
+
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                      esTikTok
+                        ? 'bg-black text-white'
+                        : esYouTube
+                          ? 'bg-red-600 text-white'
+                          : esInstagram
+                            ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
+                            : 'bg-indigo-600 text-white'
+                    }`}>
+                      {esTikTok ? 'TikTok' : esYouTube ? 'YouTube' : esInstagram ? 'Instagram' : 'Video'}
+                    </span>
+                    <div className="min-w-0">
+                      {titStr && (
+                        <p className="font-bold text-slate-800 truncate">{titStr}</p>
+                      )}
+                      <p className="font-mono text-[11px] text-slate-500 truncate max-w-md sm:max-w-xl">
+                        {urlStr}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <a
+                      href={urlStr}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors"
+                      title="Probar enlace original"
+                    >
+                      <ExternalLink size={14} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(idx)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Quitar video"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-[11px] text-slate-400 italic">No hay videos vinculados a este producto todavía.</p>
         )}
       </div>
 
