@@ -1,5 +1,5 @@
 # Edatia — Estado de Sesión
-> Última actualización: 2026-11-22 (sesión 29)
+> Última actualización: 2026-11-22 (sesión 30)
 
 ---
 
@@ -35,6 +35,29 @@ prestamos         → Control de Préstamos y Cobranza SaaS (Express + React 19)
 | ERP (Demo SAS) | 900000000 | admin (o admin@edatia.com) | Admin123! |
 | Préstamos | 1143875756 | admin@edatia.com | Admin123! |
 | Préstamos (Cliente) | 1033680464 | creditorapidos26@gmail.com | Creditosrapidos2026 |
+
+## Estado resuelto (sesión 30) — 2026-11-22
+
+✅ **Captura Directa de Fotos con Cámara en Vivo y Encuadre 1:1 para Catálogo Web (`frontend` / `edatia-web`):**
+  - **Componente `CameraCaptureModal.tsx`:**
+    - Transmisión en tiempo real vía WebRTC (`navigator.mediaDevices.getUserMedia`) con compatibilidad para celulares (Android / iOS), tablets y computadores (webcams).
+    - **Experiencia de Cámara Nativa en Celulares:** Diseño de pantalla completa borde a borde (`100dvh`), capa de prioridad máxima `z-[99999]` (eliminando colisiones visuales con el menú lateral del ERP) y protección de área segura inferior (`safe-area-inset-bottom`) para no interferir con la barra de gestos de navegación.
+    - **Guía de Encuadre 1:1 Cuadrado:** Retícula visual con esquinas de enfoque para centrar productos con la proporción exacta requerida por la tienda virtual.
+    - **Recorte Matemático 1:1 en Alta Resolución:** Al obturar, se extrae el cuadrante central del sensor (hasta 1400×1400 px), garantizando que la foto resultante corresponda exactamente a lo visto dentro de la guía verde.
+    - **Controles de Cámara:** Alternancia entre cámara trasera (`environment`) y delantera (`user`), soporte para linterna/flash (`torch`) en navegadores compatibles, y previsualización congelada ("Tomar otra" vs "Usar esta foto").
+    - **Integración con Fondo de Estudio IA:** Conectado directamente con el toggle de fondo de estudio en `ConfigProductoDetalle.tsx`. Al confirmar la foto, el backend remueve el fondo automáticamente y centra el producto sobre blanco puro 1:1.
+    - **Fallback de Compatibilidad:** Botón alternativo para invocar la app de cámara nativa del sistema operativo (`capture="environment"`).
+    - **Puntos de Integración en el ERP:** Botón dedicado **«Tomar Foto»** en la tarjeta de imágenes de la ficha técnica web (`ConfigProductoDetalle.tsx`) y en el modal de creación rápida asistida por IA (`ModalProductoIa.tsx`).
+
+✅ **Actualización de WhatsApp Oficial (`3136546975`), Saneamiento de URLs y Jerarquía de Categorías:**
+  - **Actualización de Canal de Ventas WhatsApp:**
+    - Actualización en base de datos PostgreSQL: `ConfiguracionTienda.whatsappVentas = '573136546975'` y `Empresa.telefono = '3136546975'` para la tienda Distribuidora Baby World (Empresa ID = 2).
+    - Actualización en componentes de la tienda: `FloatingWhatsAppButton.tsx`, `BlackDaysTopBar.tsx`, `CartDrawer.tsx`, `CheckoutModal.tsx`, `StoreLocationModal.tsx`, `FamiliaRegistroPage.tsx`, `ProductDetailPage.tsx` y `social.ts`.
+  - **Eliminación de Caracteres Corruptos (`\uFFFD`) en Enlaces de WhatsApp:**
+    - Saneamiento de textos predeterminados en enlaces `wa.me` y `api.whatsapp.com`, eliminando emojis UTF-8 de 4 bytes (`👋`, etc.) que causaban corrupción de caracteres al abrir WhatsApp Web o Desktop por discrepancias de codificación en el redireccionamiento.
+  - **Optimización y Limpieza de Categorías:**
+    - Eliminación de redundancias en categorías y subcategorías cruzadas en base de datos.
+    - Generación de respaldos preventivos (`Categoria_backup_20261120`, `Producto_backup_20261120`) y validación de integridad referencial.
 
 ## Estado resuelto (sesión 29) — 2026-11-22
 

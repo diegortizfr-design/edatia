@@ -116,7 +116,15 @@ docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --revertir -
 ## 4. Arquitectura de Frontend
 
 * **Componentes Clave:**
-  - `ModalProductoIa.tsx`: Modal responsivo con arrastrar y soltar, subida de fotos, atajo de pegado desde portapapeles (`Ctrl + V`), barra de progreso en tiempo real, visor de miniaturas con fallback amigable para iPhone (HEIC), y editor rápido en línea de títulos y precios.
+  - `CameraCaptureModal.tsx` (Captura de Foto en Vivo):
+    - **Visor WebRTC Nativo:** Acceso directo a la cámara para smartphones (Android/iOS), tablets y computadores (webcam).
+    - **Experiencia de Pantalla Completa Móvil (`100dvh`):** Diseñado como aplicación de cámara nativa en celulares (borde a borde) con capa de prioridad máxima `z-[99999]` para garantizar que nunca sea obstruido por barras laterales o menús de navegación del ERP.
+    - **Guía de Encuadre 1:1 Cuadrado:** Viñeta con retícula y esquinas de enfoque para encuadrar productos en la proporción exacta del catálogo virtual.
+    - **Recorte Automático 1:1 en Alta Resolución:** Al disparar, procesa el canvas extrayendo exactamente el recuadro cuadrado central (hasta 1400×1400 px), descartando fondos sobrantes laterales o verticales.
+    - **Controles de Captura:** Alternancia fluida entre cámara trasera (`environment`) y delantera (`user`), soporte para linterna/flash (`torch`) en navegadores compatibles, y opción de previsualización ("Tomar otra" vs "Usar esta foto").
+    - **Integración con Fondo de Estudio IA:** Al confirmar la captura, la imagen se envía directamente al pipeline de IA para remover el fondo y dejar el producto sobre blanco puro de estudio 1:1.
+    - **Fallback de Emergencia:** Acceso directo para invocar la app de cámara nativa del sistema operativo (`capture="environment"`) en caso de restricciones de permisos en el navegador.
+  - `ModalProductoIa.tsx`: Modal responsivo con arrastrar y soltar, botón dedicado *"O tomar foto con la cámara"*, subida de fotos, atajo de pegado desde portapapeles (`Ctrl + V`), barra de progreso en tiempo real, visor de miniaturas con fallback amigable para iPhone (HEIC), y editor rápido en línea de títulos y precios.
   - `CompartirRedesModal.tsx`:
     - **Transcodificación Forzada a JPEG Universal (`f_jpg`):** Utiliza la función helper `prepararUrlCloudinary` que inyecta `,f_jpg/` y reemplaza la extensión a `.jpg`, obligando a Cloudinary a servir siempre un estándar JPEG baseline (JFIF) con fondo blanco puro `#FFFFFF`, resolviendo problemas de incompatibilidad o archivos dañados en la aplicación Fotos de Windows y WhatsApp.
     - **Descarga Asíncrona Robusta:** Limpieza de nombres de archivo para asegurar una única extensión `.jpg` (evitando extensiones duplicadas como `.jpg.jpeg`) y retardo en la revocación del Blob (`setTimeout`) para permitir que el sistema operativo y el navegador completen la escritura en disco sin truncamiento.
@@ -134,6 +142,7 @@ docker exec -w /app edatia-backend node /app/cuadrar.js --empresa 2 --revertir -
     - **Encabezado Optimizado:** Se removieron los botones repetidos del encabezado general para mantener la interfaz despejada y profesional, centralizando los accesos en el banner destacado.
     - **Banner Difusión Omnicanal:** Bloque interactivo con accesos directos a WhatsApp, Instagram, TikTok y Marketplace.
     - **Autogeneración con IA Multimodal (OCR Visual):** Botón `✨ Autogenerar con IA` en la tarjeta "Información de Publicación" que genera y puebla automáticamente `nombreWeb`, `slug`, `etiquetaSeo`, `metaDescripcion` y `descripcionWeb`. Envía la URL de la imagen principal procesada (`imageUrl`) para que `gemini-flash-lite` lea directamente marcas, textos del empaque, edades sugeridas y advertencias mediante OCR visual multimodal, con fallback automático a texto.
+    - **Botón «Tomar Foto»:** Permite accionar la cámara en vivo del dispositivo directamente desde la tarjeta de imágenes, integrando automáticamente el visor con encuadre 1:1 y el procesamiento con fondo de estudio IA.
     - **Fondo de Estudio IA en Imágenes:** Checkbox toggle activado por defecto para aplicar fondo blanco estudio puro (`#FFFFFF`) 1200×1200 px sin logos en cualquier foto nueva. Incluye botón de varita mágica `✨` en cada miniatura para convertir fotos existentes a demanda. Con el toggle apagado, las fotos (archivo o URL) pasan por `estandarizar-imagen` y quedan cuadradas 1:1, asegurando que la tienda virtual nunca las recorte.
     - **Visor Lightbox Interactivo de Imágenes:**
       - Miniaturas ampliadas (48×48 px) con esquinas redondeadas, sombra suave e indicador interactivo de ojo (`👁️`).
