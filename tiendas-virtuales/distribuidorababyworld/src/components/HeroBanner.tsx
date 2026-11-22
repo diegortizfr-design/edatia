@@ -28,8 +28,8 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
 
   const slides: Slide[] = [
     {
-      id: 'black-days',
-      src: '/banner-black-days.jpg?v=5',
+      id: 'black-friday',
+      src: '/banner-black-friday.jpg?v=6',
       alt: 'Black Friday en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
       ariaLabel: 'Black Friday Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
       mobileText: '🔥 Black Friday: Hasta 60% OFF en Juguetes',
