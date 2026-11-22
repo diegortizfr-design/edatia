@@ -21,8 +21,12 @@ Storefront oficial de comercio electrónico para **Distribuidora Baby World (Pa�
 - **Navegación Móvil Táctil ([MobileBottomNav.tsx](src/components/MobileBottomNav.tsx)):**
   - Acceso directo con el pulgar a `Inicio`, `Secciones` (abre el Drawer), `Ofertas/Destacados` y `Bolsa`.
 
-### 2. Integración Comercial y Fidelización
-- **Campaña Dinámica:** Barra superior con marquee continuo y cuenta regresiva de urgencia.
+### 2. Integración Comercial y Campañas Estacionales
+- **Campaña Estacional Centralizada ([seasonalCampaign.ts](src/constants/seasonalCampaign.ts)):**
+  - Módulo desacoplado de campañas estacionales con soporte de presets comerciales (`black-friday`, `black-days`, `navidad`, `regreso-a-clases`).
+  - Barra superior promocional con marquee animado continuo, cuenta regresiva de urgencia (`BlackDaysTopBar.tsx`) y enlaces dinámicos de asesoría a WhatsApp sin emojis incompatibles.
+  - Insignias reactivas de descuento en tarjetas de producto y ficha de detalle (`BLACK FRIDAY -{X}%`).
+  - Piezas publicitarias 3D Ultra HD con caché versionada: Banner Hero panorámico (`banner-black-friday.jpg` a 2048×676) y Popup Modal emergente de bienvenida (`anuncio-black-friday.jpg` a 896×1200).
 - **BNPL (Compra Ahora y Paga Después):** Información y simulación de crédito con Addi y Sistecrédito.
 - **Geolocalización GPS:** Modal interactivo con dirección física en Poblado Campestre, enlaces directos a Google Maps, Waze y copia de dirección en un clic.
 - **Pedidos Directos:** Carrito con cálculo de subtotal, IVA, recargos y canalización directa a checkout o WhatsApp oficial.
