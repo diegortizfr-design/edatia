@@ -457,15 +457,19 @@ export function ConfigProductos() {
     return categorias.filter(c => !c.parentId)
   }, [categorias])
 
+  const subcategorias = useMemo(() => {
+    return categorias.filter(c => !!c.parentId)
+  }, [categorias])
+
   const availableSubcategories = useMemo(() => {
     if (!formData.categoriaId) return []
     return categorias.filter(c => c.parentId && String(c.parentId) === String(formData.categoriaId))
   }, [categorias, formData.categoriaId])
 
   const filterAvailableSubcategories = useMemo(() => {
-    if (!filterCategoria) return []
+    if (!filterCategoria) return subcategorias
     return categorias.filter(c => c.parentId && String(c.parentId) === String(filterCategoria))
-  }, [categorias, filterCategoria])
+  }, [categorias, filterCategoria, subcategorias])
 
   // Calculations for Cubicaje automatically on changes
   useEffect(() => {
@@ -1298,19 +1302,18 @@ export function ConfigProductos() {
                   {rootCategorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
-              {filterAvailableSubcategories.length > 0 && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subcategoría</label>
-                  <select
-                    value={filterSubcategoria}
-                    onChange={e => setFilterSubcategoria(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
-                  >
-                    <option value="">-- Todas las Subcategorías --</option>
-                    {filterAvailableSubcategories.map(sc => <option key={sc.id} value={sc.id}>{sc.nombre}</option>)}
-                  </select>
-                </div>
-              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subcategoría</label>
+                <select
+                  value={filterSubcategoria}
+                  onChange={e => setFilterSubcategoria(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                >
+                  <option value="">-- Todas las Subcategorías --</option>
+                  {filterAvailableSubcategories.map(sc => <option key={sc.id} value={sc.id}>{sc.nombre}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Grupo</label>
                 <select
