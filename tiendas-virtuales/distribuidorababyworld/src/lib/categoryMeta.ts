@@ -40,7 +40,7 @@ export function getCategoryIcon(catName: string): string {
 export function getCategoryMeta(catName: string): CategoryCardMeta {
   const c = catName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
 
-  // Campaña Estacional Especial (ej. Black Days, Navidad, etc.)
+  // Campaña Estacional Especial (ej. Black Friday, Navidad, etc.)
   if (
     ACTIVE_CAMPAIGN.active &&
     (c.includes('black') || c.includes('oferta') || c.includes('navidad') || c.includes('clases') || c.includes(ACTIVE_CAMPAIGN.id))

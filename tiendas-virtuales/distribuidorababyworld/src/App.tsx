@@ -81,19 +81,19 @@ export function App() {
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false)
 
-  // Mostrar modal de anuncio Black Days al abrir la tienda (1 vez por sesión)
+  // Mostrar modal de anuncio Black Friday al abrir la tienda (1 vez por sesión)
   useEffect(() => {
     const cleanPath = window.location.pathname.replace(/\/+$/, '')
     const isDirectRoute = cleanPath === '/familia' || cleanPath === '/registro' || window.location.search.includes('pago=')
     if (isDirectRoute) return
 
-    const hasShown = sessionStorage.getItem('babyworld_promo_black_days_shown')
+    const hasShown = sessionStorage.getItem('babyworld_promo_black_friday_shown')
     const forcePromo = new URLSearchParams(window.location.search).get('promo') === 'true'
 
     if (!hasShown || forcePromo) {
       const timer = setTimeout(() => {
         setIsPromoModalOpen(true)
-        sessionStorage.setItem('babyworld_promo_black_days_shown', 'true')
+        sessionStorage.setItem('babyworld_promo_black_friday_shown', 'true')
       }, 700)
       return () => clearTimeout(timer)
     }
@@ -1041,7 +1041,7 @@ export function App() {
         onClose={() => setIsLocationModalOpen(false)}
       />
 
-      {/* Modal Anuncio Promocional (Black Days Juguetería) */}
+      {/* Modal Anuncio Promocional (Black Friday Juguetería) */}
       <PromoAnnouncementModal
         isOpen={isPromoModalOpen}
         onClose={() => setIsPromoModalOpen(false)}

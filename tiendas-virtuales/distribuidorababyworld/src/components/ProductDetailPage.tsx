@@ -442,7 +442,7 @@ export function ProductDetailPage({
                         <span className="text-slate-400 line-through text-xs font-semibold">{fmtPrice(effectivePrecioAnterior)}</span>
                         <span className="bg-gradient-to-r from-slate-950 to-slate-900 text-amber-300 border border-amber-400/40 text-[10px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 shadow-xs shrink-0">
                           <span>🔥</span>
-                          <span>BLACK DAYS -{Math.round(((effectivePrecioAnterior - effectivePrice) / effectivePrecioAnterior) * 100)}%</span>
+                          <span>BLACK FRIDAY -{Math.round(((effectivePrecioAnterior - effectivePrice) / effectivePrecioAnterior) * 100)}%</span>
                         </span>
                       </div>
                       <span className="text-[11px] font-extrabold text-amber-800 shrink-0">

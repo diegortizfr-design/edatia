@@ -22,12 +22,12 @@ export interface SeasonalCampaign {
  * esta configuración o seleccionar uno de los preajustes de abajo.
  */
 export const ACTIVE_CAMPAIGN: SeasonalCampaign = {
-  id: 'black-days',
+  id: 'black-friday',
   active: true,
-  categoryName: '🔥 Black Days',
-  badgeText: 'Black Days',
+  categoryName: '🔥 Black Friday',
+  badgeText: 'Black Friday',
   icon: '🔥',
-  title: '🔥 Black Days',
+  title: '🔥 Black Friday',
   subtitle: 'Hasta 60% OFF en referencias seleccionadas',
   actionText: 'Ver ofertas',
   gradient: 'from-slate-950 via-slate-900 to-amber-950',
@@ -46,6 +46,20 @@ export const ACTIVE_CAMPAIGN: SeasonalCampaign = {
  * Plantillas listas para usar en futuras temporadas comerciales
  */
 export const SEASONAL_PRESETS: Record<string, Omit<SeasonalCampaign, 'isCampaignProduct'>> = {
+  'black-friday': {
+    id: 'black-friday',
+    active: true,
+    categoryName: '🔥 Black Friday',
+    badgeText: 'Black Friday',
+    icon: '🔥',
+    title: '🔥 Black Friday',
+    subtitle: 'Hasta 60% OFF en referencias seleccionadas',
+    actionText: 'Ver ofertas',
+    gradient: 'from-slate-950 via-slate-900 to-amber-950',
+    borderColor: 'border-amber-400/30 hover:border-amber-400',
+    accentColor: 'text-amber-300',
+    ringColor: 'hover:ring-amber-400',
+  },
   'black-days': {
     id: 'black-days',
     active: true,

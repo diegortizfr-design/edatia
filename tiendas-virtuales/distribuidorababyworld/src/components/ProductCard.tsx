@@ -80,7 +80,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           ) : discountPercent ? (
             <span className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-amber-300 border border-amber-400/40 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 shrink-0">
               <span>🔥</span>
-              <span className="tracking-tight">BLACK DAYS -{discountPercent}%</span>
+              <span className="tracking-tight">BLACK FRIDAY -{discountPercent}%</span>
             </span>
           ) : <span />}
 

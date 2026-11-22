@@ -29,7 +29,7 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <>
-      {/* Dynamic Black Days Top Bar with Live Urgency Countdown & Rotating Promos */}
+      {/* Dynamic Black Friday Top Bar with Live Urgency Countdown & Rotating Promos */}
       <BlackDaysTopBar onPromoClick={onPromoClick} />
 
       {/* Encabezado Fijo de Navegación (Sticky) */}

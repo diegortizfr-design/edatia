@@ -41,7 +41,7 @@ export function PromoAnnouncementModal({
         className="relative max-w-[340px] sm:max-w-[420px] w-full rounded-[2rem] overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] border border-white/20 bg-transparent z-10 animate-in zoom-in-95 duration-300 group select-none"
         role="dialog"
         aria-modal="true"
-        aria-label="Anuncio promocional Black Days"
+        aria-label="Anuncio promocional Black Friday"
       >
         {/* Botón flotante para cerrar (X visible y fácil de tocar) */}
         <button
@@ -65,7 +65,7 @@ export function PromoAnnouncementModal({
         >
           <img
             src={imageUrl}
-            alt="Black Days Hasta 60% DTO en Juguetería | Pañalera Baby World"
+            alt="Black Friday Hasta 60% DTO en Juguetería | Pañalera Baby World"
             className="w-full h-auto block object-contain transition-transform duration-300 group-hover:scale-[1.015]"
             loading="eager"
             decoding="async"

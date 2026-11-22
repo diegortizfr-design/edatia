@@ -30,9 +30,9 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     {
       id: 'black-days',
       src: '/banner-black-days.jpg?v=5',
-      alt: 'Black Days en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
-      ariaLabel: 'Black Days Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
-      mobileText: '🔥 Black Days: Hasta 60% OFF en Juguetes',
+      alt: 'Black Friday en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
+      ariaLabel: 'Black Friday Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
+      mobileText: '🔥 Black Friday: Hasta 60% OFF en Juguetes',
       mobileCta: 'Ver juguetes',
       mobileGradient: 'from-amber-500 via-rose-600 to-slate-950',
       mobileIcon: 'sparkles' as const,

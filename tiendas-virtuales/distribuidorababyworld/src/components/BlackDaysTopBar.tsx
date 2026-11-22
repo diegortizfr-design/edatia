@@ -20,7 +20,7 @@ interface TimeRemaining {
 const MARQUEE_ITEMS = [
   {
     icon: '🔥',
-    highlight: 'BLACK DAYS:',
+    highlight: 'BLACK FRIDAY:',
     text: '¡Hasta 60% DTO en Juguetería seleccionada!',
     action: 'Ver Ofertas →',
   },
@@ -45,7 +45,7 @@ const MARQUEE_ITEMS = [
   {
     icon: '⚡',
     highlight: 'TIEMPO LIMITADO:',
-    text: 'Precios especiales por Black Days hasta agotar existencias',
+    text: 'Precios especiales por Black Friday hasta agotar existencias',
     action: 'No te lo pierdas →',
   },
 ]
@@ -59,14 +59,14 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
     target.setDate(now.getDate() + 11)
     target.setHours(23, 59, 59, 999)
 
-    const storedTarget = sessionStorage.getItem('babyworld_black_days_target_11d')
+    const storedTarget = sessionStorage.getItem('babyworld_black_friday_target_11d') || sessionStorage.getItem('babyworld_black_days_target_11d')
     let finalTargetTime: number
 
     if (storedTarget && !isNaN(Number(storedTarget))) {
       finalTargetTime = Number(storedTarget)
     } else {
       finalTargetTime = target.getTime()
-      sessionStorage.setItem('babyworld_black_days_target_11d', finalTargetTime.toString())
+      sessionStorage.setItem('babyworld_black_friday_target_11d', finalTargetTime.toString())
     }
 
     const difference = finalTargetTime - now.getTime()
@@ -148,7 +148,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
       <div
         className="relative z-50 bg-gradient-to-r from-slate-950 via-[#0a1842] to-slate-950 text-white border-b-2 border-amber-400/40 shadow-lg select-none"
         role="region"
-        aria-label="Campaña promocional Black Days Baby World"
+        aria-label="Campaña promocional Black Friday Baby World"
       >
         {/* Línea de resplandor dorado superior */}
         <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300 to-transparent opacity-80" />
@@ -165,10 +165,10 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
               type="button"
               onClick={onPromoClick}
               className="shimmer-badge text-slate-950 font-black px-2.5 py-1 rounded-full text-[11px] tracking-wider uppercase flex items-center gap-1.5 shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
-              title="Ir al catálogo Black Days"
+              title="Ir al catálogo Black Friday"
             >
               <Flame size={14} className="text-rose-600 fill-rose-600 animate-bounce" />
-              <span>BLACK DAYS</span>
+              <span>BLACK FRIDAY</span>
             </button>
 
             {/* Marcador Digital con Casillas con Relieve */}
@@ -242,7 +242,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
 
             {/* Asesoría WhatsApp */}
             <a
-              href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
+              href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Friday"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-white bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/50 hover:border-[#25D366] px-2.5 py-1 rounded-full font-extrabold text-xs transition-all shadow-xs hover:shadow-emerald-500/30 active:scale-95 shrink-0"
@@ -310,7 +310,7 @@ export function BlackDaysTopBar({ onPromoClick }: BlackDaysTopBarProps) {
                 <TikTokIcon size={12} chromatic={true} />
               </a>
               <a
-                href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Days"
+                href="https://wa.me/573136546975?text=Hola%20Baby-World,%20deseo%20asesor%C3%ADa%20para%20un%20pedido%20de%20Black%20Friday"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full text-[10px]"
