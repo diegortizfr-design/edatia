@@ -26,12 +26,12 @@ export function CameraCaptureModal({
   const [loadingCamera, setLoadingCamera] = useState<boolean>(true)
   const [hasTorch, setHasTorch] = useState<boolean>(false)
   const [torchOn, setTorchOn] = useState<boolean>(false)
-  const [hasMultipleCameras, setHasMultipleCameras] = useState<boolean>(false)
+  const [hasMultipleCameras, setHasMultipleCameras] = useState<boolean>(true)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const nativeInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Detener la cámara y liberar recursos
+  // Detener la cámara y liberar recursos de hardware
   const stopStream = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => {
@@ -57,10 +57,10 @@ export function CameraCaptureModal({
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Tu navegador o dispositivo no soporta acceso directo a la cámara por WebRTC.')
+        throw new Error('Tu navegador no soporta acceso directo a la cámara por WebRTC.')
       }
 
-      // Detectar si hay más de 1 cámara
+      // Enumerar cámaras
       try {
         const devices = await navigator.mediaDevices.enumerateDevices()
         const videoDevices = devices.filter(d => d.kind === 'videoinput')
@@ -86,7 +86,7 @@ export function CameraCaptureModal({
         videoRef.current.play().catch(() => {})
       }
 
-      // Verificar si soporta linterna (torch)
+      // Verificar si la cámara soporta linterna (torch)
       const track = newStream.getVideoTracks()[0]
       if (track) {
         const capabilities: any = track.getCapabilities ? track.getCapabilities() : {}
@@ -96,11 +96,11 @@ export function CameraCaptureModal({
       console.warn('Error al iniciar cámara:', err)
       let msg = 'No se pudo acceder a la cámara.'
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = 'Permiso denegado. Por favor autoriza el acceso a la cámara en los permisos de tu navegador.'
+        msg = 'Permiso denegado. Permite el acceso a la cámara en la barra de direcciones de tu navegador.'
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        msg = 'No se encontró ninguna cámara conectada en tu dispositivo.'
+        msg = 'No se detectó ninguna cámara disponible en tu dispositivo.'
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        msg = 'La cámara ya está siendo utilizada por otra aplicación.'
+        msg = 'La cámara está siendo utilizada por otra app o pestaña.'
       }
       setCameraError(msg)
     } finally {
@@ -108,11 +108,12 @@ export function CameraCaptureModal({
     }
   }, [stream])
 
-  // Inicializar al abrir
+  // Manejo de apertura y cierre
   useEffect(() => {
     if (isOpen) {
       setCapturedImage(null)
       setCameraError(null)
+      setTorchOn(false)
       startCamera(facingMode)
     } else {
       stopStream()
@@ -124,7 +125,7 @@ export function CameraCaptureModal({
     }
   }, [isOpen, facingMode])
 
-  // Toggle Torch
+  // Toggle Torch (linterna)
   const toggleTorch = async () => {
     if (!stream || !hasTorch) return
     const track = stream.getVideoTracks()[0]
@@ -146,41 +147,52 @@ export function CameraCaptureModal({
     setFacingMode(nextMode)
   }
 
-  // Capturar foto del visor
+  // Capturar foto: Recorta exactamente el área cuadrada 1:1 indicada por la guía visual
   const handleCapture = () => {
     const video = videoRef.current
     if (!video) return
 
+    const vWidth = video.videoWidth || 1280
+    const vHeight = video.videoHeight || 720
+
+    // Recorte 1:1 centrado
+    const cropSize = Math.min(vWidth, vHeight)
+    const sx = (vWidth - cropSize) / 2
+    const sy = (vHeight - cropSize) / 2
+
     const canvas = document.createElement('canvas')
-    const width = video.videoWidth || 1280
-    const height = video.videoHeight || 720
-    canvas.width = width
-    canvas.height = height
+    const targetSize = Math.min(cropSize, 1400) // Resolución de alta calidad para e-commerce
+    canvas.width = targetSize
+    canvas.height = targetSize
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Si es cámara frontal, reflejar horizontalmente para que quede como espejo natural
+    // Espejo en cámara frontal
     if (facingMode === 'user') {
-      ctx.translate(width, 0)
+      ctx.translate(targetSize, 0)
       ctx.scale(-1, 1)
     }
 
-    ctx.drawImage(video, 0, 0, width, height)
+    ctx.drawImage(
+      video,
+      sx, sy, cropSize, cropSize,
+      0, 0, targetSize, targetSize
+    )
+
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
     setCapturedImage(dataUrl)
   }
 
-  // Descartar captura y volver al visor en vivo
+  // Descartar y volver al visor
   const handleRetake = () => {
     setCapturedImage(null)
   }
 
-  // Confirmar y subir foto capturada
+  // Confirmar y subir foto
   const handleConfirm = () => {
     if (!capturedImage) return
 
-    // Convertir dataURL a File
     const arr = capturedImage.split(',')
     const mimeMatch = arr[0].match(/:(.*?);/)
     const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
@@ -198,7 +210,7 @@ export function CameraCaptureModal({
     onClose()
   }
 
-  // Fallback con input nativo (especialmente útil en móviles si falla WebRTC)
+  // Fallback con input nativo para teléfonos
   const handleNativeCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -212,48 +224,84 @@ export function CameraCaptureModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90 z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200 p-0 sm:p-4">
+      {/* Contenedor principal: En móviles es 100% pantalla completa; en desktop es una tarjeta modal centrada */}
+      <div className="relative w-full h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:max-w-md md:max-w-lg bg-black sm:bg-slate-900 sm:rounded-3xl sm:border sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+        
+        {/* Header superior */}
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md z-30 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
               <Camera size={18} />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-white">{titulo}</h3>
-              <p className="text-[11px] text-slate-400">
-                {capturedImage
-                  ? 'Revisa la foto tomada antes de guardarla'
-                  : 'Centra el producto dentro de la guía cuadrada'}
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-black text-white truncate max-w-[200px] sm:max-w-xs">
+                {titulo}
+              </h3>
+              <p className="text-[10px] text-slate-400 truncate">
+                {capturedImage ? 'Revisa la foto antes de guardar' : 'Centra el producto en el recuadro 1:1'}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Cerrar cámara"
-          >
-            <X size={18} />
-          </button>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Controles de cámara en el header */}
+            {!capturedImage && !cameraError && (
+              <>
+                {hasTorch && (
+                  <button
+                    type="button"
+                    onClick={toggleTorch}
+                    className={`p-2 rounded-xl transition-all ${
+                      torchOn
+                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
+                        : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
+                    }`}
+                    title={torchOn ? 'Apagar linterna' : 'Encender linterna'}
+                  >
+                    {torchOn ? <Zap size={16} /> : <ZapOff size={16} />}
+                  </button>
+                )}
+
+                {hasMultipleCameras && (
+                  <button
+                    type="button"
+                    onClick={handleSwitchCamera}
+                    className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all"
+                    title="Alternar cámara trasera / frontal"
+                  >
+                    <SwitchCamera size={16} />
+                  </button>
+                )}
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors ml-1"
+              title="Cerrar cámara"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Viewfinder / Capture Preview Area */}
-        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[360px] sm:min-h-[440px]">
+        {/* Área del Visor / Cámara */}
+        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[420px]">
           {loadingCamera && !capturedImage && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-400 z-20 bg-slate-950">
               <Loader2 size={32} className="animate-spin text-emerald-500" />
-              <span className="text-xs font-semibold">Iniciando visor de cámara...</span>
+              <span className="text-xs font-semibold">Iniciando cámara...</span>
             </div>
           )}
 
           {cameraError && !capturedImage && (
-            <div className="p-6 text-center max-w-md flex flex-col items-center gap-3 z-20">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="p-6 text-center max-w-sm flex flex-col items-center gap-3 z-20">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <AlertCircle size={24} />
               </div>
-              <h4 className="text-sm font-bold text-white">No se pudo abrir la cámara en vivo</h4>
+              <h4 className="text-sm font-bold text-white">No se pudo acceder a la cámara</h4>
               <p className="text-xs text-slate-400 leading-relaxed">{cameraError}</p>
               
               <div className="pt-3 flex flex-col sm:flex-row gap-2 w-full justify-center">
@@ -270,101 +318,72 @@ export function CameraCaptureModal({
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
                 >
                   <Smartphone size={14} />
-                  <span>Usar Cámara Nativa</span>
+                  <span>Usar Cámara del Teléfono</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Live Video Stream */}
+          {/* Video en vivo (fullscreen absolute para llenar el visor) */}
           <video
             ref={videoRef}
             playsInline
             autoPlay
             muted
-            className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''} ${
+            style={{ objectFit: 'cover' }}
+            className={`absolute inset-0 w-full h-full ${facingMode === 'user' ? 'scale-x-[-1]' : ''} ${
               capturedImage ? 'hidden' : 'block'
             }`}
           />
 
-          {/* Square Guide Overlay (1:1 Framing Box for Product Catalog) */}
+          {/* Guía de Encuadre Cuadrado 1:1 */}
           {!capturedImage && !cameraError && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              {/* Outer darkened vignette */}
-              <div className="w-[85vw] max-w-[320px] aspect-square rounded-2xl border-2 border-emerald-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] relative flex items-center justify-center">
-                {/* Corner Accents */}
-                <span className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-emerald-400 rounded-tl" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-emerald-400 rounded-tr" />
-                <span className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-emerald-400 rounded-bl" />
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-emerald-400 rounded-br" />
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10 p-4">
+              <div className="w-[82vw] sm:w-[320px] max-w-[340px] aspect-square rounded-2xl border-2 border-emerald-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] relative flex items-center justify-center">
+                {/* Esquinas resaltadas */}
+                <span className="absolute -top-1.5 -left-1.5 w-5 h-5 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
+                <span className="absolute -bottom-1.5 -left-1.5 w-5 h-5 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
+                <span className="absolute -bottom-1.5 -right-1.5 w-5 h-5 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
 
-                {/* Subtle center crosshair */}
-                <div className="w-4 h-4 border-t border-l border-white/40 absolute" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-300/80 absolute bottom-2 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-xs">
-                  Encuadre 1:1
+                {/* Mira central sutil */}
+                <div className="w-5 h-5 border-t border-l border-white/40" />
+
+                <span className="absolute bottom-2.5 bg-black/75 text-emerald-300 font-bold text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full backdrop-blur-md border border-emerald-500/30 shadow-md">
+                  Encuadre 1:1 Cuadrado
                 </span>
               </div>
             </div>
           )}
 
-          {/* Captured Image Preview */}
+          {/* Vista previa de la captura congelada en 1:1 */}
           {capturedImage && (
-            <div className="w-full h-full flex items-center justify-center bg-black p-4">
+            <div className="absolute inset-0 flex items-center justify-center p-4 bg-black z-10">
               <img
                 src={capturedImage}
-                alt="Captura tomada"
-                className="max-h-[70vh] max-w-full rounded-2xl object-contain shadow-2xl border border-slate-800"
+                alt="Foto del producto"
+                className="w-[82vw] sm:w-[320px] max-w-[340px] aspect-square object-contain rounded-2xl shadow-2xl border-2 border-emerald-500/60"
               />
-            </div>
-          )}
-
-          {/* Top Live Camera Controls (Torch & Camera Switch) */}
-          {!capturedImage && !cameraError && (
-            <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
-              {hasTorch && (
-                <button
-                  type="button"
-                  onClick={toggleTorch}
-                  className={`p-2.5 rounded-full backdrop-blur-md transition-all ${
-                    torchOn
-                      ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/40'
-                      : 'bg-black/50 text-white hover:bg-black/70'
-                  }`}
-                  title={torchOn ? 'Apagar flash' : 'Encender flash'}
-                >
-                  {torchOn ? <Zap size={18} /> : <ZapOff size={18} />}
-                </button>
-              )}
-              {hasMultipleCameras && (
-                <button
-                  type="button"
-                  onClick={handleSwitchCamera}
-                  className="p-2.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all"
-                  title="Cambiar entre cámara trasera y frontal"
-                >
-                  <SwitchCamera size={18} />
-                </button>
-              )}
             </div>
           )}
         </div>
 
-        {/* Studio IA Badge info if active */}
+        {/* Indicador de Fondo de Estudio IA si está activo */}
         {conFondoIa && (
-          <div className="px-5 py-2 bg-indigo-950/40 border-t border-indigo-900/40 flex items-center justify-center gap-1.5 text-indigo-300 text-[11px] font-semibold text-center">
+          <div className="px-4 py-2 bg-indigo-950/70 border-t border-indigo-900/50 flex items-center justify-center gap-1.5 text-indigo-300 text-[11px] font-semibold text-center shrink-0 z-20">
             <Sparkles size={13} className="text-indigo-400 shrink-0" />
-            <span>Fondo de estudio IA activo: al confirmar se removerá el fondo para dejar blanco puro 1:1.</span>
+            <span className="truncate">Fondo de estudio IA activo: se removerá el fondo al confirmar ✨</span>
           </div>
         )}
 
-        {/* Footer / Action Buttons */}
-        <div className="px-5 py-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between gap-3">
+        {/* Barra inferior de acciones (con padding seguro para iOS / barra de navegación) */}
+        <div className="px-5 py-4 sm:py-3.5 border-t border-slate-800 bg-slate-950/90 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 z-30 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {capturedImage ? (
             <>
               <button
                 type="button"
                 onClick={handleRetake}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all"
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 <RotateCcw size={15} />
                 <span>Tomar otra</span>
@@ -372,7 +391,7 @@ export function CameraCaptureModal({
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Check size={16} />
                 <span>Usar esta foto</span>
@@ -383,24 +402,24 @@ export function CameraCaptureModal({
               <button
                 type="button"
                 onClick={() => nativeInputRef.current?.click()}
-                className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-800/80 transition-colors"
-                title="Abrir la aplicación de cámara nativa del sistema o celular"
+                className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer"
+                title="Abrir app de cámara nativa del celular"
               >
                 <Smartphone size={14} />
-                <span className="hidden sm:inline">Cámara del sistema</span>
+                <span className="hidden sm:inline">Cámara nativa</span>
               </button>
 
-              {/* Shutter Button */}
+              {/* Botón Disparador Principal */}
               <div className="flex-1 flex justify-center">
                 <button
                   type="button"
                   onClick={handleCapture}
                   disabled={loadingCamera || Boolean(cameraError)}
-                  className="w-14 h-14 rounded-full border-4 border-white/90 bg-white/20 hover:bg-white/40 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                  className="w-16 h-16 rounded-full border-4 border-white bg-white/20 active:scale-90 hover:scale-105 transition-all flex items-center justify-center shadow-lg disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
                   title="Capturar foto"
                 >
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-sm">
-                    <Camera size={20} />
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-900 shadow-sm">
+                    <Camera size={22} />
                   </div>
                 </button>
               </div>
@@ -408,7 +427,7 @@ export function CameraCaptureModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-slate-400 hover:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-800/80 transition-colors"
+                className="text-slate-400 hover:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -416,7 +435,7 @@ export function CameraCaptureModal({
           )}
         </div>
 
-        {/* Input oculto nativo como respaldo 100% garantizado en móviles/tablets */}
+        {/* Input nativo oculto para compatibilidad total con teléfonos */}
         <input
           ref={nativeInputRef}
           type="file"
