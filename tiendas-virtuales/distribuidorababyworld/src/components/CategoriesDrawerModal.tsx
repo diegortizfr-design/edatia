@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import { Product } from '../data/productos'
 import { matchesCategoryName, toCategoryTitleCase } from '../lib/categoriaFormat'
+import { getCategoryIcon } from '../lib/categoryMeta'
+import { ACTIVE_CAMPAIGN } from '../constants/seasonalCampaign'
 
 interface ErpCategory {
   id: number
@@ -27,6 +29,7 @@ interface CategoriesDrawerModalProps {
   activeCategory: string
   activeSubcategory: string
   onSelectCategory: (category: string, subcategory?: string) => void
+  onSelectAllCatalog?: () => void
 }
 
 export function CategoriesDrawerModal({
@@ -38,6 +41,7 @@ export function CategoriesDrawerModal({
   activeCategory,
   activeSubcategory,
   onSelectCategory,
+  onSelectAllCatalog,
 }: CategoriesDrawerModalProps) {
   const [searchFilter, setSearchFilter] = useState('')
 
@@ -59,23 +63,6 @@ export function CategoriesDrawerModal({
     }
   }, [isOpen])
 
-  // Mapeo de iconos dinámicos para categorías
-  const getCategoryIcon = (cat: string) => {
-    const c = cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    if (c === 'todos') return '✨'
-    if (c.includes('black') || c.includes('oferta')) return '🔥'
-    if (c.includes('toalla')) return '🫧'
-    if (c.includes('cuidado') || c.includes('aseo') || c.includes('bano') || c.includes('higiene')) return '🧴'
-    if (c.includes('panal')) return '🍼'
-    if (c.includes('calzado') || c.includes('zapato') || c.includes('tenis')) return '👟'
-    if (c.includes('juguet') || c.includes('estimul') || c.includes('didact')) return '🧸'
-    if (c.includes('ropa') || c.includes('vest') || c.includes('ajuar') || c.includes('moda')) return '👕'
-    if (c.includes('aliment') || c.includes('leche') || c.includes('lactanc') || c.includes('tetero')) return '🥣'
-    if (c.includes('coche') || c.includes('paseo') || c.includes('silla') || c.includes('cuna') || c.includes('corral')) return '🛒'
-    if (c.includes('variedad') || c.includes('accesori')) return '🎀'
-    return '🏷️'
-  }
-
   // Conteo de productos por categoría
   const productCountMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -88,7 +75,7 @@ export function CategoriesDrawerModal({
 
   // Obtener subcategorías asociadas a una categoría
   const getSubcategoriesFor = (catName: string): string[] => {
-    if (catName === 'Todos' || catName.includes('Black')) return []
+    if (catName === 'Todos' || catName.includes('Black') || catName.includes('Oferta') || catName.includes('Navidad')) return []
     const subs = new Set<string>()
 
     // Desde el ERP
@@ -203,12 +190,12 @@ export function CategoriesDrawerModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
               {filteredCategories.map((cat) => {
                 const isSelected = matchesCategoryName(activeCategory, cat)
-                const isBlackDays = cat.toLowerCase().includes('black')
+                const isSpecial = ACTIVE_CAMPAIGN.active && (cat.toLowerCase().includes('black') || cat.toLowerCase().includes(ACTIVE_CAMPAIGN.id))
                 const isTodos = cat === 'Todos'
                 const count = isTodos
                   ? products.length
-                  : isBlackDays
-                    ? products.filter(p => (p.precioAnterior && p.precioAnterior > p.precio) || p.categoria.toLowerCase().includes('juguet')).length
+                  : isSpecial
+                    ? products.filter(p => ACTIVE_CAMPAIGN.isCampaignProduct(p)).length
                     : (productCountMap.get(cat) || 0)
                 const subcategories = getSubcategoriesFor(cat)
 
@@ -218,7 +205,7 @@ export function CategoriesDrawerModal({
                     className={`p-3.5 rounded-2xl border transition-all text-left flex flex-col justify-between group ${
                       isSelected
                         ? 'border-sky-500 bg-sky-50/70 shadow-sm'
-                        : isBlackDays
+                        : isSpecial
                           ? 'border-amber-300 bg-gradient-to-br from-amber-500/10 via-amber-50 to-yellow-50 hover:border-amber-400'
                           : 'border-slate-200/80 bg-white hover:border-sky-300 hover:shadow-xs'
                     }`}
@@ -226,7 +213,11 @@ export function CategoriesDrawerModal({
                     {/* Botón principal de la categoría */}
                     <button
                       onClick={() => {
-                        onSelectCategory(cat)
+                        if (isTodos && onSelectAllCatalog) {
+                          onSelectAllCatalog()
+                        } else {
+                          onSelectCategory(cat)
+                        }
                         onClose()
                       }}
                       className="w-full flex items-center justify-between gap-2.5 text-left"
@@ -237,7 +228,7 @@ export function CategoriesDrawerModal({
                         </span>
                         <div className="min-w-0">
                           <p className={`text-xs sm:text-sm font-extrabold truncate ${
-                            isSelected ? 'text-sky-700' : isBlackDays ? 'text-amber-900' : 'text-slate-800'
+                            isSelected ? 'text-sky-700' : isSpecial ? 'text-amber-900' : 'text-slate-800'
                           }`}>
                             {cat}
                           </p>
@@ -305,22 +296,25 @@ export function CategoriesDrawerModal({
         </div>
 
         {/* Footer del Modal */}
-        <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <span className="hidden sm:inline">
-            💡 Puedes filtrar cualquier sección o dar clic para ver todo su catálogo.
+            💡 Puedes filtrar cualquier sección o ver todo nuestro inventario sin restricciones.
           </span>
           <button
             onClick={() => {
-              onSelectCategory('Todos')
+              if (onSelectAllCatalog) {
+                onSelectAllCatalog()
+              } else {
+                onSelectCategory('Todos')
+              }
               onClose()
             }}
-            className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold uppercase tracking-wider text-[11px] transition-all text-center"
+            className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-sky-600 text-white rounded-xl font-bold uppercase tracking-wider text-[11px] transition-all text-center shadow-xs active:scale-95"
           >
-            Ver Todo el Catálogo
+            Ver Todo el Catálogo ({products.length} productos)
           </button>
         </div>
       </div>
     </div>
   )
 }
-

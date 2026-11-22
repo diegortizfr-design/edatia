@@ -9,9 +9,10 @@ interface ProductCardProps {
   onAddToCart: (p: Product) => void
   onViewDetails: (p: Product) => void
   priority?: boolean
+  compact?: boolean
 }
 
-export function ProductCard({ product, onAddToCart, onViewDetails, priority = false }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onViewDetails, priority = false, compact = false }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
 
   const fmtPrice = (val: number) => {
@@ -35,7 +36,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
   }
 
   return (
-    <div className="group bg-white rounded-3xl sm:rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+    <div className={`group bg-white ${compact ? 'rounded-2xl' : 'rounded-3xl sm:rounded-[2rem]'} border border-slate-100 overflow-hidden shadow-2xs hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col h-full relative animate-fade-in-up`} style={{ animationFillMode: 'both' }}>
       {/* Product Image Box */}
       <div 
         onClick={() => onViewDetails(product)}
@@ -100,15 +101,15 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
       </div>
 
       {/* Info Body */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-2">
-        <div className="space-y-1.5">
+      <div className={`${compact ? 'p-2.5 sm:p-3 space-y-1 sm:space-y-1.5' : 'p-3 sm:p-4 space-y-2'} flex-1 flex flex-col justify-between`}>
+        <div className="space-y-1">
           {/* Category Tag & Rating */}
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border truncate max-w-[120px] ${getCategoryBadgeColor(product.categoria)}`}>
+            <span className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-md border truncate max-w-[100px] ${getCategoryBadgeColor(product.categoria)}`}>
               {product.subcategoria || product.categoria}
             </span>
-            <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold shrink-0">
-              <Star size={11} fill="currentColor" />
+            <div className="flex items-center gap-0.5 text-amber-500 text-[9px] sm:text-[10px] font-bold shrink-0">
+              <Star size={10} fill="currentColor" />
               <span>{product.rating}</span>
             </div>
           </div>
@@ -116,7 +117,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           {/* Title with consistent height across all cards */}
           <h3 
             onClick={() => onViewDetails(product)}
-            className="font-bold text-slate-800 text-xs sm:text-sm hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer min-h-[2rem] sm:min-h-[2.4rem] flex items-center"
+            className={`font-bold text-slate-800 ${compact ? 'text-[11px] sm:text-xs min-h-[1.8rem] sm:min-h-[2rem]' : 'text-xs sm:text-sm min-h-[2rem] sm:min-h-[2.4rem]'} hover:text-sky-600 transition-colors line-clamp-2 leading-tight cursor-pointer flex items-center`}
             title={product.nombre}
           >
             {product.nombre}
@@ -124,37 +125,37 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
         </div>
 
         {/* Pricing & Add to Cart */}
-        <div className="pt-2 border-t border-slate-100 space-y-2 mt-auto">
+        <div className={`${compact ? 'pt-1.5 space-y-1.5' : 'pt-2 space-y-2'} border-t border-slate-100 mt-auto`}>
           {/* Precio Anterior / Descuento (si tiene oferta activa) */}
           {product.precioAnterior && product.precioAnterior > product.precio && (
             <div className="flex items-center justify-between gap-1 leading-none">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] sm:text-[11px] text-slate-400 line-through font-semibold">
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 line-through font-semibold">
                   {fmtPrice(product.precioAnterior)}
                 </span>
                 {discountPercent && (
-                  <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-md shadow-2xs">
+                  <span className="bg-amber-400 text-slate-950 font-black text-[8px] px-1.5 py-0.2 rounded-md shadow-2xs">
                     -{discountPercent}%
                   </span>
                 )}
               </div>
               {/* Alerta de urgencia si quedan pocas unidades */}
               {product.stock > 0 && product.stock <= 5 && (
-                <span className="text-[9px] font-extrabold text-amber-600 animate-pulse truncate">
-                  ¡Últimas {product.stock} unds!
+                <span className="text-[8px] font-extrabold text-amber-600 animate-pulse truncate">
+                  ¡Últimas {product.stock}!
                 </span>
               )}
             </div>
           )}
 
           {/* Fila Principal: Precio y Botón de Añadir */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-1.5">
             <div className="min-w-0 flex-1">
-              <span className="font-black text-slate-900 text-sm sm:text-base leading-none block whitespace-nowrap">
+              <span className={`font-black text-slate-900 ${compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} leading-none block whitespace-nowrap`}>
                 {fmtPrice(product.precio)}
               </span>
-              <span className="text-[9px] text-slate-400 font-medium block mt-0.5">
-                {product.ivaPct > 0 ? `IVA ${product.ivaPct}% incl.` : 'IVA incluido'}
+              <span className="text-[8px] sm:text-[9px] text-slate-400 font-medium block mt-0.5 truncate">
+                {product.ivaPct > 0 ? `IVA ${product.ivaPct}%` : 'IVA incl.'}
               </span>
             </div>
 
@@ -168,7 +169,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
                 }
               }}
               disabled={product.stock <= 0}
-              className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 shrink-0 font-bold text-xs shadow-2xs ${
+              className={`${compact ? 'h-7 sm:h-7.5 px-2 text-[10px]' : 'h-8 sm:h-9 px-2.5 sm:px-3 text-xs'} rounded-xl transition-all flex items-center justify-center gap-1 shrink-0 font-bold shadow-2xs ${
                 product.stock > 0
                   ? 'bg-slate-900 hover:bg-sky-600 active:scale-90 text-white cursor-pointer'
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
@@ -178,11 +179,11 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
             >
               {product.stock > 0 ? (
                 <>
-                  <Plus size={14} strokeWidth={2.5} />
-                  <span className="text-xs font-bold">Añadir</span>
+                  <Plus size={compact ? 12 : 14} strokeWidth={2.5} />
+                  <span className="font-bold">Añadir</span>
                 </>
               ) : (
-                <span className="text-[10px] sm:text-[11px] font-bold">Agotado</span>
+                <span className="font-bold">Agotado</span>
               )}
             </button>
           </div>
@@ -193,19 +194,19 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
           </div>
 
           {/* Disponibilidad de Stock */}
-          <div className="min-h-[14px] flex items-center">
+          <div className="min-h-[12px] flex items-center text-[8px] sm:text-[9px]">
             {product.stock > 0 && product.stock <= 5 ? (
-              <p className="text-[9px] font-bold text-amber-700 flex items-center gap-1">
+              <p className="font-bold text-amber-700 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span>¡Últimas {product.stock} {product.stock === 1 ? 'unidad' : 'unidades'}!</span>
+                <span>¡Últimas {product.stock} unds!</span>
               </p>
             ) : product.stock > 5 ? (
-              <p className="text-[9px] font-medium text-emerald-700 flex items-center gap-1">
+              <p className="font-medium text-emerald-700 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>Disponible ({product.stock} unds)</span>
               </p>
             ) : (
-              <p className="text-[9px] font-medium text-rose-500 flex items-center gap-1">
+              <p className="font-medium text-rose-500 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                 <span>Agotado temporalmente</span>
               </p>
