@@ -8,8 +8,9 @@ import { getDocumentosConfig, incrementarConsecutivo } from '../../services/conf
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
   Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
-  Tag, Scan, Users, Sun, Moon, Zap, PackagePlus, UserPlus, Check, ChevronDown,
+  Tag, Scan, Users, Sun, Moon, Zap, PackagePlus, UserPlus, Check, ChevronDown, Camera,
 } from 'lucide-react'
+import { BarcodeScannerModal } from '../../components/BarcodeScannerModal'
 import { getClientes } from '../../services/ventas.service'
 import { getMediosPago } from '../../services/configuracion.service'
 import { getMediaUrl } from '../../services/api'
@@ -64,6 +65,7 @@ export function PosScreen() {
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
   const [tabletView, setTabletView] = useState<'catalogo' | 'carrito'>('catalogo')
+  const [showCameraScanner, setShowCameraScanner] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem('pos_theme')
@@ -420,6 +422,100 @@ export function PosScreen() {
     setShowVariantModal(false)
     setSelectedProductVariants(null)
   }, [puedeStockNegativo])
+
+  const handleCameraBarcodeScanned = async (code: string) => {
+    const cleanCode = code.trim().toLowerCase()
+    let matchedProd: any = null
+    let matchedVar: any = null
+
+    // 1. Buscar en los productos cargados en memoria
+    for (const p of productos) {
+      if (p.variantes && Array.isArray(p.variantes)) {
+        const v = p.variantes.find((varItem: any) => {
+          const varCb = String(varItem.codigoBarras || '').trim().toLowerCase()
+          const varSku = String(varItem.sku || '').trim().toLowerCase()
+          return varCb === cleanCode || varSku === cleanCode
+        })
+        if (v) {
+          matchedProd = p
+          matchedVar = v
+          break
+        }
+      }
+
+      const pCb = String(p.codigoBarras || '').trim().toLowerCase()
+      const pSku = String(p.sku || '').trim().toLowerCase()
+      const pRef = String(p.referencia || '').trim().toLowerCase()
+      const hasSecondary = Array.isArray(p.codigosBarras) && p.codigosBarras.some((cb: any) => {
+        const val = typeof cb === 'string' ? cb : cb?.codigo
+        return String(val || '').trim().toLowerCase() === cleanCode
+      })
+
+      if (pCb === cleanCode || pSku === cleanCode || pRef === cleanCode || hasSecondary) {
+        matchedProd = p
+        break
+      }
+    }
+
+    // 2. Si no se encontró en memoria, consultar al backend
+    if (!matchedProd) {
+      try {
+        const results = await buscarProductosPos(code.trim(), sesion?.caja?.bodegaId ?? 0)
+        if (results && results.length > 0) {
+          for (const p of results) {
+            if (p.variantes && Array.isArray(p.variantes)) {
+              const v = p.variantes.find((varItem: any) => {
+                const varCb = String(varItem.codigoBarras || '').trim().toLowerCase()
+                const varSku = String(varItem.sku || '').trim().toLowerCase()
+                return varCb === cleanCode || varSku === cleanCode
+              })
+              if (v) {
+                matchedProd = p
+                matchedVar = v
+                break
+              }
+            }
+            const pCb = String(p.codigoBarras || '').trim().toLowerCase()
+            const pSku = String(p.sku || '').trim().toLowerCase()
+            const pRef = String(p.referencia || '').trim().toLowerCase()
+            const hasSecondary = Array.isArray(p.codigosBarras) && p.codigosBarras.some((cb: any) => {
+              const val = typeof cb === 'string' ? cb : cb?.codigo
+              return String(val || '').trim().toLowerCase() === cleanCode
+            })
+            if (pCb === cleanCode || pSku === cleanCode || pRef === cleanCode || hasSecondary) {
+              matchedProd = p
+              break
+            }
+          }
+          if (!matchedProd) {
+            matchedProd = results[0]
+          }
+        }
+      } catch (e) {
+        console.error('Error buscando producto escaneado:', e)
+      }
+    }
+
+    if (matchedProd) {
+      if (matchedVar) {
+        addToCart(matchedProd, matchedVar)
+        return {
+          found: true,
+          productName: `${matchedProd.nombre} (${matchedVar.nombre})`,
+          price: Number(matchedVar.precioBase) > 0 ? Number(matchedVar.precioBase) : Number(matchedProd.precioBase),
+        }
+      } else {
+        addToCart(matchedProd)
+        return {
+          found: true,
+          productName: matchedProd.nombre,
+          price: Number(matchedProd.precioBase) || 0,
+        }
+      }
+    }
+
+    return { found: false }
+  }
 
   const removeFromCart = (productoId: number, varianteId?: number) =>
     setCart(prev => prev.filter(i => !(i.productoId === productoId && i.varianteId === (varianteId ?? undefined))))
@@ -856,7 +952,16 @@ export function PosScreen() {
           <div className={`p-3 shrink-0 flex gap-2 transition-colors duration-200 ${isDark ? 'bg-slate-800' : 'bg-white border-b border-slate-200'}`}>
             <div className="relative flex-1">
               <Search size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-              <Scan size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              <button
+                type="button"
+                onClick={() => setShowCameraScanner(true)}
+                title="Escanear con la cámara de la tablet"
+                className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-all active:scale-90 cursor-pointer ${
+                  isDark ? 'text-emerald-400 hover:bg-slate-700' : 'text-emerald-600 hover:bg-slate-200'
+                }`}
+              >
+                <Camera size={17} />
+              </button>
               <input
                 ref={searchRef}
                 value={q}
@@ -887,11 +992,20 @@ export function PosScreen() {
                     }
                   }
                 }}
-                placeholder="Buscar por nombre, SKU, ref. fábrica o escanear código de barras (F2: Crear Rápido)..."
-                className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white placeholder-slate-400' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-200'}`}
+                placeholder="Buscar por nombre, SKU, ref. o escanear código (F2: Crear Rápido)..."
+                className={`w-full pl-9 pr-10 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200 ${isDark ? 'bg-slate-700 text-white placeholder-slate-400' : 'bg-slate-100 text-slate-800 placeholder-slate-400 border border-slate-200'}`}
                 autoFocus
               />
             </div>
+            <button
+              type="button"
+              onClick={() => setShowCameraScanner(true)}
+              className="px-3 sm:px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 cursor-pointer"
+              title="Escanear código de barras con la cámara de la tablet"
+            >
+              <Scan size={15} />
+              <span className="hidden sm:inline">Escanear</span>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -902,7 +1016,7 @@ export function PosScreen() {
                 setQuickError(null)
                 setShowQuickCreate(true)
               }}
-              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0"
+              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Crear producto rápido (Atajo: F2)"
             >
               <Zap size={15} className="text-amber-300" />
@@ -2244,6 +2358,14 @@ export function PosScreen() {
           </div>
         </div>
       )}
+
+      {/* Modal de Escáner de Código de Barras con Cámara de Tablet */}
+      <BarcodeScannerModal
+        isOpen={showCameraScanner}
+        onClose={() => setShowCameraScanner(false)}
+        onScan={handleCameraBarcodeScanned}
+        isDark={isDark}
+      />
     </div>
   )
 }
