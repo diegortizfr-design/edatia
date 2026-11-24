@@ -197,8 +197,8 @@ export function Facturas() {
         {isLoading ? (
           <p className="text-center py-16 text-slate-400">Cargando facturas...</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-sm min-w-[780px]">
               <thead>
                 <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
                   {['Número', 'Cliente', 'Fecha', 'Vencimiento', 'Total', 'Saldo', 'Estado', 'DIAN', 'Acciones'].map(h => (

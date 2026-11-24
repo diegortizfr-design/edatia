@@ -1043,8 +1043,8 @@ export function FacturaForm() {
                 </div>
 
                 {/* Items Table */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border border-slate-200 rounded-lg overflow-x-auto custom-scrollbar shadow-xs">
+                  <table className="w-full text-sm min-w-[780px]">
                     <thead>
                       <tr className="text-xs text-slate-400 uppercase tracking-wide border-b border-slate-200 bg-slate-50">
                         <th className="px-3 py-2.5 text-left font-semibold">SKU / Producto</th>

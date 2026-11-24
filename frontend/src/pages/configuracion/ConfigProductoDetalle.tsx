@@ -2747,7 +2747,8 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
               Códigos Secundarios y Relacionados
             </h4>
           </div>
-          <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-100">
                 <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código</th>
@@ -2812,6 +2813,7 @@ function TabCodigosBarra({ producto, refetch }: { producto: any; refetch: () => 
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

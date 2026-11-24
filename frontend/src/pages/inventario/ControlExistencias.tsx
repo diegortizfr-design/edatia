@@ -701,8 +701,8 @@ export function ControlExistencias() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-xs min-w-[850px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                   <th className="text-left px-5 py-4">Producto</th>
@@ -1533,8 +1533,8 @@ export function ControlExistencias() {
                   No hay movimientos registrados para este producto en la bodega seleccionada.
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <table className="w-full text-xs">
+                <div className="border border-slate-200 rounded-xl overflow-x-auto custom-scrollbar shadow-sm">
+                  <table className="w-full text-xs min-w-[700px]">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 font-semibold text-[10px] uppercase">
                       <tr>
                         <th className="text-left px-4 py-3">Fecha</th>

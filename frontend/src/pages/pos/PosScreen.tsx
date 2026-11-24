@@ -63,6 +63,7 @@ export function PosScreen() {
   const [pagosPorMedio, setPagosPorMedio] = useState<Record<string, number>>({})
   const [ventaOk, setVentaOk] = useState<any>(null)
   const [descuentoExtra, setDescuentoExtra] = useState(0)
+  const [tabletView, setTabletView] = useState<'catalogo' | 'carrito'>('catalogo')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem('pos_theme')
@@ -772,17 +773,17 @@ export function PosScreen() {
   return (
     <div className={`fixed inset-0 flex flex-col overflow-hidden transition-colors duration-200 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-800'}`} style={{ fontFamily: 'system-ui' }}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className={`px-4 py-2 flex items-center justify-between border-b shrink-0 transition-colors duration-200 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
-        <div className="flex items-center gap-3">
+      <div className={`px-3 sm:px-4 py-2 flex items-center justify-between border-b shrink-0 transition-colors duration-200 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+        <div className="flex items-center gap-2 sm:gap-3">
           <button onClick={() => navigate('/pos')}
-            className={`transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-855'}`}>
+            className={`p-1 rounded-lg transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-855'}`}>
             <ChevronLeft size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <span className={`font-bold text-sm transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{sesion.caja?.nombre}</span>
-            <span className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>• {sesion.vendedorNombre}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className={`font-bold text-xs sm:text-sm truncate max-w-[110px] sm:max-w-none transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{sesion.caja?.nombre}</span>
+            <span className={`text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-none transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>• {sesion.vendedorNombre}</span>
             {sesion.caja?.bodega && (
-              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
+              <span className={`hidden md:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
                 isDark 
                   ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80' 
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -792,7 +793,39 @@ export function PosScreen() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Selector de modo tablet / móvil (< lg): Catálogo vs Carrito */}
+        <div className="flex lg:hidden bg-slate-100 dark:bg-slate-700/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-600">
+          <button
+            type="button"
+            onClick={() => setTabletView('catalogo')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+              tabletView === 'catalogo'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            Catálogo
+          </button>
+          <button
+            type="button"
+            onClick={() => setTabletView('carrito')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              tabletView === 'carrito'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <span>Carrito</span>
+            {cart.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-indigo-600 text-white font-extrabold">
+                {cart.reduce((acc, i) => acc + i.cantidad, 0)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-lg transition-colors duration-200 ${
@@ -804,21 +837,21 @@ export function PosScreen() {
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <div className={`text-xs transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ventas del turno</div>
             <div className={`font-bold text-sm transition-colors duration-200 ${isDark ? 'text-green-400' : 'text-green-600'}`}>{fmt(Number(sesion.totalVentas ?? 0))}</div>
           </div>
           <button onClick={() => navigate(`/pos/cierre/${sesId}`)}
-            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
+            className="bg-red-600 hover:bg-red-700 text-white text-xs px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-colors">
             Cerrar Caja
           </button>
         </div>
       </div>
 
       {/* ── Cuerpo ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Panel izquierdo: productos */}
-        <div className={`flex flex-col flex-1 overflow-hidden border-r transition-colors duration-200 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`${tabletView === 'carrito' ? 'hidden lg:flex' : 'flex'} flex-col flex-1 overflow-hidden border-r transition-colors duration-200 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
           {/* Búsqueda */}
           <div className={`p-3 shrink-0 flex gap-2 transition-colors duration-200 ${isDark ? 'bg-slate-800' : 'bg-white border-b border-slate-200'}`}>
             <div className="relative flex-1">
@@ -1006,10 +1039,51 @@ export function PosScreen() {
               )}
             </div>
           </div>
+
+          {/* Barra flotante inferior de carrito para tablet / móvil en modo Catálogo */}
+          {cart.length > 0 && tabletView === 'catalogo' && (
+            <div className={`lg:hidden px-4 py-3 border-t flex items-center justify-between shrink-0 shadow-xl z-20 transition-colors duration-200 ${
+              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                  {cart.reduce((acc, i) => acc + i.cantidad, 0)}
+                </div>
+                <div>
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Carrito</div>
+                  <div className={`text-base font-black ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                    {fmt(totales.total)}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTabletView('carrito')}
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+              >
+                <span>Ver Carrito / Cobrar</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Panel derecho: carrito */}
-        <div className={`w-80 xl:w-96 flex flex-col transition-colors duration-200 ${isDark ? 'bg-slate-800 text-white' : 'bg-white border-l border-slate-200 text-slate-800'}`}>
+        <div className={`${tabletView === 'catalogo' ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 xl:w-96 flex flex-col transition-colors duration-200 ${isDark ? 'bg-slate-800 text-white' : 'bg-white border-l border-slate-200 text-slate-800'}`}>
+          {/* Botón de retorno al catálogo en tablet/móvil */}
+          <div className="lg:hidden p-2.5 border-b flex items-center justify-between bg-indigo-50/50 dark:bg-slate-700/40 border-slate-200 dark:border-slate-700 shrink-0">
+            <button
+              type="button"
+              onClick={() => setTabletView('catalogo')}
+              className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              <ChevronLeft size={16} />
+              <span>Volver a Productos</span>
+            </button>
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              {cart.reduce((acc, i) => acc + i.cantidad, 0)} items en carrito
+            </span>
+          </div>
           {/* Cliente */}
           <div className={`p-3 border-b shrink-0 transition-colors duration-200 ${isDark ? 'border-slate-700' : 'border-slate-200'}`} ref={clientDropdownRef}>
             <div className="flex items-center justify-between mb-2">
@@ -1219,24 +1293,24 @@ export function PosScreen() {
                         )}
                         <div className={`text-xs mt-1 transition-colors duration-200 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{fmt(item.precio)} c/u</div>
                       </div>
-                      <button onClick={() => removeFromCart(item.productoId, item.varianteId)} className={`shrink-0 transition-colors duration-200 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-600'}`}>
-                        <Trash2 size={14} />
+                      <button onClick={() => removeFromCart(item.productoId, item.varianteId)} className={`p-1.5 rounded-lg shrink-0 transition-colors duration-200 ${isDark ? 'text-slate-500 hover:text-red-400 hover:bg-red-400/10' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}>
+                        <Trash2 size={15} />
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <button onClick={() => updateQty(item.productoId, -1, item.varianteId)}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
                             isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                           }`}>
-                          <Minus size={12} />
+                          <Minus size={13} />
                         </button>
                         <span className={`font-bold text-sm w-8 text-center transition-colors duration-200 ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.cantidad}</span>
                         <button onClick={() => updateQty(item.productoId, 1, item.varianteId)}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
                             isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
                           }`}>
-                          <Plus size={12} />
+                          <Plus size={13} />
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1307,25 +1381,25 @@ export function PosScreen() {
 
       {/* ── Modal Pago ─────────────────────────────────────────────────────── */}
       {showPago && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className={`rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border shadow-2xl overflow-hidden transition-colors duration-200 ${
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className={`rounded-2xl w-full max-w-4xl max-h-[96vh] flex flex-col border shadow-2xl overflow-hidden my-auto transition-colors duration-200 ${
             isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
           }`}>
             {/* Modal Header */}
-            <div className={`flex items-center justify-between p-4 border-b transition-colors duration-200 ${
+            <div className={`flex items-center justify-between p-3.5 sm:p-4 border-b shrink-0 transition-colors duration-200 ${
               isDark ? 'border-slate-700' : 'border-slate-200'
             }`}>
-              <h2 className="font-bold text-lg">Confirmación de Venta y Pago</h2>
-              <button onClick={() => setShowPago(false)} className={isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}>
+              <h2 className="font-bold text-base sm:text-lg">Confirmación de Venta y Pago</h2>
+              <button onClick={() => setShowPago(false)} className={`p-1 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}>
                 <X size={20} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-0">
+            <div className="flex-1 overflow-y-auto md:overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-0">
               
               {/* Left Side: Payment Options (7 Columns) */}
-              <div className="md:col-span-7 p-5 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0">
+              <div className="md:col-span-7 p-3.5 sm:p-5 flex flex-col justify-between overflow-y-auto space-y-4 min-h-0">
                 <div className="space-y-4">
                   {/* Total indicator */}
                   <div className={`rounded-xl p-4 text-center transition-colors duration-200 ${
@@ -1538,7 +1612,7 @@ export function PosScreen() {
               </div>
 
               {/* Right Side: Purchase Confirmation (5 Columns) */}
-              <div className={`md:col-span-5 p-5 border-t md:border-t-0 md:border-l flex flex-col justify-between overflow-hidden min-h-0 transition-colors duration-200 ${
+              <div className={`md:col-span-5 p-3.5 sm:p-5 border-t md:border-t-0 md:border-l flex flex-col justify-between overflow-y-auto md:overflow-hidden min-h-0 transition-colors duration-200 ${
                 isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50/50'
               }`}>
                 <div className="flex-1 flex flex-col min-h-0 space-y-3">

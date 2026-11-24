@@ -805,8 +805,8 @@ export function Movimientos() {
                 No se encontraron documentos comerciales con los filtros indicados.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-xs min-w-[850px]">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                       <th className="text-left px-6 py-4">Documento</th>
@@ -968,8 +968,8 @@ export function Movimientos() {
                 No se encontraron traslados con los filtros seleccionados.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-xs min-w-[850px]">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                       <th className="text-left px-6 py-4">Doc / N° Traslado</th>
@@ -1092,8 +1092,8 @@ export function Movimientos() {
                 No hay movimientos registrados para los criterios seleccionados.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-xs min-w-[850px]">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                       <th className="text-left px-6 py-4">Fecha</th>
