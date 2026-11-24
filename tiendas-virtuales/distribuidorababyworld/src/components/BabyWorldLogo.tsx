@@ -10,7 +10,7 @@ export function BabyWorldLogo({ className = "", variant = 'full', inverted = fal
   return (
     <div className={`flex items-center select-none ${className}`}>
       <img 
-        src="/logo.png" 
+        src="/logo-256.webp?v=navidad" 
         alt="Pañalera Baby World" 
         // Ajustamos la altura de la imagen dependiendo del variante (full vs compact)
         className={`object-contain transition-transform hover:scale-105 duration-300 ${

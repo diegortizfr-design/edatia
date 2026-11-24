@@ -734,8 +734,8 @@ export function CheckoutModal({
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-slate-800">Crédito Addi o Sistecrédito</span>
                             <div className="flex items-center gap-1.5">
-                              <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
-                              <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[45px] object-contain" />
+                              <img src="/logo-addi.webp" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                              <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-2.5 max-w-[45px] object-contain" />
                             </div>
                           </div>
                           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
@@ -769,7 +769,7 @@ export function CheckoutModal({
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1.5">
-                                  <img src="/logo-addi.png" alt="Addi" className="w-5 h-5 rounded-full object-contain" />
+                                  <img src="/logo-addi.webp" alt="Addi" className="w-5 h-5 rounded-full object-contain" />
                                   <span className="text-xs font-extrabold text-[#4766fc]">Addi</span>
                                 </div>
                                 <span className="text-[9px] font-bold bg-blue-100 text-[#4766fc] px-1.5 py-0.2 rounded">0% interés</span>
@@ -790,7 +790,7 @@ export function CheckoutModal({
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1">
-                                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-4 max-w-[85px] object-contain" />
+                                <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-4 max-w-[85px] object-contain" />
                                 <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">Quincenas</span>
                               </div>
                               <p className="text-[10px] text-slate-500">Cómodas quincenas</p>
@@ -1181,7 +1181,7 @@ export function CheckoutModal({
                   <div className="bg-white rounded-2xl p-3 border border-sky-100 text-center space-y-2.5 shadow-2xs">
                     <div className="relative inline-block mx-auto bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs">
                       <img
-                        src="/qr-bre-b.png"
+                        src="/qr-bre-b.webp"
                         alt="QR Bre-B Distribuidora Baby-World"
                         className="w-48 h-auto max-h-56 mx-auto rounded-lg object-contain"
                       />
@@ -1213,7 +1213,7 @@ export function CheckoutModal({
                     </div>
                     <div>
                       <a
-                        href="/qr-bre-b.png"
+                        href="/qr-bre-b.webp"
                         download="QR-Bre-B-BabyWorld.png"
                         className="inline-flex items-center gap-1 text-[10.5px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                       >
@@ -1330,7 +1330,7 @@ export function CheckoutModal({
                 <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
                   <div className="flex items-center gap-2">
                     <img 
-                      src={creditoProvider === 'addi' ? '/logo-addi.png' : '/logo-sistecredito.png'} 
+                      src={creditoProvider === 'addi' ? '/logo-addi.webp' : '/logo-sistecredito.webp'} 
                       alt={creditoProvider === 'addi' ? 'Addi' : 'Sistecrédito'} 
                       className={creditoProvider === 'addi' ? 'w-6 h-6 rounded-full object-contain' : 'h-4 max-w-[85px] object-contain'} 
                     />

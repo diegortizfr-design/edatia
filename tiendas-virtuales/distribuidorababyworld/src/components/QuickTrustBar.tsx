@@ -73,8 +73,8 @@ export function QuickTrustBar({ onOpenLocation, onOpenBnplInfo }: QuickTrustBarP
             title="Conoce cómo pagar a cuotas con Addi y Sistecrédito"
           >
             <div className="flex items-center gap-1">
-              <img src="/logo-addi.png" alt="Addi" className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full object-contain" />
-              <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 sm:h-3 max-w-[42px] sm:max-w-[48px] object-contain" />
+              <img src="/logo-addi.webp" alt="Addi" className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full object-contain" />
+              <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-2.5 sm:h-3 max-w-[42px] sm:max-w-[48px] object-contain" />
             </div>
             <span>Crédito a Cuotas</span>
           </button>

@@ -58,3 +58,28 @@
     min-width: min(100%, 560px);
   }
 }
+
+/* Animación de Nieve Navideña (GPU acelerada, fluida y ligera) */
+@keyframes snowFall {
+  0% {
+    top: -24px;
+  }
+  100% {
+    top: calc(100% + 24px);
+  }
+}
+
+@keyframes snowSway {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(22px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snow-particle {
+    display: none !important;
+  }
+}

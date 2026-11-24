@@ -65,8 +65,8 @@ export function BnplInfoModal({ isOpen, onClose }: BnplInfoModalProps) {
               <div className="flex items-center gap-2 mb-1">
                 <p className="font-bold text-slate-800">Elige Addi o Sistecrédito</p>
                 <div className="flex items-center gap-1.5 ml-auto bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
-                  <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
-                  <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 object-contain" />
+                  <img src="/logo-addi.webp" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                  <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-3 object-contain" />
                 </div>
               </div>
               <p className="text-slate-500 text-[11px] leading-snug">

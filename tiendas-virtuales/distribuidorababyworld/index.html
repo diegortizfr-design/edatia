@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png?v=navidad" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Baby-World | Pañalera, Juguetería y Variedades</title>
     <meta name="description" content="Baby-World: Tu tienda virtual especializada en pañalera, juguetería infantil y variedades para bebés y niños. Envíos rápidos y atención por WhatsApp." />
@@ -14,10 +14,14 @@
     <link rel="preconnect" href="https://api.edatia.com" crossorigin />
     <link rel="dns-prefetch" href="https://api.edatia.com" />
 
-    <!-- Google Fonts: Plus Jakarta Sans, Outfit & Chewy -->
+    <!-- Google Fonts: Asynchronous non-blocking font loading with fallback -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Chewy&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Chewy&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Chewy&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Chewy&display=swap">
+    </noscript>
 
     <!-- Meta Pixel Code -->
     <script>

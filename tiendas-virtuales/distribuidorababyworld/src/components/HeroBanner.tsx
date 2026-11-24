@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, MapPin, CreditCard } from 'lucide-react'
+import { ChristmasSnow } from './ChristmasSnow'
 
 interface HeroBannerProps {
   onOpenFamiliaRegistro: () => void
@@ -29,7 +30,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
   const slides: Slide[] = [
     {
       id: 'black-friday',
-      src: '/banner-black-friday.jpg?v=6',
+      src: '/banner-black-friday.webp?v=7',
       alt: 'Black Friday en Baby World: ¡Hasta 60% de descuento en Juguetería! Aplica en referencias seleccionadas.',
       ariaLabel: 'Black Friday Baby World: Hasta 60% de descuento en juguetería. Aplica en referencias seleccionadas.',
       mobileText: '🔥 Black Friday: Hasta 60% OFF en Juguetes',
@@ -47,7 +48,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     },
     {
       id: 'familia',
-      src: '/banner-familia.jpg?v=3',
+      src: '/banner-familia.webp?v=7',
       alt: '¡Sé parte de la Familia Baby World! Registra tus datos para acceder a muchos beneficios. Regístrate aquí.',
       ariaLabel: 'Sé parte de la Familia Baby World. Registra tus datos para acceder a muchos beneficios.',
       mobileText: 'Toca aquí para registrarte y recibir beneficios',
@@ -58,7 +59,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
     },
     {
       id: 'medios-pago',
-      src: '/banner-medios-pago.jpg?v=5',
+      src: '/banner-medios-pago.webp?v=7',
       alt: '¡Recibimos Addi y Sistecrédito! Accede a tu crédito en 5 minutos.',
       ariaLabel: '¡Recibimos Addi y Sistecrédito! Accede a tu crédito en 5 minutos.',
       mobileText: 'Recibimos Addi y Sistecrédito • En 5 min',
@@ -143,6 +144,9 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
         aria-hidden="true" 
       />
 
+      {/* Efecto sutil de Nieve Navideña */}
+      <ChristmasSnow />
+
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10">
         {/* Contenedor con flechas exteriores en monitores grandes (XL+) */}
         <div className="relative flex items-center justify-center">
@@ -171,7 +175,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
               className="flex transition-transform duration-700 ease-out"
               style={{ transform: `translateX(-${current * 100}%)` }}
             >
-              {slides.map((slide) => (
+              {slides.map((slide, idx) => (
                 <div key={slide.id} className="w-full flex-shrink-0">
                   <button
                     type="button"
@@ -183,7 +187,7 @@ export function HeroBanner({ onOpenFamiliaRegistro, onOpenLocation, onOpenBnplIn
                       src={slide.src}
                       alt={slide.alt}
                       className="w-full h-auto block select-none"
-                      loading="eager"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                       draggable={false}
                     />

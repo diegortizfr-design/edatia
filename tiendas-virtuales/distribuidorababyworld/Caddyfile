@@ -2,6 +2,9 @@
     root * /usr/share/caddy
     file_server
 
+    # Compresión moderna dinámica para reducir el ancho de banda transferido hasta un 75%
+    encode zstd gzip
+
     # Bots de redes sociales (WhatsApp, Facebook, Telegram, etc.): entregar HTML con Open Graph
     @crawlers {
         header_regexp User-Agent "(?i)(facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot|Discordbot)"
@@ -12,6 +15,18 @@
             rewrite /api/v1/public/tiendas/distribuidorababyworld/og/{re.prod.1}
         }
     }
+
+    # Caché inmutable de largo plazo para assets de Vite con hash en el nombre (/assets/*)
+    @static {
+        path /assets/*
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Caché balanceado para imágenes y recursos estáticos
+    @media {
+        path *.png *.jpg *.jpeg *.svg *.webp *.ico *.woff2 *.woff
+    }
+    header @media Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
 
     handle {
         @html {

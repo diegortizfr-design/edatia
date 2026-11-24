@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Info, Sparkles } from 'lucide-react'
-import { BnplInfoModal } from './BnplInfoModal'
+
+const BnplInfoModal = React.lazy(() => import('./BnplInfoModal').then(m => ({ default: m.BnplInfoModal })))
 
 interface BnplCreditSimulatorProps {
   price: number
@@ -28,12 +29,12 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
     return (
       <div className={`flex items-center gap-1.5 text-[10px] text-slate-500 font-medium ${className}`}>
         <span className="inline-flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
-          <img src="/logo-addi.png" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain" />
+          <img src="/logo-addi.webp" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain" />
           <span className="font-extrabold text-[#4766fc]">Addi</span>
         </span>
         <span className="text-slate-300">•</span>
         <span className="inline-flex items-center gap-1 bg-white px-1.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
-          <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[48px] object-contain" />
+          <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-2.5 max-w-[48px] object-contain" />
         </span>
       </div>
     )
@@ -68,7 +69,7 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
           {/* Opción Addi */}
           <div className="bg-white/95 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
             <img 
-              src="/logo-addi.png" 
+              src="/logo-addi.webp" 
               alt="Addi" 
               className="w-9 h-9 rounded-full object-contain shrink-0 shadow-2xs" 
             />
@@ -99,7 +100,7 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
           <div className="bg-white/95 backdrop-blur-xs p-2.5 rounded-xl border border-slate-100 flex items-center gap-2.5 shadow-2xs">
             <div className="h-9 w-20 bg-white rounded-lg border border-slate-100 flex items-center justify-center p-1 shrink-0 shadow-2xs">
               <img 
-                src="/logo-sistecredito.png" 
+                src="/logo-sistecredito.webp" 
                 alt="Sistecrédito" 
                 className="w-full h-full object-contain" 
               />
@@ -123,7 +124,11 @@ export function BnplCreditSimulator({ price, compact = false, className = '' }: 
       </div>
 
       {/* Modal Informativo: Cómo Funciona el Crédito */}
-      <BnplInfoModal isOpen={showModal} onClose={() => setShowModal(false)} />
+      {showModal && (
+        <React.Suspense fallback={null}>
+          <BnplInfoModal isOpen={showModal} onClose={() => setShowModal(false)} />
+        </React.Suspense>
+      )}
     </>
   )
 }

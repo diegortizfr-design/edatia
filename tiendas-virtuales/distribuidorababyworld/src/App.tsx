@@ -6,12 +6,9 @@ import { HeroBanner } from './components/HeroBanner'
 import { CategoriesSection } from './components/CategoriesSection'
 import { MobileBottomNav } from './components/MobileBottomNav'
 import { ProductCard } from './components/ProductCard'
-import { ProductDetailPage } from './components/ProductDetailPage'
-import { FamiliaRegistroPage } from './components/FamiliaRegistroPage'
 import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton'
 import { FloatingSocialDock } from './components/FloatingSocialDock'
-import { CartDrawer, CartItem } from './components/CartDrawer'
-import { CheckoutModal } from './components/CheckoutModal'
+import { CartDrawer, type CartItem } from './components/CartDrawer'
 import { BabyWorldLogo } from './components/BabyWorldLogo'
 import { FeaturedCarousel } from './components/FeaturedCarousel'
 import { QuickTrustBar } from './components/QuickTrustBar'
@@ -19,10 +16,6 @@ import { INSTAGRAM_URL, TIKTOK_URL } from './constants/social'
 import { InstagramIcon } from './components/InstagramIcon'
 import { TikTokIcon } from './components/TikTokIcon'
 import { ProductSkeleton } from './components/ProductSkeleton'
-import { BnplInfoModal } from './components/BnplInfoModal'
-import { StoreLocationModal } from './components/StoreLocationModal'
-import { PromoAnnouncementModal } from './components/PromoAnnouncementModal'
-import { CategoriesDrawerModal } from './components/CategoriesDrawerModal'
 import { WhatsAppIcon } from './components/WhatsAppIcon'
 import { GoogleMapsIcon } from './components/GoogleMapsIcon'
 import { LocationPinIcon } from './components/LocationPinIcon'
@@ -31,6 +24,15 @@ import { normalizarVideos } from './lib/videoEmbed'
 import { analytics } from './lib/analytics'
 import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
 import { ACTIVE_CAMPAIGN } from './constants/seasonalCampaign'
+
+// Lazy-loaded heavy screens & modals to minimize initial bundle size and speed up first paint
+const ProductDetailPage = React.lazy(() => import('./components/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })))
+const FamiliaRegistroPage = React.lazy(() => import('./components/FamiliaRegistroPage').then(m => ({ default: m.FamiliaRegistroPage })))
+const CheckoutModal = React.lazy(() => import('./components/CheckoutModal').then(m => ({ default: m.CheckoutModal })))
+const BnplInfoModal = React.lazy(() => import('./components/BnplInfoModal').then(m => ({ default: m.BnplInfoModal })))
+const StoreLocationModal = React.lazy(() => import('./components/StoreLocationModal').then(m => ({ default: m.StoreLocationModal })))
+const PromoAnnouncementModal = React.lazy(() => import('./components/PromoAnnouncementModal').then(m => ({ default: m.PromoAnnouncementModal })))
+const CategoriesDrawerModal = React.lazy(() => import('./components/CategoriesDrawerModal').then(m => ({ default: m.CategoriesDrawerModal })))
 
 interface ErpCategory {
   id: number
@@ -626,23 +628,24 @@ export function App() {
       />
 
       {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
-      {showFamiliaForm ? (
-        <FamiliaRegistroPage
-          onBack={handleCloseFamiliaRegistro}
-          API_BASE={API_BASE}
-          storeSlug={STORE_SLUG}
-        />
-      ) : selectedProduct ? (
-        <ProductDetailPage
-          product={selectedProduct}
-          allProducts={products}
-          onBack={handleCloseProduct}
-          onSelectProduct={handleOpenProduct}
-          onAddToCart={handleAddToCart}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenLocation={() => setIsLocationModalOpen(true)}
-        />
-      ) : (
+      <React.Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center py-20"><div className="w-8 h-8 border-3 border-sky-400 border-t-transparent rounded-full animate-spin" /></div>}>
+        {showFamiliaForm ? (
+          <FamiliaRegistroPage
+            onBack={handleCloseFamiliaRegistro}
+            API_BASE={API_BASE}
+            storeSlug={STORE_SLUG}
+          />
+        ) : selectedProduct ? (
+          <ProductDetailPage
+            product={selectedProduct}
+            allProducts={products}
+            onBack={handleCloseProduct}
+            onSelectProduct={handleOpenProduct}
+            onAddToCart={handleAddToCart}
+            onOpenCart={() => setIsCartOpen(true)}
+            onOpenLocation={() => setIsLocationModalOpen(true)}
+          />
+        ) : (
         <>
           {/* VISTA DE INICIO (Home): Banners + Lo Más Recomendado + Sección de Categorías */}
           {activeCategory === 'Todos' && !searchQuery && !isFullCatalogMode ? (
@@ -818,6 +821,7 @@ export function App() {
           )}
         </>
       )}
+      </React.Suspense>
 
       {/* Clean Minimalist Footer */}
       <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 mt-12">
@@ -954,11 +958,11 @@ export function App() {
             </span>
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
               <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
-                <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                <img src="/logo-addi.webp" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
                 <span>Addi (3 cuotas 0% interés)</span>
               </span>
               <span className="inline-flex items-center gap-1.5 bg-white text-slate-800 font-extrabold px-3 py-1 rounded-lg border border-slate-200 shadow-2xs">
-                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[65px] object-contain" />
+                <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-3 max-w-[65px] object-contain" />
                 <span>(Quincenas)</span>
               </span>
               <span className="bg-sky-50 text-sky-700 font-bold px-2 py-1 rounded-lg border border-sky-100">
@@ -1019,53 +1023,65 @@ export function App() {
         }}
       />
 
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cartItems={cart}
-        onSuccess={handleCheckoutSuccess}
-        API_BASE={API_BASE}
-        storeSlug={STORE_SLUG}
-      />
+      <React.Suspense fallback={null}>
+        {/* Checkout Modal (Carga bajo demanda al abrir checkout) */}
+        {isCheckoutOpen && (
+          <CheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            cartItems={cart}
+            onSuccess={handleCheckoutSuccess}
+            API_BASE={API_BASE}
+            storeSlug={STORE_SLUG}
+          />
+        )}
 
-      {/* Modal Informativo BNPL (Addi & Sistecrédito) */}
-      <BnplInfoModal
-        isOpen={isBnplModalOpen}
-        onClose={() => setIsBnplModalOpen(false)}
-      />
+        {/* Modal Informativo BNPL (Addi & Sistecrédito) */}
+        {isBnplModalOpen && (
+          <BnplInfoModal
+            isOpen={isBnplModalOpen}
+            onClose={() => setIsBnplModalOpen(false)}
+          />
+        )}
 
-      {/* Modal de Ubicación de Tienda Física */}
-      <StoreLocationModal
-        isOpen={isLocationModalOpen}
-        onClose={() => setIsLocationModalOpen(false)}
-      />
+        {/* Modal de Ubicación de Tienda Física */}
+        {isLocationModalOpen && (
+          <StoreLocationModal
+            isOpen={isLocationModalOpen}
+            onClose={() => setIsLocationModalOpen(false)}
+          />
+        )}
 
-      {/* Modal Anuncio Promocional (Black Friday Juguetería) */}
-      <PromoAnnouncementModal
-        isOpen={isPromoModalOpen}
-        onClose={() => setIsPromoModalOpen(false)}
-        onAction={handlePromoAction}
-      />
+        {/* Modal Anuncio Promocional (Black Friday Juguetería) */}
+        {isPromoModalOpen && (
+          <PromoAnnouncementModal
+            isOpen={isPromoModalOpen}
+            onClose={() => setIsPromoModalOpen(false)}
+            onAction={handlePromoAction}
+          />
+        )}
 
-      {/* Modal / Drawer Maestro de Categorías & Departamentos */}
-      <CategoriesDrawerModal
-        isOpen={isCategoriesModalOpen}
-        onClose={() => setIsCategoriesModalOpen(false)}
-        categories={availableCategories}
-        erpCategories={erpCategories}
-        products={products}
-        activeCategory={activeCategory}
-        activeSubcategory={activeSubcategory}
-        onSelectCategory={(category, subcategory) => {
-          setIsFullCatalogMode(false)
-          handleCategorySelect(category)
-          if (subcategory) {
-            setActiveSubcategory(subcategory)
-          }
-        }}
-        onSelectAllCatalog={handleSelectAllCatalog}
-      />
+        {/* Modal / Drawer Maestro de Categorías & Departamentos */}
+        {isCategoriesModalOpen && (
+          <CategoriesDrawerModal
+            isOpen={isCategoriesModalOpen}
+            onClose={() => setIsCategoriesModalOpen(false)}
+            categories={availableCategories}
+            erpCategories={erpCategories}
+            products={products}
+            activeCategory={activeCategory}
+            activeSubcategory={activeSubcategory}
+            onSelectCategory={(category, subcategory) => {
+              setIsFullCatalogMode(false)
+              handleCategorySelect(category)
+              if (subcategory) {
+                setActiveSubcategory(subcategory)
+              }
+            }}
+            onSelectAllCatalog={handleSelectAllCatalog}
+          />
+        )}
+      </React.Suspense>
     </div>
   )
 }

@@ -12,7 +12,7 @@ export function PromoAnnouncementModal({
   isOpen,
   onClose,
   onAction,
-  imageUrl = '/anuncio-black-friday.jpg?v=6'
+  imageUrl = '/anuncio-black-friday.webp?v=7'
 }: PromoAnnouncementModalProps) {
   // Manejo de tecla Escape para cerrar
   useEffect(() => {

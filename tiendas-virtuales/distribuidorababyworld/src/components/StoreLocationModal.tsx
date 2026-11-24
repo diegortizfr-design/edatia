@@ -204,13 +204,13 @@ export function StoreLocationModal({ isOpen, onClose }: StoreLocationModalProps)
             <div className="grid grid-cols-4 gap-1.5 items-center">
               {/* Addi */}
               <div className="flex items-center justify-center gap-1 bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Paga a cuotas con Addi">
-                <img src="/logo-addi.png" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain shrink-0" />
+                <img src="/logo-addi.webp" alt="Addi" className="w-3.5 h-3.5 rounded-full object-contain shrink-0" />
                 <span className="text-[11px] font-extrabold text-slate-800">Addi</span>
               </div>
 
               {/* Sistecrédito */}
               <div className="flex items-center justify-center bg-white py-1.5 px-2 rounded-xl border border-slate-200/80 shadow-2xs" title="Crédito por quincenas con Sistecrédito">
-                <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-3 max-w-[55px] object-contain" />
+                <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-3 max-w-[55px] object-contain" />
               </div>
 
               {/* Bre-B */}

@@ -270,8 +270,8 @@ export function CartDrawer({
               <div className="p-2.5 bg-gradient-to-r from-blue-50/60 via-white to-emerald-50/60 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2 text-[11px] shadow-2xs">
                 <div className="flex items-center gap-2 text-slate-700">
                   <div className="flex items-center gap-1">
-                    <img src="/logo-addi.png" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
-                    <img src="/logo-sistecredito.png" alt="Sistecrédito" className="h-2.5 max-w-[50px] object-contain" />
+                    <img src="/logo-addi.webp" alt="Addi" className="w-4 h-4 rounded-full object-contain" />
+                    <img src="/logo-sistecredito.webp" alt="Sistecrédito" className="h-2.5 max-w-[50px] object-contain" />
                   </div>
                   <span>Paga a cuotas sin tarjeta</span>
                 </div>
