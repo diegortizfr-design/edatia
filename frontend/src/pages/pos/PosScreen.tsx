@@ -695,6 +695,10 @@ export function PosScreen() {
       toast.error('El carrito de compras está vacío')
       return
     }
+    if (!selectedCliente?.id) {
+      toast.error('Debe seleccionar o asignar un cliente para completar la venta')
+      return
+    }
     if (saldoFaltante > 0) {
       toast.error(`Falta por cubrir ${fmt(saldoFaltante)} para completar la venta`)
       return
@@ -1702,21 +1706,6 @@ export function PosScreen() {
                     </div>
                   )}
 
-                  {/* Left Side Modal Actions (integrated at bottom of payment panel) */}
-                  <div className="flex gap-3 pt-4 border-t border-slate-700/50">
-                    <button onClick={() => setShowPago(false)}
-                      className={`flex-1 py-3 rounded-xl font-bold transition-colors duration-200 ${
-                        isDark ? 'bg-slate-700 hover:bg-slate-650 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                      }`}>
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleFinalizarVenta}
-                      disabled={!selectedCliente?.id || totalBaseCubierto < totales.total || mutVenta.isPending || mutVenta.isLoading}
-                      className="flex-2 flex-grow bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
-                      {mutVenta.isPending || mutVenta.isLoading ? 'Procesando...' : '✓ Finalizar Venta'}
-                    </button>
-                  </div>
                   {mutVenta.isError && (
                     <p className="text-red-500 text-xs text-center font-semibold pt-2">
                       {(mutVenta.error as any)?.response?.data?.message ?? 'Error al procesar la venta'}
@@ -1810,6 +1799,56 @@ export function PosScreen() {
 
               </div>
 
+            </div>
+
+            {/* Modal Sticky Footer - Siempre visible en la parte inferior de la tablet y PC */}
+            <div className={`p-3.5 sm:p-4 border-t shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg ${
+              isDark ? 'bg-slate-850 border-slate-700' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPago(false)}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-colors cursor-pointer ${
+                    isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'
+                  }`}
+                >
+                  Cancelar
+                </button>
+                <div className="text-right sm:text-left">
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total a Cobrar</div>
+                  <div className={`font-black text-base sm:text-lg ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                    {fmt(totalConRecargo)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleFinalizarVenta}
+                  disabled={mutVenta.isPending || mutVenta.isLoading}
+                  className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer ${
+                    totalBaseCubierto < totales.total || !selectedCliente?.id
+                      ? isDark
+                        ? 'bg-emerald-800/60 text-emerald-200 border border-emerald-600/50 hover:bg-emerald-700/70'
+                        : 'bg-emerald-600/80 text-white hover:bg-emerald-700'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                  }`}
+                >
+                  {mutVenta.isPending || mutVenta.isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Procesando venta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={18} className="stroke-[3]" />
+                      <span>Confirmar y Crear Venta ({fmt(totalConRecargo)})</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
           </div>
