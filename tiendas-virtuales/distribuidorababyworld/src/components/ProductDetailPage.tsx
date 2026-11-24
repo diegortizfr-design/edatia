@@ -13,7 +13,6 @@ import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 import { VideoReelModal, VideoReelItem } from './VideoReelModal'
 import { ShareProductModal } from './ShareProductModal'
-import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
   product: Product
@@ -537,150 +536,181 @@ export function ProductDetailPage({
                   </div>
                 )}
 
-                {/* Description */}
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
-                  {product.descripcionLarga || product.descripcion}
-                </p>
+                {/* Purchase Actions Container (Zona de Compra Inmediata) */}
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  {!isAgotado ? (
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      {/* Quantity Counter */}
+                      <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all cursor-pointer"
+                          aria-label="Disminuir"
+                        >
+                          <Minus size={15} />
+                        </button>
+                        <span className="px-2.5 sm:px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[2rem] text-center">
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.min(Math.max(1, effectiveStock), quantity + 1))}
+                          disabled={quantity >= effectiveStock}
+                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40 cursor-pointer"
+                          aria-label="Aumentar"
+                        >
+                          <Plus size={15} />
+                        </button>
+                      </div>
 
-                {/* Feature Highlights */}
-                {product.detalles && product.detalles.length > 0 && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Características Principales:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {product.detalles.map((d, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                          <CheckCircle2 size={15} className="text-sky-500 shrink-0 mt-0.5" />
-                          <span>{d}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Technical Specifications Table */}
-                {product.especificaciones && Object.keys(product.especificaciones).length > 0 && (
-                  <div className="space-y-2 pt-2">
-                    <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Ficha Técnica:
-                    </p>
-                    <div className="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 text-xs space-y-1.5">
-                      {Object.entries(product.especificaciones).map(([key, val]) => (
-                        <div key={key} className="flex justify-between py-1 border-b border-slate-200/50 last:border-none">
-                          <span className="text-slate-500 font-medium">{key}</span>
-                          <span className="text-slate-900 font-bold text-right">{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Purchase Actions Container */}
-              <div className="space-y-3 pt-4 border-t border-slate-100">
-                {!isAgotado ? (
-                  <div className="flex items-center gap-3">
-                    {/* Quantity Counter */}
-                    <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
+                      {/* Add to Cart Button */}
                       <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all"
-                        aria-label="Disminuir"
+                        type="button"
+                        onClick={handleAdd}
+                        className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
                       >
-                        <Minus size={15} />
-                      </button>
-                      <span className="px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[2rem] text-center">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => setQuantity(Math.min(Math.max(1, effectiveStock), quantity + 1))}
-                        disabled={quantity >= effectiveStock}
-                        className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40"
-                        aria-label="Aumentar"
-                      >
-                        <Plus size={15} />
+                        <ShoppingBag size={17} />
+                        <span>Añadir a mi Bolsa • {fmtPrice(effectivePrice * quantity)}</span>
                       </button>
                     </div>
-
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={handleAdd}
-                      className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all"
-                    >
-                      <ShoppingBag size={17} />
-                      <span>Añadir a mi Bolsa • {fmtPrice(effectivePrice * quantity)}</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-rose-800 font-bold">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                      <span>Producto temporalmente agotado</span>
-                    </div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs">
-                      Sin existencias
-                    </span>
-                  </div>
-                )}
-
-                {/* Direct WhatsApp Ordering */}
-                <a
-                  href={`https://wa.me/573136546975?text=${whatsappMessage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-full py-3.5 px-4 text-white rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
-                    isAgotado
-                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 ring-2 ring-emerald-500/20'
-                      : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'
-                  }`}
-                >
-                  <MessageCircle size={18} />
-                  <span>{isAgotado ? 'Consultar disponibilidad por WhatsApp' : 'Asesoría o Pedido por WhatsApp'}</span>
-                </a>
-
-                {/* Botón de Compartir en Redes Sociales */}
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="w-full py-2.5 px-4 bg-slate-50 hover:bg-sky-50/70 border border-slate-200/90 hover:border-sky-300 text-slate-700 hover:text-sky-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs group cursor-pointer active:scale-[0.98]"
-                  title="Compartir en WhatsApp, Facebook, Telegram o X"
-                >
-                  <Share2 size={15} className="text-sky-500 group-hover:scale-110 transition-transform" />
-                  <span>Compartir en WhatsApp y Redes Sociales</span>
-                </button>
-
-                {/* Trust Badges */}
-                <div className="grid grid-cols-3 gap-2 pt-2 text-center text-[10px] sm:text-[11px] text-slate-500 font-medium">
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                    <Truck size={15} className="text-sky-500" />
-                    <span>Envíos Nacionales</span>
-                  </div>
-                  {onOpenLocation ? (
-                    <button
-                      type="button"
-                      onClick={onOpenLocation}
-                      className="p-2 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-100 rounded-xl flex flex-col items-center gap-1 text-rose-800 transition-all cursor-pointer group"
-                      title="Ver ubicación en Poblado Campestre y cómo llegar"
-                    >
-                      <LocationPinIcon size={16} className="group-hover:scale-110 transition-transform" />
-                      <span className="font-bold">Tienda Física</span>
-                    </button>
                   ) : (
-                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                      <LocationPinIcon size={16} />
-                      <span>Tienda Física</span>
+                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-rose-800 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                        <span>Producto temporalmente agotado</span>
+                      </div>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-rose-600 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-2xs">
+                        Sin existencias
+                      </span>
                     </div>
                   )}
-                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
-                    <HeartHandshake size={15} className="text-pink-500" />
-                    <span>Pago Contra Entrega</span>
+
+                  {/* Acciones Secundarias: WhatsApp + Compartir */}
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`https://wa.me/573136546975?text=${whatsappMessage}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex-1 py-3 px-3.5 text-white rounded-2xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                        isAgotado
+                          ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 ring-2 ring-emerald-500/20'
+                          : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'
+                      }`}
+                    >
+                      <MessageCircle size={17} />
+                      <span>{isAgotado ? 'Consultar disponibilidad por WhatsApp' : 'Asesoría o Pedido por WhatsApp'}</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="py-3 px-3.5 bg-slate-50 hover:bg-sky-50/70 border border-slate-200/90 hover:border-sky-300 text-slate-700 hover:text-sky-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs group cursor-pointer active:scale-95 shrink-0"
+                      title="Compartir en WhatsApp, Facebook, Telegram o X"
+                    >
+                      <Share2 size={15} className="text-sky-500 group-hover:scale-110 transition-transform" />
+                      <span className="hidden sm:inline">Compartir</span>
+                    </button>
+                  </div>
+
+                  {/* Trust Badges */}
+                  <div className="grid grid-cols-3 gap-2 pt-1 text-center text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
+                      <Truck size={15} className="text-sky-500" />
+                      <span>Envíos Nacionales</span>
+                    </div>
+                    {onOpenLocation ? (
+                      <button
+                        type="button"
+                        onClick={onOpenLocation}
+                        className="p-2 bg-rose-50/70 hover:bg-rose-100/80 border border-rose-100 rounded-xl flex flex-col items-center gap-1 text-rose-800 transition-all cursor-pointer group"
+                        title="Ver ubicación en Poblado Campestre y cómo llegar"
+                      >
+                        <LocationPinIcon size={16} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-bold">Tienda Física</span>
+                      </button>
+                    ) : (
+                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
+                        <LocationPinIcon size={16} />
+                        <span>Tienda Física</span>
+                      </div>
+                    )}
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
+                      <HeartHandshake size={15} className="text-pink-500" />
+                      <span>Pago Contra Entrega</span>
+                    </div>
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {/* SECCIÓN DETALLADA: DESCRIPCIÓN, CARACTERÍSTICAS Y FICHA TÉCNICA   */}
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {(product.descripcion || product.descripcionLarga || (product.detalles && product.detalles.length > 0) || (product.especificaciones && Object.keys(product.especificaciones).length > 0)) && (
+            <div className="mt-8 pt-8 border-t border-slate-100">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+                
+                {/* Columna Izquierda: Descripción Larga */}
+                <div className="lg:col-span-7 space-y-3.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
+                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                      Descripción del Producto
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 sm:p-5 rounded-2xl border border-slate-100">
+                    {product.descripcionLarga || product.descripcion}
+                  </p>
+                </div>
+
+                {/* Columna Derecha: Características y Ficha Técnica */}
+                <div className="lg:col-span-5 space-y-5">
+                  {/* Feature Highlights */}
+                  {product.detalles && product.detalles.length > 0 && (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Características Principales
+                        </h4>
+                      </div>
+                      <div className="space-y-1.5">
+                        {product.detalles.map((d, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <CheckCircle2 size={15} className="text-sky-500 shrink-0 mt-0.5" />
+                            <span>{d}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Technical Specifications Table */}
+                  {product.especificaciones && Object.keys(product.especificaciones).length > 0 && (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
+                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                          Ficha Técnica
+                        </h4>
+                      </div>
+                      <div className="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 text-xs space-y-1.5">
+                        {Object.entries(product.especificaciones).map(([key, val]) => (
+                          <div key={key} className="flex justify-between py-1 border-b border-slate-200/50 last:border-none">
+                            <span className="text-slate-500 font-medium">{key}</span>
+                            <span className="text-slate-900 font-bold text-right">{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
