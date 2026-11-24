@@ -33,6 +33,7 @@ const BnplInfoModal = React.lazy(() => import('./components/BnplInfoModal').then
 const StoreLocationModal = React.lazy(() => import('./components/StoreLocationModal').then(m => ({ default: m.StoreLocationModal })))
 const PromoAnnouncementModal = React.lazy(() => import('./components/PromoAnnouncementModal').then(m => ({ default: m.PromoAnnouncementModal })))
 const CategoriesDrawerModal = React.lazy(() => import('./components/CategoriesDrawerModal').then(m => ({ default: m.CategoriesDrawerModal })))
+const ShareProductModal = React.lazy(() => import('./components/ShareProductModal').then(m => ({ default: m.ShareProductModal })))
 
 interface ErpCategory {
   id: number
@@ -82,6 +83,7 @@ export function App() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
   const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false)
+  const [sharingProduct, setSharingProduct] = useState<Product | null>(null)
 
   // Mostrar modal de anuncio Black Friday al abrir la tienda (1 vez por sesión)
   useEffect(() => {
@@ -667,6 +669,7 @@ export function App() {
                 products={products} 
                 onAddToCart={handleAddToCart} 
                 onViewDetails={handleOpenProduct} 
+                onShare={setSharingProduct}
               />
 
               {/* 3. Sección "Explora por Categorías" (Vitrina para que el usuario navegue a lo que necesita) */}
@@ -811,6 +814,7 @@ export function App() {
                         product={product}
                         onAddToCart={handleAddToCart}
                         onViewDetails={handleOpenProduct}
+                        onShare={setSharingProduct}
                         priority={idx < 6}
                       />
                     ))}
@@ -1079,6 +1083,15 @@ export function App() {
               }
             }}
             onSelectAllCatalog={handleSelectAllCatalog}
+          />
+        )}
+
+        {/* Modal para Compartir Producto en Redes Sociales */}
+        {sharingProduct && (
+          <ShareProductModal
+            product={sharingProduct}
+            isOpen={Boolean(sharingProduct)}
+            onClose={() => setSharingProduct(null)}
           />
         )}
       </React.Suspense>

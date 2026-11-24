@@ -12,6 +12,7 @@ import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 import { VideoReelModal, VideoReelItem } from './VideoReelModal'
+import { ShareProductModal } from './ShareProductModal'
 import toast from 'react-hot-toast'
 
 interface ProductDetailPageProps {
@@ -41,6 +42,8 @@ export function ProductDetailPage({
   const [isHovering, setIsHovering] = useState(false)
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
   const [videoModalIndex, setVideoModalIndex] = useState<number | null>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [sharingRelatedProduct, setSharingRelatedProduct] = useState<Product | null>(null)
 
   const gallery = (product.imagenes && product.imagenes.length > 0)
     ? product.imagenes
@@ -158,16 +161,7 @@ export function ProductDetailPage({
   }
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product.nombre,
-        text: `Mira ${product.nombre} en Distribuidora Baby-World`,
-        url: window.location.href,
-      }).catch(() => {})
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast.success('Enlace copiado al portapapeles', { icon: '🔗' })
-    }
+    setIsShareModalOpen(true)
   }
 
   const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
@@ -226,10 +220,11 @@ export function ProductDetailPage({
           {/* Quick Share */}
           <button
             onClick={handleShare}
-            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full transition-colors"
-            title="Compartir producto"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-sky-600 bg-slate-100 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-full transition-all shadow-2xs active:scale-95 cursor-pointer"
+            title="Compartir producto en redes sociales"
           >
-            <Share2 size={16} />
+            <Share2 size={14} className="text-sky-500" />
+            <span className="hidden sm:inline">Compartir</span>
           </button>
         </div>
       </div>
@@ -644,6 +639,17 @@ export function ProductDetailPage({
                   <span>{isAgotado ? 'Consultar disponibilidad por WhatsApp' : 'Asesoría o Pedido por WhatsApp'}</span>
                 </a>
 
+                {/* Botón de Compartir en Redes Sociales */}
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="w-full py-2.5 px-4 bg-slate-50 hover:bg-sky-50/70 border border-slate-200/90 hover:border-sky-300 text-slate-700 hover:text-sky-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-2xs group cursor-pointer active:scale-[0.98]"
+                  title="Compartir en WhatsApp, Facebook, Telegram o X"
+                >
+                  <Share2 size={15} className="text-sky-500 group-hover:scale-110 transition-transform" />
+                  <span>Compartir en WhatsApp y Redes Sociales</span>
+                </button>
+
                 {/* Trust Badges */}
                 <div className="grid grid-cols-3 gap-2 pt-2 text-center text-[10px] sm:text-[11px] text-slate-500 font-medium">
                   <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center gap-1">
@@ -714,6 +720,7 @@ export function ProductDetailPage({
                 product={p}
                 onAddToCart={onAddToCart}
                 onViewDetails={onSelectProduct}
+                onShare={(prod) => setSharingRelatedProduct(prod)}
               />
             ))}
           </div>
@@ -855,6 +862,16 @@ export function ProductDetailPage({
           variantesResueltas={true}
         />
       )}
+
+      {/* ── MODAL COMPARTIR PRODUCTO EN REDES SOCIALES ── */}
+      <ShareProductModal
+        product={sharingRelatedProduct || product}
+        isOpen={isShareModalOpen || Boolean(sharingRelatedProduct)}
+        onClose={() => {
+          setIsShareModalOpen(false)
+          setSharingRelatedProduct(null)
+        }}
+      />
     </div>
   )
 }

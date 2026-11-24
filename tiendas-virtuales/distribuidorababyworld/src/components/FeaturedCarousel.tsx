@@ -7,9 +7,10 @@ interface FeaturedCarouselProps {
   products: Product[]
   onAddToCart: (p: Product) => void
   onViewDetails: (p: Product) => void
+  onShare?: (p: Product) => void
 }
 
-export function FeaturedCarousel({ products, onAddToCart, onViewDetails }: FeaturedCarouselProps) {
+export function FeaturedCarousel({ products, onAddToCart, onViewDetails, onShare }: FeaturedCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Selección inteligente de productos para el carrusel de recomendados:
@@ -87,6 +88,7 @@ export function FeaturedCarousel({ products, onAddToCart, onViewDetails }: Featu
                 product={product}
                 onAddToCart={onAddToCart}
                 onViewDetails={onViewDetails}
+                onShare={onShare}
                 priority={idx < 4}
                 compact={true}
               />

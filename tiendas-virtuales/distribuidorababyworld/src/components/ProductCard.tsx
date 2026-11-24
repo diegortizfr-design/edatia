@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Star, Plus, Play } from 'lucide-react'
+import { Star, Plus, Play, Share2 } from 'lucide-react'
 import { Product } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
@@ -8,11 +8,12 @@ interface ProductCardProps {
   product: Product
   onAddToCart: (p: Product) => void
   onViewDetails: (p: Product) => void
+  onShare?: (p: Product) => void
   priority?: boolean
   compact?: boolean
 }
 
-export function ProductCard({ product, onAddToCart, onViewDetails, priority = false, compact = false }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onViewDetails, onShare, priority = false, compact = false }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
 
   const fmtPrice = (val: number) => {
@@ -98,6 +99,22 @@ export function ProductCard({ product, onAddToCart, onViewDetails, priority = fa
             )}
           </div>
         </div>
+
+        {/* Botón Flotante para Compartir en Redes Sociales */}
+        {onShare && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onShare(product)
+            }}
+            className="absolute bottom-2 right-2 z-10 w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white/95 hover:bg-white text-slate-500 hover:text-sky-600 shadow-xs hover:shadow border border-slate-200/90 flex items-center justify-center transition-all duration-200 active:scale-90 opacity-90 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+            title={`Compartir ${product.nombre} en redes sociales`}
+            aria-label={`Compartir ${product.nombre}`}
+          >
+            <Share2 size={13} strokeWidth={2.2} />
+          </button>
+        )}
       </div>
 
       {/* Info Body */}
