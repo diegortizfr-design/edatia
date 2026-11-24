@@ -7,7 +7,7 @@ import {
 import { getDocumentosConfig, incrementarConsecutivo } from '../../services/configuracion.service'
 import {
   ShoppingCart, Search, X, Plus, Minus, Trash2, User, CreditCard,
-  Banknote, Smartphone, Printer, ChevronLeft, AlertCircle, CheckCircle2,
+  Banknote, Smartphone, Printer, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2,
   Tag, Scan, Users, Sun, Moon, Zap, PackagePlus, UserPlus, Check, ChevronDown, Camera,
 } from 'lucide-react'
 import { BarcodeScannerModal } from '../../components/BarcodeScannerModal'
@@ -389,7 +389,7 @@ export function PosScreen() {
     const itemPrecio = variante && Number(variante.precioBase) > 0 ? Number(variante.precioBase) : Number(prod.precioBase)
     const itemSku = variante?.sku || prod.sku || ''
     const itemStock = variante ? Number(variante.stock ?? 0) : Number(prod.stock ?? 999)
-    const visual = variante ? extraerAtributosVisuales(variante.atributos, variante.nombre) : null
+    const visual = variante ? extraerAtributosVisuales(variante) : null
     const hexColor = visual?.colorHex || (variante ? buscarHexColor(variante.nombre) : undefined)
 
     setCart(prev => {
@@ -2250,7 +2250,7 @@ export function PosScreen() {
             {/* Listado de Variantes */}
             <div className="p-4 overflow-y-auto space-y-2.5 flex-1">
               {selectedProductVariants.variantes?.map((v: any) => {
-                const visual = extraerAtributosVisuales(v.atributos, v.nombre)
+                const visual = extraerAtributosVisuales(v)
                 const hexColor = visual.colorHex || buscarHexColor(v.nombre)
                 const tieneStock = v.stock > 0
                 const puedeAgregar = tieneStock || puedeStockNegativo
@@ -2288,16 +2288,16 @@ export function PosScreen() {
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
                           isDark ? 'bg-indigo-950 text-indigo-300 border border-indigo-700' : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                         }`}>
-                          {visual.tallaLabel || 'VAR'}
+                          {visual.talla || 'VAR'}
                         </div>
                       )}
 
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate leading-tight flex items-center gap-2">
                           <span>{v.nombre}</span>
-                          {visual.tallaLabel && (
+                          {visual.talla && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-600 font-mono">
-                              Talla {visual.tallaLabel}
+                              Talla {visual.talla}
                             </span>
                           )}
                         </div>
