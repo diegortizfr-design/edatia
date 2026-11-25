@@ -412,6 +412,11 @@ export function App() {
     })
   }
 
+  const handleBuyNow = (product: Product, quantity = 1, selectedVariant?: ProductVariant) => {
+    handleAddToCart(product, quantity, selectedVariant)
+    setIsCheckoutOpen(true)
+  }
+
   const handleUpdateQuantity = (productId: number, q: number, varianteId?: number) => {
     if (q <= 0) {
       handleRemoveItem(productId, varianteId)
@@ -646,6 +651,7 @@ export function App() {
             onAddToCart={handleAddToCart}
             onOpenCart={() => setIsCartOpen(true)}
             onOpenLocation={() => setIsLocationModalOpen(true)}
+            onBuyNow={handleBuyNow}
           />
         ) : (
         <>

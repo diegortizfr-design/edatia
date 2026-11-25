@@ -3,7 +3,7 @@ import {
   ArrowLeft, Star, ShoppingBag, MessageCircle, CheckCircle2, 
   Truck, HeartHandshake, Share2, Plus, Minus,
   ChevronRight, ChevronLeft, PackageCheck, Sparkles,
-  ZoomIn, Maximize2, X, Play
+  ZoomIn, Maximize2, X, Play, Zap
 } from 'lucide-react'
 import { LocationPinIcon } from './LocationPinIcon'
 import { Product, ProductVariant } from '../data/productos'
@@ -22,6 +22,7 @@ interface ProductDetailPageProps {
   onAddToCart: (p: Product, quantity?: number, selectedVariant?: ProductVariant) => void
   onOpenCart: () => void
   onOpenLocation?: () => void
+  onBuyNow?: (p: Product, quantity?: number, selectedVariant?: ProductVariant) => void
 }
 
 export function ProductDetailPage({
@@ -32,6 +33,7 @@ export function ProductDetailPage({
   onAddToCart,
   onOpenCart,
   onOpenLocation,
+  onBuyNow,
 }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(product.imagen)
@@ -155,8 +157,12 @@ export function ProductDetailPage({
 
   const handleBuyNow = () => {
     if (isAgotado) return
-    onAddToCart(product, quantity, selectedVariant || undefined)
-    onOpenCart()
+    if (onBuyNow) {
+      onBuyNow(product, quantity, selectedVariant || undefined)
+    } else {
+      onAddToCart(product, quantity, selectedVariant || undefined)
+      onOpenCart()
+    }
   }
 
   const handleShare = () => {
@@ -230,11 +236,11 @@ export function ProductDetailPage({
 
       {/* Main Product Container */}
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-8">
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-4 sm:p-8 lg:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10 items-start">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-8 lg:p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 items-start">
             
             {/* Product Image Stage con Lupa Interactiva */}
-            <div className="relative space-y-4">
+            <div className="lg:col-span-7 lg:col-start-1 lg:row-start-1 space-y-4">
               <div 
                 onClick={() => {
                   const currentIdx = gallery.indexOf(currentImage)
@@ -385,8 +391,8 @@ export function ProductDetailPage({
               )}
             </div>
 
-            {/* Product Info & Actions */}
-            <div className="flex flex-col justify-between space-y-5">
+            {/* Product Info & Actions (Zona de Compra Sticky en Desktop) */}
+            <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24 space-y-4 sm:space-y-5">
               <div className="space-y-3">
                 {/* Category & Rating */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -405,7 +411,7 @@ export function ProductDetailPage({
                 </div>
 
                 {/* Title */}
-                <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-900 leading-snug">
                   {product.nombre}
                 </h1>
 
@@ -457,14 +463,14 @@ export function ProductDetailPage({
                     <span className="font-bold text-slate-800">{fmtPrice(effectiveImpuesto)}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-200 flex items-baseline justify-between gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-sky-700">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       Total (Precio + Impuesto)
                     </span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                         {fmtPrice(effectivePrice)}
                       </span>
-                      <span className="text-[11px] text-slate-400 font-bold uppercase">COP</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">COP</span>
                     </div>
                   </div>
                 </div>
@@ -537,42 +543,55 @@ export function ProductDetailPage({
                 )}
 
                 {/* Purchase Actions Container (Zona de Compra Inmediata) */}
-                <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="space-y-2.5 pt-3 border-t border-slate-100">
                   {!isAgotado ? (
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                      {/* Quantity Counter */}
-                      <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all cursor-pointer"
-                          aria-label="Disminuir"
-                        >
-                          <Minus size={15} />
-                        </button>
-                        <span className="px-2.5 sm:px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[2rem] text-center">
-                          {quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(Math.min(Math.max(1, effectiveStock), quantity + 1))}
-                          disabled={quantity >= effectiveStock}
-                          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40 cursor-pointer"
-                          aria-label="Aumentar"
-                        >
-                          <Plus size={15} />
-                        </button>
-                      </div>
-
-                      {/* Add to Cart Button */}
+                    <div className="space-y-2">
+                      {/* Botón Principal: Comprar Ahora (Express Checkout) */}
                       <button
                         type="button"
-                        onClick={handleAdd}
-                        className="flex-1 py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-slate-900/15 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                        onClick={handleBuyNow}
+                        className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-sky-500/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer"
                       >
-                        <ShoppingBag size={17} />
-                        <span>Añadir a mi Bolsa • {fmtPrice(effectivePrice * quantity)}</span>
+                        <Zap size={16} className="fill-current text-amber-300" />
+                        <span>Comprar Ahora • {fmtPrice(effectivePrice * quantity)}</span>
                       </button>
+
+                      {/* Fila Secundaria: Selector de Cantidad + Añadir a mi Bolsa */}
+                      <div className="flex items-center gap-2 sm:gap-2.5">
+                        {/* Quantity Counter */}
+                        <div className="flex items-center border border-slate-200 bg-slate-50 rounded-2xl p-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all cursor-pointer"
+                            aria-label="Disminuir"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <span className="px-2 sm:px-3 text-xs sm:text-sm font-extrabold text-slate-900 min-w-[1.75rem] text-center">
+                            {quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(Math.min(Math.max(1, effectiveStock), quantity + 1))}
+                            disabled={quantity >= effectiveStock}
+                            className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all disabled:opacity-40 cursor-pointer"
+                            aria-label="Aumentar"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+
+                        {/* Add to Cart Button */}
+                        <button
+                          type="button"
+                          onClick={handleAdd}
+                          className="flex-1 py-2.5 sm:py-3 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+                        >
+                          <ShoppingBag size={15} />
+                          <span>Añadir a mi Bolsa</span>
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between">
@@ -592,20 +611,20 @@ export function ProductDetailPage({
                       href={`https://wa.me/573136546975?text=${whatsappMessage}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex-1 py-3 px-3.5 text-white rounded-2xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                      className={`flex-1 py-2.5 sm:py-3 px-3.5 text-white rounded-2xl font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all ${
                         isAgotado
                           ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25 ring-2 ring-emerald-500/20'
                           : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'
                       }`}
                     >
-                      <MessageCircle size={17} />
+                      <MessageCircle size={16} />
                       <span>{isAgotado ? 'Consultar disponibilidad por WhatsApp' : 'Asesoría o Pedido por WhatsApp'}</span>
                     </a>
 
                     <button
                       type="button"
                       onClick={handleShare}
-                      className="py-3 px-3.5 bg-slate-50 hover:bg-sky-50/70 border border-slate-200/90 hover:border-sky-300 text-slate-700 hover:text-sky-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs group cursor-pointer active:scale-95 shrink-0"
+                      className="py-2.5 sm:py-3 px-3.5 bg-slate-50 hover:bg-sky-50/70 border border-slate-200/90 hover:border-sky-300 text-slate-700 hover:text-sky-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs group cursor-pointer active:scale-95 shrink-0"
                       title="Compartir en WhatsApp, Facebook, Telegram o X"
                     >
                       <Share2 size={15} className="text-sky-500 group-hover:scale-110 transition-transform" />
@@ -643,74 +662,70 @@ export function ProductDetailPage({
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* ═══════════════════════════════════════════════════════════════════ */}
-          {/* SECCIÓN DETALLADA: DESCRIPCIÓN, CARACTERÍSTICAS Y FICHA TÉCNICA   */}
-          {/* ═══════════════════════════════════════════════════════════════════ */}
-          {(product.descripcion || product.descripcionLarga || (product.detalles && product.detalles.length > 0) || (product.especificaciones && Object.keys(product.especificaciones).length > 0)) && (
-            <div className="mt-8 pt-8 border-t border-slate-100">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            {/* SECCIÓN DETALLADA: DESCRIPCIÓN, CARACTERÍSTICAS Y FICHA TÉCNICA   */}
+            {/* ═══════════════════════════════════════════════════════════════════ */}
+            {(product.descripcion || product.descripcionLarga || (product.detalles && product.detalles.length > 0) || (product.especificaciones && Object.keys(product.especificaciones).length > 0)) && (
+              <div className="lg:col-span-7 lg:col-start-1 lg:row-start-2 pt-6 border-t border-slate-100 space-y-6">
                 
-                {/* Columna Izquierda: Descripción Larga */}
-                <div className="lg:col-span-7 space-y-3.5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
-                      Descripción del Producto
-                    </h3>
+                {/* Descripción Larga */}
+                {(product.descripcionLarga || product.descripcion) && (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-sky-500 rounded-full" />
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                        Descripción del Producto
+                      </h3>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50/50 p-3.5 sm:p-4 rounded-2xl border border-slate-100">
+                      {product.descripcionLarga || product.descripcion}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 sm:p-5 rounded-2xl border border-slate-100">
-                    {product.descripcionLarga || product.descripcion}
-                  </p>
-                </div>
+                )}
 
-                {/* Columna Derecha: Características y Ficha Técnica */}
-                <div className="lg:col-span-5 space-y-5">
-                  {/* Feature Highlights */}
-                  {product.detalles && product.detalles.length > 0 && (
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
-                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                          Características Principales
-                        </h4>
-                      </div>
-                      <div className="space-y-1.5">
-                        {product.detalles.map((d, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <CheckCircle2 size={15} className="text-sky-500 shrink-0 mt-0.5" />
-                            <span>{d}</span>
-                          </div>
-                        ))}
-                      </div>
+                {/* Feature Highlights */}
+                {product.detalles && product.detalles.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-sky-500 rounded-full" />
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                        Características Principales
+                      </h4>
                     </div>
-                  )}
-
-                  {/* Technical Specifications Table */}
-                  {product.especificaciones && Object.keys(product.especificaciones).length > 0 && (
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-5 bg-sky-500 rounded-full" />
-                        <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                          Ficha Técnica
-                        </h4>
-                      </div>
-                      <div className="bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-100 text-xs space-y-1.5">
-                        {Object.entries(product.especificaciones).map(([key, val]) => (
-                          <div key={key} className="flex justify-between py-1 border-b border-slate-200/50 last:border-none">
-                            <span className="text-slate-500 font-medium">{key}</span>
-                            <span className="text-slate-900 font-bold text-right">{val}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {product.detalles.map((d, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          <CheckCircle2 size={14} className="text-sky-500 shrink-0 mt-0.5" />
+                          <span>{d}</span>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
+                {/* Technical Specifications Table */}
+                {product.especificaciones && Object.keys(product.especificaciones).length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-sky-500 rounded-full" />
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                        Ficha Técnica
+                      </h4>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-3 sm:p-3.5 border border-slate-100 text-xs space-y-1.5">
+                      {Object.entries(product.especificaciones).map(([key, val]) => (
+                        <div key={key} className="flex justify-between py-1 border-b border-slate-200/50 last:border-none">
+                          <span className="text-slate-500 font-medium">{key}</span>
+                          <span className="text-slate-900 font-bold text-right">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
