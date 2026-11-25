@@ -13,6 +13,7 @@ import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
 import { VideoReelModal, VideoReelItem } from './VideoReelModal'
 import { ShareProductModal } from './ShareProductModal'
+import { appendRefToWhatsAppMessage } from '../lib/referral'
 
 interface ProductDetailPageProps {
   product: Product
@@ -178,9 +179,11 @@ export function ProductDetailPage({
     etiqueta: selectedVariant ? selectedVariant.nombre : undefined,
   }))
   const whatsappMessage = encodeURIComponent(
-    isAgotado
-      ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
-      : `Hola Baby-World! Me interesa ordenar: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
+    appendRefToWhatsAppMessage(
+      isAgotado
+        ? `Hola Baby-World! Me interesa el producto agotado: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+        : `Hola Baby-World! Me interesa ordenar: "${product.nombre}${varLabel}" (${fmtPrice(effectivePrice)} x ${quantity} und). ¿Tienen disponibilidad para envío?`
+    )
   )
 
   // Similar/Related products (excluding current product)

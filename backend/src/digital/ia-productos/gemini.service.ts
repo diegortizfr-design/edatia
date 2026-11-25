@@ -43,6 +43,12 @@ export interface InfoPublicacionWeb {
   descripcionWeb: string;
 }
 
+export interface CopyRedesAliado {
+  titulo: string;
+  texto: string;
+  hashtags: string[];
+}
+
 class GeminiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -339,6 +345,135 @@ Reglas:
       metaDescripcion: String(crudo.metaDescripcion || '').slice(0, 160).trim(),
       descripcionWeb: String(crudo.descripcionWeb || producto.descripcion || '').trim(),
     };
+  }
+
+  // ── Generar Copy de Redes Sociales para Aliados Comerciales ──────────────────
+  async generarCopyRedesAliado(
+    producto: {
+      nombre: string;
+      descripcion?: string | null;
+      descripcionWeb?: string | null;
+      precio: number;
+      categoria?: string | null;
+      marca?: string | null;
+      tiendaNombre?: string | null;
+    },
+    estilo: 'whatsapp' | 'marketplace' | 'instagram',
+  ): Promise<CopyRedesAliado> {
+    const precioFmt = `$${Math.round(Number(producto.precio || 0)).toLocaleString('es-CO')}`;
+    const tienda = producto.tiendaNombre || 'Distribuidora Baby World';
+
+    const buildFallback = (): CopyRedesAliado => {
+      const desc = (producto.descripcion || producto.descripcionWeb || 'Ideal para regalar y sorprender en casa.')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 180);
+
+      if (estilo === 'marketplace') {
+        return {
+          titulo: producto.nombre.slice(0, 85),
+          texto: `🎁 ${producto.nombre}\n💰 Precio: ${precioFmt} COP\n\n✨ ${desc}\n\n✅ Producto nuevo, garantizado y con pago contra entrega en Cali y alrededores (envíos a toda Colombia 🚚).\n\n📲 Mira fotos, detalles o pídelo directo aquí:\n👉 {{URL}}`,
+          hashtags: ['#JuguetesColombia', '#BabyWorld', '#RegalosParaNiños'],
+        };
+      }
+      if (estilo === 'instagram') {
+        return {
+          titulo: producto.nombre.slice(0, 85),
+          texto: `✨ ¡Miren esta belleza que conseguí para los peques! 🧸\n\n🎁 *${producto.nombre}*\n💰 Solo ${precioFmt} COP\n\n${desc}\n\n🚚 Envíos a toda Colombia y pago contra entrega en Cali y zona metropolitana.\n👉 Link directo para pedirlo: {{URL}}`,
+          hashtags: ['#JuguetesColombia', '#RegalosInfantiles', '#MamasColombia', '#BabyWorld'],
+        };
+      }
+      return {
+        titulo: producto.nombre.slice(0, 85),
+        texto: `🧸 *¡Recomendado del día en ${tienda}!*\n\n*${producto.nombre}*\n💰 Precio: *${precioFmt} COP*\n✨ ${desc}\n\n🚚 Pago contra entrega en Cali/alrededores y envíos a todo el país.\n👉 Míralo o pídelo aquí: {{URL}}`,
+        hashtags: ['#BabyWorld', '#Juguetes'],
+      };
+    };
+
+    if (!process.env.GEMINI_API_KEY) {
+      return buildFallback();
+    }
+
+    const guiaEstilo =
+      estilo === 'marketplace'
+        ? 'Anuncio directo para Facebook Marketplace / grupos de ventas: título llamativo corto, beneficios concretos, mención de producto nuevo, envíos a todo Colombia y pago contra entrega local, con llamado claro a ver más fotos o pedir en {{URL}}.'
+        : estilo === 'instagram'
+        ? 'Caption cercano para Instagram / TikTok / Reels: gancho inicial atractivo para papás/mamás, tono entusiasta y confiable de recomendador, precio en COP, 3-5 hashtags relevantes y enlace {{URL}} visible.'
+        : 'Mensaje breve, cálido y persuasivo para Estados de WhatsApp o chat directo: fácil de leer en 4 segundos, emojis moderados, precio en COP, mención de pago contra entrega local / envíos nacionales y enlace {{URL}}.';
+
+    const prompt = `Eres un experto en Social Selling en Colombia ayudando a un aliado independiente que recomienda juguetes de "${tienda}".
+Escribe un texto en español de Colombia listo para copiar y publicar, desde la voz de un recomendador/vendedor cercano (no suenes como robot).
+
+Datos del juguete:
+- Nombre: ${producto.nombre}
+- Categoría: ${producto.categoria || 'Juguetería'}
+- Marca: ${producto.marca || 'N/A'}
+- Precio al público: ${precioFmt} COP
+- Descripción: ${(producto.descripcionWeb || producto.descripcion || '').slice(0, 450) || 'Juguete de excelente calidad'}
+
+Formato solicitado (${estilo}):
+${guiaEstilo}
+
+Reglas estrictas:
+- Incluye exactamente el marcador literal {{URL}} en el lugar donde debe ir el enlace del producto (no lo reemplaces ni inventes otro link).
+- Incluye el precio ${precioFmt}.
+- No inventes garantías ni promociones falsas que no estén en la descripción.
+- "titulo": título atractivo máximo 80 caracteres (útil para Marketplace).
+- "texto": el mensaje completo con saltos de línea naturales y {{URL}}.
+- "hashtags": 3 a 5 hashtags en español.`;
+
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            titulo: { type: 'STRING' },
+            texto: { type: 'STRING' },
+            hashtags: { type: 'ARRAY', items: { type: 'STRING' } },
+          },
+          required: ['titulo', 'texto', 'hashtags'],
+        },
+      },
+    };
+
+    const modelosATratar = Array.from(new Set([this.modeloTexto, ...MODELOS_TEXTO_FALLBACK]));
+    let json: any;
+
+    for (const mod of modelosATratar) {
+      try {
+        json = await this.llamar(mod, body, 18_000);
+        if (json?.candidates?.[0]?.content?.parts) break;
+      } catch {
+        // continúa con el siguiente fallback
+      }
+    }
+
+    const textoPart = json?.candidates?.[0]?.content?.parts?.find((p: any) => typeof p.text === 'string')?.text;
+    if (!textoPart) {
+      return buildFallback();
+    }
+
+    try {
+      const crudo = JSON.parse(textoPart);
+      let texto = String(crudo?.texto || '').trim();
+      if (!texto) return buildFallback();
+      if (!texto.includes('{{URL}}')) {
+        texto = `${texto}\n\n👉 Pídelo aquí: {{URL}}`;
+      }
+      const hashtags = Array.isArray(crudo?.hashtags)
+        ? crudo.hashtags.map((h: any) => String(h || '').trim()).filter(Boolean).slice(0, 6)
+        : [];
+      return {
+        titulo: String(crudo?.titulo || producto.nombre).slice(0, 90).trim(),
+        texto: texto.slice(0, 1400),
+        hashtags,
+      };
+    } catch {
+      return buildFallback();
+    }
   }
 
   // ── Infraestructura ──────────────────────────────────────────────────────────

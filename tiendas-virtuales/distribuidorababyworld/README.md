@@ -37,6 +37,11 @@ Storefront oficial de comercio electrónico para **Distribuidora Baby World (Pa�
 - **Visor Reel Integrado ([VideoReelModal.tsx](src/components/VideoReelModal.tsx)):** Modal centrado con fondo oscuro, cierre instantáneo por clic exterior (`backdrop-click`), tecla `Esc` y botón directo de compra siempre visible. Desmontaje limpio de estado en React sin alterar el historial ni recargar la ficha del producto.
 - **Cero Consumo de Espacio:** El servidor no almacena videos ni consume cuota de disco; los flujos se consumen bajo demanda.
 
+### 4. Programa Piloto de Aliados Comerciales (`/aliados`)
+- **Portal de Aliados ([AliadosPortalPage.tsx](src/components/AliadosPortalPage.tsx)):** Ruta dedicada sin banners invasivos en el Home para pilotos cerrados (con soporte de código de invitación opcional). Permite registrarse con WhatsApp + PIN y ver la ganancia fija en pesos por cada juguete habilitado con stock y costo real.
+- **Kit de Venta con IA (Gemini):** Genera con 1 clic anuncios listos para **Estados de WhatsApp**, **Facebook Marketplace** e **Instagram/Reels** con el enlace rastreable (`?ref=CODIGO`) y descarga limpia de foto JPG vertical (1080×1920) o cuadrada (1200×1200).
+- **Carga Directa de Pedidos y Tracking (`src/lib/referral.ts`):** Captura automática de `?ref=` por 15 días en `CheckoutModal.tsx` y mensajes de WhatsApp (`ProductDetailPage.tsx` / `ProductDetailModal.tsx`), más formulario para que el aliado cargue pedidos de sus propios clientes para despacho contra entrega o transferencia.
+
 ---
 
 ## 🛠️ Tecnologías y Herramientas

@@ -9,6 +9,9 @@ import { IaProductosController } from './ia-productos/ia-productos.controller';
 import { IaProductosService } from './ia-productos/ia-productos.service';
 import { GeminiService } from './ia-productos/gemini.service';
 import { ImagenEstandarService } from './ia-productos/imagen-estandar.service';
+import { AliadosService } from './aliados.service';
+import { AliadosPublicController } from './aliados-public.controller';
+import { AliadosAdminController } from './aliados-admin.controller';
 
 @Module({
   imports: [PrismaModule],
@@ -16,6 +19,8 @@ import { ImagenEstandarService } from './ia-productos/imagen-estandar.service';
     DigitalController,
     DigitalPublicController,
     IaProductosController,
+    AliadosPublicController,
+    AliadosAdminController,
   ],
   providers: [
     DigitalService,
@@ -24,7 +29,8 @@ import { ImagenEstandarService } from './ia-productos/imagen-estandar.service';
     IaProductosService,
     GeminiService,
     ImagenEstandarService,
+    AliadosService,
   ],
-  exports: [DigitalService, IaProductosService],
+  exports: [DigitalService, IaProductosService, AliadosService],
 })
 export class DigitalModule {}

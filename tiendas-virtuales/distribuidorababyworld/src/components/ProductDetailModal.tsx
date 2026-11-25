@@ -4,6 +4,7 @@ import { Product, ProductVariant } from '../data/productos'
 import { BnplCreditSimulator } from './BnplCreditSimulator'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { extraerAtributosVisuales, buscarHexColor } from '../lib/variantesColores'
+import { appendRefToWhatsAppMessage } from '../lib/referral'
 
 interface ProductDetailModalProps {
   product: Product | null
@@ -96,9 +97,11 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
 
   const varLabel = selectedVariant ? ` [${selectedVariant.nombre}]` : ''
   const whatsappMessage = encodeURIComponent(
-    isAgotado
-      ? `Hola Baby-World! Me interesa el producto agotado: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
-      : `Hola Baby-World! Me interesa el producto: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Tienen disponibilidad inmediata?`
+    appendRefToWhatsAppMessage(
+      isAgotado
+        ? `Hola Baby-World! Me interesa el producto agotado: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Cuándo tendrán disponibilidad nuevamente?`
+        : `Hola Baby-World! Me interesa el producto: "${product?.nombre}${varLabel}" (${fmtPrice(effectivePrice)}). ¿Tienen disponibilidad inmediata?`
+    )
   )
 
   return (

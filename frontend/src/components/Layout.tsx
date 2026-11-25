@@ -220,6 +220,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavItem to="/digital/dashboard" icon={<Activity size={14}/>} label="E-commerce" isCollapsed={collapsed} />
             <NavItem to="/digital/catalogo" icon={<Package size={14}/>} label="Vitrina Web" isCollapsed={collapsed} />
             <NavItem to="/digital/precios" icon={<Tag size={14}/>} label="Gestión Precios" isCollapsed={collapsed} />
+            <NavItem to="/digital/aliados" icon={<Users size={14}/>} label="Aliados y Comisiones" isCollapsed={collapsed} />
             <NavItem to="/digital/visitas" icon={<BarChart3 size={14}/>} label="Visitas Tienda" isCollapsed={collapsed} />
             <NavItem to="/digital/config" icon={<Settings size={14}/>} label="Ajustes Tienda" isCollapsed={collapsed} />
           </NavGroup>

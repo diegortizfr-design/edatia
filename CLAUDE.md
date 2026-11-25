@@ -38,8 +38,9 @@ edatia/
 │   │   ├── auth/          # JWT auth ERP (register, login, /me)
 │   │   ├── users/         # CRUD usuarios ERP
 │   │   ├── empresas/      # CRUD empresas ERP
-│   │   ├── digital/       # Catálogo digital y e-commerce (Baby World)
-│   │   │   └── ia-productos/ # Catalogación asistida con Gemini + Estandarización 1200x1200
+│   │   ├── digital/       # Catálogo digital, Open Graph y e-commerce (Baby World)
+│   │   │   ├── aliados*   # Programa de Aliados Comerciales (portal /aliados, IA redes, comisiones ERP /digital/aliados)
+│   │   │   └── ia-productos/ # Catalogación asistida con Gemini + copies redes + Estandarización 1200x1200
 │   │   ├── manager-auth/  # Auth Manager (ManagerJwtStrategy, 'manager-jwt')
 │   │   ├── colaboradores/ # CRUD colaboradores internos Edatia
 │   │   ├── perfiles-cargo/# Perfiles de cargo permanentes
@@ -98,6 +99,8 @@ edatia/
 | `PlanBase` | Planes de suscripción (Básico, Estándar, Premium) |
 | `ClienteManager` | Clientes del SaaS con estado (PROSPECTO/ACTIVO/SUSPENDIDO/CANCELADO) |
 | `PlanCliente` | Módulos activos por cliente con precio negociado opcional |
+| `AliadoComercial` | Aliados de Social Selling (código referido, Nequi/Daviplata, PIN) |
+| `ComisionAliado` | Comisiones congeladas sobre utilidad neta (`PENDIENTE`/`APROBADA`/`PAGADA`/`ANULADA`) |
 
 ---
 
