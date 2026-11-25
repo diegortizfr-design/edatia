@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MercadoPagoService } from './mercadopago.service';
+import {
+  mergeConfigAliados,
+  normalizarTelefonoCol,
+  esCategoriaHabilitadaAliado,
+  calcularGananciaUnitariaAliado,
+} from './aliados.utils';
 
 @Injectable()
 export class DigitalService {
@@ -363,7 +369,7 @@ export class DigitalService {
    * Calcula las unidades reales disponibles según Control de Existencias (bodegas activas: cantidad - reservada).
    * Si el producto no maneja bodega (ej. servicio), devuelve 999.
    */
-  private calcularStockDisponible(
+  public calcularStockDisponible(
     prod: {
       manejaBodega?: boolean | null;
       stock?: Array<{ cantidad?: any; cantidadReservada?: any; bodegaId?: number; bodega?: { id?: number; activo?: boolean } | null }> | null;
@@ -399,7 +405,7 @@ export class DigitalService {
    *  2. Descuento de tienda virtual (Sale) aplicado SOBRE el precio regular de la tienda.
    * Si hay descuento activo, genera el `precioAnterior` (tachado) y el `precioTotal` final con descuento.
    */
-  private resolverPrecioYImpuesto(
+  public resolverPrecioYImpuesto(
     prod: {
       id?: number;
       categoriaId?: number | null;
@@ -837,6 +843,8 @@ export class DigitalService {
       ? dto.tipoDocumento
       : (esConsumidorFinal ? 'NIT' : 'CC');
     const numeroDocumento = esConsumidorFinal ? '222222222222' : rawDocumento;
+    const refCodigo = this.sanitizeText(dto?.refCodigo, 40).toUpperCase();
+    const origenAliado = dto?.origenAliado === 'PEDIDO_ALIADO' ? 'PEDIDO_ALIADO' : 'LINK_WEB';
 
     if (!nombre || telefono.replace(/\D/g, '').length < 7 || !direccion || !ciudad) {
       throw new BadRequestException('Datos de entrega incompletos');
@@ -869,6 +877,8 @@ export class DigitalService {
         nombre: true,
         precioWeb: true,
         precioBase: true,
+        costoPromedio: true,
+        comisionValor: true,
         tipoIva: true,
         liquidarIva: true,
         productoExentoIva: true,
@@ -987,10 +997,37 @@ export class DigitalService {
         lineSubtotal,
         lineIva,
         lineTotal,
+        costoPromedio: Number(p.costoPromedio || 0),
+        comisionValor: Number(p.comisionValor || 0),
+        categoriaId: p.categoriaId,
+        categoria: p.categoria,
       };
     });
     if (lineas.some((l: any) => !(l.precioTotal > 0))) {
       throw new BadRequestException('Uno o más productos no tienen precio configurado');
+    }
+
+    // ── Evaluación de atribución a Aliado Comercial (Social Selling) ──
+    const configAliados = mergeConfigAliados((config as any).configAliados);
+    let aliadoAtribuido: any = null;
+    let autocompraBloqueada = false;
+
+    if (refCodigo && configAliados.activo) {
+      const aliado = await (this.prisma as any).aliadoComercial.findFirst({
+        where: { empresaId, codigoReferido: refCodigo, estado: 'ACTIVO' },
+      });
+      if (aliado) {
+        const telClienteNorm = normalizarTelefonoCol(telefono);
+        const telAliadoNorm = normalizarTelefonoCol(aliado.telefono);
+        const mismoTel = Boolean(telClienteNorm && telAliadoNorm && telClienteNorm === telAliadoNorm);
+        const mismoDoc = Boolean(!esConsumidorFinal && numeroDocumento && aliado.numeroDocumento === numeroDocumento);
+
+        if (configAliados.bloquearAutocompra && (mismoTel || mismoDoc)) {
+          autocompraBloqueada = true;
+        } else {
+          aliadoAtribuido = aliado;
+        }
+      }
     }
 
     if (metodoCodigo === 'contra_entrega' && !this.esZonaLocal(ciudad)) {
@@ -1142,7 +1179,12 @@ export class DigitalService {
       const tipoEnvioTexto = this.esZonaLocal(ciudad)
       ? `Domicilio Local ($${envio === 0 ? 'Gratis' : envio})`
       : 'Nacional por Transportadora (Flete al Cobro)';
-    const notasPedido = `Pedido recibido desde tienda virtual. Ciudad: ${ciudad}. Dirección: ${direccion}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Tipo de Envío: ${tipoEnvioTexto}.`;
+      const etiquetaAliado = aliadoAtribuido
+        ? ` [Aliado: ${aliadoAtribuido.nombre} (${aliadoAtribuido.codigoReferido})]`
+        : autocompraBloqueada
+        ? ` [Ref ${refCodigo} no comisionable: autocompra]`
+        : '';
+      const notasPedido = `Pedido recibido desde tienda virtual. Ciudad: ${ciudad}. Dirección: ${direccion}. Teléfono: ${telefono}. Método de pago: ${medioPago || metodoCodigo}. Tipo de Envío: ${tipoEnvioTexto}.${etiquetaAliado}`;
       const condicionesPago = metodoCodigo === 'contra_entrega'
         ? 'CONTRA_ENTREGA'
         : metodoCodigo === 'mercadopago'
@@ -1238,11 +1280,81 @@ export class DigitalService {
           data: {
             empresaId,
             tipo: 'INFO',
-            titulo: 'Nuevo Pedido Web',
-            mensaje: `Se ha recibido el pedido ${orderNum} de ${nombre} por valor de ${this.cop(total + envio)} (${medioPago || metodoCodigo}).`,
+            titulo: aliadoAtribuido ? 'Nuevo Pedido Web (Aliado)' : 'Nuevo Pedido Web',
+            mensaje: `Se ha recibido el pedido ${orderNum} de ${nombre} por valor de ${this.cop(total + envio)} (${medioPago || metodoCodigo}).${aliadoAtribuido ? ` Referido por aliado: ${aliadoAtribuido.nombre} (${aliadoAtribuido.codigoReferido}).` : ''}`,
             leida: false,
           }
         });
+      }
+
+      // 5B. Registrar comisión para el aliado si el pedido no tiene comisión previa y tiene ítems elegibles
+      if (aliadoAtribuido) {
+        const comisionExistente = await (tx as any).comisionAliado.findFirst({
+          where: { pedidoId: order.id },
+        });
+        if (!comisionExistente) {
+          const pctAliado = aliadoAtribuido.porcentajeUtilidad !== null && aliadoAtribuido.porcentajeUtilidad !== undefined
+            ? Number(aliadoAtribuido.porcentajeUtilidad)
+            : configAliados.porcentajeUtilidad;
+
+          let montoVentaCom = 0;
+          let costoTotalCom = 0;
+          let utilidadNetaCom = 0;
+          let valorComisionTotal = 0;
+          const detalleItems: any[] = [];
+
+          for (const l of lineas) {
+            if (!esCategoriaHabilitadaAliado(l.categoria, l.categoriaId, configAliados)) continue;
+            const calc = calcularGananciaUnitariaAliado({
+              precioSubtotal: l.precioSubtotal,
+              precioTotal: l.precioTotal,
+              costoPromedio: l.costoPromedio,
+              comisionValor: l.comisionValor,
+              porcentajeUtilidad: pctAliado,
+              redondeo: configAliados.redondeoComision,
+            });
+            if (!calc.elegible || calc.ganancia <= 0) continue;
+
+            const vVenta = l.precioTotal * l.cantidad;
+            const vCosto = calc.costo * l.cantidad;
+            const vUtilidad = calc.utilidad * l.cantidad;
+            const vCom = calc.ganancia * l.cantidad;
+
+            montoVentaCom += vVenta;
+            costoTotalCom += vCosto;
+            utilidadNetaCom += vUtilidad;
+            valorComisionTotal += vCom;
+            detalleItems.push({
+              productoId: l.productoId,
+              nombre: l.nombre,
+              cantidad: l.cantidad,
+              precioUnitario: l.precioTotal,
+              gananciaUnitaria: calc.ganancia,
+              comisionTotal: vCom,
+            });
+          }
+
+          if (valorComisionTotal > 0) {
+            await (tx as any).comisionAliado.create({
+              data: {
+                empresaId,
+                aliadoId: aliadoAtribuido.id,
+                pedidoId: order.id,
+                pedidoNumero: orderNum,
+                origen: origenAliado,
+                clienteNombre: nombre,
+                clienteTelefono: telefono,
+                montoVenta: montoVentaCom,
+                costoTotal: costoTotalCom,
+                utilidadNeta: utilidadNetaCom,
+                porcentajeAplicado: pctAliado,
+                valorComision: valorComisionTotal,
+                estado: 'PENDIENTE',
+                detalleItems,
+              },
+            });
+          }
+        }
       }
 
       return { orderId: order.id, numero: orderNum };

@@ -5,6 +5,7 @@ import {
   RefreshCw, Edit3, QrCode, Download, KeyRound, Sparkles
 } from 'lucide-react'
 import { Product, ProductVariant } from '../data/productos'
+import { getActiveReferralCode } from '../lib/referral'
 
 interface CartItem {
   product: Product
@@ -267,6 +268,7 @@ export function CheckoutModal({
 
     const payload = {
       orderId: orderId || undefined,
+      refCodigo: getActiveReferralCode() || undefined,
       nombre: formData.nombre,
       email: `${formData.telefono}@cliente.babyworld.com`,
       telefono: formData.telefono,
@@ -351,7 +353,9 @@ export function CheckoutModal({
     method = paymentMethod,
     items = (activeCartItems.length > 0 ? activeCartItems : cartItems)
   ) => {
+    const refCode = getActiveReferralCode()
     let msg = `*PEDIDO BABY-WORLD - ORDEN #${ordNum}*\n\n`
+    if (refCode) msg += `*Código Aliado:* ${refCode}\n`
     msg += `*Cliente:* ${formData.nombre}\n`
     msg += `*Teléfono:* ${formData.telefono}\n`
     msg += `*Dirección:* ${formData.direccion}, ${effectiveCity}\n`

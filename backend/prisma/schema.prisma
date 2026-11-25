@@ -93,6 +93,8 @@ model Empresa {
   permiteStockNegativo Boolean  @default(false)
 
   configuracionDigital ConfiguracionTienda?
+  aliadosComerciales   AliadoComercial[]
+  comisionesAliados    ComisionAliado[]
   
   usuarios  User[]
   createdAt DateTime @default(now())
@@ -901,6 +903,9 @@ model ConfiguracionTienda {
   
   // 🏷️ Gestión de Precios y Descuentos Web
   reglasPrecios   Json?
+
+  // 🤝 Programa de Aliados Comerciales (Social Selling)
+  configAliados   Json?
 
   // 📦 Gestión de Inventario y Bodegas Ancladas
   bodegasIds        Int[]    @default([])
@@ -2364,6 +2369,7 @@ model PedidoVenta {
 
   items            PedidoVentaItem[]
   facturas         FacturaVenta[]
+  comisionesAliado ComisionAliado[]
 
   @@unique([empresaId, numero])
   @@index([empresaId, estado])
@@ -2843,4 +2849,77 @@ model CategoriaGasto {
   @@unique([empresaId, nombre])
   @@index([empresaId])
   @@index([terceroId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRAMA DE ALIADOS COMERCIALES (Social Selling)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AliadoComercial {
+  id                 Int              @id @default(autoincrement())
+  empresaId          Int
+  empresa            Empresa          @relation(fields: [empresaId], references: [id])
+
+  nombre             String
+  tipoDocumento      String           @default("CC")
+  numeroDocumento    String
+  telefono           String
+  email              String?
+  ciudad             String?
+
+  medioPago          String           @default("NEQUI") // NEQUI | DAVIPLATA | BANCOLOMBIA
+  cuentaPago         String
+  codigoReferido     String
+  pinHash            String
+  porcentajeUtilidad Decimal?         @db.Decimal(5, 2)
+  estado             String           @default("ACTIVO") // PENDIENTE | ACTIVO | SUSPENDIDO
+  aceptaTerminos     Boolean          @default(true)
+  notas              String?
+
+  comisiones         ComisionAliado[]
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([empresaId, codigoReferido])
+  @@unique([empresaId, numeroDocumento])
+  @@unique([empresaId, telefono])
+  @@index([empresaId, estado])
+}
+
+model ComisionAliado {
+  id                 Int              @id @default(autoincrement())
+  empresaId          Int
+  empresa            Empresa          @relation(fields: [empresaId], references: [id])
+
+  aliadoId           Int
+  aliado             AliadoComercial  @relation(fields: [aliadoId], references: [id], onDelete: Cascade)
+
+  pedidoId           Int?
+  pedido             PedidoVenta?     @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  pedidoNumero       String?
+  origen             String           @default("LINK_WEB") // LINK_WEB | PEDIDO_ALIADO | MANUAL
+
+  clienteNombre      String
+  clienteTelefono    String
+
+  montoVenta         Decimal          @db.Decimal(14, 2)
+  costoTotal         Decimal          @db.Decimal(14, 2)
+  utilidadNeta       Decimal          @db.Decimal(14, 2)
+  porcentajeAplicado Decimal          @db.Decimal(5, 2)
+  valorComision      Decimal          @db.Decimal(14, 2)
+
+  estado             String           @default("PENDIENTE") // PENDIENTE | APROBADA | PAGADA | ANULADA
+  detalleItems       Json?
+  comprobantePago    String?
+  fechaAprobacion    DateTime?
+  fechaPago          DateTime?
+  notas              String?
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([empresaId, estado])
+  @@index([empresaId, aliadoId])
+  @@index([pedidoId])
 }

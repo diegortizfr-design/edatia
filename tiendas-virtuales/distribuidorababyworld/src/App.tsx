@@ -24,10 +24,12 @@ import { normalizarVideos } from './lib/videoEmbed'
 import { analytics } from './lib/analytics'
 import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
 import { ACTIVE_CAMPAIGN } from './constants/seasonalCampaign'
+import { captureReferralFromUrl } from './lib/referral'
 
 // Lazy-loaded heavy screens & modals to minimize initial bundle size and speed up first paint
 const ProductDetailPage = React.lazy(() => import('./components/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })))
 const FamiliaRegistroPage = React.lazy(() => import('./components/FamiliaRegistroPage').then(m => ({ default: m.FamiliaRegistroPage })))
+const AliadosPortalPage = React.lazy(() => import('./components/AliadosPortalPage').then(m => ({ default: m.AliadosPortalPage })))
 const CheckoutModal = React.lazy(() => import('./components/CheckoutModal').then(m => ({ default: m.CheckoutModal })))
 const BnplInfoModal = React.lazy(() => import('./components/BnplInfoModal').then(m => ({ default: m.BnplInfoModal })))
 const StoreLocationModal = React.lazy(() => import('./components/StoreLocationModal').then(m => ({ default: m.StoreLocationModal })))
@@ -78,6 +80,10 @@ export function App() {
     const p = window.location.pathname.replace(/\/+$/, '')
     return p === '/familia' || p === '/registro'
   })
+  const [showAliadosPortal, setShowAliadosPortal] = useState<boolean>(() => {
+    const p = window.location.pathname.replace(/\/+$/, '')
+    return p === '/aliados' || p === '/vendedores'
+  })
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isBnplModalOpen, setIsBnplModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
@@ -87,8 +93,9 @@ export function App() {
 
   // Mostrar modal de anuncio Black Friday al abrir la tienda (1 vez por sesión)
   useEffect(() => {
+    captureReferralFromUrl()
     const cleanPath = window.location.pathname.replace(/\/+$/, '')
-    const isDirectRoute = cleanPath === '/familia' || cleanPath === '/registro' || window.location.search.includes('pago=')
+    const isDirectRoute = cleanPath === '/familia' || cleanPath === '/registro' || cleanPath === '/aliados' || cleanPath === '/vendedores' || window.location.search.includes('pago=')
     if (isDirectRoute) return
 
     const hasShown = sessionStorage.getItem('babyworld_promo_black_friday_shown')
@@ -145,10 +152,19 @@ export function App() {
     window.history.replaceState({}, '', window.location.pathname)
   }, [])
 
-  // Deep linking: sincroniza ruta (/familia, /registro, /producto/:slug) con la vista activa
+  // Deep linking: sincroniza ruta (/familia, /registro, /aliados, /producto/:slug) con la vista activa
   useEffect(() => {
     const syncFromUrl = () => {
       const cleanPath = window.location.pathname.replace(/\/+$/, '')
+      if (cleanPath === '/aliados' || cleanPath === '/vendedores') {
+        setShowAliadosPortal(true)
+        setShowFamiliaForm(false)
+        setSelectedProduct(null)
+        document.title = 'Portal de Aliados | Distribuidora Baby World'
+        return
+      }
+      setShowAliadosPortal(false)
+
       if (cleanPath === '/familia' || cleanPath === '/registro') {
         setShowFamiliaForm(true)
         setSelectedProduct(null)
@@ -458,6 +474,7 @@ export function App() {
 
   const handleOpenProduct = (product: Product) => {
     setShowFamiliaForm(false)
+    setShowAliadosPortal(false)
     setSelectedProduct(product)
     const productSlug = product.slug || product.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || product.id
     if (window.location.pathname !== `/producto/${productSlug}`) {
@@ -475,8 +492,18 @@ export function App() {
     document.title = 'Distribuidora Baby World | Tienda Virtual'
   }
 
+  const handleCloseAliadosPortal = () => {
+    setShowAliadosPortal(false)
+    if (window.location.pathname === '/aliados' || window.location.pathname === '/vendedores') {
+      window.history.pushState({}, '', '/')
+    }
+    document.title = 'Distribuidora Baby World | Tienda Virtual'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleOpenFamiliaRegistro = () => {
     setSelectedProduct(null)
+    setShowAliadosPortal(false)
     setShowFamiliaForm(true)
     if (window.location.pathname !== '/familia') {
       window.history.pushState({ view: 'familia' }, '', '/familia')
@@ -496,8 +523,9 @@ export function App() {
 
   const handleSearchChange = (qVal: string) => {
     setSearchQuery(qVal)
-    if (qVal && (showFamiliaForm || selectedProduct)) {
+    if (qVal && (showFamiliaForm || showAliadosPortal || selectedProduct)) {
       setShowFamiliaForm(false)
+      setShowAliadosPortal(false)
       setSelectedProduct(null)
       if (window.location.pathname !== '/') {
         window.history.pushState({}, '', '/')
@@ -508,9 +536,10 @@ export function App() {
 
   const handleCategorySelect = (category: string) => {
     handleCloseProduct()
-    if (showFamiliaForm) {
+    if (showFamiliaForm || showAliadosPortal) {
       setShowFamiliaForm(false)
-      if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+      setShowAliadosPortal(false)
+      if (['/familia', '/registro', '/aliados', '/vendedores'].includes(window.location.pathname)) {
         window.history.pushState({}, '', '/')
       }
       document.title = 'Distribuidora Baby World | Tienda Virtual'
@@ -527,9 +556,10 @@ export function App() {
 
   const handleSelectAllCatalog = () => {
     handleCloseProduct()
-    if (showFamiliaForm) {
+    if (showFamiliaForm || showAliadosPortal) {
       setShowFamiliaForm(false)
-      if (window.location.pathname === '/familia' || window.location.pathname === '/registro') {
+      setShowAliadosPortal(false)
+      if (['/familia', '/registro', '/aliados', '/vendedores'].includes(window.location.pathname)) {
         window.history.pushState({}, '', '/')
       }
       document.title = 'Distribuidora Baby World | Tienda Virtual'
@@ -634,9 +664,15 @@ export function App() {
         onOpenCategories={() => setIsCategoriesModalOpen(true)}
       />
 
-      {/* Dedicated screens: Familia Baby World Form / Product Detail / Catalog */}
+      {/* Dedicated screens: Aliados Portal / Familia Baby World Form / Product Detail / Catalog */}
       <React.Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center py-20"><div className="w-8 h-8 border-3 border-sky-400 border-t-transparent rounded-full animate-spin" /></div>}>
-        {showFamiliaForm ? (
+        {showAliadosPortal ? (
+          <AliadosPortalPage
+            onBack={handleCloseAliadosPortal}
+            API_BASE={API_BASE}
+            storeSlug={STORE_SLUG}
+          />
+        ) : showFamiliaForm ? (
           <FamiliaRegistroPage
             onBack={handleCloseFamiliaRegistro}
             API_BASE={API_BASE}
@@ -1003,11 +1039,11 @@ export function App() {
       {/* Floating Social Media Dock (Visible todo el tiempo en Desktop/Tablet) */}
       <FloatingSocialDock />
 
-      {/* Floating WhatsApp Button (Oculto en la vista de formulario para no estorbar en móvil) */}
-      {!showFamiliaForm && <FloatingWhatsAppButton phone="573136546975" />}
+      {/* Floating WhatsApp Button (Oculto en la vista de formulario o portal aliados para no estorbar en móvil) */}
+      {!showFamiliaForm && !showAliadosPortal && <FloatingWhatsAppButton phone="573136546975" />}
 
       {/* Sticky Mobile Bottom Navigation (Only visible on smartphones in catalog view) */}
-      {!selectedProduct && !showFamiliaForm && (
+      {!selectedProduct && !showFamiliaForm && !showAliadosPortal && (
         <MobileBottomNav
           activeCategory={activeCategory}
           onSelectCategory={handleCategorySelect}

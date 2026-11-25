@@ -210,7 +210,44 @@ Esto garantiza que la directiva `try_files` no intercepte prematuramente las sol
 
 ---
 
-## 7. Verificación y Calidad
+## 7. Programa Piloto de Aliados Comerciales (Social Selling con IA)
+
+Módulo de ventas por referidos y social selling integrado al ERP, Gemini y la tienda virtual (`distribuidorababyworld`), diseñado inicialmente como piloto cerrado en la ruta `/aliados` (sin banners invasivos en el Home).
+
+### 7.1 Modelos Prisma y Migración
+
+Definidos en `backend/prisma/schema.prisma` y migración idempotente `backend/prisma/migrations/20261125161500_add_programa_aliados/migration.sql`:
+* `ConfiguracionTienda.configAliados` (`Json?`): porcentaje de utilidad (`30%`), mínimo de retiro (`$30.000 COP`), código de invitación opcional del piloto, bloqueo de autocompras, stock mínimo y categorías habilitadas (por defecto *Juguetería / Didácticos*).
+* `AliadoComercial`: perfil del vendedor, WhatsApp, documento, medio/cuenta de pago (`NEQUI`, `DAVIPLATA`, `BANCOLOMBIA`), `codigoReferido` único (`BW-NOMBRE##`), `pinHash` (`bcrypt`) y estado (`ACTIVO`, `PENDIENTE`, `SUSPENDIDO`).
+* `ComisionAliado`: registra cada venta atribuida congelando `montoVenta`, `costoTotal`, `utilidadNeta`, `porcentajeAplicado`, `valorComision`, origen (`LINK_WEB` o `PEDIDO_ALIADO`) y estado (`PENDIENTE → APROBADA → PAGADA / ANULADA`).
+
+> **Despliegue en VPS:** Si `npx prisma migrate deploy` encuentra historial previo desincronizado (`P3009`), aplicar la migración SQL idempotente directamente sin alterar migraciones anteriores:
+> ```bash
+> docker compose exec -T api npx prisma db execute --file prisma/migrations/20261125161500_add_programa_aliados/migration.sql --schema prisma/schema.prisma
+> ```
+
+### 7.2 Endpoints REST (Públicos / Portal y Admin ERP)
+
+* **Portal Público / Aliados (`/api/v1/public/tiendas/:slug/aliados`):**
+  * `GET  /config-publica`: estado del piloto, porcentaje vigente y mínimo de retiro.
+  * `POST /registro` y `POST /login`: autenticación stateless con token HMAC-SHA256.
+  * `GET  /perfil`: resumen de saldos (*Pendiente*, *Disponible*, *Pagado*) e historial sin exponer costos internos.
+  * `GET  /catalogo`: solo productos activos con stock real y costo cargado (`costoPromedio > 0` o `comisionValor > 0`), mostrando exclusivamente precio público y `gananciaAliado` fija en pesos.
+  * `POST /productos/:productoId/copy-ia`: invoca `GeminiService.generarCopyRedesAliado` (con caché en memoria de 6 horas) para redactar anuncios en estilos `whatsapp`, `marketplace` o `instagram` con `?ref=CODIGO`.
+  * `POST /pedidos`: permite al aliado registrar pedidos de sus clientes de redes directamente para despacho contra entrega o transferencia.
+* **Administración ERP (`/api/v1/digital/aliados`, protegido con `JwtAuthGuard`):**
+  * `GET / PATCH /config`, `GET / PATCH /:id`, `POST /:id/liquidar`, `GET /comisiones`, `PATCH /comisiones/:comisionId`.
+
+### 7.3 Blindaje Financiero, Atribución y Frontend
+
+* **Protección de margen:** Si `costoPromedio <= 0` y no existe comisión fija manual, el producto se excluye del catálogo de aliados y no liquida comisión automática. El domicilio se cobra aparte y no entra en el cálculo de utilidad.
+* **Anti-autocompra:** En `DigitalService.crearPedidoWeb` se comparan los últimos 10 dígitos del teléfono y el documento del comprador contra los del aliado; si coinciden, el pedido se procesa sin generar comisión.
+* **Tracking `?ref=` de 15 días (`tiendas-virtuales/distribuidorababyworld/src/lib/referral.ts`):** Captura `?ref=CODIGO` en `localStorage`, lo envía en `CheckoutModal.tsx` y añade `[Ref: CODIGO]` al mensaje prellenado de WhatsApp en `ProductDetailPage.tsx` y `ProductDetailModal.tsx`.
+* **Pantallas:** `AliadosPortalPage.tsx` en `/aliados` (tienda virtual) y `AliadosDigital.tsx` en `/digital/aliados` (ERP).
+
+---
+
+## 8. Verificación y Calidad
 
 - **Sin logs residuales:** Sin llamadas de depuración (`console.log`, `var_dump`) en el código de producción.
 - **Seguridad:** `.env` verificado en `.gitignore`; clave de API protegida exclusivamente en el backend.
