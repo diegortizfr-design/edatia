@@ -229,8 +229,8 @@ export class DigitalService {
     if (storeConfig) return;
 
     try {
-      const { seedSmashClient } = await import('../../prisma/seed-smash');
-      await seedSmashClient();
+      const { seedSmashClient } = await import('./smash-seed');
+      await seedSmashClient(this.prisma);
     } catch (err: any) {
       console.error('[DigitalService.autoInitializeSmash] Error auto-inicializando tienda Smash:', err?.message);
     }
