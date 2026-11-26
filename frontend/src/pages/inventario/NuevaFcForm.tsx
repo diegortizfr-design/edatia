@@ -10,16 +10,20 @@ import { getCajasBancos, getImpuestos } from '../../services/erp.service'
 import { 
   ArrowLeft, Save, Plus, Trash2, Search, FileText, Upload, Link2, 
   Calendar, CreditCard, DollarSign, Clock, AlertCircle, CheckCircle2,
-  Loader2, Check, FileCheck, X
+  Loader2, Check, FileCheck, X, Layers
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { parseDianXml, DianParsedInvoice } from '../../lib/dianXmlParser'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
+import { ModalSeleccionarVariantesCompra, SelectedVarianteItem } from '../../components/ModalSeleccionarVariantesCompra'
 import { CurrencyInput } from '../../components/CurrencyInput'
 import { getApiError } from '../../services/api'
 
 interface LineaItem {
   productoId: number
+  varianteId?: number
+  varianteNombre?: string
+  varianteSku?: string
   productoNombre: string
   productoSku: string
   cantidad: string
@@ -267,6 +271,8 @@ export function NuevaFcForm() {
   const [items, setItems] = useState<LineaItem[]>([])
   const [busqueda, setBusqueda] = useState('')
   const [showModalCrear, setShowModalCrear] = useState(false)
+  const [productoParaVariantes, setProductoParaVariantes] = useState<any | null>(null)
+  const [showModalVariantes, setShowModalVariantes] = useState(false)
 
   // Queries
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
@@ -552,7 +558,14 @@ export function NuevaFcForm() {
   }
 
   function addItem(producto: any) {
-    const yaIdx = items.findIndex(i => i.productoId === producto.id)
+    if (producto.variantes && producto.variantes.length > 0) {
+      setProductoParaVariantes(producto)
+      setShowModalVariantes(true)
+      setBusqueda('')
+      return
+    }
+
+    const yaIdx = items.findIndex(i => i.productoId === producto.id && !i.varianteId)
     if (yaIdx >= 0) {
       // Si el producto ya está en la factura, incrementar la cantidad en 1
       setItems(prev => prev.map((item, idx) => idx === yaIdx ? { ...item, cantidad: String((parseFloat(item.cantidad) || 0) + 1) } : item))
@@ -571,6 +584,40 @@ export function NuevaFcForm() {
       ivaPct: ivaTarifa,
       tipoIva: ivaTarifa === 0 ? 'EXCLUIDO' : `IVA_${ivaTarifa}`,
     }])
+    setBusqueda('')
+  }
+
+  const handleAddVariantes = (seleccionadas: SelectedVarianteItem[]) => {
+    setItems(prev => {
+      const next = [...prev]
+      seleccionadas.forEach(sel => {
+        const yaIdx = next.findIndex(i => i.productoId === sel.producto.id && i.varianteId === sel.varianteId)
+        const ivaTarifa = resolveProductoIva(sel.producto)
+        if (yaIdx >= 0) {
+          const cantActual = parseFloat(next[yaIdx].cantidad) || 0
+          next[yaIdx] = {
+            ...next[yaIdx],
+            cantidad: String(cantActual + sel.cantidad),
+            costoUnitario: String(sel.costoUnitario || next[yaIdx].costoUnitario),
+          }
+        } else {
+          next.push({
+            productoId: sel.producto.id,
+            varianteId: sel.varianteId,
+            varianteNombre: sel.varianteNombre,
+            varianteSku: sel.varianteSku,
+            productoNombre: sel.producto.nombre,
+            productoSku: sel.producto.sku,
+            cantidad: String(sel.cantidad),
+            costoUnitario: String(sel.costoUnitario),
+            descuentoPct: '0',
+            ivaPct: ivaTarifa,
+            tipoIva: ivaTarifa === 0 ? 'EXCLUIDO' : `IVA_${ivaTarifa}`,
+          })
+        }
+      })
+      return next
+    })
     setBusqueda('')
   }
 
@@ -781,6 +828,7 @@ export function NuevaFcForm() {
       notas: notas || undefined,
       items: lineas.map(item => ({
         productoId: item.productoId,
+        varianteId: item.varianteId || undefined,
         cantidad: parseFloat(item.cantidad) || 0,
         costoUnitario: parseFloat(item.costoUnitario) || 0,
         subtotal: item.subtotalCalc,
@@ -1404,22 +1452,43 @@ export function NuevaFcForm() {
                 ) : sugerencias.length === 0 ? (
                   <div className="p-3 text-xs text-slate-400 text-center">No se encontraron productos con ese término</div>
                 ) : (
-                  sugerencias.map((prod: any) => (
-                    <button
-                      key={prod.id}
-                      type="button"
-                      onClick={() => addItem(prod)}
-                      className="w-full text-left p-3 hover:bg-slate-50 flex items-center justify-between transition-colors"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{prod.nombre}</p>
-                        <p className="text-[10px] font-mono text-slate-400">SKU: {prod.sku}</p>
-                      </div>
-                      <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
-                        Costo: {fmt(Number(prod.costoPromedio) || Number(prod.costo) || 0)}
-                      </span>
-                    </button>
-                  ))
+                  sugerencias.map((prod: any) => {
+                    const tieneVars = Array.isArray(prod.variantes) && prod.variantes.length > 0
+                    return (
+                      <button
+                        key={prod.id}
+                        type="button"
+                        onClick={() => addItem(prod)}
+                        className="w-full text-left p-3 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border-b border-slate-50 last:border-0"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-800">{prod.nombre}</p>
+                            {tieneVars && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                                👕 {prod.variantes.length} Variantes
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-mono text-slate-400">SKU: {prod.sku}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                            Costo: {fmt(Number(prod.costoPromedio) || Number(prod.costo) || 0)}
+                          </span>
+                          {tieneVars ? (
+                            <span className="text-xs font-bold text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+                              <Layers size={13} /> Elegir Tallas
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-indigo-600 flex items-center gap-1">
+                              <Plus size={13} /> Agregar
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })
                 )}
               </div>
             )}
@@ -1458,10 +1527,17 @@ export function NuevaFcForm() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {lineas.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50">
+                    <tr key={`${item.productoId}-${item.varianteId ?? 'base'}-${idx}`} className="hover:bg-slate-50/50">
                       <td className="py-3 pr-2">
-                        <p className="font-semibold text-slate-800">{item.productoNombre}</p>
-                        <p className="text-[10px] font-mono text-slate-400">{item.productoSku}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-semibold text-slate-800">{item.productoNombre}</p>
+                          {item.varianteNombre && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                              <Layers size={10} /> {item.varianteNombre}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] font-mono text-slate-400">{item.varianteSku || item.productoSku}</p>
                       </td>
                       <td className="py-3 pl-1">
                         <input 
@@ -1593,9 +1669,25 @@ export function NuevaFcForm() {
         onClose={() => setShowModalCrear(false)}
         initialSearch={busqueda}
         onSuccess={(nuevoProd) => {
-          addItem(nuevoProd)
+          if (nuevoProd.variantes && nuevoProd.variantes.length > 0) {
+            setProductoParaVariantes(nuevoProd)
+            setShowModalVariantes(true)
+          } else {
+            addItem(nuevoProd)
+          }
           setBusqueda('')
         }}
+      />
+
+      {/* Modal para seleccionar variantes/tallas al comprar */}
+      <ModalSeleccionarVariantesCompra
+        isOpen={showModalVariantes}
+        onClose={() => {
+          setShowModalVariantes(false)
+          setProductoParaVariantes(null)
+        }}
+        producto={productoParaVariantes}
+        onAddVariantes={handleAddVariantes}
       />
     </div>
   )

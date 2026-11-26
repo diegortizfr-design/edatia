@@ -109,6 +109,18 @@ export class ProductosService {
             },
           },
         },
+        {
+          variantes: {
+            some: {
+              activo: true,
+              OR: [
+                { sku: { contains: query, mode: 'insensitive' } },
+                { nombre: { contains: query, mode: 'insensitive' } },
+                { codigoBarras: { contains: query, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
       ];
     }
 
@@ -126,6 +138,13 @@ export class ProductosService {
       include: {
         unidadMedida: { select: { abreviatura: true } },
         stock: { include: { bodega: { select: { id: true, nombre: true, codigo: true } } } },
+        variantes: {
+          where: { activo: true },
+          include: {
+            stock: { include: { bodega: { select: { id: true, nombre: true, codigo: true } } } },
+          },
+          orderBy: { sku: 'asc' },
+        },
       },
       take: bodegaId ? 250 : 25,
       orderBy: { nombre: 'asc' },

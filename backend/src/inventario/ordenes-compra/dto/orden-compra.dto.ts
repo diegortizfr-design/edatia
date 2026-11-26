@@ -5,6 +5,9 @@ export class CreateOrdenCompraItemDto {
   @IsInt()
   productoId!: number;
 
+  @IsOptional() @IsInt()
+  varianteId?: number;
+
   @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
   cantidad!: number;
 
@@ -68,6 +71,9 @@ export class UpdateOrdenCompraDto {
 export class RecibirItemDto {
   @IsInt()
   ordenCompraItemId!: number;
+
+  @IsOptional() @IsInt()
+  varianteId?: number;
 
   @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001)
   cantidadRecibida!: number;

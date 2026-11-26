@@ -24,12 +24,15 @@ export class FacturasCompraService implements OnModuleInit {
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "recepcionId" TEXT`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "estadoRecepcion" TEXT DEFAULT 'PENDIENTE'`,
       `ALTER TABLE "FacturaCompraItem" ADD COLUMN IF NOT EXISTS "cantidadRecibida" DECIMAL(12,3) DEFAULT 0`,
+      `ALTER TABLE "FacturaCompraItem" ADD COLUMN IF NOT EXISTS "varianteId" INTEGER`,
+      `ALTER TABLE "OrdenCompraItem" ADD COLUMN IF NOT EXISTS "varianteId" INTEGER`,
       `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "facturaCompraId" INTEGER`,
       `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "bodegaId" INTEGER`,
       `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER`,
       `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "inventarioAfectado" BOOLEAN DEFAULT false`,
       `ALTER TABLE "RecepcionMercancia" ALTER COLUMN "ordenCompraId" DROP NOT NULL`,
       `ALTER TABLE "RecepcionItem" ADD COLUMN IF NOT EXISTS "productoId" INTEGER`,
+      `ALTER TABLE "RecepcionItem" ADD COLUMN IF NOT EXISTS "varianteId" INTEGER`,
       `ALTER TABLE "RecepcionItem" ADD COLUMN IF NOT EXISTS "facturaCompraItemId" INTEGER`,
       `ALTER TABLE "RecepcionItem" ALTER COLUMN "ordenCompraItemId" DROP NOT NULL`,
     ];
@@ -71,7 +74,7 @@ export class FacturasCompraService implements OnModuleInit {
         where,
         include: {
           proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
-          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          items: { include: { producto: { select: { id: true, nombre: true, sku: true } }, variante: { select: { id: true, nombre: true, sku: true, atributos: true } } } },
           ordenCompra: { select: { id: true, numero: true } },
           documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
         },
@@ -85,7 +88,7 @@ export class FacturasCompraService implements OnModuleInit {
           where,
           include: {
             proveedor: { select: { id: true, nombre: true, numeroDocumento: true } },
-            items: { include: { producto: { select: { nombre: true, sku: true } } } },
+            items: { include: { producto: { select: { id: true, nombre: true, sku: true } }, variante: { select: { id: true, nombre: true, sku: true, atributos: true } } } },
             ordenCompra: { select: { id: true, numero: true } },
             documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
           },
@@ -121,7 +124,7 @@ export class FacturasCompraService implements OnModuleInit {
         where: { id, empresaId },
         include: {
           proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
-          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          items: { include: { producto: { select: { id: true, nombre: true, sku: true } }, variante: { select: { id: true, nombre: true, sku: true, atributos: true } } } },
           ordenCompra: { select: { id: true, numero: true } },
           documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
         },
@@ -135,7 +138,7 @@ export class FacturasCompraService implements OnModuleInit {
         where: { id, empresaId },
         include: {
           proveedor: { select: { id: true, nombre: true, numeroDocumento: true, email: true, telefono: true, direccion: true } },
-          items: { include: { producto: { select: { nombre: true, sku: true } } } },
+          items: { include: { producto: { select: { id: true, nombre: true, sku: true } }, variante: { select: { id: true, nombre: true, sku: true, atributos: true } } } },
           ordenCompra: { select: { id: true, numero: true } },
           documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
         },
@@ -382,6 +385,7 @@ export class FacturasCompraService implements OnModuleInit {
             items: dto.items && dto.items.length > 0 ? {
               create: dto.items.map(item => ({
                 productoId: item.productoId,
+                varianteId: item.varianteId || undefined,
                 cantidad: item.cantidad,
                 costoUnitario: item.costoUnitario,
                 subtotal: item.subtotal,
@@ -986,6 +990,7 @@ export class FacturasCompraService implements OnModuleInit {
           items: {
             create: dto.items.map((it: any) => ({
               productoId: it.productoId,
+              varianteId: it.varianteId || undefined,
               facturaCompraItemId: it.facturaCompraItemId,
               cantidadRecibida: it.cantidadRecibida,
               costoUnitario: it.costoUnitario,
@@ -1030,6 +1035,35 @@ export class FacturasCompraService implements OnModuleInit {
           data: { cantidad: { increment: cantNueva } },
         });
 
+        // Actualizar Stock de Variante si aplica
+        const fcItem = item.facturaCompraItemId ? await tx.facturaCompraItem.findUnique({ where: { id: item.facturaCompraItemId } }) : null;
+        const varId = item.varianteId || (fcItem as any)?.varianteId || null;
+        if (varId) {
+          let stockVar = await (tx as any).stockVariante.findFirst({
+            where: { varianteId: varId, bodegaId: dto.bodegaId },
+          });
+          if (!stockVar) {
+            await (tx as any).stockVariante.create({
+              data: {
+                empresaId,
+                varianteId: varId,
+                bodegaId: dto.bodegaId,
+                cantidad: cantNueva,
+                cantidadReservada: 0,
+              },
+            });
+          } else {
+            await (tx as any).stockVariante.update({
+              where: { id: stockVar.id },
+              data: { cantidad: { increment: cantNueva } },
+            });
+          }
+          await (tx as any).varianteProducto.update({
+            where: { id: varId },
+            data: { costoPromedio: nuevoCPP },
+          }).catch(() => {});
+        }
+
         // Actualizar CPP y Costo Última Compra en Producto
         await tx.producto.update({
           where: { id: productoId },
@@ -1059,6 +1093,12 @@ export class FacturasCompraService implements OnModuleInit {
           movSeq++;
         }
 
+        let varInfo = '';
+        if (varId) {
+          const v = await (tx as any).varianteProducto.findUnique({ where: { id: varId }, select: { nombre: true, sku: true } }).catch(() => null);
+          if (v) varInfo = ` [Variante: ${v.nombre} (${v.sku})]`;
+        }
+
         await tx.movimientoInventario.create({
           data: {
             numero: numMov,
@@ -1076,7 +1116,7 @@ export class FacturasCompraService implements OnModuleInit {
             usuarioId,
             referenciaId: numeroRec,
             referenciaTipo: 'RP',
-            notas: `Recepción ${numeroRec} de FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} [Bodega: ${bodega.nombre}]`,
+            notas: `Recepción ${numeroRec} de FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor} [Bodega: ${bodega.nombre}]${varInfo}`,
           },
         });
       }

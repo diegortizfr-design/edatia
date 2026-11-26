@@ -140,6 +140,7 @@ export function Compras() {
 
       itemsToSend.push({
         productoId: fcItem.productoId,
+        varianteId: fcItem.varianteId || undefined,
         facturaCompraItemId: fcItem.id,
         cantidadRecibida: parseFloat(cantStr),
         costoUnitario: parseFloat(String(fcItem.costoUnitario)),
@@ -657,8 +658,15 @@ export function Compras() {
                         <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm hover:border-slate-300 transition-colors">
                           <div className="flex justify-between items-start gap-4">
                             <div className="min-w-0">
-                              <span className="font-mono text-[10px] font-bold text-slate-400 block">{item.producto?.sku}</span>
-                              <span className="font-bold text-slate-800 text-xs truncate block">{item.producto?.nombre}</span>
+                              <span className="font-mono text-[10px] font-bold text-slate-400 block">{item.variante?.sku || item.producto?.sku}</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-800 text-xs truncate block">{item.producto?.nombre}</span>
+                                {item.variante && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    {item.variante.nombre}
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] text-slate-400 block mt-0.5">
                                 Facturado: <span className="font-bold text-slate-600">{fmtCantidad(cantFacturada)}</span> · Previamente Recibido: <span className="font-bold text-emerald-600">{fmtCantidad(cantRecibidaPrev)}</span> · Pendiente: <span className="font-bold text-amber-600">{fmtCantidad(pendiente)}</span>
                               </span>

@@ -5,6 +5,9 @@ export class FacturaCompraItemDto {
   @IsInt()
   productoId!: number;
 
+  @IsOptional() @IsInt()
+  varianteId?: number;
+
   @IsNumber() @Min(0.001)
   cantidad!: number;
 
@@ -113,6 +116,9 @@ export class CreateFacturaCompraDto {
 export class CreateRecepcionItemDto {
   @IsInt()
   productoId!: number;
+
+  @IsOptional() @IsInt()
+  varianteId?: number;
 
   @IsOptional() @IsInt()
   facturaCompraItemId?: number;

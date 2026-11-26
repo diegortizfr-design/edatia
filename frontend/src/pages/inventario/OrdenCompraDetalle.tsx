@@ -331,8 +331,15 @@ export function OrdenCompraDetalle() {
                 return (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{item.producto?.nombre}</p>
-                      <p className="text-xs text-slate-400">{item.producto?.sku}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-medium text-slate-800">{item.producto?.nombre}</p>
+                        {item.variante && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {item.variante.nombre}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 font-mono">{item.variante?.sku || item.producto?.sku}</p>
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700 font-mono">{fmtCantidad(item.cantidad)}</td>
                     <td className="px-4 py-3 text-right">
@@ -722,8 +729,15 @@ export function OrdenCompraDetalle() {
                       const tasaIva = item.producto?.tipoIva === 'GRAVADO_19' ? 19 : item.producto?.tipoIva === 'GRAVADO_5' ? 5 : 0
                       return (
                         <tr key={item.id} className="text-slate-700">
-                          <td className="py-3 px-2 font-mono text-slate-500">{item.producto?.sku}</td>
-                          <td className="py-3 px-2 font-semibold text-slate-800">{item.producto?.nombre}</td>
+                          <td className="py-3 px-2 font-mono text-slate-500">{item.variante?.sku || item.producto?.sku}</td>
+                          <td className="py-3 px-2 font-semibold text-slate-800">
+                            {item.producto?.nombre}
+                            {item.variante && (
+                              <span className="ml-1.5 text-xs text-indigo-600 font-normal">
+                                [{item.variante.nombre}]
+                              </span>
+                            )}
+                          </td>
                           <td className="py-3 px-2 text-right">{fmtCantidad(cant)}</td>
                           <td className="py-3 px-2 text-right">{fmt(costo)}</td>
                           <td className="py-3 px-2 text-right">{dcto > 0 ? `${dcto.toFixed(1)}%` : '0%'}</td>

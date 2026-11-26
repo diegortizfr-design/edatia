@@ -46,12 +46,23 @@ const OC_INCLUDE = {
   items: {
     include: {
       producto: { select: { id: true, nombre: true, sku: true, costoPromedio: true, tipoIva: true, unidadMedida: { select: { abreviatura: true } } } },
+      variante: { select: { id: true, nombre: true, sku: true, atributos: true } },
     },
   },
   recepciones: {
     include: {
       documentoConfig: { select: { id: true, nombre: true, prefijo: true } },
-      items: { include: { ordenCompraItem: { include: { producto: { select: { id: true, nombre: true, sku: true, tipoIva: true } } } } } }
+      items: {
+        include: {
+          ordenCompraItem: {
+            include: {
+              producto: { select: { id: true, nombre: true, sku: true, tipoIva: true } },
+              variante: { select: { id: true, nombre: true, sku: true, atributos: true } },
+            },
+          },
+          variante: { select: { id: true, nombre: true, sku: true, atributos: true } },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' as const },
   },
@@ -264,6 +275,7 @@ export class OrdenesCompraService {
           items: {
             create: itemsCalculados.map(item => ({
               productoId: item.productoId,
+              varianteId: item.varianteId || undefined,
               cantidad: item.cantidad,
               costoUnitario: item.costoUnitario,
               descuentoPct: item.descuentoPct ?? 0,
@@ -493,6 +505,8 @@ export class OrdenesCompraService {
             create: dto.items.map(ri => {
               const ocItem = ocItemsMap.get(ri.ordenCompraItemId) as any;
               return {
+                productoId: ocItem.productoId,
+                varianteId: ri.varianteId || ocItem.varianteId || undefined,
                 ordenCompraItemId: ri.ordenCompraItemId,
                 cantidadRecibida: ri.cantidadRecibida,
                 costoUnitario: ri.costoUnitario ?? parseFloat(ocItem.costoUnitario.toString()),
@@ -570,6 +584,34 @@ export class OrdenesCompraService {
             },
           });
 
+          // Actualizar Stock de Variante si aplica
+          const varId = ri.varianteId || ocItem.varianteId || null;
+          if (varId) {
+            let stockVar = await (tx as any).stockVariante.findFirst({
+              where: { varianteId: varId, bodegaId },
+            });
+            if (!stockVar) {
+              await (tx as any).stockVariante.create({
+                data: {
+                  empresaId,
+                  varianteId: varId,
+                  bodegaId,
+                  cantidad: cantNueva,
+                  cantidadReservada: 0,
+                },
+              });
+            } else {
+              await (tx as any).stockVariante.update({
+                where: { id: stockVar.id },
+                data: { cantidad: { increment: cantNueva } },
+              });
+            }
+            await (tx as any).varianteProducto.update({
+              where: { id: varId },
+              data: { costoPromedio: nuevoCPP },
+            }).catch(() => {});
+          }
+
           // Procesar Lote si maneja lotes
           let loteId: number | undefined;
           if (producto.manejaLotes && ri.loteNumero) {
@@ -615,6 +657,11 @@ export class OrdenesCompraService {
 
           // Notas para registrar el lote si existe
           const loteNotas = ri.loteNumero ? ` [Lote: ${ri.loteNumero}]` : '';
+          let varInfo = '';
+          if (varId) {
+            const v = await (tx as any).varianteProducto.findUnique({ where: { id: varId }, select: { nombre: true, sku: true } }).catch(() => null);
+            if (v) varInfo = ` [Variante: ${v.nombre} (${v.sku})]`;
+          }
 
           // Crear movimiento en el kardex
           const mov = await tx.movimientoInventario.create({
@@ -634,7 +681,7 @@ export class OrdenesCompraService {
               usuarioId,
               referenciaId: numeroRec,
               referenciaTipo: 'RP',
-              notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}`,
+              notas: `Recepción ${numeroRec} · OC ${oc.numero}${loteNotas}${varInfo}`,
             },
           });
 

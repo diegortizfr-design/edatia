@@ -9,11 +9,15 @@ import { getDocumentosConfig } from '../../services/configuracion.service'
 import { getImpuestos } from '../../services/erp.service'
 import { getApiError } from '../../services/api'
 import { ModalCrearProductoRapido } from '../../components/ModalCrearProductoRapido'
+import { ModalSeleccionarVariantesCompra, SelectedVarianteItem } from '../../components/ModalSeleccionarVariantesCompra'
 import { CurrencyInput } from '../../components/CurrencyInput'
-import { ArrowLeft, Plus, Trash2, Search, Save } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Search, Save, Layers } from 'lucide-react'
 
 interface LineaItem {
   productoId: number
+  varianteId?: number
+  varianteNombre?: string
+  varianteSku?: string
   productoNombre: string
   productoSku: string
   cantidad: string
@@ -37,6 +41,8 @@ export function OrdenCompraForm() {
   const [items, setItems] = useState<LineaItem[]>([])
   const [busqueda, setBusqueda] = useState('')
   const [showModalCrear, setShowModalCrear] = useState(false)
+  const [productoParaVariantes, setProductoParaVariantes] = useState<any | null>(null)
+  const [showModalVariantes, setShowModalVariantes] = useState(false)
 
   const { data: proveedores = [] } = useQuery({ queryKey: ['proveedores'], queryFn: () => getProveedores() })
   const { data: bodegas = [] } = useQuery({ queryKey: ['bodegas'], queryFn: getBodegas })
@@ -122,7 +128,14 @@ export function OrdenCompraForm() {
   })
 
   function addItem(producto: any) {
-    const ya = items.find(i => i.productoId === producto.id)
+    if (producto.variantes && producto.variantes.length > 0) {
+      setProductoParaVariantes(producto)
+      setShowModalVariantes(true)
+      setBusqueda('')
+      return
+    }
+
+    const ya = items.find(i => i.productoId === producto.id && !i.varianteId)
     if (ya) { setBusqueda(''); return }
 
     // Priorizar costo unitario base del catálogo, luego promedio, luego último
@@ -141,6 +154,40 @@ export function OrdenCompraForm() {
       ivaPct: ivaPct,
       tieneIvaOriginal: ivaPct > 0,
     }])
+    setBusqueda('')
+  }
+
+  const handleAddVariantes = (seleccionadas: SelectedVarianteItem[]) => {
+    setItems(prev => {
+      const next = [...prev]
+      seleccionadas.forEach(sel => {
+        const yaIdx = next.findIndex(i => i.productoId === sel.producto.id && i.varianteId === sel.varianteId)
+        const ivaPct = resolveProductoIva(sel.producto)
+        if (yaIdx >= 0) {
+          const cantActual = parseFloat(next[yaIdx].cantidad) || 0
+          next[yaIdx] = {
+            ...next[yaIdx],
+            cantidad: String(cantActual + sel.cantidad),
+            costoUnitario: String(sel.costoUnitario || next[yaIdx].costoUnitario),
+          }
+        } else {
+          next.push({
+            productoId: sel.producto.id,
+            varianteId: sel.varianteId,
+            varianteNombre: sel.varianteNombre,
+            varianteSku: sel.varianteSku,
+            productoNombre: sel.producto.nombre,
+            productoSku: sel.producto.sku,
+            cantidad: String(sel.cantidad),
+            costoUnitario: String(sel.costoUnitario),
+            descuentoPct: '0',
+            ivaPct,
+            tieneIvaOriginal: ivaPct > 0,
+          })
+        }
+      })
+      return next
+    })
     setBusqueda('')
   }
 
@@ -204,6 +251,7 @@ function getHoyLocal() {
       notas: header.notas || undefined,
       items: items.map(item => ({
         productoId: item.productoId,
+        varianteId: item.varianteId || undefined,
         cantidad: parseFloat(item.cantidad),
         costoUnitario: parseFloat(item.costoUnitario),
         descuentoPct: parseFloat(item.descuentoPct) || 0,
@@ -302,12 +350,20 @@ function getHoyLocal() {
                   const costoBase = Number(p.costo) || Number(p.costoPromedio) || Number(p.costoUltimo) || 0
                   const ivaPctProd = resolveProductoIva(p)
                   const labelIva = ivaPctProd === 0 ? 'Sin IVA' : `IVA ${ivaPctProd}%`
+                  const tieneVars = Array.isArray(p.variantes) && p.variantes.length > 0
 
                   return (
                     <button key={p.id} type="button" onClick={() => addItem(p)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between gap-3">
+                      className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0 flex items-center justify-between gap-3 cursor-pointer">
                       <div>
-                        <p className="text-sm font-medium text-slate-800">{p.nombre}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-800">{p.nombre}</p>
+                          {tieneVars && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                              👕 {p.variantes.length} Variantes
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs text-slate-400 font-mono">{p.sku}</span>
                           <span className="text-slate-300">·</span>
@@ -320,7 +376,15 @@ function getHoyLocal() {
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs text-indigo-600 flex items-center gap-1 font-semibold whitespace-nowrap"><Plus size={13} /> Agregar</span>
+                      {tieneVars ? (
+                        <span className="text-xs text-indigo-700 flex items-center gap-1 font-bold whitespace-nowrap bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+                          <Layers size={13} /> Elegir Tallas
+                        </span>
+                      ) : (
+                        <span className="text-xs text-indigo-600 flex items-center gap-1 font-semibold whitespace-nowrap">
+                          <Plus size={13} /> Agregar
+                        </span>
+                      )}
                     </button>
                   )
                 })}
@@ -360,10 +424,17 @@ function getHoyLocal() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {lineas.map((item, idx) => (
-                    <tr key={item.productoId} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={`${item.productoId}-${item.varianteId ?? 'base'}-${idx}`} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-2.5 pr-2">
-                        <p className="font-medium text-slate-800">{item.productoNombre}</p>
-                        <p className="text-xs text-slate-400 font-mono">{item.productoSku}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-slate-800">{item.productoNombre}</p>
+                          {item.varianteNombre && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                              <Layers size={11} /> {item.varianteNombre}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 font-mono">{item.varianteSku || item.productoSku}</p>
                       </td>
                       <td className="py-2.5 px-1">
                         <input type="number" min="1" step="1" value={item.cantidad}
@@ -467,9 +538,26 @@ function getHoyLocal() {
         onClose={() => setShowModalCrear(false)}
         initialSearch={busqueda}
         onSuccess={(nuevoProd) => {
-          addItem(nuevoProd)
+          if (nuevoProd.variantes && nuevoProd.variantes.length > 0) {
+            setProductoParaVariantes(nuevoProd)
+            setShowModalVariantes(true)
+          } else {
+            addItem(nuevoProd)
+          }
           setBusqueda('')
         }}
+      />
+
+      {/* Modal para seleccionar variantes/tallas al comprar */}
+      <ModalSeleccionarVariantesCompra
+        isOpen={showModalVariantes}
+        onClose={() => {
+          setShowModalVariantes(false)
+          setProductoParaVariantes(null)
+        }}
+        producto={productoParaVariantes}
+        bodegaId={header.bodegaId}
+        onAddVariantes={handleAddVariantes}
       />
     </div>
   )

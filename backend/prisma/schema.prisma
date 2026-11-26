@@ -1099,6 +1099,8 @@ model FacturaCompraItem {
   facturaCompra    FacturaCompra @relation(fields: [facturaCompraId], references: [id], onDelete: Cascade)
   productoId       Int
   producto         Producto      @relation(fields: [productoId], references: [id])
+  varianteId       Int?
+  variante         VarianteProducto? @relation(fields: [varianteId], references: [id])
   cantidad         Decimal       @db.Decimal(12, 3)
   cantidadRecibida Decimal       @default(0) @db.Decimal(12, 3)
   costoUnitario    Decimal       @db.Decimal(14, 2)
@@ -1164,6 +1166,8 @@ model OrdenCompraItem {
   ordenCompra   OrdenCompra @relation(fields: [ordenCompraId], references: [id])
   productoId    Int
   producto      Producto    @relation(fields: [productoId], references: [id])
+  varianteId    Int?
+  variante      VarianteProducto? @relation(fields: [varianteId], references: [id])
 
   cantidad          Decimal  @db.Decimal(12, 3)
   cantidadRecibida  Decimal  @default(0) @db.Decimal(12, 3)
@@ -1215,6 +1219,9 @@ model RecepcionItem {
   
   productoId          Int?
   producto            Producto?           @relation(fields: [productoId], references: [id])
+
+  varianteId          Int?
+  variante            VarianteProducto?   @relation(fields: [varianteId], references: [id])
 
   ordenCompraItemId   Int?
   ordenCompraItem     OrdenCompraItem?    @relation(fields: [ordenCompraItemId], references: [id])
@@ -1307,6 +1314,9 @@ model VarianteProducto {
   stock          StockVariante[]
   codigosBarras  CodigoBarras[]
   precios        PrecioProducto[]
+  facturaCompraItems FacturaCompraItem[]
+  ordenCompraItems   OrdenCompraItem[]
+  recepcionItems     RecepcionItem[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
