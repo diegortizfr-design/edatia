@@ -8,19 +8,30 @@ import { calcularNuevoCPP } from '../common/costo-promedio.helper';
 export class FacturasCompraService implements OnModuleInit {
   async asegurarColumnas() {
     const statements = [
-      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "formaPago" TEXT DEFAULT 'CONTADO'`,
-      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "medioPago" TEXT`,
-      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0`,
-      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0`,
-      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCxpId" INTEGER`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCxp" TEXT`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "documentoCeId" INTEGER`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "numeroCe" TEXT`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "cajaBancoId" INTEGER`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "egresoId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "formaPago" TEXT DEFAULT 'CONTADO'`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "medioPago" TEXT`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "diasCredito" INTEGER DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "saldo" DECIMAL(14,2) DEFAULT 0`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "totalPagado" DECIMAL(14,2) DEFAULT 0`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "ordenCompraId" INTEGER`,
+      `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "recepcionId" TEXT`,
       `ALTER TABLE "FacturaCompra" ADD COLUMN IF NOT EXISTS "estadoRecepcion" TEXT DEFAULT 'PENDIENTE'`,
+      `ALTER TABLE "FacturaCompraItem" ADD COLUMN IF NOT EXISTS "cantidadRecibida" DECIMAL(12,3) DEFAULT 0`,
+      `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "facturaCompraId" INTEGER`,
+      `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "bodegaId" INTEGER`,
+      `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "documentoConfigId" INTEGER`,
+      `ALTER TABLE "RecepcionMercancia" ADD COLUMN IF NOT EXISTS "inventarioAfectado" BOOLEAN DEFAULT false`,
+      `ALTER TABLE "RecepcionMercancia" ALTER COLUMN "ordenCompraId" DROP NOT NULL`,
+      `ALTER TABLE "RecepcionItem" ADD COLUMN IF NOT EXISTS "productoId" INTEGER`,
+      `ALTER TABLE "RecepcionItem" ADD COLUMN IF NOT EXISTS "facturaCompraItemId" INTEGER`,
+      `ALTER TABLE "RecepcionItem" ALTER COLUMN "ordenCompraItemId" DROP NOT NULL`,
     ];
 
     for (const sql of statements) {
@@ -143,10 +154,21 @@ export class FacturasCompraService implements OnModuleInit {
     return `FC-${year}-${count + 1}`;
   }
   async create(dto: CreateFacturaCompraDto, empresaId: number, usuarioId: number) {
-    const proveedor = await this.prisma.tercero.findFirst({
+    await this.asegurarColumnas();
+
+    let proveedor = await this.prisma.tercero.findFirst({
       where: { id: dto.proveedorId, empresaId, esProveedor: true },
     });
-    if (!proveedor) throw new NotFoundException('Proveedor no encontrado');
+    if (!proveedor) {
+      proveedor = await this.prisma.tercero.findFirst({
+        where: { id: dto.proveedorId, empresaId },
+      });
+      if (!proveedor) throw new NotFoundException('Proveedor no encontrado');
+      await this.prisma.tercero.update({
+        where: { id: proveedor.id },
+        data: { esProveedor: true },
+      });
+    }
 
     // Verificar duplicado de factura de proveedor
     const existe = await this.prisma.facturaCompra.findFirst({
@@ -162,529 +184,638 @@ export class FacturasCompraService implements OnModuleInit {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      let numero: string;
-      if (dto.documentoConfigId) {
-        const docConfig = await tx.documentoConfig.findFirst({
-          where: { id: dto.documentoConfigId, empresaId, sigla: 'FC' },
-        });
-        if (!docConfig) {
-          throw new NotFoundException('Resolución de documento de factura de compra no encontrada');
-        }
-        numero = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
-        await tx.documentoConfig.update({
-          where: { id: docConfig.id },
-          data: { consecutivoSiguiente: { increment: 1 } },
-        });
-      } else {
-        numero = await this.generarConsecutivoInterno(empresaId, tx);
-      }
-
-      // 1. Determinar condiciones de pago, vencimiento y documentos de soporte (CXP / CE)
-      const isCredito = dto.formaPago === 'CREDITO';
-      const totalNum = Number(dto.total);
-      const saldoNum = isCredito ? totalNum : 0;
-      const totalPagadoNum = isCredito ? 0 : totalNum;
-
-      let fechaVenc: Date | null = null;
-      let numeroCxp: string | null = null;
-      let docCxpId: number | null = null;
-
-      let numeroCe: string | null = null;
-      let docCeId: number | null = null;
-      let cuentaTesoreriaPuc: any = null;
-      let cajaBancoObj: any = null;
-
-      if (isCredito) {
-        if (dto.fechaVencimiento) {
-          fechaVenc = new Date(dto.fechaVencimiento);
-        } else {
-          const emision = new Date(dto.fechaEmision);
-          emision.setDate(emision.getDate() + (Number(dto.diasCredito) || 30));
-          fechaVenc = emision;
-        }
-
-        // Resolución de CXP (Cuenta por Pagar)
-        if (dto.documentoCxpId) {
-          const docCxp = await tx.documentoConfig.findFirst({
-            where: { id: dto.documentoCxpId, empresaId, sigla: 'CXP' },
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        let numero: string;
+        if (dto.documentoConfigId) {
+          const docConfig = await tx.documentoConfig.findFirst({
+            where: { id: dto.documentoConfigId, empresaId, sigla: 'FC' },
           });
+          if (!docConfig) {
+            throw new NotFoundException('Resolución de documento de factura de compra no encontrada');
+          }
+          let consecutivo = docConfig.consecutivoSiguiente;
+          numero = `${docConfig.prefijo}-${consecutivo}`;
+          while (await tx.facturaCompra.findFirst({ where: { empresaId, numero } })) {
+            consecutivo++;
+            numero = `${docConfig.prefijo}-${consecutivo}`;
+          }
+          await tx.documentoConfig.update({
+            where: { id: docConfig.id },
+            data: { consecutivoSiguiente: consecutivo + 1 },
+          });
+        } else {
+          const year = new Date().getFullYear();
+          let count = await tx.facturaCompra.count({
+            where: { empresaId, numero: { startsWith: `FC-${year}-` } },
+          });
+          numero = `FC-${year}-${count + 1}`;
+          while (await tx.facturaCompra.findFirst({ where: { empresaId, numero } })) {
+            count++;
+            numero = `FC-${year}-${count + 1}`;
+          }
+        }
+
+        // 1. Determinar condiciones de pago, vencimiento y documentos de soporte (CXP / CE)
+        const isCredito = dto.formaPago === 'CREDITO';
+        const totalNum = Number(dto.total);
+        const saldoNum = isCredito ? totalNum : 0;
+        const totalPagadoNum = isCredito ? 0 : totalNum;
+
+        let fechaVenc: Date | null = null;
+        let numeroCxp: string | null = null;
+        let docCxpId: number | null = null;
+
+        let numeroCe: string | null = null;
+        let docCeId: number | null = null;
+        let cuentaTesoreriaPuc: any = null;
+        let cajaBancoObj: any = null;
+
+        if (isCredito) {
+          if (dto.fechaVencimiento) {
+            fechaVenc = new Date(dto.fechaVencimiento);
+          } else {
+            const emision = new Date(dto.fechaEmision);
+            emision.setDate(emision.getDate() + (Number(dto.diasCredito) || 30));
+            fechaVenc = emision;
+          }
+
+          // Resolución de CXP (Cuenta por Pagar)
+          let docCxp = null;
+          if (dto.documentoCxpId) {
+            docCxp = await tx.documentoConfig.findFirst({
+              where: { id: dto.documentoCxpId, empresaId, sigla: 'CXP' },
+            });
+          }
+          if (!docCxp) {
+            docCxp = await tx.documentoConfig.findFirst({
+              where: { empresaId, sigla: 'CXP', estado: 'ACTIVO' },
+            });
+          }
           if (docCxp) {
-            numeroCxp = `${docCxp.prefijo}-${docCxp.consecutivoSiguiente}`;
+            let consecutivo = docCxp.consecutivoSiguiente;
+            numeroCxp = `${docCxp.prefijo}-${consecutivo}`;
+            while (await tx.facturaCompra.findFirst({ where: { empresaId, numeroCxp } })) {
+              consecutivo++;
+              numeroCxp = `${docCxp.prefijo}-${consecutivo}`;
+            }
             await tx.documentoConfig.update({
               where: { id: docCxp.id },
-              data: { consecutivoSiguiente: { increment: 1 } },
+              data: { consecutivoSiguiente: consecutivo + 1 },
             });
             docCxpId = docCxp.id;
           }
         } else {
-          const docCxp = await tx.documentoConfig.findFirst({
-            where: { empresaId, sigla: 'CXP', estado: 'ACTIVO' },
-          });
-          if (docCxp) {
-            numeroCxp = `${docCxp.prefijo}-${docCxp.consecutivoSiguiente}`;
-            await tx.documentoConfig.update({
-              where: { id: docCxp.id },
-              data: { consecutivoSiguiente: { increment: 1 } },
-            });
-            docCxpId = docCxp.id;
-          }
-        }
-      } else {
-        fechaVenc = new Date(dto.fechaEmision);
+          fechaVenc = new Date(dto.fechaEmision);
 
-        // Resolución de CE (Comprobante de Egreso)
-        if (dto.documentoCeId) {
-          const docCe = await tx.documentoConfig.findFirst({
-            where: { id: dto.documentoCeId, empresaId, sigla: 'CE' },
-          });
-          if (docCe) {
-            numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
-            await tx.documentoConfig.update({
-              where: { id: docCe.id },
-              data: { consecutivoSiguiente: { increment: 1 } },
+          // Resolución de CE (Comprobante de Egreso)
+          let docCe = null;
+          if (dto.documentoCeId) {
+            docCe = await tx.documentoConfig.findFirst({
+              where: { id: dto.documentoCeId, empresaId, sigla: 'CE' },
             });
-            docCeId = docCe.id;
           }
-        } else {
-          const docCe = await tx.documentoConfig.findFirst({
-            where: { empresaId, sigla: 'CE', estado: 'ACTIVO' },
-          });
+          if (!docCe) {
+            docCe = await tx.documentoConfig.findFirst({
+              where: { empresaId, sigla: 'CE', estado: 'ACTIVO' },
+            });
+          }
+
           if (docCe) {
-            numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
+            let consecutivo = docCe.consecutivoSiguiente;
+            numeroCe = `${docCe.prefijo}-${consecutivo}`;
+            while (
+              (await tx.egreso.findFirst({ where: { empresaId, numero: numeroCe } })) ||
+              (await tx.comprobante.findFirst({ where: { empresaId, numero: numeroCe } }))
+            ) {
+              consecutivo++;
+              numeroCe = `${docCe.prefijo}-${consecutivo}`;
+            }
             await tx.documentoConfig.update({
               where: { id: docCe.id },
-              data: { consecutivoSiguiente: { increment: 1 } },
+              data: { consecutivoSiguiente: consecutivo + 1 },
             });
             docCeId = docCe.id;
           } else {
-            numeroCe = `CE-${new Date(dto.fechaEmision).getFullYear()}-1`;
+            const anioEmision = new Date(dto.fechaEmision).getFullYear();
+            let seq = 1;
+            numeroCe = `CE-${anioEmision}-${seq}`;
+            while (
+              (await tx.egreso.findFirst({ where: { empresaId, numero: numeroCe } })) ||
+              (await tx.comprobante.findFirst({ where: { empresaId, numero: numeroCe } }))
+            ) {
+              seq++;
+              numeroCe = `CE-${anioEmision}-${seq}`;
+            }
           }
-        }
 
-        // Resolver Caja / Banco de salida
-        if (dto.cajaBancoId) {
-          cajaBancoObj = await tx.cajaBanco.findFirst({
-            where: { id: dto.cajaBancoId, empresaId },
-          });
-          if (cajaBancoObj?.cuentaPUC) {
-            cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
-              where: { empresaId, codigo: cajaBancoObj.cuentaPUC },
+          // Resolver Caja / Banco de salida
+          if (dto.cajaBancoId) {
+            cajaBancoObj = await tx.cajaBanco.findFirst({
+              where: { id: dto.cajaBancoId, empresaId },
             });
-          }
-        }
-
-        if (!cuentaTesoreriaPuc) {
-          const defCod = cajaBancoObj?.tipo === 'CAJA' ? '110505' : '111005';
-          cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
-          });
-        }
-      }
-
-      // 1. Persistir la factura de compra
-      const tienePagosMixtos = !isCredito && Array.isArray(dto.pagos) && dto.pagos.length > 0;
-      const fc = await tx.facturaCompra.create({
-        data: {
-          empresaId,
-          numero,
-          documentoConfigId: dto.documentoConfigId,
-          documentoCxpId: docCxpId,
-          numeroCxp: numeroCxp,
-          documentoCeId: docCeId,
-          numeroCe: numeroCe,
-          cajaBancoId: tienePagosMixtos ? dto.pagos![0].cajaBancoId : (dto.cajaBancoId || undefined),
-          prefijoProveedor: dto.prefijoProveedor,
-          consecutivoProveedor: dto.consecutivoProveedor,
-          proveedorId: dto.proveedorId,
-          ordenCompraId: dto.ordenCompraId,
-          fechaEmision: new Date(dto.fechaEmision),
-          fechaVencimiento: fechaVenc,
-          formaPago: dto.formaPago || (dto.fechaVencimiento ? 'CREDITO' : 'CONTADO'),
-          medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || undefined),
-          diasCredito: dto.diasCredito !== undefined ? Number(dto.diasCredito) : (isCredito ? 30 : 0),
-          saldo: saldoNum,
-          totalPagado: totalPagadoNum,
-          subtotal: dto.subtotal,
-          descuento: dto.descuento ?? 0,
-          iva: dto.iva ?? 0,
-          total: dto.total,
-          xmlAdjunto: dto.xmlAdjunto,
-          notas: dto.notas,
-          estado: isCredito ? 'REGISTRADA' : 'PAGADA',
-          estadoRecepcion: 'PENDIENTE',
-          items: dto.items && dto.items.length > 0 ? {
-            create: dto.items.map(item => ({
-              productoId: item.productoId,
-              cantidad: item.cantidad,
-              costoUnitario: item.costoUnitario,
-              subtotal: item.subtotal,
-            }))
-          } : undefined
-        },
-      });
-
-      // Actualizar costos del producto al registrar la Factura de Compra (Último Costo, Costo Base y Costo Promedio CPP)
-      if (dto.items && dto.items.length > 0) {
-        for (const item of dto.items) {
-          const productoId = Number(item.productoId);
-          const costoUnit = Number(item.costoUnitario || 0);
-          const cantNueva = Math.max(0, Number(item.cantidad || 0));
-
-          if (productoId && costoUnit > 0) {
-            const { nuevoCPP } = await calcularNuevoCPP(tx, {
-              productoId,
-              empresaId,
-              cantNueva: cantNueva > 0 ? cantNueva : 1,
-              costoUnitario: costoUnit,
-            });
-
-            await tx.producto.update({
-              where: { id: productoId },
-              data: {
-                costoUltimo: costoUnit,
-                costo: costoUnit,
-                costoPromedio: nuevoCPP,
-              },
-            });
-          }
-        }
-      }
-
-      // Si viene vinculada a una Orden de Compra, actualizamos el estado de la OC
-      if (dto.ordenCompraId) {
-        await tx.ordenCompra.update({
-          where: { id: dto.ordenCompraId },
-          data: { estado: 'FACTURADA' },
-        });
-      }
-
-      // 2. Causación Contable Automatizada (PUC 1435 vs 2205)
-      // Resolver cuenta de inventario desde la clasificación contable o el grupo de los productos de la factura
-      let cuentaInventarioCodigo = null;
-      if (dto.items && dto.items.length > 0) {
-        const primerItem = await tx.producto.findUnique({
-          where: { id: dto.items[0].productoId },
-          include: { clasificacion: true, grupo: true }
-        });
-        if (primerItem?.grupo?.contable && (primerItem.grupo.contable as any).compras) {
-          cuentaInventarioCodigo = (primerItem.grupo.contable as any).compras;
-        } else if (primerItem?.clasificacion?.pucCuenta) {
-          cuentaInventarioCodigo = primerItem.clasificacion.pucCuenta;
-        }
-      }
-
-      let cuentaInventario = null;
-      if (cuentaInventarioCodigo) {
-        cuentaInventario = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: cuentaInventarioCodigo }
-        });
-      }
-
-      if (!cuentaInventario) {
-        cuentaInventario = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: { in: ['143505', '1435'] } },
-        });
-        if (!cuentaInventario) {
-          cuentaInventario = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: { startsWith: '1435' } },
-          });
-        }
-      }
-
-      let cuentaProveedores = await tx.cuentaPUC.findFirst({
-        where: { empresaId, codigo: { in: ['220505', '2205'] } },
-      });
-      if (!cuentaProveedores) {
-        cuentaProveedores = await tx.cuentaPUC.findFirst({
-          where: { empresaId, codigo: { startsWith: '2205' } },
-        });
-      }
-
-      if (!cuentaInventario || !cuentaProveedores) {
-        throw new BadRequestException(
-          'No se pueden generar asientos contables automáticos porque las cuentas de Inventario (1435) y/o Proveedores (2205) no están configuradas en su catálogo PUC.'
-        );
-      }
-
-      const netMerchandise = Number(dto.subtotal) - Number(dto.descuento ?? 0);
-      const ivaVal = Number(dto.iva ?? 0);
-      const totalVal = Number(dto.total);
-
-      const lineas: any[] = [];
-
-      // Inventario (1435) Débito
-      lineas.push({
-        cuentaId: cuentaInventario.id,
-        descripcion: `Compra mercancía - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-        debito: netMerchandise,
-        credito: 0,
-        terceroNit: proveedor.numeroDocumento,
-        terceroNombre: proveedor.nombre,
-      });
-
-      // IVA descontable (240810) Débito (si aplica)
-      if (ivaVal > 0) {
-        let cuentaIvaCodigo = null;
-
-        // Intentar buscar la cuenta de compras (cuentaCredito) del impuesto de IVA asociado a los productos de la factura
-        if (dto.items && dto.items.length > 0) {
-          const productIds = dto.items.map(it => it.productoId);
-          const prodImpuesto = await tx.productoImpuesto.findFirst({
-            where: {
-              productoId: { in: productIds },
-              impuesto: { tipo: 'IVA', cuentaCredito: { not: null } }
-            },
-            include: { impuesto: true }
-          });
-          if (prodImpuesto?.impuesto?.cuentaCredito) {
-            cuentaIvaCodigo = prodImpuesto.impuesto.cuentaCredito;
-          }
-        }
-
-        let cuentaIva = null;
-        if (cuentaIvaCodigo) {
-          cuentaIva = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: cuentaIvaCodigo }
-          });
-        }
-
-        if (!cuentaIva) {
-          cuentaIva = await tx.cuentaPUC.findFirst({
-            where: { empresaId, codigo: { in: ['240810', '2408'] } },
-          });
-          if (!cuentaIva) {
-            cuentaIva = await tx.cuentaPUC.findFirst({
-              where: { empresaId, codigo: { startsWith: '2408' } },
-            });
-          }
-        }
-
-        if (cuentaIva) {
-          lineas.push({
-            cuentaId: cuentaIva.id,
-            descripcion: `IVA descontable compras - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-            debito: ivaVal,
-            credito: 0,
-            terceroNit: proveedor.numeroDocumento,
-            terceroNombre: proveedor.nombre,
-          });
-        } else {
-          // Si no existe, se suma al inventario (mayor valor del costo de mercancía)
-          lineas[0].debito += ivaVal;
-        }
-      }
-
-      // Proveedores (2205) Crédito
-      lineas.push({
-        cuentaId: cuentaProveedores.id,
-        descripcion: `Obligación con proveedores - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-        debito: 0,
-        credito: totalVal,
-        terceroNit: proveedor.numeroDocumento,
-        terceroNombre: proveedor.nombre,
-      });
-
-      // Validar cuadre de partida doble
-      const sumDebito = lineas.reduce((a, b) => a + b.debito, 0);
-      const sumCredito = lineas.reduce((a, b) => a + b.credito, 0);
-      if (Math.abs(sumDebito - sumCredito) > 0.01) {
-        // Ajustamos diferencia por centavos en el inventario
-        const diff = sumCredito - sumDebito;
-        lineas[0].debito += diff;
-      }
-
-      // Obtener o crear período contable
-      const fecha = new Date(dto.fechaEmision);
-      const anio = fecha.getFullYear();
-      const mes = fecha.getMonth() + 1;
-      const periodo = await tx.periodoContable.upsert({
-        where: { empresaId_anio_mes: { empresaId, anio, mes } },
-        create: { empresaId, anio, mes },
-        update: {},
-      });
-
-      if (periodo.estado === 'CERRADO') {
-        throw new BadRequestException(`El período contable ${mes}/${anio} está cerrado`);
-      }
-
-      // Generar consecutivo del comprobante
-      const lastComp = await tx.comprobante.findFirst({
-        where: { empresaId, tipo: 'FP' },
-        orderBy: { id: 'desc' },
-      });
-      const seqComp = lastComp ? parseInt(lastComp.numero.split('-').pop() ?? '0') + 1 : 1;
-      const numComp = `FP-${anio}-${seqComp}`;
-
-      // Crear el comprobante contable directamente
-      await tx.comprobante.create({
-        data: {
-          empresaId,
-          numero: numComp,
-          tipo: 'FP',
-          concepto: `Causación Factura de Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-          fecha,
-          periodoId: periodo.id,
-          referenciaId: fc.id,
-          referenciaTipo: 'FACTURA_COMPRA',
-          usuarioId,
-          lineas: {
-            create: lineas.map((l, idx) => ({
-              cuentaId: l.cuentaId,
-              descripcion: l.descripcion,
-              debito: l.debito,
-              credito: l.credito,
-              terceroNit: l.terceroNit,
-              terceroNombre: l.terceroNombre,
-              orden: idx,
-            })),
-          },
-        },
-      });
-
-      // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Egreso (CE)
-      let pagosProcesados: {
-        cajaBancoId?: number;
-        cajaBancoNombre: string;
-        medioPago: string;
-        monto: number;
-        referencia?: string;
-        cuentaPuc: any;
-      }[] = [];
-
-      if (tienePagosMixtos) {
-        for (const p of dto.pagos!) {
-          let cbObj: any = null;
-          let ctPuc: any = null;
-          if (p.cajaBancoId) {
-            cbObj = await tx.cajaBanco.findFirst({
-              where: { id: p.cajaBancoId, empresaId },
-            });
-            if (cbObj?.cuentaPUC) {
-              ctPuc = await tx.cuentaPUC.findFirst({
-                where: { empresaId, codigo: cbObj.cuentaPUC },
+            if (cajaBancoObj?.cuentaPUC) {
+              cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+                where: { empresaId, codigo: cajaBancoObj.cuentaPUC },
               });
             }
           }
-          if (!ctPuc) {
-            const defCod = cbObj?.tipo === 'CAJA' ? '110505' : '111005';
-            ctPuc = await tx.cuentaPUC.findFirst({
+
+          if (!cuentaTesoreriaPuc) {
+            const defCod = cajaBancoObj?.tipo === 'CAJA' ? '110505' : '111005';
+            cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
               where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
             });
           }
-          if (!ctPuc) {
-            ctPuc = cuentaTesoreriaPuc || await tx.cuentaPUC.findFirst({ where: { empresaId, codigo: { startsWith: '11' } } });
+          if (!cuentaTesoreriaPuc) {
+            cuentaTesoreriaPuc = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { startsWith: '11' } },
+            });
           }
+          if (!cuentaTesoreriaPuc) {
+            cuentaTesoreriaPuc = await tx.cuentaPUC.create({
+              data: {
+                empresaId,
+                codigo: '110505',
+                nombre: 'Caja general',
+                tipo: 'ACTIVO',
+                nivel: 4,
+                permiteMovimiento: true,
+                activo: true,
+              },
+            }).catch(() => null);
+          }
+        }
 
-          pagosProcesados.push({
-            cajaBancoId: p.cajaBancoId,
-            cajaBancoNombre: cbObj?.nombre || 'Tesorería',
-            medioPago: p.medioPago || 'TRANSFERENCIA',
-            monto: Number(p.monto),
-            referencia: p.referencia,
-            cuentaPuc: ctPuc,
+        // 1. Persistir la factura de compra
+        const tienePagosMixtos = !isCredito && Array.isArray(dto.pagos) && dto.pagos.length > 0;
+        const fc = await tx.facturaCompra.create({
+          data: {
+            empresaId,
+            numero,
+            documentoConfigId: dto.documentoConfigId,
+            documentoCxpId: docCxpId,
+            numeroCxp: numeroCxp,
+            documentoCeId: docCeId,
+            numeroCe: numeroCe,
+            cajaBancoId: tienePagosMixtos ? dto.pagos![0].cajaBancoId : (dto.cajaBancoId || undefined),
+            prefijoProveedor: dto.prefijoProveedor,
+            consecutivoProveedor: dto.consecutivoProveedor,
+            proveedorId: dto.proveedorId,
+            ordenCompraId: dto.ordenCompraId,
+            recepcionId: dto.recepcionId || undefined,
+            fechaEmision: new Date(dto.fechaEmision),
+            fechaVencimiento: fechaVenc,
+            formaPago: dto.formaPago || (dto.fechaVencimiento ? 'CREDITO' : 'CONTADO'),
+            medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || undefined),
+            diasCredito: dto.diasCredito !== undefined ? Number(dto.diasCredito) : (isCredito ? 30 : 0),
+            saldo: saldoNum,
+            totalPagado: totalPagadoNum,
+            subtotal: dto.subtotal,
+            descuento: dto.descuento ?? 0,
+            iva: dto.iva ?? 0,
+            total: dto.total,
+            xmlAdjunto: dto.xmlAdjunto,
+            notas: dto.notas,
+            estado: isCredito ? 'REGISTRADA' : 'PAGADA',
+            estadoRecepcion: dto.recepcionId ? 'RECIBIDO' : 'PENDIENTE',
+            items: dto.items && dto.items.length > 0 ? {
+              create: dto.items.map(item => ({
+                productoId: item.productoId,
+                cantidad: item.cantidad,
+                costoUnitario: item.costoUnitario,
+                subtotal: item.subtotal,
+                cantidadRecibida: dto.recepcionId ? item.cantidad : 0,
+              }))
+            } : undefined
+          },
+        });
+
+        // Si viene con cruce directo a una Recepción (RP), asociarla a la FC
+        if (dto.recepcionId) {
+          const rpExistente = await tx.recepcionMercancia.findFirst({
+            where: { empresaId, numero: dto.recepcionId },
+          });
+          if (rpExistente) {
+            await tx.recepcionMercancia.update({
+              where: { id: rpExistente.id },
+              data: { facturaCompraId: fc.id },
+            });
+          }
+        }
+
+        // Actualizar costos del producto al registrar la Factura de Compra (Último Costo, Costo Base y Costo Promedio CPP)
+        if (dto.items && dto.items.length > 0) {
+          for (const item of dto.items) {
+            const productoId = Number(item.productoId);
+            const costoUnit = Number(item.costoUnitario || 0);
+            const cantNueva = Math.max(0, Number(item.cantidad || 0));
+
+            if (productoId && costoUnit > 0) {
+              const { nuevoCPP } = await calcularNuevoCPP(tx, {
+                productoId,
+                empresaId,
+                cantNueva: cantNueva > 0 ? cantNueva : 1,
+                costoUnitario: costoUnit,
+              });
+
+              await tx.producto.update({
+                where: { id: productoId },
+                data: {
+                  costoUltimo: costoUnit,
+                  costo: costoUnit,
+                  costoPromedio: nuevoCPP,
+                },
+              });
+            }
+          }
+        }
+
+        // Si viene vinculada a una Orden de Compra, actualizamos el estado de la OC
+        if (dto.ordenCompraId) {
+          await tx.ordenCompra.update({
+            where: { id: dto.ordenCompraId },
+            data: { estado: 'FACTURADA' },
           });
         }
-      } else if (cuentaTesoreriaPuc) {
-        pagosProcesados.push({
-          cajaBancoId: dto.cajaBancoId || 0,
-          cajaBancoNombre: cajaBancoObj?.nombre || 'Tesorería',
-          medioPago: dto.medioPago || 'TRANSFERENCIA',
-          monto: totalNum,
-          cuentaPuc: cuentaTesoreriaPuc,
+
+        // 2. Causación Contable Automatizada (PUC 1435 vs 2205)
+        // Resolver cuenta de inventario desde la clasificación contable o el grupo de los productos de la factura
+        let cuentaInventarioCodigo = null;
+        if (dto.items && dto.items.length > 0) {
+          const primerItem = await tx.producto.findUnique({
+            where: { id: dto.items[0].productoId },
+            include: { clasificacion: true, grupo: true }
+          });
+          if (primerItem?.grupo?.contable && (primerItem.grupo.contable as any).compras) {
+            cuentaInventarioCodigo = (primerItem.grupo.contable as any).compras;
+          } else if (primerItem?.clasificacion?.pucCuenta) {
+            cuentaInventarioCodigo = primerItem.clasificacion.pucCuenta;
+          }
+        }
+
+        let cuentaInventario = null;
+        if (cuentaInventarioCodigo) {
+          cuentaInventario = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: cuentaInventarioCodigo }
+          });
+        }
+
+        if (!cuentaInventario) {
+          cuentaInventario = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: { in: ['143505', '1435', '1405', '14'] } },
+          });
+          if (!cuentaInventario) {
+            cuentaInventario = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { startsWith: '14' } },
+            });
+          }
+        }
+
+        let cuentaProveedores = await tx.cuentaPUC.findFirst({
+          where: { empresaId, codigo: { in: ['220505', '2205', '220501', '22'] } },
         });
-      }
+        if (!cuentaProveedores) {
+          cuentaProveedores = await tx.cuentaPUC.findFirst({
+            where: { empresaId, codigo: { startsWith: '22' } },
+          });
+        }
 
-      if (!isCredito && cuentaProveedores && pagosProcesados.length > 0) {
-        const detallePagosStr = tienePagosMixtos
-          ? pagosProcesados.map(p => `${p.medioPago} (${p.cajaBancoNombre}): $${Math.round(p.monto).toLocaleString('es-CO')}`).join(' | ')
-          : '';
+        if (!cuentaInventario) {
+          cuentaInventario = await tx.cuentaPUC.create({
+            data: {
+              empresaId,
+              codigo: '143505',
+              nombre: 'Mercancías no fabricadas por la empresa',
+              tipo: 'ACTIVO',
+              nivel: 4,
+              permiteMovimiento: true,
+              activo: true,
+            },
+          }).catch(() => null);
+        }
 
-        const conceptoEgreso = tienePagosMixtos
-          ? `Pago FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor} [Pago Mixto: ${detallePagosStr}]`
-          : `Pago Factura Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`;
+        if (!cuentaProveedores) {
+          cuentaProveedores = await tx.cuentaPUC.create({
+            data: {
+              empresaId,
+              codigo: '220505',
+              nombre: 'Proveedores nacionales',
+              tipo: 'PASIVO',
+              nivel: 4,
+              permiteMovimiento: true,
+              activo: true,
+            },
+          }).catch(() => null);
+        }
 
-        const egreso = await tx.egreso.create({
-          data: {
-            empresaId,
-            numero: numeroCe || `CE-${anio}-${fc.id}`,
-            fecha,
-            terceroId: dto.proveedorId,
-            beneficiarioNombre: proveedor.nombre,
-            beneficiarioDoc: proveedor.numeroDocumento,
-            categoriaGasto: 'COMPRA MERCANCIA',
-            concepto: conceptoEgreso,
-            referencia: fc.numero,
-            cuentaGastoId: cuentaProveedores.id,
-            cajaBancoId: pagosProcesados[0]?.cajaBancoId || dto.cajaBancoId || undefined,
-            medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || 'TRANSFERENCIA'),
-            monto: totalNum,
-            montoNeto: totalNum,
-            estado: 'APROBADO',
-            usuarioId,
-            documentoConfigId: docCeId || undefined,
-          },
+        if (!cuentaInventario || !cuentaProveedores) {
+          throw new BadRequestException(
+            'No se pueden generar asientos contables automáticos porque las cuentas de Inventario (1435) y/o Proveedores (2205) no están configuradas en su catálogo PUC.'
+          );
+        }
+
+        const netMerchandise = Number(dto.subtotal) - Number(dto.descuento ?? 0);
+        const ivaVal = Number(dto.iva ?? 0);
+        const totalVal = Number(dto.total);
+
+        const lineas: any[] = [];
+
+        // Inventario (1435) Débito
+        lineas.push({
+          cuentaId: cuentaInventario.id,
+          descripcion: `Compra mercancía - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+          debito: netMerchandise,
+          credito: 0,
+          terceroNit: proveedor.numeroDocumento,
+          terceroNombre: proveedor.nombre,
         });
 
-        // Consecutivo del comprobante de egreso (CE)
-        const lastCompEgreso = await tx.comprobante.findFirst({
-          where: { empresaId, tipo: 'CE' },
+        // IVA descontable (240810) Débito (si aplica)
+        if (ivaVal > 0) {
+          let cuentaIvaCodigo = null;
+
+          if (dto.items && dto.items.length > 0) {
+            const productIds = dto.items.map(it => it.productoId);
+            const prodImpuesto = await tx.productoImpuesto.findFirst({
+              where: {
+                productoId: { in: productIds },
+                impuesto: { tipo: 'IVA', cuentaCredito: { not: null } }
+              },
+              include: { impuesto: true }
+            });
+            if (prodImpuesto?.impuesto?.cuentaCredito) {
+              cuentaIvaCodigo = prodImpuesto.impuesto.cuentaCredito;
+            }
+          }
+
+          let cuentaIva = null;
+          if (cuentaIvaCodigo) {
+            cuentaIva = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: cuentaIvaCodigo }
+            });
+          }
+
+          if (!cuentaIva) {
+            cuentaIva = await tx.cuentaPUC.findFirst({
+              where: { empresaId, codigo: { in: ['240810', '2408', '240802'] } },
+            });
+            if (!cuentaIva) {
+              cuentaIva = await tx.cuentaPUC.findFirst({
+                where: { empresaId, codigo: { startsWith: '2408' } },
+              });
+            }
+          }
+
+          if (cuentaIva) {
+            lineas.push({
+              cuentaId: cuentaIva.id,
+              descripcion: `IVA descontable compras - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+              debito: ivaVal,
+              credito: 0,
+              terceroNit: proveedor.numeroDocumento,
+              terceroNombre: proveedor.nombre,
+            });
+          } else {
+            // Si no existe, se suma al inventario (mayor valor del costo de mercancía)
+            lineas[0].debito += ivaVal;
+          }
+        }
+
+        // Proveedores (2205) Crédito
+        lineas.push({
+          cuentaId: cuentaProveedores.id,
+          descripcion: `Obligación con proveedores - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+          debito: 0,
+          credito: totalVal,
+          terceroNit: proveedor.numeroDocumento,
+          terceroNombre: proveedor.nombre,
+        });
+
+        // Validar cuadre de partida doble
+        const sumDebito = lineas.reduce((a, b) => a + b.debito, 0);
+        const sumCredito = lineas.reduce((a, b) => a + b.credito, 0);
+        if (Math.abs(sumDebito - sumCredito) > 0.01) {
+          const diff = sumCredito - sumDebito;
+          lineas[0].debito += diff;
+        }
+
+        // Obtener o crear período contable
+        const fecha = new Date(dto.fechaEmision);
+        const anio = fecha.getFullYear();
+        const mes = fecha.getMonth() + 1;
+        const periodo = await tx.periodoContable.upsert({
+          where: { empresaId_anio_mes: { empresaId, anio, mes } },
+          create: { empresaId, anio, mes },
+          update: {},
+        });
+
+        if (periodo.estado === 'CERRADO') {
+          throw new BadRequestException(`El período contable ${mes}/${anio} está cerrado`);
+        }
+
+        // Generar consecutivo del comprobante
+        const lastComp = await tx.comprobante.findFirst({
+          where: { empresaId, tipo: 'FP' },
           orderBy: { id: 'desc' },
         });
-        const seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
-        const numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
+        let seqComp = lastComp ? parseInt(lastComp.numero.split('-').pop() ?? '0') + 1 : 1;
+        let numComp = `FP-${anio}-${seqComp}`;
+        while (await tx.comprobante.findFirst({ where: { empresaId, numero: numComp } })) {
+          seqComp++;
+          numComp = `FP-${anio}-${seqComp}`;
+        }
 
-        const lineasEgreso = [
-          {
-            cuentaId: cuentaProveedores.id,
-            descripcion: `Cancelación proveedor - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
-            debito: totalNum,
-            credito: 0,
-            terceroNit: proveedor.numeroDocumento,
-            terceroNombre: proveedor.nombre,
-            orden: 0,
-          },
-          ...pagosProcesados.map((p, idx) => ({
-            cuentaId: p.cuentaPuc.id,
-            descripcion: `Salida fondos ${p.cajaBancoNombre} [${p.medioPago}] - ${egreso.numero}${p.referencia ? ` (Ref: ${p.referencia})` : ''}`,
-            debito: 0,
-            credito: p.monto,
-            terceroNit: proveedor.numeroDocumento,
-            terceroNombre: proveedor.nombre,
-            orden: idx + 1,
-          })),
-        ];
-
-        const compEgreso = await tx.comprobante.create({
+        // Crear el comprobante contable directamente
+        await tx.comprobante.create({
           data: {
             empresaId,
-            numero: numeroCe || numCompEgreso,
-            tipo: 'CE',
-            concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}${tienePagosMixtos ? ' [Pago Mixto]' : ''}`,
+            numero: numComp,
+            tipo: 'FP',
+            concepto: `Causación Factura de Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
             fecha,
             periodoId: periodo.id,
-            referenciaId: egreso.id,
-            referenciaTipo: 'EGRESO',
+            referenciaId: fc.id,
+            referenciaTipo: 'FACTURA_COMPRA',
             usuarioId,
             lineas: {
-              create: lineasEgreso,
+              create: lineas.map((l, idx) => ({
+                cuentaId: l.cuentaId,
+                descripcion: l.descripcion,
+                debito: l.debito,
+                credito: l.credito,
+                terceroNit: l.terceroNit,
+                terceroNombre: l.terceroNombre,
+                orden: idx,
+              })),
             },
           },
         });
 
-        await tx.egreso.update({
-          where: { id: egreso.id },
-          data: { comprobanteId: compEgreso.id },
-        });
+        // 3. Si la compra es de CONTADO, generar automáticamente el Egreso (CE) y Comprobante de Egreso (CE)
+        let pagosProcesados: {
+          cajaBancoId?: number;
+          cajaBancoNombre: string;
+          medioPago: string;
+          monto: number;
+          referencia?: string;
+          cuentaPuc: any;
+        }[] = [];
 
-        await tx.facturaCompra.update({
-          where: { id: fc.id },
-          data: { egresoId: egreso.id },
-        });
+        if (tienePagosMixtos) {
+          for (const p of dto.pagos!) {
+            let cbObj: any = null;
+            let ctPuc: any = null;
+            if (p.cajaBancoId) {
+              cbObj = await tx.cajaBanco.findFirst({
+                where: { id: p.cajaBancoId, empresaId },
+              });
+              if (cbObj?.cuentaPUC) {
+                ctPuc = await tx.cuentaPUC.findFirst({
+                  where: { empresaId, codigo: cbObj.cuentaPUC },
+                });
+              }
+            }
+            if (!ctPuc) {
+              const defCod = cbObj?.tipo === 'CAJA' ? '110505' : '111005';
+              ctPuc = await tx.cuentaPUC.findFirst({
+                where: { empresaId, codigo: { in: [defCod, '110505', '1105', '111005', '1110'] } },
+              });
+            }
+            if (!ctPuc) {
+              ctPuc = cuentaTesoreriaPuc || await tx.cuentaPUC.findFirst({ where: { empresaId, codigo: { startsWith: '11' } } });
+            }
+
+            pagosProcesados.push({
+              cajaBancoId: p.cajaBancoId,
+              cajaBancoNombre: cbObj?.nombre || 'Tesorería',
+              medioPago: p.medioPago || 'TRANSFERENCIA',
+              monto: Number(p.monto),
+              referencia: p.referencia,
+              cuentaPuc: ctPuc || cuentaTesoreriaPuc || cuentaProveedores,
+            });
+          }
+        } else if (cuentaTesoreriaPuc) {
+          pagosProcesados.push({
+            cajaBancoId: dto.cajaBancoId || 0,
+            cajaBancoNombre: cajaBancoObj?.nombre || 'Tesorería',
+            medioPago: dto.medioPago || 'TRANSFERENCIA',
+            monto: totalNum,
+            cuentaPuc: cuentaTesoreriaPuc,
+          });
+        }
+
+        if (!isCredito && cuentaProveedores && pagosProcesados.length > 0) {
+          const detallePagosStr = tienePagosMixtos
+            ? pagosProcesados.map(p => `${p.medioPago} (${p.cajaBancoNombre}): $${Math.round(p.monto).toLocaleString('es-CO')}`).join(' | ')
+            : '';
+
+          const conceptoEgreso = tienePagosMixtos
+            ? `Pago FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor} [Pago Mixto: ${detallePagosStr}]`
+            : `Pago Factura Compra ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`;
+
+          const egreso = await tx.egreso.create({
+            data: {
+              empresaId,
+              numero: numeroCe || `CE-${anio}-${fc.id}`,
+              fecha,
+              terceroId: dto.proveedorId,
+              beneficiarioNombre: proveedor.nombre,
+              beneficiarioDoc: proveedor.numeroDocumento,
+              categoriaGasto: 'COMPRA MERCANCIA',
+              concepto: conceptoEgreso,
+              referencia: fc.numero,
+              cuentaGastoId: cuentaProveedores.id,
+              cajaBancoId: pagosProcesados[0]?.cajaBancoId || dto.cajaBancoId || undefined,
+              medioPago: tienePagosMixtos ? 'MIXTO' : (dto.medioPago || 'TRANSFERENCIA'),
+              monto: totalNum,
+              montoNeto: totalNum,
+              estado: 'APROBADO',
+              usuarioId,
+              documentoConfigId: docCeId || undefined,
+            },
+          });
+
+          // Consecutivo del comprobante de egreso (CE)
+          const lastCompEgreso = await tx.comprobante.findFirst({
+            where: { empresaId, tipo: 'CE' },
+            orderBy: { id: 'desc' },
+          });
+          let seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
+          let numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
+          while (
+            (await tx.comprobante.findFirst({ where: { empresaId, numero: numCompEgreso } })) ||
+            (numeroCe && numCompEgreso === numeroCe)
+          ) {
+            seqCompEgreso++;
+            numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
+          }
+
+          let finalNumeroCompEgreso = numeroCe;
+          if (!finalNumeroCompEgreso || (await tx.comprobante.findFirst({ where: { empresaId, numero: finalNumeroCompEgreso } }))) {
+            finalNumeroCompEgreso = numCompEgreso;
+          }
+
+          const lineasEgreso = [
+            {
+              cuentaId: cuentaProveedores.id,
+              descripcion: `Cancelación proveedor - FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}`,
+              debito: totalNum,
+              credito: 0,
+              terceroNit: proveedor.numeroDocumento,
+              terceroNombre: proveedor.nombre,
+              orden: 0,
+            },
+            ...pagosProcesados.map((p, idx) => ({
+              cuentaId: p.cuentaPuc?.id || cuentaTesoreriaPuc?.id || cuentaProveedores.id,
+              descripcion: `Salida fondos ${p.cajaBancoNombre} [${p.medioPago}] - ${egreso.numero}${p.referencia ? ` (Ref: ${p.referencia})` : ''}`,
+              debito: 0,
+              credito: p.monto,
+              terceroNit: proveedor.numeroDocumento,
+              terceroNombre: proveedor.nombre,
+              orden: idx + 1,
+            })),
+          ];
+
+          const compEgreso = await tx.comprobante.create({
+            data: {
+              empresaId,
+              numero: finalNumeroCompEgreso,
+              tipo: 'CE',
+              concepto: `Egreso ${egreso.numero} - Cancelación FC ${dto.prefijoProveedor ?? ''} ${dto.consecutivoProveedor}${tienePagosMixtos ? ' [Pago Mixto]' : ''}`,
+              fecha,
+              periodoId: periodo.id,
+              referenciaId: egreso.id,
+              referenciaTipo: 'EGRESO',
+              usuarioId,
+              lineas: {
+                create: lineasEgreso,
+              },
+            },
+          });
+
+          await tx.egreso.update({
+            where: { id: egreso.id },
+            data: { comprobanteId: compEgreso.id },
+          });
+
+          await tx.facturaCompra.update({
+            where: { id: fc.id },
+            data: { egresoId: egreso.id },
+          });
+        }
+
+        return fc;
+      });
+    } catch (err: any) {
+      console.error('[FacturasCompraService.create] Error al registrar factura de compra:', err);
+      if (err instanceof BadRequestException || err instanceof NotFoundException || err instanceof ConflictException) {
+        throw err;
       }
-
-      return fc;
-    });
+      throw new BadRequestException(
+        `Error al procesar la factura de compra: ${err?.message || 'Error interno de base de datos'}`
+      );
+    }
   }
 
   async anular(id: number, empresaId: number, motivo?: string, usuarioId?: number) {
@@ -819,16 +950,25 @@ export class FacturasCompraService implements OnModuleInit {
       }
 
       if (docConfig) {
-        numeroRec = `${docConfig.prefijo}-${docConfig.consecutivoSiguiente}`;
+        let consecutivo = docConfig.consecutivoSiguiente;
+        numeroRec = `${docConfig.prefijo}-${consecutivo}`;
+        while (await tx.recepcionMercancia.findFirst({ where: { empresaId, numero: numeroRec } })) {
+          consecutivo++;
+          numeroRec = `${docConfig.prefijo}-${consecutivo}`;
+        }
         await tx.documentoConfig.update({
           where: { id: docConfig.id },
-          data: { consecutivoSiguiente: { increment: 1 } },
+          data: { consecutivoSiguiente: consecutivo + 1 },
         });
       } else {
-        const recCount = await tx.recepcionMercancia.count({
+        let recCount = await tx.recepcionMercancia.count({
           where: { empresaId, numero: { startsWith: `RP-${year}-` } },
         });
         numeroRec = `RP-${year}-${String(recCount + 1).padStart(5, '0')}`;
+        while (await tx.recepcionMercancia.findFirst({ where: { empresaId, numero: numeroRec } })) {
+          recCount++;
+          numeroRec = `RP-${year}-${String(recCount + 1).padStart(5, '0')}`;
+        }
       }
 
       // 1. Crear RecepcionMercancia
@@ -912,7 +1052,12 @@ export class FacturasCompraService implements OnModuleInit {
         const movCount = await tx.movimientoInventario.count({
           where: { empresaId, numero: { startsWith: `MOV-${year}-` } },
         });
-        const numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
+        let numMov = `MOV-${year}-${String(movCount + 1).padStart(5, '0')}`;
+        let movSeq = 1;
+        while (await tx.movimientoInventario.findFirst({ where: { empresaId, numero: numMov } })) {
+          numMov = `MOV-${year}-${String(movCount + 1 + movSeq).padStart(5, '0')}`;
+          movSeq++;
+        }
 
         await tx.movimientoInventario.create({
           data: {
@@ -1062,18 +1207,33 @@ export class FacturasCompraService implements OnModuleInit {
 
       let numeroCe: string;
       if (docCe) {
-        numeroCe = `${docCe.prefijo}-${docCe.consecutivoSiguiente}`;
+        let consecutivo = docCe.consecutivoSiguiente;
+        numeroCe = `${docCe.prefijo}-${consecutivo}`;
+        while (
+          (await tx.egreso.findFirst({ where: { empresaId, numero: numeroCe } })) ||
+          (await tx.comprobante.findFirst({ where: { empresaId, numero: numeroCe } }))
+        ) {
+          consecutivo++;
+          numeroCe = `${docCe.prefijo}-${consecutivo}`;
+        }
         await tx.documentoConfig.update({
           where: { id: docCe.id },
-          data: { consecutivoSiguiente: { increment: 1 } },
+          data: { consecutivoSiguiente: consecutivo + 1 },
         });
       } else {
         const lastEgreso = await tx.egreso.findFirst({
           where: { empresaId },
           orderBy: { id: 'desc' },
         });
-        const seqEgreso = lastEgreso ? parseInt(lastEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
+        let seqEgreso = lastEgreso ? parseInt(lastEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
         numeroCe = `CE-${anio}-${seqEgreso}`;
+        while (
+          (await tx.egreso.findFirst({ where: { empresaId, numero: numeroCe } })) ||
+          (await tx.comprobante.findFirst({ where: { empresaId, numero: numeroCe } }))
+        ) {
+          seqEgreso++;
+          numeroCe = `CE-${anio}-${seqEgreso}`;
+        }
       }
 
       // 2. Resolver Cuentas Contables (2205 Proveedores y 1105/1110 Tesorería)
@@ -1213,7 +1373,7 @@ export class FacturasCompraService implements OnModuleInit {
             orden: 0,
           },
           ...pagosProcesados.map((p, idx) => ({
-            cuentaId: p.cuentaPuc.id,
+            cuentaId: p.cuentaPuc?.id || cuentaTesoreriaPuc?.id || cuentaProveedores.id,
             descripcion: `Salida fondos ${p.cajaBancoNombre} [${p.medioPago}] - ${numeroCe}${p.referencia ? ` (Ref: ${p.referencia})` : ''}`,
             debito: 0,
             credito: p.monto,
@@ -1223,10 +1383,30 @@ export class FacturasCompraService implements OnModuleInit {
           })),
         ];
 
+        // Asegurar que el número de Comprobante no colisione
+        const lastCompEgreso = await tx.comprobante.findFirst({
+          where: { empresaId, tipo: 'CE' },
+          orderBy: { id: 'desc' },
+        });
+        let seqCompEgreso = lastCompEgreso ? parseInt(lastCompEgreso.numero.split('-').pop() ?? '0') + 1 : 1;
+        let numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
+        while (
+          (await tx.comprobante.findFirst({ where: { empresaId, numero: numCompEgreso } })) ||
+          (numeroCe && numCompEgreso === numeroCe)
+        ) {
+          seqCompEgreso++;
+          numCompEgreso = `CE-${anio}-${seqCompEgreso}`;
+        }
+
+        let finalNumeroCompEgreso = numeroCe;
+        if (!finalNumeroCompEgreso || (await tx.comprobante.findFirst({ where: { empresaId, numero: finalNumeroCompEgreso } }))) {
+          finalNumeroCompEgreso = numCompEgreso;
+        }
+
         const compEgreso = await tx.comprobante.create({
           data: {
             empresaId,
-            numero: numeroCe,
+            numero: finalNumeroCompEgreso,
             tipo: 'CE',
             concepto: `Egreso ${numeroCe} - Pago FC ${fc.prefijoProveedor ?? ''} ${fc.consecutivoProveedor}${tienePagosMixtos ? ' [Pago Mixto]' : ''}`,
             fecha,
