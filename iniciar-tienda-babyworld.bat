@@ -7,12 +7,12 @@ echo   Distribuidora BabyWorld - Tienda Virtual
 echo ==============================================================
 echo.
 
-:: 1. Si la tienda está corriendo en Docker (puerto oficial local: 3005)
+:: 1. Si la tienda est? corriendo en Docker (puerto oficial local: 3005)
 where docker >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     docker ps | findstr /i "edatia-glowxir" >nul
     if %ERRORLEVEL% EQU 0 (
-        echo [OK] La tienda está activa en Docker en el puerto 3005.
+        echo [OK] La tienda est? activa en Docker en el puerto 3005.
         echo Abriendo en tu navegador: http://localhost:3005 ...
         start http://localhost:3005
         exit /b 0
@@ -22,7 +22,7 @@ if %ERRORLEVEL% EQU 0 (
 :: 2. Si no corre en Docker, intentar con Node.js / Vite nativo
 where npm >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo [AVISO] Node.js / npm no está en el PATH y el contenedor Docker no está activo.
+    echo [AVISO] Node.js / npm no est? en el PATH y el contenedor Docker no est? activo.
     echo Si tienes Docker Desktop, inicia los contenedores con:
     echo   docker compose up -d glowxir
     echo Y abre: http://localhost:3005

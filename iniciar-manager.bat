@@ -12,7 +12,7 @@ if exist ".\manager" (
 ) else if exist ".\edatia\manager" (
     cd ".\edatia\manager"
 ) else (
-    echo [ERROR] No se encontró el directorio manager.
+    echo [ERROR] No se encontr? el directorio manager.
     pause
     exit /b 1
 )

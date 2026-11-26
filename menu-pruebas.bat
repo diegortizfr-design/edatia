@@ -1,9 +1,4 @@
 @echo off
-if exist "%SystemRoot%\System32\chcp.com" (
-    %SystemRoot%\System32\chcp.com 65001 >nul 2>&1
-) else (
-    chcp 65001 >nul 2>&1
-)
 title Entorno de Pruebas - Edatia Suite
 
 :MENU
@@ -12,9 +7,9 @@ echo ==============================================================
 echo              EDATIA - ENTORNO DE PRUEBAS LOCAL
 echo ==============================================================
 echo.
-echo  Selecciona qué aplicación deseas iniciar en modo desarrollo:
+echo  Selecciona la aplicacion que deseas iniciar en desarrollo:
 echo.
-echo  [1] Tienda Smash Tenis & Pádel (http://localhost:3006)
+echo  [1] Tienda Smash Tenis y Padel (http://localhost:3006)
 echo  [2] Tienda BabyWorld           (http://localhost:5176)
 echo  [3] ERP Frontend               (http://localhost:5173)
 echo  [4] Edatia Manager             (http://localhost:5174)
@@ -22,7 +17,7 @@ echo  [5] Tienda Smash + ERP Frontend
 echo  [6] Salir
 echo.
 echo ==============================================================
-set /p OPCION="Elige una opción (1-6): "
+set /p OPCION="Elige una opcion (1-6): "
 
 if "%OPCION%"=="1" goto SMASH
 if "%OPCION%"=="2" goto BABYWORLD
@@ -31,7 +26,7 @@ if "%OPCION%"=="4" goto MANAGER
 if "%OPCION%"=="5" goto AMBOS_SMASH
 if "%OPCION%"=="6" goto SALIR
 
-echo Opción no válida. Por favor selecciona del 1 al 6.
+echo Opcion no valida. Por favor selecciona del 1 al 6.
 timeout /t 2 >nul
 goto MENU
 

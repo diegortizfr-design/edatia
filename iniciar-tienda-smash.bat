@@ -1,22 +1,17 @@
 @echo off
-if exist "%SystemRoot%\System32\chcp.com" (
-    %SystemRoot%\System32\chcp.com 65001 >nul 2>&1
-) else (
-    chcp 65001 >nul 2>&1
-)
-title Entorno de Pruebas - Smash Tenis y Pádel
+title Entorno de Pruebas - Smash Tenis y Padel
 echo ==============================================================
-echo   Iniciando Tienda Virtual: Smash Tenis y Pádel
+echo   Iniciando Tienda Virtual: Smash Tenis y Padel
 echo   Puerto: http://localhost:3006
 echo ==============================================================
 echo.
 
 if exist ".\tiendas-virtuales\smash" (
     cd ".\tiendas-virtuales\smash"
-) else if exist ".\edatia\tiendas-virtuales\smash" (
-    cd ".\edatia\tiendas-virtuales\smash"
+) else if exist "..\tiendas-virtuales\smash" (
+    cd "..\tiendas-virtuales\smash"
 ) else (
-    echo [ERROR] No se encontró el directorio de la tienda smash.
+    echo [ERROR] No se encontro el directorio de la tienda smash.
     pause
     exit /b 1
 )
@@ -27,5 +22,5 @@ if not exist "node_modules" (
 )
 
 echo Abriendo servidor con Hot-Reload y navegador en puerto 3006...
-npm run dev -- --host --open
+call npm run dev -- --host --open
 pause

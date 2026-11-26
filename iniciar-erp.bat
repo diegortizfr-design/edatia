@@ -12,7 +12,7 @@ if exist ".\frontend" (
 ) else if exist ".\edatia\frontend" (
     cd ".\edatia\frontend"
 ) else (
-    echo [ERROR] No se encontró el directorio frontend.
+    echo [ERROR] No se encontr? el directorio frontend.
     pause
     exit /b 1
 )
