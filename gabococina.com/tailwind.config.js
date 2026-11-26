@@ -8,24 +8,23 @@ export default {
     extend: {
       colors: {
         gold: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
           400: '#fbbf24',
           500: '#f59e0b',
           600: '#d97706',
           700: '#b45309',
+          800: '#92400e',
         },
-        noir: {
-          950: '#0d0d0c',
-          900: '#141413',
-          850: '#1a1918',
-          800: '#232220',
-          700: '#33312e',
-        },
-        cream: {
-          50: '#fdfcf9',
-          100: '#f8f5ee',
+        warm: {
+          50: '#fdfbf7',
+          100: '#f7f4ee',
           200: '#eee8dc',
-          300: '#ddd2bf',
-        }
+          300: '#dfd5c2',
+          400: '#c5b497',
+        },
       },
       fontFamily: {
         serif: ['"Playfair Display"', 'Georgia', 'serif'],

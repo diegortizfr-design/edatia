@@ -4,22 +4,22 @@ import { TESTIMONIALS } from '../data/chef-creations';
 
 export const TestimonialsSection: React.FC = () => {
   return (
-    <section id="testimonios" className="py-20 md:py-28 bg-noir-900 border-t border-b border-noir-800 text-white">
+    <section id="testimonios" className="py-20 md:py-28 bg-[#f9f7f2] border-t border-b border-stone-200/80 text-stone-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 text-xs font-bold uppercase tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-900 text-xs font-bold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
             <span>Voces de Nuestros Comensales</span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-stone-950 leading-tight mb-4">
             Memorias Alrededor <br />
-            <span className="italic font-normal text-gold-400">de la Mesa</span>
+            <span className="italic font-normal text-amber-700">de la Mesa</span>
           </h2>
 
-          <p className="text-stone-300 text-sm sm:text-base font-light leading-relaxed">
+          <p className="text-stone-600 text-sm sm:text-base font-light leading-relaxed">
             Historias reales de anfitriones que confiaron sus momentos más especiales en las manos y el fuego de Chef Gabo.
           </p>
         </div>
@@ -29,28 +29,28 @@ export const TestimonialsSection: React.FC = () => {
           {TESTIMONIALS.map((t) => (
             <div
               key={t.id}
-              className="bg-noir-950 rounded-2xl border border-noir-800 p-8 flex flex-col justify-between shadow-xl relative group hover:border-gold-500/30 transition-colors"
+              className="bg-white rounded-2xl border border-stone-200 p-8 flex flex-col justify-between shadow-xs hover:shadow-xl card-hover-effect relative group hover:border-amber-400"
             >
-              <Quote className="w-8 h-8 text-gold-500/20 mb-4" />
+              <Quote className="w-8 h-8 text-amber-600/20 mb-4" />
 
               <div className="space-y-4">
                 {/* Stars */}
-                <div className="flex items-center gap-1 text-gold-400">
+                <div className="flex items-center gap-1 text-amber-500">
                   {[...Array(t.rating)].map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-current" />
                   ))}
                 </div>
 
-                <p className="font-serif italic text-stone-200 text-sm sm:text-base leading-relaxed">
+                <p className="font-serif italic text-stone-700 text-sm sm:text-base leading-relaxed">
                   "{t.quote}"
                 </p>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-noir-800">
-                <h4 className="font-serif font-bold text-white text-base">
+              <div className="pt-6 mt-6 border-t border-stone-100">
+                <h4 className="font-serif font-bold text-stone-950 text-base">
                   {t.author}
                 </h4>
-                <p className="text-xs text-gold-400 font-medium mt-0.5">
+                <p className="text-xs text-amber-700 font-semibold mt-0.5">
                   {t.role}
                 </p>
                 <span className="text-[11px] text-stone-500 block mt-1">

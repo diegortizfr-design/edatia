@@ -4,40 +4,40 @@
 
 @layer base {
   body {
-    background-color: #0d0d0c;
-    color: #e7e5e4;
+    background-color: #fdfbf7;
+    color: #292524;
     overflow-x: hidden;
   }
 }
 
-/* Custom delicate gold scrollbar */
+/* Custom refined light scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #141413;
+  background: #f7f4ee;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #33312e;
+  background: #d6cfc2;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b;
+  background: #b45309;
 }
 
 /* Utilities */
-.gold-glow {
-  text-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+.editorial-shadow {
+  box-shadow: 0 20px 40px -15px rgba(41, 37, 36, 0.07);
 }
 
-.box-gold-glow {
-  box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.15);
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.grain-overlay {
-  background-image: radial-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 0);
-  background-size: 24px 24px;
+.card-hover-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 50px -12px rgba(41, 37, 36, 0.12);
 }

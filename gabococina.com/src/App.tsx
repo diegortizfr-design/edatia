@@ -26,7 +26,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-noir-950 text-stone-200 flex flex-col font-sans selection:bg-gold-500 selection:text-noir-950">
+    <div className="min-h-screen bg-warm-50 text-stone-800 flex flex-col font-sans selection:bg-amber-200 selection:text-stone-900">
       <Toaster position="top-right" />
 
       {/* Navigation */}
