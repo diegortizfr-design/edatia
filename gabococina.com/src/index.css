@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #0d0d0c;
+    color: #e7e5e4;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom delicate gold scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141413;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #33312e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+/* Utilities */
+.gold-glow {
+  text-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+}
+
+.box-gold-glow {
+  box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.15);
+}
+
+.grain-overlay {
+  background-image: radial-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}
