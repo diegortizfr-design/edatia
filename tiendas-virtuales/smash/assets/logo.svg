@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Dynamic athletic gradients -->
+    <linearGradient id="limeSplash" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bef264"/>
+      <stop offset="50%" stop-color="#84cc16"/>
+      <stop offset="100%" stop-color="#4d7c0f"/>
+    </linearGradient>
+    <linearGradient id="cyanSplash" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="darkSplash" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Splatter / Paint Burst Ring (Lime Volt Top & Right) -->
+  <g id="splatters-lime" fill="url(#limeSplash)" opacity="0.95">
+    <circle cx="340" cy="90" r="14"/>
+    <circle cx="370" cy="115" r="22"/>
+    <circle cx="410" cy="145" r="12"/>
+    <circle cx="425" cy="180" r="16"/>
+    <circle cx="440" cy="225" r="10"/>
+    <circle cx="300" cy="70" r="16"/>
+    <circle cx="260" cy="60" r="18"/>
+    <circle cx="220" cy="72" r="14"/>
+    <circle cx="180" cy="95" r="12"/>
+    <circle cx="325" cy="45" r="7"/>
+    <circle cx="390" cy="80" r="8"/>
+    <circle cx="450" cy="160" r="6"/>
+    <!-- Organic splash strokes -->
+    <path d="M 330 60 Q 380 40 400 90 Q 420 140 370 120 Z"/>
+    <path d="M 380 120 Q 450 150 420 210 Q 380 200 370 150 Z"/>
+    <path d="M 230 50 Q 280 40 310 70 Q 270 90 220 70 Z"/>
+    <path d="M 170 70 Q 200 50 220 80 Q 180 110 160 85 Z"/>
+    <path d="M 400 170 Q 460 190 440 240 Q 400 230 390 190 Z"/>
+    <circle cx="465" cy="205" r="4"/>
+    <circle cx="435" cy="110" r="5"/>
+    <circle cx="280" cy="35" r="6"/>
+  </g>
+
+  <!-- Splatter / Paint Burst Ring (Cyan Blue Bottom & Right) -->
+  <g id="splatters-cyan" fill="url(#cyanSplash)" opacity="0.95">
+    <circle cx="430" cy="290" r="15"/>
+    <circle cx="410" cy="340" r="20"/>
+    <circle cx="370" cy="390" r="18"/>
+    <circle cx="320" cy="425" r="16"/>
+    <circle cx="270" cy="445" r="14"/>
+    <circle cx="210" cy="440" r="20"/>
+    <circle cx="150" cy="415" r="17"/>
+    <circle cx="105" cy="370" r="14"/>
+    <circle cx="445" cy="325" r="8"/>
+    <circle cx="395" cy="425" r="7"/>
+    <circle cx="340" cy="460" r="6"/>
+    <circle cx="230" cy="470" r="7"/>
+    <circle cx="120" cy="440" r="9"/>
+    <!-- Organic splash strokes -->
+    <path d="M 410 270 Q 460 310 420 370 Q 380 350 380 290 Z"/>
+    <path d="M 390 350 Q 410 430 330 430 Q 320 380 360 360 Z"/>
+    <path d="M 330 410 Q 320 470 240 460 Q 240 410 300 400 Z"/>
+    <path d="M 230 440 Q 180 470 140 420 Q 160 380 210 400 Z"/>
+    <path d="M 150 410 Q 90 410 90 350 Q 140 330 150 380 Z"/>
+  </g>
+
+  <!-- Splatter / Paint Burst Ring (Dark Carbon Left & Top-Left) -->
+  <g id="splatters-dark" fill="url(#darkSplash)" opacity="0.9">
+    <circle cx="85" cy="310" r="18"/>
+    <circle cx="70" cy="250" r="22"/>
+    <circle cx="75" cy="190" r="16"/>
+    <circle cx="100" cy="135" r="20"/>
+    <circle cx="135" cy="95" r="15"/>
+    <circle cx="50" cy="220" r="8"/>
+    <circle cx="55" cy="280" r="9"/>
+    <circle cx="65" cy="160" r="7"/>
+    <!-- Organic splash strokes -->
+    <path d="M 120 110 Q 70 140 60 200 Q 110 180 120 140 Z"/>
+    <path d="M 65 190 Q 40 240 60 290 Q 100 270 90 220 Z"/>
+    <path d="M 65 280 Q 50 340 100 350 Q 120 310 90 290 Z"/>
+  </g>
+
+  <!-- Central Black Sphere / Court Circle -->
+  <circle cx="250" cy="245" r="148" fill="#0b0f19" stroke="#000000" stroke-width="4"/>
+
+  <!-- Tennis Ball Curved Seams / White Dynamic Swooshes inside Black Circle -->
+  <path d="M 150 170 Q 255 125 355 210" fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" opacity="0.95"/>
+  <path d="M 280 270 Q 330 295 385 240" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 285 290 Q 335 315 375 270" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Player Silhouette: Jumping Tennis Smash Player -->
+  <g id="player-silhouette" fill="#ffffff">
+    <!-- Head and Cap -->
+    <ellipse cx="262" cy="235" rx="13" ry="14" transform="rotate(-8 262 235)"/>
+    <path d="M 252 232 Q 268 226 278 230 L 284 233 Q 275 237 258 240 Z"/> <!-- Cap Visor -->
+
+    <!-- Neck & Athletic Torso -->
+    <path d="M 254 246 L 268 245 L 286 280 L 275 345 L 235 345 L 225 305 L 244 268 Z"/>
+
+    <!-- Left Arm extended upwards reaching for the ball -->
+    <path d="M 276 268 Q 305 245 330 205 Q 345 178 358 160 Q 355 168 335 210 Q 312 250 285 278 Z"/>
+
+    <!-- Right Arm holding racket raised high in smash position -->
+    <path d="M 242 272 Q 220 275 200 290 Q 188 280 202 258 Q 220 230 232 208 L 242 215 Q 228 238 215 258 Z"/>
+
+    <!-- Tennis Racket -->
+    <!-- Handle & Grip -->
+    <path d="M 235 208 L 242 195 L 246 197 L 239 210 Z" fill="#ffffff"/>
+    <line x1="238" y1="202" x2="245" y2="188" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- Racket Throat -->
+    <path d="M 245 188 L 240 178 L 253 178 Z" fill="#ffffff"/>
+    <!-- Racket Head / Frame -->
+    <ellipse cx="250" cy="154" rx="18" ry="24" fill="none" stroke="#ffffff" stroke-width="4.5" transform="rotate(8 250 154)"/>
+    <!-- Racket Strings (Fine Grid) -->
+    <line x1="240" y1="135" x2="244" y2="173" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="247" y1="131" x2="251" y2="177" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="254" y1="132" x2="258" y2="175" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="261" y1="137" x2="264" y2="171" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="234" y1="145" x2="267" y2="145" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="233" y1="154" x2="268" y2="154" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+    <line x1="235" y1="163" x2="266" y2="163" stroke="#ffffff" stroke-width="1.2" opacity="0.85"/>
+  </g>
+
+  <!-- Smash Typographic Branding -->
+  <g transform="translate(0, 30)">
+    <!-- Smash Text with high speed slant -->
+    <text x="245" y="375" text-anchor="middle" font-family="'Syne', 'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-style="italic" font-size="64" fill="#0b0f19" letter-spacing="-1">
+      Smash
+    </text>
+    <!-- Accent stroke on text -->
+    <path d="M 150 384 L 340 384" stroke="url(#limeSplash)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 280 384 L 345 384" stroke="url(#cyanSplash)" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Subtitle: Tienda de Tenis y Pádel -->
+    <text x="250" y="405" text-anchor="middle" font-family="'Montserrat', 'Inter', sans-serif" font-weight="700" font-size="14.5" fill="#1e293b" letter-spacing="1.5">
+      TIENDA DE TENIS Y PÁDEL
+    </text>
+  </g>
+</svg>
+
