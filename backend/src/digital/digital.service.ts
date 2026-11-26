@@ -222,7 +222,26 @@ export class DigitalService {
 
   // 🌐 Métodos Públicos para la Tienda Virtual (Aislada / SaaS)
 
+  private async autoInitializeSmash() {
+    const storeConfig = await this.prisma.configuracionTienda.findFirst({
+      where: { slugTienda: 'smash' }
+    });
+    if (storeConfig) return;
+
+    try {
+      const { seedSmashClient } = await import('../../prisma/seed-smash');
+      await seedSmashClient();
+    } catch (err: any) {
+      console.error('[DigitalService.autoInitializeSmash] Error auto-inicializando tienda Smash:', err?.message);
+    }
+  }
+
   private async autoInitializeBabyWorld(slug: string) {
+    if (slug === 'smash') {
+      await this.autoInitializeSmash();
+      return;
+    }
+
     if (slug !== 'distribuidorababyworld' && slug !== 'glowxir') return;
 
     const targetSlug = slug === 'glowxir' ? 'glowxir' : 'distribuidorababyworld';
