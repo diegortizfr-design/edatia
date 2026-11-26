@@ -1,5 +1,9 @@
 @echo off
-chcp 65001 >nul
+if exist "%SystemRoot%\System32\chcp.com" (
+    %SystemRoot%\System32\chcp.com 65001 >nul 2>&1
+) else (
+    chcp 65001 >nul 2>&1
+)
 title Entorno de Pruebas - Edatia Suite
 
 :MENU
