@@ -339,8 +339,8 @@ export class FacturasCompraService implements OnModuleInit {
                 codigo: '110505',
                 nombre: 'Caja general',
                 tipo: 'ACTIVO',
+                naturaleza: 'DEBITO',
                 nivel: 4,
-                permiteMovimiento: true,
                 activo: true,
               },
             }).catch(() => null);
@@ -488,8 +488,8 @@ export class FacturasCompraService implements OnModuleInit {
               codigo: '143505',
               nombre: 'Mercancías no fabricadas por la empresa',
               tipo: 'ACTIVO',
+              naturaleza: 'DEBITO',
               nivel: 4,
-              permiteMovimiento: true,
               activo: true,
             },
           }).catch(() => null);
@@ -502,8 +502,8 @@ export class FacturasCompraService implements OnModuleInit {
               codigo: '220505',
               nombre: 'Proveedores nacionales',
               tipo: 'PASIVO',
+              naturaleza: 'CREDITO',
               nivel: 4,
-              permiteMovimiento: true,
               activo: true,
             },
           }).catch(() => null);
