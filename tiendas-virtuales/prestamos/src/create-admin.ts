@@ -18,6 +18,13 @@ async function main() {
       email: 'creditorapidos26@gmail.com',
       password: 'Créditosrapidos2026',
       isPremium: true
+    },
+    {
+      nit: '123456789',
+      name: 'yosipago',
+      email: 'yosipago@gmail.com',
+      password: '123456',
+      isPremium: true
     }
   ];
 

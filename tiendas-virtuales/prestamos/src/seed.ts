@@ -16,6 +16,13 @@ export async function seedDefaultTenants() {
       email: 'admin@edatia.com',
       password: 'Admin123!',
       isPremium: true
+    },
+    {
+      nit: '123456789',
+      name: 'yosipago',
+      email: 'yosipago@gmail.com',
+      password: '123456',
+      isPremium: true
     }
   ];
 

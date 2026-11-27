@@ -83,7 +83,8 @@ Todas las tarjetas KPI y métricas principales son clickeables y redirigen con f
 
 | Servicio | URL Local | Credenciales |
 | :--- | :--- | :--- |
-| **Aplicación Web** | [http://localhost:3006](http://localhost:3006) | `creditorapidos26@gmail.com` / `Creditosrapidos2026` |
+| **Aplicación Web (Producción)** | [https://prestamos.edatia.com](https://prestamos.edatia.com) | NIT `123456789` · `yosipago@gmail.com` / `123456` |
+| **Aplicación Web (Local)** | [http://localhost:3006](http://localhost:3006) | `creditorapidos26@gmail.com` / `Creditosrapidos2026` |
 | **Prisma Studio (BD)** | [http://localhost:5555](http://localhost:5555) | Acceso directo a tablas PostgreSQL |
 
 ---
