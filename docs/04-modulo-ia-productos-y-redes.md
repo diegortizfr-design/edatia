@@ -233,7 +233,7 @@ Definidos en `backend/prisma/schema.prisma` y migración idempotente `backend/pr
   * `POST /registro` y `POST /login`: autenticación stateless con token HMAC-SHA256.
   * `GET  /perfil`: resumen de saldos (*Pendiente*, *Disponible*, *Pagado*) e historial sin exponer costos internos.
   * `GET  /catalogo`: solo productos activos con stock real y costo cargado (`costoPromedio > 0` o `comisionValor > 0`), mostrando exclusivamente precio público y `gananciaAliado` fija en pesos.
-  * `POST /productos/:productoId/copy-ia`: invoca `GeminiService.generarCopyRedesAliado` (con caché en memoria de 6 horas) para redactar anuncios en estilos `whatsapp`, `marketplace` o `instagram` con `?ref=CODIGO`.
+  * `POST /productos/:productoId/copy-ia` (`@Throttle` 10 req/min): invoca `GeminiService.generarCopyRedesAliado` bajo demanda en estilos `whatsapp`, `marketplace` o `instagram` con `?ref=CODIGO`, protegido con doble caché compartida entre aliados: caché en memoria (6 h) y caché persistente en PostgreSQL (`Producto.metadataWeb.copiesAliados`, versionada e indexada por precio `precioRef`). Incluye `posicionarUrlArriba()` para garantizar `{{URL}}` en la línea 2 (justo debajo del gancho + precio) y facilidades de pago dinámicas según precio (Addi 3 cuotas 0% desde `$50.000`, Sistecrédito desde `$30.000`, Nequi/transferencia, contra entrega local y envíos nacionales; sin sistema de separado).
   * `POST /pedidos`: permite al aliado registrar pedidos de sus clientes de redes directamente para despacho contra entrega o transferencia.
 * **Administración ERP (`/api/v1/digital/aliados`, protegido con `JwtAuthGuard`):**
   * `GET / PATCH /config`, `GET / PATCH /:id`, `POST /:id/liquidar`, `GET /comisiones`, `PATCH /comisiones/:comisionId`.
@@ -243,7 +243,7 @@ Definidos en `backend/prisma/schema.prisma` y migración idempotente `backend/pr
 * **Protección de margen:** Si `costoPromedio <= 0` y no existe comisión fija manual, el producto se excluye del catálogo de aliados y no liquida comisión automática. El domicilio se cobra aparte y no entra en el cálculo de utilidad.
 * **Anti-autocompra:** En `DigitalService.crearPedidoWeb` se comparan los últimos 10 dígitos del teléfono y el documento del comprador contra los del aliado; si coinciden, el pedido se procesa sin generar comisión.
 * **Tracking `?ref=` de 15 días (`tiendas-virtuales/distribuidorababyworld/src/lib/referral.ts`):** Captura `?ref=CODIGO` en `localStorage`, lo envía en `CheckoutModal.tsx` y añade `[Ref: CODIGO]` al mensaje prellenado de WhatsApp en `ProductDetailPage.tsx` y `ProductDetailModal.tsx`.
-* **Pantallas:** `AliadosPortalPage.tsx` en `/aliados` (tienda virtual) y `AliadosDigital.tsx` en `/digital/aliados` (ERP).
+* **Pantallas y ahorro de IA:** `AliadosDigital.tsx` en `/digital/aliados` (ERP) y `AliadosPortalPage.tsx` en `/aliados` (tienda virtual). El modal *Kit de Venta Paso a Paso* carga una plantilla instantánea (`$0` tokens IA) al abrir o cambiar de red, deja el botón **`Redactar con IA`** opcional bajo demanda, guía paso a paso con checks verdes (`✓`), ubica **`Abrir FB Marketplace`** / **`Abrir Instagram`** en el Paso 1 junto a la descarga de foto JPG, incluye copia rápida del título y precio numérico exacto, muestra las opciones reales de pago para el cliente, e integra *Web Share API Level 2* en móviles (foto JPG + texto en 1 clic) más barra rápida multired (WhatsApp, Facebook, Telegram, TikTok).
 
 ---
 

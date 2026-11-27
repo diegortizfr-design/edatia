@@ -48,7 +48,7 @@ export class AliadosPublicController {
     return this.aliadosService.getCatalogoAliado(slug, authHeader);
   }
 
-  @Throttle({ default: { limit: 25, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('productos/:productoId/copy-ia')
   generarCopyIa(
     @Param('slug') slug: string,

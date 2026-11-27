@@ -360,8 +360,17 @@ Reglas:
     },
     estilo: 'whatsapp' | 'marketplace' | 'instagram',
   ): Promise<CopyRedesAliado> {
-    const precioFmt = `$${Math.round(Number(producto.precio || 0)).toLocaleString('es-CO')}`;
+    const precioNum = Math.round(Number(producto.precio || 0));
+    const precioFmt = `$${precioNum.toLocaleString('es-CO')}`;
+    const cuotaAddiFmt = `$${Math.round(precioNum / 3).toLocaleString('es-CO')}`;
     const tienda = producto.tiendaNombre || 'Distribuidora Baby World';
+
+    const facilidadesPago =
+      precioNum >= 50000
+        ? `cuotas sin tarjeta con Addi (hasta 3 cuotas de ${cuotaAddiFmt} sin interés) o Sistecrédito, Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)`
+        : precioNum >= 30000
+          ? 'cuotas cómodas con Sistecrédito, Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)'
+          : 'Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)';
 
     const buildFallback = (): CopyRedesAliado => {
       const desc = (producto.descripcion || producto.descripcionWeb || 'Ideal para regalar y sorprender en casa.')
@@ -372,20 +381,20 @@ Reglas:
       if (estilo === 'marketplace') {
         return {
           titulo: producto.nombre.slice(0, 85),
-          texto: `🎁 ${producto.nombre}\n💰 Precio: ${precioFmt} COP\n\n✨ ${desc}\n\n✅ Producto nuevo, garantizado y con pago contra entrega en Cali y alrededores (envíos a toda Colombia 🚚).\n\n📲 Mira fotos, detalles o pídelo directo aquí:\n👉 {{URL}}`,
+          texto: `🎁 ${producto.nombre} — ${precioFmt} COP\n👉 Míralo, fotos y pedido directo aquí: {{URL}}\n\n✨ ${desc}\n\n✅ Producto nuevo y garantizado.\n💳 Paga fácil con ${facilidadesPago} 🚚.`,
           hashtags: ['#JuguetesColombia', '#BabyWorld', '#RegalosParaNiños'],
         };
       }
       if (estilo === 'instagram') {
         return {
           titulo: producto.nombre.slice(0, 85),
-          texto: `✨ ¡Miren esta belleza que conseguí para los peques! 🧸\n\n🎁 *${producto.nombre}*\n💰 Solo ${precioFmt} COP\n\n${desc}\n\n🚚 Envíos a toda Colombia y pago contra entrega en Cali y zona metropolitana.\n👉 Link directo para pedirlo: {{URL}}`,
+          texto: `✨ *${producto.nombre}* — Solo ${precioFmt} COP 🧸\n👉 Pídelo aquí: {{URL}}\n\n${desc}\n\n💳 Paga fácil con ${facilidadesPago}.`,
           hashtags: ['#JuguetesColombia', '#RegalosInfantiles', '#MamasColombia', '#BabyWorld'],
         };
       }
       return {
         titulo: producto.nombre.slice(0, 85),
-        texto: `🧸 *¡Recomendado del día en ${tienda}!*\n\n*${producto.nombre}*\n💰 Precio: *${precioFmt} COP*\n✨ ${desc}\n\n🚚 Pago contra entrega en Cali/alrededores y envíos a todo el país.\n👉 Míralo o pídelo aquí: {{URL}}`,
+        texto: `🧸 *${producto.nombre}* — *${precioFmt} COP*\n👉 Míralo o pídelo aquí: {{URL}}\n\n✨ ${desc}\n💳 Disponible con ${facilidadesPago} (${tienda}).`,
         hashtags: ['#BabyWorld', '#Juguetes'],
       };
     };
@@ -396,10 +405,10 @@ Reglas:
 
     const guiaEstilo =
       estilo === 'marketplace'
-        ? 'Anuncio directo para Facebook Marketplace / grupos de ventas: título llamativo corto, beneficios concretos, mención de producto nuevo, envíos a todo Colombia y pago contra entrega local, con llamado claro a ver más fotos o pedir en {{URL}}.'
+        ? 'Anuncio directo para Facebook Marketplace / grupos de ventas: Línea 1 gancho corto con el nombre del producto y precio en COP; Línea 2 llamado a la acción con {{URL}}; luego beneficios concretos, producto nuevo y las facilidades de pago disponibles.'
         : estilo === 'instagram'
-        ? 'Caption cercano para Instagram / TikTok / Reels: gancho inicial atractivo para papás/mamás, tono entusiasta y confiable de recomendador, precio en COP, 3-5 hashtags relevantes y enlace {{URL}} visible.'
-        : 'Mensaje breve, cálido y persuasivo para Estados de WhatsApp o chat directo: fácil de leer en 4 segundos, emojis moderados, precio en COP, mención de pago contra entrega local / envíos nacionales y enlace {{URL}}.';
+        ? 'Caption cercano para Instagram / TikTok / Reels: Línea 1 gancho atractivo con nombre del juguete y precio en COP; Línea 2 {{URL}} visible (útil para copiar a Facebook o sticker de enlace en Historias); luego tono entusiasta de recomendador, facilidades de pago disponibles y 3-5 hashtags relevantes.'
+        : 'Mensaje breve, cálido y persuasivo para Estados de WhatsApp o chat directo: Línea 1 nombre/gancho + precio en COP; Línea 2 {{URL}} visible sin tener que abrir "Leer más"; luego 2-3 líneas con beneficios clave y facilidades de pago disponibles.';
 
     const prompt = `Eres un experto en Social Selling en Colombia ayudando a un aliado independiente que recomienda juguetes de "${tienda}".
 Escribe un texto en español de Colombia listo para copiar y publicar, desde la voz de un recomendador/vendedor cercano (no suenes como robot).
@@ -409,17 +418,24 @@ Datos del juguete:
 - Categoría: ${producto.categoria || 'Juguetería'}
 - Marca: ${producto.marca || 'N/A'}
 - Precio al público: ${precioFmt} COP
+- Medios de pago disponibles: ${facilidadesPago}
 - Descripción: ${(producto.descripcionWeb || producto.descripcion || '').slice(0, 450) || 'Juguete de excelente calidad'}
 
 Formato solicitado (${estilo}):
 ${guiaEstilo}
 
+Estructura obligatoria del campo "texto":
+- Línea 1: Gancho breve atractivo con el nombre del producto y el precio ${precioFmt} COP (SIN poner el enlace aquí).
+- Línea 2: Llamado a la acción corto seguido de exactamente {{URL}} (ejemplo: 👉 Míralo o pídelo aquí: {{URL}}).
+- Línea 3 en adelante (después de una línea en blanco): Beneficios concretos y mención natural de los medios de pago disponibles indicados arriba, breve y fácil de escanear.
+
 Reglas estrictas:
-- Incluye exactamente el marcador literal {{URL}} en el lugar donde debe ir el enlace del producto (no lo reemplaces ni inventes otro link).
+- {{URL}} debe ir OBLIGATORIAMENTE en la línea 2 (nunca solo en la línea 1 ni al final del mensaje), usando exactamente el marcador literal {{URL}} (no inventes otro enlace).
 - Incluye el precio ${precioFmt}.
+- Menciona solo las facilidades de pago indicadas arriba en "Medios de pago disponibles" (NUNCA menciones "sistema de separado" ni "plan separe", y NO menciones Addi si no aparece en "Medios de pago disponibles").
 - No inventes garantías ni promociones falsas que no estén en la descripción.
 - "titulo": título atractivo máximo 80 caracteres (útil para Marketplace).
-- "texto": el mensaje completo con saltos de línea naturales y {{URL}}.
+- "texto": el mensaje completo respetando el orden Gancho+Precio (línea 1) -> {{URL}} (línea 2) -> beneficios y medios de pago.
 - "hashtags": 3 a 5 hashtags en español.`;
 
     const body = {
@@ -460,9 +476,7 @@ Reglas estrictas:
       const crudo = JSON.parse(textoPart);
       let texto = String(crudo?.texto || '').trim();
       if (!texto) return buildFallback();
-      if (!texto.includes('{{URL}}')) {
-        texto = `${texto}\n\n👉 Pídelo aquí: {{URL}}`;
-      }
+      texto = this.posicionarUrlArriba(texto);
       const hashtags = Array.isArray(crudo?.hashtags)
         ? crudo.hashtags.map((h: any) => String(h || '').trim()).filter(Boolean).slice(0, 6)
         : [];
@@ -474,6 +488,65 @@ Reglas estrictas:
     } catch {
       return buildFallback();
     }
+  }
+
+  /**
+   * Garantiza que {{URL}} aparezca siempre en la línea 2 (justo debajo del gancho + precio),
+   * evitando que quede oculto al final tras "Ver más" o en frío en la línea 1.
+   */
+  private posicionarUrlArriba(rawTexto: string): string {
+    const lines = rawTexto.split(/\r?\n/);
+    const nonEmptyIdx = lines
+      .map((l, idx) => (l.trim().length > 0 ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    if (nonEmptyIdx.length === 0) {
+      return '👉 Míralo o pídelo aquí: {{URL}}';
+    }
+
+    const urlIdx = lines.findIndex((l) => l.includes('{{URL}}'));
+
+    if (urlIdx === -1) {
+      const firstIdx = nonEmptyIdx[0];
+      const nextIsEmpty = lines[firstIdx + 1]?.trim() === '';
+      lines.splice(firstIdx + 1, 0, ...(nextIsEmpty ? ['👉 Míralo o pídelo aquí: {{URL}}'] : ['👉 Míralo o pídelo aquí: {{URL}}', '']));
+      return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    const posInNonEmpty = nonEmptyIdx.indexOf(urlIdx);
+
+    if (posInNonEmpty === 0 && nonEmptyIdx.length >= 2) {
+      const sinUrl = lines[urlIdx]
+        .replace(/\{\{URL\}\}/g, '')
+        .replace(/[^\p{L}\p{N}\s]+/gu, '')
+        .trim();
+      if (sinUrl.length < 15) {
+        const urlLine = lines[urlIdx].trim();
+        lines.splice(urlIdx, 1);
+        const updatedNonEmpty = lines
+          .map((l, idx) => (l.trim().length > 0 ? idx : -1))
+          .filter((idx) => idx !== -1);
+        const firstIdx = updatedNonEmpty[0];
+        if (firstIdx !== undefined) {
+          const nextIsEmpty = lines[firstIdx + 1]?.trim() === '';
+          lines.splice(firstIdx + 1, 0, ...(nextIsEmpty ? [urlLine] : [urlLine, '']));
+        } else {
+          lines.unshift(urlLine);
+        }
+        return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      }
+    }
+
+    if (posInNonEmpty >= 2) {
+      const urlLine = lines[urlIdx].trim();
+      lines.splice(urlIdx, 1);
+      const firstIdx = nonEmptyIdx[0];
+      const nextIsEmpty = lines[firstIdx + 1]?.trim() === '';
+      lines.splice(firstIdx + 1, 0, ...(nextIsEmpty ? [urlLine] : [urlLine, '']));
+      return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   // ── Infraestructura ──────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import {
   ArrowLeft, Sparkles, Search, Copy, Check, Download,
   Wallet, ShoppingBag, TrendingUp, LogOut, RefreshCw, Plus, Minus,
   CheckCircle2, Clock, X, KeyRound,
-  UserPlus, PackageCheck, AlertCircle, Loader2
+  UserPlus, PackageCheck, AlertCircle, Loader2, ExternalLink, Share2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
@@ -119,9 +119,16 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
   const [kitProduct, setKitProduct] = useState<ProductoAliado | null>(null)
   const [kitEstilo, setKitEstilo] = useState<'whatsapp' | 'marketplace' | 'instagram'>('whatsapp')
   const [kitLoading, setKitLoading] = useState(false)
-  const [kitCopy, setKitCopy] = useState<{ titulo: string; texto: string; hashtags: string[]; urlReferido: string } | null>(null)
+  const [kitCopy, setKitCopy] = useState<{ titulo: string; texto: string; hashtags: string[]; urlReferido: string; esIa: boolean } | null>(null)
+  const [iaCopyCache, setIaCopyCache] = useState<Record<string, { titulo: string; texto: string; hashtags: string[]; urlReferido: string; esIa: boolean }>>({})
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [formatoImg, setFormatoImg] = useState<'vertical' | 'cuadrado'>('vertical')
+  const [sharingKit, setSharingKit] = useState(false)
+  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({})
+
+  const markStepDone = (stepKey: string) => {
+    setCompletedSteps((prev) => (prev[stepKey] ? prev : { ...prev, [stepKey]: true }))
+  }
 
   // Pedido directo para cliente
   const [orderProdId, setOrderProdId] = useState<number>(0)
@@ -254,15 +261,89 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
     setProductos([])
   }
 
-  const copiarTexto = async (texto: string, id: string, msg = '¡Copiado al portapapeles!') => {
+  const copiarTexto = async (texto: string, id: string, msg = '¡Copiado al portapapeles!', silent = false): Promise<boolean> => {
     try {
-      await navigator.clipboard.writeText(texto)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(texto)
+      } else {
+        const textArea = document.createElement('textarea')
+        textArea.value = texto
+        textArea.style.position = 'fixed'
+        textArea.style.opacity = '0'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
       setCopiedId(id)
-      toast.success(msg)
+      if (!silent) toast.success(msg)
       setTimeout(() => setCopiedId(null), 2200)
+      return true
     } catch {
-      toast.error('No se pudo copiar automáticamente')
+      if (!silent) toast.error('No se pudo copiar automáticamente')
+      return false
     }
+  }
+
+  const generarCopyBaseLocal = (
+    prod: ProductoAliado,
+    estilo: 'whatsapp' | 'marketplace' | 'instagram',
+  ) => {
+    const precioNum = Math.round(Number(prod.precioPublico || 0))
+    const precioFmt = fmtPrice(precioNum)
+    const cuotaAddiFmt = fmtPrice(Math.round(precioNum / 3))
+    const descLimpia = (prod.descripcion || 'Juguete nuevo de excelente calidad, ideal para regalar y sorprender.')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 170)
+
+    const facilidades =
+      precioNum >= 50000
+        ? `Nequi/transferencia, pago contra entrega en Cali y alrededores (envíos a toda Colombia) o a cuotas sin tarjeta con Addi (3 cuotas de ${cuotaAddiFmt} sin interés) y Sistecrédito.`
+        : precioNum >= 30000
+          ? 'Nequi/transferencia, pago contra entrega en Cali y alrededores (envíos a toda Colombia) o a cuotas con Sistecrédito.'
+          : 'Nequi/transferencia, pago contra entrega en Cali y alrededores y envíos a toda Colombia.'
+
+    const hashtags =
+      estilo === 'instagram'
+        ? ['#JuguetesColombia', '#BabyWorld', '#RegalosInfantiles', '#MamasColombia']
+        : ['#BabyWorld', '#JuguetesColombia']
+
+    let texto = ''
+    if (estilo === 'marketplace') {
+      texto = `🎁 ${prod.nombre} — ${precioFmt} COP\n👉 Míralo y pídelo aquí: ${prod.urlReferido}\n\n✨ ${descLimpia}\n\n✅ Producto nuevo y garantizado.\n💳 ${facilidades}`
+    } else if (estilo === 'instagram') {
+      texto = `✨ *${prod.nombre}* — Solo ${precioFmt} COP 🧸\n👉 Pídelo aquí: ${prod.urlReferido}\n\n${descLimpia}\n\n💳 ${facilidades}\n\n${hashtags.join(' ')}`
+    } else {
+      texto = `🧸 *${prod.nombre}* — *${precioFmt} COP*\n👉 Míralo o pídelo aquí: ${prod.urlReferido}\n\n✨ ${descLimpia}\n💳 ${facilidades}`
+    }
+
+    return {
+      titulo: `${prod.nombre.slice(0, 62)} - ${precioFmt}`,
+      texto,
+      hashtags,
+      urlReferido: prod.urlReferido,
+      esIa: false,
+    }
+  }
+
+  const cargarCopyParaEstilo = (prod: ProductoAliado, estilo: 'whatsapp' | 'marketplace' | 'instagram') => {
+    setKitEstilo(estilo)
+    setFormatoImg(estilo === 'marketplace' ? 'cuadrado' : 'vertical')
+    setCompletedSteps({})
+    const cached = iaCopyCache[`${prod.id}:${estilo}`]
+    setKitCopy(cached || generarCopyBaseLocal(prod, estilo))
+  }
+
+  const abrirKitVenta = (prod: ProductoAliado) => {
+    setKitProduct(prod)
+    cargarCopyParaEstilo(prod, 'whatsapp')
+  }
+
+  const seleccionarCanalKit = (estilo: 'whatsapp' | 'marketplace' | 'instagram') => {
+    if (!kitProduct) return
+    cargarCopyParaEstilo(kitProduct, estilo)
   }
 
   const solicitarCopyIa = async (prod: ProductoAliado, estilo: 'whatsapp' | 'marketplace' | 'instagram', regenerar = false) => {
@@ -291,12 +372,16 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
       if (estilo === 'instagram' && hashtags.length > 0 && !textoBase.includes(hashtags[0])) {
         textoBase = `${textoBase}\n\n${hashtags.join(' ')}`
       }
-      setKitCopy({
+      const nextCopy = {
         titulo: data.titulo || prod.nombre,
         texto: textoBase,
         hashtags,
         urlReferido: data.urlReferido || prod.urlReferido,
-      })
+        esIa: true,
+      }
+      setKitCopy(nextCopy)
+      setIaCopyCache((prev) => ({ ...prev, [`${prod.id}:${estilo}`]: nextCopy }))
+      toast.success(regenerar ? '¡Nueva variación IA lista!' : '¡Texto optimizado con IA listo!')
     } catch {
       toast.error('Error conectando con el asistente IA')
     } finally {
@@ -317,6 +402,15 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
     return url
   }
 
+  const obtenerBlobFotoProducto = async (prod: ProductoAliado): Promise<{ blob: Blob; url: string } | null> => {
+    const url = prepararImagenCloudinary(prod.imagen, formatoImg)
+    if (!url) return null
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('No se pudo obtener la imagen')
+    const rawBlob = await res.blob()
+    return { blob: new Blob([rawBlob], { type: 'image/jpeg' }), url }
+  }
+
   const descargarFotoProducto = async (prod: ProductoAliado) => {
     const url = prepararImagenCloudinary(prod.imagen, formatoImg)
     if (!url) {
@@ -325,10 +419,9 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
     }
     try {
       toast.loading('Preparando foto JPG...', { id: 'dl-aliado' })
-      const res = await fetch(url)
-      const blob = await res.blob()
-      const jpgBlob = new Blob([blob], { type: 'image/jpeg' })
-      const blobUrl = URL.createObjectURL(jpgBlob)
+      const imgData = await obtenerBlobFotoProducto(prod)
+      if (!imgData) throw new Error('Sin imagen')
+      const blobUrl = URL.createObjectURL(imgData.blob)
       const a = document.createElement('a')
       a.href = blobUrl
       a.download = `${prod.sku || 'juguete'}-${formatoImg}.jpg`
@@ -336,10 +429,135 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
       a.click()
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(blobUrl), 3500)
+      markStepDone('foto')
       toast.success('Foto descargada lista para publicar', { id: 'dl-aliado' })
     } catch {
       toast.error('Abriendo imagen en nueva pestaña...', { id: 'dl-aliado' })
-      window.open(url, '_blank')
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const abrirEnRedSocial = async (
+    canal: 'whatsapp' | 'marketplace' | 'facebook' | 'instagram' | 'telegram' | 'tiktok',
+    soloAbrir = false,
+  ) => {
+    if (!kitCopy) return
+    const texto = kitCopy.texto
+    const urlRef = kitCopy.urlReferido
+
+    if (soloAbrir) {
+      markStepDone('abrir')
+      if (canal === 'marketplace') {
+        toast.success('Marketplace abierto — ahora descarga la foto y pega cada campo', { duration: 3500 })
+        window.open('https://www.facebook.com/marketplace/create/item', '_blank', 'noopener,noreferrer')
+        return
+      }
+      if (canal === 'instagram') {
+        toast.success('Instagram abierto — ahora descarga la foto y copia tu caption', { duration: 3500 })
+        window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer')
+        return
+      }
+    }
+
+    markStepDone('publicar')
+
+    if (canal === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (canal === 'telegram') {
+      window.open(
+        `https://t.me/share/url?url=${encodeURIComponent(urlRef)}&text=${encodeURIComponent(texto)}`,
+        '_blank',
+        'noopener,noreferrer',
+      )
+      return
+    }
+
+    if (canal === 'marketplace') {
+      if (!completedSteps.texto) {
+        await copiarTexto(texto, 'kit-mp', '¡Descripción + link copiados! Pega todo en Marketplace')
+        markStepDone('texto')
+      } else {
+        toast.success('Abriendo FB Marketplace...')
+      }
+      window.open('https://www.facebook.com/marketplace/create/item', '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (canal === 'facebook') {
+      await copiarTexto(texto, 'kit-fb', '¡Texto copiado! Comparte el enlace en tu muro o grupos')
+      window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlRef)}&quote=${encodeURIComponent(texto)}`,
+        '_blank',
+        'noopener,noreferrer',
+      )
+      return
+    }
+
+    if (canal === 'instagram') {
+      if (!completedSteps.texto) {
+        await copiarTexto(texto, 'kit-ig', '¡Caption + hashtags copiados! Pégalos al publicar en Instagram')
+        markStepDone('texto')
+      } else {
+        toast.success('Abriendo Instagram...')
+      }
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (canal === 'tiktok') {
+      await copiarTexto(texto, 'kit-tt', '¡Texto + hashtags copiados! Pégalos en tu publicación de TikTok')
+      window.open('https://www.tiktok.com/upload', '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const compartirFotoYTextoNativo = async () => {
+    if (!kitCopy || !kitProduct) return
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return
+
+    setSharingKit(true)
+    try {
+      await copiarTexto(kitCopy.texto, 'kit-native', '', true)
+
+      let sharedWithFile = false
+      if (kitProduct.imagen) {
+        try {
+          const imgData = await obtenerBlobFotoProducto(kitProduct)
+          if (imgData) {
+            const file = new File([imgData.blob], `${kitProduct.sku || 'producto'}-${formatoImg}.jpg`, {
+              type: 'image/jpeg',
+            })
+            const canShareFiles = typeof (navigator as any).canShare === 'function' && (navigator as any).canShare({ files: [file] })
+            if (canShareFiles) {
+              await navigator.share({
+                files: [file],
+                title: kitCopy.titulo,
+                text: kitCopy.texto,
+              })
+              sharedWithFile = true
+            }
+          }
+        } catch (err: any) {
+          if (err?.name === 'AbortError') return
+        }
+      }
+
+      if (!sharedWithFile) {
+        await navigator.share({
+          title: kitCopy.titulo,
+          text: kitCopy.texto,
+          url: kitCopy.urlReferido,
+        })
+      }
+      toast.success('Texto también copiado al portapapeles por si necesitas pegarlo', { duration: 3000 })
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        toast.error('No se pudo abrir el menú de compartir del dispositivo')
+      }
+    } finally {
+      setSharingKit(false)
     }
   }
 
@@ -854,7 +1072,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                         <div className="space-y-2 pt-2 border-t border-slate-100">
                           <button
                             type="button"
-                            onClick={() => solicitarCopyIa(p, 'whatsapp')}
+                            onClick={() => abrirKitVenta(p)}
                             className="w-full py-2.5 px-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-95 transition-all"
                           >
                             <Sparkles size={14} />
@@ -1202,21 +1420,58 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
       {/* MODAL KIT DE VENTA IA */}
       {kitProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-          <div onClick={() => setKitProduct(null)} className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs" />
-          <div className="relative bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-5 sm:p-6 space-y-4">
+          <div
+            onClick={() => {
+              setKitProduct(null)
+              setCompletedSteps({})
+            }}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+          />
+          <div className="relative bg-white rounded-3xl w-full max-w-xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-4 sm:p-6 space-y-3.5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 flex items-center gap-1">
-                  <Sparkles size={12} /> Kit de Venta Generado con IA
+                  <Sparkles size={12} /> Kit de Venta Paso a Paso (IA)
                 </span>
                 <h3 className="font-black text-slate-900 text-base leading-snug mt-0.5">{kitProduct.nombre}</h3>
                 <p className="text-xs font-bold text-emerald-600 mt-0.5">
                   Precio público: {fmtPrice(kitProduct.precioPublico)} • Tu ganancia: {fmtPrice(kitProduct.gananciaAliado)}
                 </p>
               </div>
-              <button type="button" onClick={() => setKitProduct(null)} className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer">
+              <button
+                type="button"
+                onClick={() => {
+                  setKitProduct(null)
+                  setCompletedSteps({})
+                }}
+                className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
                 <X size={16} />
               </button>
+            </div>
+
+            {/* Facilidades de pago que puedes ofrecerle al cliente */}
+            <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-[10px] sm:text-[11px]">
+              <span className="font-extrabold text-emerald-900 mr-0.5">Opciones de pago para tu cliente:</span>
+              {kitProduct.precioPublico >= 50000 && (
+                <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 font-bold">
+                  Addi 3 cuotas {fmtPrice(Math.round(kitProduct.precioPublico / 3))} (0% int.)
+                </span>
+              )}
+              {kitProduct.precioPublico >= 30000 && (
+                <span className="px-2 py-0.5 rounded-full bg-white border border-emerald-200 text-emerald-700 font-bold">
+                  Sistecrédito
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-bold">
+                Nequi / Bre-B
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-bold">
+                Contra entrega (Cali y alred.)
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-bold">
+                Envíos Colombia
+              </span>
             </div>
 
             {/* Selector de canal */}
@@ -1229,7 +1484,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => solicitarCopyIa(kitProduct, tab.id)}
+                  onClick={() => seleccionarCanalKit(tab.id)}
                   className={`py-2 px-2 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer ${kitEstilo === tab.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
@@ -1238,103 +1493,314 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
               ))}
             </div>
 
-            {kitLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs text-slate-500">
-                <Loader2 className="animate-spin text-sky-500" size={28} />
-                <span>Nuestra IA está redactando un anuncio persuasivo para ti...</span>
-              </div>
-            ) : kitCopy ? (
-              <div className="space-y-3">
-                {kitEstilo === 'marketplace' && (
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Título sugerido</span>
-                      <p className="text-xs font-bold text-slate-800 truncate">{kitCopy.titulo}</p>
+            {kitCopy ? (
+              <div className="space-y-2.5">
+                {/* Atajo móvil 1-clic en WhatsApp / Instagram */}
+                {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && kitEstilo !== 'marketplace' && (
+                  <button
+                    type="button"
+                    disabled={sharingKit}
+                    onClick={compartirFotoYTextoNativo}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-50 to-indigo-50 hover:from-sky-100 hover:to-indigo-100 text-sky-900 border border-sky-200 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 transition-colors"
+                  >
+                    {sharingKit ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} className="text-sky-600" />}
+                    <span>{sharingKit ? 'Preparando foto y texto...' : 'Modo rápido celular: Compartir Foto + Texto en 1 clic'}</span>
+                  </button>
+                )}
+
+                {/* PASO 1: Abrir Red Social (cuando aplica) + Descargar Foto Limpia */}
+                <div className={`p-3 rounded-2xl border transition-colors ${completedSteps.foto && (kitEstilo === 'whatsapp' || completedSteps.abrir) ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-start gap-2.5">
+                    <span className={`w-6 h-6 rounded-full text-xs font-black flex items-center justify-center shrink-0 mt-0.5 ${completedSteps.foto ? 'bg-emerald-500 text-white' : 'bg-sky-600 text-white'}`}>
+                      {completedSteps.foto ? <Check size={13} /> : '1'}
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-extrabold text-slate-900">
+                            {kitEstilo === 'marketplace'
+                              ? 'Abre Marketplace y descarga la foto (1:1)'
+                              : kitEstilo === 'instagram'
+                                ? 'Abre Instagram y descarga la foto (9:16)'
+                                : 'Descarga la foto limpia (recomendada 9:16)'}
+                          </p>
+                          {kitEstilo !== 'whatsapp' && (
+                            <p className="text-[11px] text-slate-500">
+                              {kitEstilo === 'marketplace'
+                                ? 'Abre primero Marketplace en otra pestaña para ir subiendo la foto y pegando cada campo.'
+                                : 'Abre Instagram y ten la foto lista; pon el link en el sticker de Historias o en tu bio.'}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setFormatoImg('cuadrado')}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${formatoImg === 'cuadrado' ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
+                          >
+                            Cuadrada 1:1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormatoImg('vertical')}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${formatoImg === 'vertical' ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
+                          >
+                            Estado 9:16
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={`grid gap-2 ${kitEstilo === 'whatsapp' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                        {kitEstilo === 'marketplace' && (
+                          <button
+                            type="button"
+                            onClick={() => abrirEnRedSocial('marketplace', true)}
+                            className="py-2 px-3 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <ExternalLink size={14} />
+                            <span>{completedSteps.abrir ? 'Marketplace abierto' : 'Abrir FB Marketplace'}</span>
+                          </button>
+                        )}
+                        {kitEstilo === 'instagram' && (
+                          <button
+                            type="button"
+                            onClick={() => abrirEnRedSocial('instagram', true)}
+                            className="py-2 px-3 bg-gradient-to-r from-fuchsia-600 via-pink-600 to-amber-500 hover:opacity-95 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <ExternalLink size={14} />
+                            <span>{completedSteps.abrir ? 'Instagram abierto' : 'Abrir Instagram'}</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => descargarFotoProducto(kitProduct)}
+                          className={`py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                            completedSteps.foto
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : 'bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs'
+                          }`}
+                        >
+                          {completedSteps.foto ? <Check size={14} /> : <Download size={14} />}
+                          <span>{completedSteps.foto ? 'Foto descargada' : 'Descargar Foto JPG'}</span>
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => copiarTexto(kitCopy.titulo, 'kit-title', 'Título copiado')}
-                      className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-bold shrink-0 cursor-pointer"
-                    >
-                      Copiar
-                    </button>
+                  </div>
+                </div>
+
+                {/* PASO 2 (solo Marketplace): Copiar Título y Precio */}
+                {kitEstilo === 'marketplace' && (
+                  <div className={`p-3 rounded-2xl border space-y-2 transition-colors ${completedSteps.titulo && completedSteps.precio ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-6 h-6 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${completedSteps.titulo && completedSteps.precio ? 'bg-emerald-500 text-white' : 'bg-sky-600 text-white'}`}>
+                        {completedSteps.titulo && completedSteps.precio ? <Check size={13} /> : '2'}
+                      </span>
+                      <p className="text-xs font-extrabold text-slate-900">
+                        Copia el Título y el Precio para tu publicación
+                      </p>
+                    </div>
+
+                    <div className="pl-8 space-y-1.5">
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Título sugerido</span>
+                          <p className="text-xs font-bold text-slate-800 truncate">{kitCopy.titulo}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            copiarTexto(kitCopy.titulo, 'kit-title', 'Título copiado')
+                            markStepDone('titulo')
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold shrink-0 cursor-pointer flex items-center gap-1 ${
+                            completedSteps.titulo
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-slate-900 hover:bg-slate-800 text-white'
+                          }`}
+                        >
+                          {completedSteps.titulo ? <Check size={12} /> : <Copy size={12} />}
+                          <span>{completedSteps.titulo ? 'Copiado' : 'Copiar Título'}</span>
+                        </button>
+                      </div>
+
+                      <div className="bg-white px-2.5 py-2 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                        <div className="text-xs">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase mr-2">Campo Precio:</span>
+                          <span className="font-black text-slate-900">{Math.round(kitProduct.precioPublico)}</span>
+                          <span className="text-[11px] text-slate-500 ml-1">({fmtPrice(kitProduct.precioPublico)})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            copiarTexto(String(Math.round(kitProduct.precioPublico)), 'kit-price', 'Precio copiado sin puntos')
+                            markStepDone('precio')
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 cursor-pointer flex items-center gap-1 ${
+                            completedSteps.precio
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                          }`}
+                        >
+                          {completedSteps.precio ? <Check size={12} /> : <Copy size={12} />}
+                          <span>{completedSteps.precio ? 'Copiado' : 'Copiar Precio'}</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold text-slate-600">Texto listo para pegar (incluye tu link rastreable):</span>
+                {/* PASO 2 (WA/IG) o PASO 3 (Marketplace): Texto / Caption + Link + IA opcional */}
+                <div className={`p-3 rounded-2xl border space-y-2 transition-colors ${completedSteps.texto || (kitEstilo === 'whatsapp' && completedSteps.publicar) ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 rounded-full text-xs font-black flex items-center justify-center shrink-0 ${completedSteps.texto || (kitEstilo === 'whatsapp' && completedSteps.publicar) ? 'bg-emerald-500 text-white' : 'bg-sky-600 text-white'}`}>
+                        {completedSteps.texto || (kitEstilo === 'whatsapp' && completedSteps.publicar) ? <Check size={13} /> : kitEstilo === 'marketplace' ? '3' : '2'}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-extrabold text-slate-900">
+                            {kitEstilo === 'marketplace'
+                              ? 'Copia la Descripción + tu Link'
+                              : kitEstilo === 'instagram'
+                                ? 'Copia el Caption + Hashtags + tu Link'
+                                : 'Envía por WhatsApp o copia para tu Estado'}
+                          </p>
+                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-extrabold ${kitCopy.esIa ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200/80 text-slate-600'}`}>
+                            {kitCopy.esIa ? '✨ Texto IA' : 'Plantilla instantánea'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => solicitarCopyIa(kitProduct, kitEstilo, true)}
-                      className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
+                      disabled={kitLoading}
+                      onClick={() => solicitarCopyIa(kitProduct, kitEstilo, kitCopy.esIa)}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold flex items-center gap-1 cursor-pointer shrink-0 transition-colors disabled:opacity-60 ${
+                        kitCopy.esIa
+                          ? 'bg-white border border-sky-200 text-sky-700 hover:bg-sky-50'
+                          : 'bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white shadow-2xs'
+                      }`}
                     >
-                      <RefreshCw size={11} /> Otra variación IA
+                      {kitLoading ? (
+                        <Loader2 size={11} className="animate-spin" />
+                      ) : kitCopy.esIa ? (
+                        <RefreshCw size={11} />
+                      ) : (
+                        <Sparkles size={11} />
+                      )}
+                      <span>{kitLoading ? 'Redactando...' : kitCopy.esIa ? 'Otra variación IA' : 'Redactar con IA'}</span>
                     </button>
                   </div>
-                  <textarea
-                    rows={7}
-                    value={kitCopy.texto}
-                    onChange={(e) => setKitCopy({ ...kitCopy, texto: e.target.value })}
-                    className="w-full p-3 rounded-2xl border border-slate-200 bg-slate-50 text-xs text-slate-800 leading-relaxed focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-                  />
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copiarTexto(
-                        kitCopy.texto,
-                        'kit-full',
-                        '¡Anuncio + tu enlace copiados!',
-                      )
-                    }
-                    className="py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    {copiedId === 'kit-full' ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
-                    <span>Copiar Texto + Link</span>
-                  </button>
+                  <div className="pl-8 space-y-2">
+                    <div className="relative">
+                      <textarea
+                        rows={5}
+                        value={kitCopy.texto}
+                        disabled={kitLoading}
+                        onChange={(e) => setKitCopy({ ...kitCopy, texto: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 leading-relaxed focus:ring-2 focus:ring-sky-500 outline-none disabled:opacity-60"
+                      />
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(kitCopy.texto)}`, '_blank')
-                    }}
-                    className="py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <WhatsAppIcon className="w-4 h-4" />
-                    <span>Enviar por WhatsApp</span>
-                  </button>
-                </div>
-
-                {/* Descarga de imagen limpia */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-bold text-slate-700">Foto limpia JPG:</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormatoImg('vertical')}
-                      className={`px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer ${formatoImg === 'vertical' ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
-                    >
-                      Estado 9:16
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormatoImg('cuadrado')}
-                      className={`px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer ${formatoImg === 'cuadrado' ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
-                    >
-                      Cuadrada 1:1
-                    </button>
+                    {kitEstilo === 'whatsapp' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => abrirEnRedSocial('whatsapp')}
+                          className="py-2.5 px-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" />
+                          <span>Enviar por WhatsApp</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            copiarTexto(kitCopy.texto, 'kit-full', '¡Texto + link copiados para tu Estado!')
+                            markStepDone('texto')
+                          }}
+                          className="py-2.5 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          {copiedId === 'kit-full' || completedSteps.texto ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                          <span>{completedSteps.texto ? 'Texto copiado' : 'Copiar para Estado'}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          copiarTexto(
+                            kitCopy.texto,
+                            'kit-full',
+                            kitEstilo === 'instagram' ? '¡Caption + hashtags + link copiados!' : '¡Descripción + tu link copiados!',
+                          )
+                          markStepDone('texto')
+                        }}
+                        className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+                          completedSteps.texto
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-slate-900 hover:bg-slate-800 text-white'
+                        }`}
+                      >
+                        {copiedId === 'kit-full' || completedSteps.texto ? <Check size={15} /> : <Copy size={15} />}
+                        <span>
+                          {completedSteps.texto
+                            ? '¡Texto + Link copiado!'
+                            : kitEstilo === 'instagram'
+                              ? 'Copiar Caption + Link'
+                              : 'Copiar Descripción + Link'}
+                        </span>
+                      </button>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => descargarFotoProducto(kitProduct)}
-                    className="py-2 px-3 bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Download size={14} />
-                    <span>Descargar Foto</span>
-                  </button>
+                </div>
+
+                {/* Barra discreta para otras redes */}
+                <div className="flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl">
+                  <span className="text-[10px] font-bold text-slate-500">¿Publicas en otra red?</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {kitEstilo !== 'whatsapp' && (
+                      <button
+                        type="button"
+                        onClick={() => abrirEnRedSocial('whatsapp')}
+                        className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 text-[10px] font-bold text-slate-700 cursor-pointer transition-colors"
+                      >
+                        WhatsApp
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => abrirEnRedSocial('facebook')}
+                      className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 text-[10px] font-bold text-slate-700 cursor-pointer transition-colors"
+                    >
+                      Facebook (Muro/Grupos)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => abrirEnRedSocial('telegram')}
+                      className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 text-[10px] font-bold text-slate-700 cursor-pointer transition-colors"
+                    >
+                      Telegram
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => abrirEnRedSocial('tiktok')}
+                      className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-900 text-[10px] font-bold text-slate-700 cursor-pointer transition-colors"
+                    >
+                      TikTok
+                    </button>
+                    {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && kitEstilo === 'marketplace' && (
+                      <button
+                        type="button"
+                        disabled={sharingKit}
+                        onClick={compartirFotoYTextoNativo}
+                        className="px-2 py-1 rounded-lg bg-sky-50 border border-sky-200 hover:bg-sky-100 text-[10px] font-bold text-sky-800 cursor-pointer transition-colors disabled:opacity-60"
+                      >
+                        Compartir Foto + Texto
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : null}

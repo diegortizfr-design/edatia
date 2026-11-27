@@ -566,12 +566,35 @@ export class AliadosService {
     const prodSlug = producto.slug || producto.id;
     const urlReferido = `${baseUrl}/producto/${encodeURIComponent(String(prodSlug))}?ref=${encodeURIComponent(aliado.codigoReferido)}`;
     const pricing = this.digitalService.resolverPrecioYImpuesto(producto, (config as any).reglasPrecios);
+    const precioRef = Math.round(Number(pricing.precioTotal || 0));
+    const COPY_CACHE_VERSION = 2;
 
-    const cacheKey = `${config.empresaId}:${producto.id}:${estilo}`;
+    const cacheKey = `${config.empresaId}:${producto.id}:${estilo}:${precioRef}`;
     const ahora = Date.now();
     let baseCopy = !regenerar ? this.copyCache.get(cacheKey) : undefined;
+    let hitCache = Boolean(baseCopy && baseCopy.expiresAt >= ahora);
 
-    if (!baseCopy || baseCopy.expiresAt < ahora) {
+    if (!hitCache && !regenerar) {
+      const saved = meta?.copiesAliados?.[estilo];
+      if (
+        saved &&
+        Number(saved.v) === COPY_CACHE_VERSION &&
+        Number(saved.precioRef) === precioRef &&
+        typeof saved.texto === 'string' &&
+        saved.texto.includes('{{URL}}')
+      ) {
+        baseCopy = {
+          titulo: String(saved.titulo || nombreVisible),
+          texto: saved.texto,
+          hashtags: Array.isArray(saved.hashtags) ? saved.hashtags : [],
+          expiresAt: ahora + this.COPY_CACHE_TTL_MS,
+        };
+        this.copyCache.set(cacheKey, baseCopy);
+        hitCache = true;
+      }
+    }
+
+    if (!hitCache || !baseCopy) {
       const generado = await this.gemini.generarCopyRedesAliado(
         {
           nombre: nombreVisible,
@@ -595,6 +618,30 @@ export class AliadosService {
         expiresAt: ahora + this.COPY_CACHE_TTL_MS,
       };
       this.copyCache.set(cacheKey, baseCopy);
+
+      // Persistir en metadataWeb para compartir el copy entre todos los aliados (y sobrevivir reinicios)
+      try {
+        const nextMeta = {
+          ...meta,
+          copiesAliados: {
+            ...(meta.copiesAliados && typeof meta.copiesAliados === 'object' ? meta.copiesAliados : {}),
+            [estilo]: {
+              v: COPY_CACHE_VERSION,
+              precioRef,
+              titulo: generado.titulo,
+              texto: generado.texto,
+              hashtags: generado.hashtags,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        };
+        await this.prisma.producto.update({
+          where: { id: producto.id },
+          data: { metadataWeb: nextMeta },
+        });
+      } catch {
+        // No bloquear respuesta al aliado si falla la escritura de caché persistente
+      }
     }
 
     const textoFinal = baseCopy.texto.replace(/\{\{URL\}\}/g, urlReferido);
@@ -605,6 +652,7 @@ export class AliadosService {
       texto: textoFinal,
       hashtags: baseCopy.hashtags,
       urlReferido,
+      desdeCache: hitCache,
     };
   }
 
