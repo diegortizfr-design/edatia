@@ -891,7 +891,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] sm:text-xs font-extrabold">
               <Sparkles size={13} />
-              <span>Programa Aliados Piloto</span>
+              <span>Programa de Aliados</span>
             </span>
             {aliado && (
               <button
@@ -956,7 +956,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 <div className="p-6 text-center space-y-2 bg-amber-50 border border-amber-200 rounded-2xl">
                   <AlertCircle className="mx-auto text-amber-600" size={28} />
                   <h2 className="font-bold text-slate-900">Programa pausado temporalmente</h2>
-                  <p className="text-xs text-slate-600">Estamos ajustando cupos del piloto. Escríbenos por WhatsApp si tienes invitación.</p>
+                  <p className="text-xs text-slate-600">Estamos ajustando cupos del programa. Escríbenos por WhatsApp si tienes invitación.</p>
                 </div>
               ) : (
                 <>
@@ -1116,7 +1116,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                         </div>
                         {configPublica?.requiereCodigoInvitacion && (
                           <div className="sm:col-span-2">
-                            <label className="text-xs font-bold text-amber-800 block mb-1">Código de Invitación del Piloto *</label>
+                            <label className="text-xs font-bold text-amber-800 block mb-1">Código de Invitación *</label>
                             <input
                               type="text"
                               required

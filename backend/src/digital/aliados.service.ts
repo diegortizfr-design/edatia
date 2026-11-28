@@ -196,7 +196,7 @@ export class AliadosService {
     if (configAliados.codigoInvitacion) {
       const codigoIngresado = this.sanitizeText(dto?.codigoInvitacion, 40).toUpperCase();
       if (codigoIngresado !== configAliados.codigoInvitacion) {
-        throw new BadRequestException('El código de invitación del piloto es inválido o está vencido.');
+        throw new BadRequestException('El código de invitación es inválido o está vencido.');
       }
     }
 

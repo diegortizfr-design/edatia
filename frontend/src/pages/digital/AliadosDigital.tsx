@@ -247,7 +247,7 @@ export function AliadosDigital() {
     if (!urlPortal) return
     await navigator.clipboard.writeText(urlPortal)
     setCopiedLink(true)
-    toast.success('Enlace privado del piloto copiado')
+    toast.success('Enlace del portal de aliados copiado')
     setTimeout(() => setCopiedLink(false), 2000)
   }
 
@@ -285,7 +285,7 @@ export function AliadosDigital() {
         <div className="flex items-center gap-2 flex-wrap">
           {urlPortal && (
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs">
-              <span className="text-slate-500 font-medium hidden sm:inline">Enlace piloto:</span>
+              <span className="text-slate-500 font-medium hidden sm:inline">Enlace del portal:</span>
               <code className="font-bold text-indigo-600 truncate max-w-[210px]">{urlPortal}</code>
               <button type="button" onClick={copiarUrlPortal} className="p-1 hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer" title="Copiar enlace">
                 {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
@@ -356,7 +356,7 @@ export function AliadosDigital() {
             tab === 'config' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Settings size={15} /> Configuración del Piloto
+          <Settings size={15} /> Configuración del Programa
         </button>
       </div>
 
@@ -408,7 +408,7 @@ export function AliadosDigital() {
                 {aliadosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
-                      No hay aliados registrados aún. Comparte el enlace del piloto para iniciar pruebas.
+                      No hay aliados registrados aún. Comparte el enlace del portal para empezar a recibir registros.
                     </td>
                   </tr>
                 ) : (
@@ -619,7 +619,7 @@ export function AliadosDigital() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Código Invitación Piloto (Opcional)</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Código de Invitación (Opcional)</label>
               <input
                 type="text"
                 value={config.codigoInvitacion}
@@ -627,7 +627,7 @@ export function AliadosDigital() {
                 placeholder="Ej: BABY2026 (vacío = libre)"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm uppercase font-mono"
               />
-              <p className="text-[11px] text-slate-400 mt-1">Útil para restringir el registro durante el piloto.</p>
+              <p className="text-[11px] text-slate-400 mt-1">Útil si deseas restringir el registro solo a invitados con código.</p>
             </div>
 
             <div>
