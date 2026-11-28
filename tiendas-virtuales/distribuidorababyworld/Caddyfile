@@ -16,6 +16,16 @@
         }
     }
 
+    @crawlers_aliados {
+        header_regexp User-Agent "(?i)(facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot|Discordbot)"
+        path /aliados /aliados/
+    }
+    handle @crawlers_aliados {
+        reverse_proxy http://api:4000 {
+            rewrite /api/v1/public/tiendas/distribuidorababyworld/og-aliados
+        }
+    }
+
     # Caché inmutable de largo plazo para assets de Vite con hash en el nombre (/assets/*)
     @static {
         path /assets/*

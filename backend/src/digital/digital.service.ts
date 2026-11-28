@@ -2141,11 +2141,92 @@ ${itemsXml}
   <meta name="twitter:description" content="${descripcion}">
   <meta name="twitter:image" content="${escapeHtml(imagenUrl)}">
 
-  <!-- Redirección inmediata para usuarios en navegador -->
+  // Redirección inmediata para usuarios en navegador
   <meta http-equiv="refresh" content="0;url=${canonicalUrl}">
 </head>
 <body style="font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;padding:2rem;text-align:center;">
   <p>Cargando producto en <strong>${tienda}</strong>...</p>
+  <p><a href="${canonicalUrl}">Haz clic aquí si no redirige automáticamente</a></p>
+  <script>window.location.replace('${canonicalUrl}');</script>
+</body>
+</html>`;
+  }
+
+  async getAliadosOgHtml(slugTienda: string): Promise<string> {
+    const config = await this.prisma.configuracionTienda.findFirst({
+      where: {
+        OR: [
+          { slugTienda },
+          { dominioPropio: slugTienda },
+        ],
+      },
+    });
+
+    if (!config || !config.activo) {
+      throw new NotFoundException('Tienda no encontrada o inactiva');
+    }
+
+    let baseDomain = 'distribuidorababyworld.com';
+    if (config.dominioPropio) {
+      baseDomain = config.dominioPropio.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    } else if (config.slugTienda && config.slugTienda !== 'distribuidorababyworld') {
+      baseDomain = `${config.slugTienda}.edatia.com`;
+    }
+    const baseUrl = `https://${baseDomain}`;
+
+    const escapeHtml = (str?: string | null) =>
+      (str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const cfgAliados = ((config as any).configAliados && typeof (config as any).configAliados === 'object')
+      ? (config as any).configAliados
+      : {};
+    const pct = Number(cfgAliados.porcentajeUtilidad || 30);
+    const minRetiro = Number(cfgAliados.montoMinimoRetiro || 30000);
+
+    const rawTienda = config.nombreTienda && config.nombreTienda !== 'Edatia Demo SAS'
+      ? config.nombreTienda
+      : 'Distribuidora Baby World';
+    const tienda = escapeHtml(rawTienda);
+    const canonicalUrl = `${baseUrl}/aliados`;
+    const imagenUrl = `${baseUrl}/logo.png`;
+    const titulo = escapeHtml(`Gana el ${pct}% vendiendo juguetes sin invertir | Programa de Aliados ${rawTienda}`);
+    const descripcion = escapeHtml(
+      `Únete al Programa de Aliados de ${rawTienda}. Comparte juguetes en WhatsApp, Facebook Marketplace e Instagram con fotos y textos listos, sin invertir inventario. Retira tus ganancias desde $${minRetiro.toLocaleString('es-CO')} COP a Nequi, Daviplata o Bancolombia.`,
+    );
+
+    return `<!DOCTYPE html>
+<html lang="es" prefix="og: https://ogp.me/ns#">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${titulo}</title>
+  <meta name="description" content="${descripcion}">
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="${tienda}">
+  <meta property="og:title" content="${titulo}">
+  <meta property="og:description" content="${descripcion}">
+  <meta property="og:image" content="${escapeHtml(imagenUrl)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(imagenUrl)}">
+  <meta property="og:image:alt" content="${titulo}">
+  <meta property="og:url" content="${canonicalUrl}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${titulo}">
+  <meta name="twitter:description" content="${descripcion}">
+  <meta name="twitter:image" content="${escapeHtml(imagenUrl)}">
+
+  <!-- Redirección inmediata para usuarios en navegador -->
+  <meta http-equiv="refresh" content="0;url=${canonicalUrl}">
+</head>
+<body style="font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;padding:2rem;text-align:center;">
+  <p>Cargando el Portal de Aliados de <strong>${tienda}</strong>...</p>
   <p><a href="${canonicalUrl}">Haz clic aquí si no redirige automáticamente</a></p>
   <script>window.location.replace('${canonicalUrl}');</script>
 </body>

@@ -487,7 +487,7 @@ export class AliadosService {
         sku: p.sku,
         nombre: nombreVisible,
         slug: String(prodSlug),
-        descripcion: p.descripcion || p.descripcionWeb || '',
+        descripcion: p.descripcionWeb || p.descripcion || '',
         categoria: p.categoria?.parent?.nombre || p.categoria?.nombre || 'Juguetería',
         subcategoria: p.categoria?.parent ? p.categoria.nombre : null,
         marca: p.marca?.nombre || meta.marca || null,
@@ -512,11 +512,20 @@ export class AliadosService {
             const vBase = Number(v.precioBase || 0);
             const targetProd = vBase > 0 && vBase !== Number(p.precioBase || 0) ? { ...p, precioBase: vBase, precioWeb: null } : p;
             const vPrice = this.digitalService.resolverPrecioYImpuesto(targetProd, (config as any).reglasPrecios);
+            const vCalc = calcularGananciaUnitariaAliado({
+              precioSubtotal: vPrice.precioSubtotal,
+              precioTotal: vPrice.precioTotal,
+              costoPromedio: p.costoPromedio,
+              comisionValor: p.comisionValor,
+              porcentajeUtilidad: pctAliado,
+              redondeo: configAliados.redondeoComision,
+            });
             return {
               id: v.id,
               nombre: v.nombre,
               stockDisponible: vStock,
               precioPublico: vPrice.precioTotal,
+              gananciaAliado: vCalc.elegible && vCalc.ganancia > 0 ? vCalc.ganancia : calc.ganancia,
             };
           })
           .filter((v: any) => v.stockDisponible > 0),
@@ -567,7 +576,7 @@ export class AliadosService {
     const urlReferido = `${baseUrl}/producto/${encodeURIComponent(String(prodSlug))}?ref=${encodeURIComponent(aliado.codigoReferido)}`;
     const pricing = this.digitalService.resolverPrecioYImpuesto(producto, (config as any).reglasPrecios);
     const precioRef = Math.round(Number(pricing.precioTotal || 0));
-    const COPY_CACHE_VERSION = 2;
+    const COPY_CACHE_VERSION = 3;
 
     const cacheKey = `${config.empresaId}:${producto.id}:${estilo}:${precioRef}`;
     const ahora = Date.now();
@@ -791,11 +800,20 @@ export class AliadosService {
     if (body?.notas !== undefined) {
       data.notas = this.sanitizeText(body.notas, 500) || null;
     }
+    if (body?.nuevoPin !== undefined && String(body.nuevoPin).trim() !== '') {
+      const pinLimpio = String(body.nuevoPin).trim();
+      if (!/^\d{4,6}$/.test(pinLimpio)) {
+        throw new BadRequestException('El nuevo PIN debe tener entre 4 y 6 dígitos numéricos.');
+      }
+      data.pinHash = await bcrypt.hash(pinLimpio, 10);
+    }
 
-    return (this.prisma as any).aliadoComercial.update({
+    const updated = await (this.prisma as any).aliadoComercial.update({
       where: { id: aliado.id },
       data,
     });
+    const { pinHash: _pinHash, ...safeUpdated } = updated;
+    return safeUpdated;
   }
 
   async listarComisionesAdmin(empresaId: number, estado?: string) {

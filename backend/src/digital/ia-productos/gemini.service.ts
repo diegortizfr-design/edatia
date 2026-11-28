@@ -368,12 +368,10 @@ Reglas:
     const facilidadesPago =
       precioNum >= 50000
         ? `cuotas sin tarjeta con Addi (hasta 3 cuotas de ${cuotaAddiFmt} sin interés) o Sistecrédito, Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)`
-        : precioNum >= 30000
-          ? 'cuotas cómodas con Sistecrédito, Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)'
-          : 'Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)';
+        : 'cuotas con Sistecrédito, Addi (en compras desde $50.000), Nequi/transferencia o pago contra entrega en Cali y alrededores (envíos a toda Colombia)';
 
     const buildFallback = (): CopyRedesAliado => {
-      const desc = (producto.descripcion || producto.descripcionWeb || 'Ideal para regalar y sorprender en casa.')
+      const desc = (producto.descripcionWeb || producto.descripcion || 'Ideal para regalar y sorprender en casa.')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 180);

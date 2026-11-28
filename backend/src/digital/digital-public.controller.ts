@@ -45,6 +45,14 @@ export class DigitalPublicController {
     return this.digitalService.getProductoOgHtml(slug, productoSlug);
   }
 
+  // Vista Previa enriquecida (Open Graph) para el Portal de Aliados (/aliados)
+  @Get(':slug/og-aliados')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'public, max-age=3600')
+  async getAliadosOgHtml(@Param('slug') slug: string) {
+    return this.digitalService.getAliadosOgHtml(slug);
+  }
+
   // Analítica anónima de la tienda (visitas, producto visto, carrito, checkout)
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post(':slug/eventos')

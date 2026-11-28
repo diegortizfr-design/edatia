@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   Users, Wallet, Settings, CheckCircle2, XCircle, Clock,
   Copy, Check, Search, Loader2, Save, ExternalLink, RefreshCw,
-  DollarSign, ShieldCheck, MessageCircle, Sparkles
+  DollarSign, ShieldCheck, MessageCircle, Sparkles, KeyRound
 } from 'lucide-react'
 import api from '../../services/api'
 import toast from 'react-hot-toast'
@@ -165,6 +165,22 @@ export function AliadosDigital() {
       cargarTodo()
     } catch {
       toast.error('No se pudo actualizar el estado del aliado')
+    }
+  }
+
+  const resetearPinAliado = async (aliado: AliadoRow) => {
+    const raw = window.prompt(`Ingresa el nuevo PIN numérico (4 a 6 dígitos) para ${aliado.nombre}:`)
+    if (raw === null) return
+    const pin = raw.trim()
+    if (!/^\d{4,6}$/.test(pin)) {
+      toast.error('El PIN debe tener entre 4 y 6 dígitos numéricos')
+      return
+    }
+    try {
+      await api.patch(`/digital/aliados/${aliado.id}`, { nuevoPin: pin })
+      toast.success(`PIN actualizado para ${aliado.nombre}. Compártelo por WhatsApp.`)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'No se pudo actualizar el PIN')
     }
   }
 
@@ -435,20 +451,29 @@ export function AliadosDigital() {
                         </select>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {a.resumen.saldoAprobado > 0 ? (
+                        <div className="inline-flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            onClick={() => {
-                              setLiquidarAliado(a)
-                              setComprobantePago('')
-                            }}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                            onClick={() => resetearPinAliado(a)}
+                            title="Restablecer PIN de acceso"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
                           >
-                            <DollarSign size={12} /> Pagar
+                            <KeyRound size={12} />
+                            <span>PIN</span>
                           </button>
-                        ) : (
-                          <span className="text-[10px] text-slate-400">Sin saldo por pagar</span>
-                        )}
+                          {a.resumen.saldoAprobado > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLiquidarAliado(a)
+                                setComprobantePago('')
+                              }}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <DollarSign size={12} /> Pagar
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
