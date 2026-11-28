@@ -2184,7 +2184,6 @@ ${itemsXml}
     const cfgAliados = ((config as any).configAliados && typeof (config as any).configAliados === 'object')
       ? (config as any).configAliados
       : {};
-    const pct = Number(cfgAliados.porcentajeUtilidad || 30);
     const minRetiro = Number(cfgAliados.montoMinimoRetiro || 30000);
 
     const rawTienda = config.nombreTienda && config.nombreTienda !== 'Edatia Demo SAS'
@@ -2193,7 +2192,7 @@ ${itemsXml}
     const tienda = escapeHtml(rawTienda);
     const canonicalUrl = `${baseUrl}/aliados`;
     const imagenUrl = `${baseUrl}/logo.png`;
-    const titulo = escapeHtml(`Gana el ${pct}% vendiendo juguetes sin invertir | Programa de Aliados ${rawTienda}`);
+    const titulo = escapeHtml(`Gana comisiones vendiendo juguetes sin invertir | Programa de Aliados ${rawTienda}`);
     const descripcion = escapeHtml(
       `Únete al Programa de Aliados de ${rawTienda}. Comparte juguetes en WhatsApp, Facebook Marketplace e Instagram con fotos y textos listos, sin invertir inventario. Retira tus ganancias desde $${minRetiro.toLocaleString('es-CO')} COP a Nequi, Daviplata o Bancolombia.`,
     );

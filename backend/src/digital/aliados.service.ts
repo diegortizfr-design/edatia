@@ -141,7 +141,12 @@ export class AliadosService {
     return `BW-${primeraPalabra}${Date.now().toString().slice(-4)}`;
   }
 
-  private sanitizarAliadoPublico(aliado: any, configAliados: ConfigAliadosPrograma, baseUrl: string) {
+  private sanitizarAliadoPublico(
+    aliado: any,
+    configAliados: ConfigAliadosPrograma,
+    baseUrl: string,
+    incluirPorcentaje = false,
+  ) {
     const pct = aliado.porcentajeUtilidad !== null && aliado.porcentajeUtilidad !== undefined
       ? Number(aliado.porcentajeUtilidad)
       : configAliados.porcentajeUtilidad;
@@ -157,7 +162,7 @@ export class AliadosService {
       medioPago: aliado.medioPago,
       cuentaPago: aliado.cuentaPago,
       codigoReferido: aliado.codigoReferido,
-      porcentajeUtilidad: pct,
+      ...(incluirPorcentaje ? { porcentajeUtilidad: pct } : {}),
       estado: aliado.estado,
       urlTiendaReferido: `${baseUrl}/?ref=${encodeURIComponent(aliado.codigoReferido)}`,
       createdAt: aliado.createdAt,
@@ -172,7 +177,6 @@ export class AliadosService {
     const { config, configAliados } = await this.resolverTiendaPorSlug(slug);
     return {
       activo: configAliados.activo,
-      porcentajeUtilidad: configAliados.porcentajeUtilidad,
       requiereCodigoInvitacion: Boolean(configAliados.codigoInvitacion),
       requiereAprobacion: configAliados.requiereAprobacion,
       montoMinimoRetiro: configAliados.montoMinimoRetiro,
@@ -534,7 +538,6 @@ export class AliadosService {
 
     return {
       codigoReferido: aliado.codigoReferido,
-      porcentajeAplicado: pctAliado,
       productos: itemsCatalogo,
     };
   }
@@ -762,7 +765,7 @@ export class AliadosService {
       }
 
       return {
-        ...this.sanitizarAliadoPublico(a, configAliados, baseUrl),
+        ...this.sanitizarAliadoPublico(a, configAliados, baseUrl, true),
         porcentajePersonalizado: a.porcentajeUtilidad !== null ? Number(a.porcentajeUtilidad) : null,
         notas: a.notas,
         resumen: {

@@ -229,7 +229,7 @@ Definidos en `backend/prisma/schema.prisma` y migración idempotente `backend/pr
 ### 7.2 Endpoints REST (Públicos / Portal y Admin ERP)
 
 * **Portal Público / Aliados (`/api/v1/public/tiendas/:slug/aliados`):**
-  * `GET  /config-publica`: estado del piloto, porcentaje vigente y mínimo de retiro.
+  * `GET  /config-publica`: estado del piloto y mínimo de retiro (sin exponer porcentajes internos de utilidad).
   * `POST /registro` y `POST /login`: autenticación stateless con token HMAC-SHA256.
   * `GET  /perfil`: resumen de saldos (*Pendiente*, *Disponible*, *Pagado*) e historial sin exponer costos internos.
   * `GET  /catalogo`: solo productos activos con stock real y costo cargado (`costoPromedio > 0` o `comisionValor > 0`), mostrando exclusivamente precio público y `gananciaAliado` fija en pesos (incluyendo ganancia calculada por cada variante activa) y priorizando `descripcionWeb || descripcion`.

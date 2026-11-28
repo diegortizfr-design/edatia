@@ -26,7 +26,6 @@ interface AliadoProfile {
   medioPago: string
   cuentaPago: string
   codigoReferido: string
-  porcentajeUtilidad: number
   estado: 'PENDIENTE' | 'ACTIVO' | 'SUSPENDIDO'
   urlTiendaReferido: string
 }
@@ -90,7 +89,6 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
   const [token, setToken] = useState<string>(() => localStorage.getItem(TOKEN_STORAGE_KEY) || '')
   const [configPublica, setConfigPublica] = useState<{
     activo: boolean
-    porcentajeUtilidad?: number
     requiereCodigoInvitacion: boolean
     montoMinimoRetiro: number
     nombreTienda: string
@@ -916,7 +914,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
             {/* Propuesta de valor */}
             <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-extrabold uppercase tracking-wider">
-                💰 Gana el {configPublica?.porcentajeUtilidad ?? 30}% de utilidad
+                💰 Ganancia fija en pesos por cada juguete
               </span>
               <h1 className="text-2xl sm:text-3xl font-black leading-tight">
                 Vende nuestros juguetes en tus redes sin invertir un peso
@@ -1177,7 +1175,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 Tu código: <span className="text-emerald-400 font-mono">{aliado.codigoReferido}</span>
               </h2>
               <p className="text-xs text-slate-300">
-                Pagos a {aliado.medioPago} ({aliado.cuentaPago}) • Ganas el {aliado.porcentajeUtilidad}% de utilidad por cada juguete entregado.
+                Pagos a {aliado.medioPago} ({aliado.cuentaPago}) • Ganancia clara en pesos por cada juguete entregado.
               </p>
             </div>
 
