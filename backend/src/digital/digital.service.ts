@@ -2191,7 +2191,7 @@ ${itemsXml}
       : 'Distribuidora Baby World';
     const tienda = escapeHtml(rawTienda);
     const canonicalUrl = `${baseUrl}/aliados`;
-    const imagenUrl = `${baseUrl}/logo.png`;
+    const imagenUrl = `${baseUrl}/og-aliados.jpg?v=1`;
     const titulo = escapeHtml(`Gana comisiones vendiendo juguetes sin invertir | Programa de Aliados ${rawTienda}`);
     const descripcion = escapeHtml(
       `Únete al Programa de Aliados de ${rawTienda}. Comparte juguetes en WhatsApp, Facebook Marketplace e Instagram con fotos y textos listos, sin invertir inventario. Retira tus ganancias desde $${minRetiro.toLocaleString('es-CO')} COP a Nequi, Daviplata o Bancolombia.`,
@@ -2212,6 +2212,8 @@ ${itemsXml}
   <meta property="og:description" content="${descripcion}">
   <meta property="og:image" content="${escapeHtml(imagenUrl)}">
   <meta property="og:image:secure_url" content="${escapeHtml(imagenUrl)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="${titulo}">
   <meta property="og:url" content="${canonicalUrl}">
 

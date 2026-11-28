@@ -180,6 +180,7 @@ export class AliadosService {
       requiereCodigoInvitacion: Boolean(configAliados.codigoInvitacion),
       requiereAprobacion: configAliados.requiereAprobacion,
       montoMinimoRetiro: configAliados.montoMinimoRetiro,
+      videoGuiaUrl: configAliados.videoGuiaUrl || '',
       nombreTienda:
         config.nombreTienda && config.nombreTienda !== 'Edatia Demo SAS'
           ? config.nombreTienda

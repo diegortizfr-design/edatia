@@ -8,6 +8,7 @@ export interface ConfigAliadosPrograma {
   bloquearAutocompra: boolean;
   stockMinimoCatalogo: number;
   redondeoComision: number;
+  videoGuiaUrl: string;
 }
 
 export const DEFAULT_CONFIG_ALIADOS: ConfigAliadosPrograma = {
@@ -20,6 +21,7 @@ export const DEFAULT_CONFIG_ALIADOS: ConfigAliadosPrograma = {
   bloquearAutocompra: true,
   stockMinimoCatalogo: 1,
   redondeoComision: 100,
+  videoGuiaUrl: '',
 };
 
 export function mergeConfigAliados(raw: any): ConfigAliadosPrograma {
@@ -28,6 +30,8 @@ export function mergeConfigAliados(raw: any): ConfigAliadosPrograma {
   const minRetiro = Number(src.montoMinimoRetiro);
   const stockMin = Number(src.stockMinimoCatalogo);
   const redondeo = Number(src.redondeoComision);
+  const rawVideo = typeof src.videoGuiaUrl === 'string' ? src.videoGuiaUrl.trim().slice(0, 600) : '';
+  const videoGuiaUrl = /^https?:\/\/.+/i.test(rawVideo) ? rawVideo : '';
 
   return {
     activo: src.activo !== undefined ? Boolean(src.activo) : DEFAULT_CONFIG_ALIADOS.activo,
@@ -41,6 +45,7 @@ export function mergeConfigAliados(raw: any): ConfigAliadosPrograma {
     bloquearAutocompra: src.bloquearAutocompra !== undefined ? Boolean(src.bloquearAutocompra) : true,
     stockMinimoCatalogo: !isNaN(stockMin) && stockMin >= 1 ? Math.floor(stockMin) : DEFAULT_CONFIG_ALIADOS.stockMinimoCatalogo,
     redondeoComision: [1, 10, 100, 500, 1000].includes(redondeo) ? redondeo : DEFAULT_CONFIG_ALIADOS.redondeoComision,
+    videoGuiaUrl,
   };
 }
 

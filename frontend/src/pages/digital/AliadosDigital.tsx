@@ -67,6 +67,7 @@ interface ConfigAliados {
   bloquearAutocompra: boolean
   stockMinimoCatalogo: number
   redondeoComision: number
+  videoGuiaUrl: string
 }
 
 interface CategoriaDisponible {
@@ -640,6 +641,22 @@ export function AliadosDigital() {
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">
+              URL del Video Guía para Aliados (Opcional)
+            </label>
+            <input
+              type="url"
+              value={config.videoGuiaUrl || ''}
+              onChange={(e) => setConfig({ ...config, videoGuiaUrl: e.target.value })}
+              placeholder="https://youtube.com/shorts/... o https://www.tiktok.com/... o enlace de Reel / MP4"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Pega aquí un video corto (45–60 s) explicando cómo publicar y cargar pedidos. Aparecerá automáticamente un botón "Ver video guía" dentro del portal de aliados.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">

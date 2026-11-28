@@ -3,11 +3,13 @@ import {
   ArrowLeft, Sparkles, Search, Copy, Check, Download,
   Wallet, ShoppingBag, TrendingUp, LogOut, RefreshCw, Plus, Minus,
   CheckCircle2, Clock, X, KeyRound,
-  UserPlus, PackageCheck, AlertCircle, Loader2, ExternalLink, Share2, Trash2
+  UserPlus, PackageCheck, AlertCircle, Loader2, ExternalLink, Share2, Trash2, PlayCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getOptimizedImageUrl, FALLBACK_IMAGE } from '../lib/imageOptimizer'
 import { WhatsAppIcon } from './WhatsAppIcon'
+import { parseVideoUrl } from '../lib/videoEmbed'
+import { VideoPlayer } from './VideoPlayer'
 
 interface AliadosPortalPageProps {
   onBack: () => void
@@ -91,8 +93,14 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
     activo: boolean
     requiereCodigoInvitacion: boolean
     montoMinimoRetiro: number
+    videoGuiaUrl?: string
     nombreTienda: string
   } | null>(null)
+  const [showVideoGuia, setShowVideoGuia] = useState(false)
+  const videoGuiaInfo = useMemo(
+    () => parseVideoUrl(configPublica?.videoGuiaUrl, 'Cómo vender en Baby World'),
+    [configPublica?.videoGuiaUrl],
+  )
   const [loadingInit, setLoadingInit] = useState(true)
 
   // Auth tabs
@@ -382,7 +390,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
       )
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        toast.error(data?.message || 'No se pudo generar el texto con IA')
+        toast.error(data?.message || 'No se pudo generar otra redacción')
         return
       }
       const hashtags = Array.isArray(data.hashtags) ? data.hashtags : []
@@ -399,9 +407,9 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
       }
       setKitCopy(nextCopy)
       setIaCopyCache((prev) => ({ ...prev, [`${prod.id}:${estilo}`]: nextCopy }))
-      toast.success(regenerar ? '¡Nueva variación IA lista!' : '¡Texto optimizado con IA listo!')
+      toast.success(regenerar ? '¡Nueva redacción lista!' : '¡Redacción lista!')
     } catch {
-      toast.error('Error conectando con el asistente IA')
+      toast.error('Error conectando para generar otra redacción')
     } finally {
       setKitLoading(false)
     }
@@ -920,15 +928,15 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 Vende nuestros juguetes en tus redes sin invertir un peso
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Publica en tus Estados de WhatsApp, Facebook Marketplace o Instagram con textos creados por nuestra IA. Nosotros nos encargamos del inventario y los domicilios.
+                Publica en tus Estados de WhatsApp, Facebook Marketplace o Instagram con fotos limpias y textos listos para vender. Nosotros nos encargamos del inventario y los domicilios.
               </p>
 
               <div className="space-y-3 pt-2 text-xs">
                 <div className="flex items-start gap-2.5 bg-white/5 p-3 rounded-2xl border border-white/10">
                   <Sparkles size={16} className="text-sky-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-white">Kit de Venta con IA en 1 clic</p>
-                    <p className="text-slate-300 text-[11px]">Copia el texto optimizado con tu enlace personal y descarga fotos limpias.</p>
+                    <p className="font-bold text-white">Kit de Venta listo en 1 clic</p>
+                    <p className="text-slate-300 text-[11px]">Copia el texto con tu enlace personal y descarga fotos limpias.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5 bg-white/5 p-3 rounded-2xl border border-white/10">
@@ -948,6 +956,17 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                   </div>
                 </div>
               </div>
+
+              {configPublica?.videoGuiaUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShowVideoGuia(true)}
+                  className="w-full py-2.5 px-4 bg-white/10 hover:bg-white/20 border border-white/15 text-white rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <PlayCircle size={16} className="text-emerald-400 shrink-0" />
+                  <span>Ver video guía: cómo vender en 1 minuto</span>
+                </button>
+              )}
             </div>
 
             {/* Formulario Login / Registro */}
@@ -1180,6 +1199,16 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              {configPublica?.videoGuiaUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShowVideoGuia(true)}
+                  className="px-4 py-2.5 bg-amber-400/15 hover:bg-amber-400/25 border border-amber-300/30 text-amber-200 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <PlayCircle size={15} className="text-amber-300" />
+                  <span>Ver video guía</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => copiarTexto(aliado.urlTiendaReferido, 'main-link', '¡Link general de tu tienda copiado!')}
@@ -1202,7 +1231,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
           {aliado.estado === 'PENDIENTE' && (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-xs sm:text-sm text-amber-900">
               <Clock size={18} className="text-amber-600 shrink-0" />
-              <span>Tu cuenta está pendiente de aprobación por Baby World. Apenas sea activada podrás generar copies IA y cargar pedidos.</span>
+              <span>Tu cuenta está pendiente de aprobación por Baby World. Apenas sea activada podrás usar el Kit de Venta y cargar pedidos.</span>
             </div>
           )}
 
@@ -1394,7 +1423,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                             className="w-full py-2.5 px-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-95 transition-all"
                           >
                             <Sparkles size={14} />
-                            <span>Kit de Venta IA (Copiar y Publicar)</span>
+                            <span>Kit de Venta (Copiar y Publicar)</span>
                           </button>
 
                           <div className="grid grid-cols-2 gap-1.5">
@@ -1814,7 +1843,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                   </button>
                 </div>
                 {comisiones.length === 0 ? (
-                  <p className="p-8 text-center text-xs text-slate-500">Aún no tienes ventas registradas. ¡Comparte tu primer juguete con el Kit IA!</p>
+                  <p className="p-8 text-center text-xs text-slate-500">Aún no tienes ventas registradas. ¡Comparte tu primer juguete con el Kit de Venta!</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
@@ -1885,7 +1914,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 flex items-center gap-1">
-                  <Sparkles size={12} /> Kit de Venta Paso a Paso (IA)
+                  <Sparkles size={12} /> Kit de Venta Paso a Paso
                 </span>
                 <h3 className="font-black text-slate-900 text-base leading-snug mt-0.5">{kitProduct.nombre}</h3>
                 <p className="text-xs font-bold text-emerald-600 mt-0.5">
@@ -2179,10 +2208,10 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                         )}
                         <span>
                           {kitLoading
-                            ? 'Generando variación con IA...'
+                            ? 'Generando otra redacción...'
                             : kitCopy.esIa
-                              ? '¿Otra opción? Generar nueva variación con IA'
-                              : '¿Prefieres otra redacción? Probar variación con IA'}
+                              ? '¿Otra opción? Probar otra redacción'
+                              : '¿Prefieres otra redacción? Probar otra versión'}
                         </span>
                       </button>
                     </div>
@@ -2237,6 +2266,72 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 </div>
               </div>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL VIDEO GUÍA PARA ALIADOS */}
+      {showVideoGuia && configPublica?.videoGuiaUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            onClick={() => setShowVideoGuia(false)}
+            className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs"
+          />
+          <div className="relative bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-4 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center gap-1">
+                  <PlayCircle size={12} /> Video Guía Rápida
+                </span>
+                <h3 className="font-black text-slate-900 text-sm sm:text-base leading-snug">
+                  ¿Cómo publicar y vender en Baby World?
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVideoGuia(false)}
+                className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {videoGuiaInfo ? (
+              <div
+                className={`rounded-2xl overflow-hidden bg-slate-950 ${
+                  videoGuiaInfo.vertical ? 'aspect-[9/16] max-w-[320px] mx-auto' : 'aspect-video w-full'
+                }`}
+              >
+                <VideoPlayer video={videoGuiaInfo} title="Guía rápida para Aliados Baby World" />
+              </div>
+            ) : (
+              <div className="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <PlayCircle size={32} className="mx-auto text-emerald-600" />
+                <p className="text-xs text-slate-600">Toca el botón para ver el video guía paso a paso.</p>
+                <a
+                  href={configPublica.videoGuiaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-extrabold"
+                >
+                  <ExternalLink size={14} />
+                  <span>Abrir video guía</span>
+                </a>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span>Sigue los pasos y empieza a vender hoy mismo.</span>
+              <a
+                href={configPublica.videoGuiaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-sky-600 hover:underline inline-flex items-center gap-1 shrink-0"
+              >
+                <ExternalLink size={11} />
+                <span>Abrir aparte</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
