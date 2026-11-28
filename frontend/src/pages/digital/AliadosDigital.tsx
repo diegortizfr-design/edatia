@@ -205,7 +205,7 @@ export function AliadosDigital() {
     try {
       setLiquidando(true)
       const res = await api.post(`/digital/aliados/${liquidarAliado.id}/liquidar`, {
-        comprobantePago: comprobantePago.trim() || 'Transferencia Nequi/Daviplata',
+        comprobantePago: comprobantePago.trim() || 'Transferencia Nequi / Bre-B',
       })
       toast.success(`Liquidadas ${res.data?.cantidadLiquidadas} comisiones por ${fmtPrice(res.data?.totalPagado)}`)
       setLiquidarAliado(null)
@@ -431,7 +431,7 @@ export function AliadosDigital() {
                         >
                           <MessageCircle size={12} /> {a.telefono}
                         </a>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{a.medioPago}: <b>{a.cuentaPago}</b></p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{a.medioPago === 'BRE_B' ? 'Bre-B' : a.medioPago}: <b>{a.cuentaPago}</b></p>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="font-bold text-slate-900 block">{fmtPrice(a.resumen.totalVentas)}</span>
@@ -741,7 +741,7 @@ export function AliadosDigital() {
             <h3 className="text-base font-extrabold text-slate-900">Registrar Pago a Aliado</h3>
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs space-y-1">
               <p className="font-bold text-slate-900">{liquidarAliado.nombre} ({liquidarAliado.codigoReferido})</p>
-              <p className="text-slate-600">Transferir a: <b>{liquidarAliado.medioPago} — {liquidarAliado.cuentaPago}</b></p>
+              <p className="text-slate-600">Transferir a: <b>{liquidarAliado.medioPago === 'BRE_B' ? 'Bre-B' : liquidarAliado.medioPago} — {liquidarAliado.cuentaPago}</b></p>
               <p className="text-base font-black text-emerald-700 pt-1">
                 Total a pagar: {fmtPrice(liquidarAliado.resumen.saldoAprobado)}
               </p>

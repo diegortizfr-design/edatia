@@ -218,7 +218,7 @@ Módulo de ventas por referidos y social selling integrado al ERP, Gemini y la t
 
 Definidos en `backend/prisma/schema.prisma` y migración idempotente `backend/prisma/migrations/20261125161500_add_programa_aliados/migration.sql`:
 * `ConfiguracionTienda.configAliados` (`Json?`): porcentaje de utilidad (`30%`), mínimo de retiro (`$30.000 COP`), código de invitación opcional del piloto, bloqueo de autocompras, stock mínimo y categorías habilitadas (por defecto *Juguetería / Didácticos*).
-* `AliadoComercial`: perfil del vendedor, WhatsApp, documento, medio/cuenta de pago (`NEQUI`, `DAVIPLATA`, `BANCOLOMBIA`), `codigoReferido` único (`BW-NOMBRE##`), `pinHash` (`bcrypt`) y estado (`ACTIVO`, `PENDIENTE`, `SUSPENDIDO`).
+* `AliadoComercial`: perfil del vendedor, WhatsApp, documento, medio/cuenta de pago (`NEQUI`, `BRE_B`), `codigoReferido` único (`BW-NOMBRE##`), `pinHash` (`bcrypt`) y estado (`ACTIVO`, `PENDIENTE`, `SUSPENDIDO`).
 * `ComisionAliado`: registra cada venta atribuida congelando `montoVenta`, `costoTotal`, `utilidadNeta`, `porcentajeAplicado`, `valorComision`, origen (`LINK_WEB` o `PEDIDO_ALIADO`) y estado (`PENDIENTE → APROBADA → PAGADA / ANULADA`).
 
 > **Despliegue en VPS:** Si `npx prisma migrate deploy` encuentra historial previo desincronizado (`P3009`), aplicar la migración SQL idempotente directamente sin alterar migraciones anteriores:

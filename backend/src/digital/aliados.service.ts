@@ -207,10 +207,9 @@ export class AliadosService {
     const telefonoNorm = normalizarTelefonoCol(dto?.telefono);
     const email = this.sanitizeText(dto?.email, 120) || null;
     const ciudad = this.sanitizeText(dto?.ciudad, 80) || null;
-    const medioPago = ['NEQUI', 'DAVIPLATA', 'BANCOLOMBIA'].includes(String(dto?.medioPago || '').toUpperCase())
-      ? String(dto.medioPago).toUpperCase()
-      : 'NEQUI';
-    const cuentaPago = this.sanitizeText(dto?.cuentaPago, 40).replace(/[^\dA-Za-z-]/g, '') || telefonoNorm;
+    const rawMedio = String(dto?.medioPago || '').toUpperCase().replace(/-/g, '_');
+    const medioPago = ['NEQUI', 'BRE_B'].includes(rawMedio) ? rawMedio : 'NEQUI';
+    const cuentaPago = this.sanitizeText(dto?.cuentaPago, 60).replace(/[^\dA-Za-z@._+-]/g, '') || telefonoNorm;
     const pin = String(dto?.pin ?? '').trim();
 
     if (!nombre || nombre.length < 3) {
@@ -885,7 +884,7 @@ export class AliadosService {
     });
     if (!aliado) throw new NotFoundException('Aliado no encontrado');
 
-    const comprobantePago = this.sanitizeText(body?.comprobantePago, 120) || 'Transferencia Nequi/Daviplata';
+    const comprobantePago = this.sanitizeText(body?.comprobantePago, 120) || 'Transferencia Nequi / Bre-B';
     const notas = this.sanitizeText(body?.notas, 300) || null;
 
     return this.prisma.$transaction(async (tx) => {

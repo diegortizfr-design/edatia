@@ -168,6 +168,8 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
   const fmtPrice = (val: number) =>
     new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val || 0)
 
+  const fmtMedioPago = (m?: string | null) => (m === 'BRE_B' || m === 'BRE-B' ? 'Bre-B' : m || 'Nequi')
+
   // Cargar configuración pública del programa
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -949,7 +951,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 <div className="flex items-start gap-2.5 bg-white/5 p-3 rounded-2xl border border-white/10">
                   <Wallet size={16} className="text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-white">Pagos a tu Nequi / Daviplata</p>
+                    <p className="font-bold text-white">Pagos a tu Nequi o Bre-B</p>
                     <p className="text-slate-300 text-[11px]">
                       Ves tu ganancia exacta en pesos por cada juguete. Retiros desde {fmtPrice(configPublica?.montoMinimoRetiro ?? 30000)}.
                     </p>
@@ -1093,18 +1095,19 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none text-sm"
                           >
                             <option value="NEQUI">Nequi</option>
-                            <option value="DAVIPLATA">Daviplata</option>
-                            <option value="BANCOLOMBIA">Bancolombia / Ahorro a la Mano</option>
+                            <option value="BRE_B">Bre-B (Llave)</option>
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-slate-700 block mb-1">Número de cuenta / Nequi *</label>
+                          <label className="text-xs font-bold text-slate-700 block mb-1">
+                            {regData.medioPago === 'BRE_B' ? 'Llave Bre-B *' : 'Número de Nequi *'}
+                          </label>
                           <input
                             type="text"
                             required
                             value={regData.cuentaPago}
                             onChange={(e) => setRegData({ ...regData, cuentaPago: e.target.value })}
-                            placeholder="Ej: 3001234567"
+                            placeholder={regData.medioPago === 'BRE_B' ? 'Ej: @tullave, celular o correo' : 'Ej: 3001234567'}
                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none text-sm"
                           />
                         </div>
@@ -1156,7 +1159,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                           className="mt-0.5 rounded border-slate-300 text-sky-600"
                         />
                         <span>
-                          Acepto las reglas del programa: las comisiones se calculan por ventas entregadas y pagadas a <b>terceros</b> (no aplica para compras propias) y se liquidan desde {fmtPrice(configPublica?.montoMinimoRetiro ?? 30000)} a mi {regData.medioPago}.
+                          Acepto las reglas del programa: las comisiones se calculan por ventas entregadas y pagadas a <b>terceros</b> (no aplica para compras propias) y se liquidan desde {fmtPrice(configPublica?.montoMinimoRetiro ?? 30000)} a mi {fmtMedioPago(regData.medioPago)}.
                         </span>
                       </label>
 
@@ -1194,7 +1197,7 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
                 Tu código: <span className="text-emerald-400 font-mono">{aliado.codigoReferido}</span>
               </h2>
               <p className="text-xs text-slate-300">
-                Pagos a {aliado.medioPago} ({aliado.cuentaPago}) • Ganancia clara en pesos por cada juguete entregado.
+                Pagos a {fmtMedioPago(aliado.medioPago)} ({aliado.cuentaPago}) • Ganancia clara en pesos por cada juguete entregado.
               </p>
             </div>
 
@@ -1820,11 +1823,11 @@ export function AliadosPortalPage({ onBack, API_BASE, storeSlug }: AliadosPortal
               {resumen?.puedeSolicitarPago && (
                 <div className="bg-emerald-600 text-white p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="text-xs sm:text-sm">
-                    <p className="font-black">¡Tienes {fmtPrice(resumen.aprobada)} listos para transferir a tu {aliado.medioPago}!</p>
+                    <p className="font-black">¡Tienes {fmtPrice(resumen.aprobada)} listos para transferir a tu {fmtMedioPago(aliado.medioPago)}!</p>
                     <p className="text-emerald-100 text-xs">Cuenta registrada: {aliado.cuentaPago}</p>
                   </div>
                   <a
-                    href={`https://wa.me/573136546975?text=${encodeURIComponent(`Hola Baby World! Soy ${aliado.nombre} (Código ${aliado.codigoReferido}). Ya superé el mínimo de retiro con ${fmtPrice(resumen.aprobada)} aprobados para pago a mi ${aliado.medioPago} (${aliado.cuentaPago}).`)}`}
+                    href={`https://wa.me/573136546975?text=${encodeURIComponent(`Hola Baby World! Soy ${aliado.nombre} (Código ${aliado.codigoReferido}). Ya superé el mínimo de retiro con ${fmtPrice(resumen.aprobada)} aprobados para pago a mi ${fmtMedioPago(aliado.medioPago)} (${aliado.cuentaPago}).`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2.5 bg-white text-emerald-700 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 shrink-0"
