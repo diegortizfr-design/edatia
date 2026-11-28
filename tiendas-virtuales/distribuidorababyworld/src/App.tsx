@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Shield, Truck, Store, Clock, Navigation, ArrowLeft, Layers } from 'lucide-react'
+import { Shield, Truck, Store, Clock, Navigation, ArrowLeft, Layers, Sparkles, ArrowRight } from 'lucide-react'
 import { Navbar } from './components/Navbar'
 import { HeroBanner } from './components/HeroBanner'
 import { CategoriesSection } from './components/CategoriesSection'
@@ -24,7 +24,7 @@ import { normalizarVideos } from './lib/videoEmbed'
 import { analytics } from './lib/analytics'
 import { toCategoryTitleCase, matchesCategoryName } from './lib/categoriaFormat'
 import { ACTIVE_CAMPAIGN } from './constants/seasonalCampaign'
-import { captureReferralFromUrl } from './lib/referral'
+import { captureReferralFromUrl, getActiveReferralCode } from './lib/referral'
 
 // Lazy-loaded heavy screens & modals to minimize initial bundle size and speed up first paint
 const ProductDetailPage = React.lazy(() => import('./components/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })))
@@ -492,6 +492,17 @@ export function App() {
     document.title = 'Distribuidora Baby World | Tienda Virtual'
   }
 
+  const handleOpenAliadosPortal = () => {
+    setSelectedProduct(null)
+    setShowFamiliaForm(false)
+    setShowAliadosPortal(true)
+    if (window.location.pathname !== '/aliados') {
+      window.history.pushState({ view: 'aliados' }, '', '/aliados')
+    }
+    document.title = 'Programa de Aliados | Distribuidora Baby World'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleCloseAliadosPortal = () => {
     setShowAliadosPortal(false)
     if (window.location.pathname === '/aliados' || window.location.pathname === '/vendedores') {
@@ -729,6 +740,45 @@ export function App() {
                 }}
                 onSelectAllCatalog={handleSelectAllCatalog}
               />
+
+              {/* 4. Invitación discreta al Programa de Aliados (se oculta si llega referido con ?ref=) */}
+              {!getActiveReferralCode() && (
+                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950 text-white p-6 sm:p-8 shadow-lg border border-slate-800">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                      <div className="space-y-2 max-w-2xl">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-extrabold uppercase tracking-wider">
+                          <Sparkles size={12} />
+                          <span>Programa de Aliados Baby World</span>
+                        </span>
+                        <h2 className="text-xl sm:text-2xl font-black leading-snug">
+                          ¿Quieres generar ingresos extra vendiendo nuestros juguetes sin invertir?
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          Comparte en tus Estados de WhatsApp, Facebook Marketplace o Instagram con fotos y textos listos. Nosotros nos encargamos del inventario y los domicilios; tú ves tu ganancia exacta en pesos por cada juguete.
+                        </p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleOpenAliadosPortal}
+                          className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl font-black text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                        >
+                          <span>Quiero ser Aliado</span>
+                          <ArrowRight size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleOpenAliadosPortal}
+                          className="text-[11px] font-bold text-sky-300 hover:text-white transition-colors cursor-pointer text-center"
+                        >
+                          ¿Ya tienes cuenta? Ingresa a tu panel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
             </>
           ) : (
             /* VISTA DE CATÁLOGO POR CATEGORÍA O RESULTADOS DE BÚSQUEDA */
@@ -901,6 +951,16 @@ export function App() {
                   <TikTokIcon size={14} className="text-slate-900 group-hover:scale-110 transition-transform" />
                   <span>TikTok</span>
                 </a>
+              </div>
+              <div className="pt-1.5">
+                <button
+                  type="button"
+                  onClick={handleOpenAliadosPortal}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-extrabold transition-all shadow-2xs active:scale-95 cursor-pointer"
+                >
+                  <Sparkles size={14} className="text-emerald-600" />
+                  <span>Programa de Aliados • Vende y Gana</span>
+                </button>
               </div>
             </div>
 
