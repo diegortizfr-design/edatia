@@ -212,7 +212,7 @@ Esto garantiza que la directiva `try_files` no intercepte prematuramente las sol
 
 ## 7. Programa Piloto de Aliados Comerciales (Social Selling con IA)
 
-Módulo de ventas por referidos y social selling integrado al ERP, Gemini y la tienda virtual (`distribuidorababyworld`), diseñado inicialmente como piloto cerrado en la ruta `/aliados` (sin banners invasivos en el Home).
+Módulo de ventas por referidos y social selling integrado al ERP, Gemini y la tienda virtual (`distribuidorababyworld`), integrado en la ruta `/aliados` con acceso discreto desde el Footer y tarjeta al final del Home (oculta automáticamente cuando el visitante llega con `?ref=` activo).
 
 ### 7.1 Modelos Prisma y Migración
 
